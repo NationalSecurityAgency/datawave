@@ -29,6 +29,7 @@ import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.exceptions.NoResultsException;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.index.lookup.IndexStream.StreamContext;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.iterator.CloseableListIterable;
@@ -42,7 +43,9 @@ import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.CaseSensitivityVisitor;
+import datawave.query.jexl.visitors.ConjunctionEliminationVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
+import datawave.query.jexl.visitors.DisjunctionEliminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
 import datawave.query.jexl.visitors.ExecutableExpansionVisitor;
@@ -50,6 +53,7 @@ import datawave.query.jexl.visitors.ExpandCompositeTerms;
 import datawave.query.jexl.visitors.ExpandMultiNormalizedTerms;
 import datawave.query.jexl.visitors.FetchDataTypesVisitor;
 import datawave.query.jexl.visitors.FieldMissingFromSchemaVisitor;
+import datawave.query.jexl.visitors.FieldToFieldComparisonVisitor;
 import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnfieldedTermsVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
@@ -128,6 +132,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -502,13 +507,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFieldsAsString(), true);
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
-        addOption(cfg, QueryOptions.TYPE_METADATA_IN_HDFS, Boolean.toString(config.isTypeMetadataInHdfs()), true);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), true);
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
         addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
         addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), true);
+        addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), true);
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, compressMappings);
     }
@@ -577,9 +582,32 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
     
+    /**
+     * NOT THREAD SAFE - relies on QueryStopwatch which is not thread safe
+     * 
+     * @param lastOperation
+     * @param queryTree
+     * @param config
+     */
     public static void validateQuerySize(String lastOperation, JexlNode queryTree, ShardQueryConfiguration config) {
-        final QueryStopwatch timers = config.getTimers();
-        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Validate against term and depth thresholds");
+        validateQuerySize(lastOperation, queryTree, config, true);
+    }
+    
+    /**
+     * NOT THREAD SAFE when called with timed=true
+     * 
+     * @param lastOperation
+     * @param queryTree
+     * @param config
+     * @param timed
+     */
+    public static void validateQuerySize(String lastOperation, JexlNode queryTree, ShardQueryConfiguration config, boolean timed) {
+        TraceStopwatch stopwatch = null;
+        
+        if (timed) {
+            final QueryStopwatch timers = config.getTimers();
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Validate against term and depth thresholds");
+        }
         
         // check the query depth (up to config.getMaxDepthThreshold() + 1)
         int depth = DepthVisitor.getDepth(queryTree, config.getMaxDepthThreshold());
@@ -596,7 +624,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                             "{0} > {1}, last operation: {2}", termCount, config.getMaxTermThreshold(), lastOperation));
             throw new DatawaveFatalQueryException(qe);
         }
-        stopwatch.stop();
+        
+        if (timed) {
+            stopwatch.stop();
+        }
     }
     
     protected ASTJexlScript updateQueryTree(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
@@ -748,6 +779,26 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             queryTree = UniqueExpressionTermsVisitor.enforce(queryTree);
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after duplicate terms removed from AND and OR expressions:");
+            }
+            stopwatch.stop();
+        }
+        
+        // Enforce unique AND'd terms within OR expressions.
+        if (config.getEnforceUniqueConjunctionsWithinExpression()) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Enforce unique AND'd terms within OR expressions");
+            queryTree = ConjunctionEliminationVisitor.optimize(queryTree);
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after duplicate AND'd terms remove from OR expressions.");
+            }
+            stopwatch.stop();
+        }
+        
+        // Enforce unique OR'd terms within AND expressions.
+        if (config.getEnforceUniqueDisjunctionsWithinExpression()) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Enforce unique OR'd terms within AND expressions");
+            queryTree = DisjunctionEliminationVisitor.optimize(queryTree);
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after duplicate OR'd terms remove from AND expressions.");
             }
             stopwatch.stop();
         }
@@ -989,9 +1040,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // Fields in the data dictionary is always uppercase. Convert the unique fields to uppercase
             // so the comparisons are case insensitive
             List<String> fields = config.getUniqueFields().stream().map(field -> field.toUpperCase()).collect(Collectors.toList());
-            if (!allFields.containsAll(fields)) {
+            // for the unique fields we need to also look for any model aliases (forward or reverse) and fields generated post evaluation (e.g. HIT_TERM)
+            // this is because unique fields operate on the fields as returned to the user. We essentially leave all variants of the fields
+            // in the unique field list to ensure we catch everything
+            Set<String> uniqueFields = new HashSet<>(allFields);
+            if (queryModel != null) {
+                uniqueFields.addAll(queryModel.getForwardQueryMapping().keySet());
+                uniqueFields.addAll(queryModel.getReverseQueryMapping().values());
+            }
+            uniqueFields.add(JexlEvaluation.HIT_TERM_FIELD);
+            if (!uniqueFields.containsAll(fields)) {
                 Set<String> missingFields = Sets.newHashSet(config.getUniqueFields());
-                missingFields.removeAll(allFields);
+                missingFields.removeAll(uniqueFields);
                 nonexistentFields.addAll(missingFields);
             }
             
@@ -1151,6 +1211,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             stopwatch.stop();
         }
         
+        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Force field-to-field comparison to evaluation only");
+        queryTree = FieldToFieldComparisonVisitor.forceEvaluationOnly(queryTree);
+        if (log.isDebugEnabled()) {
+            logQuery(queryTree, "Query after forceEvaluationOnly is applied");
+        }
+        stopwatch.stop();
+        
         if (!disableCompositeFields) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand composite terms");
             
@@ -1193,6 +1260,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     logQuery(queryTree, "Query after expanding ranges:");
                 }
                 innerStopwatch.stop();
+                
+                if (reduceQuery) {
+                    innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce after range expansion");
+                    
+                    // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
+                    queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+                    
+                    if (log.isDebugEnabled()) {
+                        logQuery(queryTree, "Query after range expansion reduction:");
+                    }
+                    
+                    innerStopwatch.stop();
+                }
                 
                 innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Prune GeoWave terms");
                 Multimap<String,String> prunedTerms = HashMultimap.create();
@@ -1243,6 +1323,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                     config.isExpandValues());
                     if (log.isDebugEnabled()) {
                         logQuery(queryTree, "Query after expanding ranges again:");
+                    }
+                    if (reduceQuery) {
+                        
+                        // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
+                        queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+                        
+                        if (log.isDebugEnabled()) {
+                            logQuery(queryTree, "Query after range expansion reduction again:");
+                        }
+                        
                     }
                     queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
                     config.setExpandAllTerms(expandAllTerms);
@@ -1832,11 +1922,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 requiredAuthsString = QueryOptions.compressOption(requiredAuthsString, QueryOptions.UTF8);
             }
             addOption(cfg, QueryOptions.NON_INDEXED_DATATYPES, nonIndexedTypes, false);
-            if (config.isTypeMetadataInHdfs() == false) {
-                addOption(cfg, QueryOptions.TYPE_METADATA, typeMetadataString, false);
-            }
+            addOption(cfg, QueryOptions.TYPE_METADATA, typeMetadataString, false);
             addOption(cfg, QueryOptions.TYPE_METADATA_AUTHS, requiredAuthsString, false);
-            
             addOption(cfg, QueryOptions.METADATA_TABLE_NAME, config.getMetadataTableName(), false);
             
         } catch (TableNotFoundException | IOException e) {

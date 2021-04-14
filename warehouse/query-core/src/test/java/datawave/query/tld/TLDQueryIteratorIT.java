@@ -87,11 +87,27 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
     public void tf_exceededValue_leadingWildcard_documentSpecific_tld_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*r'))";
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ '.*r'))";
         Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
         List<String> tfField1Hits = new ArrayList<>();
-        tfField1Hits.add("a b c");
+        tfField1Hits.add("a,, b,,, c,,");
         tfField1Hits.add("r");
+        expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
+        
+        tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+    }
+    
+    @Test
+    public void tf_exceededValue_leadingWildcard_fullValueMatch_documentSpecific_tld_test() throws IOException {
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*r s'))";
+        Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
+        List<String> tfField1Hits = new ArrayList<>();
+        // from parent
+        tfField1Hits.add("a,, b,,, c,,");
+        // from child
+        tfField1Hits.add(",,q ,r, ,s,");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
         
         tf_test(seekRange, query, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
@@ -108,10 +124,10 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
     public void tf_exceededValue_leadingWildcard_shardRange_tld_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*r'))";
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ '.*r'))";
         Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
         List<String> tfField1Hits = new ArrayList<>();
-        tfField1Hits.add("a b c");
+        tfField1Hits.add("a,, b,,, c,,");
         tfField1Hits.add("r");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
         
@@ -122,7 +138,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
     public void tf_exceededValue_negated_leadingWildcard_documentSpecific_tld_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*z'))";
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*z'))";
         tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), configureTLDTestData(11), Collections.EMPTY_LIST);
     }
     
@@ -130,7 +146,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
     public void tf_exceededValue_negated_leadingWildcard_shardRange_tld_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
-        String query = "EVENT_FIELD1 =='a' && !((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ '.*z'))";
+        String query = "EVENT_FIELD1 =='a' && !((_Value_ = true) && (TF_FIELD1 =~ '.*z'))";
         tf_test(seekRange, query, getBaseExpectedEvent("123.345.456"), configureTLDTestData(11), Collections.EMPTY_LIST);
     }
     
@@ -138,10 +154,10 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
     public void tf_exceededValue_trailingWildcard_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'r.*'))";
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ 'r.*'))";
         Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
         List<String> tfField1Hits = new ArrayList<>();
-        tfField1Hits.add("a b c");
+        tfField1Hits.add("a,, b,,, c,,");
         tfField1Hits.add("r");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
         
@@ -152,10 +168,10 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
     public void tf_exceededValue_trailingWildcard_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getShardRange();
-        String query = "EVENT_FIELD1 =='a' && ((ExceededValueThresholdMarkerJexlNode = true) && (TF_FIELD1 =~ 'r.*'))";
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ 'r.*'))";
         Map.Entry<Key,Map<String,List<String>>> expectedDocument = getBaseExpectedEvent("123.345.456");
         List<String> tfField1Hits = new ArrayList<>();
-        tfField1Hits.add("a b c");
+        tfField1Hits.add("a,, b,,, c,,");
         tfField1Hits.add("r");
         expectedDocument.getValue().put("TF_FIELD1", tfField1Hits);
         
@@ -179,7 +195,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         List<Map.Entry<Key,Value>> listSource = super.configureTestData(eventTime);
         
         // add some indexed TF fields in a child
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("TF_FIELD1", "q r s", "123.345.456.1", eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("TF_FIELD1", ",,q ,r, ,s,", "123.345.456.1", eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD1", "q r s", "123.345.456.1", eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD1", "q", "123.345.456.1", eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD1", "r", "123.345.456.1", eventTime), new Value()));
@@ -188,7 +204,7 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD1", "r", "123.345.456.1", eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getTF("TF_FIELD1", "s", "123.345.456.1", eventTime), new Value()));
         
-        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("TF_FIELD2", "d e f", "123.345.456.2", eventTime), new Value()));
+        listSource.add(new AbstractMap.SimpleEntry<>(getEvent("TF_FIELD2", ",d, ,e, ,f,", "123.345.456.2", eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD2", "d e f", "123.345.456.2", eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD2", "d", "123.345.456.2", eventTime), new Value()));
         listSource.add(new AbstractMap.SimpleEntry<>(getFI("TF_FIELD2", "e", "123.345.456.2", eventTime), new Value()));

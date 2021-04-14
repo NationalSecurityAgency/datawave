@@ -12,6 +12,7 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.WiseGuysIngest;
+import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.result.event.EventBase;
@@ -48,10 +49,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
-
 /**
  * Applies uniqueness to queries
  * 
@@ -76,9 +73,9 @@ public abstract class UniqueTest {
             connector = qtth.connector;
             
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(connector, auths, TableName.SHARD);
+            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
         @Override
@@ -105,9 +102,9 @@ public abstract class UniqueTest {
             
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(connector, auths, TableName.SHARD);
+            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
         @Override
@@ -309,4 +306,33 @@ public abstract class UniqueTest {
         runTestQueryWithUniqueness(new HashSet(), queryString, startDate, endDate, extraParameters);
     }
     
+    @Test
+    public void testUniquenessWithHitTermField() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("query.syntax", "LUCENE");
+        
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID:/^[CS].*/ AND #UNIQUE(HIT_TERM)";
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+    }
+    
+    @Test
+    public void testUniquenessWithModelAliases() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("query.syntax", "LUCENE");
+        
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID:/^[CS].*/ AND #UNIQUE(BOTH_NULL)";
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+    }
 }

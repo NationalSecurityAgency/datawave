@@ -18,10 +18,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
@@ -41,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -60,11 +57,13 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
     private ShardQueryConfiguration config;
     private String fstHdfsUri;
     private FileSystem fs;
+    private Set<String> fields;
     
-    public PushdownLargeFieldedListsVisitor(ShardQueryConfiguration config, FileSystem fs, String fstHdfsUri) {
+    public PushdownLargeFieldedListsVisitor(ShardQueryConfiguration config, FileSystem fs, String fstHdfsUri, Set<String> fields) {
         this.config = config;
         this.fstHdfsUri = fstHdfsUri;
         this.fs = fs;
+        this.fields = fields;
     }
     
     /**
@@ -75,12 +74,21 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T pushdown(ShardQueryConfiguration config, T script, FileSystem fs, String fstHdfsUri) {
+        return pushdown(config, script, fs, fstHdfsUri, null, null);
+    }
+    
+    public static <T extends JexlNode> T pushdown(ShardQueryConfiguration config, T script, FileSystem fs, String fstHdfsUri,
+                    Map<String,Integer> pushdownCapacity) {
+        return pushdown(config, script, fs, fstHdfsUri, pushdownCapacity, null);
+    }
+    
+    public static <T extends JexlNode> T pushdown(ShardQueryConfiguration config, T script, FileSystem fs, String fstHdfsUri, Object data, Set<String> fields) {
         // flatten the tree
         script = TreeFlatteningRebuildingVisitor.flatten(script);
         
-        PushdownLargeFieldedListsVisitor visitor = new PushdownLargeFieldedListsVisitor(config, fs, fstHdfsUri);
+        PushdownLargeFieldedListsVisitor visitor = new PushdownLargeFieldedListsVisitor(config, fs, fstHdfsUri, fields);
         
-        return (T) script.jjtAccept(visitor, null);
+        return (T) script.jjtAccept(visitor, data);
     }
     
     // OTHER_NODES sorts before all other field names
@@ -108,17 +116,26 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         fields.addAll(rangeNodesByField.keySet());
         
         for (String field : fields) {
+            // if fields is not specified or the current field is in fields it can be reduced
+            boolean canReduce = (this.fields == null || this.fields.contains(field));
             
             Collection<JexlNode> eqNodes = eqNodesByField.get(field);
             Collection<JexlNode> rangeNodes = rangeNodesByField.get(field);
             
             // if "_ANYFIELD_" or "_NOFIELD_", then simply add the subset back into the children list
             // if past our threshold, then add a ExceededValueThresholdMarker with an OR of this subset to the children list
-            if (!Constants.ANY_FIELD.equals(field)
-                            && !Constants.NO_FIELD.equals(field)
-                            && (eqNodes.size() >= config.getMaxOrExpansionFstThreshold() || eqNodes.size() >= config.getMaxOrExpansionThreshold() || rangeNodes
-                                            .size() >= config.getMaxOrRangeThreshold()) && isIndexed(field)) {
-                log.info("Pushing down large (" + eqNodes.size() + ") fielded list for " + field);
+            // @formatter:off
+            if (canReduce &&
+                    !Constants.ANY_FIELD.equals(field) &&
+                    !Constants.NO_FIELD.equals(field) &&
+                    (eqNodes.size() >= config.getMaxOrExpansionFstThreshold() ||
+                            eqNodes.size() >= config.getMaxOrExpansionThreshold() ||
+                            rangeNodes.size() >= config.getMaxOrRangeThreshold()
+                    ) &&
+                    isIndexed(field)) {
+                // @formatter:on
+                
+                log.info("Pushing down large (" + eqNodes.size() + "|" + rangeNodes.size() + ") fielded list for " + field);
                 
                 // turn the subset of children into a list of values
                 SortedSet<String> values = new TreeSet<>();
@@ -144,9 +161,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                         TreeMap<Range,JexlNode> ranges = new TreeMap<>();
                         rangeNodes.forEach(rangeNode -> ranges.put(rangeNodeToRange(rangeNode), rangeNode));
                         
-                        int numBatches = (int) Math.ceil(rangeNodes.size() / (double) Math.max(1, config.getMaxRangesPerRangeIvarator()));
-                        numBatches = Math.min(Math.max(1, config.getMaxOrRangeIvarators()), numBatches);
-                        
+                        int numBatches = getBatchCount(rangeNodes.size());
                         List<List<Map.Entry<Range,JexlNode>>> batchedRanges = batchRanges(ranges, numBatches);
                         
                         rangeNodes = new ArrayList<>();
@@ -178,13 +193,53 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             else {
                 // recurse on the eq children in this subset
                 copyChildren(eqNodes, children, data);
+                track(data, field, eqNodes.size() - 1);
                 
                 // recurse on the range children in this subset
                 copyChildren(rangeNodes, children, data);
+                
+                int numBatches = getBatchCount(rangeNodes.size());
+                track(data, field, rangeNodes.size() - numBatches);
             }
         }
         
         return children(newNode, children.toArray(new JexlNode[children.size()]));
+    }
+    
+    /**
+     * Given a number of ranges to combine into ivarators return the number of batches that should be used.
+     * 
+     * @param ranges
+     *            the number of ranges to combine into ivarators
+     * @return one or more batches the ranges should be split into for ivarating
+     */
+    private int getBatchCount(int ranges) {
+        int numBatches = (int) Math.ceil(ranges / (double) Math.max(1, config.getMaxRangesPerRangeIvarator()));
+        return Math.min(Math.max(1, config.getMaxOrRangeIvarators()), numBatches);
+    }
+    
+    /**
+     * If data is set update it for the given field to include the new possible reduction, otherwise do nothing
+     * 
+     * @param data
+     *            the data object to store the reduction per field in, may be null
+     * @param field
+     *            the field that can be reduced
+     * @param reduction
+     *            the reduction to the query term count
+     */
+    private void track(Object data, String field, int reduction) {
+        if (data instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String,Integer> trackingMap = (Map<String,Integer>) data;
+            Integer count = 0;
+            if (trackingMap.get(field) != null) {
+                count = trackingMap.get(field);
+            }
+            
+            count += reduction;
+            trackingMap.put(field, count);
+        }
     }
     
     private List<List<Map.Entry<Range,JexlNode>>> batchRanges(TreeMap<Range,JexlNode> ranges, int numBatches) {

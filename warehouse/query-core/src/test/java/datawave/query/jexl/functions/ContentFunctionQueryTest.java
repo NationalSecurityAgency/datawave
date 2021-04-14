@@ -27,6 +27,7 @@ import datawave.ingest.table.config.TableConfigHelper;
 import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
@@ -61,7 +62,9 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
@@ -73,6 +76,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -91,6 +95,9 @@ import static datawave.query.QueryParameters.DATE_RANGE_TYPE;
 
 @RunWith(Arquillian.class)
 public class ContentFunctionQueryTest {
+    
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
     
     private static final int NUM_SHARDS = 241;
     private static final String DATA_TYPE_NAME = "test";
@@ -116,6 +123,8 @@ public class ContentFunctionQueryTest {
     ShardQueryLogic logic;
     
     private static InMemoryInstance instance;
+    
+    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
     
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
@@ -177,6 +186,8 @@ public class ContentFunctionQueryTest {
         connector.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
         
         writeKeyValues(connector, keyValues);
+        
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
     }
     
     public static void setupConfiguration(Configuration conf) {
@@ -356,6 +367,7 @@ public class ContentFunctionQueryTest {
         
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
         logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
+        logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
         
         if (useIvarator)
             setupIvarator(logic);

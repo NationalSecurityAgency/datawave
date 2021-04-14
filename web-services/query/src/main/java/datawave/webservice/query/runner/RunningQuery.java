@@ -64,6 +64,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
     private QueryPredictor predictor = null;
+    private long maxResults = 0;
     
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
@@ -118,6 +119,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         // If connection is null, then we are likely not going to use this object for query, probably for removing or closing it.
         if (null != connection) {
             setConnection(connection);
+        }
+        this.maxResults = this.logic.getResultLimit(this.settings.getDnList());
+        if (this.maxResults != this.logic.getMaxResults()) {
+            log.info("Maximum results set to " + this.maxResults + " instead of default " + this.logic.getMaxResults() + ", user " + this.settings.getUserDN()
+                            + " has a DN configured with a different limit");
         }
     }
     
@@ -228,7 +234,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
                         break;
                     }
-                } else if (this.logic.getMaxResults() >= 0 && numResults >= this.logic.getMaxResults()) {
+                } else if (this.maxResults >= 0 && numResults >= this.maxResults) {
                     log.info("Query logic max results has been reached, aborting query.next call");
                     this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
                     break;

@@ -28,6 +28,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private String logicName = "No logicName was set";
     private String logicDescription = "Not configured";
     private AuditType auditType = null;
+    private Map<String,Long> dnResultLimits = null;
     protected long maxResults = -1L;
     protected ScannerBase scanner;
     @SuppressWarnings("unchecked")
@@ -36,6 +37,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private long pageByteTrigger = 0;
     private boolean collectQueryMetrics = true;
     private String _connPoolName;
+    private Set<String> authorizedDNs;
     protected Principal principal;
     protected RoleManager roleManager;
     protected MarkingFunctions markingFunctions;
@@ -322,5 +324,25 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     
     public SelectorExtractor getSelectorExtractor() {
         return selectorExtractor;
+    }
+    
+    @Override
+    public Set<String> getAuthorizedDNs() {
+        return authorizedDNs;
+    }
+    
+    @Override
+    public void setAuthorizedDNs(Set<String> authorizedDNs) {
+        this.authorizedDNs = authorizedDNs;
+    }
+    
+    @Override
+    public void setDnResultLimits(Map<String,Long> dnResultLimits) {
+        this.dnResultLimits = dnResultLimits;
+    }
+    
+    @Override
+    public Map<String,Long> getDnResultLimits() {
+        return dnResultLimits;
     }
 }

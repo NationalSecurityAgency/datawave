@@ -3,7 +3,6 @@ package datawave.query.testframework;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions.Default;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
@@ -56,10 +55,11 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ComparisonFailure;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -93,7 +93,10 @@ import java.util.stream.Collectors;
  */
 public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.TestResultParser {
     
-    protected static final String VALUE_THRESHOLD_JEXL_NODE = ExceededValueThresholdMarkerJexlNode.class.getSimpleName();
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
+    protected static final String VALUE_THRESHOLD_JEXL_NODE = ExceededValueThresholdMarkerJexlNode.label();
     protected static final String FILTER_EXCLUDE_REGEX = "filter:excludeRegex";
     
     private static final Logger log = Logger.getLogger(AbstractFunctionalQuery.class);
@@ -144,20 +147,18 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected QueryLogicTestHarness testHarness;
     protected DatawavePrincipal principal;
     
-    protected Path temporaryFolder;
-    
     private final Set<Authorizations> authSet = new HashSet<>();
     
     protected AbstractFunctionalQuery(final RawDataManager mgr) {
         this.dataManager = mgr;
     }
     
-    protected ShardQueryLogic createQueryLogic() {
+    protected ShardQueryLogic createShardQueryLogic() {
         return new ShardQueryLogic();
     }
     
-    protected ShardQueryLogic createShardQueryLogic() {
-        ShardQueryLogic logic = createQueryLogic();
+    private ShardQueryLogic createQueryLogic() {
+        ShardQueryLogic logic = createShardQueryLogic();
         QueryTestTableHelper.configureLogicToScanTables(logic);
         
         logic.setFullTableScanEnabled(false);
@@ -168,6 +169,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setQueryPlanner(new DefaultQueryPlanner());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        
         logic.setCollectTimingDetails(true);
         logic.setLogTimingDetails(true);
         logic.setMinimumSelectivity(0.03D);
@@ -176,7 +178,11 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     }
     
     protected CountingShardQueryLogic createCountingShardQueryLogic() {
-        CountingShardQueryLogic countLogic = new CountingShardQueryLogic();
+        return new CountingShardQueryLogic();
+    }
+    
+    private CountingShardQueryLogic createCountingQueryLogic() {
+        CountingShardQueryLogic countLogic = createCountingShardQueryLogic();
         countLogic.setIncludeDataTypeAsField(true);
         countLogic.setFullTableScanEnabled(false);
         
@@ -204,9 +210,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         public QueryLogic<?> getQueryLogic(String name, Principal principal) throws IllegalArgumentException, CloneNotSupportedException {
             QueryLogic<?> logic = null;
             if (name.equals("EventQuery")) {
-                logic = createShardQueryLogic();
+                logic = createQueryLogic();
             } else if (name.equals("CountQuery")) {
-                logic = createCountingShardQueryLogic();
+                logic = createCountingQueryLogic();
             } else {
                 throw new IllegalArgumentException("Unknown query logic " + name);
             }
@@ -230,8 +236,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     @Before
     public void querySetUp() throws IOException {
-        temporaryFolder = Paths.get(Files.createTempDir().toURI());
-        
         log.debug("---------  querySetUp  ---------");
         
         // init must set auths
@@ -254,11 +258,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException("Unable to create query logics", e);
         }
-    }
-    
-    @After
-    public void cleanUp() {
-        temporaryFolder.toFile().deleteOnExit();
     }
     
     // ============================================
@@ -610,10 +609,10 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         final List<String> dirs = new ArrayList<>();
         final List<String> fstDirs = new ArrayList<>();
         for (int d = 1; d <= hdfsLocations; d++) {
-            Path ivCache = Paths.get(Files.createTempDir().toURI());
+            Path ivCache = Paths.get(temporaryFolder.newFolder().toURI());
             dirs.add(ivCache.toUri().toString());
             if (fst) {
-                ivCache = Paths.get(Files.createTempDir().toURI());
+                ivCache = Paths.get(temporaryFolder.newFolder().toURI());
                 fstDirs.add(ivCache.toAbsolutePath().toString());
             }
         }

@@ -28,6 +28,7 @@ import datawave.microservice.query.configuration.QueryData;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -59,7 +60,9 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
@@ -68,6 +71,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -87,6 +91,9 @@ import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
 
 @RunWith(Arquillian.class)
 public class CompositeIndexTest {
+    
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
     
     private static final int NUM_SHARDS = 241;
     private static final String DATA_TYPE_NAME = "wkt";
@@ -179,6 +186,8 @@ public class CompositeIndexTest {
     ShardQueryLogic logic;
     
     private static InMemoryInstance instance;
+    
+    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
     
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
@@ -274,6 +283,8 @@ public class CompositeIndexTest {
         connector.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
         
         writeKeyValues(connector, keyValues);
+        
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
     }
     
     public static void setupConfiguration(Configuration conf) {
@@ -329,12 +340,12 @@ public class CompositeIndexTest {
     @Test
     public void compositeWithoutIvaratorTest() throws Exception {
         // @formatter:off
-        String query = "(((BoundedRange = true) && (" + GEO_FIELD + " >= '0202'" + JEXL_AND_OP + GEO_FIELD + " <= '020d'))" + JEXL_OR_OP +
-                "((BoundedRange = true) && (" + GEO_FIELD + " >= '030a'" + JEXL_AND_OP + GEO_FIELD + " <= '0335'))" + JEXL_OR_OP +
-                "((BoundedRange = true) && (" + GEO_FIELD + " >= '0428'" + JEXL_AND_OP + GEO_FIELD + " <= '0483'))" + JEXL_OR_OP +
-                "(((BoundedRange = true) && " + GEO_FIELD + " >= '0500aa'" + JEXL_AND_OP + GEO_FIELD + " <= '050355'))" + JEXL_OR_OP +
-                "((BoundedRange = true) && (" + GEO_FIELD + " >= '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + GEO_FIELD + " <= '1f36c71c71c71c71c7')))" + JEXL_AND_OP +
-                "((BoundedRange = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
+        String query = "(((_Bounded_ = true) && (" + GEO_FIELD + " >= '0202'" + JEXL_AND_OP + GEO_FIELD + " <= '020d'))" + JEXL_OR_OP +
+                "((_Bounded_ = true) && (" + GEO_FIELD + " >= '030a'" + JEXL_AND_OP + GEO_FIELD + " <= '0335'))" + JEXL_OR_OP +
+                "((_Bounded_ = true) && (" + GEO_FIELD + " >= '0428'" + JEXL_AND_OP + GEO_FIELD + " <= '0483'))" + JEXL_OR_OP +
+                "(((_Bounded_ = true) && " + GEO_FIELD + " >= '0500aa'" + JEXL_AND_OP + GEO_FIELD + " <= '050355'))" + JEXL_OR_OP +
+                "((_Bounded_ = true) && (" + GEO_FIELD + " >= '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + GEO_FIELD + " <= '1f36c71c71c71c71c7')))" + JEXL_AND_OP +
+                "((_Bounded_ = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
         // @formatter:on
         
         List<QueryData> queries = getQueryRanges(query, false);
@@ -379,12 +390,12 @@ public class CompositeIndexTest {
     @Test
     public void compositeWithIvaratorTest() throws Exception {
         // @formatter:off
-        String query = "(((BoundedRange = true) && (" + GEO_FIELD + " >= '0202'" + JEXL_AND_OP + GEO_FIELD + " <= '020d'))" + JEXL_OR_OP +
-                "((BoundedRange = true) && (" + GEO_FIELD + " >= '030a'" + JEXL_AND_OP + GEO_FIELD + " <= '0335'))" + JEXL_OR_OP +
-                "((BoundedRange = true) && (" + GEO_FIELD + " >= '0428'" + JEXL_AND_OP + GEO_FIELD + " <= '0483'))" + JEXL_OR_OP +
-                "(((BoundedRange = true) && " + GEO_FIELD + " >= '0500aa'" + JEXL_AND_OP + GEO_FIELD + " <= '050355'))" + JEXL_OR_OP +
-                "((BoundedRange = true) && (" + GEO_FIELD + " >= '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + GEO_FIELD + " <= '1f36c71c71c71c71c7')))" + JEXL_AND_OP +
-                "((BoundedRange = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
+        String query = "(((_Bounded_ = true) && (" + GEO_FIELD + " >= '0202'" + JEXL_AND_OP + GEO_FIELD + " <= '020d'))" + JEXL_OR_OP +
+                "((_Bounded_ = true) && (" + GEO_FIELD + " >= '030a'" + JEXL_AND_OP + GEO_FIELD + " <= '0335'))" + JEXL_OR_OP +
+                "((_Bounded_ = true) && (" + GEO_FIELD + " >= '0428'" + JEXL_AND_OP + GEO_FIELD + " <= '0483'))" + JEXL_OR_OP +
+                "(((_Bounded_ = true) && " + GEO_FIELD + " >= '0500aa'" + JEXL_AND_OP + GEO_FIELD + " <= '050355'))" + JEXL_OR_OP +
+                "((_Bounded_ = true) && (" + GEO_FIELD + " >= '1f0aaaaaaaaaaaaaaa'" + JEXL_AND_OP + GEO_FIELD + " <= '1f36c71c71c71c71c7')))" + JEXL_AND_OP +
+                "((_Bounded_ = true) && (" + WKT_BYTE_LENGTH_FIELD + " >= 0" + JEXL_AND_OP + WKT_BYTE_LENGTH_FIELD + " < 80))";
         // @formatter:on
         
         List<QueryData> queries = getQueryRanges(query, true);
@@ -509,12 +520,14 @@ public class CompositeIndexTest {
         
         // increase the depth threshold
         logic.setMaxDepthThreshold(20);
+        logic.setMaxTermThreshold(15);
         
         // set the pushdown threshold really high to avoid collapsing uids into shards (overrides setCollapseUids if #terms is greater than this threshold)
         ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);
         
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
         logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
+        logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
         
         if (useIvarator)
             setupIvarator(logic);

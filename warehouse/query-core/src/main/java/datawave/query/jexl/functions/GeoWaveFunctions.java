@@ -184,22 +184,24 @@ public class GeoWaveFunctions {
     }
     
     public static boolean intersects(Iterable<?> values, String geoString) {
-        boolean successfullyParsedAValue = false;
-        Exception parseException = null;
-        for (Object fieldValue : values) {
-            try {
-                if (intersects(fieldValue, geoString)) {
-                    return true;
+        if (values != null) {
+            boolean successfullyParsedAValue = false;
+            Exception parseException = null;
+            for (Object fieldValue : values) {
+                try {
+                    if (intersects(fieldValue, geoString)) {
+                        return true;
+                    }
+                    successfullyParsedAValue = true;
+                } catch (Exception e) {
+                    // this is most likely a field value from the index (i.e. an encoded string @see GeometryNormalizer.getEncodedStringsFromGeometry)
+                    // ignore and continue down the list of values. This will be thrown if every value in the list threw an exception
+                    parseException = e;
                 }
-                successfullyParsedAValue = true;
-            } catch (Exception e) {
-                // this is most likely a field value from the index (i.e. an encoded string @see GeometryNormalizer.getEncodedStringsFromGeometry)
-                // ignore and continue down the list of values. This will be thrown if every value in the list threw an exception
-                parseException = e;
             }
-        }
-        if (!successfullyParsedAValue) {
-            throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+            if (!successfullyParsedAValue) {
+                throw new RuntimeException("Did not find any properly encoded values to match against", parseException);
+            }
         }
         return false;
     }

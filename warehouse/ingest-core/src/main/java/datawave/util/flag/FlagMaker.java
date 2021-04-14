@@ -274,10 +274,11 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 }
                 
                 // remove the base directory from the folder
-                if (folder.startsWith(this.fmc.getBaseHDFSDir())) {
-                    folder = folder.substring(this.fmc.getBaseHDFSDir().length());
-                    if (folder.startsWith(File.separator)) {
-                        folder = folder.substring(File.separator.length());
+                String inputFolder = folder;
+                if (inputFolder.startsWith(this.fmc.getBaseHDFSDir())) {
+                    inputFolder = inputFolder.substring(this.fmc.getBaseHDFSDir().length());
+                    if (inputFolder.startsWith(File.separator)) {
+                        inputFolder = inputFolder.substring(File.separator.length());
                     }
                 }
                 
@@ -292,7 +293,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                             if (log.isTraceEnabled()) {
                                 log.trace("Adding file " + status.getPath());
                             }
-                            this.fd.addInputFile(new InputFile(folder, status, this.fmc.getBaseHDFSDir(), this.fmc.isUseFolderTimestamp()));
+                            this.fd.addInputFile(new InputFile(inputFolder, status, this.fmc.getBaseHDFSDir(), this.fmc.isUseFolderTimestamp()));
                             logFileInfo(fc, status);
                         } catch (UnusableFileException e) {
                             log.warn("Skipping unusable file " + status.getPath(), e);

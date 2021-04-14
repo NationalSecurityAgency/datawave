@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Range;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -11,15 +12,18 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ActiveQueryLog {
     
+    public static final String DEFAULT_NAME = "default_log";
     private static final String DEFAULT_EMPTY_QUERY_ID = new UUID(0, 0).toString();
-    private static Logger log = Logger.getLogger(ActiveQueryLog.class);
-    private static ActiveQueryLog instance = null;
+    private static final Logger log = Logger.getLogger(ActiveQueryLog.class);
+    private static Cache<String,ActiveQueryLog> logCache = null;
+    private static final Object logCacheLock = new Object();
     private static AccumuloConfiguration conf = null;
     
     // Accumulo properties
@@ -27,53 +31,101 @@ public class ActiveQueryLog {
     public static final String LOG_PERIOD = "datawave.query.active.logPeriodMs";
     public static final String LOG_MAX_QUERIES = "datawave.query.active.logMaxQueries";
     public static final String WINDOW_SIZE = "datawave.query.active.windowSize";
-    private static long HOURS_24_MS = TimeUnit.MILLISECONDS.convert(24, TimeUnit.HOURS);
-    private static long MINUTES_15_MS = TimeUnit.MILLISECONDS.convert(15, TimeUnit.MINUTES);
-    private static long MINUTES_1_MS = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
+    private static final long HOURS_24_MS = TimeUnit.MILLISECONDS.convert(24, TimeUnit.HOURS);
+    private static final long MINUTES_15_MS = TimeUnit.MILLISECONDS.convert(15, TimeUnit.MINUTES);
+    private static final long MINUTES_1_MS = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
     
     // Changeable via Accumulo properties
     volatile private long maxIdle = MINUTES_15_MS;
     volatile private long logPeriod = MINUTES_1_MS;
     volatile private int logMaxQueries = 5;
     volatile private int windowSize = 10;
-    private AtomicLong lastAccess = new AtomicLong(System.currentTimeMillis());
+    private final AtomicLong lastAccess = new AtomicLong(System.currentTimeMillis());
     
     private Cache<String,ActiveQuery> CACHE = null;
-    private ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
     private Timer timer = null;
     private TimerTask timerTask = null;
     
-    synchronized public static void setConfig(AccumuloConfiguration conf) {
+    private final String name;
+    
+    synchronized public static void setConfig(final AccumuloConfiguration conf) {
         if (conf != null) {
             if (ActiveQueryLog.conf == null || conf.getUpdateCount() > ActiveQueryLog.conf.getUpdateCount()) {
                 ActiveQueryLog.conf = conf;
-                ActiveQueryLog.getInstance().checkSettings(conf, false);
             }
-        }
-    }
-    
-    public static ActiveQueryLog getInstance() {
-        
-        if (ActiveQueryLog.instance == null) {
-            synchronized (ActiveQueryLog.class) {
-                if (ActiveQueryLog.instance == null) {
-                    ActiveQueryLog.instance = new ActiveQueryLog(ActiveQueryLog.conf);
+            // Do not allow access to the cache while updating each log's settings.
+            if (logCache != null) {
+                synchronized (ActiveQueryLog.logCacheLock) {
+                    ConcurrentMap<String,ActiveQueryLog> logMap = logCache.asMap();
+                    logMap.values().forEach(log -> log.checkSettings(conf, false));
                 }
             }
         }
-        ActiveQueryLog.instance.touch();
-        // timer was cancelled, but now we need to restart it
-        if (ActiveQueryLog.instance.timer == null) {
-            ActiveQueryLog.instance.setLogPeriod(ActiveQueryLog.instance.logPeriod);
+    }
+    
+    /**
+     * Return the default {@link ActiveQueryLog} instance. The time the instance was last accessed will be updated to the current time in milliseconds, and if
+     * the instance's timer was cancelled, it will be restarted.
+     * 
+     * @return the default {@link ActiveQueryLog} instance
+     */
+    public static ActiveQueryLog getInstance() {
+        return getInstance(DEFAULT_NAME);
+    }
+    
+    /**
+     * Return the {@link ActiveQueryLog} instance associated with the specified name. If one does not exist, it will be created.
+     *
+     * If the specified name is null or blank, the default instance with the name '{@value #DEFAULT_NAME}' will be returned. Additionally, the time the log was
+     * last accessed will be updated to the current time in milliseconds, and if the log's timer was cancelled, it will be restarted.
+     * 
+     * @param name
+     *            the associated name by which to look up the desired {@link ActiveQueryLog}. This will typically be the name of a table or query logic.
+     * @return the existing or new {@link ActiveQueryLog} for the name
+     */
+    public static ActiveQueryLog getInstance(String name) {
+        // Return the default instance if the name is blank.
+        if (StringUtils.isBlank(name)) {
+            name = DEFAULT_NAME;
         }
-        return ActiveQueryLog.instance;
+        
+        // Initialize the log cache if necessary.
+        if (ActiveQueryLog.logCache == null) {
+            synchronized (ActiveQueryLog.logCacheLock) {
+                if (ActiveQueryLog.logCache == null) {
+                    ActiveQueryLog.logCache = Caffeine.newBuilder().build();
+                }
+            }
+        }
+        
+        // If no log currently exists for the name, create one.
+        ActiveQueryLog log;
+        synchronized (ActiveQueryLog.logCacheLock) {
+            log = ActiveQueryLog.logCache.getIfPresent(name);
+            if (log == null) {
+                log = new ActiveQueryLog(conf, name);
+                ActiveQueryLog.logCache.put(name, log);
+            }
+        }
+        
+        updateLastAccessedAndRestartCancelledTimer(log);
+        
+        return log;
+    }
+    
+    private static void updateLastAccessedAndRestartCancelledTimer(ActiveQueryLog log) {
+        log.touch();
+        if (log.timer == null) {
+            log.setLogPeriod(log.logPeriod);
+        }
     }
     
     private ActiveQueryLog() {
-        this(null);
+        this(null, null);
     }
     
-    private ActiveQueryLog(AccumuloConfiguration conf) {
+    private ActiveQueryLog(AccumuloConfiguration conf, String name) {
         if (conf != null) {
             checkSettings(conf, true);
         } else {
@@ -81,6 +133,7 @@ public class ActiveQueryLog {
             setLogPeriod(this.logPeriod);
             setMaxIdle(this.maxIdle);
         }
+        this.name = name;
     }
     
     private void touch() {
@@ -156,6 +209,7 @@ public class ActiveQueryLog {
                 } finally {
                     cacheLock.writeLock().unlock();
                 }
+                this.maxIdle = maxIdle;
             } else {
                 log.error("Bad value: (" + maxIdle + ") for maxIdle");
             }
@@ -232,7 +286,7 @@ public class ActiveQueryLog {
         ActiveQuery activeQuery;
         cacheLock.readLock().lock();
         try {
-            activeQuery = this.CACHE.get(queryIdFor(queryId), s -> new ActiveQuery(queryIdFor(queryId), this.windowSize));
+            activeQuery = this.CACHE.get(queryIdFor(queryId), s -> new ActiveQuery(queryIdFor(queryId), this.windowSize, name));
         } finally {
             cacheLock.readLock().unlock();
         }

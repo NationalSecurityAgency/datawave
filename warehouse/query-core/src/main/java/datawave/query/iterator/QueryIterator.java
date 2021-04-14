@@ -96,13 +96,16 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import javax.annotation.Nullable;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
@@ -192,6 +195,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     protected Map<String,Object> exceededOrEvaluationCache = null;
     
+    protected ActiveQueryLog activeQueryLog;
+    
     public QueryIterator() {}
     
     public QueryIterator(QueryIterator other, IteratorEnvironment env) {
@@ -275,35 +280,64 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         pruneIvaratorCacheDirs();
     }
     
-    // this method will prune any ivarator cache directories that are not available on this node
-    private void pruneIvaratorCacheDirs() throws IOException {
-        ivaratorCacheDirConfigs.removeIf(this::pruneIvaratorCacheDir);
-    }
-    
-    private boolean pruneIvaratorCacheDir(IvaratorCacheDirConfig config) {
-        boolean fsExists = false;
-        
-        // first, make sure the cache configuration is valid
-        if (config.isValid()) {
-            Path basePath = new Path(config.getBasePathURI());
-            
-            try {
-                FileSystem fs = this.getFileSystemCache().getFileSystem(basePath.toUri());
-                fsExists = fs.mkdirs(basePath) || fs.exists(basePath);
-            } catch (Exception e) {
-                log.debug("Ivarator Cache Dir does not exist: " + basePath);
+    // this method will prune any ivarator cache directories that do not have a valid configuration.
+    private void pruneIvaratorCacheDirs() {
+        IvaratorCacheDirConfig validConfig = null;
+        for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
+            if (hasValidBasePath(config)) {
+                validConfig = config;
+                break;
             }
         }
-        
-        return !fsExists;
+        ivaratorCacheDirConfigs.clear();
+        if (validConfig != null) {
+            ivaratorCacheDirConfigs.add(validConfig);
+        }
+    }
+    
+    private boolean hasValidBasePath(IvaratorCacheDirConfig config) {
+        if (config.isValid()) {
+            try {
+                Path basePath = new Path(config.getBasePathURI());
+                FileSystem fileSystem = this.getFileSystemCache().getFileSystem(basePath.toUri());
+                return isWritablePath(basePath, fileSystem);
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return false;
+    }
+    
+    private boolean isWritablePath(Path path, FileSystem fileSystem) {
+        try {
+            FileStatus fileStatus = fileSystem.getFileStatus(path);
+            // If the path exists, verify that it's a directory, not a file.
+            if (fileStatus.isDirectory()) {
+                // Verify that we have write access to the directory.
+                fileSystem.access(path, FsAction.WRITE);
+                return true;
+            }
+            return false;
+        } catch (FileNotFoundException e) {
+            // If the path does not exist, check if the path's parent is a writable directory.
+            Path parent = path.getParent();
+            if (parent != null) {
+                return isWritablePath(parent, fileSystem);
+            }
+            // If the parent is null, we're at the root directory and we do not have write access.
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
     }
     
     @Override
     public boolean hasTop() {
         boolean yielded = (this.yield != null) && this.yield.hasYielded();
         boolean result = (!yielded) && (this.key != null) && (this.value != null);
-        if (log.isTraceEnabled())
+        if (log.isTraceEnabled()) {
             log.trace("hasTop() " + result);
+        }
         return result;
     }
     
@@ -314,7 +348,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     @Override
     public void next() throws IOException {
-        ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.NEXT);
+        getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.NEXT);
         Span s = Trace.start("QueryIterator.next()");
         if (log.isTraceEnabled()) {
             log.trace("next");
@@ -332,10 +366,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (client != null) {
                 client.flush();
             }
-            ActiveQueryLog.getInstance().get(getQueryId()).endCall(this.originalRange, ActiveQuery.CallType.NEXT);
+            getActiveQueryLog().get(getQueryId()).endCall(this.originalRange, ActiveQuery.CallType.NEXT);
             if (this.key == null && this.value == null) {
                 // no entries to return
-                ActiveQueryLog.getInstance().remove(getQueryId(), this.originalRange);
+                getActiveQueryLog().remove(getQueryId(), this.originalRange);
             }
         }
     }
@@ -345,10 +379,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // preserve the original range for use with the Final Document tracking iterator because it is placed after the ResultCountingIterator
         // so the FinalDocumentTracking iterator needs the start key with the count already appended
         originalRange = range;
-        ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
+        getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
         Span span = Trace.start("QueryIterator.seek");
         
-        if (this.isIncludeGroupingContext() == false
+        if (!this.isIncludeGroupingContext()
                         && (this.query.contains("grouping:") || this.query.contains("matchesInGroup") || this.query.contains("MatchesInGroup") || this.query
                                         .contains("atomValuesMatch"))) {
             this.setIncludeGroupingContext(true);
@@ -405,12 +439,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             // if the Range is for a single document and the query doesn't reference any index-only or tokenized fields
             else if (documentRange != null && (!this.isContainsIndexOnlyTerms() && this.getTermFrequencyFields().isEmpty() && !super.mustUseFieldIndex)) {
-                if (log.isTraceEnabled())
+                if (log.isTraceEnabled()) {
                     log.trace("Received event specific range: " + documentRange);
+                }
                 // We can take a shortcut to the directly to the event
                 Map.Entry<Key,Document> documentKey = Maps.immutableEntry(super.getDocumentKey.apply(documentRange), new Document());
-                if (log.isTraceEnabled())
+                if (log.isTraceEnabled()) {
                     log.trace("Transformed document key: " + documentKey);
+                }
                 // we can only trim if we're certain that the projected fields
                 // aren't needed for evaluation
                 
@@ -466,15 +502,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
             }
             
-            pipelineDocuments = Iterators.filter(
-                            pipelineDocuments,
-                            keyDocumentEntry -> {
-                                // last chance before the documents are serialized
-                                ActiveQueryLog.getInstance().get(getQueryId())
-                                                .recordStats(keyDocumentEntry.getValue(), querySpanCollector.getCombinedQuerySpan(null));
-                                // Always return true since we just want to record data in the ActiveQueryLog
-                                return true;
-                            });
+            pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
+                // last chance before the documents are serialized
+                            getActiveQueryLog().get(getQueryId()).recordStats(keyDocumentEntry.getValue(), querySpanCollector.getCombinedQuerySpan(null));
+                            // Always return true since we just want to record data in the ActiveQueryLog
+                            return true;
+                        });
             
             if (this.getReturnType() == ReturnType.kryo) {
                 // Serialize the Document using Kryo
@@ -536,10 +569,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (client != null) {
                 client.flush();
             }
-            ActiveQueryLog.getInstance().get(getQueryId()).endCall(this.originalRange, ActiveQuery.CallType.SEEK);
+            getActiveQueryLog().get(getQueryId()).endCall(this.originalRange, ActiveQuery.CallType.SEEK);
             if (this.key == null && this.value == null) {
                 // no entries to return
-                ActiveQueryLog.getInstance().remove(getQueryId(), this.originalRange);
+                getActiveQueryLog().remove(getQueryId(), this.originalRange);
             }
         }
     }
@@ -547,7 +580,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     /**
      * Handle an exception returned from seek or next. This will silently ignore IterationInterruptedException as that happens when the underlying iterator was
      * interrupted because the client is no longer listening.
-     * 
+     *
      * @param e
      */
     private void handleException(Exception e) throws IOException {
@@ -558,22 +591,28 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         IOException ioe = null;
         IterationInterruptedException iie = null;
         TabletClosedException tce = null;
-        if (reason instanceof IOException)
+        if (reason instanceof IOException) {
             ioe = (IOException) reason;
-        if (reason instanceof IterationInterruptedException)
+        }
+        if (reason instanceof IterationInterruptedException) {
             iie = (IterationInterruptedException) reason;
-        if (reason instanceof TabletClosedException)
+        }
+        if (reason instanceof TabletClosedException) {
             tce = (TabletClosedException) reason;
+        }
         
         int depth = 1;
         while (iie == null && reason.getCause() != null && reason.getCause() != reason && depth < 100) {
             reason = reason.getCause();
-            if (reason instanceof IOException)
+            if (reason instanceof IOException) {
                 ioe = (IOException) reason;
-            if (reason instanceof IterationInterruptedException)
+            }
+            if (reason instanceof IterationInterruptedException) {
                 iie = (IterationInterruptedException) reason;
-            if (reason instanceof TabletClosedException)
+            }
+            if (reason instanceof TabletClosedException) {
                 tce = (TabletClosedException) reason;
+            }
             depth++;
         }
         
@@ -600,7 +639,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     /**
      * Build the document iterator
-     * 
+     *
      * @param documentRange
      * @param seekRange
      * @param columnFamilies
@@ -611,8 +650,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected NestedIterator<Key> buildDocumentIterator(Range documentRange, Range seekRange, Collection<ByteSequence> columnFamilies, boolean inclusive)
                     throws IOException, ConfigException, InstantiationException, IllegalAccessException {
         NestedIterator<Key> docIter = null;
-        if (log.isTraceEnabled())
+        if (log.isTraceEnabled()) {
             log.trace("Batched queries is " + batchedQueries);
+        }
         if (batchedQueries >= 1) {
             List<NestedQuery<Key>> nests = Lists.newArrayList();
             
@@ -620,8 +660,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 
                 Range myRange = queries.getKey();
                 
-                if (log.isTraceEnabled())
+                if (log.isTraceEnabled()) {
                     log.trace("Adding " + myRange + " from seekrange " + seekRange);
+                }
                 
                 /*
                  * Only perform the following checks if start key is not infinite and document range is specified
@@ -721,7 +762,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     /**
      * There was a request to create a serial pipeline. The factory may not choose to honor this.
-     * 
+     *
      * @return
      */
     private boolean getSerialPipelineRequest() {
@@ -730,7 +771,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     /**
      * A routine which should always be used to create deep copies of the source. This ensures that we are thread safe when doing these copies.
-     * 
+     *
      * @return
      */
     public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
@@ -1165,7 +1206,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     /**
      * If we are performing evaluation (have a query) and are not performing a full-table scan, then we want to instantiate the boolean logic iterators
-     * 
+     *
      * @return Whether or not the boolean logic iterators should be used
      */
     public boolean instantiateBooleanLogic() {
@@ -1210,10 +1251,13 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         Set<String> composites = Sets.newHashSet();
         if (compositeMetadata != null) {
-            for (Multimap<String,String> val : this.compositeMetadata.getCompositeFieldMapByType().values())
-                for (String compositeField : val.keySet())
-                    if (!CompositeIngest.isOverloadedCompositeField(val, compositeField))
+            for (Multimap<String,String> val : this.compositeMetadata.getCompositeFieldMapByType().values()) {
+                for (String compositeField : val.keySet()) {
+                    if (!CompositeIngest.isOverloadedCompositeField(val, compositeField)) {
                         composites.add(compositeField);
+                    }
+                }
+            }
         }
         projection.initializeBlacklist(composites);
         return projection;
@@ -1221,7 +1265,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     /**
      * Determines if a range is document specific according to the following criteria
-     * 
+     *
      * <pre>
      *     1. Cannot have a null start or end key
      *     2. Cannot span multiple rows
@@ -1360,7 +1404,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     /**
      * Determine whether the query can be completely satisfied by the field index
-     * 
+     *
      * @return true if it can be completely satisfied.
      */
     protected boolean isFieldIndexSatisfyingQuery() {
@@ -1554,5 +1598,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
         }
         return groupingTransform;
+    }
+    
+    protected ActiveQueryLog getActiveQueryLog() {
+        if (this.activeQueryLog == null) {
+            this.activeQueryLog = ActiveQueryLog.getInstance(getActiveQueryLogName());
+        }
+        return this.activeQueryLog;
     }
 }

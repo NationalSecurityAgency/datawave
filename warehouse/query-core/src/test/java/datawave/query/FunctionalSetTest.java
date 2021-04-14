@@ -12,6 +12,7 @@ import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.WiseGuysIngest;
+import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.client.Connector;
@@ -46,10 +47,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import static datawave.query.QueryTestTableHelper.MODEL_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
-
 /**
  * Loads some data in a mock accumulo table and then issues queries against the table using the shard query table.
  * 
@@ -67,9 +64,9 @@ public abstract class FunctionalSetTest {
             
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(connector, auths, TableName.SHARD);
+            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
         @Override
@@ -89,9 +86,9 @@ public abstract class FunctionalSetTest {
             
             WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(connector, auths, TableName.SHARD);
+            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
         
         @Override
@@ -262,7 +259,7 @@ public abstract class FunctionalSetTest {
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("ANDOLINI", "SOPRANO", "CORLEONE", "CAPONE"),
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList(),
@@ -271,12 +268,12 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("CORLEONE", "CAPONE"),
                 
                 Arrays.asList("CAPONE"),
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
                 
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
-                Arrays.asList("CORLEONE"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "ANDOLINI"),
                 Arrays.asList("SOPRANO", "CAPONE"),};
         // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
@@ -333,9 +330,9 @@ public abstract class FunctionalSetTest {
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
         
-                Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18"
-                Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18",
-                Arrays.asList("SOPRANO", "CORLEONE"), // "18 >= AG && 10 <= AG",
+                Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "10 <= AG && AG <= 18"
+                Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "10 <= AG && AG <= 18",
+                Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "18 >= AG && 10 <= AG",
                 Arrays.asList("SOPRANO", "CORLEONE"), // "AGE == 18"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "18 == AGE"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "GENDER == 'FEMALE'"

@@ -1,6 +1,5 @@
 package datawave.core.iterators;
 
-import com.google.common.io.Files;
 import datawave.query.Constants;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -12,7 +11,9 @@ import org.apache.hadoop.io.Text;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,12 +22,15 @@ import java.util.List;
 
 public class DatawaveFieldIndexIteratorJexlTest {
     
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
     FileSystem fs;
     List<IvaratorCacheDir> cacheDirs;
     
     @Before
     public void setup() throws IOException {
-        File cacheDir = Files.createTempDir();
+        File cacheDir = temporaryFolder.newFolder();
         IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(cacheDir.toURI().toString());
         fs = FileSystem.get(cacheDir.toURI(), new Configuration());
         File queryDirFile = new File(cacheDir, "query");

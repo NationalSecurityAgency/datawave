@@ -4,16 +4,18 @@ import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -33,6 +35,9 @@ import static datawave.query.testframework.RawDataManager.EQ_OP;
  */
 public class UnevaluatedFieldsQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(UnevaluatedFieldsQueryTest.class);
     
     @BeforeClass
@@ -41,8 +46,8 @@ public class UnevaluatedFieldsQueryTest extends AbstractFunctionalQuery {
         FieldConfig fldConfig = new UnevaluatedCityFields();
         dataTypes.add(new CitiesDataType(CityEntry.generic, fldConfig));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        connector = accumuloSetup.loadTables(log);
     }
     
     public UnevaluatedFieldsQueryTest() {
@@ -51,7 +56,7 @@ public class UnevaluatedFieldsQueryTest extends AbstractFunctionalQuery {
     
     @After
     public void cleanup() {
-        this.logic.setUnevaluatedFields(Collections.EMPTY_LIST);
+        this.logic.setUnevaluatedFields(Collections.emptyList());
     }
     
     @Test

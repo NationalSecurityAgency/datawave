@@ -1,15 +1,13 @@
 package datawave.query.jexl;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
+import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
-import datawave.query.jexl.JexlNodeFactory.ContainerType;
-
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -22,8 +20,12 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
+import static junit.framework.TestCase.assertNull;
 
 public class JexlASTHelperTest {
     
@@ -122,6 +124,18 @@ public class JexlASTHelperTest {
             
             Assert.assertEquals(expectations.get(value), JexlASTHelper.isWithinOr(erNode));
         }
+    }
+    
+    @Test
+    public void testGetLiteralValueSafely() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == FOO2");
+        assertNull(JexlASTHelper.getLiteralValueSafely(query));
+    }
+    
+    @Test(expected = NoSuchElementException.class)
+    public void testGetLiteralValueThrowsNSEE() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == FOO2");
+        assertNull(JexlASTHelper.getLiteralValue(query));
     }
     
     @Test
@@ -247,7 +261,7 @@ public class JexlASTHelperTest {
     
     @Test
     public void testFindRange() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((BoundedRange = true) && (A < 'b' && A > 'a')) && !(FOO == 'bar')");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A < 'b' && A > 'a')) && !(FOO == 'bar')");
         
         LiteralRange range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
         
@@ -259,7 +273,7 @@ public class JexlASTHelperTest {
         
         Assert.assertNull(range);
         
-        script = JexlASTHelper.parseJexlQuery("((BoundedRange = true) && (A < 5 && A > 1))");
+        script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A < 5 && A > 1))");
         
         range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
         
@@ -271,7 +285,7 @@ public class JexlASTHelperTest {
         Assert.assertFalse(range.isLowerInclusive());
         Assert.assertFalse(range.isUpperInclusive());
         
-        script = JexlASTHelper.parseJexlQuery("((BoundedRange = true) && (A <= 5 && A >= 1))");
+        script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A <= 5 && A >= 1))");
         
         range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
         
@@ -286,14 +300,13 @@ public class JexlASTHelperTest {
     
     @Test
     public void testFindDelayedRange() throws Exception {
-        ASTJexlScript script = JexlASTHelper
-                        .parseJexlQuery("((ASTDelayedPredicate = true) && ((BoundedRange = true) && (A < 'b' && A > 'a'))) && !(FOO == 'bar')");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((_Delayed_ = true) && ((_Bounded_ = true) && (A < 'b' && A > 'a'))) && !(FOO == 'bar')");
         
         LiteralRange range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
         
         Assert.assertNull(range);
         
-        script = JexlASTHelper.parseJexlQuery("((ASTDelayedPredicate = true) && ((BoundedRange = true) && (A < 'b' && A > 'a')))");
+        script = JexlASTHelper.parseJexlQuery("((_Delayed_ = true) && ((_Bounded_ = true) && (A < 'b' && A > 'a')))");
         
         range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
         
@@ -308,13 +321,13 @@ public class JexlASTHelperTest {
     
     @Test
     public void testFindNotDelayedRange() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((ASTDelayedPredicate = true) && ((BoundedRange = true) && (A < 'b' && A > 'a')))");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((_Delayed_ = true) && ((_Bounded_ = true) && (A < 'b' && A > 'a')))");
         
         LiteralRange range = JexlASTHelper.findRange().notDelayed().getRange(script.jjtGetChild(0));
         
         Assert.assertNull(range);
         
-        script = JexlASTHelper.parseJexlQuery("((BoundedRange = true) && (A < 5 && A > 1))");
+        script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A < 5 && A > 1))");
         
         range = JexlASTHelper.findRange().notDelayed().getRange(script.jjtGetChild(0));
         
@@ -332,7 +345,7 @@ public class JexlASTHelperTest {
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(Collections.singleton("A"));
         
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((BoundedRange = true) && (A < 'b' && A > 'a'))");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A < 'b' && A > 'a'))");
         
         LiteralRange range = JexlASTHelper.findRange().indexedOnly(null, helper).getRange(script.jjtGetChild(0));
         

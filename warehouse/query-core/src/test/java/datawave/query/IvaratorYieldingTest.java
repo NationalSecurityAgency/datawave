@@ -1,13 +1,13 @@
 package datawave.query;
 
-import com.google.common.io.Files;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -20,9 +20,9 @@ import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -37,6 +37,9 @@ import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class IvaratorYieldingTest extends AbstractFunctionalQuery {
+    
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
     
     private static final Logger log = Logger.getLogger(IvaratorYieldingTest.class);
     
@@ -58,8 +61,9 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
         generic.addIndexField(CitiesDataType.CityField.NUM.name());
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.generic, generic));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log, RebuildingScannerTestHelper.TEARDOWN.ALWAYS_SANS_CONSISTENCY, RebuildingScannerTestHelper.INTERRUPT.FI_EVERY_OTHER);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        connector = accumuloSetup.loadTables(log, RebuildingScannerTestHelper.TEARDOWN.ALWAYS_SANS_CONSISTENCY,
+                        RebuildingScannerTestHelper.INTERRUPT.FI_EVERY_OTHER);
     }
     
     @Before
@@ -77,9 +81,7 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
         logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
         
         // setup a directory for cache results
-        File tmpDir = Files.createTempDir();
-        tmpDir.deleteOnExit();
-        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
+        IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
         
         logic.setYieldThresholdMs(1);
