@@ -92,7 +92,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
             }
             
             boolean firstIteration = true;
-            Date startDate, endDate;
+            Date startDate, endDate = null;
             
             for (Iterator<YearMonthDay> it = holeDates.iterator(); it.hasNext();) {
                 if (firstIteration) {
@@ -103,7 +103,7 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
                     } else
                         endDate = originalEndDate;
                 } else {
-                    startDate = DateHelper.parse(it.next().getYyyymmdd());
+                    startDate = endDate;
                     if (it.hasNext())
                         endDate = DateHelper.parse(it.next().getYyyymmdd());
                     else {
@@ -121,7 +121,6 @@ public class FederatedQueryPlanner extends DefaultQueryPlanner {
         return returnQueryData;
     }
     
-     
     private CloseableIterable<QueryData> getQueryData(ShardQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory,
                     Date startDate, Date endDate) throws DatawaveQueryException {
         log.debug("getQueryData in the FederatedQueryPlanner is called ");
