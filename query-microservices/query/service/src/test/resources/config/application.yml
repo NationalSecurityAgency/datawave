@@ -13,6 +13,9 @@ spring:
 
 hazelcast.client.enabled: false
 
+# Uncomment the following line to override the query logic factory being used
+# queryLogicFactoryLocation: "classpath:QueryLogicFactoryAlt.xml"
+
 query:
   storage:
     backend:
@@ -25,7 +28,12 @@ query:
       true
 
   logic:
+    baseQueryLogic:
+      logicName: "BaseQueryLogic"
+    eventQuery:
+      logicName: "EventQuery"
     baseEventQuery:
+      logicName: "BaseEventQuery"
       accumuloPassword: "value"
       tableName: "value"
       dateIndexTableName: "value"

@@ -13,8 +13,7 @@ import org.springframework.web.context.annotation.RequestScope;
  */
 @EnableDiscoveryClient
 @SpringBootApplication(scanBasePackages = "datawave.microservice", exclude = {ErrorMvcAutoConfiguration.class})
-// TODO: import the other query logics
-// @ImportResource("classpath:QueryLogicFactory.xml")
+@ImportResource("${queryLogicFactoryLocation:classpath:QueryLogicFactory.xml}")
 public class QueryService {
     
     @Bean

@@ -1,6 +1,9 @@
 spring:
   application:
     name: query
+  config:
+    # Locations to check for configuration overrides
+    import: "optional:file:/etc/config/override[.yml],optional:file:/etc/config/override[.properties]"
   cloud:
     config:
       # Disable consul-first config by default. We'll turn it back on in the consul profile if that profile is enabled.
