@@ -1,8 +1,10 @@
 package datawave.query.tables;
 
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +20,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.base.Throwables;
+import datawave.microservice.common.storage.QueryCheckpoint;
+import datawave.microservice.common.storage.QueryKey;
+import datawave.microservice.query.configuration.QueryData;
 import datawave.microservice.query.configuration.Result;
+import datawave.microservice.query.configuration.ResultContext;
+import datawave.query.config.ShardQueryConfiguration;
 import org.apache.accumulo.core.client.impl.ScannerOptions;
 import org.apache.accumulo.core.client.impl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
@@ -27,6 +34,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
@@ -53,8 +61,6 @@ import datawave.webservice.query.Query;
  */
 public class BatchScannerSession extends ScannerSession implements Iterator<Result>, FutureCallback<Scan>, SessionArbiter, UncaughtExceptionHandler {
     
-    private static final int THIRTY_MINUTES = 108000000;
-    
     private static final double RANGE_MULTIPLIER = 5;
     
     private static final double QUEUE_MULTIPLIER = 25;
@@ -74,8 +80,14 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
      */
     private Set<Authorizations> localAuths;
     
+    /**
+     * This is the iterator of scanner chunks. Basically the work queue.
+     */
     protected Iterator<List<ScannerChunk>> scannerBatches;
     
+    /**
+     * This is the current batch of chunks pending submission
+     */
     protected BlockingQueue<ScannerChunk> currentBatch;
     
     protected ExecutorService service = null;
@@ -101,11 +113,36 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     
     protected AtomicInteger runnableCount = new AtomicInteger(0);
     
+    protected Set<ResultContext> runningQueries = Collections.synchronizedSet(new HashSet<>());
+    
     protected boolean backoffEnabled = false;
     
     protected boolean speculativeScanning = false;
     
     protected int threadCount = 5;
+    
+    public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
+        close();
+        List<QueryCheckpoint> checkpoints = new ArrayList<>();
+        // TODO: need to pass in the configuration
+        ShardQueryConfiguration config = null;
+        for (ResultContext context : runningQueries) {
+            if (!context.isFinished()) {
+                // TODO: Do we need a QueryData or will a ResultContext do
+                config.setQueries(Collections.singleton((QueryData) context).iterator());
+                checkpoints.add(ShardQueryLogic.checkpoint(queryKey, config));
+            }
+        }
+        // now add all of the remaining chunks
+        for (Iterator<List<ScannerChunk>> it = scannerBatches; it.hasNext();) {
+            List<ScannerChunk> chunks = it.next();
+            for (ScannerChunk chunk : chunks) {
+                config.setQueries(Collections.singleton((QueryData) chunk.getContext()).iterator());
+                checkpoints.add(ShardQueryLogic.checkpoint(queryKey, config));
+            }
+        }
+        return checkpoints;
+    }
     
     private class BatchReaderThreadFactory implements ThreadFactory {
         
@@ -114,9 +151,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         private StringBuilder threadIdentifier;
         private UncaughtExceptionHandler uncaughtHandler = null;
         
-        public BatchReaderThreadFactory(StringBuilder threadName, UncaughtExceptionHandler handler)
-        
-        {
+        public BatchReaderThreadFactory(StringBuilder threadName, UncaughtExceptionHandler handler) {
             uncaughtHandler = handler;
             this.threadIdentifier = threadName;
         }
@@ -456,8 +491,10 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     
     protected void submitScan(Scan scan, boolean increment) {
         ListenableFuture<Scan> future = (ListenableFuture<Scan>) service.submit(scan);
-        if (increment)
+        if (increment) {
             runnableCount.incrementAndGet();
+            runningQueries.add((QueryData) (scan.getScannerChunk().getContext()));
+        }
         Futures.addCallback(future, this);
     }
     
@@ -511,6 +548,10 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         
         if (finishedScan.finished()) {
             runnableCount.decrementAndGet();
+            
+            if (finishedScan.getScannerChunk().getContext().isFinished()) {
+                runningQueries.remove(finishedScan.getScannerChunk().getContext());
+            }
             
             finishedScan.close();
             

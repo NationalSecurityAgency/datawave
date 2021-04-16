@@ -11,6 +11,7 @@
     <version>1.0-SNAPSHOT</version>
     <description>DATAWAVE Query State Storage Service</description>
     <properties>
+        <start-class>datawave.microservice.common.storage.QueryStorageLauncher</start-class>
         <version.microservice.query-cache>1.0-SNAPSHOT</version.microservice.query-cache>
         <version.microservice.starter>1.6.6-SNAPSHOT</version.microservice.starter>
     </properties>

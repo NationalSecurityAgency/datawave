@@ -40,6 +40,8 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -100,8 +102,19 @@ public class PushdownScheduler extends Scheduler {
     
     @Override
     public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
-        // TODO
-        return null;
+        // if we were not actually started, then simple return the query data checkpoints
+        if (session != null) {
+            Iterator<QueryData> queries = getQueryDataIterator();
+            List<QueryCheckpoint> checkpoints = new ArrayList<>();
+            while (queries.hasNext()) {
+                config.setQueries(Collections.singleton(queries.next()).iterator());
+                checkpoints.add(ShardQueryLogic.checkpoint(queryKey, config));
+            }
+            return checkpoints;
+        } else {
+            close();
+            return session.checkpoint(queryKey);
+        }
     }
     
     /*
@@ -195,7 +208,7 @@ public class PushdownScheduler extends Scheduler {
      * @see java.io.Closeable#close()
      */
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (session != null)
             scannerFactory.close(session);
         

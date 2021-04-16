@@ -22,6 +22,7 @@ public class QueryData implements ResultContext {
     Collection<Range> ranges = Sets.newHashSet();
     Collection<String> columnFamilies = Sets.newHashSet();
     Map.Entry<Key,Value> lastResult;
+    boolean finished = false;
     
     public QueryData() {}
     
@@ -81,6 +82,13 @@ public class QueryData implements ResultContext {
     
     public void setLastResult(Map.Entry<Key,Value> result) {
         this.lastResult = result;
+        if (this.lastResult == null) {
+            this.finished = true;
+        }
+    }
+    
+    public boolean isFinished() {
+        return this.finished;
     }
     
     public Map.Entry<Key,Value> getLastResult() {

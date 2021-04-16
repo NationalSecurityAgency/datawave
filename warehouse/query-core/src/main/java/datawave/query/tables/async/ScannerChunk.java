@@ -63,7 +63,8 @@ public class ScannerChunk {
      */
     public ScannerChunk(ScannerChunk chunk) {
         Preconditions.checkNotNull(chunk);
-        options = chunk.options;
+        this.options = chunk.options;
+        this.context = chunk.context;
         this.ranges = new ConcurrentLinkedQueue<>();
         setRanges(chunk.ranges);
         this.lastKnownLocation = chunk.lastKnownLocation;

@@ -1,6 +1,7 @@
 package datawave.microservice.query.configuration;
 
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import org.apache.accumulo.core.data.Key;
@@ -61,7 +62,7 @@ public class Result<T extends ResultContext> implements Map.Entry<Key,Value> {
     }
     
     public Map.Entry<Key,Value> returnKeyValue() {
-        Map.Entry<Key,Value> entry = Maps.immutableEntry(key, value);
+        Map.Entry<Key,Value> entry = (key == null ? null : Maps.immutableEntry(key, value));
         if (context != null) {
             context.setLastResult(entry);
         }
@@ -69,7 +70,7 @@ public class Result<T extends ResultContext> implements Map.Entry<Key,Value> {
     }
     
     public static Iterator<Map.Entry<Key,Value>> keyValueIterator(Iterator<Result> it) {
-        return Iterators.transform(it, new Function<Result,Map.Entry<Key,Value>>() {
+        return Iterators.filter(Iterators.transform(it, new Function<Result,Map.Entry<Key,Value>>() {
             @Override
             public Map.Entry<Key,Value> apply(@Nullable Result input) {
                 if (input == null) {
@@ -77,11 +78,16 @@ public class Result<T extends ResultContext> implements Map.Entry<Key,Value> {
                 }
                 return input.returnKeyValue();
             }
+        }), new Predicate<Map.Entry<Key,Value>>() {
+            @Override
+            public boolean apply(Map.@org.checkerframework.checker.nullness.qual.Nullable Entry<Key,Value> keyValueEntry) {
+                return keyValueEntry != null;
+            }
         });
     }
     
     public static Iterator<Result> resultIterator(final ResultContext context, Iterator<Map.Entry<Key,Value>> it) {
-        return Iterators.transform(it, new Function<Map.Entry<Key,Value>,Result>() {
+        return Iterators.filter(Iterators.transform(it, new Function<Map.Entry<Key,Value>,Result>() {
             @Nullable
             @Override
             public Result apply(@Nullable Map.Entry<Key,Value> keyValueEntry) {
@@ -89,6 +95,12 @@ public class Result<T extends ResultContext> implements Map.Entry<Key,Value> {
                     return null;
                 }
                 return new Result(context, keyValueEntry.getKey(), keyValueEntry.getValue());
+            }
+        }), new Predicate<Result>() {
+            
+            @Override
+            public boolean apply(@org.checkerframework.checker.nullness.qual.Nullable Result result) {
+                return result != null;
             }
         });
     }

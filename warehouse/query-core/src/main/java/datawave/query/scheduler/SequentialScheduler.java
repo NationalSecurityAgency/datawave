@@ -133,7 +133,12 @@ public class SequentialScheduler extends Scheduler {
                         
                         return hasNext();
                     } else {
+                        // return an empty entry to mark the end of this scan
                         this.currentBS.close();
+                        this.currentBS = null;
+                        this.currentIter = null;
+                        this.currentEntry = new Result(this.currentQuery, null, null);
+                        return true;
                     }
                 }
                 
@@ -184,28 +189,19 @@ public class SequentialScheduler extends Scheduler {
         }
         
         public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
-            if (closed) {
-                return Collections.emptyList();
-            } else {
-                List<QueryCheckpoint> checkpoints = new ArrayList<>();
-                if (currentQuery != null) {
-                    if (lastEntry != null) {
-                        Range r = currentQuery.getRanges().iterator().next();
-                        r = new Range(lastEntry.getKey(), false, r.getEndKey(), r.isEndKeyInclusive());
-                        currentQuery.setRanges(Collections.singleton(r));
-                        lastEntry = null;
-                    }
-                    config.setQueries(null);
-                    config.setQueries(Collections.singleton(currentQuery).iterator());
-                    checkpoints.add(ShardQueryLogic.checkpoint(queryKey, config));
-                    currentQuery = null;
-                }
-                while (queries.hasNext()) {
-                    config.setQueries(Collections.singleton(queries.next()).iterator());
-                    checkpoints.add(ShardQueryLogic.checkpoint(queryKey, config));
-                }
-                return checkpoints;
+            close();
+            List<QueryCheckpoint> checkpoints = new ArrayList<>();
+            if (currentQuery != null) {
+                config.setQueries(Collections.singleton(currentQuery).iterator());
+                checkpoints.add(ShardQueryLogic.checkpoint(queryKey, config));
+                currentQuery = null;
             }
+            while (queries.hasNext()) {
+                config.setQueries(Collections.singleton(queries.next()).iterator());
+                checkpoints.add(ShardQueryLogic.checkpoint(queryKey, config));
+            }
+            config.setQueries(null);
+            return checkpoints;
         }
         
         /*
