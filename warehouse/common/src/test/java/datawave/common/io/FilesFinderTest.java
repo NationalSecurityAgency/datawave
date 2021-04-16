@@ -48,7 +48,7 @@ public class FilesFinderTest {
     
     @Test
     public void testGetFilesFromClasspath() {
-        Collection<String> expectedFiles = Stream.of(TEST_LEVEL1_XML_FILE, TEST_LEVEL2_XML_FILE).collect(Collectors.toList());
+        Collection<String> expectedFiles = Stream.of(TEST_LEVEL1_XML_FILE, TEST_LEVEL2_XML_FILE).sorted().collect(Collectors.toList());
         StringJoiner joiner = new StringJoiner(CLASSPATH_DELIMITER);
         expectedFiles.forEach(joiner::add);
         
@@ -58,7 +58,7 @@ public class FilesFinderTest {
     
     @Test
     public void testGetFilesFromClasspathWithRelativePaths() {
-        Collection<String> expectedFiles = Stream.of(TEST_LEVEL0_PROP_FILE, TEST_LEVEL1_JAR_FILE).collect(Collectors.toList());
+        Collection<String> expectedFiles = Stream.of(TEST_LEVEL0_PROP_FILE, TEST_LEVEL1_JAR_FILE).sorted().collect(Collectors.toList());
         String baseDir = TEMP_DIR + "/1/2/";
         String testPaths = baseDir + "../../" + FILE_PREFIX + "0.properties:" + baseDir + "../../1/" + FILE_PREFIX + "1.jar";
         
@@ -68,7 +68,7 @@ public class FilesFinderTest {
     
     @Test(expected = IllegalArgumentException.class)
     public void testGetFilesFromClasspathWithRelativePathFailures() {
-        Collection<String> expectedFiles = Stream.of(TEST_LEVEL0_PROP_FILE, TEST_LEVEL1_JAR_FILE).collect(Collectors.toList());
+        Collection<String> expectedFiles = Stream.of(TEST_LEVEL0_PROP_FILE, TEST_LEVEL1_JAR_FILE).sorted().collect(Collectors.toList());
         String testPaths = "../../" + FILE_PREFIX + "0.properties:../../1/" + FILE_PREFIX + "1.jar";
         
         Collection<String> filesFound = FilesFinder.getFilesFromClasspath(testPaths, CLASSPATH_DELIMITER);
@@ -77,7 +77,7 @@ public class FilesFinderTest {
     
     @Test
     public void testGetFilesFromPattern() throws IOException {
-        Collection<String> expectedFiles = Stream.of(TEST_LEVEL1_XML_FILE, TEST_LEVEL2_XML_FILE).collect(Collectors.toList());
+        Collection<String> expectedFiles = Stream.of(TEST_LEVEL1_XML_FILE, TEST_LEVEL2_XML_FILE).sorted().collect(Collectors.toList());
         Collection<String> filesFound = FilesFinder.getFilesFromPattern(TEMP_DIR, "**.xml", Integer.MAX_VALUE);
         Assert.assertEquals(expectedFiles, filesFound);
     }

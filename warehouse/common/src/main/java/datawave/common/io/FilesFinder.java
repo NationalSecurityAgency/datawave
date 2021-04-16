@@ -36,6 +36,7 @@ public class FilesFinder {
                 .stream(classpath.split(delim))
                 .filter(path -> !path.isEmpty())
                 .map(FilesFinder::convertToCanonicalPath)
+                .sorted()
                 .collect(Collectors.toList());
         // @formatter:on
     }
@@ -68,6 +69,7 @@ public class FilesFinder {
                     .filter(java.nio.file.Files::isRegularFile)
                     .filter(matcher::matches)
                     .map(Path::toString)
+                    .sorted()
                     .collect(Collectors.toList());
             // @formatter:on
         }
