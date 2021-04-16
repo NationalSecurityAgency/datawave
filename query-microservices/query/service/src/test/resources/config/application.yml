@@ -128,7 +128,7 @@ management:
 
 logging:
   level:
-    datawave.microservice.query-api: DEBUG
+    datawave.microservice: DEBUG
     io.undertow.request: FATAL
 
 audit-client:

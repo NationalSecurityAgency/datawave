@@ -190,8 +190,7 @@ public class TestDatawaveUserServiceTest {
         
         @Override
         public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
-            return dns.stream().map(dn -> new DatawaveUser(dn, UserType.USER, null, Collections.singleton(getName()), null, -1L, -1L))
-                            .collect(Collectors.toList());
+            return dns.stream().map(dn -> new DatawaveUser(dn, UserType.USER, null, Collections.singleton(getName()), null, -1L)).collect(Collectors.toList());
         }
     }
     

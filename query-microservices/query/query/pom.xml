@@ -11,7 +11,7 @@
     <version>1.0-SNAPSHOT</version>
     <properties>
         <version.datawave>3.1.5-SNAPSHOT</version.datawave>
-        <version.microservice.audit-api>1.9</version.microservice.audit-api>
+        <version.microservice.audit-api>1.10-SNAPSHOT</version.microservice.audit-api>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -24,11 +24,23 @@
                 <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-client</artifactId>
                 <version>${version.datawave}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.slf4j</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-common</artifactId>
                 <version>${version.datawave}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.slf4j</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
