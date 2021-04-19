@@ -335,7 +335,8 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
             lookup.setLimitToTerms(true);
             ((FieldNameLookup) lookup).setTypeFilterSet(config.getDatatypeFilter());
         }
-        return new IndexLookupCallable(lookup, node, false, true, keepOriginalNode);
+        
+        return new IndexLookupCallable(lookup, node, true, true, keepOriginalNode);
     }
     
     /**
