@@ -196,7 +196,7 @@ public class IngestJob implements Tool {
     private Configuration hadoopConfiguration;
     private List<Observer> jobObservers = new ArrayList<>();
     private JobObservable jobObservable;
-
+    
     public static void main(String[] args) throws Exception {
         System.out.println("Running main");
         System.exit(ToolRunner.run(null, new IngestJob(), args));
