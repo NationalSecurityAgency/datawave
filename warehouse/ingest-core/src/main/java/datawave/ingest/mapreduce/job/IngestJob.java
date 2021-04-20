@@ -247,7 +247,7 @@ public class IngestJob implements Tool {
     
     @Override
     public int run(String[] args) throws Exception {
-
+        
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
         
         ca.setThreshold(Level.INFO);
@@ -257,7 +257,7 @@ public class IngestJob implements Tool {
         // Initialize the markings file helper so we get the right markings file
         MarkingFunctions.Factory.createMarkingFunctions();
         TypeRegistry.reset();
-
+        
         // Parse the job arguments
         Configuration conf = parseArguments(args, this.getConf());
         
@@ -265,7 +265,7 @@ public class IngestJob implements Tool {
             printUsage();
             return -1;
         }
-
+        
         updateConfWithOverrides(conf);
         
         jobObservable = new JobObservable(srcHdfs != null ? getFileSystem(conf, srcHdfs) : null);
@@ -342,21 +342,21 @@ public class IngestJob implements Tool {
                 try {
                     inputFs.delete(workDirPath, true);
                 } catch (Exception er) {
-                    log.error("Unable to remove job working directory: " + workDirPath);
+                    log.error("Unable to remove directory: " + workDirPath);
                 }
                 return -1;
             }
         }
-
+        
         job.setJarByClass(this.getClass());
         for (Path inputPath : getFilesToProcess(inputFs, inputFileLists, inputFileListMarker, inputPaths)) {
             FileInputFormat.addInputPath(job, inputPath);
         }
         for (Path dependency : jobDependencies)
             job.addFileToClassPath(dependency);
-
+        
         configureInputFormat(job, cbHelper, conf);
-
+        
         configureJob(job, conf, workDirPath, outputFs);
         
         // Log configuration
@@ -560,7 +560,7 @@ public class IngestJob implements Tool {
      */
     protected Configuration parseArguments(String[] args, Configuration conf) throws ClassNotFoundException, URISyntaxException, IllegalArgumentException {
         List<String> activeResources = new ArrayList<>();
-
+        
         inputPaths = args[0];
         log.info("InputPaths is " + inputPaths);
         for (int i = 1; i < args.length; i++) {
@@ -730,7 +730,7 @@ public class IngestJob implements Tool {
                 activeResources.add(args[i]);
             }
         }
-
+        
         conf = interpolateEnvironment(conf);
         
         for (String resource : activeResources) {
@@ -744,7 +744,7 @@ public class IngestJob implements Tool {
         if (null != monitorHostValue) {
             conf.set("MONITOR_SERVER_HOST", monitorHostValue);
         }
-
+        
         if (workDir == null) {
             log.error("ERROR: Must provide a working directory name");
             return null;
@@ -769,7 +769,7 @@ public class IngestJob implements Tool {
             log.error("ERROR: -destHdfs must be specified for bulk ingest");
             return null;
         }
-
+        
         return conf;
     }
     
@@ -1306,18 +1306,18 @@ public class IngestJob implements Tool {
         // that when copying across clusters.
         //@formatter:off
         DistCpOptions options = new DistCpOptions.Builder(Collections.singletonList(srcPath), destPath)
-            .withLogPath(logPath)
-            .withMapBandwidth(distCpBandwidth)
-            .maxMaps(distCpMaxMaps)
-            .withCopyStrategy(distCpStrategy)
-            .withSyncFolder(true)
-            .preserve(DistCpOptions.FileAttribute.USER)
-            .preserve(DistCpOptions.FileAttribute.GROUP)
-            .preserve(DistCpOptions.FileAttribute.PERMISSION)
-            .preserve(DistCpOptions.FileAttribute.BLOCKSIZE)
-            .preserve(DistCpOptions.FileAttribute.CHECKSUMTYPE)
-            .withBlocking(true)
-            .build();
+                .withLogPath(logPath)
+                .withMapBandwidth(distCpBandwidth)
+                .maxMaps(distCpMaxMaps)
+                .withCopyStrategy(distCpStrategy)
+                .withSyncFolder(true)
+                .preserve(DistCpOptions.FileAttribute.USER)
+                .preserve(DistCpOptions.FileAttribute.GROUP)
+                .preserve(DistCpOptions.FileAttribute.PERMISSION)
+                .preserve(DistCpOptions.FileAttribute.BLOCKSIZE)
+                .preserve(DistCpOptions.FileAttribute.CHECKSUMTYPE)
+                .withBlocking(true)
+                .build();
         //@formatter:on
         
         DistCp cp = new DistCp(distcpConfig, options);
