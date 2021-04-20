@@ -3,6 +3,7 @@ package datawave.query.jexl;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
@@ -24,6 +25,8 @@ import org.junit.Test;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
+import static junit.framework.TestCase.assertNull;
 
 public class JexlASTHelperTest {
     
@@ -122,6 +125,18 @@ public class JexlASTHelperTest {
             
             Assert.assertEquals(expectations.get(value), JexlASTHelper.isWithinOr(erNode));
         }
+    }
+    
+    @Test
+    public void testGetLiteralValueSafely() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == FOO2");
+        assertNull(JexlASTHelper.getLiteralValueSafely(query));
+    }
+    
+    @Test(expected = NoSuchElementException.class)
+    public void testGetLiteralValueThrowsNSEE() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == FOO2");
+        assertNull(JexlASTHelper.getLiteralValue(query));
     }
     
     @Test

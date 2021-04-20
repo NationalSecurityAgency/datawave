@@ -122,7 +122,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
             }
         }
         
-        if (!fields.isEmpty()) {
+        if (!fields.isEmpty() && !forwardMap.isEmpty()) {
             for (String key : forwardMap.keySet()) {
                 Collection<Range> ranges = forwardMap.get(key);
                 try {
@@ -161,7 +161,7 @@ public class LookupTermsFromRegex extends RegexIndexLookup {
         }
         
         sessions.clear();
-        if (!reverseFields.isEmpty()) {
+        if (!reverseFields.isEmpty() && !reverseMap.isEmpty()) {
             for (String key : reverseMap.keySet()) {
                 Collection<Range> ranges = reverseMap.get(key);
                 if (log.isTraceEnabled()) {
