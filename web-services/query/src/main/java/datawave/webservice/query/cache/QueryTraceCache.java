@@ -3,6 +3,7 @@ package datawave.webservice.query.cache;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Multimap;
+import org.apache.accumulo.core.trace.Span;
 
 import javax.annotation.PostConstruct;
 import java.io.Serializable;
@@ -11,54 +12,69 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- *
+ * Provides caching for trace configurations as well as for our root query spans, so that they can be started/stopped across threads
  */
 public class QueryTraceCache {
-    private Cache<String,Multimap<String,PatternWrapper>> cache;
-    private final List<CacheListener> listeners = new ArrayList<>();
+    private Cache<String,Multimap<String,PatternWrapper>> patternCache;
+    private Cache<String,Span> spanCache;
+    private final List<CacheListener> patternListeners = new ArrayList<>();
     
     @PostConstruct
     private void init() {
-        cache = CacheBuilder.newBuilder().build();
+        patternCache = CacheBuilder.newBuilder().build();
+        spanCache = CacheBuilder.newBuilder().build();
     }
     
     public boolean containsKey(String id) {
-        return cache.asMap().containsKey(id);
+        return patternCache.asMap().containsKey(id);
     }
     
     public Multimap<String,PatternWrapper> get(String id) {
-        return cache.getIfPresent(id);
+        return patternCache.getIfPresent(id);
+    }
+    
+    public Span getSpan(String queryId) {
+        return spanCache.getIfPresent(queryId);
     }
     
     public void put(String id, Multimap<String,PatternWrapper> traceInfo) {
-        cache.put(id, traceInfo);
-        synchronized (listeners) {
-            for (CacheListener listener : listeners)
+        patternCache.put(id, traceInfo);
+        synchronized (patternListeners) {
+            for (CacheListener listener : patternListeners)
                 listener.cacheEntryModified(id, traceInfo);
         }
     }
     
+    public void put(String queryId, Span span) {
+        spanCache.put(queryId, span);
+    }
+    
     public Multimap<String,PatternWrapper> putIfAbsent(String id, Multimap<String,PatternWrapper> traceInfo) {
-        return cache.asMap().putIfAbsent(id, traceInfo);
+        return patternCache.asMap().putIfAbsent(id, traceInfo);
     }
     
     public void remove(String id) {
-        cache.invalidate(id);
+        patternCache.invalidate(id);
+    }
+    
+    public void removeSpan(String queryId) {
+        spanCache.invalidate(queryId);
     }
     
     public void clear() {
-        cache.asMap().clear();
+        patternCache.asMap().clear();
+        spanCache.asMap().clear();
     }
     
     public void addListener(CacheListener listener) {
-        synchronized (listeners) {
-            listeners.add(listener);
+        synchronized (patternListeners) {
+            patternListeners.add(listener);
         }
     }
     
     public void removeListener(CacheListener listener) {
-        synchronized (listeners) {
-            listeners.remove(listener);
+        synchronized (patternListeners) {
+            patternListeners.remove(listener);
         }
     }
     

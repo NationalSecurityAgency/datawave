@@ -11,20 +11,14 @@ import datawave.webservice.common.result.ConnectionPool;
 import org.apache.accumulo.core.Constants;
 import org.apache.accumulo.core.client.ClientConfiguration;
 import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.trace.DistributedTrace;
 import org.apache.accumulo.core.util.Pair;
-import org.apache.accumulo.core.zookeeper.ZooUtil;
-import org.apache.accumulo.tracer.AsyncSpanReceiver;
-import org.apache.accumulo.tracer.ZooTraceClient;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
-import org.apache.htrace.HTraceConfiguration;
-import org.apache.htrace.Trace;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
@@ -132,17 +126,11 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
                 log.warn("Unable to retrieve system property \"app\": " + e.getMessage());
             }
             try {
-                ClientConfiguration zkConfig = ClientConfiguration.loadDefault().withInstance(entry.getValue().getInstance())
+                // The DistributedTrace.enable method sets appropriate defaults for most trace settings
+                // Override in local client.conf as needed...
+                ClientConfiguration traceConfig = ClientConfiguration.loadDefault().withInstance(entry.getValue().getInstance())
                                 .withZkHosts(entry.getValue().getZookeepers());
-                ZooKeeperInstance instance = new ZooKeeperInstance(zkConfig);
-                Map<String,String> confMap = new HashMap<>();
-                confMap.put(DistributedTrace.TRACER_ZK_HOST, instance.getZooKeepers());
-                confMap.put(DistributedTrace.TRACER_ZK_PATH, ZooUtil.getRoot(instance) + Constants.ZTRACERS);
-                confMap.put(DistributedTrace.TRACE_HOST_PROPERTY, InetAddress.getLocalHost().getHostName());
-                confMap.put(DistributedTrace.TRACE_SERVICE_PROPERTY, appName);
-                confMap.put(AsyncSpanReceiver.SEND_TIMER_MILLIS, "1000");
-                confMap.put(AsyncSpanReceiver.QUEUE_SIZE, "5000");
-                Trace.addReceiver(new ZooTraceClient(HTraceConfiguration.fromMap(confMap)));
+                DistributedTrace.enable(InetAddress.getLocalHost().getHostName(), appName, traceConfig);
             } catch (IOException e) {
                 log.error("Unable to initialize distributed tracing system: " + e.getMessage(), e);
             }
@@ -213,6 +201,11 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
                     log.error("Error closing Accumulo Connection Pool: " + e);
                 }
             }
+        }
+        try {
+            DistributedTrace.disable();
+        } catch (Exception e) {
+            log.warn("Failed to disable tracing cleanly: " + e);
         }
     }
     

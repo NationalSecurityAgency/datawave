@@ -46,7 +46,6 @@ import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -561,14 +560,9 @@ public class QueryExecutorBean implements QueryExecutor {
             TInfo traceInfo = null;
             boolean shouldTraceQuery = shouldTraceQuery(qp.getQuery(), qd.userid, false);
             if (shouldTraceQuery) {
-                Span span = Trace.on("query:" + q.getId());
-                log.debug("Tracing query " + q.getId() + " [" + qp.getQuery() + "] on trace ID " + Long.toHexString(span.traceId()));
-                for (Entry<String,List<String>> param : queryParameters.entrySet()) {
-                    span.data(param.getKey(), param.getValue().get(0));
-                }
-                traceInfo = Tracer.traceInfo();
-                
-                defineSpan = Trace.start("query:define");
+                traceInfo = initializeQueryTrace(q.getId().toString(), queryParameters);
+                // Resume the trace on this thread
+                defineSpan = Trace.trace(traceInfo, "query:define");
             }
             
             AccumuloConnectionFactory.Priority priority = qd.logic.getConnectionPriority();
@@ -599,15 +593,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 } catch (InterruptedException e) {
                     // ignore
                 }
-                
                 defineSpan.stop();
-                
-                // TODO: not sure this makes any sense anymore in Accumulo 1.8.1
-                // if (null != defineSpan.parent()) {
-                // // Stop the main query span since we're done working with it on this thread.
-                // // We'll continue it later.
-                // defineSpan.parent().stop();
-                // }
             }
         }
     }
@@ -699,14 +685,9 @@ public class QueryExecutorBean implements QueryExecutor {
             TInfo traceInfo = null;
             boolean shouldTraceQuery = shouldTraceQuery(qp.getQuery(), qd.userid, qp.isTrace());
             if (shouldTraceQuery) {
-                Span span = Trace.on("query:" + q.getId());
-                log.debug("Tracing query " + q.getId() + " [" + qp.getQuery() + "] on trace ID " + Long.toHexString(span.traceId()));
-                for (Entry<String,List<String>> param : queryParameters.entrySet()) {
-                    span.data(param.getKey(), param.getValue().get(0));
-                }
-                traceInfo = Tracer.traceInfo();
-                
-                createSpan = Trace.start("query:create");
+                traceInfo = initializeQueryTrace(q.getId().toString(), queryParameters);
+                // Resume the trace on this thread
+                createSpan = Trace.trace(traceInfo, "query:create");
             }
             
             // hold on to a reference of the query logic so we cancel it if need be.
@@ -784,16 +765,31 @@ public class QueryExecutorBean implements QueryExecutor {
         } finally {
             if (createSpan != null) {
                 createSpan.stop();
-                // TODO: not sure this makes any sense anymore in Accumulo 1.8.1
-                // Stop the main query span since we're done working with it on this thread.
-                // We'll continue it later.
-                // createSpan.parent().stop();
             }
             if (null != q) {
                 // - Remove the logic from the cache
                 qlCache.poll(q.getId().toString());
             }
         }
+    }
+    
+    private TInfo initializeQueryTrace(String queryId, MultivaluedMap<String,String> queryParameters) {
+        Span rootSpan = Trace.on("query:" + queryId);
+        log.debug("Tracing query " + queryId + " [" + qp.getQuery() + "] on trace ID " + Long.toHexString(rootSpan.traceId()));
+        for (Entry<String,List<String>> param : queryParameters.entrySet()) {
+            rootSpan.data(param.getKey(), param.getValue().get(0));
+        }
+        
+        TInfo traceInfo = Tracer.traceInfo();
+        
+        // Go ahead and deliver to SpanReceivers, in case we fail to close the TraceScope later on
+        org.apache.htrace.Tracer.getInstance().deliver(rootSpan.getSpan());
+        
+        // Detach from the current thread. We'll cache it, then resume & stop it on query close
+        rootSpan.getScope().detach();
+        queryTraceCache.put(queryId, rootSpan);
+        
+        return traceInfo;
     }
     
     /**
@@ -1165,7 +1161,7 @@ public class QueryExecutorBean implements QueryExecutor {
             
             query = getQueryById(id);
             
-            // If we're tracing this query, then continue the trace for the reset call.
+            // If we're tracing this query, then start a new trace for the reset call.
             TInfo traceInfo = query.getTraceInfo();
             if (traceInfo != null) {
                 span = Trace.trace(traceInfo, "query:reset");
@@ -1336,12 +1332,6 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     private BaseQueryResponse _next(RunningQuery query, String queryId, Collection<String> proxyServers, Span span) throws Exception {
-        // If we're tracing this query, then continue the trace for the next call.
-        TInfo traceInfo = query.getTraceInfo();
-        if (traceInfo != null) {
-            span = Trace.trace(traceInfo, "query:next");
-        }
-        
         ResultsPage resultList;
         try {
             resultList = query.next();
@@ -1809,7 +1799,7 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * Attempt to async close a query using the executor. If the executor can't accommodate the close then the query will be closed in-line
-     * 
+     *
      * @param queryId
      *            non-null queryId
      */
@@ -1832,7 +1822,7 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * Asynchronous version of {@link #next(String)}.
-     * 
+     *
      * @see #next(String)
      */
     @GET
@@ -1909,7 +1899,6 @@ public class QueryExecutorBean implements QueryExecutor {
         RunningQuery query = null;
         Query contentLookupSettings = null;
         try {
-            
             ctx.getUserTransaction().begin();
             
             // Not calling getQueryById() here. We don't want to pull the persisted definition.
@@ -1946,6 +1935,13 @@ public class QueryExecutorBean implements QueryExecutor {
                 
                 // Set the active call and get next
                 query.setActiveCall(true);
+                
+                // If we're tracing this query, then start a new trace for the next call.
+                TInfo traceInfo = query.getTraceInfo();
+                if (traceInfo != null) {
+                    span = Trace.trace(traceInfo, "query:next");
+                    query.setTraceInfo(Tracer.traceInfo());
+                }
                 response = _next(query, id, proxyServers, span);
                 
                 // Conditionally swap the standard response with content
@@ -2071,7 +2067,7 @@ public class QueryExecutorBean implements QueryExecutor {
     /**
      * Releases the resources associated with this query. Any currently running calls to 'next' on the query will continue until they finish. Calls to 'next'
      * after a 'close' will start over at page 1.
-     * 
+     *
      * @param id
      *
      * @return datawave.webservice.result.VoidResponse
@@ -2209,38 +2205,44 @@ public class QueryExecutorBean implements QueryExecutor {
         
         log.debug("Closing " + queryId);
         
+        Span span = null;
         try {
+            TInfo traceInfo = query.getTraceInfo();
+            if (null != traceInfo) {
+                span = Trace.trace(traceInfo, "query:close");
+            }
             query.closeConnection(connectionFactory);
         } catch (Exception e) {
             log.error("Failed to close connection for " + queryId, e);
+        } finally {
+            if (null != span) {
+                // Spans aren't recorded if they take no time, so sleep for a
+                // couple milliseconds just to ensure we get something saved.
+                try {
+                    Thread.sleep(2);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+                span.data("closedAt", new Date().toString());
+                span.stop();
+                // Stop the root span for this query
+                Span querySpan = queryTraceCache.getSpan(queryId);
+                if (null != querySpan) {
+                    org.apache.htrace.Trace.continueSpan(querySpan.getSpan()).close();
+                    queryTraceCache.removeSpan(queryId);
+                }
+            }
         }
         
         queryCache.remove(queryId);
         
         log.debug("Closed " + queryId);
-        
-        // The trace was already stopped, but mark the time we closed it in the trace data.
-        TInfo traceInfo = query.getTraceInfo();
-        if (traceInfo != null) {
-            Span span = Trace.trace(traceInfo, "query:close");
-            span.data("closedAt", new Date().toString());
-            // Spans aren't recorded if they take no time, so sleep for a
-            // couple milliseconds just to ensure we get something saved.
-            try {
-                Thread.sleep(2);
-            } catch (InterruptedException e) {
-                // ignore
-            }
-            span.stop();
-            // TODO: not sure this makes any sense anymore in Accumulo 1.8.1
-            // Tracer.getInstance().flush();
-        }
     }
     
     /**
      * Releases the resources associated with this query. Any currently running calls to 'next' on the query will be stopped. Calls to 'next' after a 'cancel'
      * will start over at page 1.
-     * 
+     *
      * @param id
      *
      * @return datawave.webservice.result.VoidResponse
@@ -2374,7 +2376,7 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * List of current users queries.
-     * 
+     *
      * @see datawave.webservice.query.runner.QueryExecutorBean#listUserQueries()
      *
      * @return datawave.webservice.result.QueryImplListResponse
@@ -2508,7 +2510,7 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * remove (delete) the query
-     * 
+     *
      * @param id
      *
      * @return datawave.webservice.result.VoidResponse
@@ -3270,7 +3272,7 @@ public class QueryExecutorBean implements QueryExecutor {
     
     /**
      * Asynchronous version of {@link #execute(String, MultivaluedMap, HttpHeaders)}
-     * 
+     *
      * @see #execute(String, MultivaluedMap, HttpHeaders)
      */
     @POST
@@ -3333,7 +3335,6 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             
             boolean done = false;
-            Span span = null;
             List<PageMetric> pageMetrics = rq.getMetric().getPageTimes();
             
             // Loop over each page of query results, and notify the observer about each page.
@@ -3341,7 +3342,14 @@ public class QueryExecutorBean implements QueryExecutor {
             do {
                 long callStart = System.nanoTime();
                 rq.setActiveCall(true);
+                Span span = null;
                 try {
+                    // If we're tracing this query, then start new trace for the next call.
+                    TInfo traceInfo = rq.getTraceInfo();
+                    if (traceInfo != null) {
+                        span = Trace.trace(traceInfo, "query:nextAsync");
+                        rq.setTraceInfo(Tracer.traceInfo());
+                    }
                     BaseQueryResponse page = _next(rq, queryId, proxyServers, span);
                     long serializationStart = System.nanoTime();
                     observer.queryResultsAvailable(page);
@@ -3380,6 +3388,9 @@ public class QueryExecutorBean implements QueryExecutor {
                         } catch (Exception e) {
                             log.error("Error updating query metric", e);
                         }
+                    }
+                    if (null != span) {
+                        span.stop();
                     }
                 }
             } while (!done && !sessionContext.wasCancelCalled());
@@ -3450,12 +3461,18 @@ public class QueryExecutorBean implements QueryExecutor {
                     
                     boolean sentResults = false;
                     boolean done = false;
-                    Span span = null;
                     List<PageMetric> pageMetrics = rq.getMetric().getPageTimes();
                     
                     do {
+                        Span span = null;
                         try {
                             long callStart = System.nanoTime();
+                            // If we're tracing this query, then start a new trace for the next call.
+                            TInfo traceInfo = rq.getTraceInfo();
+                            if (traceInfo != null) {
+                                span = Trace.trace(traceInfo, "query:next");
+                                rq.setTraceInfo(Tracer.traceInfo());
+                            }
                             BaseQueryResponse page = _next(rq, queryId, proxies, span);
                             PageMetric pm = pageMetrics.get(pageMetrics.size() - 1);
                             
@@ -3508,6 +3525,10 @@ public class QueryExecutorBean implements QueryExecutor {
                                 break; // probably redundant
                             } else {
                                 throw e;
+                            }
+                        } finally {
+                            if (null != span) {
+                                span.stop();
                             }
                         }
                     } while (!done);
