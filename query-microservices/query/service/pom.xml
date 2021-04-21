@@ -12,7 +12,7 @@
     <description>DATAWAVE Query Microservice</description>
     <properties>
         <start-class>datawave.microservice.query.QueryService</start-class>
-        <version.datawave>3.1.5-SNAPSHOT</version.datawave>
+        <version.datawave>3.2.1-SNAPSHOT</version.datawave>
         <version.microservice.query>1.0-SNAPSHOT</version.microservice.query>
         <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
         <version.microservice.query-cache>1.0-SNAPSHOT</version.microservice.query-cache>

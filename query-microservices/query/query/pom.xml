@@ -10,7 +10,7 @@
     <artifactId>query</artifactId>
     <version>1.0-SNAPSHOT</version>
     <properties>
-        <version.datawave>3.1.5-SNAPSHOT</version.datawave>
+        <version.datawave>3.2.1-SNAPSHOT</version.datawave>
         <version.microservice.audit-api>1.10-SNAPSHOT</version.microservice.audit-api>
     </properties>
     <dependencyManagement>
