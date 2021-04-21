@@ -5,8 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import datawave.microservice.query.configuration.QueryData;
-import datawave.microservice.query.configuration.Result;
 import datawave.microservice.query.configuration.ResultContext;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.lang.builder.HashCodeBuilder;

@@ -103,7 +103,7 @@ public class PushdownScheduler extends Scheduler {
     @Override
     public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
         // if we were not actually started, then simple return the query data checkpoints
-        if (session != null) {
+        if (session == null) {
             Iterator<QueryData> queries = getQueryDataIterator();
             List<QueryCheckpoint> checkpoints = new ArrayList<>();
             while (queries.hasNext()) {
@@ -145,7 +145,7 @@ public class PushdownScheduler extends Scheduler {
      * @throws AccumuloException
      */
     protected Iterator<Result> concatIterators() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ParseException {
-        
+        boolean hasNext = config.getQueries().hasNext();
         String tableName = config.getShardTableName();
         
         Set<Authorizations> auths = config.getAuthorizations();
@@ -164,7 +164,7 @@ public class PushdownScheduler extends Scheduler {
         Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(tl, config, settings, tableId));
         
         try {
-            session = scannerFactory.newQueryScanner(tableName, auths, config.getQuery());
+            session = scannerFactory.newQueryScanner(tableName, auths, config.getQuery()).setConfig(config);
             
             if (config.getBypassAccumulo()) {
                 session.setDelegatedInitializer(RfileResource.class);

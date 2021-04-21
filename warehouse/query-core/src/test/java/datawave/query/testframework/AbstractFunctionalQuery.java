@@ -174,6 +174,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         logic.setLogTimingDetails(true);
         logic.setMinimumSelectivity(0.03D);
         logic.setMaxIndexScanTimeMillis(5000);
+        
         return logic;
     }
     

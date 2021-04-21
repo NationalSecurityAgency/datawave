@@ -2,6 +2,7 @@ package datawave.microservice.query.configuration;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import java.util.Collections;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -64,6 +65,19 @@ public class QueryData implements ResultContext {
     }
     
     public Collection<Range> getRanges() {
+        if (isFinished()) {
+            return Collections.emptySet();
+        } else if (lastResult != null) {
+            List<Range> newRanges = new ArrayList<>();
+            for (Range range : ranges) {
+                if (range.contains(lastResult.getKey())) {
+                    newRanges.add(new Range(lastResult.getKey(), false, range.getEndKey(), range.isEndKeyInclusive()));
+                } else {
+                    newRanges.add(range);
+                }
+            }
+            return newRanges;
+        }
         return ranges;
     }
     

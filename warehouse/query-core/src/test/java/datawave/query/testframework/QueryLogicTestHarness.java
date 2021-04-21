@@ -1,7 +1,5 @@
 package datawave.query.testframework;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Iterators;
 import datawave.data.type.Type;
 import datawave.microservice.common.storage.QueryCheckpoint;
 import datawave.microservice.common.storage.QueryKey;
@@ -17,6 +15,8 @@ import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.webservice.query.logic.CheckpointableQueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
+import java.util.LinkedList;
+import java.util.Queue;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -89,29 +89,31 @@ public class QueryLogicTestHarness {
             }
         }
         
-        boolean disableCheckpoint = true;
-        if (!disableCheckpoint && logic instanceof CheckpointableQueryLogic && factory != null) {
-            Iterator<Map.Entry<Key,Value>> iter = logic.iterator();
-            while (iter.hasNext()) {
-                actualResults = processResult(actualResults, iter.next(), checkers);
-                QueryKey queryKey = new QueryKey(new QueryPool("default"), logic.getConfig().getQuery().getId(), logic.getLogicName());
-                List<QueryCheckpoint> cps = ((CheckpointableQueryLogic) logic).checkpoint(queryKey);
-                Connector connection = logic.getConfig().getConnector();
-                iter = null;
-                for (QueryCheckpoint cp : cps) {
-                    // create a new instance of the logic
-                    try {
-                        logic = (BaseQueryLogic<Map.Entry<Key,Value>>) factory.getQueryLogic(logic.getLogicName(), logic.getPrincipal());
-                    } catch (CloneNotSupportedException e) {
-                        Assert.fail("Failed to recreate checkpointable query logic  for " + logic.getLogicName() + ": " + e.getMessage());
-                    }
-                    // now reset the logic given the checkpoint
-                    try {
-                        ((CheckpointableQueryLogic) logic).setupQuery(connection, cp);
-                    } catch (Exception e) {
-                        Assert.fail("Failed to setup query given last checkpoint: " + e.getMessage());
-                    }
-                    iter = (iter == null ? logic.iterator() : Iterators.concat(iter, logic.iterator()));
+        boolean disableCheckpoint = false;
+        if (!disableCheckpoint && logic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) logic).isCheckpointable() && factory != null) {
+            Queue<QueryCheckpoint> cps = new LinkedList<>();
+            Connector connection = logic.getConfig().getConnector();
+            QueryKey queryKey = new QueryKey(new QueryPool("default"), logic.getConfig().getQuery().getId(), logic.getLogicName());
+            cps.addAll(((CheckpointableQueryLogic) logic).checkpoint(queryKey));
+            while (!cps.isEmpty()) {
+                QueryCheckpoint cp = cps.remove();
+                // create a new instance of the logic
+                try {
+                    logic = (BaseQueryLogic<Map.Entry<Key,Value>>) factory.getQueryLogic(logic.getLogicName(), logic.getPrincipal());
+                } catch (CloneNotSupportedException e) {
+                    Assert.fail("Failed to recreate checkpointable query logic  for " + logic.getLogicName() + ": " + e.getMessage());
+                }
+                // now reset the logic given the checkpoint
+                try {
+                    ((CheckpointableQueryLogic) logic).setupQuery(connection, cp);
+                } catch (Exception e) {
+                    log.error("Failed to setup query given last checkpoint", e);
+                    Assert.fail("Failed to setup query given last checkpoint: " + e.getMessage());
+                }
+                Iterator<Map.Entry<Key,Value>> iter = logic.iterator();
+                if (iter.hasNext()) {
+                    actualResults = processResult(actualResults, iter.next(), checkers);
+                    cps.addAll(((CheckpointableQueryLogic) logic).checkpoint(queryKey));
                 }
             }
         } else {

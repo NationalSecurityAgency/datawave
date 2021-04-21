@@ -1,5 +1,6 @@
 package datawave.query.tables;
 
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -66,6 +67,11 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     private static final double QUEUE_MULTIPLIER = 25;
     
     /**
+     * The configuration used for checkpoints
+     */
+    private GenericQueryConfiguration config;
+    
+    /**
      * Delegates scanners to us, blocking if none are available or used by other sources.
      */
     private ResourceQueue delegatorReference;
@@ -124,8 +130,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
         close();
         List<QueryCheckpoint> checkpoints = new ArrayList<>();
-        // TODO: need to pass in the configuration
-        ShardQueryConfiguration config = null;
         for (ResultContext context : runningQueries) {
             if (!context.isFinished()) {
                 // TODO: Do we need a QueryData or will a ResultContext do
@@ -227,6 +231,11 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         this.threadCount = threads;
         service = new ThreadPoolExecutor(threads, threads, 120, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), new BatchReaderThreadFactory(threadId, this));
         service = MoreExecutors.listeningDecorator(service);
+        return this;
+    }
+    
+    public BatchScannerSession setConfig(GenericQueryConfiguration config) {
+        this.config = config;
         return this;
     }
     

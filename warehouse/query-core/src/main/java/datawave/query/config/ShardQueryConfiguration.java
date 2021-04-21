@@ -386,6 +386,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         super(other);
         
         // ShardQueryConfiguration copy
+        this.setCheckpointable(other.isCheckpointable());
         this.setTldQuery(other.isTldQuery());
         this.putFilterOptions(other.getFilterOptions());
         this.setDisableIndexOnlyDocuments(other.isDisableIndexOnlyDocuments());
@@ -547,6 +548,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public ShardQueryConfiguration(Map<String,Object> properties) {
         Map<String,Object> setProperties = new HashMap<>(properties);
+        setProperties.put("queries", ((List) properties.get("queries")).iterator());
         // TODO Fix properties as needed
         BeanWrapper wrapper = PropertyAccessorFactory.forBeanPropertyAccess(this);
         
@@ -554,6 +556,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public Map<String,Object> toMap() {
+        // first save off the queries
+        List<QueryData> queries = Lists.newArrayList(getQueries());
+        
         ObjectMapper mapper = new ObjectMapper();
         Map<String,Object> props = mapper.convertValue(this, Map.class);
         
@@ -563,7 +568,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         putConditionally(props, "queryFieldsDatatypes", getQueryFieldsDatatypes());
         putConditionally(props, "compositeToFieldMap", getCompositeToFieldMap());
         putConditionally(props, "dataTypes", getDataTypes());
-        putConditionally(props, "queries", getQueries());
+        putConditionally(props, "queries", queries);
         putConditionally(props, "query", getQuery());
         putConditionally(props, "normalizedFieldsDatatypes", getNormalizedFieldsDatatypes());
         putConditionally(props, "authorizations", getAuthorizations());
