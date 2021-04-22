@@ -353,6 +353,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean enforceUniqueDisjunctionsWithinExpression = false;
     
     /**
+     * Attempt to push down query terms below the configured source limit
+     */
+    private boolean reduceQueryBelowSourceLimit = false;
+    
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -528,7 +533,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setActiveQueryLogNameSource(other.getActiveQueryLogNameSource());
         this.setEnforceUniqueConjunctionsWithinExpression(other.getEnforceUniqueConjunctionsWithinExpression());
         this.setEnforceUniqueDisjunctionsWithinExpression(other.getEnforceUniqueDisjunctionsWithinExpression());
-        
+        this.setReduceQueryBelowSourceLimit(other.getReduceQueryBelowSourceLimit());
     }
     
     /**
@@ -2128,5 +2133,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueDisjunctionsWithinExpression) {
         this.enforceUniqueDisjunctionsWithinExpression = enforceUniqueDisjunctionsWithinExpression;
+    }
+    
+    public boolean getReduceQueryBelowSourceLimit() {
+        return reduceQueryBelowSourceLimit;
+    }
+    
+    public void setReduceQueryBelowSourceLimit(boolean reduceQueryBelowSourceLimit) {
+        this.reduceQueryBelowSourceLimit = reduceQueryBelowSourceLimit;
     }
 }

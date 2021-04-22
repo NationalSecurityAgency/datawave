@@ -124,6 +124,8 @@
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <!--<property name="queryMacroFunction" ref="queryMacroFunction" />-->
         <property name="markingFunctions" ref="markingFunctions" />
+        <!-- Should the visitor function attempt to reduce the query terms below the source limit -->
+        <property name="reduceQueryBelowSourceLimit" value="false" />
     </bean>
 
     <util:list id="IvaratorCacheDirConfigs">

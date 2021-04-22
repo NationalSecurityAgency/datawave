@@ -100,6 +100,12 @@ public class TermCountingVisitorTest {
         testCounts(query, 0);
     }
     
+    @Test
+    public void testContentPhraseFunction() throws ParseException {
+        String query = "FOO == 'bar' && (content:phrase(TF_FIELD1,termOffsetMap,'a','b') && (TF_FIELD1 =='a' && TF_FIELD1 =='b'))";
+        testCounts(query, 4);
+    }
+    
     private void testCounts(String query, int expectedCount) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         int count = TermCountingVisitor.countTerms(script);
