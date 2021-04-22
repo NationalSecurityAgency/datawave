@@ -95,6 +95,10 @@ public class ExpandCompositeTermsTest {
     public void test3() throws Exception {
         String query = "WINNER=='blue' && TEAM=='gold' && NAME=='gold-8' && POINTS==11";
         runTestQuery(query, "WINNER == 'blue' && TEAM_NAME_POINTS == 'gold,gold-8,11'");
+        query = "WINNER=='blue' && TEAM=='gold' && NAME=~'gold-?.*' && POINTS==11";
+        runTestQuery(query, "WINNER == 'blue' && NAME =~ 'gold-?.*' && TEAM_POINTS == 'gold,11'");
+        query = "WINNER=='blue' && TEAM=~'gol.*' && NAME=='gold-8' && POINTS==11";
+        runTestQuery(query, "WINNER == 'blue' && TEAM =~ 'gol.*' && NAME == 'gold-8' && POINTS == 11");
     }
     
     @Test
@@ -172,7 +176,7 @@ public class ExpandCompositeTermsTest {
     @Test
     public void test8() throws Exception {
         String query = "COLOR =~ '.*ed' && (WHEELS == '4' || WHEELS == '+aE4') && (MAKE_COLOR == 'honda' || MAKE == 'honda') && TYPE == 'truck'";
-        String expected = "TYPE == 'truck' && (WHEELS == '4' || WHEELS == '+aE4') && ((COLOR =~ '.*ed' && MAKE_COLOR == 'honda') || (MAKE_COLOR =~ 'honda,.*ed' && ((_Eval_ = true) && (MAKE == 'honda' && COLOR =~ '.*ed'))))";
+        String expected = "TYPE == 'truck' && (WHEELS == '4' || WHEELS == '+aE4') && ((COLOR =~ '.*ed' && MAKE_COLOR == 'honda') || (MAKE_COLOR =~ '\\Qhonda\\E,.*ed' && ((_Eval_ = true) && (MAKE == 'honda' && COLOR =~ '.*ed'))))";
         runTestQuery(query, expected);
     }
     
