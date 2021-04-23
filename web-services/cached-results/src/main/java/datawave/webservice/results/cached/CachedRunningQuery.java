@@ -1,7 +1,9 @@
 package datawave.webservice.results.cached;
 
 import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.logic.QueryLogicTransformer;
+import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.cache.QueryMetricFactory;
@@ -10,7 +12,7 @@ import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.cachedresults.CacheableQueryRowReader;
 import datawave.webservice.query.data.ObjectSizeOf;
-import datawave.webservice.query.logic.QueryLogicFactory;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import org.apache.commons.dbutils.DbUtils;
@@ -35,6 +37,8 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -1203,14 +1207,16 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                     }
                     if (crq.queryLogicName != null) {
                         try {
-                            crq.queryLogic = queryFactory.getQueryLogic(crq.queryLogicName, principal);
+                            Collection<String> userRoles = (principal instanceof DatawavePrincipal) ? ((DatawavePrincipal) principal).getPrimaryUser()
+                                            .getRoles() : Collections.emptyList();
+                            crq.queryLogic = queryFactory.getQueryLogic(crq.queryLogicName, userRoles);
                         } catch (IllegalArgumentException | CloneNotSupportedException e) {
                             log.error(e.getMessage(), e);
                         }
                     }
                 }
             }
-        } catch (SQLException e) {
+        } catch (SQLException | QueryException e) {
             log.error(e.getMessage(), e);
         }
         return crq;

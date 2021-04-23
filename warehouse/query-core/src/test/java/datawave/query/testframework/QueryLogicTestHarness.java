@@ -5,6 +5,7 @@ import datawave.microservice.common.storage.QueryCheckpoint;
 import datawave.microservice.common.storage.QueryKey;
 import datawave.microservice.common.storage.QueryPool;
 import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Attributes;
@@ -13,8 +14,8 @@ import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.CheckpointableQueryLogic;
-import datawave.webservice.query.logic.QueryLogicFactory;
 import java.util.LinkedList;
 import java.util.Queue;
 import org.apache.accumulo.core.client.Connector;
@@ -99,7 +100,7 @@ public class QueryLogicTestHarness {
                 QueryCheckpoint cp = cps.remove();
                 // create a new instance of the logic
                 try {
-                    logic = (BaseQueryLogic<Map.Entry<Key,Value>>) factory.getQueryLogic(logic.getLogicName(), logic.getPrincipal());
+                    logic = (BaseQueryLogic<Map.Entry<Key,Value>>) factory.getQueryLogic(logic.getLogicName());
                 } catch (CloneNotSupportedException e) {
                     Assert.fail("Failed to recreate checkpointable query logic  for " + logic.getLogicName() + ": " + e.getMessage());
                 }
@@ -114,6 +115,7 @@ public class QueryLogicTestHarness {
                 if (iter.hasNext()) {
                     actualResults = processResult(actualResults, iter.next(), checkers);
                     cps.addAll(((CheckpointableQueryLogic) logic).checkpoint(queryKey));
+
                 }
             }
         } else {

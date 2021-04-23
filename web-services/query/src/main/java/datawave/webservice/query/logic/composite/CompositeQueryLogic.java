@@ -15,8 +15,8 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
 import javax.enterprise.inject.Typed;
-import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -318,12 +318,12 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     }
     
     @Override
-    public boolean canRunQuery(Principal principal) {
+    public boolean canRunQuery(Collection<String> userRoles) {
         // user can run this composite query if they can run at least one of the configured query logics
         Iterator<BaseQueryLogic<?>> itr = queryLogics.iterator();
         while (itr.hasNext()) {
             BaseQueryLogic<?> logic = itr.next();
-            if (!logic.canRunQuery(principal)) {
+            if (!logic.canRunQuery(userRoles)) {
                 itr.remove();
             }
         }

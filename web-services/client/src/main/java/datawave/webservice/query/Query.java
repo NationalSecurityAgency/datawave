@@ -5,6 +5,7 @@ import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.MultiValueMap;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -28,7 +29,7 @@ public abstract class Query implements Externalizable {
     private static final long serialVersionUID = -5980134700364340930L;
     
     public abstract void initialize(String userDN, List<String> dnList, String queryLogicName, QueryParameters qp,
-                    MultivaluedMap<String,String> optionalQueryParameters);
+                    MultiValueMap<String,String> optionalQueryParameters);
     
     public abstract String getQueryLogicName();
     

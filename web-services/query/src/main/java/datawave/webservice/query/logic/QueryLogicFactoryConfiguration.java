@@ -4,6 +4,8 @@ import datawave.microservice.query.logic.QueryLogic;
 
 import java.util.Map;
 
+// TODO: JWO: Remove this once we finally move away from the WildFly Webservice
+@Deprecated
 public class QueryLogicFactoryConfiguration {
     private int maxPageSize = 0;
     private long pageByteTrigger = 0;

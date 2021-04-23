@@ -15,7 +15,7 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.inject.Inject;
-import java.security.Principal;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -30,6 +30,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private AuditType auditType = null;
     private Map<String,Long> dnResultLimits = null;
     protected long maxResults = -1L;
+    protected int maxConcurrentTasks = -1;
     protected ScannerBase scanner;
     @SuppressWarnings("unchecked")
     protected Iterator<T> iterator = (Iterator<T>) Collections.emptyList().iterator();
@@ -38,10 +39,8 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private boolean collectQueryMetrics = true;
     private String _connPoolName;
     private Set<String> authorizedDNs;
-    protected Principal principal;
-    protected RoleManager roleManager;
+    protected Set<String> requiredRoles;
     protected MarkingFunctions markingFunctions;
-    @Inject
     protected ResponseObjectFactory responseObjectFactory;
     protected SelectorExtractor selectorExtractor;
     
@@ -72,8 +71,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setPageByteTrigger(other.getPageByteTrigger());
         setCollectQueryMetrics(other.getCollectQueryMetrics());
         setConnPoolName(other.getConnPoolName());
-        setPrincipal(other.getPrincipal());
-        setRoleManager(other.getRoleManager());
+        setRequiredRoles(other.getRequiredRoles());
         setSelectorExtractor(other.getSelectorExtractor());
     }
     
@@ -108,12 +106,12 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         this.responseObjectFactory = responseObjectFactory;
     }
     
-    public Principal getPrincipal() {
-        return principal;
+    public Set<String> getRequiredRoles() {
+        return requiredRoles;
     }
     
-    public void setPrincipal(Principal principal) {
-        this.principal = principal;
+    public void setRequiredRoles(Set<String> requiredRoles) {
+        this.requiredRoles = requiredRoles;
     }
     
     @Override
@@ -124,6 +122,11 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     @Override
     public long getMaxResults() {
         return this.maxResults;
+    }
+    
+    @Override
+    public int getMaxConcurrentTasks() {
+        return this.maxConcurrentTasks;
     }
     
     @Override
@@ -145,6 +148,11 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     @Override
     public void setMaxResults(long maxResults) {
         this.maxResults = maxResults;
+    }
+    
+    @Override
+    public void setMaxConcurrentTasks(int maxConcurrentTasks) {
+        this.maxConcurrentTasks = maxConcurrentTasks;
     }
     
     @Override
@@ -265,14 +273,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         this.collectQueryMetrics = collectQueryMetrics;
     }
     
-    public RoleManager getRoleManager() {
-        return roleManager;
-    }
-    
-    public void setRoleManager(RoleManager roleManager) {
-        this.roleManager = roleManager;
-    }
-    
     /** {@inheritDoc} */
     @Override
     public String getConnPoolName() {
@@ -285,13 +285,9 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         _connPoolName = connPoolName;
     }
     
-    public boolean canRunQuery() {
-        return this.canRunQuery(this.getPrincipal());
-    }
-    
     /** {@inheritDoc} */
-    public boolean canRunQuery(Principal principal) {
-        return this.roleManager == null || this.roleManager.canRunQuery(this, principal);
+    public boolean canRunQuery(Collection<String> userRoles) {
+        return this.requiredRoles == null || userRoles.containsAll(requiredRoles);
     }
     
     @Override

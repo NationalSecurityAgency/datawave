@@ -1,19 +1,21 @@
 package datawave.webservice.query.logic;
 
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
 import datawave.configuration.spring.SpringBean;
 import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.result.VoidResponse;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+// TODO: JWO: Remove this once we finally move away from the WildFly Webservice
+@Deprecated
 public class QueryLogicFactoryImpl implements QueryLogicFactory {
     
     /**
@@ -27,19 +29,26 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
     private ApplicationContext applicationContext;
     
     @Override
-    public QueryLogic<?> getQueryLogic(String name, Principal principal) throws IllegalArgumentException, CloneNotSupportedException {
-        
+    public QueryLogic<?> getQueryLogic(String name, Collection<String> userRoles) throws IllegalArgumentException, CloneNotSupportedException {
+        return getQueryLogic(name, userRoles, true);
+    }
+    
+    @Override
+    public QueryLogic<?> getQueryLogic(String name) throws IllegalArgumentException, CloneNotSupportedException {
+        return getQueryLogic(name, null, false);
+    }
+    
+    private QueryLogic<?> getQueryLogic(String name, Collection<String> userRoles, boolean checkRoles) throws IllegalArgumentException,
+                    CloneNotSupportedException {
         QueryLogic<?> logic;
         try {
             logic = (QueryLogic<?>) applicationContext.getBean(name);
-            logic.setPrincipal(principal);
         } catch (ClassCastException | NoSuchBeanDefinitionException cce) {
             throw new IllegalArgumentException("Logic name '" + name + "' does not exist in the configuration");
         }
         
-        if (!logic.canRunQuery(principal)) {
-            throw new UnauthorizedException(new IllegalAccessException("User does not have required role(s): " + logic.getRoleManager().getRequiredRoles()),
-                            new VoidResponse());
+        if (checkRoles && !logic.canRunQuery(userRoles)) {
+            throw new UnauthorizedException(new IllegalAccessException("User does not have required role(s): " + logic.getRequiredRoles()), new VoidResponse());
         }
         
         logic.setLogicName(name);

@@ -1,6 +1,7 @@
 package datawave.webservice.query;
 
 import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryParametersImpl;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
@@ -14,6 +15,7 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.MultiValueMap;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -726,7 +728,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         this.uncaughtExceptionHandler = uncaughtExceptionHandler;
     }
     
-    public void initialize(String userDN, List<String> dnList, String queryLogicName, QueryParameters qp, MultivaluedMap<String,String> optionalQueryParameters) {
+    public void initialize(String userDN, List<String> dnList, String queryLogicName, QueryParameters qp, MultiValueMap<String,String> optionalQueryParameters) {
         this.dnList = dnList;
         this.expirationDate = qp.getExpirationDate();
         this.id = java.util.UUID.randomUUID().toString();

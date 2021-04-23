@@ -1,8 +1,8 @@
 package datawave.microservice.common.storage;
 
+import datawave.microservice.query.QueryParametersImpl;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryParametersImpl;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

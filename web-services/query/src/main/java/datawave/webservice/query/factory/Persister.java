@@ -15,6 +15,7 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import datawave.webservice.query.util.QueryUtil;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -105,7 +106,7 @@ public class Persister {
     public Query create(String userDN, List<String> dnList, SecurityMarking marking, String queryLogicName, QueryParameters qp,
                     MultivaluedMap<String,String> optionalQueryParameters) {
         Query q = responseObjectFactory.getQueryImpl();
-        q.initialize(userDN, dnList, queryLogicName, qp, optionalQueryParameters);
+        q.initialize(userDN, dnList, queryLogicName, qp, MapUtils.toMultiValueMap(optionalQueryParameters));
         q.setColumnVisibility(marking.toColumnVisibilityString());
         q.setUncaughtExceptionHandler(new QueryUncaughtExceptionHandler());
         Thread.currentThread().setUncaughtExceptionHandler(q.getUncaughtExceptionHandler());

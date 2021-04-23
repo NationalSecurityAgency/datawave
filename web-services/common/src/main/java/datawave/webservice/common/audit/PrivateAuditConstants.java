@@ -1,5 +1,7 @@
 package datawave.webservice.common.audit;
 
+import org.springframework.util.MultiValueMap;
+
 import javax.ws.rs.core.MultivaluedMap;
 
 /**
@@ -15,7 +17,12 @@ public class PrivateAuditConstants {
     public static final String USER_DN = PREFIX + "userDn";
     public static final String SELECTORS = PREFIX + "selectors";
     
+    @Deprecated
     public static void stripPrivateParameters(MultivaluedMap<String,String> queryParameters) {
+        queryParameters.entrySet().removeIf(entry -> entry.getKey().startsWith(PREFIX));
+    }
+    
+    public static void stripPrivateParameters(MultiValueMap<String,String> queryParameters) {
         queryParameters.entrySet().removeIf(entry -> entry.getKey().startsWith(PREFIX));
     }
 }

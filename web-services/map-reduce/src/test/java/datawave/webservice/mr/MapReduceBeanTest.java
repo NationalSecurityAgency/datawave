@@ -12,6 +12,7 @@ import java.util.Map;
 
 import javax.ejb.EJBContext;
 
+import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -30,7 +31,6 @@ import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.results.mr.MapReduceJobDescription;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;

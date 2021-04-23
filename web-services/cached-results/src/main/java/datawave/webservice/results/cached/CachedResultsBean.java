@@ -13,6 +13,7 @@ import datawave.marking.SecurityMarking;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.AuditBean;
@@ -44,7 +45,6 @@ import datawave.webservice.query.exception.QueryCanceledQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
@@ -1444,7 +1444,9 @@ public class CachedResultsBean {
                         Connection connection = ds.getConnection();
                         String logicName = crq.getQueryLogicName();
                         if (logicName != null) {
-                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                            Collection<String> userRoles = (p instanceof DatawavePrincipal) ? ((DatawavePrincipal) p).getPrimaryUser().getRoles() : Collections
+                                            .emptyList();
+                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, userRoles);
                             crq.activate(connection, queryLogic);
                         } else {
                             DbUtils.closeQuietly(connection);
@@ -1551,7 +1553,9 @@ public class CachedResultsBean {
                         if (crq.getShouldAutoActivate()) {
                             Connection connection = ds.getConnection();
                             String logicName = crq.getQueryLogicName();
-                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                            Collection<String> userRoles = (p instanceof DatawavePrincipal) ? ((DatawavePrincipal) p).getPrimaryUser().getRoles() : Collections
+                                            .emptyList();
+                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, userRoles);
                             crq.activate(connection, queryLogic);
                         } else {
                             throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_FOR_RESOURCES);
@@ -1665,7 +1669,9 @@ public class CachedResultsBean {
                     
                     Connection connection = ds.getConnection();
                     String logicName = crq.getQueryLogicName();
-                    QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                    Collection<String> userRoles = (p instanceof DatawavePrincipal) ? ((DatawavePrincipal) p).getPrimaryUser().getRoles() : Collections
+                                    .emptyList();
+                    QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, userRoles);
                     crq.activate(connection, queryLogic);
                     
                     response.setQueryId(crq.getQueryId());
@@ -1762,7 +1768,9 @@ public class CachedResultsBean {
                         if (crq.getShouldAutoActivate()) {
                             Connection connection = ds.getConnection();
                             String logicName = crq.getQueryLogicName();
-                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                            Collection<String> userRoles = (p instanceof DatawavePrincipal) ? ((DatawavePrincipal) p).getPrimaryUser().getRoles() : Collections
+                                            .emptyList();
+                            QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, userRoles);
                             crq.activate(connection, queryLogic);
                         } else {
                             throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_FOR_RESOURCES);
@@ -1905,7 +1913,9 @@ public class CachedResultsBean {
                     if (crq.isActivated() == false) {
                         Connection connection = ds.getConnection();
                         String logicName = crq.getQueryLogicName();
-                        QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, p);
+                        Collection<String> userRoles = (p instanceof DatawavePrincipal) ? ((DatawavePrincipal) p).getPrimaryUser().getRoles() : Collections
+                                        .emptyList();
+                        QueryLogic<?> queryLogic = queryFactory.getQueryLogic(logicName, userRoles);
                         crq.activate(connection, queryLogic);
                     }
                     
@@ -2173,7 +2183,8 @@ public class CachedResultsBean {
                 Query q = queries.get(0);
                 
                 // will throw IllegalArgumentException if not defined
-                QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), p);
+                Collection<String> userRoles = (p instanceof DatawavePrincipal) ? ((DatawavePrincipal) p).getPrimaryUser().getRoles() : Collections.emptyList();
+                QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), userRoles);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(queryExpirationConf,
                                 q.getPageTimeout()), executor, predictor, metricFactory);

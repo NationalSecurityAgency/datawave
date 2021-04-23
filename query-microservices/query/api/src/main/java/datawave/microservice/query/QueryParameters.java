@@ -25,6 +25,8 @@ public interface QueryParameters extends ParameterValidator {
     String QUERY_PARAMS = "params";
     String QUERY_VISIBILITY = "columnVisibility";
     String QUERY_LOGIC_NAME = "logicName";
+    String QUERY_POOL = "pool";
+    String QUERY_MAX_CONCURRENT_TASKS = "maxConcurrentTasks";
     
     String getQuery();
     
@@ -79,6 +81,16 @@ public interface QueryParameters extends ParameterValidator {
     String getLogicName();
     
     void setLogicName(String logicName);
+    
+    String getPool();
+    
+    void setPool(String pool);
+    
+    int getMaxConcurrentTasks();
+    
+    void setMaxConcurrentTasks(int maxConcurrentTasks);
+    
+    boolean isMaxConcurrentTasksOverridden();
     
     MultiValueMap<String,String> getRequestHeaders();
     

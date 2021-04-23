@@ -1,6 +1,7 @@
 package datawave.webservice.query.util;
 
 import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryParametersImpl;
 import datawave.microservice.query.QueryPersistence;
 import datawave.query.data.UUIDType;
 import datawave.security.util.AuthorizationsUtil;
@@ -9,7 +10,6 @@ import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.common.exception.PreConditionFailedException;
-import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;

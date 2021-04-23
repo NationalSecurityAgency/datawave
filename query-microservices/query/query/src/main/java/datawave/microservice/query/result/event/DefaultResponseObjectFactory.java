@@ -1,14 +1,22 @@
-package datawave.webservice.query.result.event;
+package datawave.microservice.query.result.event;
 
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
-import datawave.webservice.query.cachedresults.CacheableQueryRowImpl;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.DefaultEdge;
 import datawave.webservice.query.result.edge.EdgeBase;
+import datawave.webservice.query.result.event.DefaultEvent;
+import datawave.webservice.query.result.event.DefaultFacets;
+import datawave.webservice.query.result.event.DefaultField;
+import datawave.webservice.query.result.event.DefaultFieldCardinality;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FacetsBase;
+import datawave.webservice.query.result.event.FieldBase;
+import datawave.webservice.query.result.event.FieldCardinalityBase;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.metadata.DefaultMetadataField;
 import datawave.webservice.query.result.metadata.MetadataFieldBase;
 import datawave.webservice.response.objects.DefaultKey;
@@ -41,9 +49,10 @@ public class DefaultResponseObjectFactory extends ResponseObjectFactory {
         return new DefaultEventQueryResponse();
     }
     
+    // TODO: JWO: Figure out how we're going to deal with cached results
     @Override
     public CacheableQueryRow getCacheableQueryRow() {
-        return new CacheableQueryRowImpl();
+        return null;
     }
     
     @Override

@@ -14,11 +14,12 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class QueryParametersImpl implements QueryParameters {
     
     private static final List<String> KNOWN_PARAMS = Arrays.asList(QUERY_STRING, QUERY_NAME, QUERY_PERSISTENCE, QUERY_PAGESIZE, QUERY_PAGETIMEOUT,
-                    QUERY_AUTHORIZATIONS, QUERY_EXPIRATION, QUERY_TRACE, QUERY_BEGIN, QUERY_END, QUERY_VISIBILITY, QUERY_LOGIC_NAME,
+                    QUERY_AUTHORIZATIONS, QUERY_EXPIRATION, QUERY_TRACE, QUERY_BEGIN, QUERY_END, QUERY_VISIBILITY, QUERY_LOGIC_NAME, QUERY_POOL,
                     QUERY_MAX_RESULTS_OVERRIDE);
     
     protected String query;
@@ -35,6 +36,9 @@ public class QueryParametersImpl implements QueryParameters {
     protected Date endDate;
     protected String visibility;
     protected String logicName;
+    protected String pool;
+    protected boolean isMaxConcurrentTasksOverridden;
+    protected int maxConcurrentTasks;
     protected MultiValueMap<String,String> requestHeaders;
     
     public QueryParametersImpl() {
@@ -88,6 +92,9 @@ public class QueryParametersImpl implements QueryParameters {
             } else if (QUERY_MAX_RESULTS_OVERRIDE.equals(param)) {
                 this.maxResultsOverride = Long.parseLong(values.get(0));
                 this.isMaxResultsOverridden = true;
+            } else if (QUERY_MAX_CONCURRENT_TASKS.equals(param)) {
+                this.maxConcurrentTasks = Integer.parseInt(values.get(0));
+                this.isMaxConcurrentTasksOverridden = true;
             } else if (QUERY_AUTHORIZATIONS.equals(param)) {
                 // ensure that auths are comma separated with no empty values or spaces
                 Splitter splitter = Splitter.on(',').omitEmptyStrings().trimResults();
@@ -116,6 +123,8 @@ public class QueryParametersImpl implements QueryParameters {
                 this.visibility = values.get(0);
             } else if (QUERY_LOGIC_NAME.equals(param)) {
                 this.logicName = values.get(0);
+            } else if (QUERY_POOL.equals(param)) {
+                this.pool = values.get(0);
             } else {
                 throw new IllegalArgumentException("Unknown condition.");
             }
@@ -152,6 +161,10 @@ public class QueryParametersImpl implements QueryParameters {
             if (maxResultsOverride != that.maxResultsOverride)
                 return false;
         }
+        if (isMaxConcurrentTasksOverridden != that.isMaxConcurrentTasksOverridden)
+            return false;
+        if (maxConcurrentTasks != that.maxConcurrentTasks)
+            return false;
         if (trace != that.trace)
             return false;
         if (!auths.equals(that.auths))
@@ -165,6 +178,8 @@ public class QueryParametersImpl implements QueryParameters {
         if (!expirationDate.equals(that.expirationDate))
             return false;
         if (logicName != null ? !logicName.equals(that.logicName) : that.logicName != null)
+            return false;
+        if (pool != null ? !pool.equals(that.pool) : that.pool != null)
             return false;
         if (persistenceMode != that.persistenceMode)
             return false;
@@ -187,6 +202,9 @@ public class QueryParametersImpl implements QueryParameters {
         if (isMaxResultsOverridden) {
             result = 31 * result + (int) (maxResultsOverride);
         }
+        if (isMaxConcurrentTasksOverridden) {
+            result = 31 * result + maxConcurrentTasks;
+        }
         result = 31 * result + auths.hashCode();
         result = 31 * result + expirationDate.hashCode();
         result = 31 * result + (trace ? 1 : 0);
@@ -194,6 +212,7 @@ public class QueryParametersImpl implements QueryParameters {
         result = 31 * result + (endDate != null ? endDate.hashCode() : 0);
         result = 31 * result + (visibility != null ? visibility.hashCode() : 0);
         result = 31 * result + (logicName != null ? logicName.hashCode() : 0);
+        result = 31 * result + (pool != null ? pool.hashCode() : 0);
         result = 31 * result + (requestHeaders != null ? requestHeaders.hashCode() : 0);
         return result;
     }
@@ -484,6 +503,31 @@ public class QueryParametersImpl implements QueryParameters {
     }
     
     @Override
+    public String getPool() {
+        return pool;
+    }
+    
+    @Override
+    public void setPool(String pool) {
+        this.pool = pool;
+    }
+    
+    @Override
+    public int getMaxConcurrentTasks() {
+        return maxConcurrentTasks;
+    }
+    
+    @Override
+    public void setMaxConcurrentTasks(int maxConcurrentTasks) {
+        this.maxConcurrentTasks = maxConcurrentTasks;
+    }
+    
+    @Override
+    public boolean isMaxConcurrentTasksOverridden() {
+        return false;
+    }
+    
+    @Override
     public MultiValueMap<String,String> getRequestHeaders() {
         return requestHeaders;
     }
@@ -521,6 +565,9 @@ public class QueryParametersImpl implements QueryParameters {
         this.endDate = null;
         this.visibility = null;
         this.logicName = null;
+        this.pool = null;
+        this.isMaxConcurrentTasksOverridden = false;
+        this.maxConcurrentTasks = 0;
         this.requestHeaders = null;
     }
 }

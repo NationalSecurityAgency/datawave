@@ -8,12 +8,12 @@ import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
@@ -155,10 +155,10 @@ public class BasicQueryBean {
                 if (exampleQueries != null) {
                     d.setExampleQueries(new ArrayList<>(exampleQueries));
                 }
-                Set<String> requiredRoles = l.getRoleManager().getRequiredRoles();
+                Set<String> requiredRoles = l.getRequiredRoles();
                 if (requiredRoles != null) {
                     List<String> requiredRolesList = new ArrayList<>();
-                    requiredRolesList.addAll(l.getRoleManager().getRequiredRoles());
+                    requiredRolesList.addAll(l.getRequiredRoles());
                     d.setRequiredRoles(requiredRolesList);
                 }
                 
@@ -247,10 +247,10 @@ public class BasicQueryBean {
                     if (exampleQueries != null) {
                         d.setExampleQueries(new ArrayList<>(exampleQueries));
                     }
-                    Set<String> requiredRoles = l.getRoleManager().getRequiredRoles();
+                    Set<String> requiredRoles = l.getRequiredRoles();
                     if (requiredRoles != null) {
                         List<String> requiredRolesList = new ArrayList<>();
-                        requiredRolesList.addAll(l.getRoleManager().getRequiredRoles());
+                        requiredRolesList.addAll(l.getRequiredRoles());
                         d.setRequiredRoles(requiredRolesList);
                     }
                     

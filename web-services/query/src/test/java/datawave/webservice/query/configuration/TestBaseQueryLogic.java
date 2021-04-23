@@ -3,12 +3,10 @@ package datawave.webservice.query.configuration;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.microservice.query.logic.QueryLogicTransformer;
-import datawave.microservice.query.logic.RoleManager;
 import com.google.common.collect.Sets;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.logic.EasyRoleManager;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -54,9 +52,7 @@ public class TestBaseQueryLogic {
         expect(this.copy.getCollectQueryMetrics()).andReturn(false);
         expect(this.copy.getConnPoolName()).andReturn("connPool1");
         expect(this.copy.getBaseIteratorPriority()).andReturn(100);
-        expect(this.copy.getPrincipal()).andReturn(null);
-        RoleManager roleManager = new EasyRoleManager();
-        expect(this.copy.getRoleManager()).andReturn(roleManager);
+        expect(this.copy.getRequiredRoles()).andReturn(null);
         expect(this.copy.getSelectorExtractor()).andReturn(null);
         expect(this.copy.getBypassAccumulo()).andReturn(false);
         

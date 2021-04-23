@@ -2,7 +2,8 @@ package datawave.microservice.query.web.filter;
 
 import datawave.microservice.common.storage.QueryCache;
 import datawave.microservice.common.storage.QueryState;
-import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.common.storage.QueryStorageCache;
+import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.web.QueryMetrics;
 import datawave.microservice.query.web.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.metric.BaseQueryMetric;
@@ -29,15 +30,15 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
     
     private final Logger log = Logger.getLogger(this.getClass());
     
-    private final QueryProperties queryProperties;
+    private final QueryLogicFactory queryLogicFactory;
     
-    private final QueryCache queryCache;
+    private final QueryStorageCache queryStorageCache;
     
     private final QueryMetrics queryMetrics;
     
-    public QueryMetricsEnrichmentFilterAdvice(QueryProperties queryProperties, QueryCache queryCache, QueryMetrics queryMetrics) {
-        this.queryProperties = queryProperties;
-        this.queryCache = queryCache;
+    public QueryMetricsEnrichmentFilterAdvice(QueryLogicFactory queryLogicFactory, QueryStorageCache queryStorageCache, QueryMetrics queryMetrics) {
+        this.queryLogicFactory = queryLogicFactory;
+        this.queryStorageCache = queryStorageCache;
         this.queryMetrics = queryMetrics;
     }
     
@@ -89,11 +90,22 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
     public void postProcess(ResponseMethodStats responseStats) {
         String queryId = QueryMetricsEnrichmentContext.getQueryId();
         if (queryId != null) {
-            if (queryCache != null) {
-                QueryState queryState = queryCache.getQuery(UUID.fromString(queryId));
-                if (queryState != null && queryProperties.getLogic().get(queryState.getQueryLogic()).isMetricsEnabled()) {
+            if (queryStorageCache != null) {
+                // TODO: JWO: Need to figure out where the query metrics object is supposed to come from. I assumed
+                // that it would be contained in the QueryState similar to how it is stored in the RunningQuery,
+                // but that does not appear to be the case.
+                QueryState queryState = null;
+                
+                boolean isMetricsEnabled = false;
+                // try {
+                // isMetricsEnabled = queryLogicFactory.getQueryLogic(queryState.getQueryLogic()).getCollectQueryMetrics();
+                // } catch (Exception e) {
+                // log.warn("Unable to determine if query logic '" + queryState.getQueryLogic() + "' supports metrics");
+                // }
+                
+                if (queryState != null && isMetricsEnabled) {
                     try {
-                        // TODO: This probably shouldn't be instantiated here, and we also shouldn't hard code the basequerymetric implementation.
+                        // TODO: JWO: This probably shouldn't be instantiated here, and we also shouldn't hard code the basequerymetric implementation.
                         // just using this as a placeholder until we start to bring things together.
                         BaseQueryMetric metric = new QueryMetric();
                         switch (QueryMetricsEnrichmentContext.getMethodType()) {

@@ -3,6 +3,7 @@ package datawave.webservice.mr.configuration;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.configuration.QueryData;
 import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.mr.bulk.BulkInputFormat;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.iterator.ConfigurableVisibilityFilter;
@@ -17,7 +18,6 @@ import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.runner.RunningQuery;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -55,6 +55,7 @@ import java.io.ObjectOutputStream;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -327,7 +328,9 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
                                 Response.Status.UNAUTHORIZED.getStatusCode());
             
             // will throw IllegalArgumentException if not defined
-            logic = queryFactory.getQueryLogic(q.getQueryLogicName(), principal);
+            Collection<String> userRoles = (principal instanceof DatawavePrincipal) ? ((DatawavePrincipal) principal).getPrimaryUser().getRoles() : Collections
+                            .emptyList();
+            logic = queryFactory.getQueryLogic(q.getQueryLogicName(), userRoles);
             
             // Get an accumulo connection
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());

@@ -10,6 +10,7 @@ import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.protobuf.Uid.List.Builder;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.QueryParametersImpl;
 import datawave.microservice.query.QueryPersistence;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.data.parsers.DatawaveKey.KeyType;
@@ -21,10 +22,10 @@ import datawave.util.time.DateHelper;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.ModificationRequestBase.MODE;
 import datawave.webservice.modification.configuration.ModificationServiceConfiguration;
-import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.runner.QueryExecutorBean;
+import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.GenericResponse;
@@ -911,9 +912,9 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         expiration = new Date(expiration.getTime() + (1000 * 60 * 60 * 24));
         
         try {
-            GenericResponse<String> createResponse = queryService.createQuery(logicName, QueryParametersImpl.paramsToMap(logicName, query.toString(),
-                            "Query to find matching records for metadata modification", columnVisibility, new Date(0), new Date(),
-                            StringUtils.join(auths, ','), expiration, 2, -1, null, QueryPersistence.TRANSIENT, queryOptions.toString(), false));
+            GenericResponse<String> createResponse = queryService.createQuery(logicName, MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(logicName,
+                            query.toString(), "Query to find matching records for metadata modification", columnVisibility, new Date(0), new Date(),
+                            StringUtils.join(auths, ','), expiration, 2, -1, null, QueryPersistence.TRANSIENT, queryOptions.toString(), false)));
             
             id = createResponse.getResult();
             BaseQueryResponse response = queryService.next(id);

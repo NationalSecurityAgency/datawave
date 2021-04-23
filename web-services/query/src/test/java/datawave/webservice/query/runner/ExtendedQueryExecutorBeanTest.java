@@ -5,13 +5,14 @@ import com.google.common.collect.Multimap;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryParametersImpl;
 import datawave.microservice.query.QueryPersistence;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.logic.QueryLogicTransformer;
-import datawave.microservice.query.logic.RoleManager;
 import datawave.query.data.UUIDType;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
@@ -26,7 +27,6 @@ import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
@@ -40,9 +40,6 @@ import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.NoResultsQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.DatawaveRoleManager;
-import datawave.webservice.query.logic.EasyRoleManager;
-import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
@@ -387,7 +384,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(context.getCallerPrincipal()).andReturn(principal);
-        expect(this.queryLogicFactory.getQueryLogic("ql1", principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(this.dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic("ql1", Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(false);
         expect(this.queryLogic1.getResultLimit(dnList)).andReturn(-1L);
@@ -749,7 +748,9 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
         this.query.populateMetric(isA(QueryMetric.class));
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(this.dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getMaxPageSize()).andReturn(1000).times(2);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getName()).andReturn(userName);
@@ -927,7 +928,9 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
         this.query.populateMetric(isA(QueryMetric.class));
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getMaxPageSize()).andReturn(1000).times(2);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getName()).andReturn(userName);
@@ -1098,7 +1101,9 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations
         expect(context.getCallerPrincipal()).andReturn(principal);
         queryLogic1.validate(queryParameters);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getMaxPageSize()).andReturn(1000).times(2);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal);
         expect(this.principal.getName()).andReturn(userName);
@@ -1217,7 +1222,9 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
         this.query.populateMetric(isA(QueryMetric.class));
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getMaxPageSize()).andReturn(1000).times(2);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.context.getCallerPrincipal()).andReturn(this.principal);
@@ -1369,8 +1376,9 @@ public class ExtendedQueryExecutorBeanTest {
         String parameters = null;
         boolean trace = false;
         
-        MultivaluedMap<String,String> p = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
+        MultivaluedMap<String,String> p = MapUtils
+                        .toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
+                                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
         
         // Run the test
         PowerMock.replayAll();
@@ -1411,8 +1419,9 @@ public class ExtendedQueryExecutorBeanTest {
         String parameters = null;
         boolean trace = false;
         
-        MultivaluedMap<String,String> p = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
+        MultivaluedMap<String,String> p = MapUtils
+                        .toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
+                                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
         
         // Run the test
         PowerMock.replayAll();
@@ -1454,8 +1463,9 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         // Set expectations
         
-        MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
+        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+                        queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode,
+                        parameters, trace));
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -1466,7 +1476,9 @@ public class ExtendedQueryExecutorBeanTest {
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         
         queryLogic1.validate(queryParameters);
@@ -1522,7 +1534,9 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Set expectations
         expect(context.getCallerPrincipal()).andReturn(principal);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).andThrow(
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andThrow(
                         new IllegalArgumentException("INTENTIONALLY THROWN TEST EXCEPTION: UNDEFINED QUERY LOGIC"));
         
         // Run the test
@@ -1535,8 +1549,9 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
         try {
-            MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate,
-                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
+            MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+                            queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride,
+                            persistenceMode, parameters, trace));
             
             subject.createQueryAndNext(queryLogicName, queryParameters);
             
@@ -1577,8 +1592,9 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
         try {
-            MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate,
-                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
+            MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+                            queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride,
+                            persistenceMode, parameters, trace));
             
             subject.defineQuery(queryLogicName, queryParameters);
             
@@ -1619,8 +1635,9 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
         try {
-            MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate,
-                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
+            MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+                            queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride,
+                            persistenceMode, parameters, trace));
             
             subject.defineQuery(queryLogicName, queryParameters);
         } catch (DatawaveWebApplicationException e) {
@@ -1658,8 +1675,8 @@ public class ExtendedQueryExecutorBeanTest {
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
         
-        MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(null, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, null, trace);
+        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(null, query, queryName, queryVisibility,
+                        beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, null, trace));
         queryParameters.putSingle("valid", "param");
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
@@ -1684,7 +1701,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.principal.getUserDN()).andReturn(userDNpair);
         expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).andReturn(this.query);
         expect(this.query.getId()).andReturn(queryId).times(3);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getMaxPageSize()).andReturn(100).times(2);
         expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
         expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap(query)));
@@ -1845,7 +1864,9 @@ public class ExtendedQueryExecutorBeanTest {
         newQuery1.setDnList(Collections.singletonList(userDN));
         expect(this.query.duplicate(newQueryName)).andReturn(newQuery1);
         expect(context.getCallerPrincipal()).andReturn(principal).times(2);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn((QueryLogic) this.queryLogic1).times(2);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1).times(2);
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName).times(2);
         expect(this.queryLogic1.getMaxPageSize()).andReturn(100).times(2);
         QueryImpl newQuery2 = new TestQuery(newQuery1);
@@ -1981,7 +2002,9 @@ public class ExtendedQueryExecutorBeanTest {
         QueryImpl newQuery1 = new QueryImpl();
         newQuery1.setId(UUID.randomUUID());
         expect(this.query.duplicate(newQueryName)).andReturn(newQuery1);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn((QueryLogic) this.queryLogic1).times(2);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1).times(2);
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
         expect(this.queryLogic1.getMaxPageSize()).andReturn(100).times(2);
         QueryImpl newQuery2 = new TestQuery(newQuery1);
@@ -2280,7 +2303,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getOwner()).andReturn(sid).anyTimes();
         expect(this.query.getUserDN()).andReturn(sid).anyTimes();
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.HIGH);
         expect(this.query.getQueryAuthorizations()).andReturn(null).anyTimes();
         expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(false);
@@ -2383,7 +2408,6 @@ public class ExtendedQueryExecutorBeanTest {
     @Test
     public void testListQueryLogic() throws Exception {
         // Set expectations
-        RoleManager roleManager = new EasyRoleManager();
         expect(this.queryLogicFactory.getQueryLogicList()).andReturn(Arrays.asList(this.queryLogic1, this.queryLogic2));
         expect(this.queryLogic1.getLogicName()).andReturn("logic1").times(1); // Begin 1st loop
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.LOCALONLY);
@@ -2391,7 +2415,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getOptionalQueryParameters()).andReturn(new TreeSet<>());
         expect(this.queryLogic1.getRequiredQueryParameters()).andReturn(new TreeSet<>());
         expect(this.queryLogic1.getExampleQueries()).andReturn(new TreeSet<>());
-        expect(this.queryLogic1.getRoleManager()).andReturn(roleManager).anyTimes();
+        expect(this.queryLogic1.getRequiredRoles()).andReturn(new HashSet<>()).anyTimes();
         expect(this.queryLogic1.getResponseClass(EasyMock.anyObject(Query.class))).andThrow(ILLEGAL_STATE_EXCEPTION);
         expect(this.queryLogic2.getLogicName()).andReturn("logic2").times(1); // Begin 1st loop
         expect(this.queryLogic2.getAuditType(null)).andReturn(AuditType.LOCALONLY);
@@ -2399,8 +2423,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic2.getOptionalQueryParameters()).andReturn(new TreeSet<>());
         expect(this.queryLogic2.getRequiredQueryParameters()).andReturn(new TreeSet<>());
         expect(this.queryLogic2.getExampleQueries()).andReturn(new TreeSet<>());
-        RoleManager roleManager2 = new DatawaveRoleManager(Arrays.asList("ROLE_1", "ROLE_2"));
-        expect(this.queryLogic2.getRoleManager()).andReturn(roleManager2).times(2);
+        expect(this.queryLogic2.getRequiredRoles()).andReturn(new HashSet<>(Arrays.asList("ROLE_1", "ROLE_2"))).times(2);
         expect(this.queryLogic2.getResponseClass(EasyMock.anyObject(Query.class))).andReturn(this.baseResponse.getClass().getCanonicalName());
         Map<String,String> parsers = new HashMap<>();
         parsers.put("PARSER1", null);
@@ -2777,7 +2800,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.cache.get(queryName)).andReturn(null);
         expect(this.persister.findById(queryName)).andReturn(Arrays.asList((Query) this.query));
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.query.getQueryAuthorizations()).andReturn(authorization).anyTimes();
         expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(false);
@@ -3017,7 +3042,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
         expect(this.runningQuery.getSettings()).andReturn(this.query).times(3);
         expect(this.query.getOwner()).andReturn(userSid);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1).times(2);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser).times(2);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList()).times(2);
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1).times(2);
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName).times(2);
         expect(this.query.duplicate(queryName)).andReturn(duplicateQuery);
         duplicateQuery.setId(queryId);
@@ -3116,7 +3143,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
         expect(this.httpHeaders.getAcceptableMediaTypes()).andReturn(mediaTypes);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getTransformer(isA(Query.class))).andReturn(this.transformer);
         expect(this.transformer.createResponse(isA(ResultsPage.class))).andReturn(this.baseResponse);
         expect(subject.createQuery(queryLogicName, params, httpHeaders)).andReturn(createResponse);
@@ -3199,8 +3228,9 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         StreamingOutput result1 = null;
         try {
-            MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate,
-                            endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
+            MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+                            queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride,
+                            persistenceMode, parameters, trace));
             
             result1 = subject.execute(queryLogicName, queryParameters, httpHeaders);
             
@@ -3338,7 +3368,9 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getMaxPageSize()).andReturn(1000).times(2);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getName()).andReturn(userName);
@@ -3470,7 +3502,9 @@ public class ExtendedQueryExecutorBeanTest {
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
         // this.query.populateMetric(isA(QueryMetric.class));
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getMaxPageSize()).andReturn(1000).times(2);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getName()).andReturn(userName);
@@ -3593,7 +3627,9 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle("valid", "param");
         
         expect(context.getCallerPrincipal()).andReturn(principal).anyTimes();
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         queryLogic1.validate(queryParameters);
         expect(principal.getName()).andReturn(userName);
         expect(principal.getShortName()).andReturn(userSid);
@@ -3677,7 +3713,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.cache.get(queryName)).andReturn(null);
         expect(this.persister.findById(queryName)).andReturn(Arrays.asList((Query) this.query));
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).anyTimes();
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.query.getQueryAuthorizations()).andReturn(authorization).anyTimes();
         expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(false);
@@ -3772,7 +3810,9 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
         expect(this.runningQuery.getSettings()).andReturn(this.query).anyTimes();
         expect(this.query.getOwner()).andReturn(userSid);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1).times(1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1).times(1);
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName).times(1);
         expect(this.query.duplicate(queryName)).andReturn(duplicateQuery);
         duplicateQuery.setId(queryId);
@@ -3834,8 +3874,9 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         // Set expectations
         
-        MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
+        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+                        queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode,
+                        parameters, trace));
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -3846,7 +3887,9 @@ public class ExtendedQueryExecutorBeanTest {
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         
         queryLogic1.validate(queryParameters);
@@ -3902,8 +3945,9 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         // Set expectations
         
-        MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
+        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+                        queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode,
+                        parameters, trace));
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -3914,7 +3958,9 @@ public class ExtendedQueryExecutorBeanTest {
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         
         queryLogic1.validate(queryParameters);
@@ -3970,8 +4016,9 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         // Set expectations
         
-        MultivaluedMap<String,String> queryParameters = QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
+        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+                        queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode,
+                        parameters, trace));
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -3982,7 +4029,9 @@ public class ExtendedQueryExecutorBeanTest {
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         
         queryLogic1.validate(queryParameters);
@@ -4066,7 +4115,9 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(userSid);
@@ -4159,7 +4210,9 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Set expectations of the create logic
         queryLogic1.validate(queryParameters);
-        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, this.principal)).andReturn((QueryLogic) this.queryLogic1);
+        expect(this.principal.getPrimaryUser()).andReturn(dwUser);
+        expect(this.dwUser.getRoles()).andReturn(Collections.emptyList());
+        expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(userSid);

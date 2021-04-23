@@ -26,8 +26,6 @@ import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.ResultsPage.Status;
 import datawave.webservice.query.logic.BaseQueryLogicTransformer;
-import datawave.webservice.query.logic.DatawaveRoleManager;
-import datawave.webservice.query.logic.EasyRoleManager;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.result.BaseQueryResponse;
@@ -778,20 +776,16 @@ public class CompositeQueryLogicTest {
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("TESTROLE");
-        logic1.setRoleManager(new DatawaveRoleManager(roles));
+        logic1.setRequiredRoles(roles);
         TestQueryLogic2 logic2 = new TestQueryLogic2();
-        logic2.setRoleManager(new EasyRoleManager());
+        logic2.setRequiredRoles(Collections.emptySet());
         logics.add(logic1);
         logics.add(logic2);
         
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        DatawaveUser u = new DatawaveUser(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "CN=ca, OU=acme"), UserType.USER, null,
-                        Collections.singleton("TESTROLE"), null, 0L);
-        DatawavePrincipal p = new DatawavePrincipal(Collections.singletonList(u));
-        
-        Assert.assertTrue(c.canRunQuery(p));
+        Assert.assertTrue(c.canRunQuery(Collections.singleton("TESTROLE")));
         Assert.assertEquals(2, c.getQueryLogics().size());
     }
     
@@ -801,22 +795,18 @@ public class CompositeQueryLogicTest {
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("TESTROLE");
-        logic1.setRoleManager(new DatawaveRoleManager(roles));
+        logic1.setRequiredRoles(roles);
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         HashSet<String> roles2 = new HashSet<>();
         roles2.add("NONTESTROLE");
-        logic2.setRoleManager(new DatawaveRoleManager(roles2));
+        logic2.setRequiredRoles(roles2);
         logics.add(logic1);
         logics.add(logic2);
         
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        DatawaveUser u = new DatawaveUser(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "CN=ca, OU=acme"), UserType.USER, null,
-                        Collections.singleton("TESTROLE"), null, 0L);
-        DatawavePrincipal p = new DatawavePrincipal(Collections.singletonList(u));
-        
-        Assert.assertTrue(c.canRunQuery(p));
+        Assert.assertTrue(c.canRunQuery(Collections.singleton("TESTROLE")));
         Assert.assertEquals(1, c.getQueryLogics().size());
     }
     
@@ -826,22 +816,18 @@ public class CompositeQueryLogicTest {
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("NONTESTROLE");
-        logic1.setRoleManager(new DatawaveRoleManager(roles));
+        logic1.setRequiredRoles(roles);
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         HashSet<String> roles2 = new HashSet<>();
         roles2.add("NONTESTROLE");
-        logic2.setRoleManager(new DatawaveRoleManager(roles2));
+        logic2.setRequiredRoles(roles2);
         logics.add(logic1);
         logics.add(logic2);
         
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
-        DatawaveUser u = new DatawaveUser(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "CN=ca, OU=acme"), UserType.USER, null,
-                        Collections.singleton("TESTROLE"), null, 0L);
-        DatawavePrincipal p = new DatawavePrincipal(Collections.singletonList(u));
-        
-        Assert.assertFalse(c.canRunQuery(p));
+        Assert.assertFalse(c.canRunQuery(Collections.singleton("TESTROLE")));
         Assert.assertEquals(0, c.getQueryLogics().size());
         
     }

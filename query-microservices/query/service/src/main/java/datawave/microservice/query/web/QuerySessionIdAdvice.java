@@ -19,8 +19,8 @@ import javax.servlet.http.Cookie;
 import java.util.Arrays;
 import java.util.UUID;
 
-// TODO: Update to enable based on properties
-// TODO: Should this be in the API or in a starter?
+// TODO: JWO: Update to enable based on properties
+// TODO: JWO: Should this be in the API or in a starter?
 @ControllerAdvice
 public class QuerySessionIdAdvice implements ResponseBodyAdvice<Object> {
     private final Logger log = Logger.getLogger(QuerySessionIdAdvice.class);

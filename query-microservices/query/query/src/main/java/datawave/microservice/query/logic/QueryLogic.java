@@ -2,12 +2,12 @@ package datawave.microservice.query.logic;
 
 import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
-import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -16,7 +16,6 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 
-import java.security.Principal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -122,6 +121,11 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     long getMaxResults();
     
     /**
+     * @return max number of concurrent tasks to run for this query
+     */
+    int getMaxConcurrentTasks();
+    
+    /**
      * @return the results of getMaxWork
      */
     @Deprecated
@@ -160,6 +164,12 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            max number of results to pass back to the caller
      */
     void setMaxResults(long maxResults);
+    
+    /**
+     * @param maxConcurrentTasks
+     *            max number of concurrent tasks to run for this query
+     */
+    void setMaxConcurrentTasks(int maxConcurrentTasks);
     
     /**
      * @param maxRowsToScan
@@ -243,10 +253,6 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      */
     void setCollectQueryMetrics(boolean collectQueryMetrics);
     
-    void setRoleManager(RoleManager roleManager);
-    
-    RoleManager getRoleManager();
-    
     /**
      * List of parameters that can be used in the 'params' parameter to Query/create
      *
@@ -264,18 +270,16 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     String getConnPoolName();
     
     /**
-     * Check that the user has one of the required roles principal my be null when there is no intent to control access to QueryLogic
+     * Check that the user has one of the required roles. userRoles my be null when there is no intent to control access to QueryLogic
      *
-     * @param principal
+     * @param userRoles
      * @return true/false
      */
-    boolean canRunQuery(Principal principal);
+    boolean canRunQuery(Collection<String> userRoles);
     
-    boolean canRunQuery(); // uses member Principal
+    void setRequiredRoles(Set<String> requiredRoles);
     
-    void setPrincipal(Principal principal);
-    
-    Principal getPrincipal();
+    Set<String> getRequiredRoles();
     
     MarkingFunctions getMarkingFunctions();
     

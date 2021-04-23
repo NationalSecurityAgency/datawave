@@ -1,6 +1,7 @@
 package datawave.webservice.query;
 
 import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryParametersImpl;
 import org.apache.commons.lang.time.DateUtils;
 import org.junit.Before;
 import org.junit.Test;

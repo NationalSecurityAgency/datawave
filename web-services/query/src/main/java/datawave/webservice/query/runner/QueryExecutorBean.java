@@ -24,6 +24,7 @@ import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.query.data.UUIDType;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
@@ -58,7 +59,6 @@ import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
@@ -336,10 +336,10 @@ public class QueryExecutorBean implements QueryExecutor {
                 if (exampleQueries != null) {
                     d.setExampleQueries(new ArrayList<>(exampleQueries));
                 }
-                Set<String> requiredRoles = l.getRoleManager().getRequiredRoles();
+                Set<String> requiredRoles = l.getRequiredRoles();
                 if (requiredRoles != null) {
                     List<String> requiredRolesList = new ArrayList<>();
-                    requiredRolesList.addAll(l.getRoleManager().getRequiredRoles());
+                    requiredRolesList.addAll(l.getRequiredRoles());
                     d.setRequiredRoles(requiredRolesList);
                 }
                 
@@ -457,7 +457,10 @@ public class QueryExecutorBean implements QueryExecutor {
         
         // will throw IllegalArgumentException if not defined
         try {
-            qd.logic = queryLogicFactory.getQueryLogic(queryLogicName, ctx.getCallerPrincipal());
+            Principal principal = ctx.getCallerPrincipal();
+            Collection<String> userRoles = (principal instanceof DatawavePrincipal) ? ((DatawavePrincipal) principal).getPrimaryUser().getRoles() : Collections
+                            .emptyList();
+            qd.logic = queryLogicFactory.getQueryLogic(queryLogicName, userRoles);
         } catch (Exception e) {
             log.error("Failed to get query logic for " + queryLogicName, e);
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.QUERY_LOGIC_ERROR, e);
@@ -1056,7 +1059,8 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             
             // will throw IllegalArgumentException if not defined
-            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), p);
+            Collection<String> userRoles = (p instanceof DatawavePrincipal) ? ((DatawavePrincipal) p).getPrimaryUser().getRoles() : Collections.emptyList();
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), userRoles);
             AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
             RunningQuery query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(
                             queryExpirationConf, qp.getPageTimeout()), this.executor, this.predictor, this.metricFactory);
@@ -1093,7 +1097,9 @@ public class QueryExecutorBean implements QueryExecutor {
                 Query q = queries.get(0);
                 
                 // will throw IllegalArgumentException if not defined
-                QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), principal);
+                Collection<String> userRoles = (principal instanceof DatawavePrincipal) ? ((DatawavePrincipal) principal).getPrimaryUser().getRoles()
+                                : Collections.emptyList();
+                QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), userRoles);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
                 query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), principal, new RunningQueryTimingImpl(
                                 queryExpirationConf, qp.getPageTimeout()), this.executor, this.predictor, this.metricFactory);
@@ -1127,7 +1133,10 @@ public class QueryExecutorBean implements QueryExecutor {
             final String auths = q.getQueryAuthorizations();
             
             // will throw IllegalArgumentException if not defined
-            final QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), ctx.getCallerPrincipal());
+            Principal principal = ctx.getCallerPrincipal();
+            Collection<String> userRoles = (principal instanceof DatawavePrincipal) ? ((DatawavePrincipal) principal).getPrimaryUser().getRoles() : Collections
+                            .emptyList();
+            final QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), userRoles);
             final AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
             query = RunningQuery.createQueryWithAuthorizations(metrics, null, priority, logic, q, auths,
                             new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.executor, this.predictor, this.metricFactory);
@@ -2677,7 +2686,10 @@ public class QueryExecutorBean implements QueryExecutor {
             // TODO: add validation for all these sets
             // maybe set variables instead of stuffing in query
             if (newQueryLogicName != null) {
-                q.setQueryLogicName(queryLogicFactory.getQueryLogic(newQueryLogicName, ctx.getCallerPrincipal()).getLogicName());
+                Principal principal = ctx.getCallerPrincipal();
+                Collection<String> userRoles = (principal instanceof DatawavePrincipal) ? ((DatawavePrincipal) principal).getPrimaryUser().getRoles()
+                                : Collections.emptyList();
+                q.setQueryLogicName(queryLogicFactory.getQueryLogic(newQueryLogicName, userRoles).getLogicName());
             }
             if (newQuery != null) {
                 q.setQuery(newQuery);
@@ -2893,11 +2905,12 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     private void updateQueryParams(Query q, String queryLogicName, String query, Date beginDate, Date endDate, String queryAuthorizations, Date expirationDate,
-                    Integer pagesize, Integer pageTimeout, Long maxResultsOverride, String parameters) throws CloneNotSupportedException {
+                    Integer pagesize, Integer pageTimeout, Long maxResultsOverride, String parameters) throws QueryException, CloneNotSupportedException {
         Principal p = ctx.getCallerPrincipal();
         // TODO: add validation for all these sets
         if (queryLogicName != null) {
-            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(queryLogicName, p);
+            Collection<String> userRoles = (p instanceof DatawavePrincipal) ? ((DatawavePrincipal) p).getPrimaryUser().getRoles() : Collections.emptyList();
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(queryLogicName, userRoles);
             q.setQueryLogicName(logic.getLogicName());
         }
         if (query != null) {
@@ -3244,7 +3257,8 @@ public class QueryExecutorBean implements QueryExecutor {
         // Find the response class
         Class<?> responseClass;
         try {
-            QueryLogic<?> l = queryLogicFactory.getQueryLogic(logicName, p);
+            Collection<String> userRoles = (p instanceof DatawavePrincipal) ? ((DatawavePrincipal) p).getPrimaryUser().getRoles() : Collections.emptyList();
+            QueryLogic<?> l = queryLogicFactory.getQueryLogic(logicName, userRoles);
             QueryLogicTransformer t = l.getTransformer(q);
             BaseResponse refResponse = t.createResponse(emptyList);
             responseClass = refResponse.getClass();

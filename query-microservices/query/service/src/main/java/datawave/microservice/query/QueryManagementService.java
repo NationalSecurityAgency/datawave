@@ -3,26 +3,35 @@ package datawave.microservice.query;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.authorization.user.ProxiedUserDetails;
+import datawave.microservice.common.storage.QueryPool;
+import datawave.microservice.common.storage.QueryStorageCache;
+import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.util.QueryUtil;
+import datawave.security.util.ProxiedEntityUtils;
 import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.PrivateAuditConstants;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
+import datawave.webservice.common.exception.UnauthorizedException;
+import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.exception.UnauthorizedQueryException;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+import datawave.webservice.result.GenericResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 
-import javax.ws.rs.core.HttpHeaders;
-import java.security.Principal;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class QueryManagementService {
@@ -31,34 +40,109 @@ public class QueryManagementService {
     private static final ObjectMapper mapper = new ObjectMapper();
     
     private QueryProperties queryProperties;
+    
+    // Note: QueryParameters need to be request scoped
     private QueryParameters queryParameters;
     private SecurityMarking securityMarking;
+    private QueryLogicFactory queryLogicFactory;
+    private ResponseObjectFactory responseObjectFactory;
+    private QueryStorageCache queryStorageCache;
     
-    // TODO: Pull these from configuration instead
+    // TODO: JWO: Pull these from configuration instead
     private final int PAGE_TIMEOUT_MIN = 1;
     private final int PAGE_TIMEOUT_MAX = QueryExpirationProperties.PAGE_TIMEOUT_MIN_DEFAULT;
     
-    public QueryManagementService(QueryProperties queryProperties, QueryParameters queryParameters, SecurityMarking securityMarking) {
+    public QueryManagementService(QueryProperties queryProperties, QueryParameters queryParameters, SecurityMarking securityMarking,
+                    QueryLogicFactory queryLogicFactory, ResponseObjectFactory responseObjectFactory, QueryStorageCache queryStorageCache) {
         this.queryProperties = queryProperties;
         this.queryParameters = queryParameters;
         this.securityMarking = securityMarking;
+        this.queryLogicFactory = queryLogicFactory;
+        this.responseObjectFactory = responseObjectFactory;
+        this.queryStorageCache = queryStorageCache;
     }
     
-    // A few items that are cached by the validateQuery call
-    private static class QueryData {
-        QueryLogic<?> logic = null;
-        Principal p = null;
-        Set<String> proxyServers = null;
-        String userDn = null;
-        String userid = null;
-        List<String> dnList = null;
+    public TaskKey define(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
+        // validate query and get a query logic
+        QueryLogic<?> queryLogic = validateQuery(queryLogicName, parameters, currentUser);
+        
+        String userId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        log.trace(userId + " has authorizations " + currentUser.getPrimaryUser().getAuths());
+        
+        // set some audit parameters which are used internally
+        String userDn = currentUser.getPrimaryUser().getDn().subjectDN();
+        setInternalAuditParameters(queryLogicName, userDn, parameters);
+        
+        try {
+            // persist the query w/ query id in the query storage cache
+            // TODO: JWO: storeQuery assumes that this is a 'create' call, but this is a 'define' call.
+            // @formatter:off
+            TaskKey taskKey = queryStorageCache.storeQuery(
+                    new QueryPool(getPoolName()),
+                    createQuery(queryLogicName, parameters, userDn, currentUser.getDNs()),
+                    getMaxConcurrentTasks(queryLogic));
+            // @formatter:on
+            
+            // TODO: JWO: Figure out how to make query tracing work with our new architecture. Datawave issue #1155
+            
+            // TODO: JWO: Figure out how to make query metrics work with our new architecture. Datawave issue #1156
+            
+            return taskKey;
+        } catch (DatawaveWebApplicationException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unknown error storing query", e);
+            throw new BadRequestQueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
+        }
+    }
+    
+    protected String getPoolName() {
+        return (queryParameters.getPool() != null) ? queryParameters.getPool() : queryProperties.getDefaultParams().getPool();
+    }
+    
+    protected int getMaxConcurrentTasks(QueryLogic<?> queryLogic) {
+        // if there's an override, use it
+        if (queryParameters.isMaxConcurrentTasksOverridden()) {
+            return queryParameters.getMaxConcurrentTasks();
+        }
+        // if the query logic has a limit, use it
+        else if (queryLogic.getMaxConcurrentTasks() > 0) {
+            return queryLogic.getMaxConcurrentTasks();
+        }
+        // otherwise, use the configuration default
+        else {
+            return queryProperties.getDefaultParams().getMaxConcurrentTasks();
+        }
+    }
+    
+    protected Query createQuery(String queryLogicName, MultiValueMap<String,String> parameters, String userDn, List<String> dnList) {
+        Query q = responseObjectFactory.getQueryImpl();
+        q.initialize(userDn, dnList, queryLogicName, queryParameters, queryParameters.getUnknownParameters(parameters));
+        q.setColumnVisibility(securityMarking.toColumnVisibilityString());
+        q.setUncaughtExceptionHandler(new QueryUncaughtExceptionHandler());
+        Thread.currentThread().setUncaughtExceptionHandler(q.getUncaughtExceptionHandler());
+        return q;
     }
     
     /**
      * This method will provide some initial query validation for the define and create query calls.
      */
-    private void validateQuery(String queryLogicName, MultiValueMap<String,String> parameters, HttpHeaders httpHeaders) throws QueryException {
+    protected QueryLogic<?> validateQuery(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
+                    throws QueryException {
+        // validate the query parameters
+        validateParameters(queryLogicName, parameters);
         
+        // create the query logic, and perform query logic parameter validation
+        QueryLogic<?> queryLogic = createQueryLogic(queryLogicName, currentUser);
+        validateQueryLogic(queryLogic, parameters, currentUser);
+        
+        // validate the security markings
+        validateSecurityMarkings(parameters);
+        
+        return queryLogic;
+    }
+    
+    protected void validateParameters(String queryLogicName, MultiValueMap<String,String> parameters) throws QueryException {
         // add query logic name to parameters
         parameters.add(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         
@@ -100,66 +184,76 @@ public class QueryManagementService {
             log.error("Invalid begin and/or end date: " + queryParameters.getBeginDate() + " - " + queryParameters.getEndDate());
             throw new BadRequestQueryException(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE);
         }
+    }
+    
+    protected QueryLogic<?> createQueryLogic(String queryLogicName, ProxiedUserDetails currentUser) throws QueryException {
+        // will throw IllegalArgumentException if not defined
+        try {
+            return queryLogicFactory.getQueryLogic(queryLogicName, currentUser.getPrimaryUser().getRoles());
+        } catch (Exception e) {
+            log.error("Failed to get query logic for " + queryLogicName, e);
+            throw new BadRequestQueryException(DatawaveErrorCode.QUERY_LOGIC_ERROR, e);
+        }
+    }
+    
+    protected void validateQueryLogic(QueryLogic<?> queryLogic, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
+        queryLogic.validate(parameters);
         
-        // // TODO: Get this working!
-        // // will throw IllegalArgumentException if not defined
-        // try {
-        // qd.logic = queryLogicFactory.getQueryLogic(queryLogicName, ctx.getCallerPrincipal());
-        // } catch (Exception e) {
-        // log.error("Failed to get query logic for " + queryLogicName, e);
-        // throw new BadRequestQueryException(DatawaveErrorCode.QUERY_LOGIC_ERROR, e);
-        // }
-        // qd.logic.validate(parameters);
-        //
-        // try {
-        // securityMarking.clear();
-        // securityMarking.validate(parameters);
-        // } catch (IllegalArgumentException e) {
-        // log.error("Failed security markings validation", e);
-        // throw new BadRequestQueryException(DatawaveErrorCode.SECURITY_MARKING_CHECK_ERROR, e);
-        // }
-        // // Find out who/what called this method
-        // qd.proxyServers = null;
-        // qd.p = ctx.getCallerPrincipal();
-        // qd.userDn = qd.p.getName();
-        // qd.userid = qd.userDn;
-        // qd.dnList = Collections.singletonList(qd.userid);
-        // if (qd.p instanceof DatawavePrincipal) {
-        // DatawavePrincipal dp = (DatawavePrincipal) qd.p;
-        // qd.userid = dp.getShortName();
-        // qd.userDn = dp.getUserDN().subjectDN();
-        // String[] dns = dp.getDNs();
-        // Arrays.sort(dns);
-        // qd.dnList = Arrays.asList(dns);
-        // qd.proxyServers = dp.getProxyServers();
-        // }
-        // log.trace(qd.userid + " has authorizations " + ((qd.p instanceof DatawavePrincipal) ? ((DatawavePrincipal) qd.p).getAuthorizations() : ""));
-        //
-        // // always check against the max
-        // if (qd.logic.getMaxPageSize() > 0 && queryParameters.getPagesize() > qd.logic.getMaxPageSize()) {
-        // log.error("Invalid page size: " + queryParameters.getPagesize() + " vs " + qd.logic.getMaxPageSize());
-        // throw new BadRequestQueryException(DatawaveErrorCode.PAGE_SIZE_TOO_LARGE, MessageFormat.format("Max = {0}.", qd.logic.getMaxPageSize()));
-        // }
-        //
-        // // validate the max results override relative to the max results on a query logic
-        // // privileged users however can set whatever they want
-        // if (queryParameters.isMaxResultsOverridden() && qd.logic.getMaxResults() >= 0) {
-        // if (!ctx.isCallerInRole(PRIVILEGED_USER)) {
-        // if (queryParameters.getMaxResultsOverride() < 0 || (qd.logic.getMaxResults() < queryParameters.getMaxResultsOverride())) {
-        // log.error("Invalid max results override: " + queryParameters.getMaxResultsOverride() + " vs " + qd.logic.getMaxResults());
-        // throw new BadRequestQueryException(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE);
-        // }
-        // }
-        // }
-        //
-        // // Set private audit-related parameters, stripping off any that the user might have passed in first.
-        // // These are parameters that aren't passed in by the user, but rather are computed from other sources.
-        // PrivateAuditConstants.stripPrivateParameters(parameters);
-        // parameters.add(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-        // parameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
-        // parameters.add(PrivateAuditConstants.USER_DN, qd.userDn);
-        //
-        // return qd;
+        // always check against the max
+        if (queryLogic.getMaxPageSize() > 0 && queryParameters.getPagesize() > queryLogic.getMaxPageSize()) {
+            log.error("Invalid page size: " + queryParameters.getPagesize() + " vs " + queryLogic.getMaxPageSize());
+            throw new BadRequestQueryException(DatawaveErrorCode.PAGE_SIZE_TOO_LARGE, MessageFormat.format("Max = {0}.", queryLogic.getMaxPageSize()));
+        }
+        
+        // If the user is not privileged, make sure they didn't exceed the limits for the following parameters
+        if (!currentUser.getPrimaryUser().getRoles().contains(queryProperties.getPrivilegedRole())) {
+            // validate the max results override relative to the max results on a query logic
+            // privileged users however can set whatever they want
+            if (queryParameters.isMaxResultsOverridden() && queryLogic.getMaxResults() >= 0) {
+                if (queryParameters.getMaxResultsOverride() < 0 || (queryLogic.getMaxResults() < queryParameters.getMaxResultsOverride())) {
+                    log.error("Invalid max results override: " + queryParameters.getMaxResultsOverride() + " vs " + queryLogic.getMaxResults());
+                    throw new BadRequestQueryException(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE);
+                }
+            }
+            
+            // validate the max concurrent tasks override relative to the max concurrent tasks on a query logic
+            // privileged users however can set whatever they want
+            if (queryParameters.isMaxConcurrentTasksOverridden() && queryLogic.getMaxConcurrentTasks() >= 0) {
+                if (queryParameters.getMaxConcurrentTasks() < 0 || (queryLogic.getMaxConcurrentTasks() < queryParameters.getMaxConcurrentTasks())) {
+                    log.error("Invalid max concurrent tasks override: " + queryParameters.getMaxConcurrentTasks() + " vs "
+                                    + queryLogic.getMaxConcurrentTasks());
+                    throw new BadRequestQueryException(DatawaveErrorCode.INVALID_MAX_CONCURRENT_TASKS_OVERRIDE);
+                }
+            }
+        }
+        
+        // Verify that the calling principal has access to the query logic.
+        List<String> dnList = currentUser.getDNs();
+        if (!queryLogic.containsDNWithAccess(dnList)) {
+            UnauthorizedQueryException qe = new UnauthorizedQueryException("None of the DNs used have access to this query logic: " + dnList, 401);
+            GenericResponse<String> response = new GenericResponse<>();
+            response.addException(qe);
+            throw new UnauthorizedException(qe, response);
+        }
+    }
+    
+    protected void validateSecurityMarkings(MultiValueMap<String,String> parameters) throws QueryException {
+        try {
+            securityMarking.clear();
+            securityMarking.validate(parameters);
+        } catch (IllegalArgumentException e) {
+            log.error("Failed security markings validation", e);
+            throw new BadRequestQueryException(DatawaveErrorCode.SECURITY_MARKING_CHECK_ERROR, e);
+        }
+    }
+    
+    protected void setInternalAuditParameters(String queryLogicName, String userDn, MultiValueMap<String,String> parameters) {
+        // Set private audit-related parameters, stripping off any that the user might have passed in first.
+        // These are parameters that aren't passed in by the user, but rather are computed from other sources.
+        PrivateAuditConstants.stripPrivateParameters(parameters);
+        parameters.add(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        parameters.set(PrivateAuditConstants.COLUMN_VISIBILITY, securityMarking.toColumnVisibilityString());
+        parameters.add(PrivateAuditConstants.USER_DN, userDn);
     }
     
     private String writeValueAsString(Object object) {

@@ -1,6 +1,7 @@
 package datawave.webservice.query;
 
 import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.QueryParametersImpl;
 import datawave.microservice.query.QueryPersistence;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
