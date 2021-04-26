@@ -10,13 +10,8 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.logic.CheckpointableQueryLogic;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -24,8 +19,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**

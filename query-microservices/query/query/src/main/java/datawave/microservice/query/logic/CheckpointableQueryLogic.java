@@ -1,4 +1,4 @@
-package datawave.webservice.query.logic;
+package datawave.microservice.query.logic;
 
 import datawave.microservice.common.storage.QueryCheckpoint;
 import datawave.microservice.common.storage.QueryKey;

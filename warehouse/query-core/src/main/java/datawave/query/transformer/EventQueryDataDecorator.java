@@ -21,7 +21,7 @@ public class EventQueryDataDecorator {
     @Inject
     private ResponseObjectFactory responseObjectFactory;
     
-    private EventQueryDataDecorator() {}
+    public EventQueryDataDecorator() {}
     
     public void decorateData(Multimap<String,FieldBase> data) {
         // Get the values for the FieldName to put the decorated data into

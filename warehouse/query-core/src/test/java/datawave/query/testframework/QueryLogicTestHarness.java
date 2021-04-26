@@ -15,7 +15,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.CheckpointableQueryLogic;
+import datawave.microservice.query.logic.CheckpointableQueryLogic;
 import java.util.LinkedList;
 import java.util.Queue;
 import org.apache.accumulo.core.client.Connector;
@@ -101,7 +101,7 @@ public class QueryLogicTestHarness {
                 // create a new instance of the logic
                 try {
                     logic = (BaseQueryLogic<Map.Entry<Key,Value>>) factory.getQueryLogic(logic.getLogicName());
-                } catch (CloneNotSupportedException e) {
+                } catch (CloneNotSupportedException | QueryException e) {
                     Assert.fail("Failed to recreate checkpointable query logic  for " + logic.getLogicName() + ": " + e.getMessage());
                 }
                 // now reset the logic given the checkpoint
@@ -115,7 +115,7 @@ public class QueryLogicTestHarness {
                 if (iter.hasNext()) {
                     actualResults = processResult(actualResults, iter.next(), checkers);
                     cps.addAll(((CheckpointableQueryLogic) logic).checkpoint(queryKey));
-
+                    
                 }
             }
         } else {

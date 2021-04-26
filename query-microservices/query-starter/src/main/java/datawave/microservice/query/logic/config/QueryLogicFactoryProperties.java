@@ -1,12 +1,17 @@
-package datawave.microservice.query.config;
+package datawave.microservice.query.logic.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @ConfigurationProperties(prefix = "query.logic.factory")
 public class QueryLogicFactoryProperties {
     private String xmlBeansPath = "classpath:QueryLogicFactory.xml";
     private int maxPageSize = 10000;
     private long pageByteTrigger = 0;
+    
+    private Map<String,String> querySyntaxParsers = new HashMap<>();
     
     public String getXmlBeansPath() {
         return xmlBeansPath;
@@ -30,5 +35,13 @@ public class QueryLogicFactoryProperties {
     
     public void setPageByteTrigger(long pageByteTrigger) {
         this.pageByteTrigger = pageByteTrigger;
+    }
+    
+    public Map<String,String> getQuerySyntaxParsers() {
+        return querySyntaxParsers;
+    }
+    
+    public void setQuerySyntaxParsers(Map<String,String> querySyntaxParsers) {
+        this.querySyntaxParsers = querySyntaxParsers;
     }
 }
