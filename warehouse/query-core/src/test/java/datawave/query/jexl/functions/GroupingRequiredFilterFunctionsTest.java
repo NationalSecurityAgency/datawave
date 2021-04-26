@@ -1,7 +1,9 @@
 package datawave.query.jexl.functions;
 
 import com.google.common.collect.Lists;
+import datawave.data.type.DateType;
 import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.ValueTuple;
@@ -9,6 +11,8 @@ import org.apache.accumulo.core.data.Key;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -21,6 +25,11 @@ public class GroupingRequiredFilterFunctionsTest {
         TypeAttribute<String> typeAttribute = new TypeAttribute<>(type, new Key(), true);
         String normalized = tokens[2];
         return new ValueTuple(field, type, normalized, typeAttribute);
+    }
+
+    private ValueTuple makeTypedValueTuple(final String field, Type type) {
+        TypeAttribute<?> typeAttribute = new TypeAttribute<>(type, new Key(), true);
+        return new ValueTuple(field, type,type.getDelegate(), typeAttribute);
     }
     
     @Test
@@ -194,5 +203,83 @@ public class GroupingRequiredFilterFunctionsTest {
         
         Assert.assertTrue(groups.size() == 3);
         // @formatter:on
+    }
+
+    @Test
+    public void testMatchesInGroupLeftWithRange() {
+        /**
+         * Test for number type.
+         */
+        Collection<?> groups = GroupingRequiredFilterFunctions.matchesInGroupLeftRange(Lists.newArrayList(
+                makeTypedValueTuple("NAME.grandparent_0.parent_0.child_1", new NumberType("25"))),
+                 25, 30,makeTypedValueTuple("NAME.grandparent_0.parent_1.child_0",new NumberType("40")), 10,100, 1
+        );
+
+        Assert.assertTrue(groups.size() == 2);
+
+        /**
+         * Test for strings
+         */
+        groups = GroupingRequiredFilterFunctions.matchesInGroupLeftRange(Lists.newArrayList(
+                makeTypedValueTuple("NAME.grandparent_0.parent_0.child_1",new LcNoDiacriticsType("cat"))),
+                "aabc","zzz",
+                makeTypedValueTuple("NAME.grandparent_0.parent_1.child_0",new LcNoDiacriticsType("40")),
+                "30","50",1);
+        Assert.assertTrue(groups.size() == 2);
+
+        /**
+         * Test for mixed types.
+         */
+        try {
+            groups = GroupingRequiredFilterFunctions.matchesInGroupLeftRange(Lists.newArrayList(
+                    makeTypedValueTuple("NAME.grandparent_0.parent_0.child_1", new NumberType("25"))),
+                    "aabc", "zzz",
+                    makeTypedValueTuple("NAME.grandparent_0.parent_1.child_0", new LcNoDiacriticsType("40")),
+                    "30", "50", 1);
+            Assert.fail("Expected a Number format exception");
+        }catch(NumberFormatException e){
+
+        }
+
+        try {
+            groups = GroupingRequiredFilterFunctions.matchesInGroupLeftRange(Lists.newArrayList(
+                    makeTypedValueTuple("NAME.grandparent_0.parent_0.child_1", new NumberType("25"))),
+                    "\u0000", "\uffff",
+                    makeTypedValueTuple("NAME.grandparent_0.parent_1.child_0", new LcNoDiacriticsType("40")),
+                    "30", "50", 1);
+            Assert.fail("Expected a Number format exception");
+        }catch(NumberFormatException e){
+
+        }
+
+
+        /**
+         * Date types
+         * HH:mm:ssz
+         */
+
+        groups = GroupingRequiredFilterFunctions.matchesInGroupLeftRange(Lists.newArrayList(
+                makeTypedValueTuple("NAME.grandparent_0.parent_0.child_1", new DateType("2021-01-20 23:00:00"))),
+                "2019-12-31 23:00:00", "2021-12-31 23:00:00",makeTypedValueTuple("NAME.grandparent_0.parent_1.child_0",new DateType("2021-04-26 23:00:00")), "2019-12-31 23:00:00","2021-04-28 23:00:00", 1
+        );
+
+        Assert.assertTrue(groups.size() == 2);
+
+        // not a match .
+
+        groups = GroupingRequiredFilterFunctions.matchesInGroupLeftRange(Lists.newArrayList(
+                makeTypedValueTuple("NAME.grandparent_0.parent_0.child_1", new DateType("2021-01-20 23:00:00"))),
+                "2019-12-31 23:00:00", "2021-12-31 23:00:00",makeTypedValueTuple("NAME.grandparent_0.parent_1.child_0",new DateType("2022-04-26 23:00:00")), "2019-12-31 23:00:00","2021-04-28 23:00:00", 1
+        );
+
+        Assert.assertTrue(groups.size() == 0);
+
+        groups = GroupingRequiredFilterFunctions.matchesInGroupLeftRange(Lists.newArrayList(
+                makeTypedValueTuple("NAME.grandparent_0.parent_0.child_1", new DateType("2021-01-20 23:00:00"))),
+                "2019-12-31 23:00:00", "2021-12-31 23:00:00",makeTypedValueTuple("NAME.grandparent_0.parent_1.child_0",new DateType("2022-04-26 23:00:00")), "2019-12-31 23:00:00","2021-04-28 23:00:00", 0
+        );
+
+        Assert.assertTrue(groups.size() == 0);
+
     }
 }

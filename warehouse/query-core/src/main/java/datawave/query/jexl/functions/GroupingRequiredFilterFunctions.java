@@ -1,8 +1,10 @@
 package datawave.query.jexl.functions;
 
 import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
 import org.apache.log4j.Logger;
 
+import org.apache.commons.lang3.Range;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -310,6 +312,109 @@ public class GroupingRequiredFilterFunctions {
         }
         return Collections.unmodifiableCollection(allMatches);
     }
+
+    /**
+     * <pre>
+     * 'args' will be either a matched set of field/regex pairs, or a matched set of field/regex pairs followed by an index integer,
+     * in which case the integer is a zero based value to determine where to split off the 'group'.
+     * FOO.1 with a index of '0' will split off '1'
+     * FOO.BLAH.ZIP.0 with an index of '2' will split off 'BLAH.ZIP.0'
+     * If no index is supplied, the default is 0
+     * </pre>
+     *
+     * @param args
+     * @return a collection of matches
+     */
+    public static Collection<?> matchesInGroupLeftRange(Object... args) {
+        if (log.isTraceEnabled()) {
+            log.trace("matchesInGroupLeftRange(" + Arrays.asList(args) + ")");
+        }
+        // positionFrom is either '0', or it is the integer value of the last argument
+        // when the argumentCount is odd
+        int positionFromLeft = 0;
+        if (args.length % 3 != 0) { // it's odd
+            Object lastArgument = args[args.length - 1];
+            positionFromLeft = Integer.parseInt(lastArgument.toString());
+        }
+        Collection<ValueTuple> firstMatches;
+        Collection<ValueTuple> allMatches = new HashSet<>();
+        Object fieldValue1 = args[0];
+        Object lowerBound = args[1];
+        Object upperBound = args[2];
+        if (fieldValue1 instanceof Iterable) {
+            // cast as Iterable in order to call the right getAllMatches method
+            firstMatches = EvaluationPhaseFilterFunctions.getWithinInclusiveRange((Iterable) fieldValue1, lowerBound, upperBound);
+        } else {
+            firstMatches = EvaluationPhaseFilterFunctions.getWithinInclusiveRange(ValueTuple.toValueTuple(fieldValue1), lowerBound,upperBound);
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("firstMatches = " + firstMatches);
+        }
+
+        for (ValueTuple currentMatch : firstMatches) {
+            String matchFieldName = ValueTuple.getFieldName(currentMatch);
+            // my firstMatches will be a collection that looks like [NAME.grandparent_0.parent_0.child_0:SANTINO]
+            String theFirstMatch = EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(matchFieldName, positionFromLeft);
+
+            for (int i = 3; i < args.length; i += 3) {
+
+                if (args[i] instanceof Iterable) {
+                    // args[i] is a collection that looks like:
+                    // [[NAME.grandparent_0.parent_1.child_0,LUCA,luca],
+                    // [NAME.grandparent_0.parent_0.child_2,MICHAEL,michael],
+                    // [NAME.grandparent_0.parent_1.child_1,VINCENT,vincent],
+                    // [NAME.grandparent_0.parent_0.child_0,SANTINO,santino],
+                    // [NAME.grandparent_0.parent_0.child_1,FREDO,fredo],
+                    // [NAME.grandparent_0.parent_0.child_3,CONSTANZIA,constanzia]]
+                    // let's say that regex is 'FREDO'
+                    // Assuming that positionFromLeft is 0, then for each of these, I will consider only the ones that have a match on
+                    // grandparent_0.parent_0, then I will see if the name matches my regex (FREDO)
+                    // If the positionFromLeft were 1, I would consider all of the above that include grandparent.0, and then
+                    // look for a match on FREDO
+                    for (Object fieldValue : (Iterable) args[i]) {
+                        String fieldName = ValueTuple.getFieldName(fieldValue);
+                        // @formatter:off
+                        manageMatchesInGroupLeftRemainingArgs(fieldValue,
+                                args[i + 1],
+                                args[i + 2],
+                                allMatches, theFirstMatch,
+                                EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(fieldName, positionFromLeft), // the next match
+                                currentMatch);
+                        // @formatter:on
+                    }
+                } else if (args[i] instanceof ValueTuple) {
+                    // args[i] is a ValueTuple that looks like:
+                    // [NAME.grandparent_0.parent_0.child_1,FREDO,fredo],
+                    // let's say that regex is 'FREDO'
+                    // Assuming that positionFromLeft is 0, then for each of these, I will consider only the ones that have a match on
+                    // grandparent_0.parent_0, then I will see if the name matches my regex (FREDO)
+                    // If the positionFromLeft were 1, I would consider all of the above that include grandparent.0, and then
+                    // look for a match on FREDO
+                    Object fieldValue = args[i];
+                    String fieldName = ValueTuple.getFieldName(fieldValue);
+                    // @formatter:off
+                    manageMatchesInGroupLeftRemainingArgs(fieldValue,
+                            args[i + 1],
+                            args[i + 2],
+                            allMatches, theFirstMatch,
+                            EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(fieldName, positionFromLeft), // the next match
+                            currentMatch);
+                    // @formatter:on
+                }
+            }
+        }
+
+        // if there was a match found at all levels, then the matches.size will be equal to the
+        // number of field/regex pairs
+        if (allMatches.size() < args.length / 3) { // truncated in case args.length was odd
+            allMatches.clear();
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace("returning matches:" + allMatches);
+        }
+        return Collections.unmodifiableCollection(allMatches);
+    }
     
     private static void manageMatchesInGroupLeftRemainingArgs(Object fieldValue, String regex, Collection<ValueTuple> allMatches, String theFirstMatch,
                     String theNextMatch, ValueTuple currentMatch) {
@@ -319,6 +424,18 @@ public class GroupingRequiredFilterFunctions {
                 log.trace("\tfirst match equals the second: " + theFirstMatch + " == " + theNextMatch);
             }
             allMatches.addAll(EvaluationPhaseFilterFunctions.includeRegex(fieldValue, regex));
+            allMatches.add(currentMatch);
+        }
+    }
+
+    private static void manageMatchesInGroupLeftRemainingArgs(Object fieldValue, Object lowerBound, Object upperBound, Collection<ValueTuple> allMatches, String theFirstMatch,
+                                                              String theNextMatch, ValueTuple currentMatch) {
+
+        if (theNextMatch != null && theNextMatch.equals(theFirstMatch)) {
+            if (log.isTraceEnabled()) {
+                log.trace("\tfirst match equals the second: " + theFirstMatch + " == " + theNextMatch);
+            }
+            allMatches.addAll(EvaluationPhaseFilterFunctions.getWithinInclusiveRange((ValueTuple)fieldValue, lowerBound,upperBound));
             allMatches.add(currentMatch);
         }
     }

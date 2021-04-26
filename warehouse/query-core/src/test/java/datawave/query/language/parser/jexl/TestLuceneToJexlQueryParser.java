@@ -54,6 +54,8 @@ public class TestLuceneToJexlQueryParser {
         Assert.assertEquals("grouping:matchesInGroup(FOO, 'foo', BAR, 'bar')", parseQuery("#MATCHES_IN_GROUP(FOO, foo, BAR, bar)"));
         Assert.assertEquals("grouping:matchesInGroupLeft(FOO, 'foo', BAR, 'bar')", parseQuery("#MATCHES_IN_GROUP_LEFT(FOO, 'foo', BAR, 'bar')"));
         Assert.assertEquals("grouping:matchesInGroupLeft(FOO, 'foo', BAR, 'bar')", parseQuery("#MATCHES_IN_GROUP_LEFT(FOO, foo, BAR, bar)"));
+        Assert.assertEquals("grouping:matchesInGroupLeftRange(FOO, 'foo', 'food', BAR, 'bar', 'bard')", parseQuery("#MATCHES_IN_GROUP_LEFT_RANGE(FOO, 'foo','food', BAR, 'bar','bard')"));
+        Assert.assertEquals("grouping:matchesInGroupLeftRange(FOO, 'foo', 'food', BAR, 'bar', 'bard')", parseQuery("#MATCHES_IN_GROUP_LEFT_RANGE(FOO, foo, food, BAR, bar,bard)"));
     }
     
     @Test

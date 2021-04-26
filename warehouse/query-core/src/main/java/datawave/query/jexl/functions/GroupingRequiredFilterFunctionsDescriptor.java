@@ -29,7 +29,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
      *
      */
     public static class GroupingRequiredFilterJexlArgumentDescriptor implements JexlArgumentDescriptor {
-        private static final ImmutableSet<String> groupingRequiredFunctions = ImmutableSet.of("atomValuesMatch", "matchesInGroup", "matchesInGroupLeft",
+        private static final ImmutableSet<String> groupingRequiredFunctions = ImmutableSet.of("atomValuesMatch", "matchesInGroup", "matchesInGroupLeft","matchesInGroupLeftRange",
                         "getGroupsForMatchesInGroup");
         
         private final ASTFunctionNode node;
