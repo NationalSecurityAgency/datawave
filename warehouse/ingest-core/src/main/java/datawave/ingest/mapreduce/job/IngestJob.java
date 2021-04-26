@@ -338,7 +338,7 @@ public class IngestJob implements Tool {
                 configureBulkPartitionerAndOutputFormatter(job, cbHelper, conf, outputFs);
             } catch (Exception e) {
                 log.error(e);
-                log.error("Deleting orphaned directory: " + workDirPath);
+                log.info("Deleting orphaned directory: " + workDirPath);
                 try {
                     inputFs.delete(workDirPath, true);
                 } catch (Exception er) {
@@ -1306,18 +1306,18 @@ public class IngestJob implements Tool {
         // that when copying across clusters.
         //@formatter:off
         DistCpOptions options = new DistCpOptions.Builder(Collections.singletonList(srcPath), destPath)
-                .withLogPath(logPath)
-                .withMapBandwidth(distCpBandwidth)
-                .maxMaps(distCpMaxMaps)
-                .withCopyStrategy(distCpStrategy)
-                .withSyncFolder(true)
-                .preserve(DistCpOptions.FileAttribute.USER)
-                .preserve(DistCpOptions.FileAttribute.GROUP)
-                .preserve(DistCpOptions.FileAttribute.PERMISSION)
-                .preserve(DistCpOptions.FileAttribute.BLOCKSIZE)
-                .preserve(DistCpOptions.FileAttribute.CHECKSUMTYPE)
-                .withBlocking(true)
-                .build();
+            .withLogPath(logPath)
+            .withMapBandwidth(distCpBandwidth)
+            .maxMaps(distCpMaxMaps)
+            .withCopyStrategy(distCpStrategy)
+            .withSyncFolder(true)
+            .preserve(DistCpOptions.FileAttribute.USER)
+            .preserve(DistCpOptions.FileAttribute.GROUP)
+            .preserve(DistCpOptions.FileAttribute.PERMISSION)
+            .preserve(DistCpOptions.FileAttribute.BLOCKSIZE)
+            .preserve(DistCpOptions.FileAttribute.CHECKSUMTYPE)
+            .withBlocking(true)
+            .build();
         //@formatter:on
         
         DistCp cp = new DistCp(distcpConfig, options);
