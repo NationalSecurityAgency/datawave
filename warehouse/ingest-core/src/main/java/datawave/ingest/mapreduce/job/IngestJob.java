@@ -338,7 +338,7 @@ public class IngestJob implements Tool {
                 configureBulkPartitionerAndOutputFormatter(job, cbHelper, conf, outputFs);
             } catch (Exception e) {
                 log.error(e);
-                log.error("Deleting orphaned directory: " + workDirPath);
+                log.info("Deleting orphaned directory: " + workDirPath);
                 try {
                     inputFs.delete(workDirPath, true);
                 } catch (Exception er) {
