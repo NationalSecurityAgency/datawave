@@ -9,11 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MatchesInGroupLeftRange extends JexlQueryFunction {
-
+    
     public MatchesInGroupLeftRange() {
         super("matches_in_group_left_range", new ArrayList<>());
     }
-
+    
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() < 3) {
@@ -26,12 +26,12 @@ public class MatchesInGroupLeftRange extends JexlQueryFunction {
                 Integer.parseInt(shouldBeANumber);
             } catch (Exception ex) {
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", ex,
-                        this.name));
+                                this.name));
                 throw new IllegalArgumentException(qe);
             }
         }
     }
-
+    
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -51,10 +51,10 @@ public class MatchesInGroupLeftRange extends JexlQueryFunction {
         sb.append(")");
         return sb.toString();
     }
-
+    
     @Override
     public QueryFunction duplicate() {
         return new MatchesInGroupLeftRange();
     }
-
+    
 }

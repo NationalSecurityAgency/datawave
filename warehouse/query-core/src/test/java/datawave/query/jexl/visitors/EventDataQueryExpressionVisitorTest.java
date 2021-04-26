@@ -695,7 +695,7 @@ public class EventDataQueryExpressionVisitorTest {
         assertNull(filter.get("BAR"));
         assertFilters(testData, filter);
     }
-
+    
     @Test
     public void testGroupingFunctionRegex() throws Exception {
         String originalQuery = "grouping:matchesInGroup(FOO, 'abc.*')";
@@ -780,13 +780,13 @@ public class EventDataQueryExpressionVisitorTest {
         assertFilters(testData, filter);
         
     }
-
+    
     @Test
     public void testGroupingFunctionRange() throws Exception {
-        String originalQuery = "grouping:matchesInGroupLeft(FOO, 'a','b', BAR, 'de','def', 2)";
+        String originalQuery = "grouping:matchesInGroupLeftRange(FOO, 'a','b', BAR, 'de','def', 2)";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
-
+        
         // @formatter:off
         Object[][] testData = {
                 { "FOO", createKey("FOO", "abc"), TRUE },
@@ -803,13 +803,12 @@ public class EventDataQueryExpressionVisitorTest {
                 { "FOO", createKey("FOO.1", "def"), FALSE }
         };
         // @formatter:on
-
         assertNotNull(filter.get("FOO"));
         assertNotNull(filter.get("BAR"));
         assertNull(filter.get("FOO.1"));
         assertNull(filter.get("BAR.1"));
         assertFilters(testData, filter);
-
+        
     }
     
     @Test
