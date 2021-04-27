@@ -118,7 +118,7 @@ public class SharedCacheCoordinatorTest {
             for (int i = 0; i < 50; ++i) {
                 if (ConnectionState.RECONNECTED.equals(state[0]))
                     break;
-                Thread.sleep(1000);
+                Thread.sleep(1000L);
             }
             assertEquals("Client never reconnected.", ConnectionState.RECONNECTED, state[0]);
             
