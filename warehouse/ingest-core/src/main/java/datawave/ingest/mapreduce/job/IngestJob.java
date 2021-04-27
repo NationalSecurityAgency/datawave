@@ -342,7 +342,7 @@ public class IngestJob implements Tool {
                 try {
                     inputFs.delete(workDirPath, true);
                 } catch (Exception er) {
-                    log.error("Unable to remove directory: " + workDirPath);
+                    log.error("Unable to remove directory: " + workDirPath, er);
                 }
                 return -1;
             }
