@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@CacheConfig(cacheNames = QueryCache.CACHE_NAME)
+@CacheConfig(cacheNames = QueryCache.CACHE_NAME, cacheManager = "queryStorageCacheManager")
 public class QueryCache {
     private final static Logger log = Logger.getLogger(QueryCache.class);
     
@@ -36,7 +36,7 @@ public class QueryCache {
      *            The query checkpoint
      * @return The new query task
      */
-    @CachePut(key = "#result.getTaskKey().toKey()")
+    @CachePut(key = "#result.getTaskKey().toKey()", cacheManager = "queryStorageCacheManager")
     public QueryTask addQueryTask(QueryTask.QUERY_ACTION action, QueryCheckpoint checkpoint) {
         QueryTask task = new QueryTask(action, checkpoint);
         logTask("Adding task", task);
@@ -52,7 +52,7 @@ public class QueryCache {
      *            The new query checkpoint
      * @return The updated query task
      */
-    @CachePut(key = "#result.getTaskKey().toKey()")
+    @CachePut(key = "#result.getTaskKey().toKey()", cacheManager = "queryStorageCacheManager")
     public QueryTask updateQueryTask(TaskKey taskKey, QueryCheckpoint checkpoint) {
         if (!checkpoint.getQueryKey().equals(taskKey)) {
             throw new IllegalArgumentException("Checkpoint query key " + checkpoint.getQueryKey() + " does not match " + taskKey);
@@ -72,7 +72,7 @@ public class QueryCache {
      * @param taskKey
      *            The task key
      */
-    @CacheEvict(key = "#taskKey.toKey()")
+    @CacheEvict(key = "#taskKey.toKey()", cacheManager = "queryStorageCacheManager")
     public void deleteTask(TaskKey taskKey) {
         if (log.isDebugEnabled()) {
             log.debug("Deleted task " + taskKey);
@@ -114,7 +114,7 @@ public class QueryCache {
      * 
      * @return a clear message
      */
-    @CacheEvict(allEntries = true)
+    @CacheEvict(allEntries = true, cacheManager = "queryStorageCacheManager")
     public String clear() {
         log.debug("Clearing all tasks");
         return "Cleared " + CACHE_NAME + " cache";

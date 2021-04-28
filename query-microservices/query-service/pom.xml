@@ -12,7 +12,6 @@
     <packaging>pom</packaging>
     <modules>
         <module>api</module>
-        <module>query</module>
         <module>service</module>
     </modules>
     <repositories>

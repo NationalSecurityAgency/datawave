@@ -6,6 +6,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +17,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ContextConfiguration(classes = QueryLogicFactoryTest.TestConfiguration.class)
 @ActiveProfiles({"QueryLogicFactoryTest"})
 public class QueryLogicFactoryTest {
     
@@ -24,20 +24,20 @@ public class QueryLogicFactoryTest {
     QueryLogicFactory queryLogicFactory;
     
     @Test
-    public void queryLogicFactoryInitTest() throws QueryException, CloneNotSupportedException {
+    public void createShardQueryLogicTest() throws QueryException, CloneNotSupportedException {
         QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic("EventQuery");
         
         System.out.println("done!");
     }
     
+    @ComponentScan(basePackages = "datawave.microservice")
     @Configuration
     @Profile("QueryLogicFactoryTest")
-    @ComponentScan(basePackages = "datawave.microservice")
     public static class TestConfiguration {
         
     }
     
-    @SpringBootApplication(scanBasePackages = "datawave.microservice")
+    @SpringBootApplication(scanBasePackages = "datawave.microservice", exclude = {ErrorMvcAutoConfiguration.class})
     public static class TestApplication {
         public static void main(String[] args) {
             SpringApplication.run(QueryLogicFactoryTest.TestApplication.class, args);

@@ -144,7 +144,7 @@ public class BaseEventQueryConfiguration {
         Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
         for (Map.Entry<String,String> entry : baseEventQueryProperties().getQuerySyntaxParsers().entrySet()) {
             if (!entry.getKey().isEmpty()) {
-                querySyntaxParsers.put(entry.getKey(), appContext.getBean(entry.getValue(), QueryParser.class));
+                querySyntaxParsers.put(entry.getKey(), (!entry.getValue().isEmpty()) ? appContext.getBean(entry.getValue(), QueryParser.class) : null);
             }
         }
         return querySyntaxParsers;

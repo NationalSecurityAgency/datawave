@@ -87,39 +87,39 @@ public class IvaratorCacheDirConfig {
         
         return result;
     }
-
+    
     public String getBasePathURI() {
         return basePathURI;
     }
-
+    
     public void setBasePathURI(String basePathURI) {
         this.basePathURI = basePathURI;
     }
-
+    
     public int getPriority() {
         return priority;
     }
-
+    
     public void setPriority(int priority) {
         this.priority = priority;
     }
-
+    
     public long getMinAvailableStorageMiB() {
         return minAvailableStorageMiB;
     }
-
+    
     public void setMinAvailableStorageMiB(long minAvailableStorageMiB) {
         this.minAvailableStorageMiB = minAvailableStorageMiB;
     }
-
+    
     public double getMinAvailableStoragePercent() {
         return minAvailableStoragePercent;
     }
-
+    
     public void setMinAvailableStoragePercent(double minAvailableStoragePercent) {
         this.minAvailableStoragePercent = minAvailableStoragePercent;
     }
-
+    
     public static String toJson(IvaratorCacheDirConfig ivaratorCacheDirConfig) throws JsonProcessingException {
         return toJson(Collections.singletonList(ivaratorCacheDirConfig));
     }
