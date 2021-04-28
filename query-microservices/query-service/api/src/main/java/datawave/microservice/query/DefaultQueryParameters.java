@@ -14,9 +14,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
-public class QueryParametersImpl implements QueryParameters {
+public class DefaultQueryParameters implements QueryParameters {
     
     private static final List<String> KNOWN_PARAMS = Arrays.asList(QUERY_STRING, QUERY_NAME, QUERY_PERSISTENCE, QUERY_PAGESIZE, QUERY_PAGETIMEOUT,
                     QUERY_AUTHORIZATIONS, QUERY_EXPIRATION, QUERY_TRACE, QUERY_BEGIN, QUERY_END, QUERY_VISIBILITY, QUERY_LOGIC_NAME, QUERY_POOL,
@@ -41,7 +40,7 @@ public class QueryParametersImpl implements QueryParameters {
     protected int maxConcurrentTasks;
     protected MultiValueMap<String,String> requestHeaders;
     
-    public QueryParametersImpl() {
+    public DefaultQueryParameters() {
         clear();
     }
     
@@ -149,7 +148,7 @@ public class QueryParametersImpl implements QueryParameters {
         if (o == null || getClass() != o.getClass())
             return false;
         
-        QueryParametersImpl that = (QueryParametersImpl) o;
+        DefaultQueryParameters that = (DefaultQueryParameters) o;
         
         if (pagesize != that.pagesize)
             return false;
@@ -247,7 +246,7 @@ public class QueryParametersImpl implements QueryParameters {
     public static synchronized Date parseDate(String s, String defaultTime, String defaultMillisec) throws ParseException {
         Date d;
         ParseException e = null;
-        synchronized (QueryParametersImpl.dateFormat) {
+        synchronized (DefaultQueryParameters.dateFormat) {
             String str = s;
             if (str.equals("+24Hours")) {
                 d = DateUtils.addDays(new Date(), 1);
@@ -261,7 +260,7 @@ public class QueryParametersImpl implements QueryParameters {
                 }
                 
                 try {
-                    d = QueryParametersImpl.dateFormat.parse(str);
+                    d = DefaultQueryParameters.dateFormat.parse(str);
                     // if any time value in HHmmss was set either by default or by the user
                     // then we want to include ALL of that second by setting the milliseconds to 999
                     if (DateUtils.getFragmentInMilliseconds(d, Calendar.HOUR_OF_DAY) > 0) {

@@ -1,6 +1,6 @@
 package datawave.microservice.common.storage;
 
-import datawave.microservice.query.QueryParametersImpl;
+import datawave.microservice.query.DefaultQueryParameters;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import org.apache.log4j.Logger;
@@ -392,8 +392,8 @@ public class QueryStorageCacheTest {
         assertEquals(queryPool, task.getTaskKey().getQueryPool());
         assertEquals(QueryTask.QUERY_ACTION.CREATE, task.getAction());
         assertEquals(query.getQuery(), task.getParameters().get(QueryImpl.QUERY));
-        assertEquals(QueryParametersImpl.formatDate(query.getBeginDate()), task.getParameters().get(QueryImpl.BEGIN_DATE));
-        assertEquals(QueryParametersImpl.formatDate(query.getEndDate()), task.getParameters().get(QueryImpl.END_DATE));
+        assertEquals(DefaultQueryParameters.formatDate(query.getBeginDate()), task.getParameters().get(QueryImpl.BEGIN_DATE));
+        assertEquals(DefaultQueryParameters.formatDate(query.getEndDate()), task.getParameters().get(QueryImpl.END_DATE));
     }
     
     private void assertQueryTask(TaskKey key, QueryTask.QUERY_ACTION action, Query query, QueryTask task) throws ParseException {

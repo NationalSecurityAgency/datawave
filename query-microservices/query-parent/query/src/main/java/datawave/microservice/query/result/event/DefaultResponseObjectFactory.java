@@ -32,9 +32,7 @@ import datawave.webservice.results.datadictionary.DefaultDescription;
 import datawave.webservice.results.datadictionary.DefaultFields;
 import datawave.webservice.results.datadictionary.DescriptionBase;
 import datawave.webservice.results.datadictionary.FieldsBase;
-import org.springframework.stereotype.Component;
 
-@Component("responseObjectFactory")
 public class DefaultResponseObjectFactory extends ResponseObjectFactory {
     @Override
     public EventBase getEvent() {

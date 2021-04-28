@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.ArrayList;
 import java.util.List;
 
-@ConfigurationProperties(prefix = "query.parser")
+@ConfigurationProperties(prefix = "datawave.query.parser")
 public class QueryParserProperties {
     private List<String> skipTokenizeUnfieldedFields;
     private List<String> tokenizedFields;

@@ -1,12 +1,12 @@
 package datawave.microservice.query;
 
+import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.service.RemoteAuthorizationServiceUserDetailsService;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -56,7 +55,6 @@ public class QueryServiceTest {
     }
     
     @Test
-    @Ignore
     public void testQuery() {
         Collection<String> roles = Collections.singleton("AuthorizedUser");
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
@@ -66,7 +64,15 @@ public class QueryServiceTest {
                         .build();
         
         MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
-        
+        map.set(DefaultQueryParameters.QUERY_STRING, "FIELD:SOME_VALUE");
+        map.set(DefaultQueryParameters.QUERY_NAME, "The Greatest Query in the World - Tribute");
+        map.set(DefaultQueryParameters.QUERY_PERSISTENCE, "PERSISTENT");
+        map.set(DefaultQueryParameters.QUERY_AUTHORIZATIONS, "ALL");
+        map.set(DefaultQueryParameters.QUERY_EXPIRATION, "20500101 000000.000");
+        map.set(DefaultQueryParameters.QUERY_BEGIN, "20000101 000000.000");
+        map.set(DefaultQueryParameters.QUERY_END, "20500101 000000.000");
+        map.set(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, "ALL");
+
         RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
         try {

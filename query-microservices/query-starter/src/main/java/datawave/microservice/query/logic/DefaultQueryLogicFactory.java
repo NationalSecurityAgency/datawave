@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-@ConditionalOnProperty(name = "query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "datawave.query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
 public class DefaultQueryLogicFactory implements QueryLogicFactory, ApplicationContextAware {
     
     /**

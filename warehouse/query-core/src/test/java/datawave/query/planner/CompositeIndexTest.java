@@ -24,7 +24,7 @@ import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.microservice.query.QueryParameters;
-import datawave.microservice.query.QueryParametersImpl;
+import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.configuration.QueryData;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.composite.CompositeMetadataHelper;
@@ -469,7 +469,7 @@ public class CompositeIndexTest {
         params.putSingle(QUERY_BEGIN, BEGIN_DATE);
         params.putSingle(QUERY_END, END_DATE);
         
-        QueryParameters queryParams = new QueryParametersImpl();
+        QueryParameters queryParams = new DefaultQueryParameters();
         queryParams.validate(params);
         
         Set<Authorizations> auths = new HashSet<>();
@@ -498,7 +498,7 @@ public class CompositeIndexTest {
         params.putSingle(QUERY_BEGIN, BEGIN_DATE);
         params.putSingle(QUERY_END, END_DATE);
         
-        QueryParameters queryParams = new QueryParametersImpl();
+        QueryParameters queryParams = new DefaultQueryParameters();
         queryParams.validate(params);
         
         Set<Authorizations> auths = new HashSet<>();

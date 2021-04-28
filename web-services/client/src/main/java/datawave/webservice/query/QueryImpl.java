@@ -1,7 +1,7 @@
 package datawave.webservice.query;
 
 import datawave.microservice.query.QueryParameters;
-import datawave.microservice.query.QueryParametersImpl;
+import datawave.microservice.query.DefaultQueryParameters;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
@@ -804,7 +804,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         }
         if (this.expirationDate != null) {
             try {
-                p.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(this.expirationDate));
+                p.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(this.expirationDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Error formatting date", e);
             }
@@ -831,14 +831,14 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         }
         if (this.beginDate != null) {
             try {
-                p.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(this.beginDate));
+                p.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Error formatting date", e);
             }
         }
         if (this.endDate != null) {
             try {
-                p.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(this.endDate));
+                p.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(this.endDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Error formatting date", e);
             }
@@ -862,7 +862,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                     setQueryAuthorizations(map.get(key).get(0));
                     break;
                 case QueryParameters.QUERY_EXPIRATION:
-                    setExpirationDate(QueryParametersImpl.parseDate(map.get(key).get(0), null, null));
+                    setExpirationDate(DefaultQueryParameters.parseDate(map.get(key).get(0), null, null));
                     break;
                 case QueryParameters.QUERY_NAME:
                     setQueryName(map.get(key).get(0));
@@ -887,10 +887,10 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
                     setColumnVisibility(map.get(key).get(0));
                     break;
                 case QueryParameters.QUERY_BEGIN:
-                    setBeginDate(QueryParametersImpl.parseStartDate(map.get(key).get(0)));
+                    setBeginDate(DefaultQueryParameters.parseStartDate(map.get(key).get(0)));
                     break;
                 case QueryParameters.QUERY_END:
-                    setEndDate(QueryParametersImpl.parseEndDate(map.get(key).get(0)));
+                    setEndDate(DefaultQueryParameters.parseEndDate(map.get(key).get(0)));
                     break;
                 default:
                     addParameter(key, map.get(key).get(0));

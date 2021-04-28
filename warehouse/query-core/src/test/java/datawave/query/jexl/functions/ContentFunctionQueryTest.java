@@ -25,7 +25,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.microservice.query.QueryParameters;
-import datawave.microservice.query.QueryParametersImpl;
+import datawave.microservice.query.DefaultQueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -340,7 +340,7 @@ public class ContentFunctionQueryTest {
         params.putSingle(QUERY_BEGIN, BEGIN_DATE);
         params.putSingle(QUERY_END, END_DATE);
         
-        QueryParameters queryParams = new QueryParametersImpl();
+        QueryParameters queryParams = new DefaultQueryParameters();
         queryParams.validate(params);
         
         Set<Authorizations> auths = new HashSet<>();

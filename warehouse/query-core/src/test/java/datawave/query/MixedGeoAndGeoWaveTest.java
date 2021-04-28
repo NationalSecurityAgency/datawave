@@ -22,7 +22,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.microservice.query.QueryParametersImpl;
+import datawave.microservice.query.DefaultQueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidQueryException;
@@ -533,7 +533,7 @@ public class MixedGeoAndGeoWaveTest {
         params.putSingle(QUERY_BEGIN, BEGIN_DATE);
         params.putSingle(QUERY_END, END_DATE);
         
-        datawave.microservice.query.QueryParameters queryParams = new QueryParametersImpl();
+        datawave.microservice.query.QueryParameters queryParams = new DefaultQueryParameters();
         queryParams.validate(params);
         
         Set<Authorizations> auths = new HashSet<>();

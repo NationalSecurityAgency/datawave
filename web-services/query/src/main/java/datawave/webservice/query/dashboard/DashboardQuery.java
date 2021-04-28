@@ -1,6 +1,6 @@
 package datawave.webservice.query.dashboard;
 
-import datawave.microservice.query.QueryParametersImpl;
+import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.webservice.common.extjs.ExtJsResponse;
 import datawave.webservice.query.runner.QueryExecutor;
@@ -29,7 +29,7 @@ public class DashboardQuery {
     public static ExtJsResponse<DashboardSummary> createQuery(QueryExecutor queryExecutor, String auths, Date beginDate, Date endDate, Date now)
                     throws ParseException {
         
-        return (ExtJsResponse) queryExecutor.createQueryAndNext(logicName, MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(logicName, queryString,
+        return (ExtJsResponse) queryExecutor.createQueryAndNext(logicName, MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(logicName, queryString,
                         queryName, columnVisibility, beginDate, endDate, auths, DateUtils.addDays(now, 1), pageSize, pageTimeout, maxResultsOverride,
                         persistence, parameters, trace)));
     }

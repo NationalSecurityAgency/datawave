@@ -1,8 +1,11 @@
 package datawave.microservice.query.logic.config;
 
+import datawave.microservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.query.data.UUIDType;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -18,13 +21,19 @@ import java.util.Set;
 import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 
 @Configuration
-@ConditionalOnProperty(name = "query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "datawave.query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties({QueryLogicFactoryProperties.class, QueryParserProperties.class})
-@ImportResource("${query.logic.factory.xmlBeansPath:classpath:QueryLogicFactory.xml}")
+@ImportResource("${datawave.query.logic.factory.xmlBeansPath:classpath:QueryLogicFactory.xml}")
 public class QueryLogicFactoryConfiguration {
     
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ResponseObjectFactory responseObjectFactory() {
+        return new DefaultResponseObjectFactory();
+    }
+
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public Set<String> tokenizedFields(QueryParserProperties queryParserProperties) {

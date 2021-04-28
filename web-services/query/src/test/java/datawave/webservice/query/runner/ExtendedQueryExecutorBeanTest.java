@@ -5,7 +5,7 @@ import com.google.common.collect.Multimap;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.query.QueryParameters;
-import datawave.microservice.query.QueryParametersImpl;
+import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
@@ -407,7 +407,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -722,9 +722,9 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.add(QueryParameters.QUERY_STRING, query);
         queryParameters.add(QueryParameters.QUERY_NAME, queryName);
         queryParameters.add(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
-        queryParameters.add(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-        queryParameters.add(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-        queryParameters.add(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.add(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        queryParameters.add(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        queryParameters.add(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
         queryParameters.add(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.add(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
         queryParameters.add(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
@@ -736,7 +736,7 @@ public class ExtendedQueryExecutorBeanTest {
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
         
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
         MultiValueMap<String,String> op = qp.getUnknownParameters(queryParameters);
@@ -856,7 +856,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -899,9 +899,9 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
         queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
-        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
         queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
@@ -916,7 +916,7 @@ public class ExtendedQueryExecutorBeanTest {
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
         
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
@@ -1036,7 +1036,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -1075,9 +1075,9 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
         queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
-        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
         queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
@@ -1089,7 +1089,7 @@ public class ExtendedQueryExecutorBeanTest {
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
         
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
@@ -1139,7 +1139,7 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
         setInternalState(subject, EJBContext.class, context);
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, AccumuloConnectionFactory.class, connectionFactory);
         setInternalState(subject, ResponseObjectFactory.class, responseObjectFactory);
         setInternalState(subject, CreatedQueryLogicCacheBean.class, qlCache);
@@ -1197,9 +1197,9 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
         queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
-        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
         queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
@@ -1211,7 +1211,7 @@ public class ExtendedQueryExecutorBeanTest {
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
         
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
@@ -1346,7 +1346,7 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, QueryMetricsBean.class, metrics);
             setInternalState(subject, Multimap.class, traceInfos);
             setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-            setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+            setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
             setInternalState(connectionRequestBean, EJBContext.class, context);
             setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -1377,13 +1377,13 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         
         MultivaluedMap<String,String> p = MapUtils
-                        .toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
+                        .toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
                                         queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
         
         // Run the test
         PowerMock.replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
         try {
@@ -1420,13 +1420,13 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         
         MultivaluedMap<String,String> p = MapUtils
-                        .toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
+                        .toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
                                         queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
         
         // Run the test
         PowerMock.replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
         try {
@@ -1463,14 +1463,14 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         // Set expectations
         
-        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName,
                         queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode,
                         parameters, trace));
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
         
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
@@ -1498,7 +1498,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
         try {
@@ -1545,11 +1545,11 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, EJBContext.class, context);
         setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
         try {
-            MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+            MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName,
                             queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride,
                             persistenceMode, parameters, trace));
             
@@ -1588,11 +1588,11 @@ public class ExtendedQueryExecutorBeanTest {
         // Run the test
         PowerMock.replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
         try {
-            MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+            MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName,
                             queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride,
                             persistenceMode, parameters, trace));
             
@@ -1631,11 +1631,11 @@ public class ExtendedQueryExecutorBeanTest {
         // Run the test
         PowerMock.replayAll();
         QueryExecutorBean subject = new QueryExecutorBean();
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
         try {
-            MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+            MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName,
                             queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride,
                             persistenceMode, parameters, trace));
             
@@ -1675,14 +1675,14 @@ public class ExtendedQueryExecutorBeanTest {
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
         
-        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(null, query, queryName, queryVisibility,
+        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(null, query, queryName, queryVisibility,
                         beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, null, trace));
         queryParameters.putSingle("valid", "param");
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
         
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
@@ -1725,7 +1725,7 @@ public class ExtendedQueryExecutorBeanTest {
             setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
             setInternalState(subject, Multimap.class, traceInfos);
             setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-            setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+            setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
             setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
             subject.defineQuery(queryLogicName, queryParameters);
         } finally {
@@ -1819,9 +1819,9 @@ public class ExtendedQueryExecutorBeanTest {
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, newQueryName);
-        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PARAMS, parameters);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
@@ -1833,7 +1833,7 @@ public class ExtendedQueryExecutorBeanTest {
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
         
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
@@ -1899,7 +1899,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         GenericResponse<String> result1 = subject.duplicateQuery(queryId.toString(), newQueryName, queryLogicName, query, queryVisibility, beginDate, endDate,
                         queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace);
@@ -1950,7 +1950,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         
         try {
@@ -2030,7 +2030,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         
         try {
@@ -2333,7 +2333,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         QueryImplListResponse result1 = subject.list(queryName);
         PowerMock.verifyAll();
@@ -2869,7 +2869,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, Persister.class, persister);
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, AuditBean.class, auditor);
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
@@ -3018,9 +3018,9 @@ public class ExtendedQueryExecutorBeanTest {
         
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
         p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
-        p.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-        p.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-        p.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        p.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        p.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        p.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
         p.putSingle(QueryParameters.QUERY_NAME, queryName);
         p.putSingle(QueryParameters.QUERY_PAGESIZE, Integer.toString(pagesize));
         p.putSingle(QueryParameters.QUERY_PAGETIMEOUT, Integer.toString(pageTimeout));
@@ -3228,7 +3228,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         StreamingOutput result1 = null;
         try {
-            MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+            MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName,
                             queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride,
                             persistenceMode, parameters, trace));
             
@@ -3344,9 +3344,9 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
         queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
@@ -3358,7 +3358,7 @@ public class ExtendedQueryExecutorBeanTest {
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
         
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
@@ -3433,7 +3433,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -3475,9 +3475,9 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
         queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
@@ -3490,7 +3490,7 @@ public class ExtendedQueryExecutorBeanTest {
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
         
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
@@ -3576,7 +3576,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -3616,9 +3616,9 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
         queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
-        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
         queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
@@ -3660,7 +3660,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(executor, QueryMetricsBean.class, metrics);
         setInternalState(executor, Multimap.class, traceInfos);
         setInternalState(executor, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-        setInternalState(executor, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(executor, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(executor, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(executor, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -3786,9 +3786,9 @@ public class ExtendedQueryExecutorBeanTest {
         
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
         p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
-        p.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-        p.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-        p.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        p.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        p.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        p.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
         p.putSingle(QueryParameters.QUERY_NAME, queryName);
         p.putSingle(QueryParameters.QUERY_PAGESIZE, Integer.toString(pagesize));
         p.putSingle(QueryParameters.QUERY_PAGETIMEOUT, Integer.toString(pageTimeout));
@@ -3874,14 +3874,14 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         // Set expectations
         
-        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName,
                         queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode,
                         parameters, trace));
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
         
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
@@ -3907,7 +3907,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
         try {
@@ -3945,14 +3945,14 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         // Set expectations
         
-        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName,
                         queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode,
                         parameters, trace));
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
         
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
@@ -3978,7 +3978,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
         try {
@@ -4016,14 +4016,14 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         // Set expectations
         
-        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(QueryParametersImpl.paramsToMap(queryLogicName, query, queryName,
+        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName,
                         queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode,
                         parameters, trace));
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
         
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
@@ -4049,7 +4049,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryLogicFactory.class, queryLogicFactory);
         setInternalState(subject, QueryExpirationProperties.class, queryExpirationConf);
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         Throwable result1 = null;
         try {
@@ -4091,9 +4091,9 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
         queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
@@ -4105,7 +4105,7 @@ public class ExtendedQueryExecutorBeanTest {
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
         
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
@@ -4142,7 +4142,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
@@ -4186,9 +4186,9 @@ public class ExtendedQueryExecutorBeanTest {
         queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(beginDate));
-        queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
-        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expirationDate));
+        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
         queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
         queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
@@ -4200,7 +4200,7 @@ public class ExtendedQueryExecutorBeanTest {
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
         
-        QueryParameters qp = new QueryParametersImpl();
+        QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
         MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
@@ -4237,7 +4237,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, SecurityMarking.class, new ColumnVisibilitySecurityMarking());
-        setInternalState(subject, QueryParameters.class, new QueryParametersImpl());
+        setInternalState(subject, QueryParameters.class, new DefaultQueryParameters());
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);

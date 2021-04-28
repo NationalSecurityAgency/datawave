@@ -151,7 +151,8 @@ public class QueryManagementService {
         // Pull "params" values into individual query parameters for validation on the query logic.
         // This supports the deprecated "params" value (both on the old and new API). Once we remove the deprecated
         // parameter, this code block can go away.
-        parameters.get(QueryParameters.QUERY_PARAMS).stream().map(QueryUtil::parseParameters).forEach(parameters::addAll);
+        if (parameters.get(QueryParameters.QUERY_PARAMS) != null)
+            parameters.get(QueryParameters.QUERY_PARAMS).stream().map(QueryUtil::parseParameters).forEach(parameters::addAll);
         
         parameters.remove(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ);
         parameters.remove(AuditParameters.USER_DN);

@@ -1,7 +1,7 @@
 package datawave.webservice.query;
 
 import datawave.microservice.query.QueryParameters;
-import datawave.microservice.query.QueryParametersImpl;
+import datawave.microservice.query.DefaultQueryParameters;
 import org.apache.commons.lang.time.DateUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,12 +15,12 @@ import static org.junit.Assert.assertEquals;
 
 public class TestQueryParameters {
     
-    private QueryParametersImpl qp;
+    private DefaultQueryParameters qp;
     private MultiValueMap<String,String> parameters;
     
     @Before
     public void setup() {
-        qp = new QueryParametersImpl();
+        qp = new DefaultQueryParameters();
         parameters = new LinkedMultiValueMap<>();
         parameters.add(QueryParameters.QUERY_AUTHORIZATIONS, "ALL");
         parameters.add(QueryParameters.QUERY_NAME, "Test");

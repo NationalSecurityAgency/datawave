@@ -22,7 +22,7 @@ import java.util.Map;
 import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 
 @Configuration
-@ConditionalOnProperty(name = "query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "datawave.query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties({QueryLogicFactoryProperties.class})
 public class BaseEventQueryConfiguration {
     
@@ -30,7 +30,7 @@ public class BaseEventQueryConfiguration {
     private ApplicationContext appContext;
     
     @Bean
-    @ConfigurationProperties("query.logic.logics.base-event-query")
+    @ConfigurationProperties("datawave.query.logic.logics.base-event-query")
     public ShardQueryLogicProperties baseEventQueryProperties() {
         return new ShardQueryLogicProperties();
     }

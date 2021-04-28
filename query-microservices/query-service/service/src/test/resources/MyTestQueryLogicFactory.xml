@@ -22,39 +22,39 @@
     <bean id="dateIndexHelper" scope="prototype" class="datawave.query.util.DateIndexHelper" />
 
     <bean id="BaseEventQuery" parent="baseQueryLogic" class="datawave.query.tables.ShardQueryLogic" abstract="true">
-        <property name="accumuloPassword" value="${query.logic.logics.BaseEventQuery.accumuloPassword}" />
-        <property name="tableName" value="${query.logic.logics.BaseEventQuery.tableName}" />
-        <property name="dateIndexTableName" value="${query.logic.logics.BaseEventQuery.dateIndexTableName}" />
+        <property name="accumuloPassword" value="${datawave.query.logic.logics.BaseEventQuery.accumuloPassword}" />
+        <property name="tableName" value="${datawave.query.logic.logics.BaseEventQuery.tableName}" />
+        <property name="dateIndexTableName" value="${datawave.query.logic.logics.BaseEventQuery.dateIndexTableName}" />
 
         <!-- This is injected via java -->
         <property name="dateIndexHelperFactory" ref="dateIndexHelperFactory" />
 
-        <property name="defaultDateTypeName" value="${query.logic.logics.BaseEventQuery.defaultDateTypeName}"/>
-        <property name="metadataTableName" value="${query.logic.logics.BaseEventQuery.metadataTableName}" />
+        <property name="defaultDateTypeName" value="${datawave.query.logic.logics.BaseEventQuery.defaultDateTypeName}"/>
+        <property name="metadataTableName" value="${datawave.query.logic.logics.BaseEventQuery.metadataTableName}" />
 
         <!-- This is injected via java -->
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
 
-        <property name="indexTableName" value="${query.logic.logics.BaseEventQuery.indexTableName}" />
-        <property name="reverseIndexTableName" value="${query.logic.logics.BaseEventQuery.reverseIndexTableName}" />
-        <property name="maxResults" value="${query.logic.logics.BaseEventQuery.maxResults}" />
-        <property name="queryThreads" value="${query.logic.logics.BaseEventQuery.queryThreads}" />
-        <property name="indexLookupThreads" value="${query.logic.logics.BaseEventQuery.indexLookupThreads}" />
-        <property name="dateIndexThreads" value="${query.logic.logics.BaseEventQuery.dateIndexThreads}" />
-        <property name="fullTableScanEnabled" value="${query.logic.logics.BaseEventQuery.fullTableScanEnabled}" />
-        <property name="includeDataTypeAsField" value="${query.logic.logics.BaseEventQuery.includeDataTypeAsField}" />
-        <property name="disableIndexOnlyDocuments" value="${query.logic.logics.BaseEventQuery.disableIndexOnlyDocuments}" />
-        <property name="indexOnlyFilterFunctionsEnabled" value="${query.logic.logics.BaseEventQuery.indexOnlyFilterFunctionsEnabled}" />
-        <property name="includeHierarchyFields" value="${query.logic.logics.BaseEventQuery.includeHierarchyFields}" />
+        <property name="indexTableName" value="${datawave.query.logic.logics.BaseEventQuery.indexTableName}" />
+        <property name="reverseIndexTableName" value="${datawave.query.logic.logics.BaseEventQuery.reverseIndexTableName}" />
+        <property name="maxResults" value="${datawave.query.logic.logics.BaseEventQuery.maxResults}" />
+        <property name="queryThreads" value="${datawave.query.logic.logics.BaseEventQuery.queryThreads}" />
+        <property name="indexLookupThreads" value="${datawave.query.logic.logics.BaseEventQuery.indexLookupThreads}" />
+        <property name="dateIndexThreads" value="${datawave.query.logic.logics.BaseEventQuery.dateIndexThreads}" />
+        <property name="fullTableScanEnabled" value="${datawave.query.logic.logics.BaseEventQuery.fullTableScanEnabled}" />
+        <property name="includeDataTypeAsField" value="${datawave.query.logic.logics.BaseEventQuery.includeDataTypeAsField}" />
+        <property name="disableIndexOnlyDocuments" value="${datawave.query.logic.logics.BaseEventQuery.disableIndexOnlyDocuments}" />
+        <property name="indexOnlyFilterFunctionsEnabled" value="${datawave.query.logic.logics.BaseEventQuery.indexOnlyFilterFunctionsEnabled}" />
+        <property name="includeHierarchyFields" value="${datawave.query.logic.logics.BaseEventQuery.includeHierarchyFields}" />
 
         <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
         <property name="hierarchyFieldOptions"  ref="baseEventQueryHierarchyFieldOptions" />
 
-        <property name="baseIteratorPriority" value="${query.logic.logics.BaseEventQuery.baseIteratorPriority}" />
-        <property name="maxIndexScanTimeMillis" value="${query.logic.logics.BaseEventQuery.maxIndexScanTimeMillis}" />
-        <property name="collapseUids" value="${query.logic.logics.BaseEventQuery.collapseUids}" />
-        <property name="collapseUidsThreshold" value="${query.logic.logics.BaseEventQuery.collapseUidsThreshold}"/>
-        <property name="useEnrichers" value="${query.logic.logics.BaseEventQuery.useEnrichers}" />
+        <property name="baseIteratorPriority" value="${datawave.query.logic.logics.BaseEventQuery.baseIteratorPriority}" />
+        <property name="maxIndexScanTimeMillis" value="${datawave.query.logic.logics.BaseEventQuery.maxIndexScanTimeMillis}" />
+        <property name="collapseUids" value="${datawave.query.logic.logics.BaseEventQuery.collapseUids}" />
+        <property name="collapseUidsThreshold" value="${datawave.query.logic.logics.BaseEventQuery.collapseUidsThreshold}"/>
+        <property name="useEnrichers" value="${datawave.query.logic.logics.BaseEventQuery.useEnrichers}" />
 
         <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
         <property name="contentFieldNames" ref="baseEventQueryContentFieldNames" />
@@ -62,12 +62,12 @@
         <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
         <property name="realmSuffixExclusionPatterns" ref="baseEventQueryRealmSuffixExclusionPatterns" />
 
-        <property name="minimumSelectivity" value="${query.logic.logics.BaseEventQuery.minimumSelectivity}" />
+        <property name="minimumSelectivity" value="${datawave.query.logic.logics.BaseEventQuery.minimumSelectivity}" />
 
         <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
         <property name="enricherClassNames" ref="baseEventQueryEnricherClassNames" />
 
-        <property name="useFilters" value="${query.logic.logics.BaseEventQuery.useFilters}" />
+        <property name="useFilters" value="${datawave.query.logic.logics.BaseEventQuery.useFilters}" />
 
         <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
         <property name="filterClassNames" ref="baseEventQueryFilterClassNames" />
@@ -75,61 +75,61 @@
         <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
         <property name="filterOptions" ref="baseEventQueryFilterOptions" />
 
-        <property name="auditType" value="${query.logic.logics.BaseEventQuery.auditType}" />
-        <property name="logicDescription" value="${query.logic.logics.BaseEventQuery.logicDescription}" />
+        <property name="auditType" value="${datawave.query.logic.logics.BaseEventQuery.auditType}" />
+        <property name="logicDescription" value="${datawave.query.logic.logics.BaseEventQuery.logicDescription}" />
         <!-- Determines how many events in the global index lookup will be
         aggregated into a day range -->
-        <property name="eventPerDayThreshold" value="${query.logic.logics.BaseEventQuery.eventPerDayThreshold}" />
+        <property name="eventPerDayThreshold" value="${datawave.query.logic.logics.BaseEventQuery.eventPerDayThreshold}" />
         <!-- Determines how many shards in the global index lookup will be
         aggregated into a day range -->
-        <property name="shardsPerDayThreshold" value="${query.logic.logics.BaseEventQuery.shardsPerDayThreshold}" />
+        <property name="shardsPerDayThreshold" value="${datawave.query.logic.logics.BaseEventQuery.shardsPerDayThreshold}" />
         <!-- The max number of terms AFTER all expansions -->
-        <property name="maxTermThreshold" value="${query.logic.logics.BaseEventQuery.maxTermThreshold}" />
+        <property name="maxTermThreshold" value="${datawave.query.logic.logics.BaseEventQuery.maxTermThreshold}" />
         <!-- The max query depth -->
-        <property name="maxDepthThreshold" value="${query.logic.logics.BaseEventQuery.maxDepthThreshold}" />
+        <property name="maxDepthThreshold" value="${datawave.query.logic.logics.BaseEventQuery.maxDepthThreshold}" />
         <!-- The max unfielded (_ANYFIELD_) expansion per term -->
-        <property name="maxUnfieldedExpansionThreshold" value="${query.logic.logics.BaseEventQuery.maxUnfieldedExpansionThreshold}" />
+        <property name="maxUnfieldedExpansionThreshold" value="${datawave.query.logic.logics.BaseEventQuery.maxUnfieldedExpansionThreshold}" />
         <!-- The max value (regex or range) expansion -->
-        <property name="maxValueExpansionThreshold" value="${query.logic.logics.BaseEventQuery.maxValueExpansionThreshold}" />
+        <property name="maxValueExpansionThreshold" value="${datawave.query.logic.logics.BaseEventQuery.maxValueExpansionThreshold}" />
         <!-- The max value or list expansion for a single field before using an ivarator -->
-        <property name="maxOrExpansionThreshold" value="${query.logic.logics.BaseEventQuery.maxOrExpansionThreshold}" />
+        <property name="maxOrExpansionThreshold" value="${datawave.query.logic.logics.BaseEventQuery.maxOrExpansionThreshold}" />
         <!-- The max value or list expansion for a group of ranges against a single field before combining them in an ivarator -->
-        <property name="maxOrRangeThreshold" value="${query.logic.logics.BaseEventQuery.maxOrRangeThreshold}" />
+        <property name="maxOrRangeThreshold" value="${datawave.query.logic.logics.BaseEventQuery.maxOrRangeThreshold}" />
         <!-- The max value or list expansion for a single field using an FST ivarator -->
-        <property name="maxOrExpansionFstThreshold" value="${query.logic.logics.BaseEventQuery.maxOrExpansionFstThreshold}" />
+        <property name="maxOrExpansionFstThreshold" value="${datawave.query.logic.logics.BaseEventQuery.maxOrExpansionFstThreshold}" />
         <!-- The max number of splits to divide a range into for the ivarators.  They are run in a pool of threads controlled by the tserver.datawave.ivarator.threads accumulo configuration property which defaults to 100 (IteratorThreadPoolManager). -->
-        <property name="maxFieldIndexRangeSplit" value="${query.logic.logics.BaseEventQuery.maxFieldIndexRangeSplit}" />
+        <property name="maxFieldIndexRangeSplit" value="${datawave.query.logic.logics.BaseEventQuery.maxFieldIndexRangeSplit}" />
         <!-- The max number of sources that can be created across ivarators for one scan -->
-        <property name="maxIvaratorSources" value="${query.logic.logics.BaseEventQuery.maxIvaratorSources}" />
+        <property name="maxIvaratorSources" value="${datawave.query.logic.logics.BaseEventQuery.maxIvaratorSources}" />
         <!-- The max number of evaluation pipelines.  They are run in a pool of threads controlled by the tserver.datawave.evaluation.threads accumulo configuration property which defaults to 100 (IteratorThreadPoolManager). -->
-        <property name="maxEvaluationPipelines" value="${query.logic.logics.BaseEventQuery.maxEvaluationPipelines}" />
+        <property name="maxEvaluationPipelines" value="${datawave.query.logic.logics.BaseEventQuery.maxEvaluationPipelines}" />
         <!-- The max number of non-null evaluated results to cache on each tserver beyond the evaluation pipelines in queue -->
-        <property name="maxPipelineCachedResults" value="${query.logic.logics.BaseEventQuery.maxPipelineCachedResults}" />
+        <property name="maxPipelineCachedResults" value="${datawave.query.logic.logics.BaseEventQuery.maxPipelineCachedResults}" />
         <!-- the list of comma delimited hdfs configuration files something like file:///opt/datawave/hadoop-warehouse/conf/core-site.xml,file:///opt/datawave/hadoop-warehouse/conf/hdfs-site.xml-->
-        <property name="hdfsSiteConfigURLs" value="${query.logic.logics.BaseEventQuery.hdfsSiteConfigURLs}" />
+        <property name="hdfsSiteConfigURLs" value="${datawave.query.logic.logics.BaseEventQuery.hdfsSiteConfigURLs}" />
         <!-- the zookeeper configuration (could be something like file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg, or the zookeeper list (somehost1:2181,somehost2:2181,…)-->
-        <property name="zookeeperConfig" value="${query.logic.logics.BaseEventQuery.zookeeperConfig}" />
+        <property name="zookeeperConfig" value="${datawave.query.logic.logics.BaseEventQuery.zookeeperConfig}" />
 
         <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
         <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->
         <property name="ivaratorCacheDirConfigs" ref="baseEventQueryIvaratorCacheDirConfigs" />
 
         <!-- the hdfs location where FST's will be stored (see maxOrExpansionFstThreshold above) -->
-        <property name="ivaratorFstHdfsBaseURIs" value ="${query.logic.logics.BaseEventQuery.zookeeperConfig}" />
+        <property name="ivaratorFstHdfsBaseURIs" value ="${datawave.query.logic.logics.BaseEventQuery.zookeeperConfig}" />
         <!-- the size after which a buffer is flushed to a file. -->
-        <property name="ivaratorCacheBufferSize" value="${query.logic.logics.BaseEventQuery.ivaratorCacheBufferSize}" />
+        <property name="ivaratorCacheBufferSize" value="${datawave.query.logic.logics.BaseEventQuery.ivaratorCacheBufferSize}" />
         <!-- the max number of open files in an ivarator -->
-        <property name="ivaratorMaxOpenFiles" value="${query.logic.logics.BaseEventQuery.ivaratorMaxOpenFiles}" />
+        <property name="ivaratorMaxOpenFiles" value="${datawave.query.logic.logics.BaseEventQuery.ivaratorMaxOpenFiles}" />
         <!-- the number of keys scanned after which the buffer is flushed to a file. -->
-        <property name="ivaratorCacheScanPersistThreshold" value="${query.logic.logics.BaseEventQuery.ivaratorCacheScanPersistThreshold}" />
+        <property name="ivaratorCacheScanPersistThreshold" value="${datawave.query.logic.logics.BaseEventQuery.ivaratorCacheScanPersistThreshold}" />
         <!-- the scan time after which the buffer is flushed to a file. -->
-        <property name="ivaratorCacheScanTimeoutMinutes" value="${query.logic.logics.BaseEventQuery.ivaratorCacheScanTimeoutMinutes}" />
+        <property name="ivaratorCacheScanTimeoutMinutes" value="${datawave.query.logic.logics.BaseEventQuery.ivaratorCacheScanTimeoutMinutes}" />
 
         <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
         <property name="eventQueryDataDecoratorTransformer" ref="baseEventQueryEventQueryDataDecoratorTransformer" />
 
-        <property name="modelTableName" value="${query.logic.logics.BaseEventQuery.modelTableName}" />
-        <property name="modelName" value="${query.logic.logics.BaseEventQuery.modelName}" />
+        <property name="modelTableName" value="${datawave.query.logic.logics.BaseEventQuery.modelTableName}" />
+        <property name="modelName" value="${datawave.query.logic.logics.BaseEventQuery.modelName}" />
 
         <!-- This is injected via QueryLogicFactoryConfiguration.java and configured via configuration properties -->
         <property name="querySyntaxParsers" ref="baseEventQuerySyntaxParsers" />
@@ -137,16 +137,16 @@
         <!-- This is injected via QueryLogicFactory.xml -->
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
 
-        <property name="sendTimingToStatsd" value="${query.logic.logics.BaseEventQuery.sendTimingToStatsd}" />
-        <property name="collectQueryMetrics" value="${query.logic.logics.BaseEventQuery.collectQueryMetrics}" />
-        <property name="logTimingDetails" value="${query.logic.logics.BaseEventQuery.logTimingDetails}" />
-        <property name="statsdHost" value="${query.logic.logics.BaseEventQuery.statsdHost}" />
-        <property name="statsdPort" value="${query.logic.logics.BaseEventQuery.statsdPort}" />
+        <property name="sendTimingToStatsd" value="${datawave.query.logic.logics.BaseEventQuery.sendTimingToStatsd}" />
+        <property name="collectQueryMetrics" value="${datawave.query.logic.logics.BaseEventQuery.collectQueryMetrics}" />
+        <property name="logTimingDetails" value="${datawave.query.logic.logics.BaseEventQuery.logTimingDetails}" />
+        <property name="statsdHost" value="${datawave.query.logic.logics.BaseEventQuery.statsdHost}" />
+        <property name="statsdPort" value="${datawave.query.logic.logics.BaseEventQuery.statsdPort}" />
 
         <!-- This is injected via QueryLogicFactory.xml -->
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
 
-        <property name="evaluationOnlyFields" value="${query.logic.logics.BaseEventQuery.evaluationOnlyFields}" />
+        <property name="evaluationOnlyFields" value="${datawave.query.logic.logics.BaseEventQuery.evaluationOnlyFields}" />
     </bean>
 
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >

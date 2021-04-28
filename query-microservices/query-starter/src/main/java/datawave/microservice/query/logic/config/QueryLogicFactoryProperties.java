@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.util.HashMap;
 import java.util.Map;
 
-@ConfigurationProperties(prefix = "query.logic.factory")
+@ConfigurationProperties(prefix = "datawave.query.logic.factory")
 public class QueryLogicFactoryProperties {
     private String xmlBeansPath = "classpath:QueryLogicFactory.xml";
     private int maxPageSize = 10000;

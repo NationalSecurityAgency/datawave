@@ -14,7 +14,7 @@ import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.microservice.query.QueryParameters;
-import datawave.microservice.query.QueryParametersImpl;
+import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.configuration.QueryData;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -324,7 +324,7 @@ public class GeoSortedQueryDataTest {
         params.putSingle(QUERY_BEGIN, BEGIN_DATE);
         params.putSingle(QUERY_END, END_DATE);
         
-        QueryParameters queryParams = new QueryParametersImpl();
+        QueryParameters queryParams = new DefaultQueryParameters();
         queryParams.validate(params);
         
         Set<Authorizations> auths = new HashSet<>();

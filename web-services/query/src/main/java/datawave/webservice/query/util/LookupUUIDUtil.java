@@ -1,7 +1,7 @@
 package datawave.webservice.query.util;
 
 import datawave.microservice.query.QueryParameters;
-import datawave.microservice.query.QueryParametersImpl;
+import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.query.data.UUIDType;
 import datawave.security.util.AuthorizationsUtil;
@@ -331,7 +331,7 @@ public class LookupUUIDUtil {
             queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
             
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(this.beginAsDate));
+                queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginAsDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Unable to format new query begin date: " + this.beginAsDate);
             }
@@ -341,7 +341,7 @@ public class LookupUUIDUtil {
                 queryParameters.remove(QueryParameters.QUERY_END);
             }
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+                queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Unable to format new query end date: " + endDate);
             }
@@ -351,7 +351,7 @@ public class LookupUUIDUtil {
                 queryParameters.remove(QueryParameters.QUERY_EXPIRATION);
             }
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expireDate));
+                queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expireDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Unable to format new query expr date: " + expireDate);
             }
@@ -572,18 +572,18 @@ public class LookupUUIDUtil {
             queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
             queryParameters.putSingle(QueryParameters.QUERY_STRING, contentQuery.toString());
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(this.beginAsDate));
+                queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginAsDate));
             } catch (ParseException e1) {
                 throw new RuntimeException("Error formatting begin date: " + this.beginAsDate);
             }
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+                queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
             } catch (ParseException e1) {
                 throw new RuntimeException("Error formatting end date: " + endDate);
             }
             queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, userAuths);
             try {
-                queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expireDate));
+                queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expireDate));
             } catch (ParseException e1) {
                 throw new RuntimeException("Error formatting expr date: " + expireDate);
             }
@@ -685,18 +685,18 @@ public class LookupUUIDUtil {
         queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
         queryParameters.putSingle(QueryParameters.QUERY_STRING, contentQuery.toString());
         try {
-            queryParameters.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(this.beginAsDate));
+            queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginAsDate));
         } catch (ParseException e1) {
             throw new RuntimeException("Error formatting begin date: " + this.beginAsDate);
         }
         try {
-            queryParameters.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(endDate));
+            queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
         } catch (ParseException e1) {
             throw new RuntimeException("Error formatting end date: " + endDate);
         }
         queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, userAuths);
         try {
-            queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(expireDate));
+            queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expireDate));
         } catch (ParseException e1) {
             throw new RuntimeException("Error formatting expr date: " + expireDate);
         }
