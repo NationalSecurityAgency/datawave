@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -342,13 +343,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     private List<String> contentFieldNames = Collections.emptyList();
     
-    // The list of plans to process. Moved to lastResults once being processed
-    private LinkedList<QueryData> plans;
-    // set to true once we have discovered all of the possible query plans
-    private boolean gotAllPlans = false;
-    // The list of plans being processed mapped to the last result returned. QueryData removed once complete.
-    private Map<QueryData,Key> lastResult;
-    
     /**
      * The source to use as the active query log name for all query iterators in scans generated for the shard query logic. If the value
      * {@value #TABLE_NAME_SOURCE} is supplied, the shard table name will be used. If {@value #QUERY_LOGIC_NAME_SOURCE} is supplied, the name of the shard query
@@ -546,9 +540,63 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         
     }
     
+    /**
+     * This constructor is used when we are creating a checkpoint for a set of ranges (i.e. QueryData objects). All configuration required for post planning
+     * needs to be copied over here.
+     * 
+     * @param other
+     * @param queries
+     */
+    public ShardQueryConfiguration(ShardQueryConfiguration other, Collection<QueryData> queries) {
+        super(other);
+        
+        this.setQueries(queries.iterator());
+        
+        this.setQuery(other.getQuery());
+        this.setCheckpointable(other.isCheckpointable());
+        this.setMetadataTableName(other.getMetadataTableName());
+        this.setSpeculativeScanning(other.getSpeculativeScanning());
+        this.setMaxDocScanTimeout(other.getMaxDocScanTimeout());
+        this.setBackoffEnabled(other.getBackoffEnabled());
+        
+        this.setHdfsSiteConfigURLs(other.getHdfsSiteConfigURLs());
+        this.setHdfsFileCompressionCodec(other.getHdfsFileCompressionCodec());
+        this.setIvaratorCacheDirConfigs(null == other.getIvaratorCacheDirConfigs() ? null : Lists.newArrayList(other.getIvaratorCacheDirConfigs()));
+        this.setIvaratorFstHdfsBaseURIs(other.getIvaratorFstHdfsBaseURIs());
+        
+        this.setCleanupShardsAndDaysQueryHints(other.isCleanupShardsAndDaysQueryHints());
+        this.setBypassExecutabilityCheck(other.isBypassExecutabilityCheck());
+        this.setFullTableScanEnabled(other.getFullTableScanEnabled());
+        this.setSerializeQueryIterator(other.getSerializeQueryIterator());
+        this.setDatatypeFilter(other.getDatatypeFilter());
+        
+        this.setMaxOrExpansionFstThreshold(other.getMaxOrExpansionFstThreshold());
+        this.setMaxOrExpansionThreshold(other.getMaxOrExpansionThreshold());
+        this.setMaxOrRangeIvarators(other.getMaxOrRangeIvarators());
+        this.setMaxOrRangeThreshold(other.getMaxOrRangeThreshold());
+        this.setMaxTermThreshold(other.getMaxTermThreshold());
+        this.setMaxDepthThreshold(other.getMaxDepthThreshold());
+        this.setMaxRangesPerRangeIvarator(other.getMaxRangesPerRangeIvarator());
+        this.setFstCount(other.getFstCount());
+        
+        this.setIndexedFields(null == other.getIndexedFields() ? null : Sets.newHashSet(other.getIndexedFields()));
+    }
+    
     public ShardQueryConfiguration(Map<String,Object> properties) {
         Map<String,Object> setProperties = new HashMap<>(properties);
         setProperties.put("queries", ((List) properties.get("queries")).iterator());
+        List<Map<String,Object>> ivaratorCacheDirConfigs = (List) properties.get("ivaratorCacheDirConfigs");
+        if (ivaratorCacheDirConfigs != null && !ivaratorCacheDirConfigs.isEmpty()) {
+            List<IvaratorCacheDirConfig> configs = new ArrayList<>();
+            for (Map<String,Object> map : ivaratorCacheDirConfigs) {
+                IvaratorCacheDirConfig cacheConfig = new IvaratorCacheDirConfig();
+                BeanWrapper wrapper = PropertyAccessorFactory.forBeanPropertyAccess(cacheConfig);
+                wrapper.setPropertyValues(map);
+                configs.add(cacheConfig);
+            }
+            setProperties.put("ivaratorCacheDirConfigs", configs);
+        }
+        
         // TODO Fix properties as needed
         BeanWrapper wrapper = PropertyAccessorFactory.forBeanPropertyAccess(this);
         
@@ -2238,30 +2286,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setGeneratePlanOnly(boolean generatePlanOnly) {
         this.generatePlanOnly = generatePlanOnly;
-    }
-    
-    public List<QueryData> getPlans() {
-        return plans;
-    }
-    
-    public void setPlans(LinkedList<QueryData> plans) {
-        this.plans = plans;
-    }
-    
-    public boolean isGotAllPlans() {
-        return gotAllPlans;
-    }
-    
-    public void setGotAllPlans(boolean gotAllPlans) {
-        this.gotAllPlans = gotAllPlans;
-    }
-    
-    public Map<QueryData,Key> getLastResult() {
-        return lastResult;
-    }
-    
-    public void setLastResult(Map<QueryData,Key> lastResult) {
-        this.lastResult = lastResult;
     }
     
     public boolean getEnforceUniqueConjunctionsWithinExpression() {

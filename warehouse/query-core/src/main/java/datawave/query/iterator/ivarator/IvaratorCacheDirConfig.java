@@ -39,7 +39,7 @@ public class IvaratorCacheDirConfig {
         objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
     }
     
-    protected IvaratorCacheDirConfig() {
+    public IvaratorCacheDirConfig() {
         this(null);
     }
     

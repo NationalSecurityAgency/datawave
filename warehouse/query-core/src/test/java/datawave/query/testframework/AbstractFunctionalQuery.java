@@ -159,6 +159,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     private ShardQueryLogic createQueryLogic() {
         ShardQueryLogic logic = createShardQueryLogic();
+        // logic.setCheckpointable(true);
         QueryTestTableHelper.configureLogicToScanTables(logic);
         
         logic.setFullTableScanEnabled(false);

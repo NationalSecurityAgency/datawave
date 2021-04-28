@@ -185,13 +185,11 @@ public class SequentialScheduler extends Scheduler {
             close();
             List<QueryCheckpoint> checkpoints = new ArrayList<>();
             if (currentQuery != null) {
-                config.setQueries(Collections.singleton(currentQuery).iterator());
-                checkpoints.add(ShardQueryLogic.checkpoint(queryKey, config));
+                checkpoints.add(ShardQueryLogic.checkpoint(queryKey, config, Collections.singleton(currentQuery)));
                 currentQuery = null;
             }
             while (queries.hasNext()) {
-                config.setQueries(Collections.singleton(queries.next()).iterator());
-                checkpoints.add(ShardQueryLogic.checkpoint(queryKey, config));
+                checkpoints.add(ShardQueryLogic.checkpoint(queryKey, config, Collections.singleton(queries.next())));
             }
             config.setQueries(null);
             return checkpoints;

@@ -2311,8 +2311,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         }
     }
     
-    public static QueryCheckpoint checkpoint(QueryKey queryKey, GenericQueryConfiguration config) {
-        return new QueryCheckpoint(queryKey, ((ShardQueryConfiguration) config).toMap());
+    public static QueryCheckpoint checkpoint(QueryKey queryKey, ShardQueryConfiguration config, Collection<QueryData> ranges) {
+        // Create a new config that only contains what is needed to execute the specified ranges
+        return checkpoint(queryKey, new ShardQueryConfiguration(config, ranges));
+    }
+    
+    public static QueryCheckpoint checkpoint(QueryKey queryKey, ShardQueryConfiguration config) {
+        return new QueryCheckpoint(queryKey, config.toMap());
     }
     
 }
