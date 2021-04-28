@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -19,7 +20,7 @@ public class BulkIteratorEnvironment implements IteratorEnvironment {
     
     public BulkIteratorEnvironment(IteratorScope scope) {
         this.scope = scope;
-        this.conf = AccumuloConfiguration.getDefaultConfiguration();
+        this.conf = DefaultConfiguration.getInstance();
     }
     
     @Override

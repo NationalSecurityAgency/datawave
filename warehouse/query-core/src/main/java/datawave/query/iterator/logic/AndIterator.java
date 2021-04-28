@@ -8,7 +8,6 @@ import datawave.query.iterator.Util;
 import datawave.query.iterator.Util.Transformer;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -21,19 +20,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableSet;
-import java.util.Set;
 import java.util.SortedSet;
-
-import datawave.query.iterator.Util.Transformer;
-import org.apache.hadoop.util.hash.Hash;
-import org.apache.log4j.Logger;
-
-import datawave.query.attributes.Document;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.Util;
-
-import com.google.common.collect.TreeMultimap;
 
 /**
  * Performs a merge join of the child iterators. It is expected that all child iterators return values in sorted order.

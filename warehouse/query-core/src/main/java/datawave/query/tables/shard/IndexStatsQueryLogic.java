@@ -19,8 +19,8 @@ import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.result.istat.FieldStat;
 import datawave.webservice.query.result.istat.IndexStatsResponse;
 import datawave.webservice.result.BaseQueryResponse;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
@@ -49,7 +49,7 @@ import java.util.TreeSet;
 public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
     private static final Logger log = Logger.getLogger(IndexStatsQueryLogic.class);
     
-    private Connector connector;
+    private AccumuloClient client;
     
     @Override
     public AccumuloConnectionFactory.Priority getConnectionPriority() {
@@ -83,8 +83,8 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connector, Query query, Set<Authorizations> auths) throws Exception {
-        this.connector = connector;
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query query, Set<Authorizations> auths) throws Exception {
+        this.client = client;
         
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         
@@ -121,7 +121,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
         Collections.addAll(fields, config.getQueryString().split(" "));
         
         StatsMonkey monkey = new StatsMonkey();
-        monkey.con = connector;
+        monkey.client = client;
         monkey.table = TableName.INDEX_STATS;
         List<FieldStat> stats = monkey.getStat(fields, qConf.getDatatypeFilter(), qConf.getBeginDate(), qConf.getEndDate());
         this.iterator = stats.iterator();
@@ -133,7 +133,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
     }
     
     private static class StatsMonkey {
-        Connector con;
+        AccumuloClient client;
         String table;
         
         public List<FieldStat> getStat(Set<String> fields, Set<String> dataTypes, Date start, Date end) throws IOException {
@@ -150,13 +150,13 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
             final ScannerBase scanner;
             final Iterable<Entry<Key,Value>> dataSource;
             try {
-                Set<Authorizations> auths = Collections.singleton(con.securityOperations().getUserAuthorizations(con.whoami()));
+                Set<Authorizations> auths = Collections.singleton(client.securityOperations().getUserAuthorizations(client.whoami()));
                 if (fields.isEmpty()) {
-                    Scanner simpleScanner = ScannerHelper.createScanner(con, table, auths);
+                    Scanner simpleScanner = ScannerHelper.createScanner(client, table, auths);
                     dataSource = simpleScanner;
                     scanner = simpleScanner;
                 } else {
-                    BatchScanner bScanner = ScannerHelper.createBatchScanner(con, table, auths, fields.size());
+                    BatchScanner bScanner = ScannerHelper.createBatchScanner(client, table, auths, fields.size());
                     bScanner.setRanges(buildRanges(fields));
                     scanner = bScanner;
                     dataSource = bScanner;

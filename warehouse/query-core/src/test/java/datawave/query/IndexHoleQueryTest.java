@@ -58,7 +58,7 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CityEntry.hole, holes));
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     public IndexHoleQueryTest() {

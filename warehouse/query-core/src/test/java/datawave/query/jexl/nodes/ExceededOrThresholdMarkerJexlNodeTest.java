@@ -3,6 +3,7 @@ package datawave.query.jexl.nodes;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Multimap;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.data.type.GeometryType;
@@ -39,9 +40,9 @@ import datawave.webservice.query.QueryParameters;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -238,10 +239,10 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         
         // write these values to their respective tables
         instance = new InMemoryInstance();
-        Connector connector = instance.getConnector("root", PASSWORD);
-        connector.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
+        AccumuloClient client = new InMemoryAccumuloClient("root", instance);
+        client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
         
-        writeKeyValues(connector, keyValues);
+        writeKeyValues(client, keyValues);
     }
     
     public static void setupConfiguration(Configuration conf) {
@@ -271,8 +272,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         conf.set("partitioner.category.member." + TableName.SHARD, "shardedTables");
     }
     
-    private static void writeKeyValues(Connector connector, Multimap<BulkIngestKey,Value> keyValues) throws Exception {
-        final TableOperations tops = connector.tableOperations();
+    private static void writeKeyValues(AccumuloClient client, Multimap<BulkIngestKey,Value> keyValues) throws Exception {
+        final TableOperations tops = client.tableOperations();
         final Set<BulkIngestKey> biKeys = keyValues.keySet();
         for (final BulkIngestKey biKey : biKeys) {
             final String tableName = biKey.getTableName().toString();
@@ -280,7 +281,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
                 tops.create(tableName);
             }
             
-            final BatchWriter writer = connector.createBatchWriter(tableName, new BatchWriterConfig());
+            final BatchWriter writer = client.createBatchWriter(tableName, new BatchWriterConfig());
             for (final Value val : keyValues.get(biKey)) {
                 final Mutation mutation = new Mutation(biKey.getKey().getRow());
                 mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(), biKey.getKey()
@@ -649,7 +650,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
-        logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
+        logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
         
         logic.setupQuery(config);
         
@@ -687,7 +688,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
         
-        logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
+        logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
         
         logic.setupQuery(config);
         

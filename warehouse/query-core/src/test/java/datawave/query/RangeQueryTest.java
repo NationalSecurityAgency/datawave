@@ -49,7 +49,7 @@ public class RangeQueryTest extends AbstractFunctionalQuery {
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
         Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     public RangeQueryTest() {

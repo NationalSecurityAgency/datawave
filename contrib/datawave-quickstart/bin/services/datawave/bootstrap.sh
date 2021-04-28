@@ -76,6 +76,9 @@ function createAccumuloShellInitScript() {
    if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
       DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
    config -s table.classpath.context=datawave"
+   else
+      DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}
+   config -s table.classpath.context=extlib"
    fi
 
    DW_ACCUMULO_SHELL_INIT_SCRIPT="${DW_ACCUMULO_SHELL_INIT_SCRIPT}

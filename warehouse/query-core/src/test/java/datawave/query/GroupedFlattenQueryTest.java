@@ -63,7 +63,7 @@ public class GroupedFlattenQueryTest extends AbstractFunctionalQuery {
     @BeforeClass
     public static void filterSetup() throws Exception {
         accumuloSetup.setData(FileType.JSON, flatten);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     public GroupedFlattenQueryTest() {

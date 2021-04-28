@@ -1,20 +1,31 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.util.TableName;
-import datawave.util.time.DateHelper;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -27,20 +38,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.util.TableName;
+import datawave.util.time.DateHelper;
 
 public class ShardedTableMapFileTest {
     private static final Log LOG = LogFactory.getLog(ShardedTableMapFileTest.class);
@@ -128,10 +130,11 @@ public class ShardedTableMapFileTest {
         accumuloCluster = new MiniAccumuloCluster(clusterDir, PASSWORD);
         accumuloCluster.start();
         
-        Connector connector = accumuloCluster.getConnector(USERNAME, PASSWORD);
-        TableOperations tableOperations = connector.tableOperations();
-        tableOperations.create(TABLE_NAME);
-        tableOperations.addSplits(TABLE_NAME, sortedSet);
+        try (AccumuloClient client = Accumulo.newClient().from(accumuloCluster.getClientProperties()).build()) {
+            TableOperations tableOperations = client.tableOperations();
+            tableOperations.create(TABLE_NAME);
+            tableOperations.addSplits(TABLE_NAME, sortedSet);
+        }
         
         return accumuloCluster;
     }
