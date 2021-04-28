@@ -1,6 +1,7 @@
 package datawave.query.tables;
 
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import java.io.InterruptedIOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -592,10 +593,22 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
      */
     @Override
     public void onFailure(Throwable t) {
-        stop();
+        if (isInterruptedException(t)) {
+            log.info("BatchScannerSession interrupted");
+        } else {
+            log.error("BatchScanerSession failed", t);
+        }
         uncaughtExceptionHandler.uncaughtException(Thread.currentThread().currentThread(), t);
+        stopAsync();
         Throwables.propagate(t);
-        
+    }
+    
+    private boolean isInterruptedException(Throwable t) {
+        while (t != null && !(t instanceof InterruptedException || t instanceof InterruptedIOException)
+                        && !(t.getMessage() != null && t.getMessage().contains("InterruptedException"))) {
+            t = t.getCause();
+        }
+        return t != null;
     }
     
     private class BatchScannerListener extends Service.Listener {
