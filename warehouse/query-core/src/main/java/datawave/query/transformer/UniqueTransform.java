@@ -10,6 +10,8 @@ import com.google.common.hash.PrimitiveSink;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.TimingMetadata;
+import datawave.query.function.LogTiming;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
@@ -97,6 +99,10 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         if (keyDocumentEntry != null) {
+            if (isTimingMetadata(keyDocumentEntry.getValue())) {
+                return keyDocumentEntry;
+            }
+            
             try {
                 if (isDuplicate(keyDocumentEntry.getValue())) {
                     keyDocumentEntry = null;
@@ -106,6 +112,14 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
         }
         return keyDocumentEntry;
+    }
+    
+    /**
+     * Determine if the document is a TIMING_METADATA record. They should be skipped.
+     */
+    private boolean isTimingMetadata(Document document) {
+        Attribute<? extends Comparable<?>> timingMetadataAttribute = document.getDictionary().get(LogTiming.TIMING_METADATA);
+        return (timingMetadataAttribute != null && timingMetadataAttribute instanceof TimingMetadata);
     }
     
     /**

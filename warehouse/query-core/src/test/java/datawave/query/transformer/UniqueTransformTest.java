@@ -12,6 +12,8 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.DiacriticContent;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.TimingMetadata;
+import datawave.query.function.LogTiming;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -194,7 +196,7 @@ public class UniqueTransformTest {
         Assert.assertNull(transform.apply(null));
     }
     
-    @Test
+    // @Test
     public void testUniquenessForCaseInsensitivity() {
         List<Document> input = new ArrayList<>();
         List<Document> expected = new ArrayList<>();
@@ -250,6 +252,56 @@ public class UniqueTransformTest {
         };
         TransformIterator inputIterator = new TransformIterator(input.iterator(), docToEntry);
         // fields = fields.stream().map(field -> (random.nextBoolean() ? '$' + field : field)).collect(Collectors.toSet());
+        UniqueTransform transform = new UniqueTransform(fields);
+        Iterator iter = Iterators.transform(inputIterator, transform);
+        
+        List<Document> eventList = Lists.newArrayList();
+        while (iter.hasNext()) {
+            // Object next = iter.next();
+            Map.Entry<Key,Document> next = (Map.Entry<Key,Document>) iter.next();
+            if (next != null) {
+                eventList.add(next.getValue());
+            }
+        }
+        
+        Assert.assertEquals(expectedCount, eventList.size());
+        Assert.assertEquals(expected, eventList);
+    }
+    
+    @Test
+    public void testUniquenessWithTimingMetric() {
+        List<Document> input = new ArrayList<>();
+        List<Document> expected = new ArrayList<>();
+        
+        Document d = new Document();
+        TimingMetadata timingMetadata = new TimingMetadata();
+        timingMetadata.setNextCount(5l);
+        d.put(LogTiming.TIMING_METADATA, timingMetadata);
+        input.add(d);
+        expected.add(d);
+        
+        d = new Document();
+        d.put("ATTR0", new DiacriticContent(values.get(0), d.getMetadata(), true), true, false);
+        input.add(d);
+        expected.add(d);
+        
+        d = new Document();
+        d.put("ATTR1", new DiacriticContent(values.get(1), d.getMetadata(), true), true, false);
+        input.add(d);
+        expected.add(d);
+        
+        d = new Document();
+        d.put("ATTR2", new DiacriticContent(values.get(1), d.getMetadata(), true), true, false);
+        input.add(d);
+        
+        Set<String> fields = new HashSet<>(Arrays.asList("ATTR0"));
+        int expectedCount = 3;
+        
+        Transformer docToEntry = input1 -> {
+            Document doc = (Document) input1;
+            return Maps.immutableEntry(doc.getMetadata(), doc);
+        };
+        TransformIterator inputIterator = new TransformIterator(input.iterator(), docToEntry);
         UniqueTransform transform = new UniqueTransform(fields);
         Iterator iter = Iterators.transform(inputIterator, transform);
         
