@@ -36,7 +36,7 @@ public class NonShardedSplitsFile {
     protected static final Logger log = Logger.getLogger(NonShardedSplitsFile.class);
     public static final String SPLITS_FILE_NAME_PROPERTY_KEY = "datawave.ingest.bulk.NonShardedSplitsFile.cutFile";
     private static final String SPLITS_FILE_NAME_PROPERTY_VALUE = "splits.txt";
-    private static final String TAB = "/t";
+    private static final String TAB = "\t";
     private static final String SEPARATOR = "/";
     
     public static class Writer {
@@ -189,7 +189,7 @@ public class NonShardedSplitsFile {
             try (BufferedReader in = new BufferedReader(new FileReader(cacheFile.toString()))) {
                 String line;
                 while ((line = in.readLine()) != null) {
-                    String[] parts = StringUtils.split(line, "\\t");
+                    String[] parts = StringUtils.split(line, TAB);
                     isSameTable = parts[0].equals(previousTableName);
                     hasSplits = parts.length > 1;
                     hasLocations = parts.length > 2;
