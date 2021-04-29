@@ -52,8 +52,6 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     private static final boolean DEFAULT_REFRESH_SPLITS = true;
     private static final String NO_LOCATION = "noloc";
     
-    private final Configuration conf = new Configuration();
-    private AccumuloHelper cbHelper = null;
     private Path splitsPath = null;
     private Map<String,List<Text>> splits = null;
     private Map<String,Map<Text,String>> splitLocations = null;
@@ -80,7 +78,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     }
     
     private ClientContext getClientContext() throws AccumuloSecurityException {
-        return new ClientContext(this.cbHelper.getInstance(), this.cbHelper.getCredentials(), this.cbHelper.getZookeeperConfig());
+        return new ClientContext(this.accumuloHelper.getInstance(), this.accumuloHelper.getCredentials(), this.accumuloHelper.getZookeeperConfig());
     }
     
     /**
