@@ -259,7 +259,7 @@ public abstract class FunctionalSetTest {
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("ANDOLINI", "SOPRANO", "CORLEONE", "CAPONE"),
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList(),
@@ -268,12 +268,12 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("CORLEONE", "CAPONE"),
                 
                 Arrays.asList("CAPONE"),
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
                 
-                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE"),
-                Arrays.asList("CORLEONE"),
+                Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "ANDOLINI"),
                 Arrays.asList("SOPRANO", "CAPONE"),};
         // @formatter:on
         for (int i = 0; i < queryStrings.length; i++) {
@@ -330,9 +330,9 @@ public abstract class FunctionalSetTest {
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
         
-                Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18"
-                Arrays.asList("SOPRANO", "CORLEONE"), // "10 <= AG && AG <= 18",
-                Arrays.asList("SOPRANO", "CORLEONE"), // "18 >= AG && 10 <= AG",
+                Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "10 <= AG && AG <= 18"
+                Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "10 <= AG && AG <= 18",
+                Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "18 >= AG && 10 <= AG",
                 Arrays.asList("SOPRANO", "CORLEONE"), // "AGE == 18"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "18 == AGE"
                 Arrays.asList("SOPRANO", "CORLEONE"), // "GENDER == 'FEMALE'"
