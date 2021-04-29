@@ -196,7 +196,7 @@ public class UniqueTransformTest {
         Assert.assertNull(transform.apply(null));
     }
     
-    // @Test
+    @Test
     public void testUniquenessForCaseInsensitivity() {
         List<Document> input = new ArrayList<>();
         List<Document> expected = new ArrayList<>();
