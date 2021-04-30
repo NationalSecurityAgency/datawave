@@ -764,14 +764,14 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         }
         
         // Test the plan sans value expansion
-        String expect = "(((!(((_Delayed_ = true)" + JEXL_AND_OP + "(" + Constants.ANY_FIELD + RE_OP + "'.*ica')))" + JEXL_AND_OP + "!("
-                        + CityField.CONTINENT.name() + RE_OP + "'.*ica'))))";
+        String expect = "(!((_Delayed_ = true)" + JEXL_AND_OP + "(" + Constants.ANY_FIELD + RE_OP + "'.*ica'))" + JEXL_AND_OP + "!("
+                        + CityField.CONTINENT.name() + RE_OP + "'.*ica'))";
         String plan = getPlan(query, true, false);
         assertPlanEquals(expect, plan);
         
         // Test the plan sans field expansion
-        expect = "(((!(((_Delayed_ = true)" + JEXL_AND_OP + "(" + Constants.ANY_FIELD + RE_OP + "'.*ica')))" + JEXL_AND_OP + "!(" + Constants.ANY_FIELD + EQ_OP
-                        + "'north america'))))";
+        expect = "(!((_Delayed_ = true)" + JEXL_AND_OP + "(" + Constants.ANY_FIELD + RE_OP + "'.*ica'))" + JEXL_AND_OP + "!(" + Constants.ANY_FIELD + EQ_OP
+                        + "'north america'))";
         plan = getPlan(query, false, true);
         assertPlanEquals(expect, plan);
         
@@ -790,17 +790,17 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             this.logic.setFullTableScanEnabled(true);
             
             // Test the plan with all expansions
-            expect = "(((!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!(" + CityField.CONTINENT.name() + EQ_OP + "'north america'))))";
+            expect = "(!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!(" + CityField.CONTINENT.name() + EQ_OP + "'north america'))";
             plan = getPlan(query, true, true);
             assertPlanEquals(expect, plan);
             
             // Test the plan sans value expansion
-            expect = "(((!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!(" + CityField.CONTINENT.name() + RE_OP + "'.*ica'))))";
+            expect = "(!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!(" + CityField.CONTINENT.name() + RE_OP + "'.*ica'))";
             plan = getPlan(query, true, false);
             assertPlanEquals(expect, plan);
             
             // Test the plan sans field expansion
-            expect = "(((!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!(" + Constants.ANY_FIELD + EQ_OP + "'north america'))))";
+            expect = "(!(" + Constants.ANY_FIELD + RE_OP + "'.*ica')" + JEXL_AND_OP + "!(" + Constants.ANY_FIELD + EQ_OP + "'north america'))";
             plan = getPlan(query, false, true);
             assertPlanEquals(expect, plan);
             

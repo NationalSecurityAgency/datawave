@@ -58,6 +58,13 @@ public class PushdownNegationVisitorTest {
     }
     
     @Test
+    public void testDoubleNegationEqWithWraps() throws ParseException {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("!(!(F1 == 'v1'))");
+        visitor.visit(query, null);
+        Assert.assertEquals("((F1 == 'v1'))", JexlStringBuildingVisitor.buildQuery(query));
+    }
+    
+    @Test
     public void testTripleNegationEq() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!!!(F1 == 'v1')");
         visitor.visit(query, null);
@@ -69,6 +76,7 @@ public class PushdownNegationVisitorTest {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!(!(!(F1 == 'v1')))");
         visitor.visit(query, null);
         Assert.assertEquals("((!(F1 == 'v1')))", JexlStringBuildingVisitor.buildQuery(query));
+        // TODO -- dropping NOT should also drop extra ref/ref-expr
     }
     
     @Test
@@ -82,42 +90,42 @@ public class PushdownNegationVisitorTest {
     public void testAnd() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!(F1 == 'v1' && F2 == 'v2')");
         visitor.visit(query, null);
-        Assert.assertEquals("((!(F1 == 'v1') || !(F2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(query));
+        Assert.assertEquals("(!(F1 == 'v1') || !(F2 == 'v2'))", JexlStringBuildingVisitor.buildQuery(query));
     }
     
     @Test
     public void testAndNE() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!(F1 != 'v1' && F2 != 'v2')");
         visitor.visit(query, null);
-        Assert.assertEquals("(((F1 == 'v1') || (F2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(query));
+        Assert.assertEquals("((F1 == 'v1') || (F2 == 'v2'))", JexlStringBuildingVisitor.buildQuery(query));
     }
     
     @Test
     public void testOr() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!(F1 == 'v1' || F2 == 'v2')");
         visitor.visit(query, null);
-        Assert.assertEquals("((!(F1 == 'v1') && !(F2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(query));
+        Assert.assertEquals("(!(F1 == 'v1') && !(F2 == 'v2'))", JexlStringBuildingVisitor.buildQuery(query));
     }
     
     @Test
     public void testOrNE() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!(F1 != 'v1' || F2 != 'v2')");
         visitor.visit(query, null);
-        Assert.assertEquals("(((F1 == 'v1') && (F2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(query));
+        Assert.assertEquals("((F1 == 'v1') && (F2 == 'v2'))", JexlStringBuildingVisitor.buildQuery(query));
     }
     
     @Test
     public void testNestedAnd() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!(F1 == 'v1' && F2 == 'v2' && (F3 == 'v3' || F4 == 'v4'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("((!(F1 == 'v1') || !(F2 == 'v2') || (((!(F3 == 'v3') && !(F4 == 'v4'))))))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("(!(F1 == 'v1') || !(F2 == 'v2') || (!(F3 == 'v3') && !(F4 == 'v4')))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testNestedAndMixedCancels() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!(F1 != 'v1' && !F2 == 'v2' && (F3 == 'v3' || F4 == 'v4'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("(((F1 == 'v1') || (F2 == 'v2') || (((!(F3 == 'v3') && !(F4 == 'v4'))))))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("((F1 == 'v1') || (F2 == 'v2') || (!(F3 == 'v3') && !(F4 == 'v4')))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     /**
@@ -130,7 +138,7 @@ public class PushdownNegationVisitorTest {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!(F1 == 'v1' && F2 == 'v2' && (F3 == 'v3' || F4 == 'v4'))");
         String orig = JexlStringBuildingVisitor.buildQuery(query);
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("((!(F1 == 'v1') || !(F2 == 'v2') || (((!(F3 == 'v3') && !(F4 == 'v4'))))))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("(!(F1 == 'v1') || !(F2 == 'v2') || (!(F3 == 'v3') && !(F4 == 'v4')))", JexlStringBuildingVisitor.buildQuery(result));
         Assert.assertNotEquals(orig, JexlStringBuildingVisitor.buildQuery(result));
         Assert.assertEquals(orig, JexlStringBuildingVisitor.buildQuery(query));
     }
@@ -139,28 +147,28 @@ public class PushdownNegationVisitorTest {
     public void testNestedOr() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!(F1 == 'v1' || F2 == 'v2' || (F3 == 'v3' && F4 == 'v4'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("((!(F1 == 'v1') && !(F2 == 'v2') && (((!(F3 == 'v3') || !(F4 == 'v4'))))))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("(!(F1 == 'v1') && !(F2 == 'v2') && (!(F3 == 'v3') || !(F4 == 'v4')))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testNestedOrMixedCancels() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!(F1 != 'v1' || !F2 == 'v2' || (F3 == 'v3' && F4 == 'v4'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("(((F1 == 'v1') && (F2 == 'v2') && (((!(F3 == 'v3') || !(F4 == 'v4'))))))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("((F1 == 'v1') && (F2 == 'v2') && (!(F3 == 'v3') || !(F4 == 'v4')))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testDelayedPropertyMarkerPropagate() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((_Delayed_ = true) && (F1 == 'v1' || F2 == 'v2'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("((_Delayed_ = true) && ((!(F1 == 'v1') && !(F2 == 'v2'))))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("((_Delayed_ = true) && (!(F1 == 'v1') && !(F2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
     public void testEvaluationOnlyPropertyMarkerPropagate() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((_Eval_ = true) && (F1 == 'v1' || F2 == 'v2'))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("((_Eval_ = true) && ((!(F1 == 'v1') && !(F2 == 'v2'))))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("((_Eval_ = true) && (!(F1 == 'v1') && !(F2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
@@ -203,8 +211,7 @@ public class PushdownNegationVisitorTest {
         ASTJexlScript query = JexlASTHelper
                         .parseJexlQuery("(F3 == 'v3' || !(((_Bounded_ = true) && (F1 >= 'v1' && F2 <= 'v2')) || !((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals(
-                        "(F3 == 'v3' || ((!(((_Bounded_ = true) && (F1 >= 'v1' && F2 <= 'v2'))) && (((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))))))",
+        Assert.assertEquals("(F3 == 'v3' || (!((_Bounded_ = true) && (F1 >= 'v1' && F2 <= 'v2')) && ((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))))",
                         JexlStringBuildingVisitor.buildQuery(result));
     }
     
@@ -212,7 +219,7 @@ public class PushdownNegationVisitorTest {
     public void testMixedMarkers() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("!((_Delayed_ = true) && (F1 == 'v1' && ((_Term_ = true) && (F2 == 'v2'))))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals("((_Delayed_ = true) && ((!(F1 == 'v1') || !(((_Term_ = true) && (F2 == 'v2'))))))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("((_Delayed_ = true) && (!(F1 == 'v1') || !((_Term_ = true) && (F2 == 'v2'))))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
@@ -268,7 +275,7 @@ public class PushdownNegationVisitorTest {
         children.add(child2);
         JexlNode and = JexlNodeFactory.createUnwrappedAndNode(children);
         JexlNode result = PushdownNegationVisitor.applyDeMorgans(and, true);
-        Assert.assertEquals("!((!(f1 == 'v1') || !(f2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("!(!(f1 == 'v1') || !(f2 == 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
     }
     
     @Test
@@ -280,6 +287,28 @@ public class PushdownNegationVisitorTest {
         children.add(child2);
         JexlNode or = JexlNodeFactory.createUnwrappedOrNode(children);
         JexlNode result = PushdownNegationVisitor.applyDeMorgans(or, true);
-        Assert.assertEquals("!((!(f1 == 'v1') && !(f2 == 'v2')))", JexlStringBuildingVisitor.buildQuery(result));
+        Assert.assertEquals("!(!(f1 == 'v1') && !(f2 == 'v2'))", JexlStringBuildingVisitor.buildQuery(result));
+    }
+    
+    @Test
+    public void test_doubleWrappingUnionAfterPushdown() throws ParseException {
+        String query = "!(FOO == 'bar' || FOO == 'baz')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        ASTJexlScript result = (ASTJexlScript) PushdownNegationVisitor.pushdownNegations(script);
+        
+        String expected = "(!(FOO == 'bar') && !(FOO == 'baz'))";
+        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(result));
+    }
+    
+    @Test
+    public void test_doubleWrappingIntersectionAfterPushdown() throws ParseException {
+        String query = "!(FOO == 'bar' && FOO == 'baz')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        ASTJexlScript result = (ASTJexlScript) PushdownNegationVisitor.pushdownNegations(script);
+        
+        // Really? Double wrapping? That's very untidy and this is very passive aggressive.
+        // But also read the room. At most you need one wrapping. And if there are no siblings you need no wrapping!
+        String expected = "(!(FOO == 'bar') || !(FOO == 'baz'))";
+        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(result));
     }
 }

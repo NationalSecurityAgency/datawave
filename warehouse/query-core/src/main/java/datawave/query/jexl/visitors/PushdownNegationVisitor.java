@@ -2,7 +2,6 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAndNode;
@@ -16,7 +15,6 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Pushdown negations until they are either wrapping leaf nodes or bounded ranges. The purpose of this class is to remove edge cases from evaluating
@@ -41,7 +39,10 @@ public class PushdownNegationVisitor extends BaseVisitor {
         flattened.jjtAccept(new PushdownNegationVisitor(), new NegationState(false));
         
         // flatten the result
-        return TreeFlatteningRebuildingVisitor.flatten(flattened);
+        flattened = TreeFlatteningRebuildingVisitor.flatten(flattened);
+        
+        // remove extra parens and return
+        return RemoveExtraParensVisitor.remove(flattened);
     }
     
     @Override
@@ -214,9 +215,9 @@ public class PushdownNegationVisitor extends BaseVisitor {
         // flip the root operator and finish validating the root
         JexlNode newRoot;
         if (root instanceof ASTAndNode) {
-            newRoot = JexlNodeFactory.createOrNode(negatedChildren);
+            newRoot = JexlNodeFactory.createUnwrappedOrNode(negatedChildren);
         } else if (root instanceof ASTOrNode) {
-            newRoot = JexlNodeFactory.createAndNode(negatedChildren);
+            newRoot = JexlNodeFactory.createUnwrappedAndNode(negatedChildren);
         } else {
             throw new IllegalArgumentException("root must be either an ASTAndNode or ASTOrNode");
         }
