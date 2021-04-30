@@ -16,6 +16,7 @@ import javax.ejb.EJBContext;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -23,7 +24,6 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.common.cache.AccumuloTableCache;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.model.ModelList;
 

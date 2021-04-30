@@ -10,8 +10,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.WrappedConnector;
 
 import org.apache.accumulo.core.client.AccumuloException;
@@ -169,7 +168,7 @@ public class BaseTableCache implements Serializable, TableCache {
         String tempTableName = tableName + "Temp";
         try {
             Map<String,String> map = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            accumuloConn = connectionFactory.getConnection(connectionPoolName, Priority.ADMIN, map);
+            accumuloConn = connectionFactory.getConnection(connectionPoolName, AccumuloConnectionFactory.Priority.ADMIN, map);
             if (accumuloConn instanceof WrappedConnector) {
                 accumuloConn = ((WrappedConnector) accumuloConn).getReal();
             }

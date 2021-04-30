@@ -1,10 +1,10 @@
 package datawave.query.tables.chained;
 
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.microservice.query.logic.QueryLogic;
 import datawave.query.tables.chained.strategy.ChainStrategy;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;

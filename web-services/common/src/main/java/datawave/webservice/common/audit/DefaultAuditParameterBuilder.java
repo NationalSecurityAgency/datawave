@@ -4,6 +4,7 @@ import datawave.microservice.query.QueryParameters;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.MultiValueMap;
 
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.Map;
@@ -12,7 +13,7 @@ public class DefaultAuditParameterBuilder implements AuditParameterBuilder {
     private Logger log = LoggerFactory.getLogger(getClass().getName());
     
     @Override
-    public Map<String,String> convertAndValidate(MultivaluedMap<String,String> queryParameters) {
+    public Map<String,String> convertAndValidate(MultiValueMap<String,String> queryParameters) {
         AuditParameters validatedParams = new AuditParameters();
         
         MultivaluedMapImpl<String,String> auditParams = new MultivaluedMapImpl<>();

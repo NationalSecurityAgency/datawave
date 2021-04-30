@@ -10,6 +10,7 @@ import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.protobuf.Uid.List.Builder;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.query.data.parsers.DatawaveKey;
@@ -19,7 +20,6 @@ import datawave.query.util.MetadataHelperFactory;
 import datawave.security.util.ScannerHelper;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.ModificationRequestBase.MODE;
 import datawave.webservice.modification.configuration.ModificationServiceConfiguration;
 import datawave.webservice.query.result.event.DefaultEvent;
@@ -912,8 +912,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         expiration = new Date(expiration.getTime() + (1000 * 60 * 60 * 24));
         
         try {
-            GenericResponse<String> createResponse = queryService.createQuery(logicName, MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(logicName,
-                            query.toString(), "Query to find matching records for metadata modification", columnVisibility, new Date(0), new Date(),
+            GenericResponse<String> createResponse = queryService.createQuery(logicName, MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(
+                            logicName, query.toString(), "Query to find matching records for metadata modification", columnVisibility, new Date(0), new Date(),
                             StringUtils.join(auths, ','), expiration, 2, -1, null, QueryPersistence.TRANSIENT, queryOptions.toString(), false)));
             
             id = createResponse.getResult();

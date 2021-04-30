@@ -11,7 +11,6 @@
     <version>1.0-SNAPSHOT</version>
     <properties>
         <version.datawave>3.2.1-SNAPSHOT</version.datawave>
-        <version.jaxrs>3.7.0.Final</version.jaxrs>
         <version.lang3>3.3.2</version.lang3>
         <version.spring.messaging>5.3.5</version.spring.messaging>
     </properties>
@@ -37,11 +36,6 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${version.lang3}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.resteasy</groupId>
-                <artifactId>resteasy-jaxrs</artifactId>
-                <version>${version.jaxrs}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework</groupId>
@@ -89,10 +83,6 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxrs</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>

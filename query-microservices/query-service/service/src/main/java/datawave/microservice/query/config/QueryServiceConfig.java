@@ -10,7 +10,7 @@ import org.springframework.web.context.annotation.RequestScope;
 
 @Configuration
 public class QueryServiceConfig {
-
+    
     @Bean
     @ConditionalOnMissingBean
     @RequestScope

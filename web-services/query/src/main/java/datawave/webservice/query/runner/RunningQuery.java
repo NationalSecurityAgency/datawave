@@ -1,9 +1,9 @@
 package datawave.webservice.query.runner;
 
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.logic.QueryLogic;
 import datawave.security.util.AuthorizationsUtil;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.cache.QueryMetricFactory;

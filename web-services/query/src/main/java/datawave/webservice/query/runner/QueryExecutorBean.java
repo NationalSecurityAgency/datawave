@@ -20,6 +20,7 @@ import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.microservice.query.config.QueryExpirationProperties;
@@ -34,7 +35,6 @@ import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.audit.PrivateAuditConstants;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
@@ -687,7 +687,7 @@ public class QueryExecutorBean implements QueryExecutor {
                         if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
                             queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
                         }
-                        auditor.audit(queryParameters);
+                        auditor.audit(MapUtils.toMultiValueMap(queryParameters));
                     } catch (IllegalArgumentException e) {
                         log.error("Error validating audit parameters", e);
                         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
@@ -870,7 +870,7 @@ public class QueryExecutorBean implements QueryExecutor {
                         if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
                             queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
                         }
-                        auditor.audit(queryParameters);
+                        auditor.audit(MapUtils.toMultiValueMap(queryParameters));
                     } catch (IllegalArgumentException e) {
                         log.error("Error validating audit parameters", e);
                         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
@@ -1212,12 +1212,12 @@ public class QueryExecutorBean implements QueryExecutor {
                 query.closeConnection(connectionFactory);
             } else {
                 AuditType auditType = query.getLogic().getAuditType(query.getSettings());
-                MultivaluedMap<String,String> queryParameters = query.getSettings().toMap();
+                MultiValueMap<String,String> queryParameters = query.getSettings().toMap();
                 
-                queryParameters.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
-                queryParameters.putSingle(PrivateAuditConstants.LOGIC_CLASS, query.getLogic().getLogicName());
-                queryParameters.putSingle(PrivateAuditConstants.USER_DN, query.getSettings().getUserDN());
-                queryParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, query.getSettings().getColumnVisibility());
+                queryParameters.set(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
+                queryParameters.set(PrivateAuditConstants.LOGIC_CLASS, query.getLogic().getLogicName());
+                queryParameters.set(PrivateAuditConstants.USER_DN, query.getSettings().getUserDN());
+                queryParameters.set(PrivateAuditConstants.COLUMN_VISIBILITY, query.getSettings().getColumnVisibility());
                 
                 if (!auditType.equals(AuditType.NONE)) {
                     try {
@@ -1231,7 +1231,7 @@ public class QueryExecutorBean implements QueryExecutor {
                         }
                         // if the user didn't set an audit id, use the query id
                         if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
-                            queryParameters.putSingle(AuditParameters.AUDIT_ID, id);
+                            queryParameters.set(AuditParameters.AUDIT_ID, id);
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -1459,9 +1459,9 @@ public class QueryExecutorBean implements QueryExecutor {
             final GetUUIDCriteria criteria;
             final String view = (null != matchingType) ? matchingType.getDefinedView() : null;
             if ((LookupUUIDUtil.UID_QUERY.equals(view) || LookupUUIDUtil.LOOKUP_UID_QUERY.equals(view))) {
-                criteria = new UIDQueryCriteria(uuid, uuidType, queryParameters);
+                criteria = new UIDQueryCriteria(uuid, uuidType, MapUtils.toMultiValueMap(queryParameters));
             } else {
-                criteria = new GetUUIDCriteria(uuid, uuidType, queryParameters);
+                criteria = new GetUUIDCriteria(uuid, uuidType, MapUtils.toMultiValueMap(queryParameters));
             }
             
             // Set the HTTP headers if a streamed response is required
@@ -1522,7 +1522,7 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             // Create the criteria for looking up the respective events, which we need to get the shard IDs and column families
             // required for the content lookup
-            final PostUUIDCriteria criteria = new PostUUIDCriteria(uuidPairs, queryParameters);
+            final PostUUIDCriteria criteria = new PostUUIDCriteria(uuidPairs, MapUtils.toMultiValueMap(queryParameters));
             
             // Set the HTTP headers if a streamed response is required
             if (streamingOutput) {
@@ -1589,9 +1589,9 @@ public class QueryExecutorBean implements QueryExecutor {
             final GetUUIDCriteria criteria;
             final String view = (null != matchingType) ? matchingType.getDefinedView() : null;
             if ((LookupUUIDUtil.UID_QUERY.equals(view) || LookupUUIDUtil.LOOKUP_UID_QUERY.equals(view))) {
-                criteria = new UIDQueryCriteria(uuid, uuidType, queryParameters);
+                criteria = new UIDQueryCriteria(uuid, uuidType, MapUtils.toMultiValueMap(queryParameters));
             } else {
-                criteria = new GetUUIDCriteria(uuid, uuidType, queryParameters);
+                criteria = new GetUUIDCriteria(uuid, uuidType, MapUtils.toMultiValueMap(queryParameters));
             }
             
             // Add the HTTP headers in case streaming is required
@@ -1651,7 +1651,7 @@ public class QueryExecutorBean implements QueryExecutor {
             if (!StringUtils.isEmpty(streaming)) {
                 streamingOutput = Boolean.parseBoolean(streaming);
             }
-            final PostUUIDCriteria criteria = new PostUUIDCriteria(uuidPairs, queryParameters);
+            final PostUUIDCriteria criteria = new PostUUIDCriteria(uuidPairs, MapUtils.toMultiValueMap(queryParameters));
             if (streamingOutput) {
                 criteria.setStreamingOutputHeaders(httpHeaders);
             }
@@ -2725,7 +2725,7 @@ public class QueryExecutorBean implements QueryExecutor {
                     }
                 }
             }
-            MultivaluedMap<String,String> newSettings = q.toMap();
+            MultivaluedMap<String,String> newSettings = MapUtils.toMultivaluedMap(q.toMap());
             newSettings.putSingle(QueryParameters.QUERY_PERSISTENCE, persistence.name());
             return createQuery(q.getQueryLogicName(), newSettings);
         } catch (DatawaveWebApplicationException e) {
@@ -2864,10 +2864,10 @@ public class QueryExecutorBean implements QueryExecutor {
             AuditType auditType = runningQuery.getLogic().getAuditType(runningQuery.getSettings());
             if (!auditType.equals(AuditType.NONE)) {
                 try {
-                    MultivaluedMap<String,String> queryParameters = duplicate.toMap();
+                    MultiValueMap<String,String> queryParameters = duplicate.toMap();
                     // if the user didn't set an audit id, use the query id
                     if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
-                        queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
+                        queryParameters.set(AuditParameters.AUDIT_ID, q.getId().toString());
                     }
                     auditor.audit(queryParameters);
                 } catch (IllegalArgumentException e) {

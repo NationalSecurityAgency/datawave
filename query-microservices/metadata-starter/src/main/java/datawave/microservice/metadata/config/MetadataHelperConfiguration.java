@@ -12,6 +12,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
@@ -26,6 +27,7 @@ import java.util.Set;
 
 @EnableCaching
 @Configuration
+@ConditionalOnProperty(name = "datawave.metadata.enabled", havingValue = "true", matchIfMissing = true)
 public class MetadataHelperConfiguration {
     @Bean
     @ConditionalOnMissingBean

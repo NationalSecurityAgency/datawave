@@ -4,9 +4,9 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.util.Collections;
@@ -110,12 +110,12 @@ public class QueryCheckpoint implements Serializable {
      */
     public static Query propertiesToQuery(Map<String,Object> props) throws ParseException {
         Query query = new QueryImpl();
-        MultivaluedMap<String,String> queryMap = new MultivaluedHashMap<>();
+        MultiValueMap<String,String> queryMap = new LinkedMultiValueMap<>();
         props.entrySet().forEach(e -> {
             if (e.getValue() instanceof List)
                 queryMap.put(e.getKey(), (List) e.getValue());
             else
-                queryMap.putSingle(e.getKey(), e.getValue().toString());
+                queryMap.set(e.getKey(), e.getValue().toString());
         });
         query.readMap(queryMap);
         return query;

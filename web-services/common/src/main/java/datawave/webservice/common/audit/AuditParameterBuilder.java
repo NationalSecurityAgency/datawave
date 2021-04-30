@@ -1,5 +1,7 @@
 package datawave.webservice.common.audit;
 
+import org.springframework.util.MultiValueMap;
+
 import javax.ws.rs.core.MultivaluedMap;
 import java.util.Map;
 
@@ -10,8 +12,10 @@ public interface AuditParameterBuilder {
     /**
      * Extracts parameters from {@code queryParameters}, converts to the parameters required by the audit microservice, and then validates the parameters before
      * returning them in a {@link Map}.
+     * 
+     * @param queryParameters
      */
-    Map<String,String> convertAndValidate(MultivaluedMap<String,String> queryParameters);
+    Map<String,String> convertAndValidate(MultiValueMap<String,String> queryParameters);
     
     /**
      * Builds validated audit parameters for a direct call to the audit service. That is, the parameters passed in are expected to be those used by the audit

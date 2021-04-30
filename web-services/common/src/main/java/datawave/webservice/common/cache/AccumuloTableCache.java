@@ -34,7 +34,7 @@ import javax.ws.rs.Produces;
 import datawave.annotation.Required;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.interceptor.RequiredInterceptor;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.result.AccumuloTableCacheStatus;
 import datawave.webservice.query.exception.QueryException;

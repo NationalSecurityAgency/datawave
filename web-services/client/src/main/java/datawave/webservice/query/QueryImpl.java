@@ -15,6 +15,7 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import javax.naming.InvalidNameException;
@@ -794,65 +795,65 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         return this.owner;
     }
     
-    public MultivaluedMap<String,String> toMap() {
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
+    public MultiValueMap<String,String> toMap() {
+        MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         if (this.id != null) {
-            p.putSingle(QUERY_ID, this.id);
+            p.set(QUERY_ID, this.id);
         }
         if (this.queryAuthorizations != null) {
-            p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, this.queryAuthorizations);
+            p.set(QueryParameters.QUERY_AUTHORIZATIONS, this.queryAuthorizations);
         }
         if (this.expirationDate != null) {
             try {
-                p.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(this.expirationDate));
+                p.set(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(this.expirationDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Error formatting date", e);
             }
         }
         if (this.queryName != null) {
-            p.putSingle(QueryParameters.QUERY_NAME, this.queryName);
+            p.set(QueryParameters.QUERY_NAME, this.queryName);
         }
         if (this.queryLogicName != null) {
-            p.putSingle(QueryParameters.QUERY_LOGIC_NAME, this.queryLogicName);
+            p.set(QueryParameters.QUERY_LOGIC_NAME, this.queryLogicName);
         }
         // no null check on primitives
-        p.putSingle(QueryParameters.QUERY_PAGESIZE, Integer.toString(this.pagesize));
+        p.set(QueryParameters.QUERY_PAGESIZE, Integer.toString(this.pagesize));
         if (this.query != null) {
-            p.putSingle(QueryParameters.QUERY_STRING, this.query);
+            p.set(QueryParameters.QUERY_STRING, this.query);
         }
         if (this.userDN != null) {
-            p.putSingle(USER_DN, this.userDN);
+            p.set(USER_DN, this.userDN);
         }
         if (this.dnList != null) {
             p.put(DN_LIST, this.dnList);
         }
         if (this.columnVisibility != null) {
-            p.putSingle(COLUMN_VISIBILITY, this.columnVisibility);
+            p.set(COLUMN_VISIBILITY, this.columnVisibility);
         }
         if (this.beginDate != null) {
             try {
-                p.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginDate));
+                p.set(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(this.beginDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Error formatting date", e);
             }
         }
         if (this.endDate != null) {
             try {
-                p.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(this.endDate));
+                p.set(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(this.endDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Error formatting date", e);
             }
         }
         if (this.parameters != null) {
             for (Parameter parameter : parameters) {
-                p.putSingle(parameter.getParameterName(), parameter.getParameterValue());
+                p.set(parameter.getParameterName(), parameter.getParameterValue());
             }
         }
         return p;
     }
     
     @Override
-    public void readMap(MultivaluedMap<String,String> map) throws ParseException {
+    public void readMap(MultiValueMap<String,String> map) throws ParseException {
         for (String key : map.keySet()) {
             switch (key) {
                 case QUERY_ID:

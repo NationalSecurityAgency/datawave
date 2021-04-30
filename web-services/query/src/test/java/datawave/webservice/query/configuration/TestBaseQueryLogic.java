@@ -1,11 +1,11 @@
 package datawave.webservice.query.configuration;
 
+import com.google.common.collect.Sets;
+import datawave.microservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.microservice.query.logic.QueryLogicTransformer;
-import com.google.common.collect.Sets;
 import datawave.webservice.common.audit.Auditor;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
@@ -23,8 +23,8 @@ import java.util.Set;
 
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)

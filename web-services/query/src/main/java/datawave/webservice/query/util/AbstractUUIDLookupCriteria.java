@@ -4,6 +4,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 
 import datawave.webservice.query.Query;
+import org.springframework.util.MultiValueMap;
 
 /**
  * Abstract implementation of criteria used for UUID lookup queries
@@ -12,7 +13,7 @@ public abstract class AbstractUUIDLookupCriteria {
     private boolean allEventLookup;
     private boolean contentLookup;
     private HttpHeaders headersForStreamedResponse;
-    private MultivaluedMap<String,String> queryParameters;
+    private MultiValueMap<String,String> queryParameters;
     
     /**
      * Constructor
@@ -26,7 +27,7 @@ public abstract class AbstractUUIDLookupCriteria {
         }
     }
     
-    public AbstractUUIDLookupCriteria(final MultivaluedMap<String,String> queryParameters) {
+    public AbstractUUIDLookupCriteria(final MultiValueMap<String,String> queryParameters) {
         this.queryParameters = queryParameters;
     }
     
@@ -65,7 +66,7 @@ public abstract class AbstractUUIDLookupCriteria {
         this.headersForStreamedResponse = headers;
     }
     
-    public MultivaluedMap<String,String> getQueryParameters() {
+    public MultiValueMap<String,String> getQueryParameters() {
         return queryParameters;
     }
     

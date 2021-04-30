@@ -12,6 +12,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>query</module>
+        <module>common</module>
     </modules>
     <repositories>
         <repository>

@@ -27,13 +27,13 @@ import static org.springframework.beans.factory.config.ConfigurableBeanFactory.S
 public class QueryLogicFactoryConfiguration {
     
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-
+    
     @Bean
     @ConditionalOnMissingBean
     public ResponseObjectFactory responseObjectFactory() {
         return new DefaultResponseObjectFactory();
     }
-
+    
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public Set<String> tokenizedFields(QueryParserProperties queryParserProperties) {

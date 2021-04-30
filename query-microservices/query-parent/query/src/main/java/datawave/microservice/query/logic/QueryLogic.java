@@ -2,10 +2,10 @@ package datawave.microservice.query.logic;
 
 import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -25,7 +25,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     
     /**
      * A mechanism to get the normalized query without actually setting up the query. This can be called with having to call initialize.
-     *
+     * <p>
      * The default implementation is to return the query string as the normalized query
      *
      * @param connection
@@ -56,7 +56,6 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception;
     
     /**
-     *
      * @param settings
      *            - query settings (query, begin date, end date, etc.)
      * @return list of selectors used in the Query
@@ -112,7 +111,9 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      */
     void close();
     
-    /** @return the tableName */
+    /**
+     * @return the tableName
+     */
     String getTableName();
     
     /**
@@ -266,7 +267,9 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      */
     void setConnPoolName(String connPoolName);
     
-    /** @return the connPoolName */
+    /**
+     * @return the connPoolName
+     */
     String getConnPoolName();
     
     /**
@@ -297,7 +300,6 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     Set<String> getRequiredQueryParameters();
     
     /**
-     *
      * @return set of example queries
      */
     Set<String> getExampleQueries();

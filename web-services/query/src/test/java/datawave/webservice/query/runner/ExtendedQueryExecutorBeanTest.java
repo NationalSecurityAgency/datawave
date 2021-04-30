@@ -20,8 +20,8 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.audit.PrivateAuditConstants;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
+import datawave.microservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
@@ -1071,20 +1071,20 @@ public class ExtendedQueryExecutorBeanTest {
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
         
-        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-        queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
-        queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
-        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
-        queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
-        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
-        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
-        queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
-        queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
-        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-        queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
-        queryParameters.putSingle("valid", "param");
-        queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+        MultiValueMap<String,String> queryParameters = new LinkedMultiValueMap<>();
+        queryParameters.set(QueryParameters.QUERY_STRING, query);
+        queryParameters.set(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.set(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+        queryParameters.set(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        queryParameters.set(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        queryParameters.set(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
+        queryParameters.set(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        queryParameters.set(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.set(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
+        queryParameters.set(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        queryParameters.set(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+        queryParameters.set("valid", "param");
+        queryParameters.set(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -1092,7 +1092,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
-        MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
+        MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(queryParameters));
         // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.ACTIVE.name());
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
@@ -1117,7 +1117,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).andReturn(this.query);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.ACTIVE);
         expect(this.queryLogic1.getSelectors(this.query)).andReturn(null);
-        expect(auditor.audit(eq(queryParameters))).andReturn(null);
+        expect(auditor.audit(anyObject())).andReturn(null);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
@@ -1154,7 +1154,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
         Throwable result1 = null;
         try {
-            subject.createQueryAndNext(queryLogicName, queryParameters);
+            subject.createQueryAndNext(queryLogicName, MapUtils.toMultivaluedMap(queryParameters));
         } catch (DatawaveWebApplicationException e) {
             result1 = e.getCause();
         }
@@ -2780,11 +2780,11 @@ public class ExtendedQueryExecutorBeanTest {
         List<String> dnList = Collections.singletonList(userDN);
         qp.setDnList(dnList);
         
-        MultivaluedMap<String,String> map = qp.toMap();
-        map.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.PASSIVE.name());
-        map.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-        map.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, authorization);
-        map.putSingle(PrivateAuditConstants.USER_DN, userDN);
+        MultiValueMap<String,String> map = qp.toMap();
+        map.set(PrivateAuditConstants.AUDIT_TYPE, AuditType.PASSIVE.name());
+        map.set(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        map.set(PrivateAuditConstants.COLUMN_VISIBILITY, authorization);
+        map.set(PrivateAuditConstants.USER_DN, userDN);
         
         // Set expectations
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
@@ -3016,23 +3016,23 @@ public class ExtendedQueryExecutorBeanTest {
         String userDN = "userDN";
         Query duplicateQuery = PowerMock.createMock(Query.class);
         
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
-        p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
-        p.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
-        p.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
-        p.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
-        p.putSingle(QueryParameters.QUERY_NAME, queryName);
-        p.putSingle(QueryParameters.QUERY_PAGESIZE, Integer.toString(pagesize));
-        p.putSingle(QueryParameters.QUERY_PAGETIMEOUT, Integer.toString(pageTimeout));
-        p.putSingle(QueryParameters.QUERY_STRING, query);
-        p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-        p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-        p.putSingle(QueryParameters.QUERY_PARAMS, parameters);
+        MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
+        p.set(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        p.set(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        p.set(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        p.set(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
+        p.set(QueryParameters.QUERY_NAME, queryName);
+        p.set(QueryParameters.QUERY_PAGESIZE, Integer.toString(pagesize));
+        p.set(QueryParameters.QUERY_PAGETIMEOUT, Integer.toString(pageTimeout));
+        p.set(QueryParameters.QUERY_STRING, query);
+        p.set(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        p.set(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        p.set(QueryParameters.QUERY_PARAMS, parameters);
         
-        p.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.LOCALONLY.name());
-        p.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-        p.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
-        p.putSingle(PrivateAuditConstants.USER_DN, userDN);
+        p.set(PrivateAuditConstants.AUDIT_TYPE, AuditType.LOCALONLY.name());
+        p.set(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        p.set(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        p.set(PrivateAuditConstants.USER_DN, userDN);
         
         // Set expectations
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(4);
@@ -3132,10 +3132,10 @@ public class ExtendedQueryExecutorBeanTest {
         qp.setPageTimeout(pageTimeout);
         qp.setColumnVisibility(queryAuthorizations);
         
-        MultivaluedMap<String,String> params = qp.toMap();
-        params.putSingle(QueryParameters.QUERY_TRACE, Boolean.toString(trace));
-        params.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-        params.putSingle(QueryParameters.QUERY_PARAMS, parameters);
+        MultiValueMap<String,String> params = qp.toMap();
+        params.set(QueryParameters.QUERY_TRACE, Boolean.toString(trace));
+        params.set(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        params.set(QueryParameters.QUERY_PARAMS, parameters);
         
         QueryExecutorBean subject = PowerMock.createPartialMock(QueryExecutorBean.class, "createQuery");
         
@@ -3148,7 +3148,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogicFactory.getQueryLogic(queryLogicName, Collections.emptyList())).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getTransformer(isA(Query.class))).andReturn(this.transformer);
         expect(this.transformer.createResponse(isA(ResultsPage.class))).andReturn(this.baseResponse);
-        expect(subject.createQuery(queryLogicName, params, httpHeaders)).andReturn(createResponse);
+        expect(subject.createQuery(queryLogicName, MapUtils.toMultivaluedMap(params), httpHeaders)).andReturn(createResponse);
         expect(this.cache.get(eq(queryId.toString()))).andReturn(this.runningQuery);
         expect(this.runningQuery.getMetric()).andReturn(this.queryMetric);
         this.queryMetric.setCreateCallTime(EasyMock.geq(0L));
@@ -3169,7 +3169,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricsBean.class, metrics);
         setInternalState(subject, Multimap.class, traceInfos);
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
-        StreamingOutput result1 = subject.execute(queryLogicName, params, httpHeaders);
+        StreamingOutput result1 = subject.execute(queryLogicName, MapUtils.toMultivaluedMap(params), httpHeaders);
         PowerMock.verifyAll();
         
         // Verify results
@@ -3471,21 +3471,21 @@ public class ExtendedQueryExecutorBeanTest {
         HashMap<String,Collection<String>> authsMap = new HashMap<>();
         authsMap.put("userdn", Arrays.asList(queryAuthorizations));
         
-        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
-        queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
-        queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
-        queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
-        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
-        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
-        queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
-        queryParameters.putSingle(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
-        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-        queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
-        queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
-        queryParameters.putSingle("valid", "param");
-        queryParameters.putSingle(QueryExecutorBean.EXPAND_VALUES, "true");
+        MultiValueMap<String,String> queryParameters = new LinkedMultiValueMap<>();
+        queryParameters.set(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+        queryParameters.set(QueryParameters.QUERY_STRING, query);
+        queryParameters.set(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.set(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        queryParameters.set(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        queryParameters.set(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
+        queryParameters.set(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        queryParameters.set(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.set(QueryParameters.QUERY_PAGETIMEOUT, String.valueOf(pageTimeout));
+        queryParameters.set(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        queryParameters.set(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+        queryParameters.set(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+        queryParameters.set("valid", "param");
+        queryParameters.set(QueryExecutorBean.EXPAND_VALUES, "true");
         
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -3493,7 +3493,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryParameters qp = new DefaultQueryParameters();
         qp.validate(queryParameters);
         
-        MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters)));
+        MultivaluedMap<String,String> op = MapUtils.toMultivaluedMap(qp.getUnknownParameters(queryParameters));
         // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
         op.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
@@ -3515,7 +3515,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.containsDNWithAccess(Collections.singletonList(userDN))).andReturn(true);
         expect(this.queryLogic1.getAuditType(null)).andReturn(AuditType.PASSIVE);
         expect(this.queryLogic1.getSelectors(this.query)).andReturn(null);
-        expect(auditor.audit(eq(queryParameters))).andReturn(null);
+        expect(auditor.audit(anyObject())).andReturn(null);
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(persister.create(eq(userDNpair.subjectDN()), eq(dnList), eq(marking), eq(queryLogicName), eq(qp), eq(op))).andReturn(this.query);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.PASSIVE);
@@ -3580,7 +3580,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(subject, QueryMetricFactory.class, new QueryMetricFactoryImpl());
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(subject, AccumuloConnectionRequestBean.class, connectionRequestBean);
-        GenericResponse<String> result1 = subject.planQuery(queryLogicName, queryParameters);
+        GenericResponse<String> result1 = subject.planQuery(queryLogicName, MapUtils.toMultivaluedMap(queryParameters));
         PowerMock.verifyAll();
         
         // Verify results
@@ -3612,19 +3612,19 @@ public class ExtendedQueryExecutorBeanTest {
         
         HashMap<String,Collection<String>> authsMap = new HashMap<>();
         authsMap.put("USERDN", Arrays.asList(queryAuthorizations));
-        MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-        queryParameters.putSingle(QueryParameters.QUERY_STRING, query);
-        queryParameters.putSingle(QueryParameters.QUERY_NAME, queryName);
-        queryParameters.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
-        queryParameters.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
-        queryParameters.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
-        queryParameters.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
-        queryParameters.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
-        queryParameters.putSingle(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
-        queryParameters.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-        queryParameters.putSingle(QueryParameters.QUERY_TRACE, String.valueOf(trace));
-        queryParameters.putSingle(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
-        queryParameters.putSingle("valid", "param");
+        MultiValueMap<String,String> queryParameters = new LinkedMultiValueMap<>();
+        queryParameters.set(QueryParameters.QUERY_STRING, query);
+        queryParameters.set(QueryParameters.QUERY_NAME, queryName);
+        queryParameters.set(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+        queryParameters.set(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        queryParameters.set(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        queryParameters.set(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
+        queryParameters.set(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        queryParameters.set(QueryParameters.QUERY_PAGESIZE, String.valueOf(pagesize));
+        queryParameters.set(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        queryParameters.set(QueryParameters.QUERY_TRACE, String.valueOf(trace));
+        queryParameters.set(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, queryVisibility);
+        queryParameters.set("valid", "param");
         
         expect(context.getCallerPrincipal()).andReturn(principal).anyTimes();
         expect(this.principal.getPrimaryUser()).andReturn(dwUser);
@@ -3665,7 +3665,7 @@ public class ExtendedQueryExecutorBeanTest {
         setInternalState(connectionRequestBean, EJBContext.class, context);
         setInternalState(executor, AccumuloConnectionRequestBean.class, connectionRequestBean);
         
-        executor.createQuery(queryLogicName, queryParameters);
+        executor.createQuery(queryLogicName, MapUtils.toMultivaluedMap(queryParameters));
         
         PowerMock.verifyAll();
     }
@@ -3695,11 +3695,11 @@ public class ExtendedQueryExecutorBeanTest {
         qp.setUserDN(userDN);
         qp.setDnList(Collections.singletonList(userDN));
         
-        MultivaluedMap<String,String> map = qp.toMap();
-        map.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.PASSIVE.name());
-        map.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-        map.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, authorization);
-        map.putSingle(PrivateAuditConstants.USER_DN, userDN);
+        MultiValueMap<String,String> map = qp.toMap();
+        map.set(PrivateAuditConstants.AUDIT_TYPE, AuditType.PASSIVE.name());
+        map.set(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        map.set(PrivateAuditConstants.COLUMN_VISIBILITY, authorization);
+        map.set(PrivateAuditConstants.USER_DN, userDN);
         
         // Set expectations
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
@@ -3784,23 +3784,23 @@ public class ExtendedQueryExecutorBeanTest {
         String userDN = "userDN";
         Query duplicateQuery = PowerMock.createMock(Query.class);
         
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
-        p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
-        p.putSingle(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
-        p.putSingle(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
-        p.putSingle(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
-        p.putSingle(QueryParameters.QUERY_NAME, queryName);
-        p.putSingle(QueryParameters.QUERY_PAGESIZE, Integer.toString(pagesize));
-        p.putSingle(QueryParameters.QUERY_PAGETIMEOUT, Integer.toString(pageTimeout));
-        p.putSingle(QueryParameters.QUERY_STRING, query);
-        p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-        p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
-        p.putSingle(QueryParameters.QUERY_PARAMS, parameters);
+        MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
+        p.set(QueryParameters.QUERY_AUTHORIZATIONS, queryAuthorizations);
+        p.set(QueryParameters.QUERY_BEGIN, DefaultQueryParameters.formatDate(beginDate));
+        p.set(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+        p.set(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expirationDate));
+        p.set(QueryParameters.QUERY_NAME, queryName);
+        p.set(QueryParameters.QUERY_PAGESIZE, Integer.toString(pagesize));
+        p.set(QueryParameters.QUERY_PAGETIMEOUT, Integer.toString(pageTimeout));
+        p.set(QueryParameters.QUERY_STRING, query);
+        p.set(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        p.set(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+        p.set(QueryParameters.QUERY_PARAMS, parameters);
         
-        p.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.LOCALONLY.name());
-        p.putSingle(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
-        p.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
-        p.putSingle(PrivateAuditConstants.USER_DN, userDN);
+        p.set(PrivateAuditConstants.AUDIT_TYPE, AuditType.LOCALONLY.name());
+        p.set(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
+        p.set(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
+        p.set(PrivateAuditConstants.USER_DN, userDN);
         
         // Set expectations
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();

@@ -1,6 +1,7 @@
 package datawave.webservice.common.connection;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.cache.AccumuloTableCache;
 import datawave.webservice.common.connection.config.ConnectionPoolConfiguration;

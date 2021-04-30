@@ -1,5 +1,6 @@
 package datawave.webservice.common.connection;
 
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.log4j.Logger;

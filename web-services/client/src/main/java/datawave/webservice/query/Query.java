@@ -4,7 +4,7 @@ import datawave.microservice.query.QueryParameters;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -111,9 +111,9 @@ public abstract class Query implements Externalizable {
     
     public abstract String getColumnVisibility();
     
-    public abstract MultivaluedMap<String,String> toMap();
+    public abstract MultiValueMap<String,String> toMap();
     
-    public abstract void readMap(MultivaluedMap<String,String> map) throws ParseException;
+    public abstract void readMap(MultiValueMap<String,String> map) throws ParseException;
     
     public abstract Map<String,String> getCardinalityFields();
     
@@ -127,7 +127,7 @@ public abstract class Query implements Externalizable {
     
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        MultivaluedMap<String,String> map = new MultivaluedMapImpl<>();
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
         int numKeys = in.readInt();
         for (int i = 0; i < numKeys; i++) {
             String key = in.readUTF();
@@ -146,7 +146,7 @@ public abstract class Query implements Externalizable {
     
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        MultivaluedMap<String,String> map = toMap();
+        MultiValueMap<String,String> map = toMap();
         Set<String> keys = map.keySet();
         out.writeInt(keys.size());
         for (String key : keys) {

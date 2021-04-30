@@ -2,6 +2,8 @@ package datawave.query.tables.term;
 
 import com.google.common.collect.ImmutableSet;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
+import datawave.microservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.microservice.query.logic.QueryLogicTransformer;
@@ -9,8 +11,6 @@ import datawave.query.QueryParameters;
 import datawave.query.config.TermFrequencyQueryConfiguration;
 import datawave.query.transformer.TermFrequencyQueryTransformer;
 import datawave.query.util.QueryScannerHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;

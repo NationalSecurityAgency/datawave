@@ -1,9 +1,9 @@
 package datawave.webservice.query.cache;
 
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.microservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
@@ -27,8 +27,8 @@ public class TestQueryLogic extends BaseQueryLogic<Object> {
     }
     
     @Override
-    public Priority getConnectionPriority() {
-        return Priority.NORMAL;
+    public AccumuloConnectionFactory.Priority getConnectionPriority() {
+        return AccumuloConnectionFactory.Priority.NORMAL;
     }
     
     @Override

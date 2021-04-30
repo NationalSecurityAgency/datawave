@@ -2,10 +2,10 @@ package datawave.webservice.query.dashboard;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.interceptor.ResponseInterceptor;
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.security.util.ScannerHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.extjs.ExtJsResponse;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import org.apache.accumulo.core.client.Connector;

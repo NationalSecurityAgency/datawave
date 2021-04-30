@@ -38,75 +38,43 @@ public class BaseEventQueryConfiguration {
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public Map<String,String> baseEventQueryHierarchyFieldOptions() {
-        Map<String,String> hierarchyFieldOptions = new HashMap<>();
-        for (Map.Entry<String,String> entry : baseEventQueryProperties().getHierarchyFieldOptions().entrySet()) {
-            if (!entry.getKey().isEmpty()) {
-                hierarchyFieldOptions.put(entry.getKey(), entry.getValue());
-            }
-        }
-        return hierarchyFieldOptions;
+        return baseEventQueryProperties().getHierarchyFieldOptions();
     }
     
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public List<String> baseEventQueryContentFieldNames() {
-        List<String> contentFieldNames = new ArrayList<>();
-        if (baseEventQueryProperties().getContentFieldNames() != null) {
-            contentFieldNames.addAll(baseEventQueryProperties().getContentFieldNames());
-        }
-        return contentFieldNames;
+        return baseEventQueryProperties().getContentFieldNames();
     }
     
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public List<String> baseEventQueryRealmSuffixExclusionPatterns() {
-        List<String> realmSuffixExclusionPatterns = new ArrayList<>();
-        if (baseEventQueryProperties().getRealmSuffixExclusionPatterns() != null) {
-            realmSuffixExclusionPatterns.addAll(baseEventQueryProperties().getRealmSuffixExclusionPatterns());
-        }
-        return realmSuffixExclusionPatterns;
+        return baseEventQueryProperties().getRealmSuffixExclusionPatterns();
     }
     
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public List<String> baseEventQueryEnricherClassNames() {
-        List<String> enricherClassNames = new ArrayList<>();
-        if (baseEventQueryProperties().getEnricherClassNames() != null) {
-            enricherClassNames.addAll(baseEventQueryProperties().getEnricherClassNames());
-        }
-        return enricherClassNames;
+        return baseEventQueryProperties().getEnricherClassNames();
     }
     
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public List<String> baseEventQueryFilterClassNames() {
-        List<String> filterClassNames = new ArrayList<>();
-        if (baseEventQueryProperties().getFilterClassNames() != null) {
-            filterClassNames.addAll(baseEventQueryProperties().getFilterClassNames());
-        }
-        return filterClassNames;
+        return baseEventQueryProperties().getFilterClassNames();
     }
     
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public Map<String,String> baseEventQueryFilterOptions() {
-        Map<String,String> filterOptions = new HashMap<>();
-        for (Map.Entry<String,String> entry : baseEventQueryProperties().getFilterOptions().entrySet()) {
-            if (!entry.getKey().isEmpty()) {
-                filterOptions.put(entry.getKey(), entry.getValue());
-            }
-        }
-        return filterOptions;
+        return baseEventQueryProperties().getFilterOptions();
     }
     
     @Bean
     @Scope(SCOPE_PROTOTYPE)
     public List<IvaratorCacheDirConfig> baseEventQueryIvaratorCacheDirConfigs() {
-        List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = new ArrayList<>();
-        if (baseEventQueryProperties().getIvaratorCacheDirConfigs() != null) {
-            ivaratorCacheDirConfigs = baseEventQueryProperties().getIvaratorCacheDirConfigs();
-        }
-        return ivaratorCacheDirConfigs;
+        return baseEventQueryProperties().getIvaratorCacheDirConfigs();
     }
     
     @Bean
@@ -124,14 +92,14 @@ public class BaseEventQueryConfiguration {
             
             Map<String,EventQueryDataDecorator> dataDecorators = new LinkedHashMap<>();
             if (config.getDataDecorators() != null) {
-                for (Map.Entry<String,Map<String,String>> entry : config.getDataDecorators().entrySet()) {
-                    if (entry.getValue() != null) {
+                config.getDataDecorators().forEach((key, value) -> {
+                    if (value != null) {
                         EventQueryDataDecorator eventQueryDataDecorator = new EventQueryDataDecorator();
-                        eventQueryDataDecorator.setFieldName(entry.getKey());
-                        eventQueryDataDecorator.setPatternMap(new LinkedHashMap<>(entry.getValue()));
-                        dataDecorators.put(entry.getKey(), eventQueryDataDecorator);
+                        eventQueryDataDecorator.setFieldName(key);
+                        eventQueryDataDecorator.setPatternMap(new LinkedHashMap<>(value));
+                        dataDecorators.put(key, eventQueryDataDecorator);
                     }
-                }
+                });
             }
             eventQueryDataDecoratorTransformer.setDataDecorators(dataDecorators);
         }
@@ -142,11 +110,11 @@ public class BaseEventQueryConfiguration {
     @Scope(SCOPE_PROTOTYPE)
     public Map<String,QueryParser> baseEventQuerySyntaxParsers() {
         Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
-        for (Map.Entry<String,String> entry : baseEventQueryProperties().getQuerySyntaxParsers().entrySet()) {
-            if (!entry.getKey().isEmpty()) {
-                querySyntaxParsers.put(entry.getKey(), (!entry.getValue().isEmpty()) ? appContext.getBean(entry.getValue(), QueryParser.class) : null);
+        baseEventQueryProperties().getQuerySyntaxParsers().forEach((key, value) -> {
+            if (!key.isEmpty()) {
+                querySyntaxParsers.put(key, (!value.isEmpty()) ? appContext.getBean(value, QueryParser.class) : null);
             }
-        }
+        });
         return querySyntaxParsers;
     }
 }

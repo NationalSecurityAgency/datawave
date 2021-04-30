@@ -1,8 +1,8 @@
-package datawave.webservice.common.connection;
-
-import java.util.Map;
+package datawave.microservice.common.connection;
 
 import org.apache.accumulo.core.client.Connector;
+
+import java.util.Map;
 
 public interface AccumuloConnectionFactory {
     

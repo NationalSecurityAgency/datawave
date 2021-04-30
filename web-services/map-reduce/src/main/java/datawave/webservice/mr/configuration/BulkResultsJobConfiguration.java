@@ -1,5 +1,6 @@
 package datawave.webservice.mr.configuration;
 
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.configuration.QueryData;
 import datawave.microservice.query.logic.QueryLogic;
@@ -8,7 +9,6 @@ import datawave.mr.bulk.BulkInputFormat;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.iterator.ConfigurableVisibilityFilter;
 import datawave.security.util.AuthorizationsUtil;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.mr.bulkresults.map.BulkResultsFileOutputMapper;
 import datawave.webservice.mr.bulkresults.map.BulkResultsTableOutputMapper;

@@ -10,6 +10,7 @@ import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.logic.QueryLogic;
@@ -20,7 +21,6 @@ import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.audit.PrivateAuditConstants;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.common.exception.NotFoundException;
@@ -73,6 +73,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.MultiValueMap;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -445,12 +446,12 @@ public class CachedResultsBean {
             AuditType auditType = logic.getAuditType(q);
             if (!auditType.equals(AuditType.NONE)) {
                 try {
-                    MultivaluedMap<String,String> queryMap = q.toMap();
+                    MultiValueMap<String,String> queryMap = q.toMap();
                     marking.validate(queryMap);
-                    queryMap.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
-                    queryMap.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
-                    queryMap.putSingle(PrivateAuditConstants.USER_DN, q.getUserDN());
-                    queryMap.putSingle(PrivateAuditConstants.LOGIC_CLASS, logic.getLogicName());
+                    queryMap.set(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+                    queryMap.set(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
+                    queryMap.set(PrivateAuditConstants.USER_DN, q.getUserDN());
+                    queryMap.set(PrivateAuditConstants.LOGIC_CLASS, logic.getLogicName());
                     try {
                         List<String> selectors = logic.getSelectors(q);
                         if (selectors != null && !selectors.isEmpty()) {
@@ -461,7 +462,7 @@ public class CachedResultsBean {
                     }
                     // if the user didn't set an audit id, use the query id
                     if (!queryMap.containsKey(AuditParameters.AUDIT_ID)) {
-                        queryMap.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
+                        queryMap.set(AuditParameters.AUDIT_ID, q.getId().toString());
                     }
                     auditor.audit(queryMap);
                 } catch (Exception e) {
@@ -1302,19 +1303,19 @@ public class CachedResultsBean {
                 auditMessage.append("User running secondary query on cached results of original query,");
                 auditMessage.append(" original query: ").append(query.getQuery());
                 auditMessage.append(", secondary query: ").append(sqlQuery);
-                MultivaluedMap<String,String> params = query.toMap();
+                MultiValueMap<String,String> params = query.toMap();
                 marking.validate(params);
                 PrivateAuditConstants.stripPrivateParameters(queryParameters);
-                params.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
-                params.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
-                params.putSingle(PrivateAuditConstants.USER_DN, query.getUserDN());
-                params.putSingle(PrivateAuditConstants.LOGIC_CLASS, crq.getQueryLogic().getLogicName());
+                params.set(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
+                params.set(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
+                params.set(PrivateAuditConstants.USER_DN, query.getUserDN());
+                params.set(PrivateAuditConstants.LOGIC_CLASS, crq.getQueryLogic().getLogicName());
                 params.remove(QueryParameters.QUERY_STRING);
-                params.putSingle(QueryParameters.QUERY_STRING, auditMessage.toString());
+                params.set(QueryParameters.QUERY_STRING, auditMessage.toString());
                 params.putAll(queryParameters);
                 // if the user didn't set an audit id, use the query id
                 if (!params.containsKey(AuditParameters.AUDIT_ID)) {
-                    params.putSingle(AuditParameters.AUDIT_ID, queryId);
+                    params.set(AuditParameters.AUDIT_ID, queryId);
                 }
                 auditor.audit(params);
             }

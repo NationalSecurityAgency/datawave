@@ -169,7 +169,7 @@ query:
         filterClassNames:
           - 'foo.bar'
         filterOptions:
-          - 'bar.foo'
+          'bar': "foo"
         auditType: "NONE"
         logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
         eventPerDayThreshold: ${warehouse.defaults.eventPerDayThreshold}

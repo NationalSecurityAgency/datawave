@@ -1,6 +1,7 @@
 package datawave.security.authorization.test;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawaveUser;
@@ -8,7 +9,6 @@ import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;

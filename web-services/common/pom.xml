@@ -53,6 +53,10 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>metrics-reporter</artifactId>
         </dependency>
         <dependency>

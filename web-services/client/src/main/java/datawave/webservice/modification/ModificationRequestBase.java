@@ -16,6 +16,8 @@ import javax.xml.bind.annotation.adapters.XmlAdapter;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
@@ -58,10 +60,10 @@ public class ModificationRequestBase implements Serializable {
         return tsb.toString();
     }
     
-    public MultivaluedMap<String,String> toMap() {
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
+    public MultiValueMap<String,String> toMap() {
+        MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         if (this.mode != null) {
-            p.putSingle("mode", this.mode.name());
+            p.set("mode", this.mode.name());
         }
         return p;
     }

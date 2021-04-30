@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.google.common.collect.Lists;
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.cache.AccumuloTableCache;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.common.connection.config.ConnectionPoolConfiguration;
 import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
 import org.apache.accumulo.core.client.Connector;
@@ -70,7 +70,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         Whitebox.setInternalState(conf, "pools", configs);
         
         String defaultPoolName = conf.getDefaultPool();
-        HashMap<String,Map<Priority,AccumuloConnectionPool>> pools = new HashMap<>();
+        HashMap<String,Map<AccumuloConnectionFactory.Priority,AccumuloConnectionPool>> pools = new HashMap<>();
         MyAccumuloConnectionPool warehousePool = new MyAccumuloConnectionPool(warehouseFactory);
         MyAccumuloConnectionPool metricsPool = new MyAccumuloConnectionPool(metricsFactory);
         for (Entry<String,ConnectionPoolConfiguration> entry : conf.getPools().entrySet()) {
@@ -85,11 +85,11 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
                 default:
                     fail("Unknown pool name " + entry.getKey());
             }
-            Map<Priority,AccumuloConnectionPool> p = new HashMap<>();
-            p.put(Priority.ADMIN, acp);
-            p.put(Priority.HIGH, acp);
-            p.put(Priority.NORMAL, acp);
-            p.put(Priority.LOW, acp);
+            Map<AccumuloConnectionFactory.Priority,AccumuloConnectionPool> p = new HashMap<>();
+            p.put(AccumuloConnectionFactory.Priority.ADMIN, acp);
+            p.put(AccumuloConnectionFactory.Priority.HIGH, acp);
+            p.put(AccumuloConnectionFactory.Priority.NORMAL, acp);
+            p.put(AccumuloConnectionFactory.Priority.LOW, acp);
             pools.put(entry.getKey(), Collections.unmodifiableMap(p));
         }
         Whitebox.setInternalState(bean, ConnectionPoolsConfiguration.class, conf);
@@ -109,7 +109,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection(Priority.HIGH, new HashMap<>());
+        Connector con = bean.getConnection(AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
@@ -123,7 +123,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("WAREHOUSE", Priority.HIGH, new HashMap<>());
+        Connector con = bean.getConnection("WAREHOUSE", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
@@ -137,7 +137,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("WAREHOUSE", Priority.HIGH, new HashMap<>());
+        Connector con = bean.getConnection("WAREHOUSE", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
@@ -151,7 +151,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("METRICS", Priority.HIGH, new HashMap<>());
+        Connector con = bean.getConnection("METRICS", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(metricsConnection, ((WrappedConnector) con).getReal());

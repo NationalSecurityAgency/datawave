@@ -28,7 +28,7 @@ import datawave.query.transformer.EdgeQueryTransformer;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.util.time.DateHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.microservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;

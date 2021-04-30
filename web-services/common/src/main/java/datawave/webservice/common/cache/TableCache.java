@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.microservice.common.connection.AccumuloConnectionFactory;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 

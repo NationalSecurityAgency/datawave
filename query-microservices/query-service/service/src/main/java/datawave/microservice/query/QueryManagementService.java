@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
+import datawave.microservice.common.audit.PrivateAuditConstants;
 import datawave.microservice.common.storage.QueryPool;
 import datawave.microservice.common.storage.QueryStorageCache;
 import datawave.microservice.common.storage.TaskKey;
@@ -14,9 +15,6 @@ import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.util.QueryUtil;
 import datawave.security.util.ProxiedEntityUtils;
 import datawave.webservice.common.audit.AuditParameters;
-import datawave.webservice.common.audit.PrivateAuditConstants;
-import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -24,7 +22,6 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import datawave.webservice.result.GenericResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -88,8 +85,6 @@ public class QueryManagementService {
             // TODO: JWO: Figure out how to make query metrics work with our new architecture. Datawave issue #1156
             
             return taskKey;
-        } catch (DatawaveWebApplicationException e) {
-            throw e;
         } catch (Exception e) {
             log.error("Unknown error storing query", e);
             throw new BadRequestQueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
@@ -231,10 +226,7 @@ public class QueryManagementService {
         // Verify that the calling principal has access to the query logic.
         List<String> dnList = currentUser.getDNs();
         if (!queryLogic.containsDNWithAccess(dnList)) {
-            UnauthorizedQueryException qe = new UnauthorizedQueryException("None of the DNs used have access to this query logic: " + dnList, 401);
-            GenericResponse<String> response = new GenericResponse<>();
-            response.addException(qe);
-            throw new UnauthorizedException(qe, response);
+            throw new UnauthorizedQueryException("None of the DNs used have access to this query logic: " + dnList, 401);
         }
     }
     

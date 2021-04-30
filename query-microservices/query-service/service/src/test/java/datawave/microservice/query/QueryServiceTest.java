@@ -72,7 +72,7 @@ public class QueryServiceTest {
         map.set(DefaultQueryParameters.QUERY_BEGIN, "20000101 000000.000");
         map.set(DefaultQueryParameters.QUERY_END, "20500101 000000.000");
         map.set(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, "ALL");
-
+        
         RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
         try {

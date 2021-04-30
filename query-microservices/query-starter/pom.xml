@@ -30,6 +30,34 @@
                         <artifactId>*</artifactId>
                         <groupId>org.slf4j</groupId>
                     </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.jboss.resteasy</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.jboss.spec.javax.annotation</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.jboss.spec.javax.ejb</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.jboss.spec.javax.interceptor</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.jboss.spec.javax.servlet</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.jboss.logging</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jsp-api</artifactId>
+                        <groupId>javax.servlet.jsp</groupId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -41,12 +69,6 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave</artifactId>
                 <version>${version.microservice.starter}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>spring-cloud-starter-stream-rabbit</artifactId>
-                        <groupId>org.springframework.cloud</groupId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>

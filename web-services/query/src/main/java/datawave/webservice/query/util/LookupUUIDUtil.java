@@ -850,7 +850,7 @@ public class LookupUUIDUtil {
         if (criteria.isContentLookup() && !criteria.isAllEventLookup()) {
             params = params + ';' + PARAM_CONTENT_LOOKUP + ':' + true;
         }
-        criteria.getQueryParameters().putSingle(QueryParameters.QUERY_PARAMS, params);
+        criteria.getQueryParameters().set(QueryParameters.QUERY_PARAMS, params);
         
         // All is well, so return the validated criteria
         return criteria;
