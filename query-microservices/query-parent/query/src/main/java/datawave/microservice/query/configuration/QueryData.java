@@ -35,6 +35,8 @@ public class QueryData implements ResultContext {
     
     public QueryData(QueryData other) {
         this(other.getQuery(), other.getRanges(), other.getSettings());
+        this.lastResult = other.lastResult;
+        this.finished = other.finished;
     }
     
     public QueryData(QueryData other, Collection<Range> ranges) {
@@ -112,7 +114,7 @@ public class QueryData implements ResultContext {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(256);
-        sb.append("Query: '").append(this.query).append("', Ranges: ").append(this.ranges).append(", lastResult: ").append(this.lastResult.getKey())
+        sb.append("Query: '").append(this.query).append("', Ranges: ").append(this.ranges).append(", lastResult: ").append(this.lastResult)
                         .append(", Settings: ").append(this.settings);
         return sb.toString();
     }
