@@ -3,30 +3,46 @@ package datawave.query.tables;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
+import datawave.microservice.query.configuration.Result;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 
 import java.io.Serializable;
 import java.util.Iterator;
-import java.util.Map.Entry;
 
-class DedupingIterator implements Iterator<Entry<Key,Value>> {
+class DedupingIterator implements Iterator<Result> {
     static final int BLOOM_EXPECTED_DEFAULT = 500000;
     static final double BLOOM_FPP_DEFAULT = 1e-15;
     
-    private Iterator<Entry<Key,Value>> delegate;
-    private Entry<Key,Value> next;
+    private Iterator<Result> delegate;
+    private Result next;
+    private byte[] nextBytes;
     private BloomFilter<byte[]> bloom = null;
     
-    public DedupingIterator(Iterator<Entry<Key,Value>> iterator, int bloomFilterExpected, double bloomFilterFpp) {
+    public DedupingIterator(Iterator<Result> iterator) {
+        this(iterator, BLOOM_EXPECTED_DEFAULT, BLOOM_FPP_DEFAULT);
+    }
+    
+    public DedupingIterator(Iterator<Result> iterator, BloomFilter<byte[]> bloom) {
+        this(iterator, bloom, BLOOM_EXPECTED_DEFAULT, BLOOM_FPP_DEFAULT);
+    }
+    
+    public DedupingIterator(Iterator<Result> iterator, int bloomFilterExpected, double bloomFilterFpp) {
+        this(iterator, null, bloomFilterExpected, bloomFilterFpp);
+    }
+    
+    public DedupingIterator(Iterator<Result> iterator, BloomFilter<byte[]> bloom, int bloomFilterExpected, double bloomFilterFpp) {
         this.delegate = iterator;
-        this.bloom = BloomFilter.create(new ByteFunnel(), bloomFilterExpected, bloomFilterFpp);
+        if (bloom == null) {
+            bloom = BloomFilter.create(new ByteFunnel(), bloomFilterExpected, bloomFilterFpp);
+        }
+        this.bloom = bloom;
         getNext();
     }
     
-    public DedupingIterator(Iterator<Entry<Key,Value>> iterator) {
-        this(iterator, BLOOM_EXPECTED_DEFAULT, BLOOM_FPP_DEFAULT);
+    public BloomFilter<byte[]> getBloom() {
+        return bloom;
     }
     
     private void getNext() {
@@ -39,7 +55,7 @@ class DedupingIterator implements Iterator<Entry<Key,Value>> {
         }
     }
     
-    private byte[] getBytes(Entry<Key,Value> entry) {
+    private byte[] getBytes(Result entry) {
         ByteSequence row = entry.getKey().getRowData();
         ByteSequence cf = entry.getKey().getColumnFamilyData();
         
@@ -71,9 +87,14 @@ class DedupingIterator implements Iterator<Entry<Key,Value>> {
     }
     
     @Override
-    public Entry<Key,Value> next() {
-        Entry<Key,Value> nextReturn = next;
+    public Result next() {
+        Result nextReturn = next;
         if (next != null) {
+            if (nextBytes != null) {
+                // now that we are actually returning this result, update the bloom filter
+                bloom.put(nextBytes);
+                nextBytes = null;
+            }
             getNext();
         }
         return nextReturn;
@@ -84,14 +105,24 @@ class DedupingIterator implements Iterator<Entry<Key,Value>> {
         throw new UnsupportedOperationException("Remove not supported on DedupingIterator");
     }
     
-    private boolean isDuplicate(Entry<Key,Value> entry) {
-        byte[] bytes = getBytes(entry);
-        if (bloom.mightContain(bytes)) {
+    private boolean isDuplicate(Result entry) {
+        // allow empty results to go through (required to track completion of ranges)
+        if (entry.getKey() == null) {
+            return false;
+        }
+        // allow all final documents through
+        if (FinalDocumentTrackingIterator.isFinalDocumentKey(entry.getKey())) {
+            return false;
+        }
+        nextBytes = getBytes(entry);
+        if (bloom.mightContain(nextBytes)) {
+            nextBytes = null;
             return true;
         }
-        bloom.put(bytes);
         return false;
     }
+    
+    KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
     
     public static class ByteFunnel implements Funnel<byte[]>, Serializable {
         

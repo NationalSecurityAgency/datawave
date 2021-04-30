@@ -111,8 +111,9 @@ public class PushdownScheduler extends Scheduler {
             }
             return checkpoints;
         } else {
+            List<QueryCheckpoint> checkpoints = session.checkpoint(queryKey);
             close();
-            return session.checkpoint(queryKey);
+            return checkpoints;
         }
     }
     

@@ -112,7 +112,8 @@ public class QueryData implements ResultContext {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(256);
-        sb.append("Query: '").append(this.query).append("', Ranges: ").append(this.ranges).append(", Settings: ").append(this.settings);
+        sb.append("Query: '").append(this.query).append("', Ranges: ").append(this.ranges).append(", lastResult: ").append(this.lastResult.getKey())
+                        .append(", Settings: ").append(this.settings);
         return sb.toString();
     }
 }

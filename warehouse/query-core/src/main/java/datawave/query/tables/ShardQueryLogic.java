@@ -564,11 +564,15 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         this.scheduler = getScheduler(config, scannerFactory);
         
         this.scanner = null;
-        this.iterator = Result.keyValueIterator(this.scheduler.iterator());
+        Iterator<Result> resultIterator = this.scheduler.iterator();
         
         if (!config.isSortedUIDs()) {
-            this.iterator = new DedupingIterator(this.iterator);
+            DedupingIterator dedupIterator = new DedupingIterator(resultIterator, config.getBloom());
+            config.setBloom(dedupIterator.getBloom());
+            resultIterator = dedupIterator;
         }
+        
+        this.iterator = Result.keyValueIterator(resultIterator);
         
         stopwatch.stop();
         

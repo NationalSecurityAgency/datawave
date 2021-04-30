@@ -2,12 +2,14 @@ package datawave.query.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.google.common.hash.BloomFilter;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
@@ -29,7 +31,6 @@ import datawave.util.TableName;
 import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeanWrapper;
@@ -45,8 +46,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -361,6 +360,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean enforceUniqueDisjunctionsWithinExpression = false;
     
     /**
+     * A bloom filter to avoid duplicate results if needed
+     */
+    private BloomFilter<byte[]> bloom = null;
+    
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -537,7 +541,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setActiveQueryLogNameSource(other.getActiveQueryLogNameSource());
         this.setEnforceUniqueConjunctionsWithinExpression(other.getEnforceUniqueConjunctionsWithinExpression());
         this.setEnforceUniqueDisjunctionsWithinExpression(other.getEnforceUniqueDisjunctionsWithinExpression());
-        
+        this.setBloom(other.getBloom());
     }
     
     /**
@@ -580,6 +584,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setFstCount(other.getFstCount());
         
         this.setIndexedFields(null == other.getIndexedFields() ? null : Sets.newHashSet(other.getIndexedFields()));
+        
+        this.setSortedUIDs(other.isSortedUIDs());
+        this.setBloom(other.getBloom());
     }
     
     public ShardQueryConfiguration(Map<String,Object> properties) {
@@ -608,6 +615,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         List<QueryData> queries = Lists.newArrayList(getQueries());
         
         ObjectMapper mapper = new ObjectMapper();
+        mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
         Map<String,Object> props = mapper.convertValue(this, Map.class);
         
         // fix elements that are converted incorrectly
@@ -621,6 +629,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         putConditionally(props, "normalizedFieldsDatatypes", getNormalizedFieldsDatatypes());
         putConditionally(props, "authorizations", getAuthorizations());
         putConditionally(props, "fstCount", getFstCount());
+        putConditionally(props, "bloom", getBloom());
         
         return props;
     }
@@ -2303,4 +2312,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueDisjunctionsWithinExpression) {
         this.enforceUniqueDisjunctionsWithinExpression = enforceUniqueDisjunctionsWithinExpression;
     }
+    
+    public BloomFilter<byte[]> getBloom() {
+        return bloom;
+    }
+    
+    public void setBloom(BloomFilter<byte[]> bloom) {
+        this.bloom = bloom;
+    }
+    
 }

@@ -268,7 +268,11 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         
         runTest(query, expect);
         // verify that the ivarators ran and completed
-        assertEquals(3, countComplete(dirs));
+        if (this.logic.isCheckpointable()) {
+            assertEquals(8, countComplete(dirs));
+        } else {
+            assertEquals(3, countComplete(dirs));
+        }
         
         // clear list before new set is added
         dirs.clear();
@@ -321,8 +325,13 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         this.logic.setIvaratorCacheBufferSize(2);
         
         runTest(query, expect);
+        
         // verify that the ivarators ran and completed
-        assertEquals(3, countComplete(dirs));
+        if (this.logic.isCheckpointable()) {
+            assertEquals(8, countComplete(dirs));
+        } else {
+            assertEquals(3, countComplete(dirs));
+        }
         
         // clear list before new set is added
         dirs.clear();

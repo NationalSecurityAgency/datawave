@@ -1,5 +1,6 @@
 package datawave.query.tables;
 
+import datawave.microservice.query.configuration.Result;
 import datawave.query.Constants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -20,7 +21,7 @@ public class DedupingIteratorTest {
     
     public static final int DUPS_LIST_SZ = 2160;
     public static final int DEDUPED_LIST_SZ = 1500;
-    private static List<Map.Entry<Key,Value>> DUPS_LIST;
+    private static List<Result> DUPS_LIST;
     
     private int bloomExpected;
     private double bloomFpp;
@@ -58,7 +59,7 @@ public class DedupingIteratorTest {
     public void test_nodups() {
         assertEquals(DUPS_LIST_SZ, DUPS_LIST.size());
         
-        Iterable<Map.Entry<Key,Value>> input = () -> new DedupingIterator(DUPS_LIST.iterator(), bloomExpected, bloomFpp);
+        Iterable<Result> input = () -> new DedupingIterator(DUPS_LIST.iterator(), bloomExpected, bloomFpp);
         
         List<Map.Entry<Key,Value>> output = new ArrayList<>();
         input.forEach(output::add);
@@ -75,36 +76,19 @@ public class DedupingIteratorTest {
         
         assertEquals(DUPS_LIST_SZ, DUPS_LIST.size());
         
-        Iterable<Map.Entry<Key,Value>> input = () -> new DedupingIterator(DUPS_LIST.iterator(), bloomExpected, bloomFpp);
+        Iterable<Result> input = () -> new DedupingIterator(DUPS_LIST.iterator(), bloomExpected, bloomFpp);
         
-        List<Map.Entry<Key,Value>> output = new ArrayList<>();
+        List<Result> output = new ArrayList<>();
         input.forEach(output::add);
         
         // False positives should've prevented some entries from being included
         assertTrue(output.size() < DEDUPED_LIST_SZ);
     }
     
-    private static class TestEntry implements Map.Entry<Key,Value> {
-        
-        private Key key;
+    private static class TestEntry extends Result {
         
         TestEntry(Key key) {
-            this.key = key;
-        }
-        
-        @Override
-        public Key getKey() {
-            return this.key;
-        }
-        
-        @Override
-        public Value getValue() {
-            return null;
-        }
-        
-        @Override
-        public Value setValue(Value val) {
-            return null;
+            super(key, null);
         }
         
         @Override
@@ -114,12 +98,12 @@ public class DedupingIteratorTest {
             if (o == null || getClass() != o.getClass())
                 return false;
             TestEntry testEntry = (TestEntry) o;
-            return key.equals(testEntry.key);
+            return getKey().equals(testEntry.getKey());
         }
         
         @Override
         public int hashCode() {
-            return key.hashCode();
+            return getKey().hashCode();
         }
     }
 }

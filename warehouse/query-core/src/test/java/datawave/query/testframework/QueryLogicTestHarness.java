@@ -4,6 +4,7 @@ import datawave.data.type.Type;
 import datawave.microservice.common.storage.QueryCheckpoint;
 import datawave.microservice.common.storage.QueryKey;
 import datawave.microservice.common.storage.QueryPool;
+import datawave.microservice.query.configuration.QueryData;
 import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.query.attributes.Attribute;
@@ -67,6 +68,26 @@ public class QueryLogicTestHarness {
     // =============================================
     // assert methods
     
+    private void dumpCp(String start, QueryCheckpoint cp) {
+        Collection<QueryData> queries = (Collection<QueryData>) cp.getProperties().get("queries");
+        for (QueryData qd : queries) {
+            System.out.println(">>>> " + start + ": " + qd.getRanges() + " -> " + dumpResult(qd.getLastResult()));
+        }
+    }
+    
+    private String dumpResult(Map.Entry<Key,Value> entry) {
+        if (entry != null) {
+            if (entry.getValue() != null) {
+                final Document document = this.deserializer.apply(entry).getValue();
+                return String.valueOf(entry.getKey()) + " : " + document.get("EVENT_ID");
+            } else {
+                return String.valueOf(entry.getKey());
+            }
+        } else {
+            return "null";
+        }
+    }
+    
     /**
      * Determines if the correct results were obtained for a query.
      * 
@@ -113,9 +134,9 @@ public class QueryLogicTestHarness {
                 }
                 Iterator<Map.Entry<Key,Value>> iter = logic.iterator();
                 if (iter.hasNext()) {
-                    actualResults = processResult(actualResults, iter.next(), checkers);
+                    Map.Entry<Key,Value> next = iter.next();
+                    actualResults = processResult(actualResults, next, checkers);
                     cps.addAll(((CheckpointableQueryLogic) logic).checkpoint(queryKey));
-                    
                 }
             }
         } else {

@@ -97,6 +97,12 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
      */
     protected BlockingQueue<ScannerChunk> currentBatch;
     
+    // set when we need operations to stop gracefully enough to checkpoint
+    protected volatile boolean needToCheckpoint = false;
+    
+    // set when the processing is at a place where we can checkpoint
+    protected volatile boolean readyToCheckpoint = false;
+    
     protected ExecutorService service = null;
     
     ExecutorService listenerService = null;
@@ -129,13 +135,19 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     protected int threadCount = 5;
     
     public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
-        close();
+        needToCheckpoint = true;
+        while (!readyToCheckpoint && isRunning()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {}
+        }
         List<QueryCheckpoint> checkpoints = new ArrayList<>();
         for (ResultContext context : runningQueries) {
             if (!context.isFinished()) {
                 // TODO: Do we need a QueryData or will a ResultContext do
                 checkpoints.add(ShardQueryLogic.checkpoint(queryKey, (ShardQueryConfiguration) config, Collections.singleton((QueryData) context)));
             }
+            
         }
         // now add all of the remaining chunks
         for (Iterator<List<ScannerChunk>> it = scannerBatches; it.hasNext();) {
@@ -322,7 +334,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
                 return;
             }
             
-            while (scannerBatches.hasNext())
+            while (scannerBatches.hasNext() && !needToCheckpoint)
             
             {
                 if (runnableCount.get() < (threadCount * RANGE_MULTIPLIER)) {
@@ -355,7 +367,11 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
             if (log.isTraceEnabled())
                 log.trace("waiting " + runnableCount.get());
             submitTasks();
-            while (runnableCount.get() > 0) {
+            
+            // notify those that are wondering
+            readyToCheckpoint = true;
+            
+            while (runnableCount.get() > 0 && !needToCheckpoint) {
                 Thread.sleep(1);
                 // if a failure did not occur, let's check the interrupted status
                 if (isRunning()) {
@@ -376,6 +392,9 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         } catch (Exception e) {
             uncaughtExceptionHandler.uncaughtException(Thread.currentThread().currentThread(), e);
             Throwables.propagate(e);
+        } finally {
+            // make sure nobody is hung up on this flag....
+            readyToCheckpoint = true;
         }
     }
     
@@ -557,6 +576,8 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         if (finishedScan.finished()) {
             runnableCount.decrementAndGet();
             
+            // if we have pulled all of the results of the front end for this query, then and only then can we remove it.
+            // otherwise we still need it for checkpointing
             if (finishedScan.getScannerChunk().getContext().isFinished()) {
                 runningQueries.remove(finishedScan.getScannerChunk().getContext());
             }
@@ -714,7 +735,12 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
     
     @Override
     public void close() {
-        stop();
+        stopAsync();
+        try {
+            awaitTerminated();
+        } catch (Exception e) {
+            
+        }
         service.shutdownNow();
         listenerService.shutdownNow();
     }
