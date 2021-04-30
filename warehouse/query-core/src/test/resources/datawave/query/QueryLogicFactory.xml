@@ -185,6 +185,15 @@
         <property name="evaluationOnlyFields" value="_ANYFIELD_" />
     </bean>
 
+    <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
+        <property name="collapseUids" value="false"/>
+        <property name="indexFilteringClassNames">
+            <list value-type="java.lang.String">
+                <value>datawave.query.function.NormalizedVersionPredicate</value>
+            </list>
+        </property>
+    </bean>
+
     <bean id="FacetedQuery" parent="BaseEventQuery" scope="prototype" class="datawave.query.tables.facets.FacetedQueryLogic">
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Faceted search over indexed fields, returning aggregate counts for field values" />
