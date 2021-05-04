@@ -2,6 +2,7 @@ package datawave.ingest.table.balancer;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
+import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.master.thrift.TabletServerStatus;
 import org.apache.accumulo.core.util.Pair;
@@ -38,7 +39,7 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
     private static final String SHARDED_PROPERTY_PREFIX = Property.TABLE_ARBITRARY_PROP_PREFIX.getKey() + "sharded.balancer.";
     public static final String SHARDED_MAX_MIGRATIONS = SHARDED_PROPERTY_PREFIX + "max.migrations";
     private static final int MAX_MIGRATIONS_DEFAULT = 10000;
-
+    
     private static final Logger log = Logger.getLogger(ShardedTableTabletBalancer.class);
     private Collection<Pair<KeyExtent,Location>> tabletLocationCache;
     private Function<KeyExtent,String> partitioner;
