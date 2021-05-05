@@ -3,6 +3,7 @@ package datawave.microservice.common.storage;
 import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.locks.Lock;
 
 public interface QueryLockManager {
     
@@ -38,7 +39,28 @@ public interface QueryLockManager {
     default void deleteSemaphore(UUID queryId) throws IOException {
         createSemaphore(queryId, 0);
     }
-    
+
+    /**
+     * Get a lock object for a task
+     * @param task
+     * @return The Lock object
+     */
+    Lock getLock(TaskKey task);
+
+    /**
+     * Get a lock object for a query
+     * @param queryId
+     * @return The lock object
+     */
+    Lock getLock(UUID queryId);
+
+    /**
+     * Geeet a lock object for a arbitrary string
+     * @param lockId
+     * @return The lock object
+     */
+    Lock getLock(String lockId);
+
     /**
      * Acquire a lock for a task. This will wait the specified waitMs for a semaphore slot to be available.
      *
@@ -65,7 +87,7 @@ public interface QueryLockManager {
      *             if there was a lock system access failure
      */
     void releaseLock(TaskKey task) throws TaskLockException, IOException;
-    
+
     /**
      * Determine if a task is locked.
      *
@@ -76,17 +98,6 @@ public interface QueryLockManager {
      *             if there was a lock system access failure
      */
     boolean isLocked(TaskKey task) throws IOException;
-    
-    /**
-     * Determine if the specified query exists in the underlying cluster
-     * 
-     * @param queryId
-     *            The query id
-     * @return true if it exists
-     * @throws IOException
-     *             If there was a lock system access failure
-     */
-    boolean exists(UUID queryId) throws IOException;
     
     /**
      * Get the set of tasks that currently have locks in this JVM

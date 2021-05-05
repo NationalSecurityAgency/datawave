@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 public class LocalQueryLockManager implements QueryLockManager {
@@ -70,7 +71,22 @@ public class LocalQueryLockManager implements QueryLockManager {
             }
         }
     }
-    
+
+    @Override
+    public Lock getLock(TaskKey task) {
+        return null;
+    }
+
+    @Override
+    public Lock getLock(UUID queryId) {
+        return null;
+    }
+
+    @Override
+    public Lock getLock(String lockId) {
+        return null;
+    }
+
     /**
      * Acquire a lock for a task. This will wait the specified waitMs for a semaphore slot to be available.
      *
@@ -154,20 +170,6 @@ public class LocalQueryLockManager implements QueryLockManager {
             }
         }
         return false;
-    }
-    
-    /**
-     * Determine if the specified query exists in the underlying cluster
-     *
-     * @param queryId
-     *            The query id
-     * @return true if it exists
-     * @throws IOException
-     *             If there was a lock system access failure
-     */
-    @Override
-    public boolean exists(UUID queryId) throws IOException {
-        return semaphores.containsKey(queryId);
     }
     
     /**

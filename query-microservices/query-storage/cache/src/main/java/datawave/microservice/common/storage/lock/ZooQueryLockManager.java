@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 public class ZooQueryLockManager implements QueryLockManager {
@@ -75,7 +76,22 @@ public class ZooQueryLockManager implements QueryLockManager {
             lock.close();
         }
     }
-    
+
+    @Override
+    public Lock getLock(TaskKey task) {
+        return null;
+    }
+
+    @Override
+    public Lock getLock(UUID queryId) {
+        return null;
+    }
+
+    @Override
+    public Lock getLock(String lockId) {
+        return null;
+    }
+
     /**
      * Acquire a lock for a task. This will wait the specified waitMs for a semaphore slot to be available.
      *
@@ -126,8 +142,7 @@ public class ZooQueryLockManager implements QueryLockManager {
      * @throws IOException
      *             If there was a lock system access failure
      */
-    @Override
-    public boolean exists(UUID queryId) throws IOException {
+    private boolean exists(UUID queryId) throws IOException {
         // first try the quick test
         if (semaphores.containsKey(queryId)) {
             return true;
@@ -208,6 +223,7 @@ public class ZooQueryLockManager implements QueryLockManager {
         if (lock == null) {
             if (exists(queryId)) {
                 lock = new QueryLock(queryId);
+                semaphores.put(queryId, lock);
             } else {
                 throw new IllegalStateException("Query semaphore does not exist for " + queryId);
             }
