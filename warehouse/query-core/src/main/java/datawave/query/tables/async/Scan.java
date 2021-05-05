@@ -1,5 +1,6 @@
 package datawave.query.tables.async;
 
+import java.io.InterruptedIOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -10,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.google.common.base.Throwables;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.impl.ThriftScanner.ScanTimedOutException;
 import org.apache.accumulo.core.data.Key;
@@ -294,29 +296,31 @@ public class Scan implements Callable<Scan> {
                 if (log.isTraceEnabled())
                     log.trace("not finished?" + !finished());
             } while (!finished());
-        } catch (
-        
-        ScanTimedOutException e)
-        
-        {
+        } catch (ScanTimedOutException e) {
             // this is okay. This means that we are being timesliced.
             myScan.addRange(currentRange);
-        } catch (
-        
-        Exception e)
-        
-        {
-            log.error("exception ", e);
+        } catch (Exception e) {
+            if (isInterruptedException(e)) {
+                log.info("Scan interrupted");
+            } else {
+                log.error("Scan failed", e);
+            }
             throw e;
-        } finally
-        
-        {
+        } finally {
             if (null != delegatedResource) {
                 delegatorReference.close(delegatedResource);
             }
         }
         return this;
         
+    }
+    
+    private boolean isInterruptedException(Throwable t) {
+        while (t != null && !(t instanceof InterruptedException || t instanceof InterruptedIOException)
+                        && !(t.getMessage() != null && t.getMessage().contains("InterruptedException"))) {
+            t = t.getCause();
+        }
+        return t != null;
     }
     
     static final AtomicLong scanIdFactory = new AtomicLong(0);

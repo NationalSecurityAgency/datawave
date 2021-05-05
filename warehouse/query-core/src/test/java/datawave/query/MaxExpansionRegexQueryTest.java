@@ -1,5 +1,6 @@
 package datawave.query;
 
+import datawave.query.exceptions.DatawaveIvaratorMaxResultsException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -280,8 +281,18 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
             runTest(query, expect);
             fail("Expected the query to fail with the ivarators fail");
         } catch (Exception e) {
-            // expected
+            if (!hasCause(e, DatawaveIvaratorMaxResultsException.class)) {
+                log.error("Unexpected exception", e);
+                fail("Unexpected exception: " + e.getMessage());
+            }
         }
+    }
+    
+    private boolean hasCause(Throwable e, Class<? extends Exception> causeClass) {
+        while (e != null && !causeClass.isInstance(e)) {
+            e = e.getCause();
+        }
+        return e != null;
     }
     
     /**
