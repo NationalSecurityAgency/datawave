@@ -46,7 +46,7 @@ public interface QueryStorageCache {
      * @throws TaskLockException
      *             if the task is already locked
      */
-    QueryTask getTask(TaskKey taskKey, long waitMs) throws TaskLockException, IOException;
+    QueryTask getTask(TaskKey taskKey, long waitMs) throws TaskLockException, IOException, InterruptedException;
     
     /**
      * Update a stored query task with an updated checkpoint. This will also release the lock. This will throw an exception is the task is not locked.

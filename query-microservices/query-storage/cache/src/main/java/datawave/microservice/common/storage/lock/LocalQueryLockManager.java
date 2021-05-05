@@ -4,28 +4,24 @@ import datawave.microservice.common.storage.QueryLockManager;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.common.storage.TaskLockException;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 public class LocalQueryLockManager implements QueryLockManager {
-    
-    private class QueryLock {
-        int maxPermits;
-        Set<TaskKey> locks = new HashSet<>();
-        
-        public QueryLock(int count) {
-            maxPermits = count;
-        }
-    }
-    
-    private Map<UUID,QueryLock> semaphores = Collections.synchronizedMap(new HashMap<>());
+
+    // The set of query semaphores which maintain the task lock states
+    private Map<UUID, QuerySemaphore> semaphores = Collections.synchronizedMap(new HashMap<>());
+
+    // The set of other arbitrary locks
+    private Set<String> otherLocks = Collections.synchronizedSet(new HashSet<>());
     
     /**
      * This will setup a semaphore for a query with a specified count. This can be called multiple times for the same query if the number of available locks
@@ -38,14 +34,14 @@ public class LocalQueryLockManager implements QueryLockManager {
      */
     @Override
     public void createSemaphore(UUID queryId, int count) {
-        QueryLock lock = semaphores.get(queryId);
+        QuerySemaphore lock = semaphores.get(queryId);
         if (count > 0) {
             if (lock != null) {
                 synchronized (lock) {
                     lock.maxPermits = count;
                 }
             } else {
-                semaphores.put(queryId, new QueryLock(count));
+                semaphores.put(queryId, new QuerySemaphore(count));
             }
         } else {
             if (lock != null) {
@@ -64,7 +60,7 @@ public class LocalQueryLockManager implements QueryLockManager {
      */
     @Override
     public void closeSemaphore(UUID queryId) {
-        QueryLock lock = semaphores.get(queryId);
+        QuerySemaphore lock = semaphores.get(queryId);
         if (lock != null) {
             synchronized (lock) {
                 semaphores.remove(queryId);
@@ -74,86 +70,24 @@ public class LocalQueryLockManager implements QueryLockManager {
 
     @Override
     public Lock getLock(TaskKey task) {
-        return null;
-    }
-
-    @Override
-    public Lock getLock(UUID queryId) {
-        return null;
-    }
-
-    @Override
-    public Lock getLock(String lockId) {
-        return null;
-    }
-
-    /**
-     * Acquire a lock for a task. This will wait the specified waitMs for a semaphore slot to be available.
-     *
-     * @param task
-     *            The task to lock
-     * @param waitMs
-     *            How long to wait for semaphore availability
-     * @return true if able to lock the task
-     * @throws TaskLockException
-     *             if the task is already locked or the query semaphore does not exist
-     */
-    @Override
-    public boolean acquireLock(TaskKey task, long waitMs) throws TaskLockException {
-        long start = System.currentTimeMillis();
-        QueryLock lock = semaphores.get(task.getQueryId());
+        QuerySemaphore lock = semaphores.get(task.getQueryId());
         if (lock != null) {
-            while (true) {
-                synchronized (lock) {
-                    if (semaphores.containsKey(task.getQueryId())) {
-                        if (lock.locks.contains(task)) {
-                            throw new TaskLockException("Task already locked: " + task);
-                        }
-                        if (lock.locks.size() < lock.maxPermits) {
-                            lock.locks.add(task);
-                            return true;
-                        }
-                    } else {
-                        throw new TaskLockException("No such query lock exists: " + task);
-                    }
-                }
-                if ((System.currentTimeMillis() - start) >= waitMs) {
-                    return false;
-                } else {
-                    try {
-                        Thread.sleep(1);
-                    } catch (InterruptedException e) {
-                        // we were interrupted, return immediately, no lock acquired
-                        return false;
-                    }
-                }
-            }
+            return new TaskLock(task);
         } else {
             throw new TaskLockException("No such query lock exists: " + task);
         }
     }
-    
-    /**
-     * Release the lock for a task. This will also decrement the semaphore allowing another task to be locked.
-     *
-     * @param task
-     *            The task to unlock
-     * @throws TaskLockException
-     *             if the task is not locked.
-     */
+
     @Override
-    public void releaseLock(TaskKey task) throws TaskLockException {
-        QueryLock lock = semaphores.get(task.getQueryId());
-        if (lock != null) {
-            synchronized (lock) {
-                if (!lock.locks.contains(task)) {
-                    throw new TaskLockException("Task not locked: " + task);
-                }
-                lock.locks.remove(task);
-            }
-        }
+    public Lock getLock(UUID queryId) {
+        return getLock(queryId.toString());
     }
-    
+
+    @Override
+    public Lock getLock(String lockId) {
+        return new BasicLock(lockId);
+    }
+
     /**
      * Determine if a task is locked.
      *
@@ -163,7 +97,7 @@ public class LocalQueryLockManager implements QueryLockManager {
      */
     @Override
     public boolean isLocked(TaskKey task) {
-        QueryLock lock = semaphores.get(task.getQueryId());
+        QuerySemaphore lock = semaphores.get(task.getQueryId());
         if (lock != null) {
             synchronized (lock) {
                 return lock.locks.contains(task);
@@ -181,7 +115,7 @@ public class LocalQueryLockManager implements QueryLockManager {
      */
     @Override
     public Set<TaskKey> getLockedTasks(UUID queryId) {
-        QueryLock lock = semaphores.get(queryId);
+        QuerySemaphore lock = semaphores.get(queryId);
         if (lock != null) {
             synchronized (lock) {
                 return new HashSet<>(lock.locks);
@@ -200,7 +134,7 @@ public class LocalQueryLockManager implements QueryLockManager {
     }
     
     /**
-     * Get the task ids for all locks that the zookeeper cluster knows about
+     * Get the task ids for all locks that the cluster knows about
      *
      * @param queryId
      *            The query id
@@ -213,7 +147,7 @@ public class LocalQueryLockManager implements QueryLockManager {
     }
     
     /**
-     * Get the query ids for all semaphores that the zookeeper cluster knows about
+     * Get the query ids for all semaphores that the cluster knows about
      *
      * @return The set of query UUIDs
      */
@@ -221,4 +155,143 @@ public class LocalQueryLockManager implements QueryLockManager {
     public Set<UUID> getDistributedQueries() {
         return getQueries();
     }
+
+    /**
+     * A QuerySemphore maintains a set of task permits for a query
+     */
+    private class QuerySemaphore {
+        int maxPermits;
+        Set<TaskKey> locks = new HashSet<>();
+
+        public QuerySemaphore(int count) {
+            maxPermits = count;
+        }
+    }
+
+    /**
+     * A generic lock that implements most of the Lock methods
+     */
+    private abstract class GenericLock implements Lock {
+        @Override
+        public void lock() {
+            while (true) {
+                try {
+                    tryLock(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+                    return;
+                } catch (InterruptedException ie) {
+                    // try again
+                }
+            }
+        }
+
+        @Override
+        public void lockInterruptibly() throws InterruptedException {
+            tryLock(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        }
+
+        @Override
+        public boolean tryLock() {
+            try {
+                return tryLock(0, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException ie) {
+                return false;
+            }
+        }
+
+        @Override
+        public Condition newCondition() {
+            throw new UnsupportedOperationException("Conditions not supported");
+        }
+    }
+
+    /**
+     * A Task lock handles getting a lock for a task.  A lock cannot be obtained until
+     * there is a query semaphore permit available and then only if that task is not already
+     * locked.
+     */
+    private class TaskLock extends GenericLock {
+        private final TaskKey task;
+        public TaskLock(TaskKey task) {
+            this.task = task;
+        }
+
+        @Override
+        public boolean tryLock(long time, TimeUnit unit) throws TaskLockException, InterruptedException {
+            long start = System.currentTimeMillis();
+            QuerySemaphore lock = semaphores.get(task.getQueryId());
+            if (lock != null) {
+                while (true) {
+                    synchronized (lock) {
+                        if (semaphores.containsKey(task.getQueryId())) {
+                            if (lock.locks.contains(task)) {
+                                throw new TaskLockException("Task already locked: " + task);
+                            }
+                            if (lock.locks.size() < lock.maxPermits) {
+                                lock.locks.add(task);
+                                return true;
+                            }
+                        } else {
+                            throw new TaskLockException("No such query lock exists: " + task);
+                        }
+                    }
+                    if ((System.currentTimeMillis() - start) >= unit.toMillis(time)) {
+                        return false;
+                    } else {
+                        Thread.sleep(1);
+                    }
+                }
+            } else {
+                throw new TaskLockException("No such query lock exists: " + task);
+            }
+        }
+
+        @Override
+        public void unlock() {
+            QuerySemaphore lock = semaphores.get(task.getQueryId());
+            if (lock != null) {
+                synchronized (lock) {
+                    if (!lock.locks.contains(task)) {
+                        throw new TaskLockException("Task not locked: " + task);
+                    }
+                    lock.locks.remove(task);
+                }
+            }
+        }
+
+    }
+
+    /**
+     * A basic lock that is based on an arbitrary string lock id.
+     */
+    private class BasicLock extends GenericLock {
+        private final String id;
+        public BasicLock(String id) {
+            this.id = id;
+        }
+
+        @Override
+        public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+            long start = System.currentTimeMillis();
+            while (true) {
+                synchronized(otherLocks) {
+                    if (otherLocks.contains(id)) {
+                        if ((System.currentTimeMillis() - start) >= unit.toMillis(time)) {
+                            return false;
+                        } else {
+                            Thread.sleep(1);
+                        }
+                    } else {
+                        otherLocks.add(id);
+                        return true;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void unlock() {
+            otherLocks.remove(id);
+        }
+    }
+
 }

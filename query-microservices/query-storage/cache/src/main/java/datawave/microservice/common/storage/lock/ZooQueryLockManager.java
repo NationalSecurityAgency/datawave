@@ -103,7 +103,6 @@ public class ZooQueryLockManager implements QueryLockManager {
      * @throws TaskLockException
      *             if the task is already locked or the query semaphore does not exist
      */
-    @Override
     public boolean acquireLock(TaskKey task, long waitMs) throws TaskLockException, IOException {
         return getQueryLock(task.getQueryId()).acquireLock(task, waitMs);
     }
@@ -116,7 +115,6 @@ public class ZooQueryLockManager implements QueryLockManager {
      * @throws TaskLockException
      *             if the task is not locked.
      */
-    @Override
     public void releaseLock(TaskKey task) throws TaskLockException, IOException {
         getQueryLock(task.getQueryId()).releaseLock(task);
     }

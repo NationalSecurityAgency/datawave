@@ -217,7 +217,7 @@ public class QueryStorageCacheTest {
             // expected
         }
         
-        assertTrue(lockManager.acquireLock(key, 0));
+        assertTrue(lockManager.getLock(key).tryLock());
         try {
             storageService.checkpointTask(key, checkpoint);
             fail("Expected storage service to fail checkpointing an invalid task key");
@@ -225,9 +225,10 @@ public class QueryStorageCacheTest {
             // expected
         }
         
+
         key = new TaskKey(UUID.randomUUID(), checkpoint.getQueryKey());
         lockManager.createSemaphore(key.getQueryId(), 3);
-        assertTrue(lockManager.acquireLock(key, 0));
+        assertTrue(lockManager.getLock(key).tryLock());
         try {
             storageService.checkpointTask(key, checkpoint);
             fail("Expected storage service to fail checkpointing a missing task");

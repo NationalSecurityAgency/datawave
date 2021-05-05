@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class QueryStorageCacheImpl implements QueryStorageCache {
@@ -95,8 +96,8 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *             if the task is already locked
      */
     @Override
-    public QueryTask getTask(TaskKey taskKey, long waitMs) throws TaskLockException, IOException {
-        if (lockManager.acquireLock(taskKey, waitMs)) {
+    public QueryTask getTask(TaskKey taskKey, long waitMs) throws TaskLockException, IOException, InterruptedException {
+        if (lockManager.getLock(taskKey).tryLock(waitMs, TimeUnit.MILLISECONDS)) {
             return cache.getTask(taskKey);
         } else {
             return null;
@@ -118,7 +119,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     public QueryTask checkpointTask(TaskKey taskKey, QueryCheckpoint checkpoint) throws TaskLockException, IOException {
         if (lockManager.isLocked(taskKey)) {
             QueryTask queryTask = cache.updateQueryTask(taskKey, checkpoint);
-            lockManager.releaseLock(taskKey);
+            lockManager.getLock(taskKey).unlock();
             return queryTask;
         } else {
             throw new TaskLockException("Attempting to checkpoint a task that is not locked: " + taskKey);
@@ -137,7 +138,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     public void deleteTask(TaskKey taskKey) throws TaskLockException, IOException {
         if (lockManager.isLocked(taskKey)) {
             cache.deleteTask(taskKey);
-            lockManager.releaseLock(taskKey);
+            lockManager.getLock(taskKey).unlock();
         } else {
             throw new TaskLockException("Attempting to delete a task that is not locked: " + taskKey);
         }

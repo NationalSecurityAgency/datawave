@@ -62,33 +62,6 @@ public interface QueryLockManager {
     Lock getLock(String lockId);
 
     /**
-     * Acquire a lock for a task. This will wait the specified waitMs for a semaphore slot to be available.
-     *
-     * @param task
-     *            The task to lock
-     * @param waitMs
-     *            How long to wait for semaphore availability and then how long to wait for the lock
-     * @return true if able to lock the task
-     * @throws TaskLockException
-     *             if the task is already locked or the query semaphore does not exist
-     * @throws IOException
-     *             if there was a lock system access failure
-     */
-    boolean acquireLock(TaskKey task, long waitMs) throws TaskLockException, IOException;
-    
-    /**
-     * Release the lock for a task. This will also decrement the semaphore allowing another task to be locked.
-     *
-     * @param task
-     *            The task to unlock
-     * @throws TaskLockException
-     *             if the task is not locked.
-     * @throws IOException
-     *             if there was a lock system access failure
-     */
-    void releaseLock(TaskKey task) throws TaskLockException, IOException;
-
-    /**
      * Determine if a task is locked.
      *
      * @param task

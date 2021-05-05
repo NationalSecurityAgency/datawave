@@ -3,7 +3,7 @@ package datawave.microservice.common.storage;
 /**
  * An exception related to task locks
  */
-public class TaskLockException extends Exception {
+public class TaskLockException extends RuntimeException {
     public TaskLockException(String message) {
         super(message);
     }
