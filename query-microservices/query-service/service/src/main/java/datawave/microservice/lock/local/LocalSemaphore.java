@@ -6,8 +6,8 @@ import java.util.concurrent.TimeUnit;
 
 public class LocalSemaphore implements Semaphore {
 
-    private String name;
-    private java.util.concurrent.Semaphore semaphore;
+    private final String name;
+    private final java.util.concurrent.Semaphore semaphore;
 
     LocalSemaphore(String name, java.util.concurrent.Semaphore semaphore) {
         this.name = name;

@@ -9,11 +9,10 @@ import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
 public class ZookeeperSemaphore implements Semaphore {
-
-    private String path;
-    private InterProcessSemaphoreV2 semaphore;
-    final private LinkedList<Lease> leases = new LinkedList<>();
-    private CuratorFramework curatorFramework;
+    private final String path;
+    private final InterProcessSemaphoreV2 semaphore;
+    private final LinkedList<Lease> leases = new LinkedList<>();
+    private final CuratorFramework curatorFramework;
 
     ZookeeperSemaphore(String path, InterProcessSemaphoreV2 semaphore, CuratorFramework curatorFramework) {
         this.path = path;
@@ -23,7 +22,7 @@ public class ZookeeperSemaphore implements Semaphore {
 
     @Override
     public String getName() {
-        return null;
+        return path;
     }
 
     @Override

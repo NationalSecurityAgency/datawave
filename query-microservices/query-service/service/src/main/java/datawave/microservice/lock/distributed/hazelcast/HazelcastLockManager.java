@@ -3,6 +3,7 @@ package datawave.microservice.lock.distributed.hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.ISemaphore;
+import datawave.microservice.lock.Lock;
 import datawave.microservice.lock.LockManager;
 import datawave.microservice.lock.Semaphore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -29,5 +30,10 @@ public class HazelcastLockManager implements LockManager {
             throw new Exception("Unable to initialize ISemaphore");
         }
         return new HazelcastSemaphore(iSemaphore);
+    }
+
+    @Override
+    public Lock getLock(String name) {
+        return new HazelcastLock(cpSubsystem.getLock(name));
     }
 }

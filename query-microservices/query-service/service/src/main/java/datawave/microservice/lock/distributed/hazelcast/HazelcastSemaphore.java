@@ -6,7 +6,7 @@ import datawave.microservice.lock.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 public class HazelcastSemaphore implements Semaphore {
-    private ISemaphore semaphore;
+    private final ISemaphore semaphore;
 
     HazelcastSemaphore(ISemaphore semaphore) {
         this.semaphore = semaphore;
