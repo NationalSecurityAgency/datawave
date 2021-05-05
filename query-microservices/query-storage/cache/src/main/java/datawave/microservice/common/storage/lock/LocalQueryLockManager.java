@@ -16,10 +16,10 @@ import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
 public class LocalQueryLockManager implements QueryLockManager {
-
+    
     // The set of query semaphores which maintain the task lock states
-    private Map<UUID, QuerySemaphore> semaphores = Collections.synchronizedMap(new HashMap<>());
-
+    private Map<UUID,QuerySemaphore> semaphores = Collections.synchronizedMap(new HashMap<>());
+    
     // The set of other arbitrary locks
     private Set<String> otherLocks = Collections.synchronizedSet(new HashSet<>());
     
@@ -67,7 +67,7 @@ public class LocalQueryLockManager implements QueryLockManager {
             }
         }
     }
-
+    
     @Override
     public Lock getLock(TaskKey task) {
         QuerySemaphore lock = semaphores.get(task.getQueryId());
@@ -77,17 +77,17 @@ public class LocalQueryLockManager implements QueryLockManager {
             throw new TaskLockException("No such query lock exists: " + task);
         }
     }
-
+    
     @Override
     public Lock getLock(UUID queryId) {
         return getLock(queryId.toString());
     }
-
+    
     @Override
     public Lock getLock(String lockId) {
         return new BasicLock(lockId);
     }
-
+    
     /**
      * Determine if a task is locked.
      *
@@ -155,19 +155,19 @@ public class LocalQueryLockManager implements QueryLockManager {
     public Set<UUID> getDistributedQueries() {
         return getQueries();
     }
-
+    
     /**
      * A QuerySemphore maintains a set of task permits for a query
      */
     private class QuerySemaphore {
         int maxPermits;
         Set<TaskKey> locks = new HashSet<>();
-
+        
         public QuerySemaphore(int count) {
             maxPermits = count;
         }
     }
-
+    
     /**
      * A generic lock that implements most of the Lock methods
      */
@@ -183,12 +183,12 @@ public class LocalQueryLockManager implements QueryLockManager {
                 }
             }
         }
-
+        
         @Override
         public void lockInterruptibly() throws InterruptedException {
             tryLock(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         }
-
+        
         @Override
         public boolean tryLock() {
             try {
@@ -197,24 +197,24 @@ public class LocalQueryLockManager implements QueryLockManager {
                 return false;
             }
         }
-
+        
         @Override
         public Condition newCondition() {
             throw new UnsupportedOperationException("Conditions not supported");
         }
     }
-
+    
     /**
-     * A Task lock handles getting a lock for a task.  A lock cannot be obtained until
-     * there is a query semaphore permit available and then only if that task is not already
-     * locked.
+     * A Task lock handles getting a lock for a task. A lock cannot be obtained until there is a query semaphore permit available and then only if that task is
+     * not already locked.
      */
     private class TaskLock extends GenericLock {
         private final TaskKey task;
+        
         public TaskLock(TaskKey task) {
             this.task = task;
         }
-
+        
         @Override
         public boolean tryLock(long time, TimeUnit unit) throws TaskLockException, InterruptedException {
             long start = System.currentTimeMillis();
@@ -244,7 +244,7 @@ public class LocalQueryLockManager implements QueryLockManager {
                 throw new TaskLockException("No such query lock exists: " + task);
             }
         }
-
+        
         @Override
         public void unlock() {
             QuerySemaphore lock = semaphores.get(task.getQueryId());
@@ -257,23 +257,24 @@ public class LocalQueryLockManager implements QueryLockManager {
                 }
             }
         }
-
+        
     }
-
+    
     /**
      * A basic lock that is based on an arbitrary string lock id.
      */
     private class BasicLock extends GenericLock {
         private final String id;
+        
         public BasicLock(String id) {
             this.id = id;
         }
-
+        
         @Override
         public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
             long start = System.currentTimeMillis();
             while (true) {
-                synchronized(otherLocks) {
+                synchronized (otherLocks) {
                     if (otherLocks.contains(id)) {
                         if ((System.currentTimeMillis() - start) >= unit.toMillis(time)) {
                             return false;
@@ -287,11 +288,11 @@ public class LocalQueryLockManager implements QueryLockManager {
                 }
             }
         }
-
+        
         @Override
         public void unlock() {
             otherLocks.remove(id);
         }
     }
-
+    
 }

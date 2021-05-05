@@ -17,18 +17,19 @@ import org.springframework.stereotype.Component;
 @ConditionalOnBean(CuratorFramework.class)
 @ConditionalOnProperty(name = "datawave.lock.type", havingValue = "zookeeper")
 public class ZookeeperLockManager implements LockManager {
-
+    
     final private CuratorFramework curatorFramework;
-
+    
     public ZookeeperLockManager(CuratorFramework curatorFramework) {
         this.curatorFramework = curatorFramework;
     }
-
+    
     @Override
     public Semaphore getSemaphore(String name, int permits) throws Exception {
-        return new ZookeeperSemaphore(name, new InterProcessSemaphoreV2(curatorFramework, name, new SharedCount(curatorFramework, name + "/permits", permits)), curatorFramework);
+        return new ZookeeperSemaphore(name, new InterProcessSemaphoreV2(curatorFramework, name, new SharedCount(curatorFramework, name + "/permits", permits)),
+                        curatorFramework);
     }
-
+    
     @Override
     public Lock getLock(String name) {
         return new ZookeeperLock(name, new InterProcessMutex(curatorFramework, name));

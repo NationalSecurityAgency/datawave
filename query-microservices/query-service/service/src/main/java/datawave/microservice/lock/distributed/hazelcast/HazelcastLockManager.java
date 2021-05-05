@@ -16,13 +16,13 @@ import org.springframework.stereotype.Component;
 @ConditionalOnBean(HazelcastInstance.class)
 @ConditionalOnProperty(name = "datawave.lock.type", havingValue = "hazelcast")
 public class HazelcastLockManager implements LockManager {
-
+    
     private CPSubsystem cpSubsystem;
-
+    
     public HazelcastLockManager(HazelcastInstance hazelcastInstance) {
         this.cpSubsystem = hazelcastInstance.getCPSubsystem();
     }
-
+    
     @Override
     public Semaphore getSemaphore(String name, int permits) throws Exception {
         ISemaphore iSemaphore = cpSubsystem.getSemaphore(name);
@@ -31,7 +31,7 @@ public class HazelcastLockManager implements LockManager {
         }
         return new HazelcastSemaphore(iSemaphore);
     }
-
+    
     @Override
     public Lock getLock(String name) {
         return new HazelcastLock(cpSubsystem.getLock(name));

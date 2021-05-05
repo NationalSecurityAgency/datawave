@@ -39,28 +39,31 @@ public interface QueryLockManager {
     default void deleteSemaphore(UUID queryId) throws IOException {
         createSemaphore(queryId, 0);
     }
-
+    
     /**
      * Get a lock object for a task
+     * 
      * @param task
      * @return The Lock object
      */
     Lock getLock(TaskKey task);
-
+    
     /**
      * Get a lock object for a query
+     * 
      * @param queryId
      * @return The lock object
      */
     Lock getLock(UUID queryId);
-
+    
     /**
      * Geeet a lock object for a arbitrary string
+     * 
      * @param lockId
      * @return The lock object
      */
     Lock getLock(String lockId);
-
+    
     /**
      * Determine if a task is locked.
      *

@@ -225,7 +225,6 @@ public class QueryStorageCacheTest {
             // expected
         }
         
-
         key = new TaskKey(UUID.randomUUID(), checkpoint.getQueryKey());
         lockManager.createSemaphore(key.getQueryId(), 3);
         assertTrue(lockManager.getLock(key).tryLock());

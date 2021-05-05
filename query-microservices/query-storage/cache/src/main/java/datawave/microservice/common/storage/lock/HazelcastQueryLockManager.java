@@ -1,15 +1,14 @@
 package datawave.microservice.common.storage.lock;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.cp.IAtomicLong;
+import com.hazelcast.cp.ISemaphore;
+import com.hazelcast.cp.lock.FencedLock;
 import datawave.microservice.common.storage.QueryLockManager;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.common.storage.TaskLockException;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
-import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreV2;
-import org.apache.curator.framework.recipes.locks.Lease;
-import org.apache.curator.framework.recipes.shared.SharedCount;
-import org.apache.curator.retry.ExponentialBackoffRetry;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -24,20 +23,23 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
-public class ZooQueryLockManager implements QueryLockManager {
+public class HazelcastQueryLockManager implements QueryLockManager {
     
-    // The curator client
-    private CuratorFramework client;
+    // The hazelcast instance
+    private final HazelcastInstance instance;
     
-    // The base zookeeper path for all of the locks
+    // The hazelcast client
+    private final CPSubsystem client;
+    
+    // The base path for all of the locks
     private static final String BASE_PATH = "/QueryStorageCache/";
     
     // The set of query lock objects being used by this JVM
     private Map<UUID,QuerySemaphore> semaphores = Collections.synchronizedMap(new HashMap<>());
     
-    public ZooQueryLockManager(String zookeeperConnectionString) {
-        client = CuratorFrameworkFactory.builder().connectString(zookeeperConnectionString).retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
-        client.start();
+    public HazelcastQueryLockManager(HazelcastInstance hazelcastInstance) {
+        this.instance = hazelcastInstance;
+        this.client = hazelcastInstance.getCPSubsystem();
     }
     
     /**
@@ -47,6 +49,7 @@ public class ZooQueryLockManager implements QueryLockManager {
      * @param queryId
      *            The query id
      * @param count
+     *            The max permits
      */
     @Override
     public void createSemaphore(UUID queryId, int count) throws IOException {
@@ -69,6 +72,7 @@ public class ZooQueryLockManager implements QueryLockManager {
      * This will drop any cached data for this queryid, leaving the query locks in the underlying cluster. Any local task locks will be released.
      *
      * @param queryId
+     *            The query id
      */
     @Override
     public void closeSemaphore(UUID queryId) throws IOException {
@@ -121,9 +125,10 @@ public class ZooQueryLockManager implements QueryLockManager {
         }
         
         try {
-            return (client.checkExists().forPath(getBasePath(queryId)) != null);
+            IAtomicLong count = client.getAtomicLong(getSemaphoreCountPath(queryId));
+            return (count.get() != 0);
         } catch (Exception e) {
-            throw new TaskLockException("Failed to examine zookeeper path for " + getBaseTaskLockPath(queryId), e);
+            throw new TaskLockException("Failed to examine hazelcast path for " + getSemaphoreCountPath(queryId), e);
         }
     }
     
@@ -150,35 +155,38 @@ public class ZooQueryLockManager implements QueryLockManager {
     }
     
     /**
-     * Get the task ids for all locks that the zookeeper cluster knows about
+     * Get the task ids for all locks that the cluster knows about
      *
      * @param queryId
+     *            The query id
      * @return A set of task UUIDs
      * @throws IOException
      */
     @Override
     public Set<UUID> getDistributedLockedTasks(UUID queryId) throws IOException {
+        final String basePath = getBaseTaskLockPath(queryId);
         try {
-            List<String> paths = client.getChildren().forPath(getBaseTaskLockPath(queryId));
-            return paths.stream().map(u -> UUID.fromString(u)).collect(Collectors.toSet());
+            return instance.getDistributedObjects().stream().map(o -> o.getName()).filter(o -> o.startsWith(basePath)).map(u -> UUID.fromString(u))
+                            .collect(Collectors.toSet());
         } catch (Exception e) {
-            throw new IOException("Failed to examine zookeeper path for " + getBaseTaskLockPath(queryId), e);
+            throw new IOException("Failed to examine hazelcast path for " + basePath, e);
         }
     }
     
     /**
-     * Get the query ids for all semaphores that the zookeeper cluster knows about
+     * Get the query ids for all semaphores that the hazelcast cluster knows about
      *
      * @return The set of query UUIDs
      * @throws IOException
      */
     @Override
     public Set<UUID> getDistributedQueries() throws IOException {
+        final String basePath = getBaseQueryPath();
         try {
-            List<String> paths = client.getChildren().forPath(BASE_PATH);
-            return paths.stream().map(u -> UUID.fromString(u)).collect(Collectors.toSet());
+            return instance.getDistributedObjects().stream().map(o -> o.getName()).filter(o -> o.startsWith(basePath)).map(u -> UUID.fromString(u))
+                            .collect(Collectors.toSet());
         } catch (Exception e) {
-            throw new IOException("Failed to examine zookeeper path for " + BASE_PATH, e);
+            throw new IOException("Failed to examine hazelcast path for " + basePath, e);
         }
     }
     
@@ -186,6 +194,7 @@ public class ZooQueryLockManager implements QueryLockManager {
      * Get a query lock that is expected to exist.
      * 
      * @param queryId
+     *            The query id
      * @return the query lock
      * @throws IllegalStateException
      *             if the query lock has not already been created
@@ -204,14 +213,23 @@ public class ZooQueryLockManager implements QueryLockManager {
     }
     
     /**
-     * Get the base path for all locks, semaphores, etc for a query
+     * Get the base path for all queries
+     * 
+     * @return the base query path
+     */
+    private static String getBaseQueryPath() {
+        return BASE_PATH + "queries/";
+    }
+    
+    /**
+     * Get the base path for all locks, semaphores, etc for a specific query
      * 
      * @param queryId
      *            The queryId
      * @return the base path
      */
     private static String getBasePath(UUID queryId) {
-        return BASE_PATH + queryId;
+        return getBaseQueryPath() + queryId;
     }
     
     /**
@@ -273,42 +291,17 @@ public class ZooQueryLockManager implements QueryLockManager {
     private class QuerySemaphore {
         private static final int DEFAULT_PERMITS = 1;
         private final UUID queryId;
-        private final SharedCount maxPermits;
-        private final InterProcessSemaphoreV2 semaphore;
-        private final Map<TaskKey,LeaseAndLock> leases = new HashMap<>();
-        
-        private class LeaseAndLock {
-            final Lease lease;
-            final InterProcessMutex lock;
-            
-            LeaseAndLock(Lease lease, InterProcessMutex lock) {
-                this.lease = lease;
-                this.lock = lock;
-            }
-            
-            public void close() throws IOException {
-                try {
-                    lock.release();
-                } catch (Exception e) {
-                    throw new IOException("Unable to release lock", e);
-                } finally {
-                    lease.close();
-                }
-            }
-        }
+        private final IAtomicLong maxPermits;
+        private final ISemaphore semaphore;
+        private final Map<TaskKey,FencedLock> locks = new HashMap<>();
         
         QuerySemaphore(UUID queryId) throws TaskLockException {
             this.queryId = queryId;
             // first lets setup the shared count if needed
-            maxPermits = getSemaphoreCount(queryId, DEFAULT_PERMITS);
-            try {
-                maxPermits.start();
-            } catch (Exception e) {
-                throw new TaskLockException("Unable to start zookeeper counter", e);
-            }
+            maxPermits = getSemaphoreCount(queryId);
             
             // now lets create the semaphore
-            semaphore = getSemaphore(queryId, maxPermits);
+            semaphore = getSemaphore(queryId, maxPermits, DEFAULT_PERMITS);
         }
         
         QuerySemaphore(UUID queryId, int count) throws IOException {
@@ -320,20 +313,26 @@ public class ZooQueryLockManager implements QueryLockManager {
         
         synchronized void updatePermits(int count) throws IOException {
             try {
-                maxPermits.setCount(count);
+                int current = (int) (maxPermits.get());
+                maxPermits.set(count);
+                if (current > count) {
+                    semaphore.reducePermits(current - count);
+                } else if (current < count) {
+                    semaphore.increasePermits(count - current);
+                }
             } catch (Exception e) {
-                throw new IOException("Unable to set zookeeper counter", e);
+                throw new IOException("Unable to set hazelcast counter", e);
             }
         }
         
         synchronized void close() throws IOException {
             try {
-                for (LeaseAndLock lease : leases.values()) {
-                    lease.close();
+                for (FencedLock lock : locks.values()) {
+                    this.semaphore.release();
+                    lock.unlock();
                 }
             } finally {
-                leases.clear();
-                maxPermits.close();
+                locks.clear();
             }
         }
         
@@ -342,7 +341,8 @@ public class ZooQueryLockManager implements QueryLockManager {
                 close();
             } finally {
                 try {
-                    client.delete().deletingChildrenIfNeeded().forPath(getBasePath(queryId));
+                    maxPermits.destroy();
+                    semaphore.destroy();
                 } catch (Exception e) {
                     throw new IOException("Failed to delete query lock for " + queryId, e);
                 }
@@ -350,72 +350,70 @@ public class ZooQueryLockManager implements QueryLockManager {
         }
         
         synchronized boolean acquireLock(TaskKey task, long waitMs) throws InterruptedException, TaskLockException {
-            if (leases.containsKey(task)) {
+            if (locks.containsKey(task)) {
                 throw new TaskLockException("Task already locked locally: " + task);
             }
-            Lease lease = null;
-            InterProcessMutex lock = null;
+            FencedLock lock = null;
             boolean acquiredLock = false;
             try {
                 // first get a semaphore lease
-                lease = semaphore.acquire(waitMs, TimeUnit.MILLISECONDS);
-                if (lease == null) {
+                if (!semaphore.tryAcquire(waitMs, TimeUnit.MILLISECONDS)) {
                     return false;
                 }
                 
                 // acquire the lock
                 lock = getTaskLock(task);
-                acquiredLock = lock.acquire(waitMs, TimeUnit.MILLISECONDS);
+                acquiredLock = lock.tryLock(waitMs, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 throw new TaskLockException("Unable to acquire a task lock", e);
             } finally {
                 if (acquiredLock) {
-                    leases.put(task, new LeaseAndLock(lease, lock));
+                    locks.put(task, lock);
                     return true;
                 } else {
-                    if (lease != null) {
-                        try {
-                            lease.close();
-                        } catch (IOException e) {
-                            throw new TaskLockException("Task is already locked: " + task + " AND failed to release lease", e);
-                        }
-                    }
+                    semaphore.release();
                     throw new TaskLockException("Task is already locked: " + task);
                 }
             }
         }
         
         synchronized void releaseLock(TaskKey task) throws TaskLockException {
-            LeaseAndLock lease = leases.remove(task);
-            if (lease == null) {
+            FencedLock lock = locks.remove(task);
+            if (lock == null) {
                 throw new TaskLockException("Task not locked: " + task);
             }
             
             try {
-                lease.close();
-            } catch (IOException e) {
+                this.semaphore.release();
+                lock.unlock();
+            } catch (Exception e) {
                 throw new TaskLockException("Failed to close lease", e);
             }
         }
         
         synchronized boolean isLocked(TaskKey task) {
-            return leases.containsKey(task);
+            return locks.containsKey(task);
         }
         
         synchronized Set<TaskKey> getLockedTasks() {
-            return new HashSet<>(leases.keySet());
+            return new HashSet<>(locks.keySet());
         }
         
-        private SharedCount getSemaphoreCount(UUID queryId, int count) {
-            return new SharedCount(client, getSemaphoreCountPath(queryId), count);
+        private IAtomicLong getSemaphoreCount(UUID queryId) {
+            return client.getAtomicLong(getSemaphoreCountPath(queryId));
         }
         
-        private InterProcessSemaphoreV2 getSemaphore(UUID queryId, SharedCount count) {
-            return new InterProcessSemaphoreV2(client, getSemaphorePath(queryId), count);
+        private ISemaphore getSemaphore(UUID queryId, IAtomicLong maxPermits, int seedValue) {
+            ISemaphore semaphore = client.getSemaphore(getSemaphorePath(queryId));
+            if (maxPermits.get() == 0) {
+                maxPermits.set(seedValue);
+                semaphore.init(seedValue);
+            }
+            return semaphore;
         }
         
-        private InterProcessMutex getTaskLock(TaskKey task) {
-            return new InterProcessMutex(client, getTaskLockPath(task));
+        private FencedLock getTaskLock(TaskKey task) {
+            return client.getLock(getTaskLockPath(task));
         }
     }
     
@@ -483,19 +481,17 @@ public class ZooQueryLockManager implements QueryLockManager {
      */
     private class BasicLock extends GenericLock {
         private final String id;
-        private InterProcessMutex lock;
+        private FencedLock lock;
         
         public BasicLock(String id) {
             this.id = id;
-            this.lock = new InterProcessMutex(client, getOtherLockPath(id));
+            this.lock = client.getLock(getOtherLockPath(id));
         }
         
         @Override
-        public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+        public boolean tryLock(long time, TimeUnit unit) {
             try {
-                return lock.acquire(time, unit);
-            } catch (InterruptedException e) {
-                throw e;
+                return lock.tryLock(time, unit);
             } catch (Exception e) {
                 throw new TaskLockException("Unable to acquire lock " + id, e);
             }
@@ -504,7 +500,7 @@ public class ZooQueryLockManager implements QueryLockManager {
         @Override
         public void unlock() {
             try {
-                lock.release();
+                lock.unlock();
             } catch (Exception e) {
                 throw new TaskLockException("Failed to unlock " + id, e);
             }

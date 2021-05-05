@@ -17,7 +17,7 @@ public class LocalLockManager implements LockManager {
     public Semaphore getSemaphore(String name, int permits) {
         return new LocalSemaphore(name, new java.util.concurrent.Semaphore(permits));
     }
-
+    
     @Override
     public Lock getLock(String name) {
         return new LocalLock(name, new ReentrantLock());
