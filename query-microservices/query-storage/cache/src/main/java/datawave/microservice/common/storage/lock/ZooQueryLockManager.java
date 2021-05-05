@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
@@ -32,7 +33,7 @@ public class ZooQueryLockManager implements QueryLockManager {
     private static final String BASE_PATH = "/QueryStorageCache/";
     
     // The set of query lock objects being used by this JVM
-    private Map<UUID,QueryLock> semaphores = Collections.synchronizedMap(new HashMap<>());
+    private Map<UUID, QuerySemaphore> semaphores = Collections.synchronizedMap(new HashMap<>());
     
     public ZooQueryLockManager(String zookeeperConnectionString) {
         client = CuratorFrameworkFactory.builder().connectString(zookeeperConnectionString).retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
@@ -50,16 +51,16 @@ public class ZooQueryLockManager implements QueryLockManager {
     @Override
     public void createSemaphore(UUID queryId, int count) throws IOException {
         if (count == 0) {
-            QueryLock lock = semaphores.remove(queryId);
+            QuerySemaphore lock = semaphores.remove(queryId);
             if (lock != null) {
                 lock.delete();
             }
         } else {
-            QueryLock lock = semaphores.get(queryId);
+            QuerySemaphore lock = semaphores.get(queryId);
             if (lock != null) {
                 lock.updatePermits(count);
             } else {
-                semaphores.put(queryId, new QueryLock(queryId, count));
+                semaphores.put(queryId, new QuerySemaphore(queryId, count));
             }
         }
     }
@@ -71,7 +72,7 @@ public class ZooQueryLockManager implements QueryLockManager {
      */
     @Override
     public void closeSemaphore(UUID queryId) throws IOException {
-        QueryLock lock = semaphores.remove(queryId);
+        QuerySemaphore lock = semaphores.remove(queryId);
         if (lock != null) {
             lock.close();
         }
@@ -79,46 +80,19 @@ public class ZooQueryLockManager implements QueryLockManager {
 
     @Override
     public Lock getLock(TaskKey task) {
-        return null;
+        return new TaskLock(task);
     }
 
     @Override
     public Lock getLock(UUID queryId) {
-        return null;
+        return getLock(queryId.toString());
     }
 
     @Override
     public Lock getLock(String lockId) {
-        return null;
+        return new BasicLock(lockId);
     }
 
-    /**
-     * Acquire a lock for a task. This will wait the specified waitMs for a semaphore slot to be available.
-     *
-     * @param task
-     *            The task to lock
-     * @param waitMs
-     *            How long to wait for semaphore availability and then how long to wait for the lock
-     * @return true if able to lock the task
-     * @throws TaskLockException
-     *             if the task is already locked or the query semaphore does not exist
-     */
-    public boolean acquireLock(TaskKey task, long waitMs) throws TaskLockException, IOException {
-        return getQueryLock(task.getQueryId()).acquireLock(task, waitMs);
-    }
-    
-    /**
-     * Release the lock for a task. This will also decrement the semaphore allowing another task to be locked.
-     *
-     * @param task
-     *            The task to unlock
-     * @throws TaskLockException
-     *             if the task is not locked.
-     */
-    public void releaseLock(TaskKey task) throws TaskLockException, IOException {
-        getQueryLock(task.getQueryId()).releaseLock(task);
-    }
-    
     /**
      * Determine if a task is locked.
      *
@@ -140,7 +114,7 @@ public class ZooQueryLockManager implements QueryLockManager {
      * @throws IOException
      *             If there was a lock system access failure
      */
-    private boolean exists(UUID queryId) throws IOException {
+    private boolean exists(UUID queryId) throws TaskLockException {
         // first try the quick test
         if (semaphores.containsKey(queryId)) {
             return true;
@@ -149,7 +123,7 @@ public class ZooQueryLockManager implements QueryLockManager {
         try {
             return (client.checkExists().forPath(getBasePath(queryId)) != null);
         } catch (Exception e) {
-            throw new IOException("Failed to examine zookeeper path for " + getBaseTaskLockPath(queryId), e);
+            throw new TaskLockException("Failed to examine zookeeper path for " + getBaseTaskLockPath(queryId), e);
         }
     }
     
@@ -216,11 +190,11 @@ public class ZooQueryLockManager implements QueryLockManager {
      * @throws IllegalStateException
      *             if the query lock has not already been created
      */
-    private QueryLock getQueryLock(UUID queryId) throws IOException {
-        QueryLock lock = semaphores.get(queryId);
+    private QuerySemaphore getQueryLock(UUID queryId) throws TaskLockException {
+        QuerySemaphore lock = semaphores.get(queryId);
         if (lock == null) {
             if (exists(queryId)) {
-                lock = new QueryLock(queryId);
+                lock = new QuerySemaphore(queryId);
                 semaphores.put(queryId, lock);
             } else {
                 throw new IllegalStateException("Query semaphore does not exist for " + queryId);
@@ -250,7 +224,7 @@ public class ZooQueryLockManager implements QueryLockManager {
     private static String getSemaphoreCountPath(UUID queryId) {
         return getBasePath(queryId) + "/semaphoreCount";
     }
-    
+
     /**
      * Get the semaphore path for a query
      * 
@@ -282,11 +256,20 @@ public class ZooQueryLockManager implements QueryLockManager {
     private static String getTaskLockPath(TaskKey task) {
         return getBaseTaskLockPath(task.getQueryId()) + '/' + task.getTaskId();
     }
-    
+
     /**
-     * The query lock class which handles creating and deleting query semaphores and locks
+     * Get the path for some other lock
+     * @param id
+     * @return the lock path
      */
-    private class QueryLock {
+    private static String getOtherLockPath(String id) {
+        return BASE_PATH + "OtherLocks/" + id;
+    }
+
+    /**
+     * The query lock class which handles creating and deleting query semaphores and task locks
+     */
+    private class QuerySemaphore {
         private static final int DEFAULT_PERMITS = 1;
         private final UUID queryId;
         private final SharedCount maxPermits;
@@ -313,21 +296,21 @@ public class ZooQueryLockManager implements QueryLockManager {
             }
         }
         
-        QueryLock(UUID queryId) throws IOException {
+        QuerySemaphore(UUID queryId) throws TaskLockException {
             this.queryId = queryId;
             // first lets setup the shared count if needed
             maxPermits = getSemaphoreCount(queryId, DEFAULT_PERMITS);
             try {
                 maxPermits.start();
             } catch (Exception e) {
-                throw new IOException("Unable to start zookeeper counter", e);
+                throw new TaskLockException("Unable to start zookeeper counter", e);
             }
             
             // now lets create the semaphore
             semaphore = getSemaphore(queryId, maxPermits);
         }
         
-        QueryLock(UUID queryId, int count) throws IOException {
+        QuerySemaphore(UUID queryId, int count) throws IOException {
             this(queryId);
             
             // set the number of permits
@@ -365,7 +348,7 @@ public class ZooQueryLockManager implements QueryLockManager {
             }
         }
         
-        synchronized boolean acquireLock(TaskKey task, long waitMs) throws IOException, TaskLockException {
+        synchronized boolean acquireLock(TaskKey task, long waitMs) throws InterruptedException, TaskLockException {
             if (leases.containsKey(task)) {
                 throw new TaskLockException("Task already locked locally: " + task);
             }
@@ -383,26 +366,35 @@ public class ZooQueryLockManager implements QueryLockManager {
                 lock = getTaskLock(task);
                 acquiredLock = lock.acquire(waitMs, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
-                throw new IOException("Unable to acquire a task lock", e);
+                throw new TaskLockException("Unable to acquire a task lock", e);
             } finally {
                 if (acquiredLock) {
                     leases.put(task, new LeaseAndLock(lease, lock));
                     return true;
                 } else {
-                    if (lease != null)
-                        lease.close();
+                    if (lease != null) {
+                        try {
+                            lease.close();
+                        } catch (IOException e) {
+                            throw new TaskLockException("Task is already locked: " + task + " AND failed to release lease", e);
+                        }
+                    }
                     throw new TaskLockException("Task is already locked: " + task);
                 }
             }
         }
         
-        synchronized void releaseLock(TaskKey task) throws TaskLockException, IOException {
+        synchronized void releaseLock(TaskKey task) throws TaskLockException {
             LeaseAndLock lease = leases.remove(task);
             if (lease == null) {
                 throw new TaskLockException("Task not locked: " + task);
             }
-            
-            lease.close();
+
+            try {
+                lease.close();
+            } catch (IOException e) {
+                throw new TaskLockException("Failed to close lease", e);
+            }
         }
         
         synchronized boolean isLocked(TaskKey task) {
@@ -425,5 +417,100 @@ public class ZooQueryLockManager implements QueryLockManager {
             return new InterProcessMutex(client, getTaskLockPath(task));
         }
     }
-    
+
+
+    /**
+     * A generic lock that implements most of the Lock methods
+     */
+    private abstract class GenericLock implements Lock {
+        @Override
+        public void lock() {
+            while (true) {
+                try {
+                    tryLock(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+                    return;
+                } catch (InterruptedException ie) {
+                    // try again
+                }
+            }
+        }
+
+        @Override
+        public void lockInterruptibly() throws InterruptedException {
+            tryLock(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        }
+
+        @Override
+        public boolean tryLock() {
+            try {
+                return tryLock(0, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException ie) {
+                return false;
+            }
+        }
+
+        @Override
+        public Condition newCondition() {
+            throw new UnsupportedOperationException("Conditions not supported");
+        }
+    }
+
+    /**
+     * A Task lock handles getting a lock for a task.  A lock cannot be obtained until
+     * there is a query semaphore permit available and then only if that task is not already
+     * locked.
+     */
+    private class TaskLock extends GenericLock {
+        private final TaskKey task;
+        public TaskLock(TaskKey task) {
+            this.task = task;
+        }
+
+        @Override
+        public boolean tryLock(long time, TimeUnit unit) throws TaskLockException, InterruptedException {
+            return getQueryLock(task.getQueryId()).acquireLock(task, unit.toMillis(time));
+        }
+
+        @Override
+        public void unlock() {
+            getQueryLock(task.getQueryId()).releaseLock(task);
+        }
+
+    }
+
+    /**
+     * A basic lock that is based on an arbitrary string lock id.
+     */
+    private class BasicLock extends GenericLock {
+        private final String id;
+        private InterProcessMutex lock;
+
+        public BasicLock(String id) {
+            this.id = id;
+            this.lock = new InterProcessMutex(client, getOtherLockPath(id));
+        }
+
+        @Override
+        public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+            try {
+                return lock.acquire(time, unit);
+            } catch (InterruptedException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new TaskLockException("Unable to acquire lock " + id, e);
+            }
+        }
+
+        @Override
+        public void unlock() {
+            try {
+                lock.release();
+            } catch (Exception e) {
+                throw new TaskLockException("Failed to unlock " + id, e);
+            }
+        }
+    }
+
+
+
 }
