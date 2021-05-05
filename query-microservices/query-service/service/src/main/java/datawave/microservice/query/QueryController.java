@@ -1,9 +1,11 @@
 package datawave.microservice.query;
 
 import com.codahale.metrics.annotation.Timed;
+import com.hazelcast.core.HazelcastInstance;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.query.web.annotation.EnrichQueryMetrics;
+import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class QueryController {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
-    private QueryManagementService queryManagementService;
-    
+    private final QueryManagementService queryManagementService;
+
     public QueryController(QueryManagementService queryManagementService) {
         this.queryManagementService = queryManagementService;
     }
@@ -31,13 +33,48 @@ public class QueryController {
     @EnrichQueryMetrics(methodType = EnrichQueryMetrics.MethodType.CREATE)
     @RequestMapping(path = "{queryLogic}/define", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
-    public GenericResponse<String> define(@PathVariable(name = "queryLogic") String queryLogicName, @RequestParam MultiValueMap<String,String> parameters,
+    public GenericResponse<String> define(@PathVariable(name = "queryLogic") String queryLogic, @RequestParam MultiValueMap<String,String> parameters,
                     @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
-        TaskKey taskKey = queryManagementService.define(queryLogicName, parameters, currentUser);
+        TaskKey taskKey = queryManagementService.define(queryLogic, parameters, currentUser);
         
         GenericResponse<String> resp = new GenericResponse<>();
         resp.setResult(taskKey.getQueryId().toString());
         return resp;
     }
-    
+
+    @Timed(name = "dw.query.createQuery", absolute = true)
+    @EnrichQueryMetrics(methodType = EnrichQueryMetrics.MethodType.CREATE)
+    @RequestMapping(path = "{queryLogic}/define", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+            "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public GenericResponse<String> create(@PathVariable(name = "queryLogic") String queryLogic, @RequestParam MultiValueMap<String,String> parameters,
+                                          @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
+        TaskKey taskKey = queryManagementService.create(queryLogic, parameters, currentUser);
+
+        GenericResponse<String> resp = new GenericResponse<>();
+        resp.setHasResults(true);
+        resp.setResult(taskKey.getQueryId().toString());
+        return resp;
+    }
+
+    @Timed(name = "dw.query.next", absolute = true)
+    @EnrichQueryMetrics(methodType = EnrichQueryMetrics.MethodType.NEXT)
+    @RequestMapping(path = "{queryId}/next", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+            "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public BaseQueryResponse next(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
+        // need to find the query in the query storage cache, and then check for results on the results queue
+
+        // figure out what user this is
+
+        // check to see if we're already handling a next call for this user/query
+
+        // check to see if the query id exists in the query cache
+
+        // make sure that this is the caller's query
+
+        // get the next set of results
+
+        // return the results to the user
+
+        return null;
+    }
 }

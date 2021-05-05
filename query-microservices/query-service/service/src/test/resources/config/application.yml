@@ -93,6 +93,9 @@ warehouse:
     modelName: 'DATAWAVE'
 
 datawave:
+  lock:
+    type: local
+
   metadata:
     all-metadata-auths:
       - PRIVATE,PUBLIC
