@@ -44,7 +44,7 @@ public class QueryController {
     
     @Timed(name = "dw.query.createQuery", absolute = true)
     @EnrichQueryMetrics(methodType = EnrichQueryMetrics.MethodType.CREATE)
-    @RequestMapping(path = "{queryLogic}/define", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+    @RequestMapping(path = "{queryLogic}/create", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public GenericResponse<String> create(@PathVariable(name = "queryLogic") String queryLogic, @RequestParam MultiValueMap<String,String> parameters,
                     @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
@@ -61,19 +61,8 @@ public class QueryController {
     @RequestMapping(path = "{queryId}/next", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public BaseQueryResponse next(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
-        // need to find the query in the query storage cache, and then check for results on the results queue
         
-        // figure out what user this is
-        
-        // check to see if we're already handling a next call for this user/query
-        
-        // check to see if the query id exists in the query cache
-        
-        // make sure that this is the caller's query
-        
-        // get the next set of results
-        
-        // return the results to the user
+        queryManagementService.next();
         
         return null;
     }

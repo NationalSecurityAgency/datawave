@@ -23,7 +23,7 @@ public class DefaultQueryLogicFactory implements QueryLogicFactory, ApplicationC
     /**
      * Configuration for parameters that are for all query logic types
      */
-    private QueryLogicFactoryProperties queryLogicFactoryProperties;
+    private final QueryLogicFactoryProperties queryLogicFactoryProperties;
     
     private ApplicationContext applicationContext;
     

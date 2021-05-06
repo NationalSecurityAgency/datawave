@@ -8,6 +8,7 @@ import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.common.audit.PrivateAuditConstants;
 import datawave.microservice.common.storage.QueryPool;
 import datawave.microservice.common.storage.QueryStorageCache;
+import datawave.microservice.common.storage.QueryTask;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.lock.LockManager;
 import datawave.microservice.query.config.QueryExpirationProperties;
@@ -30,7 +31,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 
+import java.io.IOException;
 import java.text.MessageFormat;
+import java.text.ParseException;
 import java.util.List;
 
 @Service
@@ -39,17 +42,17 @@ public class QueryManagementService {
     
     private static final ObjectMapper mapper = new ObjectMapper();
     
-    private QueryProperties queryProperties;
+    private final QueryProperties queryProperties;
     
     // Note: QueryParameters need to be request scoped
-    private QueryParameters queryParameters;
+    private final QueryParameters queryParameters;
     // Note: SecurityMarking needs to be request scoped
-    private SecurityMarking securityMarking;
-    private QueryLogicFactory queryLogicFactory;
-    private ResponseObjectFactory responseObjectFactory;
-    private QueryStorageCache queryStorageCache;
-    private AuditClient auditClient;
-    private LockManager lockManager;
+    private final SecurityMarking securityMarking;
+    private final QueryLogicFactory queryLogicFactory;
+    private final ResponseObjectFactory responseObjectFactory;
+    private final QueryStorageCache queryStorageCache;
+    private final AuditClient auditClient;
+    private final LockManager lockManager;
     
     // TODO: JWO: Pull these from configuration instead
     private final int PAGE_TIMEOUT_MIN = 1;
@@ -157,6 +160,28 @@ public class QueryManagementService {
             log.error("Unknown error storing query", e);
             throw new BadRequestQueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
         }
+    }
+    
+    public void next() throws IOException, InterruptedException, ParseException {
+        // does the query exist?
+        QueryTask queryTask = queryStorageCache.getTask(null, 0);
+        Query query = queryTask.getQueryCheckpoint().getPropertiesAsQuery();
+        
+        // if it exists, can we gaet a lock on this next call?
+        
+        // need to find the query in the query storage cache, and then check for results on the results queue
+        
+        // figure out what user this is
+        
+        // check to see if we're already handling a next call for this user/query
+        
+        // check to see if the query id exists in the query cache
+        
+        // make sure that this is the caller's query
+        
+        // get the next set of results
+        
+        // return the results to the user
     }
     
     protected void audit(Query query, QueryLogic<?> queryLogic, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {

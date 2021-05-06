@@ -8,12 +8,10 @@ import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreV2;
 import org.apache.curator.framework.recipes.shared.SharedCount;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-@Component("lockManager")
-@ConditionalOnMissingBean(name = "lockManager")
+@Component("distributedLockManager")
 @ConditionalOnBean(CuratorFramework.class)
 @ConditionalOnProperty(name = "datawave.lock.type", havingValue = "zookeeper")
 public class ZookeeperLockManager implements LockManager {

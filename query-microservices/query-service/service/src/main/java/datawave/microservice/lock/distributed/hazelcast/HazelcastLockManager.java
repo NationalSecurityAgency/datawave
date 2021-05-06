@@ -7,12 +7,10 @@ import datawave.microservice.lock.Lock;
 import datawave.microservice.lock.LockManager;
 import datawave.microservice.lock.Semaphore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-@Component("lockManager")
-@ConditionalOnMissingBean(name = "lockManager")
+@Component("distributedLockManager")
 @ConditionalOnBean(HazelcastInstance.class)
 @ConditionalOnProperty(name = "datawave.lock.type", havingValue = "hazelcast")
 public class HazelcastLockManager implements LockManager {
