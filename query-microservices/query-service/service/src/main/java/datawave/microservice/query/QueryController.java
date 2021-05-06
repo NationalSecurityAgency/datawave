@@ -62,7 +62,7 @@ public class QueryController {
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public BaseQueryResponse next(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
         
-        queryManagementService.next();
+        queryManagementService.next(queryId, currentUser);
         
         return null;
     }

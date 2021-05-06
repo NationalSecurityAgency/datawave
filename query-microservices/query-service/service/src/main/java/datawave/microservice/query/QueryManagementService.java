@@ -7,9 +7,12 @@ import datawave.microservice.audit.AuditClient;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.common.audit.PrivateAuditConstants;
 import datawave.microservice.common.storage.QueryPool;
+import datawave.microservice.common.storage.QueryQueueListener;
+import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryStorageCache;
 import datawave.microservice.common.storage.QueryTask;
 import datawave.microservice.common.storage.TaskKey;
+import datawave.microservice.lock.Lock;
 import datawave.microservice.lock.LockManager;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.config.QueryProperties;
@@ -22,6 +25,8 @@ import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NotFoundQueryException;
+import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -32,6 +37,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.MultiValueMap;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.util.List;
@@ -51,8 +58,11 @@ public class QueryManagementService {
     private final QueryLogicFactory queryLogicFactory;
     private final ResponseObjectFactory responseObjectFactory;
     private final QueryStorageCache queryStorageCache;
+    private final QueryQueueManager queryQueueManager;
     private final AuditClient auditClient;
     private final LockManager lockManager;
+    
+    private final String identifier;
     
     // TODO: JWO: Pull these from configuration instead
     private final int PAGE_TIMEOUT_MIN = 1;
@@ -60,15 +70,24 @@ public class QueryManagementService {
     
     public QueryManagementService(QueryProperties queryProperties, QueryParameters queryParameters, SecurityMarking securityMarking,
                     QueryLogicFactory queryLogicFactory, ResponseObjectFactory responseObjectFactory, QueryStorageCache queryStorageCache,
-                    AuditClient auditClient, LockManager lockManager) {
+                    QueryQueueManager queryQueueManager, AuditClient auditClient, LockManager lockManager) {
         this.queryProperties = queryProperties;
         this.queryParameters = queryParameters;
         this.securityMarking = securityMarking;
         this.queryLogicFactory = queryLogicFactory;
         this.responseObjectFactory = responseObjectFactory;
         this.queryStorageCache = queryStorageCache;
+        this.queryQueueManager = queryQueueManager;
         this.auditClient = auditClient;
         this.lockManager = lockManager;
+        
+        String hostname;
+        try {
+            hostname = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            hostname = "UNKNOWN";
+        }
+        this.identifier = hostname;
     }
     
     /**
@@ -162,26 +181,54 @@ public class QueryManagementService {
         }
     }
     
-    public void next() throws IOException, InterruptedException, ParseException {
+    public void next(String queryId, ProxiedUserDetails currentUser) throws IOException, InterruptedException, ParseException, QueryException {
         // does the query exist?
         QueryTask queryTask = queryStorageCache.getTask(null, 0);
+        if (queryTask == null) {
+            throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, MessageFormat.format("{0}", queryId));
+        }
+        
+        // does the current user own this query?
+        String userId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
         Query query = queryTask.getQueryCheckpoint().getPropertiesAsQuery();
+        if (!query.getOwner().equals(userId)) {
+            throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", userId, query.getOwner()));
+        }
         
-        // if it exists, can we gaet a lock on this next call?
-        
-        // need to find the query in the query storage cache, and then check for results on the results queue
-        
-        // figure out what user this is
-        
-        // check to see if we're already handling a next call for this user/query
-        
-        // check to see if the query id exists in the query cache
-        
-        // make sure that this is the caller's query
-        
-        // get the next set of results
-        
-        // return the results to the user
+        Lock lock = lockManager.getLock(queryId);
+        try {
+            // try to get a lock on this call to prevent concurrent next calls
+            // we disallow concurrent next calls to prevent a single user from starving out other users
+            try {
+                lock.lock();
+            } catch (Exception e) {
+                lock = null;
+                throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR, "Unable to acquire lock on query.");
+            }
+            
+            // if we made it this far, we're ready to start checking for results
+            // TODO: Figure out how to get results from the queue
+            QueryQueueListener listener = queryQueueManager.createListener(identifier, queryId);
+            
+            // TODO: I have no idea what I'm supposed to be receiving here...
+            Object something;
+            try {
+                something = listener.receive();
+            } catch (Exception e) {
+                throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_OR_SERVER_ERROR, e, MessageFormat.format("id = {0}", queryId));
+            }
+            
+            // TODO: Where is the page number supposed to come from? It SHOULD come from the cache, right?
+            
+        } finally {
+            if (lock != null) {
+                try {
+                    lock.unlock();
+                } catch (Exception e) {
+                    throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR, "Unable to release lock on query.");
+                }
+            }
+        }
     }
     
     protected void audit(Query query, QueryLogic<?> queryLogic, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {

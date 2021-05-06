@@ -1,6 +1,5 @@
 package datawave.microservice.query.web.filter;
 
-import datawave.microservice.common.storage.QueryCache;
 import datawave.microservice.common.storage.QueryState;
 import datawave.microservice.common.storage.QueryStorageCache;
 import datawave.microservice.query.logic.QueryLogicFactory;
@@ -23,7 +22,6 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
 
 @ControllerAdvice
 public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter implements ResponseBodyAdvice<Object> {

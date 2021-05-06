@@ -55,12 +55,42 @@ public class QueryServiceTest {
     }
     
     @Test
-    public void testQuery() {
+    public void testDefineQuery() {
         Collection<String> roles = Collections.singleton("AuthorizedUser");
         DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
         UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/query/v1/EventQuery/define")
+                        .build();
+        
+        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+        map.set(DefaultQueryParameters.QUERY_STRING, "FIELD:SOME_VALUE");
+        map.set(DefaultQueryParameters.QUERY_NAME, "The Greatest Query in the World - Tribute");
+        map.set(DefaultQueryParameters.QUERY_PERSISTENCE, "PERSISTENT");
+        map.set(DefaultQueryParameters.QUERY_AUTHORIZATIONS, "ALL");
+        map.set(DefaultQueryParameters.QUERY_EXPIRATION, "20500101 000000.000");
+        map.set(DefaultQueryParameters.QUERY_BEGIN, "20000101 000000.000");
+        map.set(DefaultQueryParameters.QUERY_END, "20500101 000000.000");
+        map.set(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, "ALL");
+        
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
+        
+        try {
+            ResponseEntity resp = jwtRestTemplate.exchange(requestEntity, String.class);
+            
+            System.out.println("done!");
+        } finally {
+            assertTrue("", true);
+        }
+    }
+    
+    @Test
+    public void testCreateQuery() {
+        Collection<String> roles = Collections.singleton("AuthorizedUser");
+        DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
+        ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
+        
+        UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/query/v1/EventQuery/create")
                         .build();
         
         MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
