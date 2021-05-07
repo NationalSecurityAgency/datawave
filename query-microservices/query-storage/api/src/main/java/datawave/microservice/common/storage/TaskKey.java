@@ -2,10 +2,17 @@ package datawave.microservice.common.storage;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializable;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.util.UUID;
 
 public class TaskKey extends QueryKey implements Serializable {
@@ -13,12 +20,32 @@ public class TaskKey extends QueryKey implements Serializable {
     
     public static final String TASK_ID_PREFIX = "T-";
     
+    @JsonProperty("taskId")
     private UUID taskId;
     
     /**
      * Default constructor for deserialization
      */
     public TaskKey() {}
+    
+    /**
+     * This method id to allow deserialization of the toKey() or toString() value used when this is in a map
+     * 
+     * @param value
+     *            The toString() from a task key
+     */
+    public TaskKey(String value) {
+        super(value);
+    }
+    
+    @Override
+    public void setPart(String part) {
+        if (part.startsWith(TASK_ID_PREFIX)) {
+            taskId = UUID.fromString(part.substring(TASK_ID_PREFIX.length()));
+        } else {
+            super.setPart(part);
+        }
+    }
     
     @JsonCreator
     public TaskKey(@JsonProperty("taskId") UUID taskId, @JsonProperty("queryPool") QueryPool queryPool, @JsonProperty("queryId") UUID queryId,

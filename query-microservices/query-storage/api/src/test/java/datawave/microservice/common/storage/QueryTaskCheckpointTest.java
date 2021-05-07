@@ -260,18 +260,19 @@ public class QueryTaskCheckpointTest {
     public void testQueryState() throws JsonProcessingException {
         UUID uuid = UUID.randomUUID();
         QueryPool queryPool = new QueryPool("default");
-        QueryStats queryStats = new QueryStats();
         String queryLogic = "EventQuery";
-        QueryProperties queryProperties = new QueryProperties(new QueryKey(queryPool, uuid, queryLogic));
-        Map<QueryTask.QUERY_ACTION,Integer> props = new HashMap<>();
-        props.put(QueryTask.QUERY_ACTION.CREATE, 1);
-        props.put(QueryTask.QUERY_ACTION.NEXT, 10);
-        QueryState state = new QueryState(queryPool, uuid, queryLogic, queryProperties, queryStats, props);
+        QueryStatus queryStatus = new QueryStatus(new QueryKey(queryPool, uuid, queryLogic));
+        TaskStates tasks = new TaskStates(new QueryKey(queryPool, uuid, queryLogic));
+        Map<TaskKey,String> props = new HashMap<>();
+        props.put(new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic), TaskStates.TASK_STATE.READY.name());
+        props.put(new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic), TaskStates.TASK_STATE.READY.name());
+        tasks.setTaskStates(props);
+        QueryState state = new QueryState(queryPool, uuid, queryLogic, queryStatus, tasks);
         
         assertEquals(uuid, state.getQueryId());
         assertEquals(queryPool, state.getQueryPool());
         assertEquals(queryLogic, state.getQueryLogic());
-        assertEquals(props, state.getTaskCounts());
+        assertEquals(tasks, state.getTaskStates());
         
         String json = new ObjectMapper().writeValueAsString(state);
         QueryState state2 = new ObjectMapper().readerFor(QueryState.class).readValue(json);
@@ -279,38 +280,34 @@ public class QueryTaskCheckpointTest {
         assertEquals(state.hashCode(), state2.hashCode());
         
         UUID uuid2 = UUID.fromString(uuid.toString());
-        QueryStats queryStats2 = new QueryStats();
         QueryPool queryPool2 = new QueryPool("default");
         String queryLogic2 = "EventQuery";
-        QueryProperties queryProperties2 = new QueryProperties(new QueryKey(queryPool2, uuid2, queryLogic2));
-        Map<QueryTask.QUERY_ACTION,Integer> props2 = new HashMap<>();
-        props2.put(QueryTask.QUERY_ACTION.CREATE, 1);
-        props2.put(QueryTask.QUERY_ACTION.NEXT, 10);
-        state2 = new QueryState(queryPool2, uuid2, queryLogic2, queryProperties2, queryStats2, props2);
+        QueryStatus queryStatus2 = new QueryStatus(new QueryKey(queryPool2, uuid2, queryLogic2));
+        TaskStates tasks2 = new TaskStates(new QueryKey(queryPool, uuid, queryLogic));
+        tasks2.setTaskStates(new HashMap<>(props));
+        state2 = new QueryState(queryPool2, uuid2, queryLogic2, queryStatus2, tasks2);
         
         assertEquals(state, state2);
         assertEquals(state.hashCode(), state2.hashCode());
         
         UUID otherId = UUID.randomUUID();
         QueryPool otherPool = new QueryPool("other");
-        QueryStats otherStats = new QueryStats();
-        otherStats.setNumResults(1);
         String otherLogic = "EdgeQuery";
-        QueryProperties otherProperties = new QueryProperties(new QueryKey(otherPool, otherId, otherLogic));
-        Map<QueryTask.QUERY_ACTION,Integer> otherProps = new HashMap<>();
-        otherProps.put(QueryTask.QUERY_ACTION.CREATE, 1);
-        otherProps.put(QueryTask.QUERY_ACTION.NEXT, 11);
-        QueryState otherState = new QueryState(queryPool, otherId, queryLogic, queryProperties, queryStats, props);
+        QueryStatus otherProperties = new QueryStatus(new QueryKey(otherPool, otherId, otherLogic));
+        TaskStates otherTasks = new TaskStates(new QueryKey(queryPool, uuid, queryLogic));
+        Map<TaskKey,String> otherProps = new HashMap<>();
+        props.put(new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic), TaskStates.TASK_STATE.READY.name());
+        props.put(new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic), TaskStates.TASK_STATE.READY.name());
+        otherTasks.setTaskStates(otherProps);
+        QueryState otherState = new QueryState(queryPool, otherId, queryLogic, queryStatus, tasks);
         assertNotEquals(otherState, state);
-        otherState = new QueryState(otherPool, uuid, queryLogic, queryProperties, queryStats, props);
+        otherState = new QueryState(otherPool, uuid, queryLogic, queryStatus, tasks);
         assertNotEquals(otherState, state);
-        otherState = new QueryState(queryPool, uuid, otherLogic, queryProperties, queryStats, props);
+        otherState = new QueryState(queryPool, uuid, otherLogic, queryStatus, tasks);
         assertNotEquals(otherState, state);
-        otherState = new QueryState(queryPool, uuid, queryLogic, otherProperties, queryStats, props);
+        otherState = new QueryState(queryPool, uuid, queryLogic, otherProperties, tasks);
         assertNotEquals(otherState, state);
-        otherState = new QueryState(queryPool, uuid, queryLogic, queryProperties, otherStats, props);
-        assertNotEquals(otherState, state);
-        otherState = new QueryState(queryPool, uuid, queryLogic, queryProperties, queryStats, otherProps);
+        otherState = new QueryState(queryPool, uuid, queryLogic, queryStatus, otherTasks);
         assertNotEquals(otherState, state);
     }
 }

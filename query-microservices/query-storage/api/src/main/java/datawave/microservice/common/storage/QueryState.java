@@ -8,9 +8,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -19,23 +16,19 @@ import java.util.UUID;
 @XmlRootElement
 public class QueryState {
     private QueryKey queryKey;
-    private QueryProperties queryProperties;
-    private QueryStats queryStats;
-    private Map<QueryTask.QUERY_ACTION,Integer> taskCounts;
-
-    public QueryState(QueryKey queryKey, QueryProperties queryProperties, QueryStats queryStats, Map<QueryTask.QUERY_ACTION,Integer> taskCounts) {
-        this(queryKey.getQueryPool(), queryKey.getQueryId(), queryKey.getQueryLogic(), queryProperties, queryStats, taskCounts);
+    private QueryStatus queryStatus;
+    private TaskStates taskStates;
+    
+    public QueryState(QueryKey queryKey, QueryStatus queryStatus, TaskStates taskStates) {
+        this(queryKey.getQueryPool(), queryKey.getQueryId(), queryKey.getQueryLogic(), queryStatus, taskStates);
     }
     
     @JsonCreator
     public QueryState(@JsonProperty("queryPool") QueryPool queryPool, @JsonProperty("queryId") UUID queryId, @JsonProperty("queryLogic") String queryLogic,
-                    @JsonProperty("queryProperties") QueryProperties queryProperties,
-                    @JsonProperty("queryStats") QueryStats queryStats,
-                    @JsonProperty("taskCounts") Map<QueryTask.QUERY_ACTION,Integer> taskCounts) {
+                    @JsonProperty("queryStatus") QueryStatus queryStatus, @JsonProperty("taskStates") TaskStates taskStates) {
         this.queryKey = new QueryKey(queryPool, queryId, queryLogic);
-        this.queryProperties = queryProperties;
-        this.queryStats = queryStats;
-        this.taskCounts = Collections.unmodifiableMap(new HashMap<>(taskCounts));
+        this.queryStatus = queryStatus;
+        this.taskStates = taskStates;
     }
     
     @JsonIgnore
@@ -54,35 +47,32 @@ public class QueryState {
     public String getQueryLogic() {
         return getQueryKey().getQueryLogic();
     }
-
-    public QueryProperties getQueryProperties() {
-        return queryProperties;
+    
+    public QueryStatus getQueryStatus() {
+        return queryStatus;
     }
-
-    public QueryStats getQueryStats() {
-        return queryStats;
-    }
-
-    public Map<QueryTask.QUERY_ACTION,Integer> getTaskCounts() {
-        return taskCounts;
+    
+    public TaskStates getTaskStates() {
+        return taskStates;
     }
     
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append(getQueryKey()).append("queryProperties", getQueryProperties()).append("queryStats", getQueryStats()).append("taskCounts", getTaskCounts()).build();
+        return new ToStringBuilder(this).append(getQueryKey()).append("queryProperties", getQueryStatus()).append("taskStates", getTaskStates()).build();
     }
     
     @Override
     public boolean equals(Object o) {
         if (o instanceof QueryState) {
             QueryState other = (QueryState) o;
-            return new EqualsBuilder().append(getQueryKey(), other.getQueryKey()).append(getQueryProperties(), other.getQueryProperties()).append(getQueryStats(), other.getQueryStats()).append(getTaskCounts(), other.getTaskCounts()).isEquals();
+            return new EqualsBuilder().append(getQueryKey(), other.getQueryKey()).append(getQueryStatus(), other.getQueryStatus())
+                            .append(getTaskStates(), other.getTaskStates()).isEquals();
         }
         return false;
     }
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(getQueryKey()).append(getQueryProperties()).append(getQueryStats()).append(getTaskCounts()).toHashCode();
+        return new HashCodeBuilder().append(getQueryKey()).append(getQueryStatus()).append(getTaskStates()).toHashCode();
     }
 }

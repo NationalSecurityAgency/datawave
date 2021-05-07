@@ -52,76 +52,83 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         
         // create the query semaphore
         lockManager.createSemaphore(queryUuid, count);
-
+        
         // store the initial query properties
-        QueryProperties queryProperties = new QueryProperties(checkpoint.getQueryKey());
-        queryProperties.setQuery(query);
-        cache.updateQueryProperties(queryProperties);
-
+        QueryStatus queryStatus = new QueryStatus(checkpoint.getQueryKey());
+        queryStatus.setQuery(query);
+        cache.updateQueryStatus(queryStatus);
+        
         // create and store the initial create task with the checkpoint. This will send out the task notification.
         QueryTask task = createTask(QueryTask.QUERY_ACTION.CREATE, checkpoint);
         
         // return the task key
         return task.getTaskKey();
     }
-
+    
     /**
-     * Get the current query state.  This includes the query properties, stats, and task summary
+     * Get the current query state. This includes the query properties, stats, and task summary
+     * 
      * @param queryId
-     *      the query id
+     *            the query id
      * @return query stats
      */
     public QueryState getQueryState(UUID queryId) {
         return cache.getQuery(queryId);
     }
-
+    
     /**
      * Get the current query properties.
+     * 
      * @param queryId
-     *     the query id
+     *            the query id
      * @return the query properties
      */
-    public QueryProperties getQueryProperties(UUID queryId) {
-        return cache.getQueryProperties(queryId);
+    public QueryStatus getQueryStatus(UUID queryId) {
+        return cache.getQueryStatus(queryId);
     }
-
+    
     /**
      * Get all query propertis
+     * 
      * @return the query properties
      */
-    public List<QueryProperties> getQueryProperties() {
-        return cache.getQueryProperties();
+    public List<QueryStatus> getQueryStatus() {
+        return cache.getQueryStatus();
     }
-
-    /**
-     * Get the current query stats.
-     * @param queryId
-     *     the query id
-     * @return the query stats
-     */
-    public QueryStats getQueryStats(UUID queryId) {
-        return cache.getQueryStats(queryId);
-    }
+    
     /**
      * update the query properties
-     * @param queryProperties
-     *     the query properties
+     * 
+     * @param queryStatus
+     *            the query properties
      */
-    public void updateQueryProperties(QueryProperties queryProperties) {
-        cache.updateQueryProperties(queryProperties);
+    public void updateQueryStatus(QueryStatus queryStatus) {
+        cache.updateQueryStatus(queryStatus);
     }
-
+    
     /**
-     * Update the query stats
+     * Get the current task states.
+     *
      * @param queryId
-     *     the query id
-     * @param queryStats
-     *     the query stats
+     *            the query id
+     * @return the task states
      */
-    public void updateQueryStats(UUID queryId, QueryStats queryStats) {
-        cache.updateQueryStats(queryId, queryStats);
+    @Override
+    public TaskStates getTaskStates(UUID queryId) {
+        return cache.getTaskStates(queryId);
     }
-
+    
+    /**
+     * update the query status
+     *
+     * @param taskStates
+     *            the task states
+     */
+    @Override
+    public void updateTaskStates(TaskStates taskStates) {
+        cache.updateTaskStates(taskStates);
+    }
+    
     /**
      * Create a new query task. This will create a new query task, store it, and send out a task notification.
      * 

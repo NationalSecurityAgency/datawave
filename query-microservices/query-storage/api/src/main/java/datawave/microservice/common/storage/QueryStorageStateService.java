@@ -31,5 +31,5 @@ public interface QueryStorageStateService {
      * @return The task descriptions
      */
     List<TaskDescription> getTasks(String queryId);
-
+    
 }

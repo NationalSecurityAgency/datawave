@@ -97,7 +97,7 @@ public class QueryStorageCacheTest {
             lockManager.deleteSemaphore(queryId);
         }
     }
-
+    
     @Test
     public void testStoreQuery() throws ParseException, InterruptedException, IOException, TaskLockException {
         // ensure the message queue is empty
@@ -342,10 +342,10 @@ public class QueryStorageCacheTest {
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
-        QueryProperties queryProperties = new QueryProperties(new QueryKey(queryPool, queryId, query.getQueryLogicName()));
+        QueryStatus queryStatus = new QueryStatus(new QueryKey(queryPool, queryId, query.getQueryLogicName()));
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
-
-        storageService.updateQueryProperties(queryProperties);
+        
+        storageService.updateQueryStatus(queryStatus);
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
@@ -354,7 +354,7 @@ public class QueryStorageCacheTest {
         assertNull(messageConsumer.receiveTaskNotification(0));
         
         // now get the query tasks
-        List<QueryProperties> queries = storageService.getQueryProperties();
+        List<QueryStatus> queries = storageService.getQueryStatus();
         assertEquals(1, queries.size());
         List<TaskKey> tasks = storageService.getTasks(queries.get(0).getQueryKey().getQueryId());
         assertEquals(1, tasks.size());
@@ -369,7 +369,7 @@ public class QueryStorageCacheTest {
         assertNull(messageConsumer.receiveTaskNotification(0));
         
         // make sure it deleted
-        queries = storageService.getQueryProperties();
+        queries = storageService.getQueryStatus();
         assertEquals(0, queries.size());
         
     }
@@ -377,10 +377,8 @@ public class QueryStorageCacheTest {
     private void assertQueryCreate(UUID queryId, QueryPool queryPool, QueryState state) {
         assertEquals(queryId, state.getQueryId());
         assertEquals(queryPool, state.getQueryPool());
-        Map<QueryTask.QUERY_ACTION,Integer> counts = state.getTaskCounts();
-        assertEquals(5, counts.size());
-        assertTrue(counts.containsKey(QueryTask.QUERY_ACTION.CREATE));
-        assertEquals(1, counts.get(QueryTask.QUERY_ACTION.CREATE).intValue());
+        // TaskStates tasks = state.getTaskStates();
+        // assertEquals(1, tasks.getTaskStates().size());
     }
     
     private void assertQueryCreate(UUID queryId, QueryPool queryPool, Query query, TaskDescription task) throws ParseException {

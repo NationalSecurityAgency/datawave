@@ -117,10 +117,7 @@ public class QueryStorageStateServiceTest {
     private void assertQueryCreate(UUID queryId, QueryPool queryPool, QueryState state) {
         assertEquals(queryId, state.getQueryId());
         assertEquals(queryPool, state.getQueryPool());
-        Map<QueryTask.QUERY_ACTION,Integer> counts = state.getTaskCounts();
-        assertEquals(1, counts.size());
-        assertTrue(counts.containsKey(QueryTask.QUERY_ACTION.CREATE));
-        assertEquals(1, counts.get(QueryTask.QUERY_ACTION.CREATE).intValue());
+        TaskStates tasks = state.getTaskStates();
     }
     
     private void assertQueryCreate(UUID queryId, QueryPool queryPool, Query query, TaskDescription task) throws ParseException {

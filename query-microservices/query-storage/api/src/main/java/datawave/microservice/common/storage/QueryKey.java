@@ -1,5 +1,8 @@
 package datawave.microservice.common.storage;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -13,8 +16,11 @@ public class QueryKey implements Serializable {
     public static final String POOL_PREFIX = "P-";
     public static final String LOGIC_PREFIX = "L-";
     
+    @JsonProperty
     private QueryPool queryPool;
+    @JsonProperty
     private UUID queryId;
+    @JsonProperty
     private String queryLogic;
     
     /**
@@ -22,7 +28,31 @@ public class QueryKey implements Serializable {
      */
     public QueryKey() {}
     
-    public QueryKey(QueryPool queryPool, UUID queryId, String queryLogic) {
+    /**
+     * This method id to allow deserialization of the toKey() or toString() value used when this is in a map
+     * 
+     * @param value
+     *            The toString() from a task key
+     */
+    public QueryKey(String value) {
+        String[] parts = StringUtils.split(value, '.');
+        for (String part : parts) {
+            setPart(part);
+        }
+    }
+    
+    protected void setPart(String part) {
+        if (part.startsWith(QUERY_ID_PREFIX)) {
+            queryId = UUID.fromString(part.substring(QUERY_ID_PREFIX.length()));
+        } else if (part.startsWith(POOL_PREFIX)) {
+            queryPool = new QueryPool(part.substring(POOL_PREFIX.length()));
+        } else if (part.startsWith(LOGIC_PREFIX)) {
+            queryLogic = part.substring(LOGIC_PREFIX.length());
+        }
+    }
+    
+    @JsonCreator
+    public QueryKey(@JsonProperty("queryPool") QueryPool queryPool, @JsonProperty("queryId") UUID queryId, @JsonProperty("queryLogic") String queryLogic) {
         this.queryPool = queryPool;
         this.queryId = queryId;
         this.queryLogic = queryLogic;
@@ -39,15 +69,15 @@ public class QueryKey implements Serializable {
     public String getQueryLogic() {
         return queryLogic;
     }
-
+    
     public static String toUUIDKey(UUID queryId) {
         return QUERY_ID_PREFIX + queryId.toString();
     }
-
+    
     public String toUUIDKey() {
         return toUUIDKey(queryId);
     }
-
+    
     public String toKey() {
         return toUUIDKey() + '.' + POOL_PREFIX + queryPool.getName() + '.' + LOGIC_PREFIX + queryLogic;
     }

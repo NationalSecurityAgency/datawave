@@ -22,53 +22,57 @@ public interface QueryStorageCache {
      * @return The create task key
      */
     TaskKey storeQuery(QueryPool queryPool, Query query, int count) throws IOException;
-
+    
     /**
-     * Get the current query state.  This includes the query properties, stats, and task summary
+     * Get the current query state. This includes the query status and the task statuses
+     * 
      * @param queryId
-     *      the query id
+     *            the query id
      * @return query stats
      */
-     QueryState getQueryState(UUID queryId);
-
+    QueryState getQueryState(UUID queryId);
+    
     /**
-     * Get the current query properties.
+     * Get the current query status.
+     * 
      * @param queryId
-     *     the query id
-     * @return the query properties
+     *            the query id
+     * @return the query status
      */
-    QueryProperties getQueryProperties(UUID queryId);
-
+    QueryStatus getQueryStatus(UUID queryId);
+    
     /**
-     * Get all of the query properties
-     * @return a list of query properties
+     * Get all of the query status
+     * 
+     * @return a list of query status
      */
-    List<QueryProperties> getQueryProperties();
-
+    List<QueryStatus> getQueryStatus();
+    
     /**
-     * Get the current query stats.
+     * update the query status
+     * 
+     * @param queryStatus
+     *            the query status
+     */
+    void updateQueryStatus(QueryStatus queryStatus);
+    
+    /**
+     * Get the current task states.
+     * 
      * @param queryId
-     *     the query id
-     * @return the query stats
+     *            the query id
+     * @return the task states
      */
-    QueryStats getQueryStats(UUID queryId);
-
+    TaskStates getTaskStates(UUID queryId);
+    
     /**
-     * update the query properies
-     * @param queryProperties
-     *     the query properties
+     * update the query status
+     * 
+     * @param taskStates
+     *            the task states
      */
-    void updateQueryProperties(QueryProperties queryProperties);
-
-    /**
-     * Update the query stats
-     * @param queryId
-     *     the query id
-     * @param queryStats
-     *     the query stats
-     */
-    void updateQueryStats(UUID queryId, QueryStats queryStats);
-
+    void updateTaskStates(TaskStates taskStates);
+    
     /**
      * Create a new query task. This will create a new query task, store it, and send out a task notification.
      * 
