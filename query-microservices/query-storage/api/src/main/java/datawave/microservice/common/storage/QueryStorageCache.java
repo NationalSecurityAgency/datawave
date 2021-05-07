@@ -40,6 +40,12 @@ public interface QueryStorageCache {
     QueryProperties getQueryProperties(UUID queryId);
 
     /**
+     * Get all of the query properties
+     * @return a list of query properties
+     */
+    List<QueryProperties> getQueryProperties();
+
+    /**
      * Get the current query stats.
      * @param queryId
      *     the query id
@@ -49,12 +55,10 @@ public interface QueryStorageCache {
 
     /**
      * update the query properies
-     * @param queryId
-     *     the query id
      * @param queryProperties
      *     the query properties
      */
-    void updateQueryProperties(UUID queryId, QueryProperties queryProperties);
+    void updateQueryProperties(QueryProperties queryProperties);
 
     /**
      * Update the query stats
@@ -123,27 +127,9 @@ public interface QueryStorageCache {
     public boolean deleteQuery(UUID queryId) throws IOException;
     
     /**
-     * Delete all queries for a query pool
-     *
-     * @param queryPool
-     *            The query pool
-     * @return true if anything deleted
-     */
-    public boolean deleteQueryPool(QueryPool queryPool) throws IOException;
-    
-    /**
      * Clear the cache
      */
     public void clear() throws IOException;
-    
-    /**
-     * Get queries that are in storage for a specified query pool
-     *
-     * @param queryPool
-     *            The query pool
-     * @return The list of query IDs
-     */
-    public List<UUID> getQueries(QueryPool queryPool) throws IOException;
     
     /**
      * Get the tasks that are stored for a specified query

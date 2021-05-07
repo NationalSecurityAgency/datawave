@@ -105,6 +105,6 @@ public class QueryTask implements Serializable {
      * @return a key
      */
     public static String toKey(UUID taskId, QueryKey queryKey) {
-        return taskId.toString() + ':' + queryKey.toKey();
+        return queryKey.toKey() + ':' + taskId.toString();
     }
 }

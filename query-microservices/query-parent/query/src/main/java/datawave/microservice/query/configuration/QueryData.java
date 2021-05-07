@@ -2,16 +2,14 @@ package datawave.microservice.query.configuration;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import java.util.Collections;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Class to encapsulate all required information to run a query.
@@ -22,7 +20,7 @@ public class QueryData implements ResultContext {
     String query;
     Collection<Range> ranges = Sets.newHashSet();
     Collection<String> columnFamilies = Sets.newHashSet();
-    Map.Entry<Key,Value> lastResult;
+    Key lastResult;
     boolean finished = false;
     
     public QueryData() {}
@@ -72,8 +70,8 @@ public class QueryData implements ResultContext {
         } else if (lastResult != null) {
             List<Range> newRanges = new ArrayList<>();
             for (Range range : ranges) {
-                if (range.contains(lastResult.getKey())) {
-                    newRanges.add(new Range(lastResult.getKey(), false, range.getEndKey(), range.isEndKeyInclusive()));
+                if (range.contains(lastResult)) {
+                    newRanges.add(new Range(lastResult, false, range.getEndKey(), range.isEndKeyInclusive()));
                 } else {
                     newRanges.add(range);
                 }
@@ -96,7 +94,7 @@ public class QueryData implements ResultContext {
         this.settings.add(cfg);
     }
     
-    public void setLastResult(Map.Entry<Key,Value> result) {
+    public void setLastResult(Key result) {
         this.lastResult = result;
         if (this.lastResult == null) {
             this.finished = true;
@@ -107,7 +105,7 @@ public class QueryData implements ResultContext {
         return this.finished;
     }
     
-    public Map.Entry<Key,Value> getLastResult() {
+    public Key getLastResult() {
         return lastResult;
     }
     

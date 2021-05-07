@@ -39,13 +39,21 @@ public class QueryKey implements Serializable {
     public String getQueryLogic() {
         return queryLogic;
     }
-    
+
+    public static String toUUIDKey(UUID queryId) {
+        return QUERY_ID_PREFIX + queryId.toString();
+    }
+
+    public String toUUIDKey() {
+        return toUUIDKey(queryId);
+    }
+
     public String toKey() {
-        return POOL_PREFIX + queryPool.getName() + '.' + QUERY_ID_PREFIX + queryId.toString() + '.' + LOGIC_PREFIX + queryLogic;
+        return toUUIDKey() + '.' + POOL_PREFIX + queryPool.getName() + '.' + LOGIC_PREFIX + queryLogic;
     }
     
     public String toRoutingKey() {
-        return POOL_PREFIX + queryPool.getName() + ".*.*";
+        return "*." + POOL_PREFIX + queryPool.getName() + ".*";
     }
     
     @Override

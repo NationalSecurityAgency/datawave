@@ -64,7 +64,7 @@ public class Result<T extends ResultContext> implements Map.Entry<Key,Value> {
     public Map.Entry<Key,Value> returnKeyValue() {
         Map.Entry<Key,Value> entry = (key == null ? null : Maps.immutableEntry(key, value));
         if (context != null) {
-            context.setLastResult(entry);
+            context.setLastResult(entry == null ? null : entry.getKey());
         }
         return entry;
     }

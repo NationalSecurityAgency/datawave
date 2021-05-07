@@ -11,7 +11,7 @@ public interface ResultContext {
      * 
      * @param result
      */
-    void setLastResult(Map.Entry<Key,Value> result);
+    void setLastResult(Key result);
     
     boolean isFinished();
 }

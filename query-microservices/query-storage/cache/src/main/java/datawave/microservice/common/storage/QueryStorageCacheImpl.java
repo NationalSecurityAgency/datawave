@@ -54,9 +54,9 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         lockManager.createSemaphore(queryUuid, count);
 
         // store the initial query properties
-        QueryProperties queryProperties = new QueryProperties();
+        QueryProperties queryProperties = new QueryProperties(checkpoint.getQueryKey());
         queryProperties.setQuery(query);
-        cache.updateQueryProperties(queryUuid, queryProperties);
+        cache.updateQueryProperties(queryProperties);
 
         // create and store the initial create task with the checkpoint. This will send out the task notification.
         QueryTask task = createTask(QueryTask.QUERY_ACTION.CREATE, checkpoint);
@@ -86,6 +86,14 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     }
 
     /**
+     * Get all query propertis
+     * @return the query properties
+     */
+    public List<QueryProperties> getQueryProperties() {
+        return cache.getQueryProperties();
+    }
+
+    /**
      * Get the current query stats.
      * @param queryId
      *     the query id
@@ -95,14 +103,12 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         return cache.getQueryStats(queryId);
     }
     /**
-     * update the query properies
-     * @param queryId
-     *     the query id
+     * update the query properties
      * @param queryProperties
      *     the query properties
      */
-    public void updateQueryProperties(UUID queryId, QueryProperties queryProperties) {
-        cache.updateQueryProperties(queryId, queryProperties);
+    public void updateQueryProperties(QueryProperties queryProperties) {
+        cache.updateQueryProperties(queryProperties);
     }
 
     /**
@@ -209,27 +215,10 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public boolean deleteQuery(UUID queryId) throws IOException {
-        int deletedTasks = cache.deleteTasks(queryId);
+        int deleted = cache.deleteQuery(queryId);
         queue.deleteQueue(queryId);
         lockManager.deleteSemaphore(queryId);
-        return (deletedTasks > 0);
-    }
-    
-    /**
-     * Delete all queries for a query pool
-     *
-     * @param queryPool
-     *            The query pool
-     * @return true if anything deleted
-     */
-    @Override
-    public boolean deleteQueryPool(QueryPool queryPool) throws IOException {
-        int deletedTasks = cache.deleteTasks(queryPool);
-        queue.deleteQueue(queryPool);
-        for (QueryState query : cache.getQueries(queryPool)) {
-            lockManager.deleteSemaphore(query.getQueryId());
-        }
-        return (deletedTasks > 0);
+        return (deleted > 0);
     }
     
     /**
@@ -237,27 +226,11 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public void clear() throws IOException {
-        cache.clear();
         for (QueryState queries : cache.getQueries()) {
             queue.emptyQueue(queries.getQueryId());
             lockManager.deleteSemaphore(queries.getQueryId());
         }
-    }
-    
-    /**
-     * Get queries that are in storage for a specified query pool
-     *
-     * @param queryPool
-     *            The query pool
-     * @return The list of query IDs
-     */
-    @Override
-    public List<UUID> getQueries(QueryPool queryPool) {
-        List<UUID> queries = new ArrayList<>();
-        for (QueryState query : cache.getQueries(queryPool)) {
-            queries.add(query.getQueryId());
-        }
-        return queries;
+        cache.clear();
     }
     
     /**

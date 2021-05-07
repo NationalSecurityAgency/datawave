@@ -71,20 +71,7 @@ public class QueryLogicTestHarness {
     private void dumpCp(String start, QueryCheckpoint cp) {
         Collection<QueryData> queries = (Collection<QueryData>) cp.getProperties().get("queries");
         for (QueryData qd : queries) {
-            System.out.println(">>>> " + start + ": " + qd.getRanges() + " -> " + dumpResult(qd.getLastResult()));
-        }
-    }
-    
-    private String dumpResult(Map.Entry<Key,Value> entry) {
-        if (entry != null) {
-            if (entry.getValue() != null) {
-                final Document document = this.deserializer.apply(entry).getValue();
-                return String.valueOf(entry.getKey()) + " : " + document.get("EVENT_ID");
-            } else {
-                return String.valueOf(entry.getKey());
-            }
-        } else {
-            return "null";
+            System.out.println(">>>> " + start + ": " + qd.getRanges() + " -> " + qd.getLastResult());
         }
     }
     

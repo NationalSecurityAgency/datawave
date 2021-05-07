@@ -36,11 +36,11 @@ public class TaskKey extends QueryKey implements Serializable {
     }
     
     public String toKey() {
-        return TASK_ID_PREFIX + taskId.toString() + '.' + super.toKey();
+        return super.toKey() + '.' + TASK_ID_PREFIX + taskId.toString();
     }
     
     public String toRoutingKey() {
-        return "*." + super.toRoutingKey();
+        return super.toRoutingKey() + ".*";
     }
     
     @Override

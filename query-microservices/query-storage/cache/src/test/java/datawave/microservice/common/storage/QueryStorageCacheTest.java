@@ -97,7 +97,7 @@ public class QueryStorageCacheTest {
             lockManager.deleteSemaphore(queryId);
         }
     }
-    
+
     @Test
     public void testStoreQuery() throws ParseException, InterruptedException, IOException, TaskLockException {
         // ensure the message queue is empty
@@ -133,11 +133,6 @@ public class QueryStorageCacheTest {
         assertQueryTask(key, QueryTask.QUERY_ACTION.CREATE, query, tasks.get(0));
         
         List<QueryState> queries = queryCache.getQueries();
-        assertNotNull(queries);
-        assertEquals(1, queries.size());
-        assertQueryCreate(key.getQueryId(), queryPool, queries.get(0));
-        
-        queries = queryCache.getQueries(queryPool);
         assertNotNull(queries);
         assertEquals(1, queries.size());
         assertQueryCreate(key.getQueryId(), queryPool, queries.get(0));
@@ -347,8 +342,10 @@ public class QueryStorageCacheTest {
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
+        QueryProperties queryProperties = new QueryProperties(new QueryKey(queryPool, queryId, query.getQueryLogicName()));
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
-        
+
+        storageService.updateQueryProperties(queryProperties);
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
@@ -357,9 +354,9 @@ public class QueryStorageCacheTest {
         assertNull(messageConsumer.receiveTaskNotification(0));
         
         // now get the query tasks
-        List<UUID> queries = storageService.getQueries(queryPool);
+        List<QueryProperties> queries = storageService.getQueryProperties();
         assertEquals(1, queries.size());
-        List<TaskKey> tasks = storageService.getTasks(queries.get(0));
+        List<TaskKey> tasks = storageService.getTasks(queries.get(0).getQueryKey().getQueryId());
         assertEquals(1, tasks.size());
         lockManager.createSemaphore(queryId, 3);
         QueryTask task = storageService.getTask(tasks.get(0), 0);
@@ -372,7 +369,7 @@ public class QueryStorageCacheTest {
         assertNull(messageConsumer.receiveTaskNotification(0));
         
         // make sure it deleted
-        queries = storageService.getQueries(queryPool);
+        queries = storageService.getQueryProperties();
         assertEquals(0, queries.size());
         
     }
@@ -381,7 +378,7 @@ public class QueryStorageCacheTest {
         assertEquals(queryId, state.getQueryId());
         assertEquals(queryPool, state.getQueryPool());
         Map<QueryTask.QUERY_ACTION,Integer> counts = state.getTaskCounts();
-        assertEquals(1, counts.size());
+        assertEquals(5, counts.size());
         assertTrue(counts.containsKey(QueryTask.QUERY_ACTION.CREATE));
         assertEquals(1, counts.get(QueryTask.QUERY_ACTION.CREATE).intValue());
     }

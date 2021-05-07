@@ -20,7 +20,11 @@ public class QueryCache {
     private final static Logger log = Logger.getLogger(QueryCache.class);
     
     public static final String CACHE_NAME = "QueryCache";
-    
+
+    public static final String PROPS = "PROPS:";
+    public static final String STATS = "STATS:";
+    public static final String TASK = "TASK:";
+
     private final LockableCacheInspector cacheInspector;
     
     public QueryCache(LockableCacheInspector cacheInspector) {
@@ -29,15 +33,13 @@ public class QueryCache {
 
     /**
      * Store the query properties for a query.
-     * @param queryId
-     *     the query id
      * @param queryProperties
      *     the query properties
      * @return the stored query properties
      */
-    @CachePut(key = "#queryId.toString() + '-PROPS'", cacheManager = "queryStorageCacheManager")
-    public QueryProperties updateQueryProperties(UUID queryId, QueryProperties queryProperties) {
-        logProperties("Storing", queryId, queryProperties);
+    @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).PROPS + #queryProperties.getQueryKey().toUUIDKey()", cacheManager = "queryStorageCacheManager")
+    public QueryProperties updateQueryProperties(QueryProperties queryProperties) {
+        logProperties("Storing", queryProperties, queryProperties.getQueryKey().getQueryId());
         return queryProperties;
     }
 
@@ -46,10 +48,10 @@ public class QueryCache {
      * @param queryId
      *      The query id
      */
-    @CacheEvict(key = "#queryId.toString() + '-PROPS'", cacheManager = "queryStorageCacheManager")
+    @CacheEvict(key = "T(datawave.microservice.common.storage.QueryCache).PROPS + T(datawave.microservice.common.storage.QueryKey).toUUIDKey(#queryId)", cacheManager = "queryStorageCacheManager")
     public void deleteQueryProperties(UUID queryId) {
         if (log.isDebugEnabled()) {
-            log.debug("Deleted query properies for " + queryId);
+            log.debug("Deleted query properties for " + queryId);
         }
     }
 
@@ -61,9 +63,17 @@ public class QueryCache {
      * @return The query properties
      */
     public QueryProperties getQueryProperties(UUID queryId) {
-        QueryProperties queryProperties = cacheInspector.list(CACHE_NAME, QueryProperties.class, queryId.toString() + "-PROPS");
-        logProperties("Retrieved", queryId, queryProperties);
-        return queryProperties;
+        QueryProperties props = cacheInspector.list(CACHE_NAME, QueryProperties.class, PROPS + QueryKey.toUUIDKey(queryId));
+        logProperties("Retrieved", props, queryId);
+        return props;
+    }
+
+    /**
+     * Get all of the existing query properties
+     * @return A list of query properties
+     */
+    public List<QueryProperties> getQueryProperties() {
+        return (List<QueryProperties>)cacheInspector.listMatching(CACHE_NAME, QueryProperties.class, PROPS);
     }
 
     /**
@@ -74,9 +84,9 @@ public class QueryCache {
      *     the query stats
      * @return the stored query stats
      */
-    @CachePut(key = "#queryId.toString() + '-STATS'", cacheManager = "queryStorageCacheManager")
+    @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).STATS + QueryKey.getUUIDKey(#queryId)", cacheManager = "queryStorageCacheManager")
     public QueryStats updateQueryStats(UUID queryId, QueryStats queryStats) {
-        logStats("Storing", queryId, queryStats);
+        logStats("Storing", queryStats, queryId);
         return queryStats;
     }
 
@@ -85,7 +95,7 @@ public class QueryCache {
      * @param queryId
      *      The query id
      */
-    @CacheEvict(key = "#queryId.toString() + '-STATS'", cacheManager = "queryStorageCacheManager")
+    @CacheEvict(key = "T(datawave.microservice.common.storage.QueryCache).STATS + QueryKey.getUUIDKey(#queryId)", cacheManager = "queryStorageCacheManager")
     public void deleteQueryStats(UUID queryId) {
         if (log.isDebugEnabled()) {
             log.debug("Deleted query stats for " + queryId);
@@ -100,8 +110,8 @@ public class QueryCache {
      * @return The query stats
      */
     public QueryStats getQueryStats(UUID queryId) {
-        QueryStats queryStats = cacheInspector.list(CACHE_NAME, QueryStats.class, queryId.toString() + "-STATS");
-        logStats("Retrieved", queryId, queryStats);
+        QueryStats queryStats = cacheInspector.list(CACHE_NAME, QueryStats.class, STATS + QueryKey.toUUIDKey(queryId));
+        logStats("Retrieved", queryStats, queryId);
         return queryStats;
     }
 
@@ -114,7 +124,7 @@ public class QueryCache {
      *            The query checkpoint
      * @return The new query task
      */
-    @CachePut(key = "#result.getTaskKey().toKey()", cacheManager = "queryStorageCacheManager")
+    @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).TASK + #result.getTaskKey().toKey() ", cacheManager = "queryStorageCacheManager")
     public QueryTask addQueryTask(QueryTask.QUERY_ACTION action, QueryCheckpoint checkpoint) {
         QueryTask task = new QueryTask(action, checkpoint);
         logTask("Adding task", task);
@@ -130,7 +140,7 @@ public class QueryCache {
      *            The new query checkpoint
      * @return The updated query task
      */
-    @CachePut(key = "#result.getTaskKey().toKey()", cacheManager = "queryStorageCacheManager")
+    @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).TASK + #result.getTaskKey().toKey()", cacheManager = "queryStorageCacheManager")
     public QueryTask updateQueryTask(TaskKey taskKey, QueryCheckpoint checkpoint) {
         if (!checkpoint.getQueryKey().equals(taskKey)) {
             throw new IllegalArgumentException("Checkpoint query key " + checkpoint.getQueryKey() + " does not match " + taskKey);
@@ -150,43 +160,13 @@ public class QueryCache {
      * @param taskKey
      *            The task key
      */
-    @CacheEvict(key = "#taskKey.toKey()", cacheManager = "queryStorageCacheManager")
+    @CacheEvict(key = "T(datawave.microservice.common.storage.QueryCache).TASK + #taskKey.toKey()", cacheManager = "queryStorageCacheManager")
     public void deleteTask(TaskKey taskKey) {
         if (log.isDebugEnabled()) {
             log.debug("Deleted task " + taskKey);
         }
     }
     
-    /**
-     * Delete all tasks for a query
-     * 
-     * @param queryId
-     *            the query id
-     * @return the number of tasks deleted
-     */
-    public int deleteTasks(UUID queryId) {
-        int deleted = cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, QueryKey.QUERY_ID_PREFIX + queryId.toString());
-        if (log.isDebugEnabled()) {
-            log.debug("Deleted all ( " + deleted + ") tasks for query " + queryId);
-        }
-        return deleted;
-    }
-    
-    /**
-     * Delete all tasks for a query pool
-     *
-     * @param queryPool
-     *            the query pool
-     * @return the number of tasks deleted
-     */
-    public int deleteTasks(QueryPool queryPool) {
-        int deleted = cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, QueryKey.POOL_PREFIX + queryPool.getName());
-        if (log.isDebugEnabled()) {
-            log.debug("Deleted all ( " + deleted + ") tasks for query pool " + queryPool);
-        }
-        return deleted;
-    }
-
     /**
      * Return the task for a given task id and query key
      * 
@@ -195,7 +175,7 @@ public class QueryCache {
      * @return The query task
      */
     public QueryTask getTask(TaskKey taskKey) {
-        QueryTask task = cacheInspector.list(CACHE_NAME, QueryTask.class, taskKey.toKey());
+        QueryTask task = cacheInspector.list(CACHE_NAME, QueryTask.class, TASK + taskKey.toKey());
         logTask("Retrieved", task, taskKey);
         return task;
     }
@@ -208,7 +188,7 @@ public class QueryCache {
      * @return A list of tasks
      */
     public List<QueryTask> getTasks(UUID queryId) {
-        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, QueryKey.QUERY_ID_PREFIX + queryId.toString());
+        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, TASK + QueryKey.toUUIDKey(queryId));
         if (tasks == null) {
             tasks = Collections.EMPTY_LIST;
         }
@@ -217,7 +197,45 @@ public class QueryCache {
         }
         return tasks;
     }
-    
+
+    /**
+     * Get the tasks for a query
+     *
+     * @param queryKey
+     *            The query key
+     * @return A list of tasks
+     */
+    public List<QueryTask> getTasks(QueryKey queryKey) {
+        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, TASK + queryKey.toKey());
+        if (tasks == null) {
+            tasks = Collections.EMPTY_LIST;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("Retrieved " + tasks.size() + " tasks for queryId " + queryKey);
+        }
+        return tasks;
+    }
+
+    /**
+     * Get the tasks counts for a query
+     *
+     * @param queryKey
+     *            The query key
+     * @return A list of tasks
+     */
+    public Map<QueryTask.QUERY_ACTION, Integer> getTaskCounts(QueryKey queryKey) {
+        Map<QueryTask.QUERY_ACTION, MutableInt> taskCounts = new HashMap<>();
+        for (QueryTask.QUERY_ACTION action : QueryTask.QUERY_ACTION.values()) {
+            taskCounts.put(action, new MutableInt());
+        }
+        List<QueryTask> tasks = getTasks(queryKey);
+        for (QueryTask task : tasks) {
+            taskCounts.get(task.getAction()).increment();
+        }
+        return taskCounts.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getValue()));
+    }
+
     /**
      * Get the query tasks for a query pool
      *
@@ -242,7 +260,7 @@ public class QueryCache {
      * @return A list of tasks
      */
     public List<QueryTask> getTasks() {
-        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listAll(CACHE_NAME, QueryTask.class);
+        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, TASK);
         if (tasks == null) {
             tasks = Collections.EMPTY_LIST;
         }
@@ -258,24 +276,13 @@ public class QueryCache {
      * @return A list of query states
      */
     public List<QueryState> getQueries() {
-        List<QueryState> queries = getQueries(getTasks());
+        List<QueryState> queries = new ArrayList<>();
+        List<QueryProperties> properties = (List<QueryProperties>) cacheInspector.listMatching(CACHE_NAME, QueryProperties.class, PROPS);
+        for (QueryProperties query : properties) {
+            queries.add(getQuery(query));
+        }
         if (log.isDebugEnabled()) {
             log.debug("Retrieved " + queries.size() + " queries");
-        }
-        return queries;
-    }
-    
-    /**
-     * Get a list of query states from the cache for a specified query pool
-     * 
-     * @param queryPool
-     *            The query pool
-     * @return a list of query states
-     */
-    public List<QueryState> getQueries(QueryPool queryPool) {
-        List<QueryState> queries = getQueries(getTasks(queryPool));
-        if (log.isDebugEnabled()) {
-            log.debug("Retrieved " + queries.size() + " queries for pool " + queryPool);
         }
         return queries;
     }
@@ -288,29 +295,27 @@ public class QueryCache {
      * @return the query state
      */
     public QueryState getQuery(UUID queryId) {
-        List<QueryState> states = getQueries(getTasks(queryId));
-        if (states.isEmpty()) {
-            if (log.isDebugEnabled()) {
-                log.debug("Returning null query state for queryId " + queryId);
-            }
-            return null;
-        } else if (states.size() == 1) {
-            QueryState state = states.get(0);
-            if (log.isTraceEnabled()) {
-                log.trace("Returning query state " + state);
-            } else if (log.isDebugEnabled()) {
-                log.debug("Returning query state for queryId " + queryId);
-            }
-            return state;
-        } else {
-            log.error("Retrieved too many (" + states.size() + ") query states for queryId " + queryId);
-            throw new IllegalStateException("Found " + states.size() + " query states matching query id " + queryId);
-        }
+        QueryProperties props = getQueryProperties(queryId);
+        return getQuery(props);
     }
     
     /**
-     * Get the task descriptions for a specified query
+     * Get a query state
      * 
+     * @param properties
+     *            A query properties
+     * @return A query stat
+     */
+    private QueryState getQuery(QueryProperties properties) {
+        return new QueryState(properties.getQueryKey(),
+                properties,
+                getQueryStats(properties.getQueryKey().getQueryId()),
+                getTaskCounts(properties.getQueryKey()));
+    }
+
+    /**
+     * Get the task descriptions for a specified query
+     *
      * @param queryId
      *            The query id
      * @return a list of task descriptions
@@ -322,41 +327,7 @@ public class QueryCache {
         }
         return tasks;
     }
-    
-    /**
-     * For a list of tasks, return a list of QueryState
-     * 
-     * @param tasks
-     *            A list of query tasks
-     * @return A list of QueryState
-     */
-    private List<QueryState> getQueries(List<QueryTask> tasks) {
-        Map<QueryKey,Map<QueryTask.QUERY_ACTION,MutableInt>> queries = new HashMap<>();
-        for (QueryTask task : tasks) {
-            QueryKey key = task.getQueryCheckpoint().getQueryKey();
-            Map<QueryTask.QUERY_ACTION,MutableInt> actionCounts = queries.get(key);
-            if (actionCounts == null) {
-                actionCounts = new HashMap<>();
-                queries.put(key, actionCounts);
-            }
-            MutableInt count = actionCounts.get(task.getAction());
-            if (count == null) {
-                count = new MutableInt(0);
-                actionCounts.put(task.getAction(), count);
-            }
-            count.increment();
-        }
-        List<QueryState> states = new ArrayList<>();
-        for (Map.Entry<QueryKey,Map<QueryTask.QUERY_ACTION,MutableInt>> entry : queries.entrySet()) {
-            QueryState state = new QueryState(entry.getKey(),
-                            getQueryProperties(entry.getKey().getQueryId()),
-                            getQueryStats(entry.getKey().getQueryId()),
-                            entry.getValue().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getValue())));
-            states.add(state);
-        }
-        return states;
-    }
-    
+
     /**
      * For a list of tasks, return a list of task descriptions
      * 
@@ -371,6 +342,21 @@ public class QueryCache {
                             .collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())))));
         }
         return descriptions;
+    }
+
+    /**
+     * Delete everything for a query
+     *
+     * @param queryId
+     *            the query id
+     * @return the number of items deleted
+     */
+    public int deleteQuery(UUID queryId) {
+        int deleted = cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, QueryKey.toUUIDKey(queryId));
+        if (log.isDebugEnabled()) {
+            log.debug("Deleted all ( " + deleted + ") tasks for query " + queryId);
+        }
+        return deleted;
     }
 
     /**
@@ -420,31 +406,31 @@ public class QueryCache {
 
     /**
      * A convience method for logging query properties
-     * @param queryId
-     *     the query id
-     * @param queryProperties
+     * @param props
      *     the query properties
+     * @param key
+     *     the query id
      */
-    private void logProperties(String msg, UUID queryId, QueryProperties queryProperties) {
+    private void logProperties(String msg, QueryProperties props, UUID key) {
         if (log.isTraceEnabled()) {
-            log.trace(msg + " query properties for " + queryId + ": " + queryProperties);
+            log.trace(msg + ' ' + (props == null ? "null props for " + key : props.toString()));
         } else if (log.isDebugEnabled()) {
-            log.debug(msg + " query properties for " + queryId);
+            log.debug(msg + ' ' + (props == null ? "null props for " + key : "props for " + key));
         }
     }
 
     /**
      * A convience method for logging query stats
-     * @param queryId
+     * @param stats
+     *     the query stats
+     * @param key
      *     the query id
-     * @param queryStats
-     *     the query ats
      */
-    private void logStats(String msg, UUID queryId, QueryStats queryStats) {
+    private void logStats(String msg, QueryStats stats, UUID key) {
         if (log.isTraceEnabled()) {
-            log.trace(msg + " query stats for " + queryId + ": " + queryStats);
+            log.trace(msg + ' ' + (stats == null ? "null stats for " + key : stats.toString()));
         } else if (log.isDebugEnabled()) {
-            log.debug(msg + " query stats for " + queryId);
+            log.debug(msg + ' ' + (stats == null ? "null stats for " + key : "stats for " + key));
         }
     }
 

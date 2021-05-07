@@ -109,10 +109,6 @@ public class QueryStorageStateServiceTest {
         assertEquals(1, queries.size());
         assertQueryCreate(key.getQueryId(), queryPool, queries.get(0));
         
-        queries = storageStateService.getRunningQueries(queryPool.toString());
-        assertEquals(1, queries.size());
-        assertQueryCreate(key.getQueryId(), queryPool, queries.get(0));
-        
         List<TaskDescription> tasks = storageStateService.getTasks(key.getQueryId().toString());
         assertEquals(1, tasks.size());
         assertQueryCreate(key.getQueryId(), queryPool, query, tasks.get(0));
@@ -176,13 +172,6 @@ public class QueryStorageStateServiceTest {
                             .path("/QueryStorage/v1/tasks/" + queryId).build();
             return toTaskDescriptions(jwtRestTemplate.exchange(authUser, HttpMethod.GET, getQueryUri, String.class));
             
-        }
-        
-        @Override
-        public List<QueryState> getRunningQueries(String queryPool) {
-            UriComponents getQueryUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                            .path("/QueryStorage/v1/queries/" + queryPool).build();
-            return toStates(jwtRestTemplate.exchange(authUser, HttpMethod.GET, getQueryUri, String.class));
         }
         
         private final ObjectMapper mapper = new ObjectMapper();

@@ -260,9 +260,9 @@ public class QueryTaskCheckpointTest {
     public void testQueryState() throws JsonProcessingException {
         UUID uuid = UUID.randomUUID();
         QueryPool queryPool = new QueryPool("default");
-        QueryProperties queryProperties = new QueryProperties();
         QueryStats queryStats = new QueryStats();
         String queryLogic = "EventQuery";
+        QueryProperties queryProperties = new QueryProperties(new QueryKey(queryPool, uuid, queryLogic));
         Map<QueryTask.QUERY_ACTION,Integer> props = new HashMap<>();
         props.put(QueryTask.QUERY_ACTION.CREATE, 1);
         props.put(QueryTask.QUERY_ACTION.NEXT, 10);
@@ -279,10 +279,10 @@ public class QueryTaskCheckpointTest {
         assertEquals(state.hashCode(), state2.hashCode());
         
         UUID uuid2 = UUID.fromString(uuid.toString());
-        QueryProperties queryProperties2 = new QueryProperties();
         QueryStats queryStats2 = new QueryStats();
         QueryPool queryPool2 = new QueryPool("default");
         String queryLogic2 = "EventQuery";
+        QueryProperties queryProperties2 = new QueryProperties(new QueryKey(queryPool2, uuid2, queryLogic2));
         Map<QueryTask.QUERY_ACTION,Integer> props2 = new HashMap<>();
         props2.put(QueryTask.QUERY_ACTION.CREATE, 1);
         props2.put(QueryTask.QUERY_ACTION.NEXT, 10);
@@ -293,9 +293,10 @@ public class QueryTaskCheckpointTest {
         
         UUID otherId = UUID.randomUUID();
         QueryPool otherPool = new QueryPool("other");
-        QueryProperties otherProperties = new QueryProperties();
         QueryStats otherStats = new QueryStats();
+        otherStats.setNumResults(1);
         String otherLogic = "EdgeQuery";
+        QueryProperties otherProperties = new QueryProperties(new QueryKey(otherPool, otherId, otherLogic));
         Map<QueryTask.QUERY_ACTION,Integer> otherProps = new HashMap<>();
         otherProps.put(QueryTask.QUERY_ACTION.CREATE, 1);
         otherProps.put(QueryTask.QUERY_ACTION.NEXT, 11);
@@ -306,6 +307,8 @@ public class QueryTaskCheckpointTest {
         otherState = new QueryState(queryPool, uuid, otherLogic, queryProperties, queryStats, props);
         assertNotEquals(otherState, state);
         otherState = new QueryState(queryPool, uuid, queryLogic, otherProperties, queryStats, props);
+        assertNotEquals(otherState, state);
+        otherState = new QueryState(queryPool, uuid, queryLogic, queryProperties, otherStats, props);
         assertNotEquals(otherState, state);
         otherState = new QueryState(queryPool, uuid, queryLogic, queryProperties, queryStats, otherProps);
         assertNotEquals(otherState, state);
