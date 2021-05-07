@@ -26,7 +26,85 @@ public class QueryCache {
     public QueryCache(LockableCacheInspector cacheInspector) {
         this.cacheInspector = cacheInspector;
     }
-    
+
+    /**
+     * Store the query properties for a query.
+     * @param queryId
+     *     the query id
+     * @param queryProperties
+     *     the query properties
+     * @return the stored query properties
+     */
+    @CachePut(key = "#queryId.toString() + '-PROPS'", cacheManager = "queryStorageCacheManager")
+    public QueryProperties updateQueryProperties(UUID queryId, QueryProperties queryProperties) {
+        logProperties("Storing", queryId, queryProperties);
+        return queryProperties;
+    }
+
+    /**
+     * Delete the query properties for a query
+     * @param queryId
+     *      The query id
+     */
+    @CacheEvict(key = "#queryId.toString() + '-PROPS'", cacheManager = "queryStorageCacheManager")
+    public void deleteQueryProperties(UUID queryId) {
+        if (log.isDebugEnabled()) {
+            log.debug("Deleted query properies for " + queryId);
+        }
+    }
+
+    /**
+     * Return the query properties for a query
+     *
+     * @param queryId
+     *            The query id
+     * @return The query properties
+     */
+    public QueryProperties getQueryProperties(UUID queryId) {
+        QueryProperties queryProperties = cacheInspector.list(CACHE_NAME, QueryProperties.class, queryId.toString() + "-PROPS");
+        logProperties("Retrieved", queryId, queryProperties);
+        return queryProperties;
+    }
+
+    /**
+     * Store the query stats for a query.
+     * @param queryId
+     *     the query id
+     * @param queryStats
+     *     the query stats
+     * @return the stored query stats
+     */
+    @CachePut(key = "#queryId.toString() + '-STATS'", cacheManager = "queryStorageCacheManager")
+    public QueryStats updateQueryStats(UUID queryId, QueryStats queryStats) {
+        logStats("Storing", queryId, queryStats);
+        return queryStats;
+    }
+
+    /**
+     * Delete the query stats for a query
+     * @param queryId
+     *      The query id
+     */
+    @CacheEvict(key = "#queryId.toString() + '-STATS'", cacheManager = "queryStorageCacheManager")
+    public void deleteQueryStats(UUID queryId) {
+        if (log.isDebugEnabled()) {
+            log.debug("Deleted query stats for " + queryId);
+        }
+    }
+
+    /**
+     * Return the query stats for a query
+     *
+     * @param queryId
+     *            The query id
+     * @return The query stats
+     */
+    public QueryStats getQueryStats(UUID queryId) {
+        QueryStats queryStats = cacheInspector.list(CACHE_NAME, QueryStats.class, queryId.toString() + "-STATS");
+        logStats("Retrieved", queryId, queryStats);
+        return queryStats;
+    }
+
     /**
      * This will create and store a new query task.
      * 
@@ -42,7 +120,7 @@ public class QueryCache {
         logTask("Adding task", task);
         return task;
     }
-    
+
     /**
      * Update a stored query task with an updated checkpoint
      * 
@@ -108,18 +186,7 @@ public class QueryCache {
         }
         return deleted;
     }
-    
-    /**
-     * Clear out the cache
-     * 
-     * @return a clear message
-     */
-    @CacheEvict(allEntries = true, cacheManager = "queryStorageCacheManager")
-    public String clear() {
-        log.debug("Clearing all tasks");
-        return "Cleared " + CACHE_NAME + " cache";
-    }
-    
+
     /**
      * Return the task for a given task id and query key
      * 
@@ -282,6 +349,8 @@ public class QueryCache {
         List<QueryState> states = new ArrayList<>();
         for (Map.Entry<QueryKey,Map<QueryTask.QUERY_ACTION,MutableInt>> entry : queries.entrySet()) {
             QueryState state = new QueryState(entry.getKey(),
+                            getQueryProperties(entry.getKey().getQueryId()),
+                            getQueryStats(entry.getKey().getQueryId()),
                             entry.getValue().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getValue())));
             states.add(state);
         }
@@ -303,7 +372,18 @@ public class QueryCache {
         }
         return descriptions;
     }
-    
+
+    /**
+     * Clear out the cache
+     *
+     * @return a clear message
+     */
+    @CacheEvict(allEntries = true, cacheManager = "queryStorageCacheManager")
+    public String clear() {
+        log.debug("Clearing all tasks");
+        return "Cleared " + CACHE_NAME + " cache";
+    }
+
     /**
      * A convience method for logging a task
      * 
@@ -337,4 +417,36 @@ public class QueryCache {
             log.debug(msg + ' ' + (task == null ? "null task for " + key : task.toDebug()));
         }
     }
+
+    /**
+     * A convience method for logging query properties
+     * @param queryId
+     *     the query id
+     * @param queryProperties
+     *     the query properties
+     */
+    private void logProperties(String msg, UUID queryId, QueryProperties queryProperties) {
+        if (log.isTraceEnabled()) {
+            log.trace(msg + " query properties for " + queryId + ": " + queryProperties);
+        } else if (log.isDebugEnabled()) {
+            log.debug(msg + " query properties for " + queryId);
+        }
+    }
+
+    /**
+     * A convience method for logging query stats
+     * @param queryId
+     *     the query id
+     * @param queryStats
+     *     the query ats
+     */
+    private void logStats(String msg, UUID queryId, QueryStats queryStats) {
+        if (log.isTraceEnabled()) {
+            log.trace(msg + " query stats for " + queryId + ": " + queryStats);
+        } else if (log.isDebugEnabled()) {
+            log.debug(msg + " query stats for " + queryId);
+        }
+    }
+
+
 }

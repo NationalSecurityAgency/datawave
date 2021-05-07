@@ -22,7 +22,49 @@ public interface QueryStorageCache {
      * @return The create task key
      */
     TaskKey storeQuery(QueryPool queryPool, Query query, int count) throws IOException;
-    
+
+    /**
+     * Get the current query state.  This includes the query properties, stats, and task summary
+     * @param queryId
+     *      the query id
+     * @return query stats
+     */
+     QueryState getQueryState(UUID queryId);
+
+    /**
+     * Get the current query properties.
+     * @param queryId
+     *     the query id
+     * @return the query properties
+     */
+    QueryProperties getQueryProperties(UUID queryId);
+
+    /**
+     * Get the current query stats.
+     * @param queryId
+     *     the query id
+     * @return the query stats
+     */
+    QueryStats getQueryStats(UUID queryId);
+
+    /**
+     * update the query properies
+     * @param queryId
+     *     the query id
+     * @param queryProperties
+     *     the query properties
+     */
+    void updateQueryProperties(UUID queryId, QueryProperties queryProperties);
+
+    /**
+     * Update the query stats
+     * @param queryId
+     *     the query id
+     * @param queryStats
+     *     the query stats
+     */
+    void updateQueryStats(UUID queryId, QueryStats queryStats);
+
     /**
      * Create a new query task. This will create a new query task, store it, and send out a task notification.
      * 
