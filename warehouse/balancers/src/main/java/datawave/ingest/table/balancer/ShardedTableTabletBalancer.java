@@ -93,13 +93,17 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
     @Override
     protected int getMaxMigrations() {
         int maxMigrations = MAX_MIGRATIONS_DEFAULT;
-        String maxMigrationsProp = this.configuration.getTableConfiguration(this.tableId).get(SHARDED_MAX_MIGRATIONS);
-        if (maxMigrationsProp != null && !maxMigrationsProp.isEmpty()) {
-            try {
-                maxMigrations = Integer.parseInt(maxMigrationsProp);
-            } catch (Exception e) {
-                log.error("Unable to parse " + SHARDED_MAX_MIGRATIONS + " value (" + maxMigrationsProp + ") as an integer.  Defaulting to " + maxMigrations);
+        try {
+            String maxMigrationsProp = this.configuration.getTableConfiguration(this.tableId).get(SHARDED_MAX_MIGRATIONS);
+            if (maxMigrationsProp != null && !maxMigrationsProp.isEmpty()) {
+                try {
+                    maxMigrations = Integer.parseInt(maxMigrationsProp);
+                } catch (Exception e) {
+                    log.error("Unable to parse " + SHARDED_MAX_MIGRATIONS + " value (" + maxMigrationsProp + ") as an integer.  Defaulting to " + maxMigrations);
+                }
             }
+        } catch (Exception e) {
+            log.warn("Failed to get " + SHARDED_MAX_MIGRATIONS + ".  Defaulting to " + maxMigrations, e);
         }
         return maxMigrations;
     }
