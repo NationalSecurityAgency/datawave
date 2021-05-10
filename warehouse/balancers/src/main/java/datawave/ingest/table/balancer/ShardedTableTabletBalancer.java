@@ -38,7 +38,7 @@ import java.util.TreeMap;
 public class ShardedTableTabletBalancer extends GroupBalancer {
     private static final String SHARDED_PROPERTY_PREFIX = Property.TABLE_ARBITRARY_PROP_PREFIX.getKey() + "sharded.balancer.";
     public static final String SHARDED_MAX_MIGRATIONS = SHARDED_PROPERTY_PREFIX + "max.migrations";
-    private static final int MAX_MIGRATIONS_DEFAULT = 10000;
+    public static final int MAX_MIGRATIONS_DEFAULT = 10000;
     
     private static final Logger log = Logger.getLogger(ShardedTableTabletBalancer.class);
     private Collection<Pair<KeyExtent,Location>> tabletLocationCache;
