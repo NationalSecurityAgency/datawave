@@ -8,10 +8,20 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import datawave.common.test.integration.IntegrationTest;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.Instance;
+import org.apache.accumulo.core.client.security.tokens.AuthenticationToken;
+import org.apache.accumulo.core.conf.AccumuloConfiguration;
+import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.master.thrift.TabletServerStatus;
 import org.apache.accumulo.core.util.MapCounter;
 import org.apache.accumulo.core.util.Pair;
+import org.apache.accumulo.server.conf.NamespaceConfiguration;
+import org.apache.accumulo.server.conf.ServerConfigurationFactory;
+import org.apache.accumulo.server.conf.TableConfiguration;
 import org.apache.accumulo.server.master.balancer.GroupBalancer.Location;
 import org.apache.accumulo.server.master.state.TServerInstance;
 import org.apache.accumulo.server.master.state.TabletMigration;
@@ -23,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -43,13 +54,15 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ShardedTableTabletBalancerTest {
     private static final String TNAME = "s";
     
     private TestTServers testTServers;
+    private TestInstance instance = new TestInstance();
+    private TestTableConfiguration config = new TestTableConfiguration(instance, TNAME, null);
     private TestShardedTableTabletBalancer testBalancer;
     private long randomSeed = new Random().nextLong();
     
@@ -64,7 +77,16 @@ public class ShardedTableTabletBalancerTest {
     @Before
     public void setUp() throws Exception {
         testTServers = new TestTServers(new Random(randomSeed));
-        testBalancer = new TestShardedTableTabletBalancer(testTServers);
+        testBalancer = new TestShardedTableTabletBalancer(testTServers, config);
+    }
+    
+    @Test
+    public void testMaxMigrations() {
+        assertEquals(ShardedTableTabletBalancer.MAX_MIGRATIONS_DEFAULT, testBalancer.getMaxMigrations());
+        config.set(ShardedTableTabletBalancer.SHARDED_MAX_MIGRATIONS, "10");
+        assertEquals(10, testBalancer.getMaxMigrations());
+        config.set(ShardedTableTabletBalancer.SHARDED_MAX_MIGRATIONS, "42");
+        assertEquals(42, testBalancer.getMaxMigrations());
     }
     
     @Test
@@ -821,12 +843,90 @@ public class ShardedTableTabletBalancerTest {
         }
     }
     
+    private class TestInstance implements Instance {
+        
+        @Override
+        public String getRootTabletLocation() {
+            return null;
+        }
+        
+        @Override
+        public List<String> getMasterLocations() {
+            return null;
+        }
+        
+        @Override
+        public String getInstanceID() {
+            return "test-id";
+        }
+        
+        @Override
+        public String getInstanceName() {
+            return "test-name";
+        }
+        
+        @Override
+        public String getZooKeepers() {
+            return null;
+        }
+        
+        @Override
+        public int getZooKeepersSessionTimeOut() {
+            return 0;
+        }
+        
+        @Override
+        public Connector getConnector(String user, byte[] pass) throws AccumuloException, AccumuloSecurityException {
+            return null;
+        }
+        
+        @Override
+        public Connector getConnector(String user, ByteBuffer pass) throws AccumuloException, AccumuloSecurityException {
+            return null;
+        }
+        
+        @Override
+        public Connector getConnector(String user, CharSequence pass) throws AccumuloException, AccumuloSecurityException {
+            return null;
+        }
+        
+        @Override
+        public AccumuloConfiguration getConfiguration() {
+            return null;
+        }
+        
+        @Override
+        public void setConfiguration(AccumuloConfiguration conf) {
+            
+        }
+        
+        @Override
+        public Connector getConnector(String principal, AuthenticationToken token) throws AccumuloException, AccumuloSecurityException {
+            return null;
+        }
+    }
+    
+    private class TestServerConfigurationFactory extends ServerConfigurationFactory {
+        private final TableConfiguration config;
+        
+        public TestServerConfigurationFactory(TableConfiguration config) {
+            super(new TestInstance());
+            this.config = config;
+        }
+        
+        @Override
+        public TableConfiguration getTableConfiguration(String tableId) {
+            return config;
+        }
+    }
+    
     private class TestShardedTableTabletBalancer extends ShardedTableTabletBalancer {
         private TestTServers testTServers;
         
-        public TestShardedTableTabletBalancer(TestTServers testTServers) {
+        public TestShardedTableTabletBalancer(TestTServers testTServers, TableConfiguration config) {
             super(TNAME);
             this.testTServers = testTServers;
+            this.configuration = new TestServerConfigurationFactory(config);
         }
         
         @Override
@@ -844,10 +944,34 @@ public class ShardedTableTabletBalancerTest {
         protected long getWaitTime() {
             return 0;
         }
+    }
+    
+    public class TestTableConfiguration extends TableConfiguration {
+        
+        private Map<String,String> properties = new HashMap<>();
+        
+        public TestTableConfiguration(Instance instance, String tableId, NamespaceConfiguration parent) {
+            super(instance, tableId, parent);
+        }
+        
+        public void set(String key, String value) {
+            this.properties.put(key, value);
+        }
         
         @Override
-        protected int getMaxMigrations() {
-            return 30000;
+        public String get(String property) {
+            return properties.get(property);
+        }
+        
+        @Override
+        public String get(Property property) {
+            return properties.get(property.getKey());
+        }
+        
+        @Override
+        public int getCount(Property property) {
+            return Integer.parseInt(properties.get(property.getKey()));
         }
     }
+    
 }
