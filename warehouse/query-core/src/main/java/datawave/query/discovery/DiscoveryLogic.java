@@ -70,7 +70,7 @@ import com.google.common.collect.Sets;
 public class DiscoveryLogic extends ShardIndexQueryTable {
     
     private static final Logger log = Logger.getLogger(DiscoveryLogic.class);
-
+    
     public static final String SEPARATE_COUNTS_BY_COLVIS = "separate.counts.by.colvis";
     public static final String SHOW_REFERENCE_COUNT = "show.reference.count";
     public static final String REVERSE_INDEX = "reverse.index";
