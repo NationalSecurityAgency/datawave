@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @CacheConfig(cacheNames = QueryCache.CACHE_NAME, cacheManager = "queryStorageCacheManager")
@@ -80,7 +81,89 @@ public class QueryCache {
     public List<QueryStatus> getQueryStatus() {
         return (List<QueryStatus>) cacheInspector.listMatching(CACHE_NAME, QueryStatus.class, QUERY);
     }
-    
+
+    /**
+     * Acquires the lock for the specified query status.
+     *
+     * @param queryId
+     *            The query id
+     */
+    void lockQueryStatus(UUID queryId) {
+        cacheInspector.lock(CACHE_NAME, QUERY + QueryKey.toUUIDKey(queryId));
+    }
+
+    /**
+     * Acquires the lock for the specified query status for the specified lease time.
+     *
+     * @param queryId
+     *            The query id
+     * @param leaseTimeMillis
+     *            The lease time in millis
+     */
+    void lockQueryStatus(UUID queryId, long leaseTimeMillis) {
+        cacheInspector.lock(CACHE_NAME, QUERY + QueryKey.toUUIDKey(queryId), leaseTimeMillis, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Acquires the lock for the specified query status.
+     *
+     * @param queryId
+     *            The query id
+     * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
+     */
+    boolean tryLockQueryStatus(UUID queryId) {
+        return cacheInspector.tryLock(CACHE_NAME, QUERY + QueryKey.toUUIDKey(queryId));
+    }
+
+    /**
+     * Acquires the lock for the specified query status for the specified lease time.
+     *
+     * @param queryId
+     *            The query id
+     * @param waitTimeMillis
+     *            The lease time in millis
+     * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
+     */
+    boolean tryLockQueryStatus(UUID queryId, long waitTimeMillis) throws InterruptedException {
+        return cacheInspector.tryLock(CACHE_NAME, QUERY + QueryKey.toUUIDKey(queryId), waitTimeMillis, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Acquires the lock for the specified query status for the specified lease time.
+     *
+     * @param queryId
+     *            The query id
+     * @param waitTimeMillis
+     *            The lease time in millis
+     * @param leaseTimeMillis
+     *            Time to wait before releasing the lock
+     * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
+     */
+    boolean tryLockQueryStatus(UUID queryId, long waitTimeMillis, long leaseTimeMillis) throws InterruptedException {
+        return cacheInspector.tryLock(CACHE_NAME, QUERY + QueryKey.toUUIDKey(queryId), waitTimeMillis, TimeUnit.MILLISECONDS, leaseTimeMillis, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Releases the lock for the specified query status
+     *
+     * @param queryId
+     *            The query id
+     */
+    void unlockQueryStatus(UUID queryId) {
+        cacheInspector.unlock(CACHE_NAME, QUERY + QueryKey.toUUIDKey(queryId));
+    }
+
+    /**
+     * Releases the lock for the specified query status regardless of the lock owner.
+     * It always successfully unlocks the key, never blocks, and returns immediately.
+     *
+     * @param queryId
+     *            The query id
+     */
+    void forceUnlockQueryStatus(UUID queryId) {
+        cacheInspector.unlock(CACHE_NAME, QUERY + QueryKey.toUUIDKey(queryId));
+    }
+
     /**
      * Store the task states for a query.
      * 

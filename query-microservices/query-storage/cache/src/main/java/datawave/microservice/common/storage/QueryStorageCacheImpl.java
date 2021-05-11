@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -56,6 +57,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         // store the initial query properties
         QueryStatus queryStatus = new QueryStatus(checkpoint.getQueryKey());
         queryStatus.setQuery(query);
+        queryStatus.setLastUpdated(new Date());
         cache.updateQueryStatus(queryStatus);
         
         // create and store the initial create task with the checkpoint. This will send out the task notification.
@@ -95,7 +97,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     public List<QueryStatus> getQueryStatus() {
         return cache.getQueryStatus();
     }
-    
+
     /**
      * update the query properties
      * 
@@ -103,9 +105,92 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *            the query properties
      */
     public void updateQueryStatus(QueryStatus queryStatus) {
+        queryStatus.setLastUpdated(new Date());
         cache.updateQueryStatus(queryStatus);
     }
-    
+
+    /**
+     * Acquires the lock for the specified query status.
+     *
+     * @param queryId
+     *            The query id
+     */
+    public void lockQueryStatus(UUID queryId) {
+        cache.lockQueryStatus(queryId);
+    }
+
+    /**
+     * Acquires the lock for the specified query status for the specified lease time.
+     *
+     * @param queryId
+     *            The query id
+     * @param leaseTimeMillis
+     *            The lease time in millis
+     */
+    public void lockQueryStatus(UUID queryId, long leaseTimeMillis) {
+        cache.lockQueryStatus(queryId, leaseTimeMillis);
+    }
+
+    /**
+     * Acquires the lock for the specified query status.
+     *
+     * @param queryId
+     *            The query id
+     * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
+     */
+    public boolean tryLockQueryStatus(UUID queryId) {
+        return cache.tryLockQueryStatus(queryId);
+    }
+
+    /**
+     * Acquires the lock for the specified query status for the specified lease time.
+     *
+     * @param queryId
+     *            The query id
+     * @param waitTimeMillis
+     *            The lease time in millis
+     * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
+     */
+    public boolean tryLockQueryStatus(UUID queryId, long waitTimeMillis) throws InterruptedException {
+        return cache.tryLockQueryStatus(queryId, waitTimeMillis);
+    }
+
+    /**
+     * Acquires the lock for the specified query status for the specified lease time.
+     *
+     * @param queryId
+     *            The query id
+     * @param waitTimeMillis
+     *            The lease time in millis
+     * @param leaseTimeMillis
+     *            Time to wait before releasing the lock
+     * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
+     */
+    public boolean tryLockQueryStatus(UUID queryId, long waitTimeMillis, long leaseTimeMillis) throws InterruptedException {
+        return cache.tryLockQueryStatus(queryId, waitTimeMillis, leaseTimeMillis);
+    }
+
+    /**
+     * Releases the lock for the specified query status
+     *
+     * @param queryId
+     *            The query id
+     */
+    public void unlockQueryStatus(UUID queryId) {
+        cache.unlockQueryStatus(queryId);
+    }
+
+    /**
+     * Releases the lock for the specified query status regardless of the lock owner.
+     * It always successfully unlocks the key, never blocks, and returns immediately.
+     *
+     * @param queryId
+     *            The query id
+     */
+    public void forceUnlockQueryStatus(UUID queryId) {
+        cache.forceUnlockQueryStatus(queryId);
+    }
+
     /**
      * Get the current task states.
      *

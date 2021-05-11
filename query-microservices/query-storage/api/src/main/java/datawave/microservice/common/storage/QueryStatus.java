@@ -6,10 +6,11 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.io.Serializable;
+import java.util.Date;
 
 public class QueryStatus implements Serializable {
     public enum QUERY_STATE {
-        DEFINED, CREATED, CLOSED, CANCELLED
+        DEFINED, CREATED, CLOSED, CANCELED
     }
     
     private QueryKey queryKey;
@@ -18,6 +19,7 @@ public class QueryStatus implements Serializable {
     private String plan;
     private int numResultsGenerated;
     private int numResultsReturned;
+    private Date lastUpdated;
     
     public QueryStatus() {}
     
@@ -72,7 +74,15 @@ public class QueryStatus implements Serializable {
     public void setNumResultsReturned(int numResultsReturned) {
         this.numResultsReturned = numResultsReturned;
     }
-    
+
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
     @Override
     public int hashCode() {
         return new HashCodeBuilder().append(queryKey).append(queryState).append(query).append(plan).append(numResultsReturned).append(numResultsGenerated)
