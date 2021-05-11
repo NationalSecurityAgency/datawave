@@ -70,13 +70,13 @@ import com.google.common.collect.Sets;
 public class DiscoveryLogic extends ShardIndexQueryTable {
     
     private static final Logger log = Logger.getLogger(DiscoveryLogic.class);
-    
+
     public static final String SEPARATE_COUNTS_BY_COLVIS = "separate.counts.by.colvis";
     public static final String SHOW_REFERENCE_COUNT = "show.reference.count";
     public static final String REVERSE_INDEX = "reverse.index";
     
-    private Boolean separateCountsByColVis = false;
-    private Boolean showReferenceCount = false;
+    private static Boolean separateCountsByColVis = DiscoveryQueryConfiguration.getSeparateCountsByColVis();
+    private static Boolean showReferenceCount = DiscoveryQueryConfiguration.getShowReferenceCount();
     private MetadataHelper metadataHelper;
     
     public DiscoveryLogic() {
