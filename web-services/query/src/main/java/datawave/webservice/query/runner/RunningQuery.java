@@ -212,12 +212,17 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     log.info("Query requested page size had been reached, aborting query.next call");
                     break;
                 }
+                //if the number of results returned less than requested, then break out
+                if (currentPageCount < this.logic.getMaxPageSize()) {
+                    log.info("Query requested page size returned less than requested, aborting query.next call");
+                    break;
+                }
                 // if the logic had a max page size and we have reached that, then break out
                 if (this.logic.getMaxPageSize() > 0 && currentPageCount >= this.logic.getMaxPageSize()) {
                     log.info("Query logic max page size has been reached, aborting query.next call");
                     break;
                 }
-                // if the logic had a page byte trigger and we have readed that, then break out
+                // if the logic had a page byte trigger and we have reached that, then break out
                 if (this.logic.getPageByteTrigger() > 0 && currentPageBytes >= this.logic.getPageByteTrigger()) {
                     log.info("Query logic max page byte trigger has been reached, aborting query.next call");
                     hitPageByteTrigger = true;
