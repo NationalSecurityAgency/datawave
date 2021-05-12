@@ -5,6 +5,7 @@ import datawave.webservice.query.Query;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.locks.Lock;
 
 /**
  * This is an interface to the query storage service
@@ -57,72 +58,31 @@ public interface QueryStorageCache {
     void updateQueryStatus(QueryStatus queryStatus);
     
     /**
-     * Acquires the lock for the specified query status.
+     * Get a lock for the query status
      *
      * @param queryId
-     *            The query id
+     *            the query id
+     * @return a lock object
      */
-    void lockQueryStatus(UUID queryId);
+    QueryStorageLock getQueryStatusLock(UUID queryId);
     
     /**
-     * Acquires the lock for the specified query status for the specified lease time.
+     * Get a task states lock
      *
      * @param queryId
-     *            The query id
-     * @param leaseTimeMillis
-     *            The lease time in millis
+     *            the query id
+     * @return a lock object
      */
-    void lockQueryStatus(UUID queryId, long leaseTimeMillis);
+    QueryStorageLock getTaskStatesLock(UUID queryId);
     
     /**
-     * Acquires the lock for the specified query status.
+     * Get a task lock
      *
-     * @param queryId
-     *            The query id
-     * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
+     * @param task
+     *            The task key
+     * @return a lock object
      */
-    boolean tryLockQueryStatus(UUID queryId);
-    
-    /**
-     * Acquires the lock for the specified query status for the specified lease time.
-     *
-     * @param queryId
-     *            The query id
-     * @param waitTimeMillis
-     *            The lease time in millis
-     * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
-     */
-    boolean tryLockQueryStatus(UUID queryId, long waitTimeMillis) throws InterruptedException;
-    
-    /**
-     * Acquires the lock for the specified query status for the specified lease time.
-     *
-     * @param queryId
-     *            The query id
-     * @param waitTimeMillis
-     *            The lease time in millis
-     * @param leaseTimeMillis
-     *            Time to wait before releasing the lock
-     * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
-     */
-    boolean tryLockQueryStatus(UUID queryId, long waitTimeMillis, long leaseTimeMillis) throws InterruptedException;
-    
-    /**
-     * Releases the lock for the specified query status
-     *
-     * @param queryId
-     *            The query id
-     */
-    void unlockQueryStatus(UUID queryId);
-    
-    /**
-     * Releases the lock for the specified query status regardless of the lock owner. It always successfully unlocks the key, never blocks, and returns
-     * immediately.
-     *
-     * @param queryId
-     *            The query id
-     */
-    void forceUnlockQueryStatus(UUID queryId);
+    QueryStorageLock getTaskLock(TaskKey task);
     
     /**
      * Get the current task states.
@@ -211,4 +171,103 @@ public interface QueryStorageCache {
      * @return The list of task keys
      */
     public List<TaskKey> getTasks(UUID queryId) throws IOException;
+    
+    /************** Some convenience methods for query status locking ************/
+    
+    /**
+     * Acquires the lock for the specified query status.
+     *
+     * @param queryId
+     *            The query id
+     * @deprecated try getQueryStatusLock(queryId).lock()
+     */
+    @Deprecated
+    default void lockQueryStatus(UUID queryId) {
+        getQueryStatusLock(queryId).lock();
+    }
+    
+    /**
+     * Acquires the lock for the specified query status for the specified lease time.
+     *
+     * @param queryId
+     *            The query id
+     * @param leaseTimeMillis
+     *            The lease time in millis
+     * @deprecated try getQueryStatusLock(queryId).lock(leaseTimeMillis)
+     */
+    @Deprecated
+    default void lockQueryStatus(UUID queryId, long leaseTimeMillis) {
+        getQueryStatusLock(queryId).lock(leaseTimeMillis);
+    }
+    
+    /**
+     * Acquires the lock for the specified query status.
+     *
+     * @param queryId
+     *            The query id
+     * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
+     * @deprecated try getQueryStatusLock(queryId).tryLock()
+     */
+    @Deprecated
+    default boolean tryLockQueryStatus(UUID queryId) {
+        return getQueryStatusLock(queryId).tryLock();
+    }
+    
+    /**
+     * Tries to acquires the lock for the specified query status for the specified wait time.
+     *
+     * @param queryId
+     *            The query id
+     * @param waitTimeMillis
+     *            The wait time in millis
+     * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
+     * @deprecated try getQueryStatusLock(queryId).tryLock(waitTimeMillis)
+     */
+    @Deprecated
+    default boolean tryLockQueryStatus(UUID queryId, long waitTimeMillis) throws InterruptedException {
+        return getQueryStatusLock(queryId).tryLock(waitTimeMillis);
+    }
+    
+    /**
+     * Try to acquire the lock for the specified query status for the specified wait time and lease time
+     *
+     * @param queryId
+     *            The query id
+     * @param waitTimeMillis
+     *            The wait time in millis
+     * @param leaseTimeMillis
+     *            Time to wait before releasing the lock
+     * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
+     * @deprecated try getQueryStatusLock(queryId).tryLock(waitTimeMillis, leaseTimeMillis)
+     */
+    @Deprecated
+    default boolean tryLockQueryStatus(UUID queryId, long waitTimeMillis, long leaseTimeMillis) throws InterruptedException {
+        return getQueryStatusLock(queryId).tryLock(waitTimeMillis, leaseTimeMillis);
+    }
+    
+    /**
+     * Releases the lock for the specified query status
+     *
+     * @param queryId
+     *            The query id
+     * @deprecated try getQueryStatusLock(queryId).unlock()
+     */
+    @Deprecated
+    default void unlockQueryStatus(UUID queryId) {
+        getQueryStatusLock(queryId).unlock();
+    }
+    
+    /**
+     * Releases the lock for the specified query status regardless of the lock owner. It always successfully unlocks the key, never blocks, and returns
+     * immediately.
+     *
+     * @param queryId
+     *            The query id
+     * @deprecated try getQueryStatusLock(queryId).forceUnlock()
+     */
+    @Deprecated
+    default void forceUnlockQueryStatus(UUID queryId) {
+        getQueryStatusLock(queryId).forceUnlock();
+    }
+    
 }

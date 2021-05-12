@@ -248,7 +248,7 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     private void incrementConcurrentNextCount(UUID queryUUID) throws InterruptedException, QueryException {
-        if (queryStorageCache.tryLockQueryStatus(queryUUID, queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
+        if (queryStorageCache.getQueryStatusLock(queryUUID).tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
             try {
                 // increment the concurrent next
                 QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryUUID);
@@ -260,7 +260,7 @@ public class QueryManagementService implements QueryRequestHandler {
                                     "Concurrent next call limit reached: " + queryProperties.getConcurrentNextLimit());
                 }
             } finally {
-                queryStorageCache.unlockQueryStatus(queryUUID);
+                queryStorageCache.getQueryStatusLock(queryUUID).unlock();
             }
         } else {
             throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR, "Unable to acquire lock on query.");
@@ -268,7 +268,7 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     private void decrementConcurrentNextCount(UUID queryUUID) throws InterruptedException, QueryException {
-        if (queryStorageCache.tryLockQueryStatus(queryUUID, queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
+        if (queryStorageCache.getQueryStatusLock(queryUUID).tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
             try {
                 // increment the concurrent next
                 QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryUUID);
@@ -280,7 +280,7 @@ public class QueryManagementService implements QueryRequestHandler {
                                     "Concurrent next call limit reached: " + queryProperties.getConcurrentNextLimit());
                 }
             } finally {
-                queryStorageCache.unlockQueryStatus(queryUUID);
+                queryStorageCache.getQueryStatusLock(queryUUID).unlock();
             }
         } else {
             throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR, "Unable to acquire lock on query.");
@@ -358,14 +358,14 @@ public class QueryManagementService implements QueryRequestHandler {
             
             // TODO: lock the cache entry and change state to canceled
             // try to be nice and acquire the lock before updating the status
-            if (queryStorageCache.tryLockQueryStatus(queryUUID, queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
+            if (queryStorageCache.getQueryStatusLock(queryUUID).tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
                 try {
                     // update query state to CANCELED
                     QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryUUID);
                     queryStatus.setQueryState(CANCELED);
                     queryStorageCache.updateQueryStatus(queryStatus);
                 } finally {
-                    queryStorageCache.unlockQueryStatus(queryUUID);
+                    queryStorageCache.getQueryStatusLock(queryUUID).unlock();
                 }
             } else {
                 // TODO: Instead of throwing an exception, do we want to be mean here and update the state to canceled without acquiring a lock? Probably yes...
@@ -404,14 +404,14 @@ public class QueryManagementService implements QueryRequestHandler {
     private void close(String queryId, boolean publishEvent) throws InterruptedException, QueryException {
         UUID queryUUID = UUID.fromString(queryId);
         
-        if (queryStorageCache.tryLockQueryStatus(queryUUID, queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
+        if (queryStorageCache.getQueryStatusLock(queryUUID).tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
             try {
                 // update query state to CLOSED
                 QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryUUID);
                 queryStatus.setQueryState(CLOSED);
                 queryStorageCache.updateQueryStatus(queryStatus);
             } finally {
-                queryStorageCache.unlockQueryStatus(queryUUID);
+                queryStorageCache.getQueryStatusLock(queryUUID).unlock();
             }
         } else {
             // TODO: Instead of throwing an exception, do we want to be mean here and update the state to canceled without acquiring a lock? Probably yes...
