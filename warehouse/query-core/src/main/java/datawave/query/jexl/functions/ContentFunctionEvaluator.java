@@ -180,6 +180,9 @@ public abstract class ContentFunctionEvaluator {
                 
                 // Iterate over each collection of offsets (grouped by field) and try to find one that satisfies the phrase/adjacency
                 for (String field : offsetsByField.keySet()) {
+                    if (!fields.isEmpty() && !fields.contains(field)) {
+                        continue;
+                    }
                     List<List<TermWeightPosition>> offsets = offsetsByField.get(field);
                     if (offsets == null || offsets.isEmpty()) {
                         continue;
