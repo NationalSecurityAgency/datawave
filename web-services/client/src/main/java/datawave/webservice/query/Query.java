@@ -1,5 +1,7 @@
 package datawave.webservice.query;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import datawave.microservice.query.QueryParameters;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.metric.BaseQueryMetric;
@@ -7,7 +9,6 @@ import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
@@ -24,6 +25,7 @@ import java.util.UUID;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(QueryImpl.class)
+@JsonDeserialize(as = QueryImpl.class)
 public abstract class Query implements Externalizable {
     
     private static final long serialVersionUID = -5980134700364340930L;
@@ -89,6 +91,7 @@ public abstract class Query implements Externalizable {
     
     public abstract Parameter findParameter(String parameter);
     
+    @JsonIgnore
     public abstract void setParameters(Map<String,String> parameters);
     
     public abstract void addParameter(String key, String val);
@@ -119,9 +122,10 @@ public abstract class Query implements Externalizable {
     
     public abstract void populateMetric(BaseQueryMetric metric);
     
-    public abstract void setOptionalQueryParameters(MultivaluedMap<String,String> optionalQueryParameters);
+    public abstract void setOptionalQueryParameters(MultiValueMap<String,String> optionalQueryParameters);
     
-    public abstract MultivaluedMap<String,String> getOptionalQueryParameters();
+    @JsonDeserialize(as = LinkedMultiValueMap.class)
+    public abstract MultiValueMap<String,String> getOptionalQueryParameters();
     
     public abstract void removeParameter(String key);
     

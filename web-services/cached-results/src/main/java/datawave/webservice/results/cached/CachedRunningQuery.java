@@ -15,10 +15,12 @@ import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.util.MapUtils;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.MultiValueMap;
 
 import javax.sql.DataSource;
 import javax.sql.rowset.CachedRowSet;
@@ -1188,9 +1190,16 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                             InputStream istream = optionalQueryParametersBlob.getBinaryStream();
                             ObjectInputStream oistream = new ObjectInputStream(istream);
                             Object optionalQueryParametersObject = oistream.readObject();
-                            if (optionalQueryParametersObject != null && optionalQueryParametersObject instanceof MultivaluedMapImpl) {
-                                MultivaluedMapImpl<String,String> optionalQueryParameters = (MultivaluedMapImpl<String,String>) optionalQueryParametersObject;
-                                query.setOptionalQueryParameters(optionalQueryParameters);
+                            if (optionalQueryParametersObject != null) {
+                                if (optionalQueryParametersObject instanceof MultivaluedMapImpl) {
+                                    MultivaluedMapImpl<String,String> optionalQueryParameters = (MultivaluedMapImpl<String,String>) optionalQueryParametersObject;
+                                    query.setOptionalQueryParameters(MapUtils.toMultiValueMap(optionalQueryParameters));
+                                } else if (optionalQueryParametersObject instanceof MultiValueMap) {
+                                    query.setOptionalQueryParameters((MultiValueMap) optionalQueryParametersObject);
+                                } else {
+                                    throw new IllegalArgumentException("Failed to convert " + optionalQueryParametersObject.getClass() + " to a "
+                                                    + MultiValueMap.class);
+                                }
                             }
                         } catch (IOException e) {
                             log.error(e.getMessage(), e);

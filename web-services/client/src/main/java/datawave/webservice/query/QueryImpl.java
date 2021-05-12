@@ -1,5 +1,6 @@
 package datawave.webservice.query;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.webservice.query.metric.BaseQueryMetric;
@@ -14,14 +15,12 @@ import io.protostuff.UninitializedMessageException;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -250,7 +249,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     @XmlElement
     protected String columnVisibility;
     @XmlTransient
-    protected MultivaluedMap<String,String> optionalQueryParameters;
+    protected MultiValueMap<String,String> optionalQueryParameters;
     
     protected transient QueryUncaughtExceptionHandler uncaughtExceptionHandler;
     
@@ -368,6 +367,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         }
     }
     
+    @JsonIgnore
     public void setParameters(Map<String,String> parameters) {
         HashSet<Parameter> paramObjs = new HashSet<Parameter>(parameters.size());
         for (Entry<String,String> param : parameters.entrySet()) {
@@ -409,11 +409,11 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         this.endDate = endDate;
     }
     
-    public MultivaluedMap<String,String> getOptionalQueryParameters() {
+    public MultiValueMap<String,String> getOptionalQueryParameters() {
         return optionalQueryParameters;
     }
     
-    public void setOptionalQueryParameters(MultivaluedMap<String,String> optionalQueryParameters) {
+    public void setOptionalQueryParameters(MultiValueMap<String,String> optionalQueryParameters) {
         this.optionalQueryParameters = optionalQueryParameters;
     }
     
