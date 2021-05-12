@@ -7,7 +7,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -265,9 +267,10 @@ public class QueryTaskCheckpointTest {
         String queryLogic = "EventQuery";
         QueryStatus queryStatus = new QueryStatus(new QueryKey(queryPool, uuid, queryLogic));
         TaskStates tasks = new TaskStates(new QueryKey(queryPool, uuid, queryLogic), 10);
-        MultiValueMap<TaskStates.TASK_STATE,TaskKey> states = new LinkedMultiValueMap<>();
-        states.add(TaskStates.TASK_STATE.READY, new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic));
-        states.add(TaskStates.TASK_STATE.READY, new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic));
+        Map<TaskStates.TASK_STATE,Set<TaskKey>> states = new HashMap<>();
+        states.put(TaskStates.TASK_STATE.READY, new HashSet<>());
+        states.get(TaskStates.TASK_STATE.READY).add(new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic));
+        states.get(TaskStates.TASK_STATE.READY).add(new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic));
         tasks.setTaskStates(states);
         QueryState state = new QueryState(queryPool, uuid, queryLogic, queryStatus, tasks);
         
@@ -286,7 +289,7 @@ public class QueryTaskCheckpointTest {
         String queryLogic2 = "EventQuery";
         QueryStatus queryStatus2 = new QueryStatus(new QueryKey(queryPool2, uuid2, queryLogic2));
         TaskStates tasks2 = new TaskStates(new QueryKey(queryPool, uuid, queryLogic), 10);
-        tasks2.setTaskStates(new LinkedMultiValueMap<>(states));
+        tasks2.setTaskStates(new HashMap<>(states));
         state2 = new QueryState(queryPool2, uuid2, queryLogic2, queryStatus2, tasks2);
         
         assertEquals(state, state2);
@@ -297,9 +300,10 @@ public class QueryTaskCheckpointTest {
         String otherLogic = "EdgeQuery";
         QueryStatus otherProperties = new QueryStatus(new QueryKey(otherPool, otherId, otherLogic));
         TaskStates otherTasks = new TaskStates(new QueryKey(queryPool, uuid, queryLogic), 10);
-        MultiValueMap<TaskStates.TASK_STATE,TaskKey> otherStates = new LinkedMultiValueMap<>();
-        states.add(TaskStates.TASK_STATE.READY, new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic));
-        states.add(TaskStates.TASK_STATE.READY, new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic));
+        Map<TaskStates.TASK_STATE,Set<TaskKey>> otherStates = new HashMap<>();
+        otherStates.put(TaskStates.TASK_STATE.READY, new HashSet<>());
+        otherStates.get(TaskStates.TASK_STATE.READY).add(new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic));
+        otherStates.get(TaskStates.TASK_STATE.READY).add(new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic));
         otherTasks.setTaskStates(otherStates);
         QueryState otherState = new QueryState(queryPool, otherId, queryLogic, queryStatus, tasks);
         assertNotEquals(otherState, state);

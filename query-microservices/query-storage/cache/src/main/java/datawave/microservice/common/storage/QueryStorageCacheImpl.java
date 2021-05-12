@@ -180,6 +180,11 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         // create a query task in the cache
         QueryTask task = cache.addQueryTask(action, checkpoint);
         
+        // Set the initial ready state in the task states
+        TaskStates states = cache.getTaskStates(task.getTaskKey().getQueryId());
+        states.setState(task.getTaskKey(), TaskStates.TASK_STATE.READY);
+        cache.updateTaskStates(states);
+        
         // send a task notification
         if (properties.isSendNotifications()) {
             queue.sendMessage(task.getNotification());

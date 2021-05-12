@@ -111,6 +111,9 @@ public class QueryStorageCacheTest {
         TaskKey key = storageService.storeQuery(queryPool, query, 3);
         assertNotNull(key);
         
+        TaskStates states = storageService.getTaskStates(key.getQueryId());
+        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
+        
         // ensure we got a task notification
         QueryTaskNotification notification = messageConsumer.receiveTaskNotification();
         assertNotNull(notification);
@@ -181,10 +184,15 @@ public class QueryStorageCacheTest {
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
+        QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
+        queryCache.updateTaskStates(new TaskStates(queryKey, 10));
         QueryTask task = storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         TaskKey key = task.getTaskKey();
         assertEquals(checkpoint.getQueryKey(), key);
+        
+        TaskStates states = storageService.getTaskStates(key.getQueryId());
+        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
         
         // ensure we got a task notification
         QueryTaskNotification notification = messageConsumer.receiveTaskNotification();
@@ -230,7 +238,9 @@ public class QueryStorageCacheTest {
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
+        QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
+        queryCache.updateTaskStates(new TaskStates(queryKey, 10));
         
         TaskKey key = new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), query.getQueryLogicName());
         try {
@@ -292,7 +302,9 @@ public class QueryStorageCacheTest {
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
+        QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
+        queryCache.updateTaskStates(new TaskStates(queryKey, 10));
         
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
@@ -328,7 +340,9 @@ public class QueryStorageCacheTest {
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
+        QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
+        queryCache.updateTaskStates(new TaskStates(queryKey, 10));
         
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
@@ -367,8 +381,10 @@ public class QueryStorageCacheTest {
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
-        QueryStatus queryStatus = new QueryStatus(new QueryKey(queryPool, queryId, query.getQueryLogicName()));
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
+        QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
+        QueryStatus queryStatus = new QueryStatus(queryKey);
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
+        queryCache.updateTaskStates(new TaskStates(queryKey, 10));
         
         storageService.updateQueryStatus(queryStatus);
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
