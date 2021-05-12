@@ -1,12 +1,12 @@
 package datawave.microservice.query;
 
 import com.codahale.metrics.annotation.Timed;
-import com.hazelcast.core.HazelcastInstance;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.query.web.annotation.EnrichQueryMetrics;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.VoidResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(path = "/v1", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -62,8 +64,25 @@ public class QueryController {
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public BaseQueryResponse next(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
         
-        queryManagementService.next(queryId, currentUser);
+        List<Object> resultObjects = queryManagementService.next(queryId, currentUser);
         
         return null;
     }
+    
+    @Timed(name = "dw.query.cancel", absolute = true)
+    @RequestMapping(path = "{queryId}/cancel", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
+            "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public VoidResponse cancel(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
+        queryManagementService.cancel(queryId, currentUser);
+        return null;
+    }
+    
+    @Timed(name = "dw.query.close", absolute = true)
+    @RequestMapping(path = "{queryId}/close", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
+            "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public VoidResponse close(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
+        queryManagementService.close(queryId, currentUser);
+        return null;
+    }
+    
 }

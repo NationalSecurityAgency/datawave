@@ -97,7 +97,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     public List<QueryStatus> getQueryStatus() {
         return cache.getQueryStatus();
     }
-
+    
     /**
      * update the query properties
      * 
@@ -108,7 +108,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         queryStatus.setLastUpdated(new Date());
         cache.updateQueryStatus(queryStatus);
     }
-
+    
     /**
      * Acquires the lock for the specified query status.
      *
@@ -118,7 +118,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     public void lockQueryStatus(UUID queryId) {
         cache.lockQueryStatus(queryId);
     }
-
+    
     /**
      * Acquires the lock for the specified query status for the specified lease time.
      *
@@ -130,7 +130,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     public void lockQueryStatus(UUID queryId, long leaseTimeMillis) {
         cache.lockQueryStatus(queryId, leaseTimeMillis);
     }
-
+    
     /**
      * Acquires the lock for the specified query status.
      *
@@ -141,7 +141,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     public boolean tryLockQueryStatus(UUID queryId) {
         return cache.tryLockQueryStatus(queryId);
     }
-
+    
     /**
      * Acquires the lock for the specified query status for the specified lease time.
      *
@@ -154,7 +154,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     public boolean tryLockQueryStatus(UUID queryId, long waitTimeMillis) throws InterruptedException {
         return cache.tryLockQueryStatus(queryId, waitTimeMillis);
     }
-
+    
     /**
      * Acquires the lock for the specified query status for the specified lease time.
      *
@@ -169,7 +169,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     public boolean tryLockQueryStatus(UUID queryId, long waitTimeMillis, long leaseTimeMillis) throws InterruptedException {
         return cache.tryLockQueryStatus(queryId, waitTimeMillis, leaseTimeMillis);
     }
-
+    
     /**
      * Releases the lock for the specified query status
      *
@@ -179,10 +179,10 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     public void unlockQueryStatus(UUID queryId) {
         cache.unlockQueryStatus(queryId);
     }
-
+    
     /**
-     * Releases the lock for the specified query status regardless of the lock owner.
-     * It always successfully unlocks the key, never blocks, and returns immediately.
+     * Releases the lock for the specified query status regardless of the lock owner. It always successfully unlocks the key, never blocks, and returns
+     * immediately.
      *
      * @param queryId
      *            The query id
@@ -190,7 +190,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     public void forceUnlockQueryStatus(UUID queryId) {
         cache.forceUnlockQueryStatus(queryId);
     }
-
+    
     /**
      * Get the current task states.
      *

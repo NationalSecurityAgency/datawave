@@ -55,7 +55,7 @@ public interface QueryStorageCache {
      *            the query status
      */
     void updateQueryStatus(QueryStatus queryStatus);
-
+    
     /**
      * Acquires the lock for the specified query status.
      *
@@ -63,7 +63,7 @@ public interface QueryStorageCache {
      *            The query id
      */
     void lockQueryStatus(UUID queryId);
-
+    
     /**
      * Acquires the lock for the specified query status for the specified lease time.
      *
@@ -73,7 +73,7 @@ public interface QueryStorageCache {
      *            The lease time in millis
      */
     void lockQueryStatus(UUID queryId, long leaseTimeMillis);
-
+    
     /**
      * Acquires the lock for the specified query status.
      *
@@ -82,7 +82,7 @@ public interface QueryStorageCache {
      * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
      */
     boolean tryLockQueryStatus(UUID queryId);
-
+    
     /**
      * Acquires the lock for the specified query status for the specified lease time.
      *
@@ -93,7 +93,7 @@ public interface QueryStorageCache {
      * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
      */
     boolean tryLockQueryStatus(UUID queryId, long waitTimeMillis) throws InterruptedException;
-
+    
     /**
      * Acquires the lock for the specified query status for the specified lease time.
      *
@@ -106,7 +106,7 @@ public interface QueryStorageCache {
      * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
      */
     boolean tryLockQueryStatus(UUID queryId, long waitTimeMillis, long leaseTimeMillis) throws InterruptedException;
-
+    
     /**
      * Releases the lock for the specified query status
      *
@@ -114,16 +114,16 @@ public interface QueryStorageCache {
      *            The query id
      */
     void unlockQueryStatus(UUID queryId);
-
+    
     /**
-     * Releases the lock for the specified query status regardless of the lock owner.
-     * It always successfully unlocks the key, never blocks, and returns immediately.
+     * Releases the lock for the specified query status regardless of the lock owner. It always successfully unlocks the key, never blocks, and returns
+     * immediately.
      *
      * @param queryId
      *            The query id
      */
     void forceUnlockQueryStatus(UUID queryId);
-
+    
     /**
      * Get the current task states.
      * 

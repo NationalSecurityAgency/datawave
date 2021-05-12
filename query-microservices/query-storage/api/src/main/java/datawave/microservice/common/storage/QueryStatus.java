@@ -19,6 +19,7 @@ public class QueryStatus implements Serializable {
     private String plan;
     private int numResultsGenerated;
     private int numResultsReturned;
+    private int concurrentNextCount;
     private Date lastUpdated;
     
     public QueryStatus() {}
@@ -74,15 +75,23 @@ public class QueryStatus implements Serializable {
     public void setNumResultsReturned(int numResultsReturned) {
         this.numResultsReturned = numResultsReturned;
     }
-
+    
+    public int getConcurrentNextCount() {
+        return concurrentNextCount;
+    }
+    
+    public void setConcurrentNextCount(int concurrentNextCount) {
+        this.concurrentNextCount = concurrentNextCount;
+    }
+    
     public Date getLastUpdated() {
         return lastUpdated;
     }
-
+    
     public void setLastUpdated(Date lastUpdated) {
         this.lastUpdated = lastUpdated;
     }
-
+    
     @Override
     public int hashCode() {
         return new HashCodeBuilder().append(queryKey).append(queryState).append(query).append(plan).append(numResultsReturned).append(numResultsGenerated)
