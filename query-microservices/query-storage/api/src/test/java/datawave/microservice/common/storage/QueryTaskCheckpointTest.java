@@ -3,6 +3,8 @@ package datawave.microservice.common.storage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -262,11 +264,11 @@ public class QueryTaskCheckpointTest {
         QueryPool queryPool = new QueryPool("default");
         String queryLogic = "EventQuery";
         QueryStatus queryStatus = new QueryStatus(new QueryKey(queryPool, uuid, queryLogic));
-        TaskStates tasks = new TaskStates(new QueryKey(queryPool, uuid, queryLogic));
-        Map<TaskKey,String> props = new HashMap<>();
-        props.put(new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic), TaskStates.TASK_STATE.READY.name());
-        props.put(new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic), TaskStates.TASK_STATE.READY.name());
-        tasks.setTaskStates(props);
+        TaskStates tasks = new TaskStates(new QueryKey(queryPool, uuid, queryLogic), 10);
+        MultiValueMap<TaskStates.TASK_STATE,TaskKey> states = new LinkedMultiValueMap<>();
+        states.add(TaskStates.TASK_STATE.READY, new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic));
+        states.add(TaskStates.TASK_STATE.READY, new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic));
+        tasks.setTaskStates(states);
         QueryState state = new QueryState(queryPool, uuid, queryLogic, queryStatus, tasks);
         
         assertEquals(uuid, state.getQueryId());
@@ -283,8 +285,8 @@ public class QueryTaskCheckpointTest {
         QueryPool queryPool2 = new QueryPool("default");
         String queryLogic2 = "EventQuery";
         QueryStatus queryStatus2 = new QueryStatus(new QueryKey(queryPool2, uuid2, queryLogic2));
-        TaskStates tasks2 = new TaskStates(new QueryKey(queryPool, uuid, queryLogic));
-        tasks2.setTaskStates(new HashMap<>(props));
+        TaskStates tasks2 = new TaskStates(new QueryKey(queryPool, uuid, queryLogic), 10);
+        tasks2.setTaskStates(new LinkedMultiValueMap<>(states));
         state2 = new QueryState(queryPool2, uuid2, queryLogic2, queryStatus2, tasks2);
         
         assertEquals(state, state2);
@@ -294,11 +296,11 @@ public class QueryTaskCheckpointTest {
         QueryPool otherPool = new QueryPool("other");
         String otherLogic = "EdgeQuery";
         QueryStatus otherProperties = new QueryStatus(new QueryKey(otherPool, otherId, otherLogic));
-        TaskStates otherTasks = new TaskStates(new QueryKey(queryPool, uuid, queryLogic));
-        Map<TaskKey,String> otherProps = new HashMap<>();
-        props.put(new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic), TaskStates.TASK_STATE.READY.name());
-        props.put(new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic), TaskStates.TASK_STATE.READY.name());
-        otherTasks.setTaskStates(otherProps);
+        TaskStates otherTasks = new TaskStates(new QueryKey(queryPool, uuid, queryLogic), 10);
+        MultiValueMap<TaskStates.TASK_STATE,TaskKey> otherStates = new LinkedMultiValueMap<>();
+        states.add(TaskStates.TASK_STATE.READY, new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic));
+        states.add(TaskStates.TASK_STATE.READY, new TaskKey(UUID.randomUUID(), queryPool, uuid, queryLogic));
+        otherTasks.setTaskStates(otherStates);
         QueryState otherState = new QueryState(queryPool, otherId, queryLogic, queryStatus, tasks);
         assertNotEquals(otherState, state);
         otherState = new QueryState(otherPool, uuid, queryLogic, queryStatus, tasks);

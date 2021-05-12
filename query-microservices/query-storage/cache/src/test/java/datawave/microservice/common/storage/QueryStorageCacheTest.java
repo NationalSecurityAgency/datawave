@@ -3,6 +3,7 @@ package datawave.microservice.common.storage;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,9 +56,6 @@ public class QueryStorageCacheTest {
     @Autowired
     private QueryQueueManager queueManager;
     
-    @Autowired
-    private QueryLockManager lockManager;
-    
     private QueryQueueListener messageConsumer;
     
     private static final String LISTENER_ID = "QueryStorageCacheTestListener";
@@ -80,8 +78,15 @@ public class QueryStorageCacheTest {
     
     public void cleanupData() throws IOException {
         storageService.clear();
+        queryCache.clear();
+        if (!queryCache.getTasks().isEmpty()) {
+            queryCache.clear();
+            if (!queryCache.getTasks().isEmpty()) {
+                queryCache.getTasks();
+                System.out.println("break here");
+            }
+        }
         clearQueue();
-        clearLocks();
     }
     
     void clearQueue() throws IOException {
@@ -92,12 +97,6 @@ public class QueryStorageCacheTest {
         }
     }
     
-    void clearLocks() throws IOException {
-        for (UUID queryId : lockManager.getQueries()) {
-            lockManager.deleteSemaphore(queryId);
-        }
-    }
-    
     @Test
     public void testStoreQuery() throws ParseException, InterruptedException, IOException, TaskLockException {
         // ensure the message queue is empty
@@ -105,6 +104,7 @@ public class QueryStorageCacheTest {
         
         Query query = new QueryImpl();
         query.setQuery("foo == bar");
+        query.setQueryLogicName("EventQuery");
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         QueryPool queryPool = new QueryPool(TEST_POOL);
@@ -143,6 +143,32 @@ public class QueryStorageCacheTest {
         assertQueryCreate(key.getQueryId(), queryPool, query, taskDescs.get(0));
     }
     
+    public static class QueryTaskHolder {
+        public QueryTask task;
+        public Exception throwable;
+    }
+    
+    private QueryTask getTaskOnSeparateThread(final TaskKey key, final long waitMs) throws Exception {
+        QueryTaskHolder taskHolder = new QueryTaskHolder();
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    taskHolder.task = storageService.getTask(key, waitMs);
+                } catch (Exception e) {
+                    taskHolder.throwable = e;
+                }
+            }
+        });
+        t.start();
+        while (t.isAlive()) {
+            Thread.sleep(1);
+        }
+        if (taskHolder.throwable != null) {
+            throw taskHolder.throwable;
+        }
+        return taskHolder.task;
+    }
+    
     @Test
     public void testStoreTask() throws ParseException, InterruptedException, IOException, TaskLockException {
         // ensure the message queue is empty
@@ -156,7 +182,6 @@ public class QueryStorageCacheTest {
         UUID queryId = UUID.randomUUID();
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
-        lockManager.createSemaphore(queryId, 3);
         QueryTask task = storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         TaskKey key = task.getTaskKey();
         assertEquals(checkpoint.getQueryKey(), key);
@@ -169,24 +194,28 @@ public class QueryStorageCacheTest {
         // ensure the message queue is empty again
         assertNull(messageConsumer.receiveTaskNotification(0));
         
-        assertFalse(lockManager.isLocked(task.getTaskKey()));
+        assertFalse(storageService.getTaskLock(task.getTaskKey()).isLocked());
         
         task = storageService.getTask(key, 0);
         assertQueryTask(key, QueryTask.QUERY_ACTION.NEXT, query, task);
-        assertTrue(lockManager.isLocked(task.getTaskKey()));
+        assertTrue(storageService.getTaskLock(task.getTaskKey()).isLocked());
+        assertTrue(storageService.getTaskLock(task.getTaskKey()).isLocked());
+        assertTrue(storageService.getTaskLock(task.getTaskKey()).isLocked());
         
         try {
-            task = storageService.getTask(key, 0);
+            task = getTaskOnSeparateThread(key, 0);
             fail("Expected failure due to task already being locked");
         } catch (TaskLockException e) {
             storageService.checkpointTask(task.getTaskKey(), task.getQueryCheckpoint());
             task = storageService.getTask(key, 0);
+        } catch (Exception e) {
+            fail("Unexpected exception " + e.getMessage());
         }
         assertQueryTask(key, QueryTask.QUERY_ACTION.NEXT, query, task);
         
         storageService.deleteTask(task.getTaskKey());
         
-        assertFalse(lockManager.isLocked(task.getTaskKey()));
+        assertFalse(storageService.getTaskLock(task.getTaskKey()).isLocked());
     }
     
     @Test
@@ -204,7 +233,6 @@ public class QueryStorageCacheTest {
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
         
         TaskKey key = new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), query.getQueryLogicName());
-        lockManager.createSemaphore(key.getQueryId(), 3);
         try {
             storageService.checkpointTask(key, checkpoint);
             fail("Expected storage service to fail checkpointing an invalid task key without a lock");
@@ -212,7 +240,7 @@ public class QueryStorageCacheTest {
             // expected
         }
         
-        assertTrue(lockManager.getLock(key).tryLock());
+        assertTrue(storageService.getTaskLock(key).tryLock());
         try {
             storageService.checkpointTask(key, checkpoint);
             fail("Expected storage service to fail checkpointing an invalid task key");
@@ -221,8 +249,7 @@ public class QueryStorageCacheTest {
         }
         
         key = new TaskKey(UUID.randomUUID(), checkpoint.getQueryKey());
-        lockManager.createSemaphore(key.getQueryId(), 3);
-        assertTrue(lockManager.getLock(key).tryLock());
+        assertTrue(storageService.getTaskLock(key).tryLock());
         try {
             storageService.checkpointTask(key, checkpoint);
             fail("Expected storage service to fail checkpointing a missing task");
@@ -267,7 +294,6 @@ public class QueryStorageCacheTest {
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
         
-        lockManager.createSemaphore(queryId, 3);
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
@@ -304,7 +330,6 @@ public class QueryStorageCacheTest {
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), query);
         
-        lockManager.createSemaphore(queryId, 3);
         storageService.createTask(QueryTask.QUERY_ACTION.NEXT, checkpoint);
         
         // clear out message queue
@@ -325,7 +350,7 @@ public class QueryStorageCacheTest {
         // ensure we did not get another task notification
         assertNull(messageConsumer.receiveTaskNotification(0));
         
-        // make sure it -d
+        // make sure it deleted
         tasks = storageService.getTasks(queryId);
         assertEquals(0, tasks.size());
     }
@@ -358,7 +383,6 @@ public class QueryStorageCacheTest {
         assertEquals(1, queries.size());
         List<TaskKey> tasks = storageService.getTasks(queries.get(0).getQueryKey().getQueryId());
         assertEquals(1, tasks.size());
-        lockManager.createSemaphore(queryId, 3);
         QueryTask task = storageService.getTask(tasks.get(0), 0);
         assertQueryTask(notification.getTaskKey(), QueryTask.QUERY_ACTION.NEXT, query, task);
         

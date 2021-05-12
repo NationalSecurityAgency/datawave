@@ -18,9 +18,16 @@ public interface QueryStorageLock {
     /**
      * Acquires the lock for the specified query status.
      *
-     * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
+     * @return true if the lock was acquired, false if otherwise
      */
     boolean tryLock();
+    
+    /**
+     * Determine if the lock is already acquired
+     *
+     * @return true if the lock is already acquired, false otherwise
+     */
+    boolean isLocked();
     
     /**
      * Acquires the lock within a specified amount of time.

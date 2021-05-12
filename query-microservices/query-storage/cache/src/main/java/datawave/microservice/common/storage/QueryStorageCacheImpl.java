@@ -10,13 +10,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class QueryStorageCacheImpl implements QueryStorageCache {
-    
-    @Autowired
-    private QueryLockManager lockManager;
     
     @Autowired
     private QueryCache cache;
@@ -48,17 +44,19 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
             query.setId(queryUuid);
         }
         
-        // create the initial query checkpoint
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryPool, queryUuid, query.getQueryLogicName(), query);
+        QueryKey queryKey = new QueryKey(queryPool, queryUuid, query.getQueryLogicName());
         
-        // create the query semaphore
-        lockManager.createSemaphore(queryUuid, count);
+        // create the initial query checkpoint
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
         
         // store the initial query properties
         QueryStatus queryStatus = new QueryStatus(checkpoint.getQueryKey());
         queryStatus.setQuery(query);
         queryStatus.setLastUpdated(new Date());
         cache.updateQueryStatus(queryStatus);
+        
+        TaskStates taskStates = new TaskStates(queryKey, count);
+        cache.updateTaskStates(taskStates);
         
         // create and store the initial create task with the checkpoint. This will send out the task notification.
         QueryTask task = createTask(QueryTask.QUERY_ACTION.CREATE, checkpoint);
@@ -204,11 +202,11 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *             if the task is already locked
      */
     @Override
-    public QueryTask getTask(TaskKey taskKey, long waitMs) throws TaskLockException, IOException, InterruptedException {
-        if (lockManager.getLock(taskKey).tryLock(waitMs, TimeUnit.MILLISECONDS)) {
+    public QueryTask getTask(TaskKey taskKey, long waitMs) throws TaskLockException, InterruptedException {
+        if (cache.getTaskLock(taskKey).tryLock(waitMs)) {
             return cache.getTask(taskKey);
         } else {
-            return null;
+            throw new TaskLockException("Unable to get task lock for " + taskKey);
         }
     }
     
@@ -224,10 +222,11 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *             if the task is not locked
      */
     @Override
-    public QueryTask checkpointTask(TaskKey taskKey, QueryCheckpoint checkpoint) throws TaskLockException, IOException {
-        if (lockManager.isLocked(taskKey)) {
+    public QueryTask checkpointTask(TaskKey taskKey, QueryCheckpoint checkpoint) throws TaskLockException {
+        QueryStorageLock taskLock = cache.getTaskLock(taskKey);
+        if (taskLock.isLocked()) {
             QueryTask queryTask = cache.updateQueryTask(taskKey, checkpoint);
-            lockManager.getLock(taskKey).unlock();
+            taskLock.unlock();
             return queryTask;
         } else {
             throw new TaskLockException("Attempting to checkpoint a task that is not locked: " + taskKey);
@@ -243,10 +242,11 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *             if the task is not locked
      */
     @Override
-    public void deleteTask(TaskKey taskKey) throws TaskLockException, IOException {
-        if (lockManager.isLocked(taskKey)) {
+    public void deleteTask(TaskKey taskKey) throws TaskLockException {
+        QueryStorageLock taskLock = cache.getTaskLock(taskKey);
+        if (taskLock.isLocked()) {
             cache.deleteTask(taskKey);
-            lockManager.getLock(taskKey).unlock();
+            taskLock.unlock();
         } else {
             throw new TaskLockException("Attempting to delete a task that is not locked: " + taskKey);
         }
@@ -260,10 +260,9 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return true if deleted
      */
     @Override
-    public boolean deleteQuery(UUID queryId) throws IOException {
+    public boolean deleteQuery(UUID queryId) {
         int deleted = cache.deleteQuery(queryId);
         queue.deleteQueue(queryId);
-        lockManager.deleteSemaphore(queryId);
         return (deleted > 0);
     }
     
@@ -271,10 +270,9 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * Clear the cache
      */
     @Override
-    public void clear() throws IOException {
+    public void clear() {
         for (QueryState queries : cache.getQueries()) {
             queue.emptyQueue(queries.getQueryId());
-            lockManager.deleteSemaphore(queries.getQueryId());
         }
         cache.clear();
     }

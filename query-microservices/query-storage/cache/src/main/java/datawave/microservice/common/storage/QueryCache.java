@@ -1,6 +1,7 @@
 package datawave.microservice.common.storage;
 
 import datawave.microservice.cached.LockableCacheInspector;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.log4j.Logger;
 import org.springframework.cache.annotation.CacheConfig;
@@ -89,7 +90,7 @@ public class QueryCache {
      *            the task states
      * @return the stored task states
      */
-    @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).TASKS + #queryStatus.getQueryKey().toUUIDKey()",
+    @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).TASKS + #taskStates.getQueryKey().toUUIDKey()",
                     cacheManager = "queryStorageCacheManager")
     public TaskStates updateTaskStates(TaskStates taskStates) {
         logStatus("Storing", taskStates, taskStates.getQueryKey().getQueryId());
@@ -368,9 +369,15 @@ public class QueryCache {
      *
      * @return a clear message
      */
-    @CacheEvict(allEntries = true, cacheManager = "queryStorageCacheManager")
+    @CacheEvict(allEntries = true, cacheManager = "queryStorageCacheManager", beforeInvocation = true)
     public String clear() {
-        log.debug("Clearing all tasks");
+        log.debug("Clearing all queries and tasks");
+        
+        // make sure we deleted everything
+        cacheInspector.evictMatching(CACHE_NAME, QueryStatus.class, QUERY);
+        cacheInspector.evictMatching(CACHE_NAME, TaskStates.class, TASKS);
+        cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, TASK);
+        
         return "Cleared " + CACHE_NAME + " cache";
     }
     
@@ -510,6 +517,37 @@ public class QueryCache {
         @Override
         public boolean tryLock() {
             return cacheInspector.tryLock(CACHE_NAME, storageKey);
+        }
+        
+        /**
+         * Determine if the lock is already acquired
+         *
+         * @return true if the lock is already acquired, false otherwise
+         */
+        @Override
+        public boolean isLocked() {
+            // To truly determine whether a key is locked, need to check in a separate thread
+            final MutableBoolean locked = new MutableBoolean();
+            Thread t = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    if (tryLock()) {
+                        unlock();
+                        locked.setFalse();
+                    } else {
+                        locked.setTrue();
+                    }
+                }
+            });
+            t.start();
+            while (t.isAlive()) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ie) {
+                    throw new RuntimeException("Interrupted while trying to check lock", ie);
+                }
+            }
+            return locked.booleanValue();
         }
         
         /**
