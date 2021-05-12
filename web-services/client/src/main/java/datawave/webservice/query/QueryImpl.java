@@ -1,6 +1,8 @@
 package datawave.webservice.query;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.webservice.query.metric.BaseQueryMetric;
@@ -223,6 +225,8 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     protected String userDN;
     @XmlElement
     @XmlJavaTypeAdapter(OptionallyEncodedStringAdapter.class)
+    @JsonSerialize(using = OptionallyEncodedStringAdapter.Serializer.class)
+    @JsonDeserialize(using = OptionallyEncodedStringAdapter.Deserializer.class)
     protected String query;
     @XmlElement
     protected Date beginDate;
@@ -299,6 +303,11 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     
     public boolean isMaxResultsOverridden() {
         return isMaxResultsOverridden;
+    }
+    
+    // needed for deserialization
+    public void setIsMaxResultsOverridden(boolean overridden) {
+        this.isMaxResultsOverridden = overridden;
     }
     
     public Set<Parameter> getParameters() {
