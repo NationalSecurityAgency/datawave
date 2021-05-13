@@ -212,7 +212,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     log.info("Query requested page size had been reached, aborting query.next call");
                     break;
                 }
-                //if the number of results returned less than requested, then break out
+                // if the number of results returned less than requested, then break out
                 if (currentPageCount < this.logic.getMaxPageSize()) {
                     log.info("Query requested page size returned less than requested, aborting query.next call");
                     break;
