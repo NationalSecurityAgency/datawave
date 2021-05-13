@@ -88,6 +88,7 @@ module add --name=com.mysql.driver --dependencies=javax.api,javax.transaction.ap
 /system-property=dw.metrics.reporter.port:add(value=${metrics.reporter.port})
 /system-property=dw.metrics.reporter.class:add(value=${metrics.reporter.class})
 /system-property=dw.cache.tableNames:add(value="${tables.to.cache}")
+/system-property=dw.cache.reloadInterval:add(value="${cache.reloadInterval}")
 /system-property=dw.model.defaultTableName:add(value=${table.name.metadata})
 /system-property=dw.basemaps:add(value="${basemaps}")
 

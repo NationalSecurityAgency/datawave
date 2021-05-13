@@ -3,9 +3,11 @@ package datawave.ingest.table.balancer;
 import com.google.common.collect.Iterables;
 
 import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.master.thrift.TabletServerStatus;
 import org.apache.accumulo.core.util.Pair;
+import org.apache.accumulo.server.conf.TableConfiguration;
 import org.apache.accumulo.server.master.balancer.GroupBalancer;
 import org.apache.accumulo.server.master.state.TServerInstance;
 import org.apache.accumulo.server.master.state.TabletMigration;
@@ -37,12 +39,18 @@ import java.util.function.Function;
  * and so on. This is not ideal, since the real goal is to spread data out across the cluster as much as possible.
  */
 public class ShardedTableTabletBalancer extends GroupBalancer {
+    private static final String SHARDED_PROPERTY_PREFIX = Property.TABLE_ARBITRARY_PROP_PREFIX.getKey() + "sharded.balancer.";
+    public static final String SHARDED_MAX_MIGRATIONS = SHARDED_PROPERTY_PREFIX + "max.migrations";
+    public static final int MAX_MIGRATIONS_DEFAULT = 10000;
+    
     private static final Logger log = Logger.getLogger(ShardedTableTabletBalancer.class);
     private Collection<Pair<KeyExtent,Location>> tabletLocationCache;
     private Function<KeyExtent,String> partitioner;
+    private TableId tableId;
     
     public ShardedTableTabletBalancer(TableId tableId) {
         super(tableId);
+        this.tableId = tableId;
     }
     
     // synchronized to ensure exclusivity between getAssignments and balance calls
@@ -87,7 +95,24 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
     
     @Override
     protected int getMaxMigrations() {
-        return 10000;
+        int maxMigrations = MAX_MIGRATIONS_DEFAULT;
+        try {
+            String maxMigrationsProp = getTableConfiguration().get(SHARDED_MAX_MIGRATIONS);
+            if (maxMigrationsProp != null && !maxMigrationsProp.isEmpty()) {
+                try {
+                    maxMigrations = Integer.parseInt(maxMigrationsProp);
+                } catch (Exception e) {
+                    log.error("Unable to parse " + SHARDED_MAX_MIGRATIONS + " value (" + maxMigrationsProp + ") as an integer.  Defaulting to " + maxMigrations);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to get " + SHARDED_MAX_MIGRATIONS + ".  Defaulting to " + maxMigrations, e);
+        }
+        return maxMigrations;
+    }
+    
+    protected TableConfiguration getTableConfiguration() {
+        return this.context.getServerConfFactory().getTableConfiguration(this.tableId);
     }
     
     /**
