@@ -1,5 +1,6 @@
 package datawave.query.tables;
 
+import java.io.InterruptedIOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Collection;
 import java.util.Collections;
@@ -539,10 +540,22 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
      */
     @Override
     public void onFailure(Throwable t) {
-        stopAsync();
+        if (isInterruptedException(t)) {
+            log.info("BatchScannerSession interrupted");
+        } else {
+            log.error("BatchScanerSession failed", t);
+        }
         uncaughtExceptionHandler.uncaughtException(Thread.currentThread().currentThread(), t);
+        stopAsync();
         Throwables.propagate(t);
-        
+    }
+    
+    private boolean isInterruptedException(Throwable t) {
+        while (t != null && !(t instanceof InterruptedException || t instanceof InterruptedIOException)
+                        && !(t.getMessage() != null && t.getMessage().contains("InterruptedException"))) {
+            t = t.getCause();
+        }
+        return t != null;
     }
     
     private class BatchScannerListener extends Service.Listener {

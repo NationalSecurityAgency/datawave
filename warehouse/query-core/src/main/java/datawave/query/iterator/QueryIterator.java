@@ -3,6 +3,7 @@ package datawave.query.iterator;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -107,6 +108,7 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 import javax.annotation.Nullable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -281,7 +283,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     // this method will prune any ivarator cache directories that do not have a valid configuration.
-    private void pruneIvaratorCacheDirs() {
+    private void pruneIvaratorCacheDirs() throws InterruptedIOException {
+        if (ivaratorCacheDirConfigs.isEmpty()) {
+            return;
+        }
         IvaratorCacheDirConfig validConfig = null;
         for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
             if (hasValidBasePath(config)) {
@@ -289,26 +294,29 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 break;
             }
         }
-        ivaratorCacheDirConfigs.clear();
         if (validConfig != null) {
-            ivaratorCacheDirConfigs.add(validConfig);
+            ivaratorCacheDirConfigs = Collections.singletonList(validConfig);
+        } else {
+            ivaratorCacheDirConfigs = Collections.EMPTY_LIST;
         }
     }
     
-    private boolean hasValidBasePath(IvaratorCacheDirConfig config) {
+    private boolean hasValidBasePath(IvaratorCacheDirConfig config) throws InterruptedIOException {
         if (config.isValid()) {
             try {
                 Path basePath = new Path(config.getBasePathURI());
                 FileSystem fileSystem = this.getFileSystemCache().getFileSystem(basePath.toUri());
                 return isWritablePath(basePath, fileSystem);
+            } catch (InterruptedIOException ioe) {
+                throw ioe;
             } catch (Exception e) {
-                return false;
+                log.error("Failure to validate path " + config, e);
             }
         }
         return false;
     }
     
-    private boolean isWritablePath(Path path, FileSystem fileSystem) {
+    private boolean isWritablePath(Path path, FileSystem fileSystem) throws InterruptedIOException {
         try {
             FileStatus fileStatus = fileSystem.getFileStatus(path);
             // If the path exists, verify that it's a directory, not a file.
@@ -317,7 +325,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 fileSystem.access(path, FsAction.WRITE);
                 return true;
             }
-            return false;
         } catch (FileNotFoundException e) {
             // If the path does not exist, check if the path's parent is a writable directory.
             Path parent = path.getParent();
@@ -325,10 +332,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 return isWritablePath(parent, fileSystem);
             }
             // If the parent is null, we're at the root directory and we do not have write access.
-            return false;
+        } catch (InterruptedIOException ioe) {
+            throw ioe;
         } catch (Exception e) {
-            return false;
+            log.error("Failure to validate path " + path, e);
         }
+        return false;
     }
     
     @Override
