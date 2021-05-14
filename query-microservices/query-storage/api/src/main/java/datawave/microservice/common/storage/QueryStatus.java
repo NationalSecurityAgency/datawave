@@ -25,8 +25,8 @@ public class QueryStatus implements Serializable {
     private Query query;
     private Set<String> auths;
     private String plan;
-    private int numResultsGenerated;
-    private int numResultsReturned;
+    private long numResultsGenerated;
+    private long numResultsReturned;
     private int concurrentNextCount;
     private Date lastUpdated;
     
@@ -90,19 +90,19 @@ public class QueryStatus implements Serializable {
         setAuths(auths);
     }
     
-    public int getNumResultsGenerated() {
+    public long getNumResultsGenerated() {
         return numResultsGenerated;
     }
     
-    public void setNumResultsGenerated(int numResultsGenerated) {
+    public void setNumResultsGenerated(long numResultsGenerated) {
         this.numResultsGenerated = numResultsGenerated;
     }
     
-    public int getNumResultsReturned() {
+    public long getNumResultsReturned() {
         return numResultsReturned;
     }
     
-    public void setNumResultsReturned(int numResultsReturned) {
+    public void setNumResultsReturned(long numResultsReturned) {
         this.numResultsReturned = numResultsReturned;
     }
     

@@ -1,6 +1,6 @@
 package datawave.microservice.query.executor;
 
-import datawave.microservice.common.storage.QueryCheckpoint;
+import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryStatus;
 import datawave.microservice.common.storage.QueryStorageCache;
 import datawave.microservice.common.storage.QueryStorageLock;
@@ -9,11 +9,14 @@ import datawave.microservice.common.storage.QueryTaskNotification;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.common.storage.TaskLockException;
 import datawave.microservice.common.storage.TaskStates;
+import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.logic.CheckpointableQueryLogic;
 import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.logic.QueryLogicFactory;
+import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.Connector;
-import org.springframework.security.core.parameters.P;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 
@@ -23,13 +26,16 @@ import java.io.IOException;
  * TODO: Query Metrics TODO: Query Predictions
  **/
 public class QueryExecutor {
+    private static final Logger log = Logger.getLogger(QueryExecutor.class);
     
     private final Connector connector;
     private final QueryStorageCache cache;
+    private final QueryQueueManager queues;
     private final QueryLogicFactory queryLogicFactory;
     
-    public QueryExecutor(Connector connector, QueryStorageCache cache, QueryLogicFactory queryLogicFactory) {
+    public QueryExecutor(Connector connector, QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory) {
         this.cache = cache;
+        this.queues = queues;
         this.connector = connector;
         this.queryLogicFactory = queryLogicFactory;
     }
@@ -37,9 +43,8 @@ public class QueryExecutor {
     public boolean handleTask(QueryTaskNotification taskNotification) throws IOException, InterruptedException {
         boolean gotLock = false;
         boolean taskComplete = false;
-        QueryCheckpoint checkpoint = null;
         TaskKey taskKey = taskNotification.getTaskKey();
-        QueryStorageLock lock = cache.getTaskStatesLock(taskKey.getQueryId());
+        QueryStorageLock taskStatesLock = cache.getTaskStatesLock(taskKey.getQueryId());
         try {
             // pull the task out of the cache, locking it in the process
             // TODO: how long do we wait? Do we want to set a lease time in case we die somehow?
@@ -48,14 +53,14 @@ public class QueryExecutor {
                 
                 // check the states to see if we can run this now
                 try {
-                    lock.lock();
+                    taskStatesLock.lock();
                     TaskStates states = cache.getTaskStates(taskKey.getQueryId());
                     if (states.setState(taskKey, TaskStates.TASK_STATE.RUNNING)) {
                         cache.updateTaskStates(states);
                         gotLock = true;
                     }
                 } finally {
-                    lock.unlock();
+                    taskStatesLock.unlock();
                 }
                 
                 // only proceed if we got the lock
@@ -66,20 +71,28 @@ public class QueryExecutor {
                     switch (task.getAction()) {
                         case CREATE:
                         case DEFINE:
-                            queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName());
-                            queryLogic.initialize(connector, queryStatus.getQuery(), queryStatus.getAuthorizations());
-                            if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
-                                CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
-                                
-                            } else {
-                                
-                            }
-                            taskComplete = true;
-                            break;
                         case NEXT:
                             queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName());
-                            queryLogic.initialize(connector, queryStatus.getQuery(), queryStatus.getAuthorizations());
-                            taskComplete = true;
+                            GenericQueryConfiguration config = queryLogic.initialize(connector, queryStatus.getQuery(), queryStatus.getAuthorizations());
+                            if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
+                                CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
+                                cpQueryLogic.setupQuery(connector, task.getQueryCheckpoint());
+                                if (task.getAction() == QueryTask.QUERY_ACTION.NEXT) {
+                                    taskComplete = pullResults(taskKey, queryLogic, queryStatus.getQuery(), false);
+                                    if (!taskComplete) {
+                                        checkpoint(cpQueryLogic);
+                                    }
+                                } else {
+                                    checkpoint(cpQueryLogic);
+                                    taskComplete = true;
+                                }
+                            } else {
+                                queryLogic.setupQuery(config);
+                                taskComplete = pullResults(taskKey, queryLogic, queryStatus.getQuery(), true);
+                                if (!taskComplete) {
+                                    throw new IllegalStateException("Expected to have exhausted results.  Something went wrong here");
+                                }
+                            }
                             break;
                         case CLOSE:
                             taskComplete = true;
@@ -93,30 +106,112 @@ public class QueryExecutor {
             }
         } catch (TaskLockException tle) {
             // somebody is already processing this one
+        } catch (Exception e) {
+            // TODO: How do we get this exception back to the query service controller?
+            
         } finally {
             if (gotLock) {
                 TaskStates.TASK_STATE newState = TaskStates.TASK_STATE.READY;
                 if (taskComplete) {
                     cache.deleteTask(taskKey);
                     newState = TaskStates.TASK_STATE.COMPLETED;
-                } else if (checkpoint != null) {
-                    cache.checkpointTask(taskKey, checkpoint);
                 } else {
                     cache.getTaskLock(taskKey).unlock();
                 }
                 try {
-                    lock.lock();
+                    taskStatesLock.lock();
                     TaskStates states = cache.getTaskStates(taskKey.getQueryId());
                     if (states.setState(taskKey, newState)) {
                         cache.updateTaskStates(states);
                     }
                 } finally {
-                    lock.unlock();
+                    taskStatesLock.unlock();
                 }
                 return true;
             } else {
                 return false;
             }
         }
+    }
+    
+    private boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, long maxResults, int maxPageSize) {
+        QueryStatus status = cache.getQueryStatus(taskKey.getQueryId());
+        if (status != null) {
+            int pageSize = status.getQuery().getPagesize();
+            if (maxPageSize != 0) {
+                pageSize = Math.min(pageSize, maxPageSize);
+            }
+            if (status.getNumResultsGenerated() < maxResults) {
+                if ((status.getNumResultsGenerated() - status.getNumResultsReturned()) < (2.5 * pageSize)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    private long incrementNumResultsGenerated(TaskKey taskKey) {
+        QueryStorageLock lock = cache.getQueryStatusLock(taskKey.getQueryId());
+        try {
+            lock.lock();
+            QueryStatus status = cache.getQueryStatus(taskKey.getQueryId());
+            if (status != null) {
+                long numGenerated = status.getNumResultsGenerated() + 1;
+                status.setNumResultsGenerated(numGenerated);
+                cache.updateQueryStatus(status);
+                return numGenerated;
+            } else {
+                return Integer.MAX_VALUE;
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    private QueryStatus.QUERY_STATE getQueryState(TaskKey taskKey) {
+        QueryStatus status = cache.getQueryStatus(taskKey.getQueryId());
+        if (status != null) {
+            return status.getQueryState();
+        } else {
+            return QueryStatus.QUERY_STATE.CLOSED;
+        }
+    }
+    
+    private boolean pullResults(TaskKey taskKey, QueryLogic queryLogic, Query settings, boolean exhaustIterator) throws Exception {
+        TransformIterator iter = queryLogic.getTransformIterator(settings);
+        long maxResults = queryLogic.getMaxResults();
+        if (settings.isMaxResultsOverridden()) {
+            maxResults = settings.getMaxResultsOverride();
+        }
+        int pageSize = settings.getPagesize();
+        if (queryLogic.getMaxPageSize() != 0) {
+            pageSize = Math.min(pageSize, queryLogic.getMaxPageSize());
+        }
+        boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, maxResults, pageSize);
+        while (running && iter.hasNext()) {
+            QueryStatus.QUERY_STATE queryState = getQueryState(taskKey);
+            // if we are canceled, then break out
+            if (queryState == QueryStatus.QUERY_STATE.CANCELED || queryState == QueryStatus.QUERY_STATE.CLOSED) {
+                log.info("Query has been cancelled, aborting query.next call");
+                // TODO this.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
+                break;
+            }
+            
+            Object result = iter.next();
+            queues.sendMessage(taskKey.getQueryId(), taskKey.toKey() + incrementNumResultsGenerated(taskKey), result);
+            
+            // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
+            // TODO
+            // if (iter.getTransformer() instanceof WritesQueryMetrics) {
+            // ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
+            // }
+            
+            running = shouldGenerateMoreResults(exhaustIterator, taskKey, maxResults, pageSize);
+        }
+        return !iter.hasNext();
+    }
+    
+    private void checkpoint(CheckpointableQueryLogic cpQueryLogic) {
+        
     }
 }
