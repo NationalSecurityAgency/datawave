@@ -1,0 +1,86 @@
+spring:
+
+  application:
+    name: query-cache-test
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
+
+hazelcast.client.enabled: false
+
+logging:
+  level:
+    root: WARN
+    datawave.microservice.common.storage: WARN
+    datawave.microservice.common.storage.QueryCache: WARN
+    io.undertow.request: FATAL
+
+---
+
+spring.config.activate.on-profile: sync-disabled
+
+query:
+  storage:
+    syncStorage:
+      false
+
+---
+
+spring.config.activate.on-profile: sync-enabled
+
+query:
+  storage:
+    syncStorage:
+      true
+
+---
+
+spring.config.activate.on-profile: send-notifications
+
+query:
+  storage:
+    sendNotifications:
+      true
+
+---
+
+spring.config.activate.on-profile: no-notifications
+
+query:
+  storage:
+    sendNotifications:
+      false
+
+---
+
+spring.config.activate.on-profile: use-rabbit
+
+query:
+  storage:
+    backend:
+      RABBITMQ
+    rabbitConnectionString:
+      amqp://localhost:5672
+
+---
+
+spring.config.activate.on-profile: use-kafka
+
+query:
+  storage:
+    backend:
+      KAFKA
+    kafkaConnectionString:
+      localhost:9092
+
+---
+
+spring.config.activate.on-profile: use-local
+
+query:
+  storage:
+    backend:
+      LOCAL
+
+---
+
+spring.config.activate.on-profile: missing

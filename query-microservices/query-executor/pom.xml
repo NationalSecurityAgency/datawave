@@ -7,16 +7,12 @@
         <version>1.8</version>
         <relativePath />
     </parent>
-    <artifactId>query-microservices-build-parent</artifactId>
+    <artifactId>query-executor-service-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
-        <module>metadata-starter</module>
-        <module>query-service</module>
-        <module>query-starter</module>
-        <module>query-storage</module>
-        <module>query-executor</module>
-        <module>query-parent</module>
+        <module>api</module>
+        <module>executor</module>
     </modules>
     <repositories>
         <repository>

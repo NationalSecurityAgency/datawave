@@ -14,6 +14,8 @@ spring:
       allowed-callers:
         - "cn=test keystore, ou=my department, o=my company, st=some-state, c=us<cn=test keystore, ou=my department, o=my company, st=some-state, c=us>"
 
+hazelcast.client.enabled: false
+
 server:
   port: 0
   non-secure-port: 0
@@ -217,6 +219,11 @@ datawave:
           statsdHost: ${warehouse.statsd.host}
           statsdPort: ${warehouse.statsd.port}
           evaluationOnlyFields: ""
+
+query:
+  storage:
+    backend:
+      LOCAL
 
 audit-client:
   discovery:
