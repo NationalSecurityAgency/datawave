@@ -71,7 +71,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     
     private static final Logger log = Logger.getLogger(DiscoveryLogic.class);
     
-    DiscoveryQueryConfiguration config = new DiscoveryQueryConfiguration();
+    DiscoveryQueryConfiguration config;
     public static final String SEPARATE_COUNTS_BY_COLVIS = "separate.counts.by.colvis";
     public static final String SHOW_REFERENCE_COUNT = "show.reference.count";
     public static final String REVERSE_INDEX = "reverse.index";
@@ -89,6 +89,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         DiscoveryQueryConfiguration config = new DiscoveryQueryConfiguration(this, settings);
+        
+        this.config = config;
         
         this.scannerFactory = new ScannerFactory(client);
         

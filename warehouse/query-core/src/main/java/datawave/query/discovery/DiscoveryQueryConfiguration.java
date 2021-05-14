@@ -16,8 +16,6 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration {
     private Boolean separateCountsByColVis = false;
     private Boolean showReferenceCount = false;
     
-    public DiscoveryQueryConfiguration() {}
-    
     public DiscoveryQueryConfiguration(ShardIndexQueryTable logic, Query query) {
         super(logic, query);
     }
