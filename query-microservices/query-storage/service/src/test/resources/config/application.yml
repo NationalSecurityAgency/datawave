@@ -87,10 +87,6 @@ query:
   storage:
     backend:
       RABBITMQ
-    lockManager:
-      ZOO
-    zooKeeperConnectionString:
-      localhost:2181
 
 ---
 
@@ -100,10 +96,6 @@ query:
   storage:
     backend:
       KAFKA
-    lockManager:
-      ZOO
-    zooKeeperConnectionString:
-      localhost:2181
 
 ---
 
@@ -112,8 +104,6 @@ spring.config.activate.on-profile: use-local
 query:
   storage:
     backend:
-      LOCAL
-    lockManager:
       LOCAL
 
 ---

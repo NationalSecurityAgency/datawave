@@ -116,8 +116,6 @@ query:
   storage:
     backend:
       LOCAL
-    lockManager:
-      LOCAL
     syncStorage:
       true
     sendNotifications:

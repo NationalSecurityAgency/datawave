@@ -60,10 +60,6 @@ query:
       RABBITMQ
     rabbitConnectionString:
       amqp://localhost:5672
-    lockManager:
-      ZOO
-    zooKeeperConnectionString:
-      localhost:2181
 
 ---
 
@@ -75,10 +71,6 @@ query:
       KAFKA
     kafkaConnectionString:
       localhost:9092
-    lockManager:
-      ZOO
-    zooKeeperConnectionString:
-      localhost:2181
 
 ---
 
@@ -87,8 +79,6 @@ spring.config.activate.on-profile: use-local
 query:
   storage:
     backend:
-      LOCAL
-    lockManager:
       LOCAL
 
 ---
