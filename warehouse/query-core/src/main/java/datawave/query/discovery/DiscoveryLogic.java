@@ -68,15 +68,15 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 public class DiscoveryLogic extends ShardIndexQueryTable {
-    
+
+
     private static final Logger log = Logger.getLogger(DiscoveryLogic.class);
-    
+
+    DiscoveryQueryConfiguration config = new DiscoveryQueryConfiguration();
     public static final String SEPARATE_COUNTS_BY_COLVIS = "separate.counts.by.colvis";
     public static final String SHOW_REFERENCE_COUNT = "show.reference.count";
     public static final String REVERSE_INDEX = "reverse.index";
-    
-    private static Boolean separateCountsByColVis = DiscoveryQueryConfiguration.getSeparateCountsByColVis();
-    private static Boolean showReferenceCount = DiscoveryQueryConfiguration.getShowReferenceCount();
+
     private MetadataHelper metadataHelper;
     
     public DiscoveryLogic() {
@@ -116,13 +116,13 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         // Check if user would like counts separated by column visibility
         if (null != settings.findParameter(SEPARATE_COUNTS_BY_COLVIS)
                         && !settings.findParameter(SEPARATE_COUNTS_BY_COLVIS).getParameterValue().trim().isEmpty()) {
-            separateCountsByColVis = Boolean.valueOf(settings.findParameter(SEPARATE_COUNTS_BY_COLVIS).getParameterValue().trim());
+            boolean separateCountsByColVis = Boolean.parseBoolean(settings.findParameter(SEPARATE_COUNTS_BY_COLVIS).getParameterValue().trim());
             config.setSeparateCountsByColVis(separateCountsByColVis);
         }
         
         // Check if user would like to show reference counts instead of term counts
         if (null != settings.findParameter(SHOW_REFERENCE_COUNT) && !settings.findParameter(SHOW_REFERENCE_COUNT).getParameterValue().trim().isEmpty()) {
-            showReferenceCount = Boolean.valueOf(settings.findParameter(SHOW_REFERENCE_COUNT).getParameterValue().trim());
+            Boolean showReferenceCount = Boolean.valueOf(settings.findParameter(SHOW_REFERENCE_COUNT).getParameterValue().trim());
             config.setShowReferenceCount(showReferenceCount);
         }
         
@@ -224,10 +224,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                             config.getLiterals(), config.getPatterns(), config.getRanges(), true);
             iterators.add(transformScanner(bs));
         }
-        
-        config.setSeparateCountsByColVis(separateCountsByColVis);
-        config.setShowReferenceCount(showReferenceCount);
-        
+
         this.iterator = concat(iterators.iterator());
     }
     
@@ -498,21 +495,40 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         params.add(SEPARATE_COUNTS_BY_COLVIS);
         return params;
     }
-    
+
     public Boolean getSeparateCountsByColVis() {
-        return separateCountsByColVis;
+
+        if (config != null) {
+            return config.getSeparateCountsByColVis();
+        }
+
+        return false;
+
     }
-    
+
     public void setSeparateCountsByColVis(Boolean separateCountsByColVis) {
-        this.separateCountsByColVis = separateCountsByColVis;
+
+        if (config != null) {
+            config.setSeparateCountsByColVis(separateCountsByColVis);
+        }
+
     }
-    
+
     public Boolean getShowReferenceCount() {
-        return showReferenceCount;
+
+        if (config != null) {
+            return config.getShowReferenceCount();
+        }
+
+        return false;
     }
-    
+
     public void setShowReferenceCount(Boolean showReferenceCount) {
-        this.showReferenceCount = showReferenceCount;
+
+        if (config != null) {
+            config.setShowReferenceCount(showReferenceCount);
+        }
+
     }
-    
+
 }

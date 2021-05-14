@@ -13,13 +13,16 @@ import com.google.common.collect.Multimap;
 public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration {
     private Multimap<String,String> literals, patterns;
     private Multimap<String,LiteralRange<String>> ranges;
-    private static Boolean separateCountsByColVis = false;
-    private static Boolean showReferenceCount = false;
-    
+    private  Boolean separateCountsByColVis = false;
+    private  Boolean showReferenceCount = false;
+
+    public DiscoveryQueryConfiguration() {
+    }
+
     public DiscoveryQueryConfiguration(ShardIndexQueryTable logic, Query query) {
         super(logic, query);
     }
-    
+
     public Multimap<String,String> getLiterals() {
         return literals;
     }
@@ -44,11 +47,11 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration {
         this.patterns = patterns;
     }
     
-    public static Boolean getSeparateCountsByColVis() {
+    public Boolean getSeparateCountsByColVis() {
         return separateCountsByColVis;
     }
     
-    public static Boolean getShowReferenceCount() {
+    public Boolean getShowReferenceCount() {
         return showReferenceCount;
     }
     
