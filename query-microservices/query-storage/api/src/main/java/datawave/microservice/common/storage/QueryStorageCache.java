@@ -1,11 +1,12 @@
 package datawave.microservice.common.storage;
 
 import datawave.webservice.query.Query;
+import org.apache.accumulo.core.security.Authorizations;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.locks.Lock;
 
 /**
  * This is an interface to the query storage service
@@ -18,11 +19,12 @@ public interface QueryStorageCache {
      *            The query pool
      * @param query
      *            The query parameters
+     * @param auths
      * @param count
      *            The number of available locks which equates to the number of concurrent executors that can act on this query
      * @return The create task key
      */
-    TaskKey storeQuery(QueryPool queryPool, Query query, int count) throws IOException;
+    TaskKey storeQuery(QueryPool queryPool, Query query, Set<Authorizations> auths, int count) throws IOException;
     
     /**
      * Get the current query state. This includes the query status and the task statuses

@@ -2,6 +2,7 @@ package datawave.microservice.common.storage;
 
 import datawave.microservice.common.storage.config.QueryStorageProperties;
 import datawave.webservice.query.Query;
+import org.apache.accumulo.core.security.Authorizations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -31,12 +33,13 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *            The query pool
      * @param query
      *            The query parameters
+     * @param auths
      * @param count
      *            The number of available locks which equates to the number of concurrent executors that can act on this query
      * @return The task key
      */
     @Override
-    public TaskKey storeQuery(QueryPool queryPool, Query query, int count) throws IOException {
+    public TaskKey storeQuery(QueryPool queryPool, Query query, Set<Authorizations> auths, int count) throws IOException {
         UUID queryUuid = query.getId();
         if (queryUuid == null) {
             // create the query UUID
@@ -52,6 +55,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         // store the initial query properties
         QueryStatus queryStatus = new QueryStatus(checkpoint.getQueryKey());
         queryStatus.setQuery(query);
+        queryStatus.setAuthorizations(auths);
         queryStatus.setLastUpdated(new Date());
         cache.updateQueryStatus(queryStatus);
         

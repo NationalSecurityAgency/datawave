@@ -3,7 +3,7 @@ package datawave.microservice.common.storage;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,8 +23,10 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -108,7 +110,9 @@ public class QueryStorageCacheTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         QueryPool queryPool = new QueryPool(TEST_POOL);
-        TaskKey key = storageService.storeQuery(queryPool, query, 3);
+        Set<Authorizations> auths = new HashSet<>();
+        auths.add(new Authorizations("FOO", "BAR"));
+        TaskKey key = storageService.storeQuery(queryPool, query, auths, 3);
         assertNotNull(key);
         
         TaskStates states = storageService.getTaskStates(key.getQueryId());

@@ -1,5 +1,7 @@
 package datawave.microservice.query;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.service.RemoteAuthorizationServiceUserDetailsService;
@@ -57,7 +59,8 @@ public class QueryServiceTest {
     @Test
     public void testDefineQuery() {
         Collection<String> roles = Collections.singleton("AuthorizedUser");
-        DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
+        Collection<String> auths = Collections.singleton("ALL");
+        DatawaveUser uathDWUser = new DatawaveUser(DN, USER, auths, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
         UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/query/v1/EventQuery/define")
@@ -87,7 +90,8 @@ public class QueryServiceTest {
     @Test
     public void testCreateQuery() {
         Collection<String> roles = Collections.singleton("AuthorizedUser");
-        DatawaveUser uathDWUser = new DatawaveUser(DN, USER, null, roles, null, System.currentTimeMillis());
+        Collection<String> auths = Collections.singleton("ALL");
+        DatawaveUser uathDWUser = new DatawaveUser(DN, USER, auths, roles, null, System.currentTimeMillis());
         ProxiedUserDetails authUser = new ProxiedUserDetails(Collections.singleton(uathDWUser), uathDWUser.getCreationTime());
         
         UriComponents uri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort).path("/query/v1/EventQuery/create")

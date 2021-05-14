@@ -19,6 +19,8 @@ import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
 import datawave.microservice.query.util.QueryUtil;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.util.AuthorizationsUtil;
 import datawave.security.util.ProxiedEntityUtils;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
@@ -30,6 +32,7 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+import org.apache.accumulo.core.security.Authorizations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.bus.BusProperties;
@@ -46,7 +49,10 @@ import java.net.UnknownHostException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
@@ -130,13 +136,17 @@ public class QueryManagementService implements QueryRequestHandler {
         String userDn = currentUser.getPrimaryUser().getDn().subjectDN();
         setInternalAuditParameters(queryLogicName, userDn, parameters);
         
+        // calculate the auths for this query
+        Set<Authorizations> auths = AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(),
+                        new DatawavePrincipal(currentUser.getProxiedUsers()));
+        
         try {
             // persist the query w/ query id in the query storage cache
             // TODO: JWO: storeQuery assumes that this is a 'create' call, but this is a 'define' call.
             // @formatter:off
             TaskKey taskKey = queryStorageCache.storeQuery(
                     new QueryPool(getPoolName()),
-                    createQuery(queryLogicName, parameters, userDn, currentUser.getDNs()),
+                    createQuery(queryLogicName, parameters, userDn, currentUser.getDNs()), auths,
                     getMaxConcurrentTasks(queryLogic));
             // @formatter:on
             
@@ -179,12 +189,16 @@ public class QueryManagementService implements QueryRequestHandler {
             Query query = createQuery(queryLogicName, parameters, userDn, currentUser.getDNs());
             audit(query, queryLogic, parameters, currentUser);
             
+            // calculate the auths for this query
+            Set<Authorizations> auths = AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(),
+                            new DatawavePrincipal(currentUser.getProxiedUsers()));
+            
             try {
                 // persist the query w/ query id in the query storage cache
                 // @formatter:off
                 TaskKey taskKey = queryStorageCache.storeQuery(
                         new QueryPool(getPoolName()),
-                        query,
+                        query, auths,
                         getMaxConcurrentTasks(queryLogic));
                 // @formatter:on
                 

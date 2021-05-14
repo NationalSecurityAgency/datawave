@@ -1,12 +1,19 @@
 package datawave.microservice.common.storage;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import datawave.webservice.query.Query;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class QueryStatus implements Serializable {
     public enum QUERY_STATE {
@@ -16,6 +23,7 @@ public class QueryStatus implements Serializable {
     private QueryKey queryKey;
     private QUERY_STATE queryState = QUERY_STATE.DEFINED;
     private Query query;
+    private Set<String> auths;
     private String plan;
     private int numResultsGenerated;
     private int numResultsReturned;
@@ -60,6 +68,28 @@ public class QueryStatus implements Serializable {
         this.query = query;
     }
     
+    public Set<String> getAuths() {
+        return auths;
+    }
+    
+    public void setAuths(Set<String> auths) {
+        this.auths = auths;
+    }
+    
+    @JsonIgnore
+    public Set<Authorizations> getAuthorizations() {
+        return Collections.singleton(new Authorizations(this.auths.stream().map(a -> a.getBytes(StandardCharsets.UTF_8)).collect(Collectors.toList())));
+    }
+    
+    @JsonIgnore
+    public void setAuthorizations(Set<Authorizations> authorizations) {
+        Set<String> auths = new HashSet<>();
+        for (Authorizations authorization : authorizations) {
+            auths.addAll(authorization.getAuthorizations().stream().map(b -> new String(b, StandardCharsets.UTF_8)).collect(Collectors.toList()));
+        }
+        setAuths(auths);
+    }
+    
     public int getNumResultsGenerated() {
         return numResultsGenerated;
     }
@@ -94,23 +124,24 @@ public class QueryStatus implements Serializable {
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(queryKey).append(queryState).append(query).append(plan).append(numResultsReturned).append(numResultsGenerated)
-                        .build();
+        return new HashCodeBuilder().append(queryKey).append(queryState).append(query).append(auths).append(plan).append(numResultsReturned)
+                        .append(numResultsGenerated).build();
     }
     
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof QueryStatus) {
             QueryStatus other = (QueryStatus) obj;
-            return new EqualsBuilder().append(queryKey, other.queryKey).append(queryState, other.queryState).append(query, other.query).append(plan, other.plan)
-                            .append(numResultsGenerated, other.numResultsGenerated).append(numResultsReturned, other.numResultsReturned).build();
+            return new EqualsBuilder().append(queryKey, other.queryKey).append(queryState, other.queryState).append(query, other.query)
+                            .append(auths, other.auths).append(plan, other.plan).append(numResultsGenerated, other.numResultsGenerated)
+                            .append(numResultsReturned, other.numResultsReturned).build();
         }
         return false;
     }
     
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("queryKey", queryKey).append("queryState", queryState).append("query", query).append("plan", plan)
-                        .append("numResultsGenerated", numResultsGenerated).append("numResultsReturned", numResultsReturned).build();
+        return new ToStringBuilder(this).append("queryKey", queryKey).append("queryState", queryState).append("query", query).append("auths", auths)
+                        .append("plan", plan).append("numResultsGenerated", numResultsGenerated).append("numResultsReturned", numResultsReturned).build();
     }
 }
