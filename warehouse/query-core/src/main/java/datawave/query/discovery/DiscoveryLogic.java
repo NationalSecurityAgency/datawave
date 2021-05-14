@@ -68,15 +68,14 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 public class DiscoveryLogic extends ShardIndexQueryTable {
-
-
+    
     private static final Logger log = Logger.getLogger(DiscoveryLogic.class);
-
+    
     DiscoveryQueryConfiguration config = new DiscoveryQueryConfiguration();
     public static final String SEPARATE_COUNTS_BY_COLVIS = "separate.counts.by.colvis";
     public static final String SHOW_REFERENCE_COUNT = "show.reference.count";
     public static final String REVERSE_INDEX = "reverse.index";
-
+    
     private MetadataHelper metadataHelper;
     
     public DiscoveryLogic() {
@@ -224,7 +223,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                             config.getLiterals(), config.getPatterns(), config.getRanges(), true);
             iterators.add(transformScanner(bs));
         }
-
+        
         this.iterator = concat(iterators.iterator());
     }
     
@@ -495,40 +494,40 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         params.add(SEPARATE_COUNTS_BY_COLVIS);
         return params;
     }
-
+    
     public Boolean getSeparateCountsByColVis() {
-
+        
         if (config != null) {
             return config.getSeparateCountsByColVis();
         }
-
+        
         return false;
-
+        
     }
-
+    
     public void setSeparateCountsByColVis(Boolean separateCountsByColVis) {
-
+        
         if (config != null) {
             config.setSeparateCountsByColVis(separateCountsByColVis);
         }
-
+        
     }
-
+    
     public Boolean getShowReferenceCount() {
-
+        
         if (config != null) {
             return config.getShowReferenceCount();
         }
-
+        
         return false;
     }
-
+    
     public void setShowReferenceCount(Boolean showReferenceCount) {
-
+        
         if (config != null) {
             config.setShowReferenceCount(showReferenceCount);
         }
-
+        
     }
-
+    
 }
