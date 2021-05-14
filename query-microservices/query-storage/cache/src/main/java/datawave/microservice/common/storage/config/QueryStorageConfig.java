@@ -1,5 +1,7 @@
 package datawave.microservice.common.storage.config;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.spring.cache.HazelcastCacheManager;
 import datawave.microservice.cached.CacheInspector;
@@ -63,7 +65,11 @@ public class QueryStorageConfig implements RabbitListenerConfigurer {
     @Bean(name = "queryStorageCacheManager")
     @ConditionalOnMissingBean(name = "queryStorageCacheManager")
     public CacheManager queryStorageCacheManager() {
-        return new HazelcastCacheManager(Hazelcast.newHazelcastInstance());
+        CPSubsystemConfig cpconfig = new CPSubsystemConfig();
+        cpconfig.setCPMemberCount(3);
+        Config config = new Config();
+        config.setCPSubsystemConfig(cpconfig);
+        return new HazelcastCacheManager(Hazelcast.newHazelcastInstance(config));
     }
     
     @Bean
