@@ -46,7 +46,7 @@ public class QueryCache {
         logStatus("Storing", queryStatus, queryStatus.getQueryKey().getQueryId());
         return queryStatus;
     }
-    
+
     /**
      * Delete the query status for a query
      * 
@@ -526,28 +526,7 @@ public class QueryCache {
          */
         @Override
         public boolean isLocked() {
-            // To truly determine whether a key is locked, need to check in a separate thread
-            final MutableBoolean locked = new MutableBoolean();
-            Thread t = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    if (tryLock()) {
-                        unlock();
-                        locked.setFalse();
-                    } else {
-                        locked.setTrue();
-                    }
-                }
-            });
-            t.start();
-            while (t.isAlive()) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException ie) {
-                    throw new RuntimeException("Interrupted while trying to check lock", ie);
-                }
-            }
-            return locked.booleanValue();
+            return cacheInspector.isLocked(CACHE_NAME, storageKey);
         }
         
         /**
