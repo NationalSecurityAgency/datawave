@@ -46,7 +46,7 @@ public class QueryCache {
         logStatus("Storing", queryStatus, queryStatus.getQueryKey().getQueryId());
         return queryStatus;
     }
-
+    
     /**
      * Delete the query status for a query
      * 
