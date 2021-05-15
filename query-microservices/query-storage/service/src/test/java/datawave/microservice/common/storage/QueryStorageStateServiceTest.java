@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles({"QueryStorageStateServiceTest", "sync-enabled", "no-notifications", "use-local"})
+@ActiveProfiles({"QueryStorageStateServiceTest", "sync-enabled", "no-notifications"})
 @EnableRabbit
 public class QueryStorageStateServiceTest {
     

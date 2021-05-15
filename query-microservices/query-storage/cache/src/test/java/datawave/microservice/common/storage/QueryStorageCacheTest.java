@@ -5,18 +5,19 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.messaging.Message;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
@@ -38,16 +39,30 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications", "use-local"})
-@EnableRabbit
+@ContextConfiguration(classes = QueryStorageCacheTest.QueryStorageCacheTestConfiguration.class)
+@ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications"})
 public class QueryStorageCacheTest {
     private static final Logger log = Logger.getLogger(QueryStorageCacheTest.class);
     public static final String TEST_POOL = "testPool";
     
     @Configuration
     @Profile("QueryStorageCacheTest")
-    @ComponentScan(basePackages = {"datawave.microservice"})
-    public static class QueryStorageCacheTestConfiguration {}
+    @ComponentScan(basePackages = "datawave.microservice")
+    public static class QueryStorageCacheTestConfiguration {
+        @Bean
+        public QueryQueueListener messageConsumer(QueryQueueManager queueManager) {
+            // ensure our pool is created so we can start listening to it
+            queueManager.ensureQueueCreated(new QueryPool(TEST_POOL));
+            return queueManager.createListener(LISTENER_ID, TEST_POOL);
+        }
+    }
+    
+    @SpringBootApplication(scanBasePackages = "datawave.microservice")
+    public static class TestApplication {
+        public static void main(String[] args) {
+            SpringApplication.run(QueryStorageCacheTest.TestApplication.class, args);
+        }
+    }
     
     @Autowired
     private QueryCache queryCache;
@@ -58,47 +73,12 @@ public class QueryStorageCacheTest {
     @Autowired
     private QueryQueueManager queueManager;
     
+    @Autowired
     private QueryQueueListener messageConsumer;
     
     private static final String LISTENER_ID = "QueryStorageCacheTestListener";
     
-    @BeforeEach
-    public void before() throws IOException {
-        // ensure our pool is created so we can start listening to it
-        queueManager.ensureQueueCreated(new QueryPool(TEST_POOL));
-        messageConsumer = queueManager.createListener(LISTENER_ID, TEST_POOL);
-        cleanupData();
-    }
-    
-    @AfterEach
-    public void cleanup() throws IOException {
-        cleanupData();
-        messageConsumer.stop();
-        messageConsumer = null;
-        queueManager.deleteQueue(new QueryPool(TEST_POOL));
-    }
-    
-    public void cleanupData() throws IOException {
-        storageService.clear();
-        queryCache.clear();
-        if (!queryCache.getTasks().isEmpty()) {
-            queryCache.clear();
-            if (!queryCache.getTasks().isEmpty()) {
-                queryCache.getTasks();
-                System.out.println("break here");
-            }
-        }
-        clearQueue();
-    }
-    
-    void clearQueue() throws IOException {
-        queueManager.emptyQueue(new QueryPool(TEST_POOL));
-        Message<byte[]> msg = messageConsumer.receive();
-        while (msg != null) {
-            msg = messageConsumer.receive(0L);
-        }
-    }
-    
+    @DirtiesContext
     @Test
     public void testStoreQuery() throws ParseException, InterruptedException, IOException, TaskLockException {
         // ensure the message queue is empty
@@ -176,6 +156,7 @@ public class QueryStorageCacheTest {
         return taskHolder.task;
     }
     
+    @DirtiesContext
     @Test
     public void testStoreTask() throws ParseException, InterruptedException, IOException, TaskLockException {
         // ensure the message queue is empty
@@ -230,6 +211,7 @@ public class QueryStorageCacheTest {
         assertFalse(storageService.getTaskLock(task.getTaskKey()).isLocked());
     }
     
+    @DirtiesContext
     @Test
     public void testCheckpointTask() throws InterruptedException, ParseException, IOException, TaskLockException {
         // ensure the message queue is empty
@@ -294,6 +276,7 @@ public class QueryStorageCacheTest {
         assertEquals(checkpoint, task.getQueryCheckpoint());
     }
     
+    @DirtiesContext
     @Test
     public void testGetAndDeleteTask() throws ParseException, InterruptedException, IOException, TaskLockException {
         // ensure the message queue is empty
@@ -332,6 +315,7 @@ public class QueryStorageCacheTest {
         assertNull(task);
     }
     
+    @DirtiesContext
     @Test
     public void testGetAndDeleteQueryTasks() throws ParseException, InterruptedException, IOException, TaskLockException {
         // ensure the message queue is empty
@@ -373,6 +357,7 @@ public class QueryStorageCacheTest {
         assertEquals(0, tasks.size());
     }
     
+    @DirtiesContext
     @Test
     public void testGetAndDeleteTypeTasks() throws ParseException, InterruptedException, IOException, TaskLockException {
         // ensure the message queue is empty

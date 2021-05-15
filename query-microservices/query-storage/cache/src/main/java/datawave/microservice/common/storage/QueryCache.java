@@ -1,7 +1,6 @@
 package datawave.microservice.common.storage;
 
 import datawave.microservice.cached.LockableCacheInspector;
-import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.log4j.Logger;
 import org.springframework.cache.annotation.CacheConfig;
@@ -17,7 +16,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-@CacheConfig(cacheNames = QueryCache.CACHE_NAME, cacheManager = "queryStorageCacheManager")
+@CacheConfig(cacheNames = QueryCache.CACHE_NAME)
 public class QueryCache {
     private final static Logger log = Logger.getLogger(QueryCache.class);
     
@@ -40,8 +39,7 @@ public class QueryCache {
      *            the query status
      * @return the stored query status
      */
-    @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).QUERY + #queryStatus.getQueryKey().toUUIDKey()",
-                    cacheManager = "queryStorageCacheManager")
+    @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).QUERY + #queryStatus.getQueryKey().toUUIDKey()")
     public QueryStatus updateQueryStatus(QueryStatus queryStatus) {
         logStatus("Storing", queryStatus, queryStatus.getQueryKey().getQueryId());
         return queryStatus;
@@ -53,8 +51,7 @@ public class QueryCache {
      * @param queryId
      *            The query id
      */
-    @CacheEvict(key = "T(datawave.microservice.common.storage.QueryCache).QUERY + T(datawave.microservice.common.storage.QueryKey).toUUIDKey(#queryId)",
-                    cacheManager = "queryStorageCacheManager")
+    @CacheEvict(key = "T(datawave.microservice.common.storage.QueryCache).QUERY + T(datawave.microservice.common.storage.QueryKey).toUUIDKey(#queryId)")
     public void deleteQueryStatus(UUID queryId) {
         if (log.isDebugEnabled()) {
             log.debug("Deleted query status for " + queryId);
@@ -90,8 +87,7 @@ public class QueryCache {
      *            the task states
      * @return the stored task states
      */
-    @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).TASKS + #taskStates.getQueryKey().toUUIDKey()",
-                    cacheManager = "queryStorageCacheManager")
+    @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).TASKS + #taskStates.getQueryKey().toUUIDKey()")
     public TaskStates updateTaskStates(TaskStates taskStates) {
         logStatus("Storing", taskStates, taskStates.getQueryKey().getQueryId());
         return taskStates;
@@ -103,8 +99,7 @@ public class QueryCache {
      * @param queryId
      *            The query id
      */
-    @CacheEvict(key = "T(datawave.microservice.common.storage.QueryCache).TASKS + T(datawave.microservice.common.storage.QueryKey).toUUIDKey(#queryId)",
-                    cacheManager = "queryStorageCacheManager")
+    @CacheEvict(key = "T(datawave.microservice.common.storage.QueryCache).TASKS + T(datawave.microservice.common.storage.QueryKey).toUUIDKey(#queryId)")
     public void deleteTaskStates(UUID queryId) {
         if (log.isDebugEnabled()) {
             log.debug("Deleted task statuses for " + queryId);
@@ -133,7 +128,7 @@ public class QueryCache {
      *            The query checkpoint
      * @return The new query task
      */
-    @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).TASK + #result.getTaskKey().toKey() ", cacheManager = "queryStorageCacheManager")
+    @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).TASK + #result.getTaskKey().toKey() ")
     public QueryTask addQueryTask(QueryTask.QUERY_ACTION action, QueryCheckpoint checkpoint) {
         QueryTask task = new QueryTask(action, checkpoint);
         logTask("Adding task", task);
@@ -149,7 +144,7 @@ public class QueryCache {
      *            The new query checkpoint
      * @return The updated query task
      */
-    @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).TASK + #result.getTaskKey().toKey()", cacheManager = "queryStorageCacheManager")
+    @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).TASK + #result.getTaskKey().toKey()")
     public QueryTask updateQueryTask(TaskKey taskKey, QueryCheckpoint checkpoint) {
         if (!checkpoint.getQueryKey().equals(taskKey)) {
             throw new IllegalArgumentException("Checkpoint query key " + checkpoint.getQueryKey() + " does not match " + taskKey);
@@ -169,7 +164,7 @@ public class QueryCache {
      * @param taskKey
      *            The task key
      */
-    @CacheEvict(key = "T(datawave.microservice.common.storage.QueryCache).TASK + #taskKey.toKey()", cacheManager = "queryStorageCacheManager")
+    @CacheEvict(key = "T(datawave.microservice.common.storage.QueryCache).TASK + #taskKey.toKey()")
     public void deleteTask(TaskKey taskKey) {
         if (log.isDebugEnabled()) {
             log.debug("Deleted task " + taskKey);
@@ -369,7 +364,7 @@ public class QueryCache {
      *
      * @return a clear message
      */
-    @CacheEvict(allEntries = true, cacheManager = "queryStorageCacheManager", beforeInvocation = true)
+    @CacheEvict(allEntries = true, beforeInvocation = true)
     public String clear() {
         log.debug("Clearing all queries and tasks");
         

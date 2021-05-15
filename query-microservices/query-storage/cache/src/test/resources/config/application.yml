@@ -10,8 +10,7 @@ hazelcast.client.enabled: false
 logging:
   level:
     root: WARN
-    datawave.microservice.common.storage: WARN
-    datawave.microservice.common.storage.QueryCache: WARN
+    datawave.microservice.common.storage: DEBUG
     io.undertow.request: FATAL
 
 ---
@@ -57,29 +56,23 @@ spring.config.activate.on-profile: use-rabbit
 query:
   storage:
     backend:
-      RABBITMQ
-    rabbitConnectionString:
-      amqp://localhost:5672
+      rabbit
 
 ---
 
 spring.config.activate.on-profile: use-kafka
 
-query:
-  storage:
-    backend:
-      KAFKA
-    kafkaConnectionString:
-      localhost:9092
-
----
-
-spring.config.activate.on-profile: use-local
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: KafkaQueryQueueManager
+      autoOffsetReset: latest
 
 query:
   storage:
     backend:
-      LOCAL
+      kafka
 
 ---
 

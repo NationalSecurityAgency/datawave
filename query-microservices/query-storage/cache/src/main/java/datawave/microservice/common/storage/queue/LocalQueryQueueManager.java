@@ -7,9 +7,11 @@ import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryTaskNotification;
 import org.apache.log4j.Logger;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -21,8 +23,14 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import static datawave.microservice.common.storage.queue.LocalQueryQueueManager.LOCAL;
+
+@Component
+@ConditionalOnProperty(name = "query.storage.backend", havingValue = LOCAL, matchIfMissing = true)
 public class LocalQueryQueueManager implements QueryQueueManager {
     private static final Logger log = Logger.getLogger(QueryQueueManager.class);
+    
+    public static final String LOCAL = "local";
     
     public static final String MESSAGE_KEY = "messageKey";
     public static final String MESSAGE_ID = "messageId";

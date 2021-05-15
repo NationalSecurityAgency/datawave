@@ -86,7 +86,7 @@ spring.config.activate.on-profile: use-rabbit
 query:
   storage:
     backend:
-      RABBITMQ
+      rabbitmq
 
 ---
 
@@ -95,16 +95,7 @@ spring.config.activate.on-profile: use-kafka
 query:
   storage:
     backend:
-      KAFKA
-
----
-
-spring.config.activate.on-profile: use-local
-
-query:
-  storage:
-    backend:
-      LOCAL
+      kafka
 
 ---
 

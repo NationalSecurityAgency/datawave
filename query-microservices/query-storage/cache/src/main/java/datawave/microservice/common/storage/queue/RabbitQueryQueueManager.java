@@ -26,6 +26,7 @@ import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.amqp.support.converter.MessagingMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
 
@@ -36,8 +37,14 @@ import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static datawave.microservice.common.storage.queue.RabbitQueryQueueManager.RABBIT;
+
+@Component
+@ConditionalOnProperty(name = "query.storage.backend", havingValue = RABBIT)
 public class RabbitQueryQueueManager implements QueryQueueManager {
     private static final Logger log = Logger.getLogger(QueryQueueManager.class);
+    
+    public static final String RABBIT = "rabbit";
     
     @Autowired
     private QueryStorageProperties properties;

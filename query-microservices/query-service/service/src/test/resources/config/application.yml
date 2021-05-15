@@ -92,6 +92,11 @@ warehouse:
     ivaratorCacheScanTimeoutMinutes: 60
     modelName: 'DATAWAVE'
 
+query:
+  storage:
+    syncStorage: true
+    sendNotifications: true
+
 datawave:
   lock:
     type: local
@@ -120,13 +125,6 @@ datawave:
           definedView: "LuceneUUIDEventQuery"
         - fieldName: "PAGE_TITLE"
           definedView: "LuceneUUIDEventQuery"
-    storage:
-      backend:
-        LOCAL
-      syncStorage:
-        true
-      sendNotifications:
-        true
     logic:
       factory:
         enabled: true
