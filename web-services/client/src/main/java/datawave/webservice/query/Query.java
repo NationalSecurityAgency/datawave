@@ -1,6 +1,7 @@
 package datawave.webservice.query;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import datawave.microservice.query.QueryParameters;
 import datawave.webservice.query.QueryImpl.Parameter;
@@ -25,7 +26,7 @@ import java.util.UUID;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(QueryImpl.class)
-@JsonDeserialize(as = QueryImpl.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 public abstract class Query implements Externalizable {
     
     private static final long serialVersionUID = -5980134700364340930L;
@@ -72,6 +73,8 @@ public abstract class Query implements Externalizable {
     public abstract void setMaxResultsOverride(long maxResults);
     
     public abstract boolean isMaxResultsOverridden();
+    
+    public abstract void setMaxResultsOverridden(boolean maxResultsOverridden);
     
     public abstract Set<Parameter> getParameters();
     

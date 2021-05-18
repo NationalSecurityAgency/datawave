@@ -1,10 +1,11 @@
 package datawave.webservice.query;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import datawave.microservice.query.QueryParameters;
+import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.QueryParameters;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
@@ -225,8 +226,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     protected String userDN;
     @XmlElement
     @XmlJavaTypeAdapter(OptionallyEncodedStringAdapter.class)
-    @JsonSerialize(using = OptionallyEncodedStringAdapter.Serializer.class)
-    @JsonDeserialize(using = OptionallyEncodedStringAdapter.Deserializer.class)
+    @JsonSerialize(using = ToStringSerializer.class)
     protected String query;
     @XmlElement
     protected Date beginDate;
@@ -241,7 +241,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     @XmlElement
     protected int pageTimeout;
     @XmlElement
-    protected boolean isMaxResultsOverridden;
+    protected boolean maxResultsOverridden;
     @XmlElement
     protected long maxResultsOverride;
     @XmlElement
@@ -302,12 +302,11 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     }
     
     public boolean isMaxResultsOverridden() {
-        return isMaxResultsOverridden;
+        return maxResultsOverridden;
     }
     
-    // needed for deserialization
-    public void setIsMaxResultsOverridden(boolean overridden) {
-        this.isMaxResultsOverridden = overridden;
+    public void setMaxResultsOverridden(boolean maxResultsOverridden) {
+        this.maxResultsOverridden = maxResultsOverridden;
     }
     
     public Set<Parameter> getParameters() {
@@ -344,7 +343,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     
     public void setMaxResultsOverride(long maxResults) {
         this.maxResultsOverride = maxResults;
-        this.isMaxResultsOverridden = true;
+        this.maxResultsOverridden = true;
     }
     
     public void setPagesize(int pagesize) {
@@ -376,7 +375,6 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         }
     }
     
-    @JsonIgnore
     public void setParameters(Map<String,String> parameters) {
         HashSet<Parameter> paramObjs = new HashSet<Parameter>(parameters.size());
         for (Entry<String,String> param : parameters.entrySet()) {

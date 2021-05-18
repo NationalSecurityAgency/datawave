@@ -12,40 +12,16 @@
     <description>DATAWAVE Query Microservice</description>
     <properties>
         <start-class>datawave.microservice.query.QueryService</start-class>
-        <version.datawave>3.2.1-SNAPSHOT</version.datawave>
-        <version.microservice.query>1.0-SNAPSHOT</version.microservice.query>
         <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
-        <version.microservice.starter>1.6.6-SNAPSHOT</version.microservice.starter>
         <version.microservice.starter-audit>1.3-SNAPSHOT</version.microservice.starter-audit>
         <version.microservice.starter-query>1.0-SNAPSHOT</version.microservice.starter-query>
     </properties>
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>gov.nsa.datawave</groupId>
-                <artifactId>datawave-query-core</artifactId>
-                <version>${version.datawave}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>org.slf4j</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>query</artifactId>
-                <version>${version.microservice.query}</version>
-            </dependency>
-            <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query-api</artifactId>
                 <version>${version.microservice.query-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>spring-boot-starter-datawave</artifactId>
-                <version>${version.microservice.starter}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -58,9 +34,11 @@
                 <version>${version.microservice.starter-query}</version>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.webservices</groupId>
-                <artifactId>datawave-ws-client</artifactId>
-                <version>${version.datawave}</version>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>spring-boot-starter-datawave-query</artifactId>
+                <version>${version.microservice.starter-query}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -84,6 +62,12 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>spring-boot-starter-datawave-query</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>query-storage</artifactId>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

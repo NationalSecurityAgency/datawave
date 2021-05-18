@@ -12,7 +12,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>api</module>
-        <module>executor</module>
+        <module>service</module>
     </modules>
     <repositories>
         <repository>

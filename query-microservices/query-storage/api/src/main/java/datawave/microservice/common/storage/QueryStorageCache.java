@@ -19,12 +19,13 @@ public interface QueryStorageCache {
      *            The query pool
      * @param query
      *            The query parameters
-     * @param auths
+     * @param calculatedAuths
+     *            The intersection of the user's auths with the requested auths
      * @param count
      *            The number of available locks which equates to the number of concurrent executors that can act on this query
      * @return The create task key
      */
-    TaskKey storeQuery(QueryPool queryPool, Query query, Set<Authorizations> auths, int count) throws IOException;
+    TaskKey storeQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
     
     /**
      * Get the current query state. This includes the query status and the task statuses

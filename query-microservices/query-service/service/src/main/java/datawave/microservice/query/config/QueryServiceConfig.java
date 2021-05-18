@@ -21,6 +21,7 @@ public class QueryServiceConfig {
     }
     
     @Bean
+    @ConditionalOnMissingBean(QueryProperties.class)
     @ConfigurationProperties("datawave.query")
     public QueryProperties queryProperties() {
         return new QueryProperties();

@@ -1,7 +1,5 @@
 package datawave.microservice.query;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.service.RemoteAuthorizationServiceUserDetailsService;

@@ -26,6 +26,10 @@
                         <artifactId>*</artifactId>
                         <groupId>org.slf4j</groupId>
                     </exclusion>
+                    <exclusion>
+                        <artifactId>log4j</artifactId>
+                        <groupId>log4j</groupId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
@@ -56,6 +60,10 @@
                     <exclusion>
                         <artifactId>*</artifactId>
                         <groupId>org.slf4j</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>log4j</artifactId>
+                        <groupId>log4j</groupId>
                     </exclusion>
                 </exclusions>
             </dependency>

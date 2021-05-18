@@ -43,14 +43,6 @@ public interface QueryQueueManager {
     void emptyQueue(QueryPool queryPool);
     
     /**
-     * This will send a query task notification message. This will call ensureQueueCreated before sending the message.
-     *
-     * @param taskNotification
-     *            the task notification to send
-     */
-    void sendMessage(QueryTaskNotification taskNotification);
-    
-    /**
      * Ensure a queue is created for a query results queue. This will create an exchange, a queue, and a binding between them for the results queue.
      *
      * @param queryId

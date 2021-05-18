@@ -14,7 +14,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.springframework.beans.factory.annotation.Required;
 
-import javax.inject.Inject;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
