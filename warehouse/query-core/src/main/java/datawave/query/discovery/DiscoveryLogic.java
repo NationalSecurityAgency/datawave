@@ -499,36 +499,25 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     
     public Boolean getSeparateCountsByColVis() {
         
-        if (config != null) {
-            return config.getSeparateCountsByColVis();
-        }
-        
-        return false;
+        return config.getSeparateCountsByColVis();
         
     }
     
     public void setSeparateCountsByColVis(Boolean separateCountsByColVis) {
         
-        if (config != null) {
-            config.setSeparateCountsByColVis(separateCountsByColVis);
-        }
+        config.setSeparateCountsByColVis(separateCountsByColVis);
         
     }
     
     public Boolean getShowReferenceCount() {
         
-        if (config != null) {
-            return config.getShowReferenceCount();
-        }
+        return config.getShowReferenceCount();
         
-        return false;
     }
     
     public void setShowReferenceCount(Boolean showReferenceCount) {
         
-        if (config != null) {
-            config.setShowReferenceCount(showReferenceCount);
-        }
+        config.setShowReferenceCount(showReferenceCount);
         
     }
     
