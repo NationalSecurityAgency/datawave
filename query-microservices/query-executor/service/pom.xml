@@ -11,7 +11,7 @@
     <version>1.0-SNAPSHOT</version>
     <description>DATAWAVE Query Executor Service</description>
     <properties>
-        <start-class>datawave.microservice.query.QueryExecutor</start-class>
+        <start-class>datawave.microservice.query.executor.QueryExecutorService</start-class>
         <version.microservice.starter-query>1.0-SNAPSHOT</version.microservice.starter-query>
     </properties>
     <dependencyManagement>
