@@ -184,10 +184,12 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         if (!filterRuleApplied) {
             acceptFlag = timeStamp > this.cutOffDateMillis;
         }
-        if (log.isTraceEnabled()) {
-            log.trace("acceptFlag = " + acceptFlag);
-        }
-        return acceptFlag;
+
+	// This absolutely crushes tservers if trace logging is enabled
+        //if (log.isTraceEnabled()) {
+        //    log.trace("acceptFlag = " + acceptFlag);
+        //}
+        //return acceptFlag;
         
     }
     
