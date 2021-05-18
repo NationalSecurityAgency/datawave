@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -13,8 +14,6 @@ import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -69,16 +68,14 @@ public class FunctionIndexQueryExpansionVisitorTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         // Create an in-memory accumulo instance and write the data index table.
-        InMemoryInstance instance = new InMemoryInstance(FunctionIndexQueryExpansionVisitorTest.class.getName());
-        Connector connector = instance.getConnector("root", new PasswordToken(""));
-        connector.tableOperations().create(TableName.DATE_INDEX);
-        DateIndexTestIngest.writeItAll(connector);
+        InMemoryAccumuloClient client = new InMemoryAccumuloClient("root", new InMemoryInstance(FunctionIndexQueryExpansionVisitorTest.class.getName()));
+        client.tableOperations().create(TableName.DATE_INDEX);
+        DateIndexTestIngest.writeItAll(client);
         
         // Configure the helpers.
         Authorizations auths = new Authorizations("HUSH");
-        metadataHelper = new MetadataHelperFactory().createMetadataHelper(connector, TableName.DATE_INDEX, Collections.singleton(auths));
-        dateIndexHelper = new DateIndexHelperFactory().createDateIndexHelper().initialize(connector, TableName.DATE_INDEX, Collections.singleton(auths), 2,
-                        0.9f);
+        metadataHelper = new MetadataHelperFactory().createMetadataHelper(client, TableName.DATE_INDEX, Collections.singleton(auths));
+        dateIndexHelper = new DateIndexHelperFactory().createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths), 2, 0.9f);
         
         // Configure the shard query configuration.
         config.setBeginDate(DateHelper.parse("20100701"));

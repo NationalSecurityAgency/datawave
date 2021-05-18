@@ -1,5 +1,6 @@
 package datawave.query.tables.async;
 
+import java.io.InterruptedIOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -10,8 +11,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.google.common.base.Throwables;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.impl.ThriftScanner.ScanTimedOutException;
+import org.apache.accumulo.core.clientImpl.ThriftScanner.ScanTimedOutException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -22,7 +24,6 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Function;
 import com.google.common.eventbus.Subscribe;
 
-import datawave.mr.bulk.RfileResource;
 import datawave.query.tables.AccumuloResource;
 import datawave.query.tables.AccumuloResource.ResourceFactory;
 import datawave.query.tables.BatchResource;
@@ -200,31 +201,29 @@ public class Scan implements Callable<Scan> {
                 
                 Class<? extends AccumuloResource> initializer = delegatedResourceInitializer;
                 
-                if (initializer != RfileResource.class) {
-                    if (!docSpecific) {
-                        initializer = BatchResource.class;
-                    } else {
+                if (!docSpecific) {
+                    initializer = BatchResource.class;
+                } else {
+                    
+                    if (null != arbiter && timeout > 0) {
                         
-                        if (null != arbiter && timeout > 0) {
-                            
-                            myScan.getOptions().setTimeout(timeout, TimeUnit.MILLISECONDS);
-                            
-                            if (!arbiter.canRun(myScan)) {
-                                if (log.isInfoEnabled()) {
-                                    log.info("Not running " + currentRange);
-                                }
-                                if (log.isTraceEnabled()) {
-                                    log.trace("Not running scan as we have other work to do, and this server is unresponsive");
-                                }
-                                return this;
-                            } else {
-                                if (log.isTraceEnabled()) {
-                                    log.trace("Running scan as server is not unresponsive");
-                                }
+                        myScan.getOptions().setTimeout(timeout, TimeUnit.MILLISECONDS);
+                        
+                        if (!arbiter.canRun(myScan)) {
+                            if (log.isInfoEnabled()) {
+                                log.info("Not running " + currentRange);
+                            }
+                            if (log.isTraceEnabled()) {
+                                log.trace("Not running scan as we have other work to do, and this server is unresponsive");
+                            }
+                            return this;
+                        } else {
+                            if (log.isTraceEnabled()) {
+                                log.trace("Running scan as server is not unresponsive");
                             }
                         }
-                        
                     }
+                    
                 }
                 
                 String scanId = getNewScanId();
@@ -294,29 +293,31 @@ public class Scan implements Callable<Scan> {
                 if (log.isTraceEnabled())
                     log.trace("not finished?" + !finished());
             } while (!finished());
-        } catch (
-        
-        ScanTimedOutException e)
-        
-        {
+        } catch (ScanTimedOutException e) {
             // this is okay. This means that we are being timesliced.
             myScan.addRange(currentRange);
-        } catch (
-        
-        Exception e)
-        
-        {
-            log.error("exception ", e);
+        } catch (Exception e) {
+            if (isInterruptedException(e)) {
+                log.info("Scan interrupted");
+            } else {
+                log.error("Scan failed", e);
+            }
             throw e;
-        } finally
-        
-        {
+        } finally {
             if (null != delegatedResource) {
                 delegatorReference.close(delegatedResource);
             }
         }
         return this;
         
+    }
+    
+    private boolean isInterruptedException(Throwable t) {
+        while (t != null && !(t instanceof InterruptedException || t instanceof InterruptedIOException)
+                        && !(t.getMessage() != null && t.getMessage().contains("InterruptedException"))) {
+            t = t.getCause();
+        }
+        return t != null;
     }
     
     static final AtomicLong scanIdFactory = new AtomicLong(0);

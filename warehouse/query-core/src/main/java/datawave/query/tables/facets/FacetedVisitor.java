@@ -109,7 +109,7 @@ public class FacetedVisitor extends BaseVisitor {
         
         script.jjtAccept(this, kvIterList);
         
-        Iterator<Entry<Key,Value>> kvIter = Iterators.emptyIterator();
+        Iterator<Entry<Key,Value>> kvIter = Collections.emptyIterator();
         for (Iterator<Entry<Key,Value>> iter : kvIterList) {
             kvIter = Iterators.concat(kvIter, iter);
         }

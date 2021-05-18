@@ -7,7 +7,7 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.QueryLogic;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
@@ -25,7 +25,7 @@ public abstract class FullChainStrategy<T1,T2> implements ChainStrategy<T1,T2> {
     protected final Logger log = Logger.getLogger(FullChainStrategy.class);
     
     @Override
-    public Iterator<T2> runChainedQuery(Connector connector, Query initialQuery, Set<Authorizations> auths, Iterator<T1> initialQueryResults,
+    public Iterator<T2> runChainedQuery(AccumuloClient client, Query initialQuery, Set<Authorizations> auths, Iterator<T1> initialQueryResults,
                     QueryLogic<T2> latterQueryLogic) throws Exception {
         Query latterQuery = buildLatterQuery(initialQuery, initialQueryResults, latterQueryLogic.getLogicName());
         
@@ -49,7 +49,7 @@ public abstract class FullChainStrategy<T1,T2> implements ChainStrategy<T1,T2> {
             };
         }
         
-        GenericQueryConfiguration config = latterQueryLogic.initialize(connector, latterQuery, auths);
+        GenericQueryConfiguration config = latterQueryLogic.initialize(client, latterQuery, auths);
         
         latterQueryLogic.setupQuery(config);
         

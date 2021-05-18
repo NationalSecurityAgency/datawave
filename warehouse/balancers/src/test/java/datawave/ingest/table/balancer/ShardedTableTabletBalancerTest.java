@@ -1,6 +1,5 @@
 package datawave.ingest.table.balancer;
 
-import com.google.common.base.Function;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Iterables;
@@ -8,7 +7,8 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import datawave.common.test.integration.IntegrationTest;
-import org.apache.accumulo.core.data.impl.KeyExtent;
+import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.master.thrift.TabletServerStatus;
 import org.apache.accumulo.core.util.MapCounter;
 import org.apache.accumulo.core.util.Pair;
@@ -41,13 +41,14 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ShardedTableTabletBalancerTest {
-    private static final String TNAME = "s";
+    private static final TableId TNAME = TableId.of("s");
     
     private TestTServers testTServers;
     private TestShardedTableTabletBalancer testBalancer;
@@ -65,6 +66,11 @@ public class ShardedTableTabletBalancerTest {
     public void setUp() throws Exception {
         testTServers = new TestTServers(new Random(randomSeed));
         testBalancer = new TestShardedTableTabletBalancer(testTServers);
+    }
+    
+    @Test
+    public void testMaxMigrations() {
+        assertEquals(ShardedTableTabletBalancer.MAX_MIGRATIONS_DEFAULT, testBalancer.getMaxMigrations());
     }
     
     @Test
@@ -238,14 +244,16 @@ public class ShardedTableTabletBalancerTest {
         
         // Balance first with pending migrations w/ our table name in them and make sure no balancing happens
         ArrayList<TabletMigration> migrationsOut = new ArrayList<>();
-        HashSet<KeyExtent> migrations = Sets.newHashSet(new KeyExtent("foo", new Text("2"), new Text("1")), new KeyExtent("bar", new Text("2"), new Text("1")),
+        TableId foo = TableId.of("foo");
+        TableId bar = TableId.of("bar");
+        HashSet<KeyExtent> migrations = Sets.newHashSet(new KeyExtent(foo, new Text("2"), new Text("1")), new KeyExtent(bar, new Text("2"), new Text("1")),
                         new KeyExtent(TNAME, new Text("2"), new Text("1")));
         long balanceWaitTime = testBalancer.balance(testTServers.getCurrent(), migrations, migrationsOut);
         assertEquals("Incorrect balance wait time reported", 5000, balanceWaitTime);
         assertTrue("Generated migrations when we had pending migrations for our table! [" + migrationsOut + "]", migrationsOut.isEmpty());
         
         // Now balance with pending migrations w/o our table name and make sure everything balances.
-        migrations = Sets.newHashSet(new KeyExtent("foo", new Text("2"), new Text("1")), new KeyExtent("bar", new Text("2"), new Text("1")));
+        migrations = Sets.newHashSet(new KeyExtent(foo, new Text("2"), new Text("1")), new KeyExtent(bar, new Text("2"), new Text("1")));
         balanceWaitTime = testBalancer.balance(testTServers.getCurrent(), migrations, migrationsOut);
         assertEquals("Incorrect balance wait time reported", 5000, balanceWaitTime);
         ensureUniqueMigrations(migrationsOut);
@@ -540,7 +548,7 @@ public class ShardedTableTabletBalancerTest {
         testTServers.checkBalance(testBalancer.getPartitioner());
     }
     
-    private static KeyExtent makeExtent(String table, String end, String prev) {
+    private static KeyExtent makeExtent(TableId table, String end, String prev) {
         return new KeyExtent(table, toText(end), toText(prev));
     }
     
@@ -844,10 +852,6 @@ public class ShardedTableTabletBalancerTest {
         protected long getWaitTime() {
             return 0;
         }
-        
-        @Override
-        protected int getMaxMigrations() {
-            return 30000;
-        }
     }
+    
 }

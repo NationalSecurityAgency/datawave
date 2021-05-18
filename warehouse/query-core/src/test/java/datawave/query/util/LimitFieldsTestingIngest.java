@@ -2,14 +2,15 @@ package datawave.query.util;
 
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
+import datawave.data.type.DateType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.util.TableName;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -28,6 +29,7 @@ public class LimitFieldsTestingIngest {
         SHARD, DOCUMENT;
     }
     
+    private static final Type<?> dateType = new DateType();
     private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
     
     protected static final String datatype = "test";
@@ -42,7 +44,7 @@ public class LimitFieldsTestingIngest {
      * 
      * @return
      */
-    public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
+    public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
@@ -52,7 +54,7 @@ public class LimitFieldsTestingIngest {
         
         try {
             // write the shard table :
-            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             mutation = new Mutation(shard);
             
             mutation.put(datatype + "\u0000" + myUID, "FOO_1.FOO.1.0" + "\u0000" + "yawn", columnVisibility, timeStamp, emptyValue);
@@ -60,6 +62,7 @@ public class LimitFieldsTestingIngest {
             mutation.put(datatype + "\u0000" + myUID, "FOO_3.FOO.3.0" + "\u0000" + "abcd", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "FOO_3_BAR.FOO.0" + "\u0000" + "abcd<cat>", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "FOO_1_BAR.FOO.0" + "\u0000" + "yawn<cat>", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "FOO_1_BAR_1.FOO.0" + "\u0000" + "Wed Mar 24 12:00:00 EDT 2021", columnVisibility, timeStamp, emptyValue);
             
             mutation.put(datatype + "\u0000" + myUID, "FOO_1.FOO.1.1" + "\u0000" + "yawn", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "FOO_4.FOO.4.1" + "\u0000" + "purr", columnVisibility, timeStamp, emptyValue);
@@ -89,7 +92,7 @@ public class LimitFieldsTestingIngest {
         
         try {
             // write shard index table:
-            bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
             
             mutation = new Mutation(lcNoDiacriticsType.normalize("abcd"));
             mutation.put("FOO_3".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
@@ -151,7 +154,7 @@ public class LimitFieldsTestingIngest {
             
             // write the field index table:
             
-            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             
             mutation = new Mutation(shard);
             
@@ -195,7 +198,7 @@ public class LimitFieldsTestingIngest {
         
         try {
             // write metadata table:
-            bw = con.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
             
             mutation = new Mutation("FOO_3");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
@@ -226,6 +229,12 @@ public class LimitFieldsTestingIngest {
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
             mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
+            bw.addMutation(mutation);
+            
+            mutation = new Mutation("FOO_1_BAR_1");
+            mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
+            mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
+            mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + dateType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
             
         } finally {

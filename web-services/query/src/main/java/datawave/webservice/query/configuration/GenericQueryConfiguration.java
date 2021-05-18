@@ -2,15 +2,14 @@ package datawave.webservice.query.configuration;
 
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
 import datawave.util.TableName;
 import datawave.webservice.query.logic.BaseQueryLogic;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 
 import com.google.common.collect.Iterators;
@@ -27,7 +26,7 @@ import com.google.common.collect.Iterators;
  * 
  */
 public abstract class GenericQueryConfiguration {
-    private Connector connector = null;
+    private AccumuloClient client = null;
     private Set<Authorizations> authorizations = Collections.singleton(Authorizations.EMPTY);
     // Leave in a top-level query for backwards-compatibility purposes
     private String queryString = null;
@@ -43,7 +42,7 @@ public abstract class GenericQueryConfiguration {
     // Table name
     private String tableName = TableName.SHARD;
     
-    private Iterator<QueryData> queries = Iterators.emptyIterator();
+    private Iterator<QueryData> queries = Collections.emptyIterator();
     
     protected boolean bypassAccumulo;
     
@@ -69,7 +68,7 @@ public abstract class GenericQueryConfiguration {
         this.setBypassAccumulo(genericConfig.getBypassAccumulo());
         this.setAuthorizations(genericConfig.getAuthorizations());
         this.setBeginDate(genericConfig.getBeginDate());
-        this.setConnector(genericConfig.getConnector());
+        this.setClient(genericConfig.getClient());
         this.setEndDate(genericConfig.getEndDate());
         this.setMaxWork(genericConfig.getMaxWork());
         this.setQueries(genericConfig.getQueries());
@@ -95,12 +94,12 @@ public abstract class GenericQueryConfiguration {
         this.queries = queries;
     }
     
-    public Connector getConnector() {
-        return connector;
+    public AccumuloClient getClient() {
+        return client;
     }
     
-    public void setConnector(Connector connector) {
-        this.connector = connector;
+    public void setClient(AccumuloClient client) {
+        this.client = client;
     }
     
     public void setQueryString(String query) {
@@ -174,7 +173,7 @@ public abstract class GenericQueryConfiguration {
      */
     public boolean canRunQuery() {
         // Ensure we were given connector and authorizations
-        if (null == this.getConnector() || null == this.getAuthorizations()) {
+        if (null == this.getClient() || null == this.getAuthorizations()) {
             return false;
         }
         

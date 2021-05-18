@@ -44,6 +44,8 @@ public class MarkingFunctionsFactory {
             if (log.isDebugEnabled()) {
                 log.debug("Failed to load Spring contexts", t);
             }
+        } finally {
+            context.close();
         }
         
         return markingFunctions;

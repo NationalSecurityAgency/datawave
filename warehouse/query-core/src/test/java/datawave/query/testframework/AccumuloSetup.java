@@ -10,9 +10,9 @@ import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.util.TableName;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Mutation;
@@ -146,7 +146,7 @@ public class AccumuloSetup extends ExternalResource {
      * @throws AccumuloException
      *             , AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException Accumulo error conditions
      */
-    public Connector loadTables(final Logger parentLog) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
+    public AccumuloClient loadTables(final Logger parentLog) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
                     TableExistsException, TableNotFoundException, URISyntaxException {
         return loadTables(parentLog, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER);
     }
@@ -160,9 +160,9 @@ public class AccumuloSetup extends ExternalResource {
      * @throws AccumuloException
      *             , AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException Accumulo error conditions
      */
-    public Connector loadTables(final Logger parentLog, final RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
-                    throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException, TableExistsException, TableNotFoundException,
-                    URISyntaxException {
+    public AccumuloClient loadTables(final Logger parentLog, final RebuildingScannerTestHelper.TEARDOWN teardown,
+                    RebuildingScannerTestHelper.INTERRUPT interrupt) throws AccumuloException, AccumuloSecurityException, IOException, InterruptedException,
+                    TableExistsException, TableNotFoundException, URISyntaxException {
         log.debug("------------- loadTables -------------");
         
         if (this.fileFormat != FileType.GROUPING) {
@@ -171,7 +171,7 @@ public class AccumuloSetup extends ExternalResource {
         }
         
         QueryTestTableHelper tableHelper = new QueryTestTableHelper(AccumuloSetup.class.getName(), parentLog, teardown, interrupt);
-        final Connector connector = tableHelper.connector;
+        final AccumuloClient client = tableHelper.client;
         tableHelper.configureTables(this.recordWriter);
         
         for (DataTypeHadoopConfig dt : this.dataTypes) {
@@ -183,17 +183,17 @@ public class AccumuloSetup extends ExternalResource {
             }
         }
         
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_INDEX);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_RINDEX);
+        PrintUtility.printTable(client, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);
+        PrintUtility.printTable(client, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD);
+        PrintUtility.printTable(client, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD);
+        PrintUtility.printTable(client, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD);
         
         // TODO: elsewhere?
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_TABLE_NAME);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_METADATA_TABLE_NAME);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_HASH_TABLE_NAME);
+        PrintUtility.printTable(client, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_TABLE_NAME);
+        PrintUtility.printTable(client, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_METADATA_TABLE_NAME);
+        PrintUtility.printTable(client, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_HASH_TABLE_NAME);
         
-        return connector;
+        return client;
     }
     
     private void ingestTestData(Configuration conf, TestFileLoader loader) throws IOException, InterruptedException {

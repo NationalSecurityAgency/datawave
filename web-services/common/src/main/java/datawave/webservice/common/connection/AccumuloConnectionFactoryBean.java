@@ -1,5 +1,6 @@
 package datawave.webservice.common.connection;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.cache.AccumuloTableCache;
@@ -9,14 +10,10 @@ import datawave.webservice.common.result.Connection;
 import datawave.webservice.common.result.ConnectionFactoryResponse;
 import datawave.webservice.common.result.ConnectionPool;
 import org.apache.accumulo.core.Constants;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.trace.DistributedTrace;
 import org.apache.accumulo.core.util.Pair;
-import org.apache.accumulo.core.zookeeper.ZooUtil;
 import org.apache.accumulo.tracer.AsyncSpanReceiver;
 import org.apache.accumulo.tracer.ZooTraceClient;
 import org.apache.commons.lang.mutable.MutableInt;
@@ -83,6 +80,10 @@ import java.util.Set;
 @MBean
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory {
+    public static final String TRACE_HOST_PROPERTY = "trace.host";
+    public static final String TRACE_SERVICE_PROPERTY = "trace.service";
+    public static final String TRACER_ZK_HOST = "tracer.zookeeper.host";
+    public static final String TRACER_ZK_PATH = "tracer.zookeeper.path";
     
     private Logger log = Logger.getLogger(this.getClass());
     
@@ -92,7 +93,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     @Inject
     private AccumuloTableCache cache;
     
-    private Map<String,Map<Priority,AccumuloConnectionPool>> pools;
+    private Map<String,Map<Priority,AccumuloClientPool>> pools;
     
     @Inject
     private ConnectionPoolsConfiguration connectionPoolsConfiguration;
@@ -110,7 +111,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         HashMap<String,Pair<String,PasswordToken>> instances = new HashMap<>();
         this.defaultPoolName = connectionPoolsConfiguration.getDefaultPool();
         for (Entry<String,ConnectionPoolConfiguration> entry : connectionPoolsConfiguration.getPools().entrySet()) {
-            Map<Priority,AccumuloConnectionPool> p = new HashMap<>();
+            Map<Priority,AccumuloClientPool> p = new HashMap<>();
             ConnectionPoolConfiguration conf = entry.getValue();
             p.put(Priority.ADMIN, createConnectionPool(conf, conf.getAdminPriorityPoolSize()));
             p.put(Priority.HIGH, createConnectionPool(conf, conf.getHighPriorityPoolSize()));
@@ -132,14 +133,11 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
                 log.warn("Unable to retrieve system property \"app\": " + e.getMessage());
             }
             try {
-                ClientConfiguration zkConfig = ClientConfiguration.loadDefault().withInstance(entry.getValue().getInstance())
-                                .withZkHosts(entry.getValue().getZookeepers());
-                ZooKeeperInstance instance = new ZooKeeperInstance(zkConfig);
                 Map<String,String> confMap = new HashMap<>();
-                confMap.put(DistributedTrace.TRACER_ZK_HOST, instance.getZooKeepers());
-                confMap.put(DistributedTrace.TRACER_ZK_PATH, ZooUtil.getRoot(instance) + Constants.ZTRACERS);
-                confMap.put(DistributedTrace.TRACE_HOST_PROPERTY, InetAddress.getLocalHost().getHostName());
-                confMap.put(DistributedTrace.TRACE_SERVICE_PROPERTY, appName);
+                confMap.put(TRACER_ZK_HOST, entry.getValue().getZookeepers());
+                confMap.put(TRACER_ZK_PATH, Constants.ZTRACERS);
+                confMap.put(TRACE_HOST_PROPERTY, InetAddress.getLocalHost().getHostName());
+                confMap.put(TRACE_SERVICE_PROPERTY, appName);
                 confMap.put(AsyncSpanReceiver.SEND_TIMER_MILLIS, "1000");
                 confMap.put(AsyncSpanReceiver.QUEUE_SIZE, "5000");
                 Trace.addReceiver(new ZooTraceClient(HTraceConfiguration.fromMap(confMap)));
@@ -151,10 +149,9 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         cache.setConnectionFactory(this);
     }
     
-    private AccumuloConnectionPool createConnectionPool(ConnectionPoolConfiguration conf, int limit) {
-        AccumuloConnectionPoolFactory factory = new AccumuloConnectionPoolFactory(conf.getUsername(), conf.getPassword(), conf.getZookeepers(),
-                        conf.getInstance());
-        AccumuloConnectionPool pool = new AccumuloConnectionPool(factory);
+    private AccumuloClientPool createConnectionPool(ConnectionPoolConfiguration conf, int limit) {
+        AccumuloClientPoolFactory factory = new AccumuloClientPoolFactory(conf.getUsername(), conf.getPassword(), conf.getZookeepers(), conf.getInstance());
+        AccumuloClientPool pool = new AccumuloClientPool(factory);
         pool.setTestOnBorrow(true);
         pool.setTestOnReturn(true);
         pool.setMaxTotal(limit);
@@ -169,9 +166,9 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         return pool;
     }
     
-    private void setupMockAccumuloUser(ConnectionPoolConfiguration conf, AccumuloConnectionPool pool, HashMap<String,Pair<String,PasswordToken>> instances)
+    private void setupMockAccumuloUser(ConnectionPoolConfiguration conf, AccumuloClientPool pool, HashMap<String,Pair<String,PasswordToken>> instances)
                     throws Exception {
-        Connector c = null;
+        AccumuloClient c = null;
         try {
             c = pool.borrowObject(new HashMap<>());
             
@@ -205,8 +202,8 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     
     @PreDestroy
     public void tearDown() {
-        for (Entry<String,Map<Priority,AccumuloConnectionPool>> entry : this.pools.entrySet()) {
-            for (Entry<Priority,AccumuloConnectionPool> poolEntry : entry.getValue().entrySet()) {
+        for (Entry<String,Map<Priority,AccumuloClientPool>> entry : this.pools.entrySet()) {
+            for (Entry<Priority,AccumuloClientPool> poolEntry : entry.getValue().entrySet()) {
                 try {
                     poolEntry.getValue().close();
                 } catch (Exception e) {
@@ -226,32 +223,32 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     }
     
     /**
-     * Gets a connection from the pool with the assigned priority
+     * Gets a client from the pool with the assigned priority
      *
-     * Deprecated in 2.2.3, use getConnection(String poolName, Priority priority, {@code Map<String, String> trackingMap)}
+     * Deprecated in 2.2.3, use getClient(String poolName, Priority priority, {@code Map<String, String> trackingMap)}
      *
      * @param priority
-     *            the connection's Priority
-     * @return accumulo connection
+     *            the client's Priority
+     * @return accumulo client
      * @throws Exception
      */
-    public Connector getConnection(Priority priority, Map<String,String> trackingMap) throws Exception {
-        return getConnection(null, priority, trackingMap);
+    public AccumuloClient getClient(Priority priority, Map<String,String> trackingMap) throws Exception {
+        return getClient(null, priority, trackingMap);
     }
     
     /**
-     * Gets a connection from the named pool with the assigned priority
+     * Gets a client from the named pool with the assigned priority
      *
      * @param cpn
-     *            the name of the pool to retrieve the connection from
+     *            the name of the pool to retrieve the client from
      * @param priority
-     *            the priority of the connection
+     *            the priority of the client
      * @param tm
      *            the tracking map
-     * @return Accumulo connection
+     * @return Accumulo client
      * @throws Exception
      */
-    public Connector getConnection(final String cpn, final Priority priority, final Map<String,String> tm) throws Exception {
+    public AccumuloClient getClient(final String cpn, final Priority priority, final Map<String,String> tm) throws Exception {
         final Map<String,String> trackingMap = (tm != null) ? tm : new HashMap<>();
         final String poolName = (cpn != null) ? cpn : defaultPoolName;
         
@@ -264,40 +261,40 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
             if (proxyServers != null)
                 trackingMap.put("proxyServers", proxyServers.toString());
         }
-        AccumuloConnectionPool pool = pools.get(poolName).get(priority);
-        Connector c = pool.borrowObject(trackingMap);
-        Connector mock = cache.getInstance().getConnector(pool.getFactory().getUsername(), new PasswordToken(pool.getFactory().getPassword()));
-        WrappedConnector wrappedConnector = new WrappedConnector(c, mock);
+        AccumuloClientPool pool = pools.get(poolName).get(priority);
+        AccumuloClient c = pool.borrowObject(trackingMap);
+        AccumuloClient mock = new InMemoryAccumuloClient(pool.getFactory().getUsername(), cache.getInstance());
+        mock.securityOperations().changeLocalUserPassword(pool.getFactory().getUsername(), new PasswordToken(pool.getFactory().getPassword()));
+        WrappedAccumuloClient wrappedAccumuloClient = new WrappedAccumuloClient(c, mock);
         String classLoaderContext = System.getProperty("dw.accumulo.classLoader.context");
         if (classLoaderContext != null) {
-            wrappedConnector.setScannerClassLoaderContext(classLoaderContext);
+            wrappedAccumuloClient.setScannerClassLoaderContext(classLoaderContext);
         }
         String timeout = System.getProperty("dw.accumulo.scan.batch.timeout.seconds");
         if (timeout != null) {
-            wrappedConnector.setScanBatchTimeoutSeconds(Long.parseLong(timeout));
+            wrappedAccumuloClient.setScanBatchTimeoutSeconds(Long.parseLong(timeout));
         }
-        return wrappedConnector;
+        return wrappedAccumuloClient;
     }
     
     /**
-     * Returns the connection to the pool with the associated priority.
+     * Returns the client to the pool with the associated priority.
      *
-     * @param connection
-     *            The connection to return
-     * @throws Exception
+     * @param client
+     *            The client to return
      */
     @PermitAll
     // permit anyone to return a connection
-    public void returnConnection(Connector connection) throws Exception {
-        if (connection instanceof WrappedConnector) {
-            WrappedConnector wrappedConnector = (WrappedConnector) connection;
-            wrappedConnector.clearScannerClassLoaderContext();
-            connection = wrappedConnector.getReal();
+    public void returnClient(AccumuloClient client) {
+        if (client instanceof WrappedAccumuloClient) {
+            WrappedAccumuloClient wrappedAccumuloClient = (WrappedAccumuloClient) client;
+            wrappedAccumuloClient.clearScannerClassLoaderContext();
+            client = wrappedAccumuloClient.getReal();
         }
-        for (Entry<String,Map<Priority,AccumuloConnectionPool>> entry : this.pools.entrySet()) {
-            for (Entry<Priority,AccumuloConnectionPool> poolEntry : entry.getValue().entrySet()) {
-                if (poolEntry.getValue().connectorCameFromHere(connection)) {
-                    poolEntry.getValue().returnObject(connection);
+        for (Entry<String,Map<Priority,AccumuloClientPool>> entry : this.pools.entrySet()) {
+            for (Entry<Priority,AccumuloClientPool> poolEntry : entry.getValue().entrySet()) {
+                if (poolEntry.getValue().connectorCameFromHere(client)) {
+                    poolEntry.getValue().returnObject(client);
                     return;
                 }
             }
@@ -310,7 +307,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     @JmxManaged
     public String report() {
         StringBuilder buf = new StringBuilder();
-        for (Entry<String,Map<Priority,AccumuloConnectionPool>> entry : this.pools.entrySet()) {
+        for (Entry<String,Map<Priority,AccumuloClientPool>> entry : this.pools.entrySet()) {
             buf.append("**** ").append(entry.getKey()).append(" ****\n");
             buf.append("ADMIN: ").append(entry.getValue().get(Priority.ADMIN)).append("\n");
             buf.append("HIGH: ").append(entry.getValue().get(Priority.HIGH)).append("\n");
@@ -344,13 +341,13 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
         
-        for (Entry<String,Map<Priority,AccumuloConnectionPool>> entry : this.pools.entrySet()) {
-            for (Entry<Priority,AccumuloConnectionPool> entry2 : entry.getValue().entrySet()) {
+        for (Entry<String,Map<Priority,AccumuloClientPool>> entry : this.pools.entrySet()) {
+            for (Entry<Priority,AccumuloClientPool> entry2 : entry.getValue().entrySet()) {
                 String poolName = entry.getKey();
                 Priority priority = entry2.getKey();
-                AccumuloConnectionPool p = entry2.getValue();
+                AccumuloClientPool p = entry2.getValue();
                 
-                Long now = System.currentTimeMillis();
+                long now = System.currentTimeMillis();
                 MutableInt maxActive = new MutableInt();
                 MutableInt numActive = new MutableInt();
                 MutableInt maxIdle = new MutableInt();
@@ -382,7 +379,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
                     }
                     String stateStart = m.get("connection.state.start");
                     if (stateStart != null) {
-                        Long stateStartLong = Long.valueOf(stateStart);
+                        long stateStartLong = Long.parseLong(stateStart);
                         c.setTimeInState((now - stateStartLong));
                         Date stateStartDate = new Date(stateStartLong);
                         c.addProperty("connection.state.start", sdf.format(stateStartDate));
@@ -407,8 +404,8 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     @JmxManaged
     public int getConnectionUsagePercent() {
         double maxPercentage = 0.0;
-        for (Entry<String,Map<Priority,AccumuloConnectionPool>> entry : pools.entrySet()) {
-            for (Entry<Priority,AccumuloConnectionPool> poolEntry : entry.getValue().entrySet()) {
+        for (Entry<String,Map<Priority,AccumuloClientPool>> entry : pools.entrySet()) {
+            for (Entry<Priority,AccumuloClientPool> poolEntry : entry.getValue().entrySet()) {
                 // Don't include ADMIN priority connections when computing a usage percentage
                 if (Priority.ADMIN.equals(poolEntry.getKey()))
                     continue;
@@ -445,7 +442,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         String currentUserDN = null;
         Principal p = context.getCallerPrincipal();
         
-        if (p != null && p instanceof DatawavePrincipal) {
+        if (p instanceof DatawavePrincipal) {
             currentUserDN = ((DatawavePrincipal) p).getUserDN().subjectDN();
         }
         
@@ -456,7 +453,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         Set<String> currentProxyServers = null;
         Principal p = context.getCallerPrincipal();
         
-        if (p != null && p instanceof DatawavePrincipal) {
+        if (p instanceof DatawavePrincipal) {
             currentProxyServers = ((DatawavePrincipal) p).getProxyServers();
         }
         

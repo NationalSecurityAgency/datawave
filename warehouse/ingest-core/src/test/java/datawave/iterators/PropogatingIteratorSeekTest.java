@@ -1,7 +1,7 @@
 package datawave.iterators;
 
 import datawave.ingest.table.aggregator.PropogatingCombiner;
-import org.apache.accumulo.core.client.impl.BaseIteratorEnvironment;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.data.*;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
@@ -123,7 +123,7 @@ public class PropogatingIteratorSeekTest {
         }
     }
     
-    public static class TestIteratorEnvironment extends BaseIteratorEnvironment {
+    public static class TestIteratorEnvironment implements IteratorEnvironment {
         public boolean isSamplingEnabled() {
             return false;
         }

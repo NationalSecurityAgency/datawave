@@ -40,7 +40,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.maxExp, max));
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     public MaxExpansionIndexOnlyQueryTest() {

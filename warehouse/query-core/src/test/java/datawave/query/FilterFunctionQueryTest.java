@@ -50,7 +50,7 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
         dataTypes.add(new CitiesDataType(CityEntry.nullState, generic));
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     public FilterFunctionQueryTest() {

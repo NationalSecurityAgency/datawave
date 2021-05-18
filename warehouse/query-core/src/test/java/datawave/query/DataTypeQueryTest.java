@@ -56,7 +56,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         }
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
-        connector = accumuloSetup.loadTables(log);
+        client = accumuloSetup.loadTables(log);
     }
     
     public DataTypeQueryTest() {

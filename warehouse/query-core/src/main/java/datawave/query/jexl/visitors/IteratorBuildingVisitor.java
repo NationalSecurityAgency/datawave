@@ -1032,23 +1032,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return null;
     }
     
-    private boolean isUsable(Path path) throws IOException {
-        try {
-            if (!hdfsFileSystem.getFileSystem(path.toUri()).mkdirs(path)) {
-                throw new IOException("Unable to mkdirs: fs.mkdirs(" + path + ")->false");
-            }
-        } catch (MalformedURLException e) {
-            throw new IOException("Unable to load hadoop configuration", e);
-        } catch (Exception e) {
-            log.warn("Unable to access " + path, e);
-            return false;
-        }
-        return true;
-    }
-    
     /**
-     * Create a cache directory path for a specified regex node. If alternatives have been specified, then random alternatives will be attempted until one is
-     * found that can be written to.
+     * Build a list of potential hdfs directories based on each ivarator cache dir configs.
      * 
      * @return A path
      */
@@ -1070,10 +1055,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         path = new Path(path, scanId);
                     }
                     path = new Path(path, subdirectory);
-                    if (isUsable(path)) {
-                        URI uri = path.toUri();
-                        pathAndFs.add(new IvaratorCacheDir(config, hdfsFileSystem.getFileSystem(uri), uri.toString()));
-                    }
+                    URI uri = path.toUri();
+                    pathAndFs.add(new IvaratorCacheDir(config, hdfsFileSystem.getFileSystem(uri), uri.toString()));
                 }
             }
         }
@@ -1312,7 +1295,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     public static class FunctionFilter implements Filter {
-        private Script script;
+        
+        private final Script script;
+        private final DatawaveJexlContext context;
         
         public FunctionFilter(List<ASTFunctionNode> nodes) {
             ASTJexlScript script = new ASTJexlScript(ParserTreeConstants.JJTJEXLSCRIPT);
@@ -1333,6 +1318,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             
             // Evaluate the JexlContext against the Script
             this.script = engine.createScript(query);
+            
+            // setup a re-usable context
+            this.context = new DatawaveJexlContext();
         }
         
         @Override
@@ -1347,13 +1335,15 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             index = fieldValue.lastIndexOf('\0', index - 1);
             fieldValue = fieldValue.substring(0, index);
             
-            // create a jexl context with this valud
-            JexlContext context = new DatawaveJexlContext();
+            // set the field value into the JexlContext
             context.set(fieldName, new ValueTuple(fieldName, fieldValue, fieldValue, null));
             
             boolean matched = false;
             
             Object o = script.execute(context);
+            
+            // Clear the context for future reuse
+            context.clear();
             
             // Jexl might return us a null depending on the AST
             if (o != null && Boolean.class.isAssignableFrom(o.getClass())) {

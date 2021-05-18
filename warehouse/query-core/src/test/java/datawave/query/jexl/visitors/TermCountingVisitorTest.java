@@ -76,6 +76,30 @@ public class TermCountingVisitorTest {
         testCounts(query, 2);
     }
     
+    @Test
+    public void testExceededOrThreshold() throws ParseException {
+        String query = "((_List_ = true) && ((id = '123') && (field = 'TEST') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))";
+        testCounts(query, 1);
+    }
+    
+    @Test
+    public void testExceededTermThreshold() throws ParseException {
+        String query = "((_Term_ = true) && (FOO == 'bar'))";
+        testCounts(query, 1);
+    }
+    
+    @Test
+    public void testExceededValueThreshold() throws ParseException {
+        String query = "((_Value_ = true) && (INDEX_ONLY_FIELD =~ 'a*'))";
+        testCounts(query, 1);
+    }
+    
+    @Test
+    public void testRandomAssignmentNodeThreshold() throws ParseException {
+        String query = "((OtherProperty = true) && ((id = '123') && (field = 'test') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))";
+        testCounts(query, 0);
+    }
+    
     private void testCounts(String query, int expectedCount) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         int count = TermCountingVisitor.countTerms(script);
