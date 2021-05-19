@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 public class QueryStatus implements Serializable {
     public enum QUERY_STATE {
-        DEFINED, CREATED, CLOSED, CANCELED
+        DEFINED, CREATED, CLOSED, CANCELED, FAILED
     }
     
     private QueryKey queryKey;
@@ -30,6 +30,7 @@ public class QueryStatus implements Serializable {
     private long numResultsReturned;
     private int concurrentNextCount;
     private Date lastUpdated;
+    private Exception failure;
     
     public QueryStatus() {}
     
@@ -95,6 +96,14 @@ public class QueryStatus implements Serializable {
         this.calculatedAuthorizations = calculatedAuthorizations;
         this.calculatedAuths = null;
         getCalculatedAuths();
+    }
+    
+    public Exception getFailure() {
+        return failure;
+    }
+    
+    public void setFailure(Exception failure) {
+        this.failure = failure;
     }
     
     public long getNumResultsGenerated() {

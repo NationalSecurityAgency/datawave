@@ -13,7 +13,7 @@ public class QueryTask implements Serializable {
     private static final long serialVersionUID = 579211458890999398L;
     
     public enum QUERY_ACTION implements Serializable {
-        DEFINE, CREATE, NEXT, CLOSE, TEST
+        DEFINE, CREATE, PREDICT, NEXT, CLOSE, TEST
     }
     
     private final TaskKey taskKey;

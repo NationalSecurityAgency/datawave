@@ -413,7 +413,9 @@ public class QueryCache {
     
     /**
      * A convience method for logging query status
-     * 
+     *
+     * @param msg
+     *            A message to prepend
      * @param status
      *            the query status
      * @param key
@@ -429,7 +431,9 @@ public class QueryCache {
     
     /**
      * A convenience method for logging task statuses
-     * 
+     *
+     * @param msg
+     *            A message to prepend
      * @param status
      *            the task statueses
      * @param key

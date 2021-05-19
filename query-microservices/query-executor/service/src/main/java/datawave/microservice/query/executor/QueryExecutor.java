@@ -86,6 +86,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
                     switch (task.getAction()) {
                         case CREATE:
                         case DEFINE:
+                        case PREDICT:
                         case NEXT:
                             queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName());
                             GenericQueryConfiguration config = queryLogic.initialize(connector, queryStatus.getQuery(),
@@ -124,7 +125,6 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
             // somebody is already processing this one
         } catch (Exception e) {
             // TODO: How do we get this exception back to the query service controller?
-            
         } finally {
             if (gotLock) {
                 TaskStates.TASK_STATE newState = TaskStates.TASK_STATE.READY;
