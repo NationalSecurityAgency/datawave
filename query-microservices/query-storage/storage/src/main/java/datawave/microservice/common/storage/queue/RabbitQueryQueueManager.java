@@ -181,7 +181,9 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      * Add a queue to a listener
      *
      * @param listenerId
+     *            The listenerid
      * @param queueName
+     *            The queue name
      */
     private void addQueueToListener(String listenerId, String queueName) {
         if (log.isDebugEnabled()) {
@@ -209,7 +211,9 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      * Remove a queue from a listener
      *
      * @param listenerId
+     *            The listener id
      * @param queueName
+     *            The query name
      */
     private void removeQueueFromListener(String listenerId, String queueName) {
         if (log.isInfoEnabled()) {
@@ -228,7 +232,9 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      * Check whether a queue exists on a listener
      *
      * @param listenerId
+     *            The listener id
      * @param queueName
+     *            The query name
      * @return true if listening, false if not
      */
     private boolean checkQueueExistOnListener(String listenerId, String queueName) {
@@ -264,6 +270,7 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      * Get the listener given a listener id
      *
      * @param listenerId
+     *            The listener id
      * @return the listener
      */
     private AbstractMessageListenerContainer getMessageListenerContainerById(String listenerId) {
