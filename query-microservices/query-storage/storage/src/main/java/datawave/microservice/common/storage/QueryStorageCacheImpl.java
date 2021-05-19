@@ -38,9 +38,9 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     }
     
     /**
-     * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification on a channel
+     * Store/cache a new query. This will create a query task containing the query with a DEFINE query action and send out a task notification on a channel
      * using the name of the query logic.
-     * 
+     *
      * @param queryPool
      *            The query pool
      * @param query
@@ -52,7 +52,31 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return The task key
      */
     @Override
-    public TaskKey storeQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
+    public TaskKey defineQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
+        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.DEFINED);
+    }
+    
+    /**
+     * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification on a channel
+     * using the name of the query logic.
+     *
+     * @param queryPool
+     *            The query pool
+     * @param query
+     *            The query parameters
+     * @param calculatedAuthorizations
+     *            The intersection of the user's auths with the requested auths
+     * @param count
+     *            The number of available locks which equates to the number of concurrent executors that can act on this query
+     * @return The task key
+     */
+    @Override
+    public TaskKey createQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
+        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATED);
+    }
+    
+    private TaskKey storeQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count, QueryStatus.QUERY_STATE queryState)
+                    throws IOException {
         UUID queryUuid = query.getId();
         if (queryUuid == null) {
             // create the query UUID
@@ -67,6 +91,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         
         // store the initial query properties
         QueryStatus queryStatus = new QueryStatus(checkpoint.getQueryKey());
+        queryStatus.setQueryState(queryState);
         queryStatus.setQuery(query);
         queryStatus.setCalculatedAuthorizations(calculatedAuthorizations);
         queryStatus.setLastUpdated(new Date());
@@ -76,7 +101,13 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         cache.updateTaskStates(taskStates);
         
         // create and store the initial create task with the checkpoint. This will send out the task notification.
-        QueryTask task = createTask(QueryTask.QUERY_ACTION.CREATE, checkpoint);
+        QueryTask.QUERY_ACTION queryAction = null;
+        if (queryState == QueryStatus.QUERY_STATE.DEFINED) {
+            queryAction = QueryTask.QUERY_ACTION.DEFINE;
+        } else if (queryState == QueryStatus.QUERY_STATE.CREATED) {
+            queryAction = QueryTask.QUERY_ACTION.CREATE;
+        }
+        QueryTask task = createTask(queryAction, checkpoint);
         
         // return the task key
         return task.getTaskKey();

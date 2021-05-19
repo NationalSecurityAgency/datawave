@@ -13,7 +13,7 @@ import java.util.UUID;
  */
 public interface QueryStorageCache {
     /**
-     * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification.
+     * Store/cache a new query. This will create a query task containing the query with a DEFINE query action and send out a task notification.
      * 
      * @param queryPool
      *            The query pool
@@ -25,7 +25,22 @@ public interface QueryStorageCache {
      *            The number of available locks which equates to the number of concurrent executors that can act on this query
      * @return The create task key
      */
-    TaskKey storeQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
+    TaskKey defineQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
+    
+    /**
+     * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification.
+     *
+     * @param queryPool
+     *            The query pool
+     * @param query
+     *            The query parameters
+     * @param calculatedAuths
+     *            The intersection of the user's auths with the requested auths
+     * @param count
+     *            The number of available locks which equates to the number of concurrent executors that can act on this query
+     * @return The create task key
+     */
+    TaskKey createQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
     
     /**
      * Get the current query state. This includes the query status and the task statuses

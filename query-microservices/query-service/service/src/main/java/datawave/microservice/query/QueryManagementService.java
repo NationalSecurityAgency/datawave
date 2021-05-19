@@ -135,7 +135,7 @@ public class QueryManagementService implements QueryRequestHandler {
             // persist the query w/ query id in the query storage cache
             // TODO: JWO: storeQuery assumes that this is a 'create' call, but this is a 'define' call.
             // @formatter:off
-            TaskKey taskKey = queryStorageCache.storeQuery(
+            TaskKey taskKey = queryStorageCache.defineQuery(
                     new QueryPool(getPoolName()),
                     createQuery(queryLogicName, parameters, userDn, currentUser.getDNs()),
                     AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(), currentUser),
@@ -184,7 +184,7 @@ public class QueryManagementService implements QueryRequestHandler {
             try {
                 // persist the query w/ query id in the query storage cache
                 // @formatter:off
-                TaskKey taskKey = queryStorageCache.storeQuery(
+                TaskKey taskKey = queryStorageCache.createQuery(
                         new QueryPool(getPoolName()),
                         query,
                         AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(), currentUser),

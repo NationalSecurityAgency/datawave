@@ -106,7 +106,7 @@ public class QueryStorageCacheTest {
     
     @DirtiesContext
     @Test
-    public void testStoreQuery() throws ParseException, InterruptedException, IOException, TaskLockException {
+    public void testCreateQuery() throws ParseException, InterruptedException, IOException, TaskLockException {
         // ensure the message queue is empty
         assertTrue(queryTaskNotifications.isEmpty());
         
@@ -118,7 +118,7 @@ public class QueryStorageCacheTest {
         QueryPool queryPool = new QueryPool(TEST_POOL);
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
-        TaskKey key = storageService.storeQuery(queryPool, query, auths, 3);
+        TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
         assertNotNull(key);
         
         TaskStates states = storageService.getTaskStates(key.getQueryId());
