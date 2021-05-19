@@ -43,6 +43,11 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave</artifactId>
                 <version>${version.microservice.starter}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>spring-boot-starter-datawave</artifactId>
+                <version>${version.microservice.starter}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -74,6 +79,11 @@
             <artifactId>spring-kafka</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -86,32 +96,6 @@
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-actuator-autoconfigure</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- With Spring Cloud 2020, this dependency is needed in order for resources/config/bootstrap.yml to be loaded -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-bootstrap</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-stream-binder-rabbit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-stream-test-support</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

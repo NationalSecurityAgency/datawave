@@ -98,9 +98,6 @@ query:
     sendNotifications: true
 
 datawave:
-  lock:
-    type: local
-
   metadata:
     all-metadata-auths:
       - PRIVATE,PUBLIC

@@ -7,7 +7,8 @@ import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Primary;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.messaging.support.MessageHeaderAccessor;
@@ -22,10 +23,15 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 
-@Primary
+import static datawave.microservice.common.storage.queue.TestQueryQueueManager.TEST;
+
 @Component
+@ConditionalOnProperty(name = "query.storage.backend", havingValue = TEST, matchIfMissing = true)
+@ConditionalOnMissingBean(type = "QueryQueueManager")
 public class TestQueryQueueManager implements QueryQueueManager {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
+    
+    public static final String TEST = "test";
     
     public static final String MESSAGE_KEY = "messageKey";
     public static final String MESSAGE_ID = "messageId";

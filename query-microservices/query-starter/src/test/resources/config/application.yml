@@ -115,13 +115,6 @@ datawave:
           definedView: "LuceneUUIDEventQuery"
         - fieldName: "PAGE_TITLE"
           definedView: "LuceneUUIDEventQuery"
-    storage:
-      backend:
-        LOCAL
-      syncStorage:
-        true
-      sendNotifications:
-        true
     logic:
       factory:
         enabled: true
@@ -219,11 +212,6 @@ datawave:
           statsdHost: ${warehouse.statsd.host}
           statsdPort: ${warehouse.statsd.port}
           evaluationOnlyFields: ""
-
-query:
-  storage:
-    backend:
-      LOCAL
 
 audit-client:
   discovery:

@@ -4,6 +4,8 @@ import datawave.microservice.query.DefaultQueryParameters;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.security.Authorizations;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
@@ -60,13 +62,6 @@ public class QueryStorageCacheTest {
         }
         
         @Bean
-        public QueryQueueListener messageConsumer(QueryQueueManager queueManager) {
-            // ensure our pool is created so we can start listening to it
-            queueManager.ensureQueueCreated(new QueryPool(TEST_POOL));
-            return queueManager.createListener(LISTENER_ID, TEST_POOL);
-        }
-        
-        @Bean
         @Primary
         public ApplicationEventPublisher publisher(ApplicationEventPublisher publisher) {
             return event -> {
@@ -94,12 +89,20 @@ public class QueryStorageCacheTest {
     private QueryQueueManager queueManager;
     
     @Autowired
-    private QueryQueueListener messageConsumer;
-    
-    @Autowired
     private LinkedList<QueryTaskNotification> queryTaskNotifications;
     
     private static final String LISTENER_ID = "QueryStorageCacheTestListener";
+    
+    @BeforeEach
+    public void before() {
+        queueManager.ensureQueueCreated(new QueryPool(TEST_POOL));
+        queueManager.createListener(LISTENER_ID, TEST_POOL);
+    }
+    
+    @AfterEach
+    public void after() {
+        queueManager.deleteQueue(new QueryPool(TEST_POOL));
+    }
     
     @DirtiesContext
     @Test

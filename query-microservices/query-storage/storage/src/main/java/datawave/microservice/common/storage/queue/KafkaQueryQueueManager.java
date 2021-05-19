@@ -45,7 +45,7 @@ import static datawave.microservice.common.storage.queue.KafkaQueryQueueManager.
 
 @Component
 @ConditionalOnProperty(name = "query.storage.backend", havingValue = KAFKA)
-@ConditionalOnMissingBean(QueryQueueManager.class)
+@ConditionalOnMissingBean(type = "QueryQueueManager")
 public class KafkaQueryQueueManager implements QueryQueueManager {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     

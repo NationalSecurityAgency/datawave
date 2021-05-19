@@ -26,7 +26,6 @@ import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.amqp.support.converter.MessagingMessageConverter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.messaging.Message;
@@ -42,8 +41,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static datawave.microservice.common.storage.queue.RabbitQueryQueueManager.RABBIT;
 
 @Component
-@ConditionalOnProperty(name = "query.storage.backend", havingValue = RABBIT, matchIfMissing = true)
-@ConditionalOnMissingBean(QueryQueueManager.class)
+@ConditionalOnProperty(name = "query.storage.backend", havingValue = RABBIT)
+@ConditionalOnMissingBean(type = "QueryQueueManager")
 public class RabbitQueryQueueManager implements QueryQueueManager {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
@@ -353,8 +352,11 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         // default wait for 1 minute
         private static final long WAIT_MS_DEFAULT = 60L * 1000L;
         
-        @Autowired
         private RabbitTemplate rabbitTemplate;
+        
+        public TestMessageConsumer(RabbitTemplate rabbitTemplate) {
+            this.rabbitTemplate = rabbitTemplate;
+        }
         
         private AtomicInteger semaphore = new AtomicInteger(0);
         

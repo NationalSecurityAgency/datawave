@@ -45,7 +45,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *            The query pool
      * @param query
      *            The query parameters
-     * @param calculatedAuths
+     * @param calculatedAuthorizations
      *            The intersection of the user's auths with the requested auths
      * @param count
      *            The number of available locks which equates to the number of concurrent executors that can act on this query
