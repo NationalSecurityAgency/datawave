@@ -61,7 +61,10 @@ public class QueryStorageStateServiceTest {
     private RestTemplateBuilder restTemplateBuilder;
     
     private JWTRestTemplate jwtRestTemplate;
-    
+
+    @Autowired
+    private QueryQueueManager queueManager;
+
     @Autowired
     private QueryStorageCache storageService;
     
@@ -83,8 +86,9 @@ public class QueryStorageStateServiceTest {
     @AfterEach
     public void cleanup() throws IOException {
         storageService.clear();
+        queueManager.deleteQueue(new QueryPool(TEST_POOL));
     }
-    
+
     @Test
     public void testStateStorageService() throws ParseException, InterruptedException, TaskLockException, IOException {
         Query query = new QueryImpl();

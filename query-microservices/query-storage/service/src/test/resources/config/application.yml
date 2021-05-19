@@ -86,11 +86,18 @@ spring.config.activate.on-profile: use-rabbit
 query:
   storage:
     backend:
-      rabbitmq
+      rabbit
 
 ---
 
 spring.config.activate.on-profile: use-kafka
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: KafkaQueryQueueManager
+      autoOffsetReset: latest
 
 query:
   storage:
