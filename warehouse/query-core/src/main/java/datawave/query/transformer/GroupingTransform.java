@@ -585,7 +585,11 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         }
     }
     
-    // static class SortedGroupAtrrTypeMap extends TreeMultimap <Type<T extends Comparable<T>>, GroupingTypeAttribute<T>> {
-    //
-    // }
+    @Override
+    public int hashCode() {
+        HashCodeBuilder hcb = new HashCodeBuilder(2099, 2129);
+        hcb.append(getType().getDelegateAsString());
+        return hcb.toHashCode();
+    }
+ }
 }
