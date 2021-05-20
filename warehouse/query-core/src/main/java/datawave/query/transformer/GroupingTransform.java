@@ -583,13 +583,12 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 return 0;
             }
         }
+
+        @Override
+        public int hashCode() {
+            HashCodeBuilder hcb = new HashCodeBuilder(2099, 2129);
+            hcb.append(getType().getDelegateAsString());
+            return hcb.toHashCode();
+        }
     }
-    
-    @Override
-    public int hashCode() {
-        HashCodeBuilder hcb = new HashCodeBuilder(2099, 2129);
-        hcb.append(getType().getDelegateAsString());
-        return hcb.toHashCode();
-    }
- }
 }
