@@ -68,11 +68,13 @@ public class QueryFunctions {
         if (field != null) {
             // we only want to test against the normalized variant to be consistent with the DatawaveArithmetic
             String fieldValue = ValueTuple.getNormalizedStringValue(field);
-            int leftComparison = fieldValue.compareTo(left);
-            if (leftComparison > 0 || (leftInclusive && leftComparison == 0)) {
-                int rightComparison = fieldValue.compareTo(right);
-                if (rightComparison < 0 || (rightInclusive && rightComparison == 0)) {
-                    return Collections.singleton(getHitTermString(field));
+            if (fieldValue != null) {
+                int leftComparison = fieldValue.compareTo(left);
+                if (leftComparison > 0 || (leftInclusive && leftComparison == 0)) {
+                    int rightComparison = fieldValue.compareTo(right);
+                    if (rightComparison < 0 || (rightInclusive && rightComparison == 0)) {
+                        return Collections.singleton(getHitTermString(field));
+                    }
                 }
             }
         }
@@ -103,21 +105,23 @@ public class QueryFunctions {
         Number value = null;
         if (field != null) {
             String fieldValue = ValueTuple.getNormalizedStringValue(field);
-            if (NumericalEncoder.isPossiblyEncoded(fieldValue)) {
-                try {
-                    value = NumericalEncoder.decode(fieldValue);
-                } catch (NumberFormatException nfe) {
+            if (fieldValue != null) {
+                if (NumericalEncoder.isPossiblyEncoded(fieldValue)) {
+                    try {
+                        value = NumericalEncoder.decode(fieldValue);
+                    } catch (NumberFormatException nfe) {
+                        try {
+                            value = NumberUtils.createNumber(fieldValue);
+                        } catch (Exception nfe2) {
+                            throw new NumberFormatException("Cannot decode " + fieldValue + " using NumericalEncoder or float");
+                        }
+                    }
+                } else {
                     try {
                         value = NumberUtils.createNumber(fieldValue);
                     } catch (Exception nfe2) {
-                        throw new NumberFormatException("Cannot decode " + fieldValue + " using NumericalEncoder or float");
+                        throw new NumberFormatException("Cannot decode " + fieldValue + " using float");
                     }
-                }
-            } else {
-                try {
-                    value = NumberUtils.createNumber(fieldValue);
-                } catch (Exception nfe2) {
-                    throw new NumberFormatException("Cannot decode " + fieldValue + " using float");
                 }
             }
         }
