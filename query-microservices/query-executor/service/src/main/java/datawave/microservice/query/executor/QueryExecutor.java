@@ -214,7 +214,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
             }
             
             Object result = iter.next();
-            queues.sendMessage(taskKey.getQueryId(), new Result(UUID.randomUUID().toString(), result));
+            queues.sendMessage(taskKey.getQueryId(), new Result(UUID.randomUUID().toString(), new Object[] {result}));
             
             // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
             // TODO
