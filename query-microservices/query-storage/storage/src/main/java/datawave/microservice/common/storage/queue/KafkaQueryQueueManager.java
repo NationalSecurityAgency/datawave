@@ -62,7 +62,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     private final ConsumerFactory kafkaConsumerFactory;
     
     // A mapping of queue names to routing keys
-    private Map<String,String> queues = new HashMap<>();
+    private Map<String,String> topics = new HashMap<>();
     
     public KafkaQueryQueueManager(KafkaAdmin adminClient, KafkaTemplate kafkaTemplate, ConsumerFactory kafkaConsumerFactory) {
         this.adminClient = AdminClient.create(adminClient.getConfigurationProperties());
@@ -93,7 +93,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     public void ensureQueueCreated(QueryPool queryPool) {
         QueryTaskNotification testMessage = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), "NA"),
                         QueryTask.QUERY_ACTION.TEST);
-        ensureQueueCreated(queryPool.getName(), testMessage.getTaskKey().toRoutingKey(), testMessage.getTaskKey().toKey());
+        ensureTopicCreated(queryPool.getName(), testMessage.getTaskKey().toRoutingKey(), testMessage.getTaskKey().toKey());
     }
     
     /**
@@ -126,7 +126,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
      */
     @Override
     public void ensureQueueCreated(UUID queryId) {
-        ensureQueueCreated(queryId.toString(), queryId.toString(), queryId.toString());
+        ensureTopicCreated(queryId.toString(), queryId.toString(), queryId.toString());
     }
     
     /**
@@ -179,29 +179,29 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     /**
      * Ensure a queue is created for a given pool
      *
-     * @param topicId
+     * @param topic
      *            The name of the queue
      * @param routingPattern
      *            The routing pattern used to bind the exchange to the queue
      * @param routingKey
      *            A routing key to use for a test message
      */
-    private void ensureQueueCreated(String topicId, String routingPattern, String routingKey) {
-        if (queues.get(topicId) == null) {
-            synchronized (queues) {
-                if (queues.get(topicId) == null) {
+    private void ensureTopicCreated(String topic, String routingPattern, String routingKey) {
+        if (topics.get(topic) == null) {
+            synchronized (topics) {
+                if (topics.get(topic) == null) {
                     if (log.isInfoEnabled()) {
-                        log.debug("Creating topic " + topicId + " with routing pattern " + routingPattern);
+                        log.debug("Creating topic " + topic + " with routing pattern " + routingPattern);
                     }
                     
                     try {
-                        createTopic(topicId, 10, (short) 1);
-                        topicReadyWait(topicId, 10, TimeUnit.SECONDS);
+                        createTopic(topic, 10, (short) 1);
+                        topicReadyWait(topic, 10, TimeUnit.SECONDS);
                     } catch (Exception e) {
                         Throwables.propagate(e);
                     }
                     
-                    queues.put(topicId, routingPattern);
+                    topics.put(topic, routingPattern);
                 }
             }
         }
@@ -302,7 +302,9 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
                 voidFuture.get();
             }
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.debug("Failed to delete topic " + topic, e);
+            log.error("Failed to delete topic " + topic, e);
+        } finally {
+            topics.remove(topic);
         }
     }
     
@@ -325,7 +327,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
                 voidFuture.get();
             }
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.debug("Failed to delete group " + group, e);
+            log.error("Failed to delete group " + group, e);
         }
     }
     
@@ -368,7 +370,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
             }
             
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.debug("Unable to describe group " + group, e);
+            log.warn("Unable to describe group " + group, e);
         }
         return groupDesc;
     }
@@ -394,7 +396,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
             }
             
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            log.debug("Unable to describe topic " + topic, e);
+            log.warn("Unable to describe topic " + topic, e);
         }
         return topicDesc;
     }
