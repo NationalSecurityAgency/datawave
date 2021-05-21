@@ -150,8 +150,8 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
     
     private long incrementNumResultsGenerated(TaskKey taskKey) {
         QueryStorageLock lock = cache.getQueryStatusLock(taskKey.getQueryId());
+        lock.lock();
         try {
-            lock.lock();
             QueryStatus status = cache.getQueryStatus(taskKey.getQueryId());
             if (status != null) {
                 long numGenerated = status.getNumResultsGenerated() + 1;
