@@ -8,9 +8,8 @@ public class Result {
     private Object[] payload;
     private String id;
     
-    public Result(@JsonProperty("resultId") String id,
-                  @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class") @JsonProperty("payload") Object[] payload,
-                  @JsonProperty("payloadType") String payloadType) {
+    public Result(@JsonProperty("resultId") String id, @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY,
+                    property = "@class") @JsonProperty("payload") Object[] payload, @JsonProperty("payloadType") String payloadType) {
         this.id = id;
         this.payloadType = payloadType;
         this.payload = payload;

@@ -297,7 +297,7 @@ public class QueryManagementService implements QueryRequestHandler {
         
         // keep waiting for results until we're finished
         while (!isFinished(queryId)) {
-            Object[] results = resultListener.receive(queryProperties.getResultQueueIntervalMillis()).getPayload().getPayloadObject();
+            Object[] results = resultListener.receive(queryProperties.getResultQueueIntervalMillis()).getPayload().getPayload();
             if (results != null) {
                 resultList.addAll(Arrays.asList(results));
             }
