@@ -5,6 +5,7 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
@@ -20,6 +21,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.messaging.Message;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -48,9 +50,23 @@ import static org.junit.jupiter.api.Assertions.fail;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ContextConfiguration(classes = QueryStorageCacheTest.QueryStorageCacheTestConfiguration.class)
-@ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications"})
-public class QueryStorageCacheTest {
+public abstract class QueryStorageCacheTest {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
+    
+    @ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications"})
+    public static class LocalQueryStorageCacheTest extends QueryStorageCacheTest {}
+    
+    @EmbeddedKafka
+    @ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications", "use-embedded-kafka"})
+    public static class EmbeddedKafkaQueryStorageCacheTest extends QueryStorageCacheTest {}
+    
+    @Disabled("Cannot run this test without an externally deployed RabbitMQ instance.")
+    @ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications", "use-rabbit"})
+    public static class RabbitQueryStorageCacheTest extends QueryStorageCacheTest {}
+    
+    @Disabled("Cannot run this test without an externally deployed Kafka instance.")
+    @ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications", "use-kafka"})
+    public static class KafkaQueryStorageCacheTest extends QueryStorageCacheTest {}
     
     @Configuration
     @Profile("QueryStorageCacheTest")
@@ -65,11 +81,10 @@ public class QueryStorageCacheTest {
         @Primary
         public ApplicationEventPublisher publisher(ApplicationEventPublisher publisher) {
             return event -> {
-                publisher.publishEvent(event);
                 if (event instanceof RemoteQueryTaskNotificationEvent)
                     publishedEvents().push(((RemoteQueryTaskNotificationEvent) event).getNotification());
             };
-        };
+        }
     }
     
     @SpringBootApplication(scanBasePackages = "datawave.microservice")
@@ -90,8 +105,6 @@ public class QueryStorageCacheTest {
     
     @Autowired
     private LinkedList<QueryTaskNotification> queryTaskNotifications;
-    
-    private static final String LISTENER_ID = "QueryStorageCacheTestListener";
     
     public String TEST_POOL = "TestPool";
     

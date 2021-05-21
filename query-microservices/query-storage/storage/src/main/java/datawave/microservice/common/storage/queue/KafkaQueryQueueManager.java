@@ -10,17 +10,15 @@ import datawave.microservice.common.storage.QueryTask;
 import datawave.microservice.common.storage.QueryTaskNotification;
 import datawave.microservice.common.storage.Result;
 import datawave.microservice.common.storage.TaskKey;
-import datawave.microservice.common.storage.config.QueryStorageProperties;
 import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.ConsumerGroupDescription;
 import org.apache.kafka.clients.admin.DeleteRecordsResult;
-import org.apache.kafka.clients.admin.DeleteTopicsResult;
-import org.apache.kafka.clients.admin.DescribeTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.RecordsToDelete;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.slf4j.Logger;
@@ -28,8 +26,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.MessageListener;
@@ -44,8 +42,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static datawave.microservice.common.storage.queue.KafkaQueryQueueManager.KAFKA;
+import static org.apache.kafka.common.ConsumerGroupState.STABLE;
 
 @Component
 @ConditionalOnProperty(name = "query.storage.backend", havingValue = KAFKA)
@@ -55,19 +57,16 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     
     public static final String KAFKA = "kafka";
     
-    private final QueryStorageProperties properties;
-    private final AdminClient kafkaAdmin;
+    private final AdminClient adminClient;
     private final KafkaTemplate kafkaTemplate;
     private final ConsumerFactory kafkaConsumerFactory;
     
     // A mapping of queue names to routing keys
     private Map<String,String> queues = new HashMap<>();
     
-    public KafkaQueryQueueManager(QueryStorageProperties properties, AdminClient kafkaAdmin, ProducerFactory kafkaProducerFactory,
-                    ConsumerFactory kafkaConsumerFactory) {
-        this.properties = properties;
-        this.kafkaAdmin = kafkaAdmin;
-        this.kafkaTemplate = new KafkaTemplate(kafkaProducerFactory);
+    public KafkaQueryQueueManager(KafkaAdmin adminClient, KafkaTemplate kafkaTemplate, ConsumerFactory kafkaConsumerFactory) {
+        this.adminClient = AdminClient.create(adminClient.getConfigurationProperties());
+        this.kafkaTemplate = kafkaTemplate;
         this.kafkaConsumerFactory = kafkaConsumerFactory;
     }
     
@@ -105,7 +104,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
      */
     @Override
     public void deleteQueue(QueryPool queryPool) {
-        deleteQueue(queryPool.getName());
+        deleteTopic(queryPool.getName());
     }
     
     /**
@@ -138,7 +137,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
      */
     @Override
     public void deleteQueue(UUID queryId) {
-        deleteQueue(queryId.toString());
+        deleteTopic(queryId.toString());
     }
     
     /**
@@ -180,57 +179,158 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     /**
      * Ensure a queue is created for a given pool
      *
-     * @param queueName
+     * @param topicId
      *            The name of the queue
      * @param routingPattern
      *            The routing pattern used to bind the exchange to the queue
      * @param routingKey
      *            A routing key to use for a test message
      */
-    private void ensureQueueCreated(String queueName, String routingPattern, String routingKey) {
-        if (queues.get(queueName) == null) {
+    private void ensureQueueCreated(String topicId, String routingPattern, String routingKey) {
+        if (queues.get(topicId) == null) {
             synchronized (queues) {
-                if (queues.get(queueName) == null) {
+                if (queues.get(topicId) == null) {
                     if (log.isInfoEnabled()) {
-                        log.debug("Creating topic " + queueName + " with routing pattern " + routingPattern);
+                        log.debug("Creating topic " + topicId + " with routing pattern " + routingPattern);
                     }
                     
-                    CreateTopicsResult createFuture = kafkaAdmin.createTopics(Collections.singleton(new NewTopic(queueName, 10, (short) 1)));
                     try {
-                        createFuture.all().get();
+                        createTopic(topicId, 10, (short) 1);
+                        topicReadyWait(topicId, 10, TimeUnit.SECONDS);
                     } catch (Exception e) {
                         Throwables.propagate(e);
                     }
                     
-                    queues.put(queueName, routingPattern);
+                    queues.put(topicId, routingPattern);
                 }
             }
         }
     }
     
-    private void deleteQueue(String name) {
-        try {
-            DeleteTopicsResult result = kafkaAdmin.deleteTopics(Collections.singleton(name));
-            try {
-                result.all().get();
-            } catch (Exception e) {
-                Throwables.propagate(e);
+    private void groupReadyWait(String group, long duration, TimeUnit unit) throws TimeoutException {
+        long nanoStopTime = System.nanoTime() + unit.toNanos(duration);
+        while (!isGroupReady(group)) {
+            if (System.nanoTime() >= nanoStopTime) {
+                throw new TimeoutException("Timed out waiting for Kafka group to be ready");
             }
-        } catch (Exception e) {
-            log.error("Failed to delete queue " + name, e);
-        } finally {
-            queues.remove(name);
+            log.debug("Kafka Group [" + group + "] is not ready.");
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                log.debug("Timed out waiting to call group descriptions");
+            }
+        }
+    }
+    
+    private boolean isGroupReady(String group) {
+        return isGroupReady(group, -1L, null);
+    }
+    
+    private boolean isGroupReady(String group, long interval, TimeUnit unit) {
+        ConsumerGroupDescription groupDesc = describeGroup(group, interval, unit);
+        boolean groupReady = groupDesc != null && groupDesc.state().equals(STABLE);
+        if (!groupReady) {
+            log.debug("Kafka Group [" + group + "] is not ready.");
+        }
+        return groupReady;
+    }
+    
+    private void topicReadyWait(String topic, long duration, TimeUnit unit) throws TimeoutException {
+        long nanoStopTime = System.nanoTime() + unit.toNanos(duration);
+        while (!isTopicReady(topic)) {
+            if (System.nanoTime() >= nanoStopTime) {
+                throw new TimeoutException("Timed out waiting for Kafka topic to be ready");
+            }
+            log.warn("Kafka Topic [" + topic + "] is not ready.");
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                log.debug("Timed out waiting to call topic descriptions");
+            }
+        }
+    }
+    
+    private boolean isTopicReady(String topic) {
+        return isTopicReady(topic, -1L, null);
+    }
+    
+    private boolean isTopicReady(String topic, long interval, TimeUnit unit) {
+        TopicDescription topicDesc = describeTopic(topic);
+        boolean topicReady = topicDesc != null;
+        if (!topicReady) {
+            log.debug("Kafka Topic [" + topic + "] is not ready.");
+        }
+        return topicReady;
+    }
+    
+    private void createTopic(String topic, int partitions, short replicas) throws InterruptedException, ExecutionException, TimeoutException {
+        createTopic(topic, partitions, replicas, -1L, null);
+    }
+    
+    private void createTopic(String topic, int partitions, short replicas, long timeout, TimeUnit unit)
+                    throws InterruptedException, ExecutionException, TimeoutException {
+        // @formatter:off
+        KafkaFuture<Void> voidFuture = adminClient
+                .createTopics(Collections.singleton(new NewTopic(topic, partitions, replicas)))
+                .values()
+                .get(topic);
+        // @formatter:on
+        
+        if (timeout >= 0 && unit != null) {
+            voidFuture.get(timeout, unit);
+        } else {
+            voidFuture.get();
+        }
+    }
+    
+    private void deleteTopic(String topic) {
+        deleteTopic(topic, -1L, null);
+    }
+    
+    private void deleteTopic(String topic, long timeout, TimeUnit unit) {
+        try {
+            // @formatter:off
+            KafkaFuture<Void> voidFuture = adminClient
+                    .deleteTopics(Collections.singleton(topic))
+                    .values()
+                    .get(topic);
+            // @formatter:on
+            
+            if (timeout >= 0 && unit != null) {
+                voidFuture.get(timeout, unit);
+            } else {
+                voidFuture.get();
+            }
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            log.debug("Failed to delete topic " + topic, e);
+        }
+    }
+    
+    private void deleteGroup(String group) {
+        deleteGroup(group, -1L, null);
+    }
+    
+    private void deleteGroup(String group, long timeout, TimeUnit unit) {
+        try {
+            // @formatter:off
+            KafkaFuture<Void> voidFuture = adminClient
+                    .deleteConsumerGroups(Collections.singleton(group))
+                    .deletedGroups()
+                    .get(group);
+            // @formatter:on
+            
+            if (timeout >= 0 && unit != null) {
+                voidFuture.get(timeout, unit);
+            } else {
+                voidFuture.get();
+            }
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            log.debug("Failed to delete group " + group, e);
         }
     }
     
     private void emptyQueue(String name) {
-        DescribeTopicsResult result = kafkaAdmin.describeTopics(Collections.singleton(name));
-        TopicDescription topic = null;
-        try {
-            topic = result.values().get(name).get();
-        } catch (Exception e) {
-            log.error("Unable to describe topic " + name, e);
-        }
+        TopicDescription topic = describeTopic(name);
         if (topic != null) {
             Map<TopicPartition,RecordsToDelete> partitions = new HashMap<>();
             RecordsToDelete records = RecordsToDelete.beforeOffset(Long.MAX_VALUE);
@@ -238,13 +338,65 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
                 TopicPartition partition = new TopicPartition(name, info.partition());
                 partitions.put(partition, records);
             }
-            DeleteRecordsResult result2 = kafkaAdmin.deleteRecords(partitions);
+            DeleteRecordsResult result2 = adminClient.deleteRecords(partitions);
             try {
                 result2.all();
             } catch (Exception e) {
-                log.error("Unable to empty queue " + name, e);
+                log.debug("Unable to empty queue " + name, e);
             }
         }
+    }
+    
+    private ConsumerGroupDescription describeGroup(String group) {
+        return describeGroup(group, -1L, null);
+    }
+    
+    private ConsumerGroupDescription describeGroup(String group, long timeout, TimeUnit unit) {
+        ConsumerGroupDescription groupDesc = null;
+        try {
+            // @formatter:off
+            KafkaFuture<ConsumerGroupDescription> groupDescFuture = adminClient
+                    .describeConsumerGroups(Collections.singletonList(group))
+                    .describedGroups()
+                    .get(group);
+            // @formatter:on
+            
+            if (timeout >= 0 && unit != null) {
+                groupDesc = groupDescFuture.get(timeout, unit);
+            } else {
+                groupDesc = groupDescFuture.get();
+            }
+            
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            log.debug("Unable to describe group " + group, e);
+        }
+        return groupDesc;
+    }
+    
+    private TopicDescription describeTopic(String topic) {
+        return describeTopic(topic, -1L, null);
+    }
+    
+    private TopicDescription describeTopic(String topic, long timeout, TimeUnit unit) {
+        TopicDescription topicDesc = null;
+        try {
+            // @formatter:off
+            KafkaFuture<TopicDescription> topicDescFuture = adminClient
+                    .describeTopics(Collections.singleton(topic))
+                    .values()
+                    .get(topic);
+            // @formatter:on
+            
+            if (timeout >= 0 && unit != null) {
+                topicDesc = topicDescFuture.get(timeout, unit);
+            } else {
+                topicDesc = topicDescFuture.get();
+            }
+            
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            log.debug("Unable to describe topic " + topic, e);
+        }
+        return topicDesc;
     }
     
     /**
@@ -254,17 +406,24 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         private java.util.Queue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
         private final String listenerId;
         private final String topicId;
+        private final String groupId;
         private ConcurrentMessageListenerContainer container;
         
         public KafkaQueueListener(String listenerId, String topicId) {
+            this(listenerId, topicId, null);
+        }
+        
+        public KafkaQueueListener(String listenerId, String topicId, String groupId) {
             this.listenerId = listenerId;
             this.topicId = topicId;
             
             ContainerProperties props = new ContainerProperties(topicId);
             props.setMessageListener(this);
-            props.setGroupId(topicId);
+            props.setGroupId(groupId);
             
             container = new ConcurrentMessageListenerContainer<>(kafkaConsumerFactory, props);
+            
+            this.groupId = container.getGroupId();
             
             container.start();
             
@@ -275,6 +434,13 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
                     break;
                 }
             }
+            
+            try {
+                topicReadyWait(this.topicId, 10, TimeUnit.SECONDS);
+                groupReadyWait(this.groupId, 10, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                Throwables.propagate(e);
+            }
         }
         
         @Override
@@ -284,6 +450,10 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         
         public String getTopicId() {
             return topicId;
+        }
+        
+        public String getGroupId() {
+            return groupId;
         }
         
         @Override

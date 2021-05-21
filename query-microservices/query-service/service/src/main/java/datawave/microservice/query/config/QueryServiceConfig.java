@@ -1,5 +1,6 @@
 package datawave.microservice.query.config;
 
+import datawave.marking.MarkingFunctions;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryParameters;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -18,6 +19,13 @@ public class QueryServiceConfig {
     @RequestScope
     public QueryParameters queryParameters() {
         return new DefaultQueryParameters();
+    }
+    
+    @Bean
+    @ConditionalOnMissingBean
+    @RequestScope
+    public MarkingFunctions markingFunctions() {
+        return new MarkingFunctions.Default();
     }
     
     @Bean

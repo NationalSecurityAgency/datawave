@@ -34,6 +34,43 @@ services:
       discovery:
         condition: service_started
 
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:3
+    ports:
+      - "2181:2181"
+    networks:
+      - demo
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka:
+    image: docker.io/bitnami/kafka:2
+    ports:
+      - "9093:9093"
+    networks:
+      - demo
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=INTERNAL://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=INTERNAL://kafka:9092,EXTERNAL://127.0.0.1:9093
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      zookeeper:
+        condition: service_started
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    ports:
+      - "9000:9000"
+    networks:
+      - demo
+    environment:
+      - KAFKA_BROKERCONNECT=kafka:9092
+    depends_on:
+      kafka:
+        condition: service_started
+
   configuration:
     image: datawave/config-service:1.4
     command:
