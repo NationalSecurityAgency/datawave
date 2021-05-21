@@ -76,6 +76,26 @@ public interface QueryStorageCache {
     void updateQueryStatus(QueryStatus queryStatus);
     
     /**
+     * Update the query status state
+     * 
+     * @param queryId
+     *            The query id
+     * @param state
+     *            The updated state
+     */
+    void updateQueryStatus(UUID queryId, QueryStatus.QUERY_STATE state);
+    
+    /**
+     * Update a task state
+     * 
+     * @param taskKey
+     *            The task key
+     * @param state
+     *            The updated state
+     */
+    boolean updateTaskState(TaskKey taskKey, TaskStates.TASK_STATE state);
+    
+    /**
      * Get a lock for the query status
      *
      * @param queryId
@@ -129,6 +149,13 @@ public interface QueryStorageCache {
      * @return The new query task
      */
     QueryTask createTask(QueryTask.QUERY_ACTION action, QueryCheckpoint checkpoint) throws IOException;
+    
+    /**
+     * Post a task notification
+     * 
+     * @param taskNotification
+     */
+    public void post(QueryTaskNotification taskNotification);
     
     /**
      * Get a task for a given task key and lock it for processing. This return null if the task no longer exists. This will throw an exception if the task is

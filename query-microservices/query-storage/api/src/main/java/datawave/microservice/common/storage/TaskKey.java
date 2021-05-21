@@ -1,6 +1,7 @@
 package datawave.microservice.common.storage;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -29,6 +30,16 @@ public class TaskKey extends QueryKey implements Serializable {
      */
     public TaskKey(String value) {
         super(value);
+    }
+    
+    /**
+     * Get the query key for this task
+     * 
+     * @return the query key
+     */
+    @JsonIgnore
+    public QueryKey getQueryKey() {
+        return this;
     }
     
     @Override

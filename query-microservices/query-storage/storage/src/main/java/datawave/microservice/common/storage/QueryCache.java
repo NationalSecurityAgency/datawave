@@ -54,6 +54,7 @@ public class QueryCache {
      */
     @CacheEvict(key = "T(datawave.microservice.common.storage.QueryCache).QUERY + T(datawave.microservice.common.storage.QueryKey).toUUIDKey(#queryId)")
     public void deleteQueryStatus(UUID queryId) {
+        String key = QUERY + QueryKey.toUUIDKey(queryId);
         if (log.isDebugEnabled()) {
             log.debug("Deleted query status for " + queryId);
         }

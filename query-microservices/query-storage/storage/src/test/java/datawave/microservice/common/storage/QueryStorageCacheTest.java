@@ -460,6 +460,59 @@ public abstract class QueryStorageCacheTest {
     
     @DirtiesContext
     @Test
+    public void testTaskStateUpdate() throws ParseException, InterruptedException, IOException, TaskLockException {
+        Query query = new QueryImpl();
+        query.setQueryLogicName("EventQuery");
+        query.setQuery("foo == bar");
+        query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
+        query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        UUID queryId = UUID.randomUUID();
+        createdQueries.add(queryId);
+        QueryPool queryPool = new QueryPool(TEST_POOL);
+        QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
+        TaskStates states = new TaskStates(queryKey, 2);
+        TaskKey key = new TaskKey(UUID.randomUUID(), queryKey);
+        TaskKey key2 = new TaskKey(UUID.randomUUID(), queryKey);
+        TaskKey key3 = new TaskKey(UUID.randomUUID(), queryKey);
+        states.setState(key, TaskStates.TASK_STATE.READY);
+        
+        storageService.updateTaskStates(states);
+        
+        assertEquals(TaskStates.TASK_STATE.READY, queryCache.getTaskStates(queryId).getState(key));
+        assertTrue(storageService.updateTaskState(key, TaskStates.TASK_STATE.RUNNING));
+        assertEquals(TaskStates.TASK_STATE.RUNNING, queryCache.getTaskStates(queryId).getState(key));
+        assertTrue(storageService.updateTaskState(key2, TaskStates.TASK_STATE.RUNNING));
+        // should fail trying to run another
+        assertFalse(storageService.updateTaskState(key3, TaskStates.TASK_STATE.RUNNING));
+        assertTrue(storageService.updateTaskState(key, TaskStates.TASK_STATE.COMPLETED));
+        assertEquals(TaskStates.TASK_STATE.COMPLETED, queryCache.getTaskStates(queryId).getState(key));
+        // now this should succeed
+        assertTrue(storageService.updateTaskState(key3, TaskStates.TASK_STATE.RUNNING));
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testQueryStateUpdate() throws ParseException, InterruptedException, IOException, TaskLockException {
+        Query query = new QueryImpl();
+        query.setQueryLogicName("EventQuery");
+        query.setQuery("foo == bar");
+        query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
+        query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        QueryPool queryPool = new QueryPool(TEST_POOL);
+        Set<Authorizations> auths = new HashSet<>();
+        auths.add(new Authorizations("FOO", "BAR"));
+        TaskKey taskKey = storageService.createQuery(queryPool, query, auths, 2);
+        UUID queryId = taskKey.getQueryId();
+        createdQueries.add(queryId);
+        
+        assertEquals(QueryStatus.QUERY_STATE.CREATED, storageService.getQueryStatus(queryId).getQueryState());
+        storageService.updateQueryStatus(queryId, QueryStatus.QUERY_STATE.CANCELED);
+        assertEquals(QueryStatus.QUERY_STATE.CANCELED, storageService.getQueryStatus(queryId).getQueryState());
+    }
+    
+    @DirtiesContext
+    @Test
     public void testResultsQueue() throws Exception {
         // ensure the message queue is empty
         assertTrue(queryTaskNotifications.isEmpty());

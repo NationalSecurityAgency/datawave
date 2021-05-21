@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class TaskStates implements Serializable {
     public enum TASK_STATE implements Serializable {
-        READY, RUNNING, COMPLETED
+        READY, RUNNING, COMPLETED, FAILED
     }
     
     private QueryKey queryKey;
@@ -66,7 +66,7 @@ public class TaskStates implements Serializable {
         }
         if (taskState == TASK_STATE.RUNNING) {
             // if we already have the max number of running tasks, then we cannot change state
-            if (taskStates.get(taskState).size() >= maxRunning) {
+            if (taskStates.containsKey(taskState) && taskStates.get(taskState).size() >= maxRunning) {
                 return false;
             }
         }

@@ -160,6 +160,51 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     }
     
     /**
+     * Update the query status state
+     *
+     * @param queryId
+     *            The query id
+     * @param state
+     *            the query state
+     */
+    @Override
+    public void updateQueryStatus(UUID queryId, QueryStatus.QUERY_STATE state) {
+        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
+        lock.lock();
+        try {
+            QueryStatus status = cache.getQueryStatus(queryId);
+            status.setQueryState(state);
+            updateQueryStatus(status);
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    /**
+     * Update a task state
+     *
+     * @param taskKey
+     *            The task key
+     * @param state
+     *            The task state
+     */
+    @Override
+    public boolean updateTaskState(TaskKey taskKey, TaskStates.TASK_STATE state) {
+        QueryStorageLock lock = cache.getTaskStatesLock(taskKey.getQueryId());
+        lock.lock();
+        try {
+            TaskStates states = cache.getTaskStates(taskKey.getQueryId());
+            if (states.setState(taskKey, state)) {
+                updateTaskStates(states);
+                return true;
+            }
+        } finally {
+            lock.unlock();
+        }
+        return false;
+    }
+    
+    /**
      * Get a lock for the query status
      *
      * @param queryId
@@ -238,14 +283,25 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         cache.updateTaskStates(states);
         
         // publish a task notification event
-        if (properties.isSendNotifications()) {
-            // broadcast the notification to the executor services
-            publisher.publishEvent(new RemoteQueryTaskNotificationEvent(this, busProperties.getId(), queryProperties.getExecutorServiceName(),
-                            task.getNotification()));
-        }
+        post(task.getNotification());
         
         // return the task
         return task;
+    }
+    
+    /**
+     * Post a task notification
+     * 
+     * @param taskNotification
+     */
+    @Override
+    public void post(QueryTaskNotification taskNotification) {
+        // publish a task notification event
+        if (properties.isSendNotifications()) {
+            // broadcast the notification to the executor services
+            publisher.publishEvent(
+                            new RemoteQueryTaskNotificationEvent(this, busProperties.getId(), queryProperties.getExecutorServiceName(), taskNotification));
+        }
     }
     
     /**

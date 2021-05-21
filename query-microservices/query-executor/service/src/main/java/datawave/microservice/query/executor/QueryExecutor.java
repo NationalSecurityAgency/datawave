@@ -1,12 +1,14 @@
 package datawave.microservice.query.executor;
 
-import datawave.microservice.common.storage.Result;
+import datawave.microservice.common.storage.QueryCheckpoint;
+import datawave.microservice.common.storage.QueryKey;
 import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryStatus;
 import datawave.microservice.common.storage.QueryStorageCache;
 import datawave.microservice.common.storage.QueryStorageLock;
 import datawave.microservice.common.storage.QueryTask;
 import datawave.microservice.common.storage.QueryTaskNotification;
+import datawave.microservice.common.storage.Result;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.common.storage.TaskLockException;
 import datawave.microservice.common.storage.TaskStates;
@@ -43,48 +45,25 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         this.queryLogicFactory = queryLogicFactory;
     }
     
-    public void handleQueryTaskNotification(QueryTaskNotification queryTaskNotification) {
-        try {
-            if (handleTask(queryTaskNotification)) {
-                // do something
-            } else {
-                // do something else
-            }
-        } catch (IOException e) {
-            // oops - handle this
-        } catch (InterruptedException e) {
-            // double oops - handle this too
-        }
-    }
-    
-    public boolean handleTask(QueryTaskNotification taskNotification) throws IOException, InterruptedException {
+    @Override
+    public void handleQueryTaskNotification(QueryTaskNotification taskNotification) {
         boolean gotLock = false;
         boolean taskComplete = false;
+        boolean taskFailed = false;
         TaskKey taskKey = taskNotification.getTaskKey();
-        QueryStorageLock taskStatesLock = cache.getTaskStatesLock(taskKey.getQueryId());
         try {
             // pull the task out of the cache, locking it in the process
             // TODO: how long do we wait? Do we want to set a lease time in case we die somehow?
             QueryTask task = cache.getTask(taskKey, 100);
             if (task != null) {
-                
                 // check the states to see if we can run this now
-                try {
-                    taskStatesLock.lock();
-                    TaskStates states = cache.getTaskStates(taskKey.getQueryId());
-                    if (states.setState(taskKey, TaskStates.TASK_STATE.RUNNING)) {
-                        cache.updateTaskStates(states);
-                        gotLock = true;
-                    }
-                } finally {
-                    taskStatesLock.unlock();
-                }
+                gotLock = cache.updateTaskState(taskKey, TaskStates.TASK_STATE.RUNNING);
                 
                 // only proceed if we got the lock
                 if (gotLock) {
                     // pull the query from the cache
                     QueryStatus queryStatus = cache.getQueryStatus(taskKey.getQueryId());
-                    QueryLogic<?> queryLogic = null;
+                    QueryLogic<?> queryLogic;
                     switch (task.getAction()) {
                         case CREATE:
                         case DEFINE:
@@ -99,10 +78,11 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
                                 if (task.getAction() == QueryTask.QUERY_ACTION.NEXT) {
                                     taskComplete = pullResults(taskKey, queryLogic, queryStatus.getQuery(), false);
                                     if (!taskComplete) {
-                                        checkpoint(cpQueryLogic);
+                                        checkpoint(taskKey.getQueryKey(), cpQueryLogic);
+                                        taskComplete = true;
                                     }
                                 } else {
-                                    checkpoint(cpQueryLogic);
+                                    checkpoint(taskKey.getQueryKey(), cpQueryLogic);
                                     taskComplete = true;
                                 }
                             } else {
@@ -126,28 +106,30 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         } catch (TaskLockException tle) {
             // somebody is already processing this one
         } catch (Exception e) {
-            // TODO: How do we get this exception back to the query service controller?
+            taskFailed = true;
+            QueryStatus status = cache.getQueryStatus(taskKey.getQueryId());
+            status.setFailure(e);
+            status.setQueryState(QueryStatus.QUERY_STATE.FAILED);
         } finally {
             if (gotLock) {
-                TaskStates.TASK_STATE newState = TaskStates.TASK_STATE.READY;
                 if (taskComplete) {
-                    cache.deleteTask(taskKey);
-                    newState = TaskStates.TASK_STATE.COMPLETED;
+                    cache.updateTaskState(taskKey, TaskStates.TASK_STATE.COMPLETED);
+                    try {
+                        cache.deleteTask(taskKey);
+                    } catch (IOException e) {
+                        log.error("We may be leaving an orphaned task: " + taskKey, e);
+                    }
+                } else if (taskFailed) {
+                    cache.updateTaskState(taskKey, TaskStates.TASK_STATE.FAILED);
+                    cache.getTaskLock(taskKey).unlock();
                 } else {
+                    cache.updateTaskState(taskKey, TaskStates.TASK_STATE.READY);
                     cache.getTaskLock(taskKey).unlock();
                 }
-                try {
-                    taskStatesLock.lock();
-                    TaskStates states = cache.getTaskStates(taskKey.getQueryId());
-                    if (states.setState(taskKey, newState)) {
-                        cache.updateTaskStates(states);
-                    }
-                } finally {
-                    taskStatesLock.unlock();
-                }
+            } else {
+                cache.post(taskNotification);
             }
         }
-        return gotLock;
     }
     
     private boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, long maxResults, int maxPageSize) {
@@ -227,7 +209,17 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         return !iter.hasNext();
     }
     
-    private void checkpoint(CheckpointableQueryLogic cpQueryLogic) {
-        
+    /**
+     * Checkpoint a query logic
+     * 
+     * @param queryKey
+     * @param cpQueryLogic
+     * @throws IOException
+     */
+    private void checkpoint(QueryKey queryKey, CheckpointableQueryLogic cpQueryLogic) throws IOException {
+        for (QueryCheckpoint cp : cpQueryLogic.checkpoint(queryKey)) {
+            cache.checkpointTask(new TaskKey(UUID.randomUUID(), queryKey), cp);
+        }
     }
+    
 }
