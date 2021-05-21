@@ -2,17 +2,21 @@ package datawave.microservice.common.storage.queue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Throwables;
 import datawave.microservice.common.storage.QueryPool;
 import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryTask;
 import datawave.microservice.common.storage.QueryTaskNotification;
+import datawave.microservice.common.storage.Result;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.common.storage.config.QueryStorageProperties;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteRecordsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.RecordsToDelete;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -23,14 +27,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.MessageListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -38,10 +44,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static datawave.microservice.common.storage.queue.KafkaQueryQueueManager.KAFKA;
-import static datawave.microservice.common.storage.queue.KafkaQueryQueueManager.TestMessageConsumer.TEST_MESSAGE;
 
 @Component
 @ConditionalOnProperty(name = "query.storage.backend", havingValue = KAFKA)
@@ -54,16 +58,16 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     private final QueryStorageProperties properties;
     private final AdminClient kafkaAdmin;
     private final KafkaTemplate kafkaTemplate;
-    private final DefaultKafkaConsumerFactory kafkaConsumerFactory;
+    private final ConsumerFactory kafkaConsumerFactory;
     
     // A mapping of queue names to routing keys
     private Map<String,String> queues = new HashMap<>();
     
-    public KafkaQueryQueueManager(QueryStorageProperties properties, AdminClient kafkaAdmin, KafkaTemplate kafkaTemplate,
-                    DefaultKafkaConsumerFactory kafkaConsumerFactory) {
+    public KafkaQueryQueueManager(QueryStorageProperties properties, AdminClient kafkaAdmin, ProducerFactory kafkaProducerFactory,
+                    ConsumerFactory kafkaConsumerFactory) {
         this.properties = properties;
         this.kafkaAdmin = kafkaAdmin;
-        this.kafkaTemplate = kafkaTemplate;
+        this.kafkaTemplate = new KafkaTemplate(kafkaProducerFactory);
         this.kafkaConsumerFactory = kafkaConsumerFactory;
     }
     
@@ -155,20 +159,22 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
      *
      * @param queryId
      *            the query ID
-     * @param resultId
-     *            a unique id for the result
      * @param result
      *            the result
      */
     @Override
-    public void sendMessage(UUID queryId, String resultId, Object result) {
+    public void sendMessage(UUID queryId, Result result) {
         ensureQueueCreated(queryId);
         
         String exchangeName = queryId.toString();
         if (log.isDebugEnabled()) {
             log.debug("Publishing message to " + exchangeName);
         }
-        kafkaTemplate.send(exchangeName, resultId, result);
+        try {
+            kafkaTemplate.send(exchangeName, new ObjectMapper().writeValueAsString(result));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Unable to serialize result", e);
+        }
     }
     
     /**
@@ -189,27 +195,11 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
                         log.debug("Creating topic " + queueName + " with routing pattern " + routingPattern);
                     }
                     
-                    // should be created automatically when sending the message
-                    
-                    if (log.isInfoEnabled()) {
-                        log.debug("Sending test message to verify topic " + queueName);
-                    }
-                    // add our test listener to the queue and wait for a test message
-                    boolean received = false;
-                    TestMessageConsumer testMessageConsumer = null;
+                    CreateTopicsResult createFuture = kafkaAdmin.createTopics(Collections.singleton(new NewTopic(queueName, 10, (short) 1)));
                     try {
-                        testMessageConsumer = new TestMessageConsumer(queueName);
-                        kafkaTemplate.send(queueName, routingKey, new ObjectMapper().writeValueAsBytes(TEST_MESSAGE));
-                        received = testMessageConsumer.receiveTest();
-                    } catch (JsonProcessingException e) {
-                        throw new IllegalStateException("Unable to serialize a string as json?", e);
-                    } finally {
-                        if (testMessageConsumer != null) {
-                            testMessageConsumer.stop();
-                        }
-                    }
-                    if (!received) {
-                        throw new RuntimeException("Unable to verify that queue and exchange were created for " + queueName);
+                        createFuture.all().get();
+                    } catch (Exception e) {
+                        Throwables.propagate(e);
                     }
                     
                     queues.put(queueName, routingPattern);
@@ -219,11 +209,17 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     }
     
     private void deleteQueue(String name) {
-        DeleteTopicsResult result = kafkaAdmin.deleteTopics(Collections.singleton(name));
         try {
-            result.all();
+            DeleteTopicsResult result = kafkaAdmin.deleteTopics(Collections.singleton(name));
+            try {
+                result.all().get();
+            } catch (Exception e) {
+                Throwables.propagate(e);
+            }
         } catch (Exception e) {
             log.error("Failed to delete queue " + name, e);
+        } finally {
+            queues.remove(name);
         }
     }
     
@@ -251,67 +247,11 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         }
     }
     
-    public class TestMessageConsumer extends KafkaQueueListener {
-        private static final String LISTENER_ID = "KafkaQueryQueueManagerTestListener";
-        public static final String TEST_MESSAGE = "TEST_MESSAGE";
-        
-        private ConcurrentMessageListenerContainer container;
-        private AtomicInteger semaphore = new AtomicInteger(0);
-        
-        // default wait for 1 minute
-        private static final long WAIT_MS_DEFAULT = 60L * 1000L;
-        
-        public TestMessageConsumer(String topicId) {
-            super(LISTENER_ID, topicId);
-        }
-        
-        @Override
-        public void onMessage(ConsumerRecord<String,byte[]> data) {
-            if (log.isTraceEnabled()) {
-                log.trace("Test Listener " + getListenerId() + " got message " + data.key());
-            }
-            String body = null;
-            try {
-                body = new ObjectMapper().readerFor(String.class).readValue(data.value());
-            } catch (Exception e) {
-                // body is not a json string
-            }
-            // determine if this is a test message
-            if (TEST_MESSAGE.equals(body)) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Test Listener " + getListenerId() + " got a test message");
-                }
-                semaphore.incrementAndGet();
-            }
-        }
-        
-        public boolean receiveTest() {
-            return receiveTest(WAIT_MS_DEFAULT);
-        }
-        
-        public boolean receiveTest(long waitMs) {
-            long start = System.currentTimeMillis();
-            while ((semaphore.get() == 0) && ((System.currentTimeMillis() - start) < waitMs)) {
-                try {
-                    Thread.sleep(1L);
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-            if (semaphore.get() > 0) {
-                semaphore.decrementAndGet();
-                return true;
-            } else {
-                return false;
-            }
-        }
-    }
-    
     /**
      * A listener for local queues
      */
-    public class KafkaQueueListener implements QueryQueueListener, MessageListener<String,byte[]> {
-        private java.util.Queue<Message> messageQueue = new ArrayBlockingQueue<>(100);
+    public class KafkaQueueListener implements QueryQueueListener, MessageListener<String,String> {
+        private java.util.Queue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
         private final String listenerId;
         private final String topicId;
         private ConcurrentMessageListenerContainer container;
@@ -322,11 +262,19 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
             
             ContainerProperties props = new ContainerProperties(topicId);
             props.setMessageListener(this);
+            props.setGroupId(topicId);
             
             container = new ConcurrentMessageListenerContainer<>(kafkaConsumerFactory, props);
             
             container.start();
             
+            while (!container.isRunning()) {
+                try {
+                    Thread.sleep(1L);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
         }
         
         @Override
@@ -344,7 +292,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         }
         
         @Override
-        public Message<byte[]> receive(long waitMs) {
+        public Message<Result> receive(long waitMs) {
             long start = System.currentTimeMillis();
             int count = 0;
             while (messageQueue.isEmpty() && ((System.currentTimeMillis() - start) < waitMs)) {
@@ -372,13 +320,19 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
          *            the data to be processed.
          */
         @Override
-        public void onMessage(ConsumerRecord<String,byte[]> data) {
+        public void onMessage(ConsumerRecord<String,String> data) {
             if (log.isTraceEnabled()) {
                 log.trace("Listener " + getListenerId() + " got message " + data.key());
             }
             MessagingMessageConverter converter = new MessagingMessageConverter();
-            Message message = converter.toMessage(data, null, null, byte[].class);
-            messageQueue.add(message);
+            Message<String> message = (Message<String>) converter.toMessage(data, null, null, String.class);
+            Message<Result> resultMessage = null;
+            try {
+                resultMessage = new GenericMessage<>(new ObjectMapper().readerFor(Result.class).readValue(message.getPayload()), message.getHeaders());
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Unable to deserialize results", e);
+            }
+            messageQueue.add(resultMessage);
         }
         
         /**
@@ -390,7 +344,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
          *            the acknowledgment.
          */
         @Override
-        public void onMessage(ConsumerRecord<String,byte[]> data, Acknowledgment acknowledgment) {
+        public void onMessage(ConsumerRecord<String,String> data, Acknowledgment acknowledgment) {
             onMessage(data);
             acknowledgment.acknowledge();
         }
@@ -405,7 +359,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
          * @since 2.0
          */
         @Override
-        public void onMessage(ConsumerRecord<String,byte[]> data, Consumer<?,?> consumer) {
+        public void onMessage(ConsumerRecord<String,String> data, Consumer<?,?> consumer) {
             onMessage(data);
         }
         
@@ -421,7 +375,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
          * @since 2.0
          */
         @Override
-        public void onMessage(ConsumerRecord<String,byte[]> data, Acknowledgment acknowledgment, Consumer<?,?> consumer) {
+        public void onMessage(ConsumerRecord<String,String> data, Acknowledgment acknowledgment, Consumer<?,?> consumer) {
             onMessage(data, acknowledgment);
         }
     }

@@ -97,8 +97,12 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         queryStatus.setLastUpdated(new Date());
         cache.updateQueryStatus(queryStatus);
         
+        // store the initial tasks states
         TaskStates taskStates = new TaskStates(queryKey, count);
         cache.updateTaskStates(taskStates);
+        
+        // create the results queue
+        queue.ensureQueueCreated(queryKey.getQueryId());
         
         // create and store the initial create task with the checkpoint. This will send out the task notification.
         QueryTask.QUERY_ACTION queryAction = null;

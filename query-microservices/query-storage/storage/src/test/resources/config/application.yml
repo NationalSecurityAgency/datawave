@@ -97,10 +97,16 @@ spring.config.activate.on-profile: use-kafka
 
 spring:
   kafka:
-    bootstrap-servers: localhost:9092
     consumer:
+      bootstrap-servers: localhost:9092
       group-id: KafkaQueryQueueManager
       autoOffsetReset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      bootstrap-servers: localhost:9092
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 query:
   storage:

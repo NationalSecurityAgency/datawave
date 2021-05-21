@@ -1,11 +1,13 @@
 package datawave.microservice.common.storage.queue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.microservice.common.storage.QueryPool;
 import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryTask;
 import datawave.microservice.common.storage.QueryTaskNotification;
+import datawave.microservice.common.storage.Result;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.common.storage.config.QueryStorageProperties;
 import org.slf4j.Logger;
@@ -15,28 +17,27 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerEndpoint;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
-import org.springframework.amqp.rabbit.listener.MessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.amqp.support.converter.MessagingMessageConverter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static datawave.microservice.common.storage.queue.RabbitQueryQueueManager.RABBIT;
 
@@ -52,20 +53,17 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
     private final RabbitAdmin rabbitAdmin;
     private final RabbitTemplate rabbitTemplate;
     private final RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
-    private final TestMessageConsumer testMessageConsumer;
     private final ConnectionFactory connectionFactory;
     
     // A mapping of exchange/queue names to routing keys
     private Map<String,String> exchanges = new HashMap<>();
     
     public RabbitQueryQueueManager(QueryStorageProperties properties, RabbitAdmin rabbitAdmin, RabbitTemplate rabbitTemplate,
-                    RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry, TestMessageConsumer testMessageConsumer,
-                    ConnectionFactory connectionFactory) {
+                    RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry, ConnectionFactory connectionFactory) {
         this.properties = properties;
         this.rabbitAdmin = rabbitAdmin;
         this.rabbitTemplate = rabbitTemplate;
         this.rabbitListenerEndpointRegistry = rabbitListenerEndpointRegistry;
-        this.testMessageConsumer = testMessageConsumer;
         this.connectionFactory = connectionFactory;
     }
     
@@ -80,8 +78,7 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      */
     @Override
     public QueryQueueListener createListener(String listenerId, String queueName) {
-        QueryQueueListener listener = new RabbitQueueListener(listenerId);
-        addQueueToListener(listenerId, queueName);
+        QueryQueueListener listener = new RabbitQueueListener(listenerId, queueName);
         return listener;
     }
     
@@ -160,20 +157,22 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      *
      * @param queryId
      *            the query ID
-     * @param resultId
-     *            a unique id for the result
      * @param result
      *            the result
      */
     @Override
-    public void sendMessage(UUID queryId, String resultId, Object result) {
+    public void sendMessage(UUID queryId, Result result) {
         ensureQueueCreated(queryId);
         
         String exchangeName = queryId.toString();
         if (log.isDebugEnabled()) {
             log.debug("Publishing message to " + exchangeName);
         }
-        rabbitTemplate.convertAndSend(exchangeName, resultId, result);
+        try {
+            rabbitTemplate.convertAndSend(exchangeName, queryId.toString(), result);
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to serialize results", e);
+        }
     }
     
     /**
@@ -303,22 +302,6 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
                     rabbitAdmin.declareQueue(queue);
                     rabbitAdmin.declareBinding(binding);
                     
-                    if (log.isInfoEnabled()) {
-                        log.debug("Sending test message to verify exchange/queue " + exchangeQueueName);
-                    }
-                    // add our test listener to the queue and wait for a test message
-                    boolean received = false;
-                    try {
-                        addQueueToListener(testMessageConsumer.getListenerId(), exchangeQueueName);
-                        rabbitTemplate.convertAndSend(exchangeQueueName, routingKey, TestMessageConsumer.TEST_MESSAGE);
-                        received = testMessageConsumer.receive();
-                    } finally {
-                        removeQueueFromListener(testMessageConsumer.getListenerId(), exchangeQueueName);
-                    }
-                    if (!received) {
-                        throw new RuntimeException("Unable to verify that queue and exchange were created for " + exchangeQueueName);
-                    }
-                    
                     exchanges.put(exchangeQueueName, routingPattern);
                 }
             }
@@ -351,75 +334,15 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         return e != null;
     }
     
-    @Component
-    public static class TestMessageConsumer {
-        private static final String LISTENER_ID = "RabbitQueryQueueManagerTestListener";
-        public static final String TEST_MESSAGE = "TEST_MESSAGE";
-        
-        // default wait for 1 minute
-        private static final long WAIT_MS_DEFAULT = 60L * 1000L;
-        
-        private RabbitTemplate rabbitTemplate;
-        
-        public TestMessageConsumer(RabbitTemplate rabbitTemplate) {
-            this.rabbitTemplate = rabbitTemplate;
-        }
-        
-        private AtomicInteger semaphore = new AtomicInteger(0);
-        
-        @RabbitListener(id = LISTENER_ID, autoStartup = "true")
-        public void processMessage(org.springframework.amqp.core.Message message) {
-            String body = null;
-            try {
-                body = new ObjectMapper().readerFor(String.class).readValue(message.getBody());
-            } catch (Exception e) {
-                // body is not a json string
-            }
-            // determine if this is a test message
-            if (TEST_MESSAGE.equals(body)) {
-                semaphore.incrementAndGet();
-            } else {
-                // requeue, this was not a test message
-                rabbitTemplate.convertAndSend(message.getMessageProperties().getReceivedExchange(), message.getMessageProperties().getReceivedRoutingKey(),
-                                message.getBody());
-            }
-        }
-        
-        public String getListenerId() {
-            return LISTENER_ID;
-        }
-        
-        public boolean receive() {
-            return receive(WAIT_MS_DEFAULT);
-        }
-        
-        public boolean receive(long waitMs) {
-            long start = System.currentTimeMillis();
-            while ((semaphore.get() == 0) && ((System.currentTimeMillis() - start) < waitMs)) {
-                try {
-                    Thread.sleep(1L);
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-            if (semaphore.get() > 0) {
-                semaphore.decrementAndGet();
-                return true;
-            } else {
-                return false;
-            }
-        }
-    }
-    
     /**
      * A listener for local queues
      */
     public class RabbitQueueListener implements QueryQueueListener {
-        private java.util.Queue<org.springframework.messaging.Message<byte[]>> messageQueue = new ArrayBlockingQueue<>(100);
+        private java.util.Queue<org.springframework.messaging.Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
         private final String listenerId;
         private Thread thread = null;
         
-        public RabbitQueueListener(String listenerId) {
+        public RabbitQueueListener(String listenerId, String queueName) {
             this.listenerId = listenerId;
             MessageListenerAdapter listenerAdapter = new MessageListenerAdapter(this, "receiveMessage");
             listenerAdapter.setMessageConverter(new MessagingMessageConverter());
@@ -428,6 +351,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
             endpoint.setAutoStartup(true);
             endpoint.setId(listenerId);
             endpoint.setMessageListener(listenerAdapter);
+            endpoint.setQueueNames(queueName);
+            endpoint.setGroup(queueName);
             DirectRabbitListenerContainerFactory listenerContainerFactory = new DirectRabbitListenerContainerFactory();
             listenerContainerFactory.setConnectionFactory(connectionFactory);
             rabbitListenerEndpointRegistry.registerListenerContainer(endpoint, listenerContainerFactory, true);
@@ -440,19 +365,27 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         
         @Override
         public void stop() {
-            MessageListenerContainer container = rabbitListenerEndpointRegistry.getListenerContainer(getListenerId());
+            AbstractMessageListenerContainer container = (AbstractMessageListenerContainer) rabbitListenerEndpointRegistry
+                            .getListenerContainer(getListenerId());
             if (container != null) {
+                container.removeQueueNames(container.getQueueNames());
                 container.stop();
                 rabbitListenerEndpointRegistry.unregisterListenerContainer(getListenerId());
             }
         }
         
         public void receiveMessage(Message<byte[]> message) {
-            messageQueue.add(message);
+            try {
+                messageQueue.add(new GenericMessage<Result>(new ObjectMapper().readerFor(Result.class).readValue(message.getPayload()), message.getHeaders()));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Failed to deserialize payload as a Result", e);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to deserialize payload as a Result", e);
+            }
         }
         
         @Override
-        public Message<byte[]> receive(long waitMs) {
+        public Message<Result> receive(long waitMs) {
             long start = System.currentTimeMillis();
             int count = 0;
             while (messageQueue.isEmpty() && ((System.currentTimeMillis() - start) < waitMs)) {

@@ -73,10 +73,8 @@ public interface QueryQueueManager {
      *
      * @param queryId
      *            the query ID
-     * @param resultId
-     *            a unique id for the result
      * @param result
      *            the result
      */
-    void sendMessage(UUID queryId, String resultId, Object result);
+    void sendMessage(UUID queryId, Result result);
 }

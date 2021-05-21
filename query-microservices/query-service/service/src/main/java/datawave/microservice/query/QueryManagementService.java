@@ -12,6 +12,7 @@ import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryStatus;
 import datawave.microservice.common.storage.QueryStorageCache;
+import datawave.microservice.common.storage.Result;
 import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.config.QueryProperties;
@@ -296,7 +297,7 @@ public class QueryManagementService implements QueryRequestHandler {
         
         // keep waiting for results until we're finished
         while (!isFinished(queryId)) {
-            Object[] results = getObjectResults(resultListener.receive(queryProperties.getResultQueueIntervalMillis()).getPayload());
+            Object[] results = resultListener.receive(queryProperties.getResultQueueIntervalMillis()).getPayload().getPayloadObject();
             if (results != null) {
                 resultList.addAll(Arrays.asList(results));
             }
@@ -319,18 +320,6 @@ public class QueryManagementService implements QueryRequestHandler {
         // 6) have we reached the "max work" limit? (i.e. next count + seek count)
         // 7) are we going to timeout before getting a full page? if so, return partial results
         return false;
-    }
-    
-    // TODO: This is totally bogus and should be removed once QueryQueueListener is updated to return objects
-    private Object[] getObjectResults(byte[] bytes) {
-        Object[] objects = null;
-        if (bytes != null) {
-            objects = new Object[bytes.length];
-            for (int i = 0; i < bytes.length; i++) {
-                objects[i] = bytes[i];
-            }
-        }
-        return objects;
     }
     
     public void cancel(String queryId, ProxiedUserDetails currentUser) throws QueryException {

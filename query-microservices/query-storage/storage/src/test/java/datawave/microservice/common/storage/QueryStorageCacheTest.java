@@ -5,7 +5,6 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
@@ -21,6 +20,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.springframework.messaging.Message;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 
@@ -50,7 +51,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 @ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications"})
 public class QueryStorageCacheTest {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
-    public static final String TEST_POOL = "testPool";
     
     @Configuration
     @Profile("QueryStorageCacheTest")
@@ -93,15 +93,23 @@ public class QueryStorageCacheTest {
     
     private static final String LISTENER_ID = "QueryStorageCacheTestListener";
     
-    @BeforeEach
-    public void before() {
-        queueManager.ensureQueueCreated(new QueryPool(TEST_POOL));
-        queueManager.createListener(LISTENER_ID, TEST_POOL);
-    }
+    public String TEST_POOL = "TestPool";
+    
+    private Queue<QueryQueueListener> listeners = new LinkedList<>();
+    private Queue<UUID> createdQueries = new LinkedList<>();
     
     @AfterEach
-    public void after() {
-        queueManager.deleteQueue(new QueryPool(TEST_POOL));
+    public void cleanup() {
+        while (!listeners.isEmpty()) {
+            listeners.remove().stop();
+        }
+        while (!createdQueries.isEmpty()) {
+            try {
+                storageService.deleteQuery(createdQueries.remove());
+            } catch (Exception e) {
+                log.error("Failed to delete query", e);
+            }
+        }
     }
     
     @DirtiesContext
@@ -119,6 +127,7 @@ public class QueryStorageCacheTest {
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
         TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
+        createdQueries.add(key.getQueryId());
         assertNotNull(key);
         
         TaskStates states = storageService.getTaskStates(key.getQueryId());
@@ -194,6 +203,7 @@ public class QueryStorageCacheTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
+        createdQueries.add(queryId);
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
@@ -249,6 +259,7 @@ public class QueryStorageCacheTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
+        createdQueries.add(queryId);
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
@@ -314,6 +325,7 @@ public class QueryStorageCacheTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
+        createdQueries.add(queryId);
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
@@ -353,6 +365,7 @@ public class QueryStorageCacheTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
+        createdQueries.add(queryId);
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
@@ -374,6 +387,7 @@ public class QueryStorageCacheTest {
         
         // now delete the query tasks
         storageService.deleteQuery(queryId);
+        createdQueries.remove(queryId);
         
         // ensure we did not get another task notification
         assertTrue(queryTaskNotifications.isEmpty());
@@ -395,6 +409,7 @@ public class QueryStorageCacheTest {
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
         UUID queryId = UUID.randomUUID();
+        createdQueries.add(queryId);
         QueryPool queryPool = new QueryPool(TEST_POOL);
         QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
         QueryStatus queryStatus = new QueryStatus(queryKey);
@@ -419,6 +434,7 @@ public class QueryStorageCacheTest {
         
         // now delete the query tasks
         storageService.deleteQuery(queryId);
+        createdQueries.remove(queryId);
         
         // ensure we did not get another task notification
         assertTrue(queryTaskNotifications.isEmpty());
@@ -427,6 +443,39 @@ public class QueryStorageCacheTest {
         queries = storageService.getQueryStatus();
         assertEquals(0, queries.size());
         
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testResultsQueue() throws Exception {
+        // ensure the message queue is empty
+        assertTrue(queryTaskNotifications.isEmpty());
+        
+        Query query = new QueryImpl();
+        query.setQuery("foo == bar");
+        query.setQueryLogicName("EventQuery");
+        query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
+        query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        QueryPool queryPool = new QueryPool(TEST_POOL);
+        Set<Authorizations> auths = new HashSet<>();
+        auths.add(new Authorizations("FOO", "BAR"));
+        TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
+        createdQueries.add(key.getQueryId());
+        assertNotNull(key);
+        
+        // setup a listener for this query's result queue
+        QueryQueueListener listener = queueManager.createListener("TestListener", key.getQueryId().toString());
+        listeners.add(listener);
+        
+        // send a result
+        Result result = new Result("result1", new Object[] {"Some result"});
+        queueManager.sendMessage(key.getQueryId(), result);
+        
+        // receive the message
+        Message<Result> msg = listener.receive();
+        
+        assertNotNull(msg, "Got no result message");
+        assertEquals(result.getPayloadObject()[0], msg.getPayload().getPayloadObject()[0]);
     }
     
     private void assertQueryCreate(UUID queryId, QueryPool queryPool, QueryState state) {

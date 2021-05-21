@@ -1,5 +1,6 @@
 package datawave.microservice.query.executor;
 
+import datawave.microservice.common.storage.Result;
 import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryStatus;
 import datawave.microservice.common.storage.QueryStorageCache;
@@ -20,6 +21,7 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * This class holds the business logic for handling a task notification
@@ -212,7 +214,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
             }
             
             Object result = iter.next();
-            queues.sendMessage(taskKey.getQueryId(), taskKey.toKey() + incrementNumResultsGenerated(taskKey), result);
+            queues.sendMessage(taskKey.getQueryId(), new Result(UUID.randomUUID().toString(), result));
             
             // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
             // TODO

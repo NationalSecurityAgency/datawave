@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.microservice.common.storage.QueryPool;
 import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
+import datawave.microservice.common.storage.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -83,7 +84,7 @@ public class TestQueryQueueManager implements QueryQueueManager {
         }
     }
     
-    private void sendMessage(String name, Message<byte[]> message) {
+    private void sendMessage(String name, Message<Result> message) {
         ensureQueueCreated(name);
         synchronized (queues) {
             Queue queue = queues.get(name);
@@ -165,21 +166,14 @@ public class TestQueryQueueManager implements QueryQueueManager {
      *
      * @param queryId
      *            the query ID
-     * @param resultId
-     *            a unique id for the result
      * @param result
      */
     @Override
-    public void sendMessage(UUID queryId, String resultId, Object result) {
-        Message<byte[]> message = null;
-        try {
-            MessageHeaderAccessor header = new MessageHeaderAccessor();
-            header.setHeader(MESSAGE_KEY, queryId);
-            header.setHeader(MESSAGE_ID, resultId);
-            message = MessageBuilder.createMessage(new ObjectMapper().writeValueAsBytes(result), header.toMessageHeaders());
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Could not serialize a QueryTaskNotification", e);
-        }
+    public void sendMessage(UUID queryId, Result result) {
+        Message<Result> message = null;
+        MessageHeaderAccessor header = new MessageHeaderAccessor();
+        header.setHeader(MESSAGE_KEY, queryId);
+        message = MessageBuilder.createMessage(result, header.toMessageHeaders());
         sendMessage(queryId.toString(), message);
     }
     
@@ -189,7 +183,7 @@ public class TestQueryQueueManager implements QueryQueueManager {
     public class TestQueueListener implements Runnable, QueryQueueListener {
         private static final long WAIT_MS_DEFAULT = 100;
         
-        private Queue<Message<byte[]>> messageQueue = new ArrayBlockingQueue<>(100);
+        private Queue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
         private final String listenerId;
         private Thread thread;
         
@@ -234,17 +228,17 @@ public class TestQueryQueueManager implements QueryQueueManager {
             }
         }
         
-        public void message(Message<byte[]> message) {
+        public void message(Message<Result> message) {
             messageQueue.add(message);
         }
         
         @Override
-        public Message<byte[]> receive() {
+        public Message<Result> receive() {
             return receive(WAIT_MS_DEFAULT);
         }
         
         @Override
-        public Message<byte[]> receive(long waitMs) {
+        public Message<Result> receive(long waitMs) {
             long start = System.currentTimeMillis();
             int count = 0;
             while (messageQueue.isEmpty() && ((System.currentTimeMillis() - start) < waitMs)) {
