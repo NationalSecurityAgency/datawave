@@ -18,6 +18,7 @@ import datawave.microservice.query.logic.CheckpointableQueryLogic;
 import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
@@ -51,6 +52,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         boolean taskComplete = false;
         boolean taskFailed = false;
         TaskKey taskKey = taskNotification.getTaskKey();
+        UUID queryId = taskKey.getQueryId();
         try {
             // pull the task out of the cache, locking it in the process
             // TODO: how long do we wait? Do we want to set a lease time in case we die somehow?
@@ -62,19 +64,42 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
                 // only proceed if we got the lock
                 if (gotLock) {
                     // pull the query from the cache
-                    QueryStatus queryStatus = cache.getQueryStatus(taskKey.getQueryId());
+                    QueryStatus queryStatus = cache.getQueryStatus(queryId);
                     QueryLogic<?> queryLogic;
                     switch (task.getAction()) {
+                        case PLAN:
+                            queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName());
+                            // by default we will expand the fields but not the values.
+                            boolean expandFields = true;
+                            boolean expandValues = false;
+                            Query query = queryStatus.getQuery();
+                            for (QueryImpl.Parameter p : query.getParameters()) {
+                                if (p.getParameterName().equals(QueryTask.EXPAND_FIELDS)) {
+                                    expandFields = Boolean.valueOf(p.getParameterValue());
+                                } else if (p.getParameterName().equals(QueryTask.EXPAND_VALUES)) {
+                                    expandValues = Boolean.valueOf(p.getParameterValue());
+                                }
+                            }
+                            String plan = queryLogic.getPlan(connector, queryStatus.getQuery(), queryStatus.getCalculatedAuthorizations(), expandFields,
+                                            expandValues);
+                            updatePlan(queryId, plan);
+                            break;
                         case CREATE:
                         case DEFINE:
-                        case PLAN:
                         case NEXT:
                             queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName());
                             GenericQueryConfiguration config = queryLogic.initialize(connector, queryStatus.getQuery(),
                                             queryStatus.getCalculatedAuthorizations());
+                            
+                            // update the query status plan
+                            if (task.getAction() != QueryTask.QUERY_ACTION.NEXT) {
+                                updatePlan(queryId, config.getQueryString());
+                            }
+                            
                             if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
                                 CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
                                 cpQueryLogic.setupQuery(connector, task.getQueryCheckpoint());
+                                
                                 if (task.getAction() == QueryTask.QUERY_ACTION.NEXT) {
                                     taskComplete = pullResults(taskKey, queryLogic, queryStatus.getQuery(), false);
                                     if (!taskComplete) {
@@ -146,6 +171,18 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
             }
         }
         return false;
+    }
+    
+    private void updatePlan(UUID queryId, String plan) {
+        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
+        lock.lock();
+        try {
+            QueryStatus queryStatus = cache.getQueryStatus(queryId);
+            queryStatus.setPlan(plan);
+            cache.updateQueryStatus(queryStatus);
+        } finally {
+            lock.unlock();
+        }
     }
     
     private long incrementNumResultsGenerated(TaskKey taskKey) {

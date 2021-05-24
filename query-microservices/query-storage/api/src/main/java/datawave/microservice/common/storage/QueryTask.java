@@ -16,6 +16,12 @@ public class QueryTask implements Serializable {
         DEFINE, CREATE, PLAN, NEXT, CLOSE, TEST
     }
     
+    /**
+     * Parameter names used when getting a plan prior to creating a query
+     */
+    public static final String EXPAND_VALUES = "expand.values";
+    public static final String EXPAND_FIELDS = "expand.fields";
+    
     private final TaskKey taskKey;
     private final QUERY_ACTION action;
     private final QueryCheckpoint queryCheckpoint;
