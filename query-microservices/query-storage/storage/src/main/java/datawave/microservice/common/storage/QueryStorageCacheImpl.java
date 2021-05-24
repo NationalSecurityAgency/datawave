@@ -312,13 +312,15 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *            The task key
      * @param waitMs
      *            How long to wait to get a task lock
+     * @param leaseMs
+     *            How long to hold onto lock
      * @return The query task, null if deleted
      * @throws TaskLockException
      *             if the task is already locked
      */
     @Override
-    public QueryTask getTask(TaskKey taskKey, long waitMs) throws TaskLockException, InterruptedException {
-        if (cache.getTaskLock(taskKey).tryLock(waitMs)) {
+    public QueryTask getTask(TaskKey taskKey, long waitMs, long leaseMs) throws TaskLockException, InterruptedException {
+        if (cache.getTaskLock(taskKey).tryLock(waitMs, leaseMs)) {
             return cache.getTask(taskKey);
         } else {
             throw new TaskLockException("Unable to get task lock for " + taskKey);

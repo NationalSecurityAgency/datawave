@@ -14,6 +14,7 @@ import datawave.microservice.common.storage.TaskLockException;
 import datawave.microservice.common.storage.TaskStates;
 import datawave.microservice.common.storage.remote.QueryTaskNotificationHandler;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.logic.CheckpointableQueryLogic;
 import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.logic.QueryLogicFactory;
@@ -29,7 +30,7 @@ import java.util.UUID;
 /**
  * This class holds the business logic for handling a task notification
  *
- * TODO: Query Metrics TODO: Query Predictions
+ * TODO: Query Metrics
  **/
 public class QueryExecutor implements QueryTaskNotificationHandler {
     private static final Logger log = Logger.getLogger(QueryExecutor.class);
@@ -38,8 +39,11 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
     private final QueryStorageCache cache;
     private final QueryQueueManager queues;
     private final QueryLogicFactory queryLogicFactory;
+    private final ExecutorProperties executorProperties;
     
-    public QueryExecutor(Connector connector, QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory) {
+    public QueryExecutor(ExecutorProperties executorProperties, Connector connector, QueryStorageCache cache, QueryQueueManager queues,
+                    QueryLogicFactory queryLogicFactory) {
+        this.executorProperties = executorProperties;
         this.cache = cache;
         this.queues = queues;
         this.connector = connector;
@@ -55,8 +59,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         UUID queryId = taskKey.getQueryId();
         try {
             // pull the task out of the cache, locking it in the process
-            // TODO: how long do we wait? Do we want to set a lease time in case we die somehow?
-            QueryTask task = cache.getTask(taskKey, 100);
+            QueryTask task = cache.getTask(taskKey, executorProperties.getLockWaitTimeMillis(), executorProperties.getLockLeaseTimeMillis());
             if (task != null) {
                 // check the states to see if we can run this now
                 gotLock = cache.updateTaskState(taskKey, TaskStates.TASK_STATE.RUNNING);

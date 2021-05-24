@@ -53,6 +53,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 public abstract class QueryStorageCacheTest {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
+    private final long FIVE_MIN = 5 * 60 * 1000L;
+    
     @ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications"})
     public static class LocalQueryStorageCacheTest extends QueryStorageCacheTest {}
     
@@ -154,7 +156,7 @@ public abstract class QueryStorageCacheTest {
         // ensure the message queue is empty again
         assertTrue(queryTaskNotifications.isEmpty());
         
-        QueryTask task = storageService.getTask(key, 0);
+        QueryTask task = storageService.getTask(key, 0, FIVE_MIN);
         assertQueryTask(key, QueryTask.QUERY_ACTION.CREATE, query, task);
         
         List<QueryTask> tasks = queryCache.getTasks(key.getQueryId());
@@ -188,7 +190,7 @@ public abstract class QueryStorageCacheTest {
         Thread t = new Thread(new Runnable() {
             public void run() {
                 try {
-                    taskHolder.task = storageService.getTask(key, waitMs);
+                    taskHolder.task = storageService.getTask(key, waitMs, FIVE_MIN);
                 } catch (Exception e) {
                     taskHolder.throwable = e;
                 }
@@ -238,7 +240,7 @@ public abstract class QueryStorageCacheTest {
         
         assertFalse(storageService.getTaskLock(task.getTaskKey()).isLocked());
         
-        task = storageService.getTask(key, 0);
+        task = storageService.getTask(key, 0, FIVE_MIN);
         assertQueryTask(key, QueryTask.QUERY_ACTION.NEXT, query, task);
         assertTrue(storageService.getTaskLock(task.getTaskKey()).isLocked());
         assertTrue(storageService.getTaskLock(task.getTaskKey()).isLocked());
@@ -249,7 +251,7 @@ public abstract class QueryStorageCacheTest {
             fail("Expected failure due to task already being locked");
         } catch (TaskLockException e) {
             storageService.checkpointTask(task.getTaskKey(), task.getQueryCheckpoint());
-            task = storageService.getTask(key, 0);
+            task = storageService.getTask(key, 0, FIVE_MIN);
         } catch (Exception e) {
             fail("Unexpected exception " + e.getMessage());
         }
@@ -311,7 +313,7 @@ public abstract class QueryStorageCacheTest {
         assertTrue(queryTaskNotifications.isEmpty());
         
         // get the task to aquire the lock
-        storageService.getTask(notification.getTaskKey(), 0);
+        storageService.getTask(notification.getTaskKey(), 0, FIVE_MIN);
         
         // now update the task
         Map<String,Object> props = new HashMap<>();
@@ -322,7 +324,7 @@ public abstract class QueryStorageCacheTest {
         // ensure we did not get another task notification
         assertTrue(queryTaskNotifications.isEmpty());
         
-        QueryTask task = storageService.getTask(notification.getTaskKey(), 0);
+        QueryTask task = storageService.getTask(notification.getTaskKey(), 0, FIVE_MIN);
         assertEquals(checkpoint, task.getQueryCheckpoint());
     }
     
@@ -352,7 +354,7 @@ public abstract class QueryStorageCacheTest {
         assertTrue(queryTaskNotifications.isEmpty());
         
         // ensure we can get a task
-        QueryTask task = storageService.getTask(notification.getTaskKey(), 0);
+        QueryTask task = storageService.getTask(notification.getTaskKey(), 0, FIVE_MIN);
         assertQueryTask(notification.getTaskKey(), QueryTask.QUERY_ACTION.NEXT, query, task);
         
         // now delete the task
@@ -362,7 +364,7 @@ public abstract class QueryStorageCacheTest {
         assertTrue(queryTaskNotifications.isEmpty());
         
         // ensure there is no more task stored
-        task = storageService.getTask(notification.getTaskKey(), 0);
+        task = storageService.getTask(notification.getTaskKey(), 0, FIVE_MIN);
         assertNull(task);
     }
     
@@ -395,7 +397,7 @@ public abstract class QueryStorageCacheTest {
         List<TaskKey> tasks = storageService.getTasks(queryId);
         assertEquals(1, tasks.size());
         QueryTask task;
-        task = storageService.getTask(tasks.get(0), 0);
+        task = storageService.getTask(tasks.get(0), 0, FIVE_MIN);
         assertQueryTask(notification.getTaskKey(), QueryTask.QUERY_ACTION.NEXT, query, task);
         
         // now delete the query tasks
@@ -442,7 +444,7 @@ public abstract class QueryStorageCacheTest {
         assertEquals(1, queries.size());
         List<TaskKey> tasks = storageService.getTasks(queries.get(0).getQueryKey().getQueryId());
         assertEquals(1, tasks.size());
-        QueryTask task = storageService.getTask(tasks.get(0), 0);
+        QueryTask task = storageService.getTask(tasks.get(0), 0, FIVE_MIN);
         assertQueryTask(notification.getTaskKey(), QueryTask.QUERY_ACTION.NEXT, query, task);
         
         // now delete the query tasks
