@@ -67,7 +67,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
                     switch (task.getAction()) {
                         case CREATE:
                         case DEFINE:
-                        case PREDICT:
+                        case PLAN:
                         case NEXT:
                             queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName());
                             GenericQueryConfiguration config = queryLogic.initialize(connector, queryStatus.getQuery(),
