@@ -128,8 +128,12 @@ public class TLDQueryIterator extends QueryIterator {
             @Override
             public boolean keep(Key k) {
                 boolean root = TLDEventDataFilter.isRootPointer(k);
-                DatawaveKey datawaveKey = new DatawaveKey(k);
-                return (root && getIndexOnlyFields().contains(datawaveKey.getFieldName())) || !root;
+                if (!root) {
+                    return true;
+                } else {
+                    DatawaveKey datawaveKey = new DatawaveKey(k);
+                    return getIndexOnlyFields().contains(datawaveKey.getFieldName());
+                }
             }
             
             @Override
