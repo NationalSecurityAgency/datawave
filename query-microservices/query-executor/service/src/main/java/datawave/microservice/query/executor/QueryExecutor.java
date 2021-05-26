@@ -135,9 +135,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
             // somebody is already processing this one
         } catch (Exception e) {
             taskFailed = true;
-            QueryStatus status = cache.getQueryStatus(taskKey.getQueryId());
-            status.setFailure(e);
-            status.setQueryState(QueryStatus.QUERY_STATE.FAILED);
+            cache.updateFailedQueryStatus(taskKey.getQueryId(), e);
         } finally {
             if (gotLock) {
                 if (taskComplete) {

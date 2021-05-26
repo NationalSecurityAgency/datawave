@@ -86,8 +86,18 @@ public interface QueryStorageCache {
     void updateQueryStatus(UUID queryId, QueryStatus.QUERY_STATE state);
     
     /**
+     * Update the query status state
+     *
+     * @param queryId
+     *            The query id
+     * @param e
+     *            The exception
+     */
+    void updateFailedQueryStatus(UUID queryId, Exception e);
+    
+    /**
      * Update a task state
-     * 
+     *
      * @param taskKey
      *            The task key
      * @param state

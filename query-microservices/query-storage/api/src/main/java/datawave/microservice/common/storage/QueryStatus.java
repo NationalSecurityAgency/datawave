@@ -7,6 +7,9 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -29,7 +32,8 @@ public class QueryStatus implements Serializable {
     private long numResultsReturned;
     private int concurrentNextCount;
     private Date lastUpdated;
-    private Exception failure;
+    private String failureMessage;
+    private String stackTrace;
     
     public QueryStatus() {}
     
@@ -97,12 +101,29 @@ public class QueryStatus implements Serializable {
         getCalculatedAuths();
     }
     
-    public Exception getFailure() {
-        return failure;
+    public String getFailureMessage() {
+        return failureMessage;
     }
     
+    public void setFailureMessage(String failureMessage) {
+        this.failureMessage = failureMessage;
+    }
+    
+    public String getStackTrace() {
+        return stackTrace;
+    }
+    
+    public void setStackTrace(String stackTrace) {
+        this.stackTrace = stackTrace;
+    }
+    
+    @JsonIgnore
     public void setFailure(Exception failure) {
-        this.failure = failure;
+        setFailureMessage(failure.getMessage());
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8));
+        failure.printStackTrace(writer);
+        setStackTrace(new String(outputStream.toByteArray(), StandardCharsets.UTF_8));
     }
     
     public long getNumResultsReturned() {

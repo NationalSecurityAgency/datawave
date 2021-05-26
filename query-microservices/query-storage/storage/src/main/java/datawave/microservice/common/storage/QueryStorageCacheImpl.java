@@ -181,6 +181,28 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     }
     
     /**
+     * Update the query status state
+     *
+     * @param queryId
+     *            The query id
+     * @param e
+     *            the exception
+     */
+    @Override
+    public void updateFailedQueryStatus(UUID queryId, Exception e) {
+        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
+        lock.lock();
+        try {
+            QueryStatus status = cache.getQueryStatus(queryId);
+            status.setQueryState(QueryStatus.QUERY_STATE.FAILED);
+            status.setFailure(e);
+            updateQueryStatus(status);
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    /**
      * Update a task state
      *
      * @param taskKey
