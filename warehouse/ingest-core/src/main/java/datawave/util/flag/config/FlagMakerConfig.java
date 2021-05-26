@@ -371,5 +371,4 @@ public class FlagMakerConfig {
         result.append("flagMakerClass: " + this.getFlagMakerClass() + "\n");
         return result.toString();
     }
-    
 }
