@@ -3,13 +3,10 @@ package datawave.microservice.common.storage.queue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
-import datawave.microservice.common.storage.QueryPool;
 import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
-import datawave.microservice.common.storage.QueryTask;
-import datawave.microservice.common.storage.QueryTaskNotification;
 import datawave.microservice.common.storage.Result;
-import datawave.microservice.common.storage.TaskKey;
+import org.apache.commons.math3.util.ArithmeticUtils;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.ConsumerGroupDescription;
 import org.apache.kafka.clients.admin.DeleteRecordsResult;
@@ -37,14 +34,17 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import static datawave.microservice.common.storage.queue.KafkaQueryQueueManager.KAFKA;
 import static org.apache.kafka.common.ConsumerGroupState.STABLE;
@@ -84,41 +84,6 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     }
     
     /**
-     * Ensure a queue is created for a pool. This will create an exchange, a queue, and a binding between them for the query pool.
-     *
-     * @param queryPool
-     *            the query poll
-     */
-    @Override
-    public void ensureQueueCreated(QueryPool queryPool) {
-        QueryTaskNotification testMessage = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), "NA"),
-                        QueryTask.QUERY_ACTION.TEST);
-        ensureTopicCreated(queryPool.getName(), testMessage.getTaskKey().toRoutingKey(), testMessage.getTaskKey().toKey());
-    }
-    
-    /**
-     * A mechanism to delete a queue for a pool.
-     *
-     * @param queryPool
-     *            the query pool
-     */
-    @Override
-    public void deleteQueue(QueryPool queryPool) {
-        deleteTopic(queryPool.getName());
-    }
-    
-    /**
-     * A mechanism to empty a queues messages for a pool
-     *
-     * @param queryPool
-     *            the query pool
-     */
-    @Override
-    public void emptyQueue(QueryPool queryPool) {
-        emptyQueue(queryPool.getName());
-    }
-    
-    /**
      * Ensure a queue is created for a query results queue. This will create an exchange, a queue, and a binding between them for the results queue.
      *
      * @param queryId
@@ -149,6 +114,18 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     @Override
     public void emptyQueue(UUID queryId) {
         emptyQueue(queryId.toString());
+    }
+    
+    /**
+     * Get the queue size
+     *
+     * @param queryId
+     *            The query Id
+     * @return the number of elements.
+     */
+    @Override
+    public int getQueueSize(UUID queryId) {
+        return getQueueSize(queryId.toString());
     }
     
     /**
@@ -347,6 +324,18 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
                 log.debug("Unable to empty queue " + name, e);
             }
         }
+    }
+    
+    private int getQueueSize(final String topic) {
+        TopicDescription topicDescription = describeTopic(topic);
+        Set<TopicPartition> partitions = topicDescription.partitions().stream().map(d -> new TopicPartition(topic, d.partition())).collect(Collectors.toSet());
+        Consumer consumer = kafkaConsumerFactory.createConsumer();
+        Map<TopicPartition,Long> offsets = consumer.endOffsets(partitions);
+        Long total = offsets.entrySet().stream().mapToLong(e -> e.getValue() - consumer.position(e.getKey())).sum();
+        if (total > Integer.MAX_VALUE) {
+            throw new ArithmeticException("Queue size is over max int: total");
+        }
+        return total.intValue();
     }
     
     private ConsumerGroupDescription describeGroup(String group) {

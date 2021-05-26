@@ -2,13 +2,9 @@ package datawave.microservice.common.storage.queue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import datawave.microservice.common.storage.QueryPool;
 import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
-import datawave.microservice.common.storage.QueryTask;
-import datawave.microservice.common.storage.QueryTaskNotification;
 import datawave.microservice.common.storage.Result;
-import datawave.microservice.common.storage.TaskKey;
 import datawave.microservice.common.storage.config.QueryStorageProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +12,7 @@ import org.springframework.amqp.AmqpIOException;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueInformation;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.config.DirectRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerEndpoint;
@@ -83,41 +80,6 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
     }
     
     /**
-     * Ensure a queue is created for a pool. This will create an exchange, a queue, and a binding between them for the query pool.
-     *
-     * @param queryPool
-     *            the query poll
-     */
-    @Override
-    public void ensureQueueCreated(QueryPool queryPool) {
-        QueryTaskNotification testMessage = new QueryTaskNotification(new TaskKey(UUID.randomUUID(), queryPool, UUID.randomUUID(), "NA"),
-                        QueryTask.QUERY_ACTION.TEST);
-        ensureQueueCreated(queryPool.getName(), testMessage.getTaskKey().toRoutingKey(), testMessage.getTaskKey().toKey());
-    }
-    
-    /**
-     * A mechanism to delete a queue for a pool.
-     *
-     * @param queryPool
-     *            the query pool
-     */
-    @Override
-    public void deleteQueue(QueryPool queryPool) {
-        deleteQueue(queryPool.getName());
-    }
-    
-    /**
-     * A mechanism to empty a queues messages for a pool
-     *
-     * @param queryPool
-     *            the query pool
-     */
-    @Override
-    public void emptyQueue(QueryPool queryPool) {
-        emptyQueue(queryPool.getName());
-    }
-    
-    /**
      * Ensure a queue is created for a query results queue. This will create an exchange, a queue, and a binding between them for the results queue.
      *
      * @param queryId
@@ -148,6 +110,18 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
     @Override
     public void emptyQueue(UUID queryId) {
         emptyQueue(queryId.toString());
+    }
+    
+    /**
+     * Get the queue size
+     *
+     * @param queryId
+     *            The query Id
+     * @return the number of elements
+     */
+    @Override
+    public int getQueueSize(UUID queryId) {
+        return getQueueSize(queryId.toString());
     }
     
     /**
@@ -325,6 +299,14 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
             // log an continue
             log.error("Failed to empty queue " + exchangeQueueName, e);
         }
+    }
+    
+    private int getQueueSize(String exchangeQueueName) {
+        QueueInformation info = rabbitAdmin.getQueueInfo(exchangeQueueName);
+        if (info != null) {
+            return info.getMessageCount();
+        }
+        return 0;
     }
     
     private boolean containsCause(Throwable e, Class<? extends Exception> exceptionClass) {

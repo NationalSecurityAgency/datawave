@@ -4,7 +4,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import datawave.microservice.query.executor.config.ExecutorProperties;
 
 @Configuration
 public class QueryExecutorConfig {

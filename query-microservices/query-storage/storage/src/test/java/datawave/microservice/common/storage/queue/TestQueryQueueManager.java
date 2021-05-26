@@ -1,8 +1,5 @@
 package datawave.microservice.common.storage.queue;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import datawave.microservice.common.storage.QueryPool;
 import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.Result;
@@ -84,6 +81,16 @@ public class TestQueryQueueManager implements QueryQueueManager {
         }
     }
     
+    private int getQueueSize(String name) {
+        synchronized (queues) {
+            Queue queue = queues.get(name);
+            if (queue != null) {
+                return queue.size();
+            }
+        }
+        return 0;
+    }
+    
     private void sendMessage(String name, Message<Result> message) {
         ensureQueueCreated(name);
         synchronized (queues) {
@@ -92,39 +99,6 @@ public class TestQueryQueueManager implements QueryQueueManager {
                 queue.add(message);
             }
         }
-    }
-    
-    /**
-     * Ensure a queue is created for a given pool
-     *
-     * @param queryPool
-     *            the query pool
-     */
-    @Override
-    public void ensureQueueCreated(QueryPool queryPool) {
-        ensureQueueCreated(queryPool.getName());
-    }
-    
-    /**
-     * A mechanism to delete a queue for a pool.
-     *
-     * @param queryPool
-     *            the query pool
-     */
-    @Override
-    public void deleteQueue(QueryPool queryPool) {
-        deleteQueue(queryPool.getName());
-    }
-    
-    /**
-     * A mechanism to empty a queues messages for a pool
-     *
-     * @param queryPool
-     *            the query pool
-     */
-    @Override
-    public void emptyQueue(QueryPool queryPool) {
-        emptyQueue(queryPool.getName());
     }
     
     /**
@@ -158,6 +132,18 @@ public class TestQueryQueueManager implements QueryQueueManager {
     @Override
     public void emptyQueue(UUID queryId) {
         emptyQueue(queryId.toString());
+    }
+    
+    /**
+     * Get the queue size
+     *
+     * @param queryId
+     *            The query Id
+     * @return the number of elements
+     */
+    @Override
+    public int getQueueSize(UUID queryId) {
+        return getQueueSize(queryId.toString());
     }
     
     /**

@@ -86,7 +86,6 @@ public class QueryStorageStateServiceTest {
     @AfterEach
     public void cleanup() throws IOException {
         storageService.clear();
-        queueManager.deleteQueue(new QueryPool(TEST_POOL));
     }
     
     @Test

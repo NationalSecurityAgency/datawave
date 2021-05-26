@@ -19,30 +19,6 @@ public interface QueryQueueManager {
     QueryQueueListener createListener(String listenerId, String queueName);
     
     /**
-     * Ensure a queue is created for a pool. This will create an exchange, a queue, and a binding between them for the query pool.
-     *
-     * @param queryPool
-     *            the query pool
-     */
-    void ensureQueueCreated(QueryPool queryPool);
-    
-    /**
-     * A mechanism to delete a queue for a pool.
-     *
-     * @param queryPool
-     *            the query pool
-     */
-    void deleteQueue(QueryPool queryPool);
-    
-    /**
-     * A mechanism to empty a queues messages for a pool
-     * 
-     * @param queryPool
-     *            the query pool
-     */
-    void emptyQueue(QueryPool queryPool);
-    
-    /**
      * Ensure a queue is created for a query results queue. This will create an exchange, a queue, and a binding between them for the results queue.
      *
      * @param queryId
@@ -67,9 +43,16 @@ public interface QueryQueueManager {
     void emptyQueue(UUID queryId);
     
     /**
-     * This will send a result message. This will call ensureQueueCreated before sending the message.
+     * Get the queue size
      *
-     * TODO Should the result be more strongly typed?
+     * @param queryId
+     *            The query Id
+     * @return the number of elements.
+     */
+    int getQueueSize(UUID queryId);
+    
+    /**
+     * This will send a result message. This will call ensureQueueCreated before sending the message.
      *
      * @param queryId
      *            the query ID
@@ -77,4 +60,5 @@ public interface QueryQueueManager {
      *            the result
      */
     void sendMessage(UUID queryId, Result result);
+    
 }

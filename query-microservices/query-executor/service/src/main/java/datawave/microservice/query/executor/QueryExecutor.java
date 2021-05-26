@@ -160,20 +160,9 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         }
     }
     
-    private boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, long maxResults, int maxPageSize) {
-        QueryStatus status = cache.getQueryStatus(taskKey.getQueryId());
-        if (status != null) {
-            int pageSize = status.getQuery().getPagesize();
-            if (maxPageSize != 0) {
-                pageSize = Math.min(pageSize, maxPageSize);
-            }
-            if (status.getNumResultsGenerated() < maxResults) {
-                if ((status.getNumResultsGenerated() - status.getNumResultsReturned()) < (2.5 * pageSize)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    private boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize) {
+        int queueSize = queues.getQueueSize(taskKey.getQueryId());
+        return (queueSize < (2.5 * maxPageSize));
     }
     
     private void updatePlan(UUID queryId, String plan) {
@@ -217,15 +206,11 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
     
     private boolean pullResults(TaskKey taskKey, QueryLogic queryLogic, Query settings, boolean exhaustIterator) throws Exception {
         TransformIterator iter = queryLogic.getTransformIterator(settings);
-        long maxResults = queryLogic.getMaxResults();
-        if (settings.isMaxResultsOverridden()) {
-            maxResults = settings.getMaxResultsOverride();
-        }
         int pageSize = settings.getPagesize();
         if (queryLogic.getMaxPageSize() != 0) {
             pageSize = Math.min(pageSize, queryLogic.getMaxPageSize());
         }
-        boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, maxResults, pageSize);
+        boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize);
         while (running && iter.hasNext()) {
             QueryStatus.QUERY_STATE queryState = getQueryState(taskKey);
             // if we are canceled, then break out
@@ -244,7 +229,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
             // ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
             // }
             
-            running = shouldGenerateMoreResults(exhaustIterator, taskKey, maxResults, pageSize);
+            running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize);
         }
         return !iter.hasNext();
     }
