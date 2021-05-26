@@ -177,24 +177,6 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         }
     }
     
-    private long incrementNumResultsGenerated(TaskKey taskKey) {
-        QueryStorageLock lock = cache.getQueryStatusLock(taskKey.getQueryId());
-        lock.lock();
-        try {
-            QueryStatus status = cache.getQueryStatus(taskKey.getQueryId());
-            if (status != null) {
-                long numGenerated = status.getNumResultsGenerated() + 1;
-                status.setNumResultsGenerated(numGenerated);
-                cache.updateQueryStatus(status);
-                return numGenerated;
-            } else {
-                return Integer.MAX_VALUE;
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
-    
     private QueryStatus.QUERY_STATE getQueryState(TaskKey taskKey) {
         QueryStatus status = cache.getQueryStatus(taskKey.getQueryId());
         if (status != null) {

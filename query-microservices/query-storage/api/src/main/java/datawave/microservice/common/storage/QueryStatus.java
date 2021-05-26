@@ -26,7 +26,6 @@ public class QueryStatus implements Serializable {
     @JsonIgnore
     private Set<Authorizations> calculatedAuthorizations;
     private String plan;
-    private long numResultsGenerated;
     private long numResultsReturned;
     private int concurrentNextCount;
     private Date lastUpdated;
@@ -106,14 +105,6 @@ public class QueryStatus implements Serializable {
         this.failure = failure;
     }
     
-    public long getNumResultsGenerated() {
-        return numResultsGenerated;
-    }
-    
-    public void setNumResultsGenerated(long numResultsGenerated) {
-        this.numResultsGenerated = numResultsGenerated;
-    }
-    
     public long getNumResultsReturned() {
         return numResultsReturned;
     }
@@ -141,7 +132,7 @@ public class QueryStatus implements Serializable {
     @Override
     public int hashCode() {
         return new HashCodeBuilder().append(queryKey).append(queryState).append(query).append(calculatedAuths).append(calculatedAuthorizations).append(plan)
-                        .append(numResultsReturned).append(numResultsGenerated).build();
+                        .append(numResultsReturned).build();
     }
     
     @Override
@@ -150,8 +141,7 @@ public class QueryStatus implements Serializable {
             QueryStatus other = (QueryStatus) obj;
             return new EqualsBuilder().append(queryKey, other.queryKey).append(queryState, other.queryState).append(query, other.query)
                             .append(calculatedAuths, other.calculatedAuths).append(calculatedAuthorizations, other.calculatedAuthorizations)
-                            .append(plan, other.plan).append(numResultsGenerated, other.numResultsGenerated)
-                            .append(numResultsReturned, other.numResultsReturned).build();
+                            .append(plan, other.plan).append(numResultsReturned, other.numResultsReturned).build();
         }
         return false;
     }
@@ -160,6 +150,6 @@ public class QueryStatus implements Serializable {
     public String toString() {
         return new ToStringBuilder(this).append("queryKey", queryKey).append("queryState", queryState).append("query", query)
                         .append("calculatedAuths", calculatedAuths).append("calculatedAuthorizations", calculatedAuthorizations).append("plan", plan)
-                        .append("numResultsGenerated", numResultsGenerated).append("numResultsReturned", numResultsReturned).build();
+                        .append("numResultsReturned", numResultsReturned).build();
     }
 }
