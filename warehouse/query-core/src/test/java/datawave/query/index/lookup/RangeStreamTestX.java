@@ -3168,7 +3168,7 @@ public class RangeStreamTestX {
             planScript = JexlASTHelper.parseJexlQuery(plannedString);
             
             assertTrue("Queries did not match for counter: " + counter + " on shard: " + planRange.toString() + "\nExpected: " + expectedString
-                            + "\nActual  : " + plannedString, TreeEqualityVisitor.isEqual(expectedScript, planScript, new TreeEqualityVisitor.Reason()));
+                            + "\nActual  : " + plannedString, TreeEqualityVisitor.isEqual(expectedScript, planScript));
             counter++;
         }
         
