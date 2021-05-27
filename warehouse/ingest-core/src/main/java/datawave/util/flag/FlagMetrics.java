@@ -54,7 +54,7 @@ public class FlagMetrics {
         if (!this.enabled) {
             return;
         }
-
+        
         ctx.getCounter(datawave.metrics.util.flag.InputFile.FLAGMAKER_END_TIME).setValue(System.currentTimeMillis());
         final StandaloneStatusReporter reporter = ctx.getReporter();
         if (reporter == null)
