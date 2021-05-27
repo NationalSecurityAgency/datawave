@@ -12,7 +12,7 @@ public class RunningQueryTimingImpl implements RunningQueryTiming {
     private long pageShortCircuitTimeoutMs = 58 * 60 * 1000;
     
     public RunningQueryTimingImpl(QueryExpirationProperties conf, int pageTimeout) {
-        this(conf.getCallTimeInMS(), conf.getPageSizeShortCircuitCheckTimeInMS(), conf.getPageShortCircuitTimeoutInMS());
+        this(conf.getCallTimeoutMillis(), conf.getShortCircuitCheckTimeMillis(), conf.getShortCircuitTimeoutMillis());
         
         if (pageTimeout > 0) {
             maxCallMs = pageTimeout * 60 * 1000;

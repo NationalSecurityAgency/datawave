@@ -29,9 +29,17 @@ public class QueryStatus implements Serializable {
     @JsonIgnore
     private Set<Authorizations> calculatedAuthorizations;
     private String plan;
-    private long numResultsReturned;
-    private int concurrentNextCount;
+    
+    private long numResultsReturned = 0L;
+    private int concurrentNextCount = 0;
+    private long lastPageNumber = 0L;
+    
+    // datetime of last user interaction
+    private Date lastUsed;
+    
+    // datetime of last service interaction
     private Date lastUpdated;
+    
     private String failureMessage;
     private String stackTrace;
     
@@ -142,6 +150,22 @@ public class QueryStatus implements Serializable {
         this.concurrentNextCount = concurrentNextCount;
     }
     
+    public long getLastPageNumber() {
+        return lastPageNumber;
+    }
+    
+    public void setLastPageNumber(long lastPageNumber) {
+        this.lastPageNumber = lastPageNumber;
+    }
+    
+    public Date getLastUsed() {
+        return lastUsed;
+    }
+    
+    public void setLastUsed(Date lastUsed) {
+        this.lastUsed = lastUsed;
+    }
+    
     public Date getLastUpdated() {
         return lastUpdated;
     }
@@ -152,25 +176,68 @@ public class QueryStatus implements Serializable {
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(queryKey).append(queryState).append(query).append(calculatedAuths).append(calculatedAuthorizations).append(plan)
-                        .append(numResultsReturned).build();
+        // @formatter:off
+        return new HashCodeBuilder()
+                .append(queryKey)
+                .append(queryState)
+                .append(query)
+                .append(calculatedAuths)
+                .append(calculatedAuthorizations)
+                .append(plan)
+                .append(numResultsReturned)
+                .append(concurrentNextCount)
+                .append(lastPageNumber)
+                .append(lastUsed)
+                .append(lastUpdated)
+                .append(failureMessage)
+                .append(stackTrace)
+                .build();
+        // @formatter:on
     }
     
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof QueryStatus) {
             QueryStatus other = (QueryStatus) obj;
-            return new EqualsBuilder().append(queryKey, other.queryKey).append(queryState, other.queryState).append(query, other.query)
-                            .append(calculatedAuths, other.calculatedAuths).append(calculatedAuthorizations, other.calculatedAuthorizations)
-                            .append(plan, other.plan).append(numResultsReturned, other.numResultsReturned).build();
+            // @formatter:off
+            return new EqualsBuilder()
+                    .append(queryKey, other.queryKey)
+                    .append(queryState, other.queryState)
+                    .append(query, other.query)
+                    .append(calculatedAuths, other.calculatedAuths)
+                    .append(calculatedAuthorizations, other.calculatedAuthorizations)
+                    .append(plan, other.plan)
+                    .append(numResultsReturned, other.numResultsReturned)
+                    .append(concurrentNextCount, other.concurrentNextCount)
+                    .append(lastPageNumber, other.lastPageNumber)
+                    .append(lastUsed, other.lastUsed)
+                    .append(lastUpdated, other.lastUpdated)
+                    .append(failureMessage, other.failureMessage)
+                    .append(stackTrace, other.stackTrace)
+                    .build();
+            // @formatter:on
         }
         return false;
     }
     
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("queryKey", queryKey).append("queryState", queryState).append("query", query)
-                        .append("calculatedAuths", calculatedAuths).append("calculatedAuthorizations", calculatedAuthorizations).append("plan", plan)
-                        .append("numResultsReturned", numResultsReturned).build();
+        // @formatter:off
+        return new ToStringBuilder(this)
+                .append("queryKey", queryKey)
+                .append("queryState", queryState)
+                .append("query", query)
+                .append("calculatedAuths", calculatedAuths)
+                .append("calculatedAuthorizations", calculatedAuthorizations)
+                .append("plan", plan)
+                .append("numResultsReturned", numResultsReturned)
+                .append("concurrentNextCount", concurrentNextCount)
+                .append("lastPageNumber", lastPageNumber)
+                .append("lastUsed", lastUsed)
+                .append("lastUpdated", lastUpdated)
+                .append("failureMessage", failureMessage)
+                .append("stackTrace", stackTrace)
+                .build();
+        // @formatter:on
     }
 }

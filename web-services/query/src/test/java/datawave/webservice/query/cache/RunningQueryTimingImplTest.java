@@ -39,9 +39,9 @@ public class RunningQueryTimingImplTest {
     @Test
     public void testQueryExpirationProperties() {
         QueryExpirationProperties conf = new QueryExpirationProperties();
-        conf.setCallTime(10);
-        conf.setPageShortCircuitTimeout(9);
-        conf.setPageSizeShortCircuitCheckTime(5);
+        conf.setCallTimeout(10);
+        conf.setShortCircuitTimeout(9);
+        conf.setShortCircuitCheckTime(5);
         RunningQueryTimingImpl timing = new RunningQueryTimingImpl(conf, -1);
         
         assertEquals(10 * 60 * 1000, timing.getMaxCallMs());

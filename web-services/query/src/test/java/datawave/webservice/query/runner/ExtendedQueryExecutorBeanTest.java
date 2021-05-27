@@ -243,9 +243,9 @@ public class ExtendedQueryExecutorBeanTest {
         queryLogic2 = PowerMock.createMock(QuerySyntaxParserQueryLogic.class);
         
         queryExpirationConf = new QueryExpirationProperties();
-        queryExpirationConf.setPageSizeShortCircuitCheckTime(45);
-        queryExpirationConf.setPageShortCircuitTimeout(58);
-        queryExpirationConf.setCallTime(60);
+        queryExpirationConf.setShortCircuitCheckTime(45);
+        queryExpirationConf.setShortCircuitTimeout(58);
+        queryExpirationConf.setIdleTimeout(60);
     }
     
     @SuppressWarnings({"rawtypes", "unchecked"})

@@ -253,7 +253,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private ClosedQueryCache closedQueryCache;
     
     private final int PAGE_TIMEOUT_MIN = 1;
-    private final int PAGE_TIMEOUT_MAX = QueryExpirationProperties.PAGE_TIMEOUT_MIN_DEFAULT;
+    private final int PAGE_TIMEOUT_MAX = 60;
     
     @Inject
     private QueryParameters qp;

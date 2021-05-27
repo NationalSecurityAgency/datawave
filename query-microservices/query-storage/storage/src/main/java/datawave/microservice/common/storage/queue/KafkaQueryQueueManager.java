@@ -394,7 +394,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
      * A listener for local queues
      */
     public class KafkaQueueListener implements QueryQueueListener, MessageListener<String,String> {
-        private java.util.Queue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
+        private ArrayBlockingQueue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
         private final String listenerId;
         private final String topicId;
         private final String groupId;
@@ -454,24 +454,15 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         
         @Override
         public Message<Result> receive(long waitMs) {
-            long start = System.currentTimeMillis();
-            int count = 0;
-            while (messageQueue.isEmpty() && ((System.currentTimeMillis() - start) < waitMs)) {
-                count++;
-                try {
-                    Thread.sleep(1L);
-                } catch (InterruptedException e) {
-                    break;
+            Message<Result> result = null;
+            try {
+                result = messageQueue.poll(waitMs, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Interrupted while waiting for query results");
                 }
             }
-            if (log.isTraceEnabled()) {
-                log.trace("Cycled " + count + " rounds looking for message");
-            }
-            if (messageQueue.isEmpty()) {
-                return null;
-            } else {
-                return messageQueue.remove();
-            }
+            return result;
         }
         
         /**

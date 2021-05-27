@@ -94,7 +94,7 @@ public class QueryExpirationBean {
         }
         long now = System.currentTimeMillis();
         clearQueries(now);
-        qlCache.clearQueryLogics(now, conf.getCallTimeInMS());
+        qlCache.clearQueryLogics(now, conf.getCallTimeoutMillis());
     }
     
     private void clearQueries(long now) {
@@ -177,11 +177,11 @@ public class QueryExpirationBean {
     private boolean isIdleTooLong(RunningQuery query, long currentTime) {
         long difference = currentTime - query.getLastUsed();
         if (log.isDebugEnabled()) {
-            long countDown = (conf.getIdleTimeInMS() / 1000) - (difference / 1000);
+            long countDown = (conf.getIdleTimeoutMillis() / 1000) - (difference / 1000);
             log.debug("Query: " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " will be evicted in: " + countDown + " seconds.");
         }
         
-        return difference > conf.getIdleTimeInMS();
+        return difference > conf.getIdleTimeoutMillis();
     }
     
     /**
@@ -200,7 +200,7 @@ public class QueryExpirationBean {
         query.touch(); // Since we know we're still in a call, go ahead and reset the idle time.
         long difference = currentTime - query.getTimeOfCurrentCall();
         
-        if (difference > conf.getCallTimeInMS()) {
+        if (difference > conf.getIdleTimeoutMillis()) {
             log.warn("Query " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " has been in a call for " + (difference / 1000)
                             + "s.  We are evicting this query from the cache.");
             return true;

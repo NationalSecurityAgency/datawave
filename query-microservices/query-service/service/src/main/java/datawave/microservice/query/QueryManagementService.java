@@ -8,30 +8,33 @@ import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.common.audit.PrivateAuditConstants;
 import datawave.microservice.common.storage.QueryPool;
-import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryStatus;
 import datawave.microservice.common.storage.QueryStorageCache;
 import datawave.microservice.common.storage.QueryStorageLock;
 import datawave.microservice.common.storage.TaskKey;
-import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
+import datawave.microservice.query.runner.NextCall;
 import datawave.microservice.query.util.QueryUtil;
 import datawave.security.util.ProxiedEntityUtils;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.cache.QueryMetricFactory;
+import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NoResultsQueryException;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+import datawave.webservice.result.BaseQueryResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.bus.BusProperties;
@@ -46,11 +49,9 @@ import org.springframework.util.MultiValueMap;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.Future;
 
 import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CANCELED;
 import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CLOSED;
@@ -72,34 +73,37 @@ public class QueryManagementService implements QueryRequestHandler {
     private final SecurityMarking securityMarking;
     
     private final QueryLogicFactory queryLogicFactory;
+    private final QueryMetricFactory queryMetricFactory;
     private final ResponseObjectFactory responseObjectFactory;
     private final QueryStorageCache queryStorageCache;
     private final QueryQueueManager queryQueueManager;
     private final AuditClient auditClient;
-    private final ThreadPoolTaskExecutor nextExecutor;
     
     private final String identifier;
     
-    private MultiValueMap<String,Future<List<Object>>> nextTaskMap = new LinkedMultiValueMap<>();
+    private final ThreadPoolTaskExecutor nextCallExecutor;
+    private final MultiValueMap<String,NextCall> nextCallMap = new LinkedMultiValueMap<>();
     
     // TODO: JWO: Pull these from configuration instead
     private final int PAGE_TIMEOUT_MIN = 1;
-    private final int PAGE_TIMEOUT_MAX = QueryExpirationProperties.PAGE_TIMEOUT_MIN_DEFAULT;
+    private final int PAGE_TIMEOUT_MAX = 60;
     
     public QueryManagementService(QueryProperties queryProperties, ApplicationContext appCtx, BusProperties busProperties, QueryParameters queryParameters,
-                    SecurityMarking securityMarking, QueryLogicFactory queryLogicFactory, ResponseObjectFactory responseObjectFactory,
-                    QueryStorageCache queryStorageCache, QueryQueueManager queryQueueManager, AuditClient auditClient, ThreadPoolTaskExecutor nextExecutor) {
+                    SecurityMarking securityMarking, QueryLogicFactory queryLogicFactory, QueryMetricFactory queryMetricFactory,
+                    ResponseObjectFactory responseObjectFactory, QueryStorageCache queryStorageCache, QueryQueueManager queryQueueManager,
+                    AuditClient auditClient, ThreadPoolTaskExecutor nextCallExecutor) {
         this.queryProperties = queryProperties;
         this.appCtx = appCtx;
         this.busProperties = busProperties;
         this.queryParameters = queryParameters;
         this.securityMarking = securityMarking;
         this.queryLogicFactory = queryLogicFactory;
+        this.queryMetricFactory = queryMetricFactory;
         this.responseObjectFactory = responseObjectFactory;
         this.queryStorageCache = queryStorageCache;
         this.queryQueueManager = queryQueueManager;
         this.auditClient = auditClient;
-        this.nextExecutor = nextExecutor;
+        this.nextCallExecutor = nextCallExecutor;
         
         String hostname;
         try {
@@ -210,37 +214,64 @@ public class QueryManagementService implements QueryRequestHandler {
         }
     }
     
-    public List<Object> next(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+    /**
+     * Gets the next page of results from the query object. If the object is no longer alive, meaning that the current session has expired, then this fail. The
+     * response object type is dynamic, see the listQueryLogic operation to determine what the response type object will be.
+     *
+     * @param queryId
+     * @param currentUser
+     *
+     * @return
+     * @throws QueryException
+     */
+    public BaseQueryResponse next(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         UUID queryUUID = UUID.fromString(queryId);
         try {
             // make sure the query is valid, and the user can act on it
             validateRequest(queryId, currentUser);
             
-            boolean decrementNext = false;
+            // before we spin up a separate thread, make sure we are allowed to call next
+            QueryStatus queryStatus = incrementConcurrentNextCount(queryUUID);
+            
+            // TODO: Publish a next notification?
+            
+            // get the query logic
+            String queryLogicName = queryStatus.getQuery().getQueryLogicName();
+            QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName(), currentUser.getPrimaryUser().getRoles());
+            
+            long pageNumber = -1L;
+            NextCall nextCall = new NextCall(queryProperties, queryQueueManager, queryStorageCache, queryMetricFactory, queryId, queryLogic, identifier);
+            nextCallMap.add(queryId, nextCall);
             try {
-                // before we spin up a separate thread, make sure we are allowed to call next
-                incrementConcurrentNextCount(queryUUID);
-                decrementNext = true;
-                
-                Future<List<Object>> future;
-                try {
-                    future = nextExecutor.submit(() -> nextCall(queryId));
-                } catch (TaskRejectedException e) {
-                    throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Next task rejected by the executor for query " + queryId);
-                }
-                
-                // add this future to the next task map
-                nextTaskMap.add(queryId, future);
+                // submit the next call to the executor
+                nextCall.setFuture(nextCallExecutor.submit(nextCall));
                 
                 // wait for the results to be ready
-                List<Object> results = future.get();
+                ResultsPage<Object> resultsPage = nextCall.getFuture().get();
                 
-                // remote this future from the next task map
-                nextTaskMap.remove(queryId, future);
-                
-                return results;
+                // format the response
+                if (!resultsPage.getResults().isEmpty()) {
+                    BaseQueryResponse response = queryLogic.getTransformer(queryStatus.getQuery()).createResponse(resultsPage);
+                    
+                    // after all of our work is done, perform our final query status update for this next call
+                    pageNumber = updateStatusAndGetPageNumber(queryUUID, resultsPage.getResults().size());
+                    
+                    response.setHasResults(true);
+                    response.setPageNumber(pageNumber);
+                    response.setLogicName(queryLogicName);
+                    response.setQueryId(queryId);
+                    return response;
+                } else {
+                    throw new NoResultsQueryException(DatawaveErrorCode.NO_QUERY_RESULTS_FOUND, MessageFormat.format("{0}", queryId));
+                }
+            } catch (TaskRejectedException e) {
+                throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Next task rejected by the executor for query " + queryId);
             } finally {
-                if (decrementNext) {
+                // remove this next call from the map, and decrement the next count for this query
+                nextCallMap.get(queryId).remove(nextCall);
+                
+                // update query status if we failed
+                if (pageNumber > 0) {
                     decrementConcurrentNextCount(queryUUID);
                 }
             }
@@ -252,38 +283,27 @@ public class QueryManagementService implements QueryRequestHandler {
         }
     }
     
-    private void incrementConcurrentNextCount(UUID queryUUID) throws InterruptedException, QueryException {
-        if (queryStorageCache.getQueryStatusLock(queryUUID).tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
-            try {
-                // increment the concurrent next
-                QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryUUID);
-                if (queryStatus != null && queryStatus.getConcurrentNextCount() < queryProperties.getConcurrentNextLimit()) {
-                    queryStatus.setConcurrentNextCount(queryStatus.getConcurrentNextCount() + 1);
-                    queryStorageCache.updateQueryStatus(queryStatus);
-                } else {
-                    throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR,
-                                    "Concurrent next call limit reached: " + queryProperties.getConcurrentNextLimit());
-                }
-            } finally {
-                queryStorageCache.getQueryStatusLock(queryUUID).unlock();
-            }
-        } else {
-            throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR, "Unable to acquire lock on query.");
-        }
-    }
-    
-    private void decrementConcurrentNextCount(UUID queryUUID) throws InterruptedException, QueryException {
+    private QueryStatus incrementConcurrentNextCount(UUID queryUUID) throws InterruptedException, QueryException {
+        QueryStatus queryStatus;
         QueryStorageLock statusLock = queryStorageCache.getQueryStatusLock(queryUUID);
         if (statusLock.tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
             try {
                 // increment the concurrent next
-                QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryUUID);
-                if (queryStatus != null && queryStatus.getConcurrentNextCount() < queryProperties.getConcurrentNextLimit()) {
-                    queryStatus.setConcurrentNextCount(queryStatus.getConcurrentNextCount() - 1);
-                    queryStorageCache.updateQueryStatus(queryStatus);
+                queryStatus = queryStorageCache.getQueryStatus(queryUUID);
+                if (queryStatus != null) {
+                    if (queryStatus.getConcurrentNextCount() < queryProperties.getConcurrentNextLimit()) {
+                        queryStatus.setConcurrentNextCount(queryStatus.getConcurrentNextCount() + 1);
+                        
+                        // update the last used datetime for the query
+                        queryStatus.setLastUsed(new Date());
+                        
+                        queryStorageCache.updateQueryStatus(queryStatus);
+                    } else {
+                        throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR,
+                                        "Concurrent next call limit reached: " + queryProperties.getConcurrentNextLimit());
+                    }
                 } else {
-                    throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR,
-                                    "Concurrent next call limit reached: " + queryProperties.getConcurrentNextLimit());
+                    throw new QueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, "Unable to find query status in cache.");
                 }
             } finally {
                 statusLock.unlock();
@@ -291,39 +311,94 @@ public class QueryManagementService implements QueryRequestHandler {
         } else {
             throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR, "Unable to acquire lock on query.");
         }
+        return queryStatus;
     }
     
-    private List<Object> nextCall(String queryId) throws Exception {
-        List<Object> resultList = new ArrayList<>();
-        QueryQueueListener resultListener = queryQueueManager.createListener(identifier, queryId);
-        
-        // keep waiting for results until we're finished
-        while (!isFinished(queryId)) {
-            Object[] results = resultListener.receive(queryProperties.getResultQueueIntervalMillis()).getPayload().getPayload();
-            if (results != null) {
-                resultList.addAll(Arrays.asList(results));
+    private QueryStatus decrementConcurrentNextCount(UUID queryUUID) throws InterruptedException, QueryException {
+        QueryStatus queryStatus;
+        QueryStorageLock statusLock = queryStorageCache.getQueryStatusLock(queryUUID);
+        if (statusLock.tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
+            try {
+                // increment the concurrent next
+                queryStatus = queryStorageCache.getQueryStatus(queryUUID);
+                if (queryStatus != null) {
+                    if (queryStatus.getConcurrentNextCount() > 0) {
+                        queryStatus.setConcurrentNextCount(queryStatus.getConcurrentNextCount() - 1);
+                        
+                        // update the last used datetime for the query
+                        queryStatus.setLastUsed(new Date());
+                        
+                        queryStorageCache.updateQueryStatus(queryStatus);
+                    } else {
+                        throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR,
+                                        "Concurrent next count can't be decremented: " + queryStatus.getConcurrentNextCount());
+                    }
+                } else {
+                    throw new QueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, "Unable to find query status in cache.");
+                }
+            } finally {
+                statusLock.unlock();
             }
+        } else {
+            throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR, "Unable to acquire lock on query.");
         }
-        
-        return resultList;
+        return queryStatus;
     }
     
-    private boolean isFinished(String queryId) {
-        // get the query stats from the cache
-        // TODO: It may be more efficient to broadcast a canceled query to all query services vs. hitting the cache each time
-        QueryStatus queryStatus = queryStorageCache.getQueryStatus(UUID.fromString(queryId));
-        
-        // conditions we need to check for
-        // 1) was this query canceled?
-        // 2) have we hit the user's results-per-page limit?
-        // 3) have we hit the query logic's results-per-page limit?
-        // 4) have we hit the query logic's bytes-per-page limit?
-        // 5) have we hit the max results (or the max results override)?
-        // 6) have we reached the "max work" limit? (i.e. next count + seek count)
-        // 7) are we going to timeout before getting a full page? if so, return partial results
-        return false;
+    private long updateStatusAndGetPageNumber(UUID queryUUID, int numResults) throws InterruptedException, QueryException {
+        long pageNumber;
+        QueryStorageLock statusLock = queryStorageCache.getQueryStatusLock(queryUUID);
+        if (statusLock.tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
+            try {
+                // increment the concurrent next
+                QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryUUID);
+                if (queryStatus != null) {
+                    // decrement the concurrent next count
+                    if (queryStatus.getConcurrentNextCount() > 0) {
+                        queryStatus.setConcurrentNextCount(queryStatus.getConcurrentNextCount() - 1);
+                        
+                        // update the last used datetime for the query
+                        queryStatus.setLastUsed(new Date());
+                        
+                        queryStorageCache.updateQueryStatus(queryStatus);
+                    } else {
+                        // TODO: Exception, or error?
+                        throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR,
+                                        "Concurrent next count can't be decremented: " + queryStatus.getConcurrentNextCount());
+                    }
+                    
+                    // get and increment the page number
+                    queryStatus.setLastPageNumber(queryStatus.getLastPageNumber() + 1);
+                    pageNumber = queryStatus.getLastPageNumber();
+                    
+                    // update the number of results returned
+                    queryStatus.setNumResultsReturned(queryStatus.getNumResultsReturned() + numResults);
+                    
+                    // update the last used datetime for the query
+                    queryStatus.setLastUsed(new Date());
+                    
+                    queryStorageCache.updateQueryStatus(queryStatus);
+                } else {
+                    throw new QueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, "Unable to find query status in cache.");
+                }
+            } finally {
+                statusLock.unlock();
+            }
+        } else {
+            throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR, "Unable to acquire lock on query.");
+        }
+        return pageNumber;
     }
     
+    /**
+     * Releases the resources associated with this query. Any currently running calls to 'next' on the query will be stopped. Calls to 'next' after a 'cancel'
+     * will start over at page 1.
+     *
+     * @param queryId
+     * @param currentUser
+     *
+     * @throws QueryException
+     */
     public void cancel(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
@@ -340,15 +415,24 @@ public class QueryManagementService implements QueryRequestHandler {
         }
     }
     
+    /**
+     *
+     * Once the cancel request is validated, this method is called to actually cancel the query.
+     *
+     * @param queryId
+     *            The id of the query to cancel
+     * @param publishEvent
+     *            If true, the cancel request will be published on the bus
+     * @throws InterruptedException
+     * @throws QueryException
+     */
     private void cancel(String queryId, boolean publishEvent) throws InterruptedException, QueryException {
         UUID queryUUID = UUID.fromString(queryId);
         
         // if we have an active next call for this query locally, cancel it
-        List<Future<List<Object>>> futures = nextTaskMap.get(queryId);
-        if (futures != null) {
-            for (Future<List<Object>> future : futures) {
-                future.cancel(true);
-            }
+        List<NextCall> nextCalls = nextCallMap.get(queryId);
+        if (nextCalls != null) {
+            nextCalls.forEach(NextCall::cancel);
             
             // TODO: lock the cache entry and change state to canceled
             // try to be nice and acquire the lock before updating the status
@@ -380,6 +464,15 @@ public class QueryManagementService implements QueryRequestHandler {
         }
     }
     
+    /**
+     * Releases the resources associated with this query. Any currently running calls to 'next' on the query will continue until they finish. Calls to 'next'
+     * after a 'close' will start over at page 1.
+     *
+     * @param queryId
+     * @param currentUser
+     *
+     * @throws QueryException
+     */
     public void close(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
@@ -396,6 +489,17 @@ public class QueryManagementService implements QueryRequestHandler {
         }
     }
     
+    /**
+     *
+     * Once the close request is validated, this method is called to actually close the query.
+     *
+     * @param queryId
+     *            The id of the query to close
+     * @param publishEvent
+     *            If true, the close request will be published on the bus
+     * @throws InterruptedException
+     * @throws QueryException
+     */
     private void close(String queryId, boolean publishEvent) throws InterruptedException, QueryException {
         UUID queryUUID = UUID.fromString(queryId);
         

@@ -18,7 +18,8 @@ public class QueryProperties {
     @NotEmpty
     private String privilegedRole = "PrivilegedUser";
     @Positive
-    private long resultQueueIntervalMillis = TimeUnit.SECONDS.toMillis(60);
+    private long resultPollRate = TimeUnit.SECONDS.toMillis(30);
+    private TimeUnit resultPollRateTimeUnit = TimeUnit.MILLISECONDS;
     // The amount of time to wait for the lock to be acquired
     @PositiveOrZero
     private long lockWaitTimeMillis = TimeUnit.SECONDS.toMillis(5);
@@ -46,12 +47,24 @@ public class QueryProperties {
         this.privilegedRole = privilegedRole;
     }
     
-    public long getResultQueueIntervalMillis() {
-        return resultQueueIntervalMillis;
+    public long getResultPollRate() {
+        return resultPollRate;
     }
     
-    public void setResultQueueIntervalMillis(long resultQueueIntervalMillis) {
-        this.resultQueueIntervalMillis = resultQueueIntervalMillis;
+    public void setResultPollRate(long resultPollRate) {
+        this.resultPollRate = resultPollRate;
+    }
+    
+    public TimeUnit getResultPollRateTimeUnit() {
+        return resultPollRateTimeUnit;
+    }
+    
+    public void setResultPollRateTimeUnit(TimeUnit resultPollRateTimeUnit) {
+        this.resultPollRateTimeUnit = resultPollRateTimeUnit;
+    }
+    
+    public long getResultPollRateMillis() {
+        return resultPollRateTimeUnit.toMillis(resultPollRate);
     }
     
     public long getLockWaitTimeMillis() {

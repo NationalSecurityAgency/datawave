@@ -18,8 +18,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @RequestMapping(path = "/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class QueryController {
@@ -63,10 +61,7 @@ public class QueryController {
     @RequestMapping(path = "{queryId}/next", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public BaseQueryResponse next(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
-        
-        List<Object> resultObjects = queryManagementService.next(queryId, currentUser);
-        
-        return null;
+        return queryManagementService.next(queryId, currentUser);
     }
     
     @Timed(name = "dw.query.cancel", absolute = true)

@@ -174,9 +174,9 @@ public class QueryExecutorBeanTest {
         ctx = createStrictMock(EJBContext.class);
         qlCache = new CreatedQueryLogicCacheBean();
         queryExpirationConf = new QueryExpirationProperties();
-        queryExpirationConf.setPageSizeShortCircuitCheckTime(45);
-        queryExpirationConf.setPageShortCircuitTimeout(58);
-        queryExpirationConf.setCallTime(60);
+        queryExpirationConf.setShortCircuitCheckTime(45);
+        queryExpirationConf.setShortCircuitTimeout(58);
+        queryExpirationConf.setCallTimeout(60);
         connectionRequestBean = createStrictMock(AccumuloConnectionRequestBean.class);
         setInternalState(auditor, AuditService.class, auditService);
         setInternalState(auditor, AuditParameterBuilder.class, new DefaultAuditParameterBuilder());

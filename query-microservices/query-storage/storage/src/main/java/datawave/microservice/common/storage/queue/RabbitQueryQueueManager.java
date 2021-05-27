@@ -1,6 +1,5 @@
 package datawave.microservice.common.storage.queue;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
@@ -11,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpIOException;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.MessageListener;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueInformation;
 import org.springframework.amqp.core.TopicExchange;
@@ -21,8 +21,6 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
-import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
-import org.springframework.amqp.support.converter.MessagingMessageConverter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.messaging.Message;
@@ -35,6 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import static datawave.microservice.common.storage.queue.RabbitQueryQueueManager.RABBIT;
 
@@ -319,20 +318,17 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
     /**
      * A listener for local queues
      */
-    public class RabbitQueueListener implements QueryQueueListener {
-        private java.util.Queue<org.springframework.messaging.Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
+    public class RabbitQueueListener implements QueryQueueListener, MessageListener {
+        private ArrayBlockingQueue<org.springframework.messaging.Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
         private final String listenerId;
-        private Thread thread = null;
         
         public RabbitQueueListener(String listenerId, String queueName) {
             this.listenerId = listenerId;
-            MessageListenerAdapter listenerAdapter = new MessageListenerAdapter(this, "receiveMessage");
-            listenerAdapter.setMessageConverter(new MessagingMessageConverter());
             SimpleRabbitListenerEndpoint endpoint = new SimpleRabbitListenerEndpoint();
             endpoint.setAdmin(rabbitAdmin);
             endpoint.setAutoStartup(true);
             endpoint.setId(listenerId);
-            endpoint.setMessageListener(listenerAdapter);
+            endpoint.setMessageListener(this);
             endpoint.setQueueNames(queueName);
             endpoint.setGroup(queueName);
             DirectRabbitListenerContainerFactory listenerContainerFactory = new DirectRabbitListenerContainerFactory();
@@ -356,11 +352,11 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
             }
         }
         
-        public void receiveMessage(Message<byte[]> message) {
+        @Override
+        public void onMessage(org.springframework.amqp.core.Message message) {
             try {
-                messageQueue.add(new GenericMessage<Result>(new ObjectMapper().readerFor(Result.class).readValue(message.getPayload()), message.getHeaders()));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Failed to deserialize payload as a Result", e);
+                messageQueue.add(new GenericMessage<>(new ObjectMapper().readerFor(Result.class).readValue(message.getBody()),
+                                message.getMessageProperties().getHeaders()));
             } catch (IOException e) {
                 throw new RuntimeException("Failed to deserialize payload as a Result", e);
             }
@@ -368,24 +364,15 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         
         @Override
         public Message<Result> receive(long waitMs) {
-            long start = System.currentTimeMillis();
-            int count = 0;
-            while (messageQueue.isEmpty() && ((System.currentTimeMillis() - start) < waitMs)) {
-                count++;
-                try {
-                    Thread.sleep(1L);
-                } catch (InterruptedException e) {
-                    break;
+            Message<Result> result = null;
+            try {
+                result = messageQueue.poll(waitMs, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Interrupted while waiting for query results");
                 }
             }
-            if (log.isTraceEnabled()) {
-                log.trace("Cycled " + count + " rounds looking for message");
-            }
-            if (messageQueue.isEmpty()) {
-                return null;
-            } else {
-                return messageQueue.remove();
-            }
+            return result;
         }
     }
     

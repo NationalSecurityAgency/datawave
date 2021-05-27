@@ -20,6 +20,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import static datawave.microservice.common.storage.queue.TestQueryQueueManager.TEST;
 
@@ -169,7 +170,7 @@ public class TestQueryQueueManager implements QueryQueueManager {
     public class TestQueueListener implements Runnable, QueryQueueListener {
         private static final long WAIT_MS_DEFAULT = 100;
         
-        private Queue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
+        private ArrayBlockingQueue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
         private final String listenerId;
         private Thread thread;
         
@@ -225,24 +226,15 @@ public class TestQueryQueueManager implements QueryQueueManager {
         
         @Override
         public Message<Result> receive(long waitMs) {
-            long start = System.currentTimeMillis();
-            int count = 0;
-            while (messageQueue.isEmpty() && ((System.currentTimeMillis() - start) < waitMs)) {
-                count++;
-                try {
-                    Thread.sleep(1L);
-                } catch (InterruptedException e) {
-                    break;
+            Message<Result> result = null;
+            try {
+                result = messageQueue.poll(waitMs, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Interrupted while waiting for query results");
                 }
             }
-            if (log.isTraceEnabled()) {
-                log.trace("Cycled " + count + " rounds looking for message");
-            }
-            if (messageQueue.isEmpty()) {
-                return null;
-            } else {
-                return messageQueue.remove();
-            }
+            return result;
         }
     }
 }

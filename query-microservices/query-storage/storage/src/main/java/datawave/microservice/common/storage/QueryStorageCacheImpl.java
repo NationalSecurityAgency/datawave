@@ -94,7 +94,8 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         queryStatus.setQueryState(queryState);
         queryStatus.setQuery(query);
         queryStatus.setCalculatedAuthorizations(calculatedAuthorizations);
-        queryStatus.setLastUpdated(new Date());
+        queryStatus.setLastUsed(new Date());
+        queryStatus.setLastUpdated(queryStatus.getLastUsed());
         cache.updateQueryStatus(queryStatus);
         
         // store the initial tasks states

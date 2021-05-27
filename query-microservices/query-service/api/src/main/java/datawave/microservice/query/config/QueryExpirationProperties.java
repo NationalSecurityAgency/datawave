@@ -1,75 +1,94 @@
 package datawave.microservice.query.config;
 
+import java.util.concurrent.TimeUnit;
+
 public class QueryExpirationProperties {
-    public static final int PAGE_TIMEOUT_MIN_DEFAULT = 60;
-    public static final int IDLE_TIME_MIN_DEFAULT = 15;
+    private long idleTimeout = 15;
+    private TimeUnit idleTimeUnit = TimeUnit.MINUTES;
+    private long callTimeout = 60;
+    private TimeUnit callTimeUnit = TimeUnit.MINUTES;
+    private long shortCircuitCheckTime = callTimeout / 2;
+    private TimeUnit shortCircuitCheckTimeUnit = TimeUnit.MINUTES;
+    private long shortCircuitTimeout = Math.round(0.97 * callTimeout);
+    private TimeUnit shortCircuitTimeUnit = TimeUnit.MINUTES;
     
-    private long idleTimeMinutes = IDLE_TIME_MIN_DEFAULT;
-    private long callTimeMinutes = PAGE_TIMEOUT_MIN_DEFAULT;
-    private long pageSizeShortCircuitCheckTimeMinutes = PAGE_TIMEOUT_MIN_DEFAULT / 2;
-    private long pageShortCircuitTimeoutMinutes = Math.round(0.97 * PAGE_TIMEOUT_MIN_DEFAULT);
-    
-    public long getIdleTimeMinutes() {
-        return idleTimeMinutes;
+    public long getIdleTimeout() {
+        return idleTimeout;
     }
     
-    public long getIdleTimeInMS() {
-        return idleTimeMinutes * 60 * 1000;
+    public long getIdleTimeoutMillis() {
+        return idleTimeUnit.toMillis(idleTimeout);
     }
     
-    public void setIdleTime(long idleTimeMinutes) {
-        this.idleTimeMinutes = idleTimeMinutes;
+    public void setIdleTimeout(long idleTimeout) {
+        this.idleTimeout = idleTimeout;
     }
     
-    public void setIdleTimeMinutes(long idleTimeMinutes) {
-        this.idleTimeMinutes = idleTimeMinutes;
+    public TimeUnit getIdleTimeUnit() {
+        return idleTimeUnit;
     }
     
-    public long getCallTimeMinutes() {
-        return callTimeMinutes;
+    public void setIdleTimeUnit(TimeUnit idleTimeUnit) {
+        this.idleTimeUnit = idleTimeUnit;
     }
     
-    public long getCallTimeInMS() {
-        return callTimeMinutes * 60 * 1000;
+    public long getCallTimeout() {
+        return callTimeout;
     }
     
-    public void setCallTime(long callTimeMinutes) {
-        this.callTimeMinutes = callTimeMinutes;
+    public long getCallTimeoutMillis() {
+        return callTimeUnit.toMillis(callTimeout);
     }
     
-    public void setCallTimeMinutes(long callTimeMinutes) {
-        this.callTimeMinutes = callTimeMinutes;
+    public void setCallTimeout(long callTimeout) {
+        this.callTimeout = callTimeout;
     }
     
-    public float getPageSizeShortCircuitCheckTimeMinutes() {
-        return pageSizeShortCircuitCheckTimeMinutes;
+    public TimeUnit getCallTimeUnit() {
+        return callTimeUnit;
     }
     
-    public long getPageSizeShortCircuitCheckTimeInMS() {
-        return pageSizeShortCircuitCheckTimeMinutes * 60 * 1000;
+    public void setCallTimeUnit(TimeUnit callTimeUnit) {
+        this.callTimeUnit = callTimeUnit;
     }
     
-    public void setPageSizeShortCircuitCheckTime(long pageSizeShortCircuitCheckTimeMinutes) {
-        this.pageSizeShortCircuitCheckTimeMinutes = pageSizeShortCircuitCheckTimeMinutes;
+    public long getShortCircuitCheckTime() {
+        return shortCircuitCheckTime;
     }
     
-    public void setPageSizeShortCircuitCheckTimeMinutes(long pageSizeShortCircuitCheckTimeMinutes) {
-        this.pageSizeShortCircuitCheckTimeMinutes = pageSizeShortCircuitCheckTimeMinutes;
+    public long getShortCircuitCheckTimeMillis() {
+        return shortCircuitCheckTimeUnit.toMillis(shortCircuitCheckTime);
     }
     
-    public long getPageShortCircuitTimeoutMinutes() {
-        return pageShortCircuitTimeoutMinutes;
+    public void setShortCircuitCheckTime(long shortCircuitCheckTime) {
+        this.shortCircuitCheckTime = shortCircuitCheckTime;
     }
     
-    public long getPageShortCircuitTimeoutInMS() {
-        return pageShortCircuitTimeoutMinutes * 60 * 1000;
+    public TimeUnit getShortCircuitCheckTimeUnit() {
+        return shortCircuitCheckTimeUnit;
     }
     
-    public void setPageShortCircuitTimeout(long pageShortCircuitTimeoutMinutes) {
-        this.pageShortCircuitTimeoutMinutes = pageShortCircuitTimeoutMinutes;
+    public void setShortCircuitCheckTimeUnit(TimeUnit shortCircuitCheckTimeUnit) {
+        this.shortCircuitCheckTimeUnit = shortCircuitCheckTimeUnit;
     }
     
-    public void setPageShortCircuitTimeoutMinutes(long pageShortCircuitTimeoutMinutes) {
-        this.pageShortCircuitTimeoutMinutes = pageShortCircuitTimeoutMinutes;
+    public long getShortCircuitTimeout() {
+        return shortCircuitTimeout;
+    }
+    
+    public long getShortCircuitTimeoutMillis() {
+        return shortCircuitTimeUnit.toMillis(shortCircuitTimeout);
+    }
+    
+    public void setShortCircuitTimeout(long shortCircuitTimeout) {
+        this.shortCircuitTimeout = shortCircuitTimeout;
+    }
+    
+    public TimeUnit getShortCircuitTimeUnit() {
+        return shortCircuitTimeUnit;
+    }
+    
+    public void setShortCircuitTimeUnit(TimeUnit shortCircuitTimeUnit) {
+        this.shortCircuitTimeUnit = shortCircuitTimeUnit;
     }
 }

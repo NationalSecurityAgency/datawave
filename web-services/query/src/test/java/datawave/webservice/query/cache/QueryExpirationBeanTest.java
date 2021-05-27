@@ -69,8 +69,8 @@ public class QueryExpirationBeanTest {
         QueryExpirationBean bean = new QueryExpirationBean();
         
         QueryExpirationProperties expirationConfiguration = new QueryExpirationProperties();
-        setInternalState(expirationConfiguration, "idleTimeMinutes", expireTime);
-        setInternalState(expirationConfiguration, "callTimeMinutes", expireTime);
+        setInternalState(expirationConfiguration, "idleTimeout", expireTime);
+        setInternalState(expirationConfiguration, "callTimeout", expireTime);
         
         setInternalState(bean, QueryExpirationProperties.class, expirationConfiguration);
         setInternalState(bean, QueryCache.class, queryCache);
