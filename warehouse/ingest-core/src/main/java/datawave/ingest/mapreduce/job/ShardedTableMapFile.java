@@ -288,7 +288,6 @@ public class ShardedTableMapFile {
      *            if validation of shards mappings should be performed
      * @return the path to the sharded table map file
      * @throws IOException
-     * @throws URISyntaxException
      */
     public static Path createShardedMapFile(Logger log, Configuration conf, Path workDir, String shardedTableName, boolean validateShardLocations)
                     throws IOException {
