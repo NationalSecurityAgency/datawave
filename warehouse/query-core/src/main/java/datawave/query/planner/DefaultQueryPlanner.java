@@ -51,6 +51,7 @@ import datawave.query.jexl.visitors.ExpandCompositeTerms;
 import datawave.query.jexl.visitors.ExpandMultiNormalizedTerms;
 import datawave.query.jexl.visitors.FetchDataTypesVisitor;
 import datawave.query.jexl.visitors.FieldMissingFromSchemaVisitor;
+import datawave.query.jexl.visitors.FieldToFieldComparisonVisitor;
 import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnfieldedTermsVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
@@ -582,7 +583,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     /**
-     * NOT THREAD SAFE -- relies on QueryStopwatch is not thread safe
+     * NOT THREAD SAFE - relies on QueryStopwatch which is not thread safe
      * 
      * @param lastOperation
      * @param queryTree
@@ -1209,6 +1210,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             
             stopwatch.stop();
         }
+        
+        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Force field-to-field comparison to evaluation only");
+        queryTree = FieldToFieldComparisonVisitor.forceEvaluationOnly(queryTree);
+        if (log.isDebugEnabled()) {
+            logQuery(queryTree, "Query after forceEvaluationOnly is applied");
+        }
+        stopwatch.stop();
         
         if (!disableCompositeFields) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand composite terms");

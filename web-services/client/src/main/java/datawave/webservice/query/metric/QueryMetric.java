@@ -12,6 +12,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.result.event.HasMarkings;
 
@@ -146,7 +147,8 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                             .append(this.getNextCount(), other.getNextCount()).append(this.getSeekCount(), other.getSeekCount())
                             .append(this.getYieldCount(), other.getYieldCount()).append(this.getDocRanges(), other.getDocRanges())
                             .append(this.getFiRanges(), other.getFiRanges()).append(this.getPlan(), other.getPlan())
-                            .append(this.getLoginTime(), other.getLoginTime()).append(this.getPredictions(), other.getPredictions()).isEquals();
+                            .append(this.getLoginTime(), other.getLoginTime()).append(this.getPredictions(), other.getPredictions())
+                            .append(this.getMarkings(), other.getMarkings()).isEquals();
         } else {
             return false;
         }
@@ -368,7 +370,6 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                     }
                 }
             }
-            
         }
         
         public void mergeFrom(Input input, QueryMetric message) throws IOException {
@@ -635,6 +636,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
         }
     };
     
+    @JsonIgnore
     public Schema<? extends BaseQueryMetric> getSchemaInstance() {
         return getSchema();
     }

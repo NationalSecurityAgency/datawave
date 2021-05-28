@@ -114,19 +114,23 @@ public class GroupingRequiredFilterFunctions {
      */
     private static boolean manageGroupsForMatchesInGroupRemainingArgs(Object fieldValue, String regex, String context, Collection<ValueTuple> allMatches,
                     ValueTuple currentMatch) {
-        String fieldName = ValueTuple.getFieldName(fieldValue);
-        boolean contextHasMatch = false;
-        if (fieldName.endsWith(context)) {
-            // includeRegex will return either an emptyCollection, or a SingletonCollection containing
-            // the first match that was found
-            Collection<ValueTuple> rightSideMatches = EvaluationPhaseFilterFunctions.includeRegex(fieldValue, regex);
-            if (!rightSideMatches.isEmpty()) {
-                allMatches.addAll(rightSideMatches);
-                allMatches.add(currentMatch); // add the left side unmodified match
-                contextHasMatch = true;
+        if (fieldValue != null) {
+            String fieldName = ValueTuple.getFieldName(fieldValue);
+            boolean contextHasMatch = false;
+            if (fieldName.endsWith(context)) {
+                // includeRegex will return either an emptyCollection, or a SingletonCollection containing
+                // the first match that was found
+                Collection<ValueTuple> rightSideMatches = EvaluationPhaseFilterFunctions.includeRegex(fieldValue, regex);
+                if (!rightSideMatches.isEmpty()) {
+                    allMatches.addAll(rightSideMatches);
+                    allMatches.add(currentMatch); // add the left side unmodified match
+                    contextHasMatch = true;
+                }
             }
+            return contextHasMatch;
+        } else {
+            return false;
         }
-        return contextHasMatch;
     }
     
     /**
@@ -137,7 +141,7 @@ public class GroupingRequiredFilterFunctions {
      * FOO.BLAH.ZIP.0 with an index of '2' will split off 'BLAH.ZIP.0'
      * If no index is supplied, the default is 0
      * </pre>
-     * 
+     *
      * @param args
      *            suuplies field/regex pairs with an optional index as the last arg
      * @return a collection of matches
@@ -188,7 +192,7 @@ public class GroupingRequiredFilterFunctions {
     
     /**
      * helper function for matchesInGroup
-     * 
+     *
      * @param fieldValue
      * @param regex
      * @param context
@@ -217,7 +221,7 @@ public class GroupingRequiredFilterFunctions {
      * FOO.BLAH.ZIP.0 with an index of '2' will split off 'BLAH.ZIP.0'
      * If no index is supplied, the default is 0
      * </pre>
-     * 
+     *
      * @param args
      * @return a collection of matches
      */
