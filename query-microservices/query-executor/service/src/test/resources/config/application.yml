@@ -1,7 +1,9 @@
 spring:
+
+  application:
+    name: query-executor-test
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
-
   security:
     user.password: passwordNotUsed
     datawave:
@@ -40,7 +42,12 @@ management:
 
 logging:
   level:
-    datawave.microservice: DEBUG
+    root: warn
+    datawave.microservice.query.executor: ERROR
+    datawave.microservice.common.storage: ERROR
+    io.undertow.request: FATAL
+    org.apache.kafka: ERROR
+    kafka: FATAL
 
 warehouse:
   accumulo:
@@ -94,10 +101,8 @@ warehouse:
 
 query:
   storage:
-    syncStorage:
-      true
-    sendNotifications:
-      true
+    syncStorage: true
+    sendNotifications: true
 
 datawave:
   metadata:
@@ -221,3 +226,88 @@ datawave:
           statsdHost: ${warehouse.statsd.host}
           statsdPort: ${warehouse.statsd.port}
           evaluationOnlyFields: ""
+
+audit-client:
+  discovery:
+    enabled: false
+  uri: '${AUDIT_SERVER_URL:http://localhost:11111/audit}'
+
+---
+
+spring.config.activate.on-profile: sync-disabled
+
+query:
+  storage:
+    syncStorage:
+      false
+
+---
+
+spring.config.activate.on-profile: sync-enabled
+
+query:
+  storage:
+    syncStorage:
+      true
+
+---
+
+spring.config.activate.on-profile: send-notifications
+
+query:
+  storage:
+    sendNotifications:
+      true
+
+---
+
+spring.config.activate.on-profile: no-notifications
+
+query:
+  storage:
+    sendNotifications:
+      false
+
+---
+
+spring.config.activate.on-profile: use-rabbit
+
+query:
+  storage:
+    backend:
+      rabbit
+
+---
+
+spring.config.activate.on-profile: use-kafka
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: KafkaQueryQueueManager
+      autoOffsetReset: latest
+
+query:
+  storage:
+    backend:
+      kafka
+
+---
+
+spring.config.activate.on-profile: use-embedded-kafka
+
+spring:
+  kafka:
+    bootstrap-servers: "${spring.embedded.kafka.brokers}"
+    consumer:
+      group-id: KafkaQueryQueueManager
+      autoOffsetReset: latest
+query:
+  storage:
+    backend:
+      kafka
+
+---
+
+spring.config.activate.on-profile: missing

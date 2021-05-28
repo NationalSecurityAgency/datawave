@@ -3,6 +3,7 @@ package datawave.microservice.common.storage;
 import datawave.microservice.common.storage.config.QueryStorageProperties;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.security.Authorizations;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.cloud.bus.event.RemoteQueryTaskNotificationEvent;
@@ -53,7 +54,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public TaskKey defineQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
-        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.DEFINED);
+        return storeQuery(queryPool, query, calculatedAuthorizations, count, false);
     }
     
     /**
@@ -72,10 +73,10 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public TaskKey createQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
-        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATED);
+        return storeQuery(queryPool, query, calculatedAuthorizations, count, true);
     }
     
-    private TaskKey storeQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count, QueryStatus.QUERY_STATE queryState)
+    private TaskKey storeQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count, boolean sendCreateTask)
                     throws IOException {
         UUID queryUuid = query.getId();
         if (queryUuid == null) {
@@ -91,7 +92,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         
         // store the initial query properties
         QueryStatus queryStatus = new QueryStatus(checkpoint.getQueryKey());
-        queryStatus.setQueryState(queryState);
+        queryStatus.setQueryState(QueryStatus.QUERY_STATE.DEFINED);
         queryStatus.setQuery(query);
         queryStatus.setCalculatedAuthorizations(calculatedAuthorizations);
         queryStatus.setLastUsed(new Date());
@@ -106,16 +107,13 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         queue.ensureQueueCreated(queryKey.getQueryId());
         
         // create and store the initial create task with the checkpoint. This will send out the task notification.
-        QueryTask.QUERY_ACTION queryAction = null;
-        if (queryState == QueryStatus.QUERY_STATE.DEFINED) {
-            queryAction = QueryTask.QUERY_ACTION.DEFINE;
-        } else if (queryState == QueryStatus.QUERY_STATE.CREATED) {
-            queryAction = QueryTask.QUERY_ACTION.CREATE;
+        if (sendCreateTask) {
+            QueryTask task = createTask(QueryTask.QUERY_ACTION.CREATE, checkpoint);
+            return task.getTaskKey();
         }
-        QueryTask task = createTask(queryAction, checkpoint);
         
-        // return the task key
-        return task.getTaskKey();
+        // return the an empty task key
+        return new TaskKey(null, new QueryKey(queryPool, queryUuid, query.getQueryLogicName()));
     }
     
     /**

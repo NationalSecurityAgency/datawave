@@ -4,7 +4,7 @@ import datawave.microservice.common.storage.QueryCheckpoint;
 import datawave.microservice.common.storage.QueryKey;
 import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryStatus;
-import datawave.microservice.common.storage.QueryStatusCache;
+import datawave.microservice.common.storage.CachedQueryStatus;
 import datawave.microservice.common.storage.QueryStorageCache;
 import datawave.microservice.common.storage.QueryTask;
 import datawave.microservice.common.storage.QueryTaskNotification;
@@ -67,7 +67,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
                 // only proceed if we got the lock
                 if (gotLock) {
                     // pull the query from the cache
-                    QueryStatusCache queryStatus = new QueryStatusCache(cache, queryId, executorProperties.getMaxQueryStatusAge());
+                    CachedQueryStatus queryStatus = new CachedQueryStatus(cache, queryId, executorProperties.getMaxQueryStatusAge());
                     QueryLogic<?> queryLogic;
                     switch (task.getAction()) {
                         case PLAN:
@@ -88,7 +88,6 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
                             queryStatus.setPlan(plan);
                             break;
                         case CREATE:
-                        case DEFINE:
                         case NEXT:
                             queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName());
                             GenericQueryConfiguration config = queryLogic.initialize(connector, queryStatus.getQuery(),
@@ -110,6 +109,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
                                         taskComplete = true;
                                     }
                                 } else {
+                                    queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
                                     checkpoint(taskKey.getQueryKey(), cpQueryLogic);
                                     taskComplete = true;
                                 }
@@ -134,6 +134,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         } catch (TaskLockException tle) {
             // somebody is already processing this one
         } catch (Exception e) {
+            log.error("Failed to process task " + taskKey, e);
             taskFailed = true;
             cache.updateFailedQueryStatus(taskKey.getQueryId(), e);
         } finally {
@@ -158,7 +159,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         }
     }
     
-    private boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize, long maxResults, QueryStatusCache queryStatus) {
+    private boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize, long maxResults, CachedQueryStatus queryStatus) {
         QueryStatus.QUERY_STATE state = queryStatus.getQueryState();
         if (state == QueryStatus.QUERY_STATE.CANCELED || state == QueryStatus.QUERY_STATE.CLOSED || state == QueryStatus.QUERY_STATE.FAILED) {
             return false;
@@ -190,7 +191,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         }
     }
     
-    private boolean pullResults(TaskKey taskKey, QueryLogic queryLogic, QueryStatusCache queryStatus, boolean exhaustIterator) throws Exception {
+    private boolean pullResults(TaskKey taskKey, QueryLogic queryLogic, CachedQueryStatus queryStatus, boolean exhaustIterator) throws Exception {
         // start the timer on the query status to ensure we flush numResultsGenerated updates periodically
         queryStatus.startTimer();
         try {

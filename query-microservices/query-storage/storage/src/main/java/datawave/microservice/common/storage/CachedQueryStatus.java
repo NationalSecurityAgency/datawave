@@ -17,7 +17,7 @@ import java.util.UUID;
  * incrementNumResultsGenerated) will force an update and will update the underlying storage. Updates made via the incrementNumResultReturned and
  * incrementNumResultsGenerated methods will only be updated in the underlying storage when the cache is refreshed per the specified interval.
  */
-public class QueryStatusCache extends QueryStatus {
+public class CachedQueryStatus extends QueryStatus {
     private final QueryStorageCache cache;
     private final UUID queryId;
     private final long invalidCacheMs;
@@ -26,7 +26,7 @@ public class QueryStatusCache extends QueryStatus {
     private volatile long queryStatusTimeStamp = -1;
     private Timer timer = null;
     
-    public QueryStatusCache(QueryStorageCache cache, UUID queryId, long invalidCacheMs) {
+    public CachedQueryStatus(QueryStorageCache cache, UUID queryId, long invalidCacheMs) {
         this.cache = cache;
         this.queryId = queryId;
         this.invalidCacheMs = invalidCacheMs;

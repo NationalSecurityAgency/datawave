@@ -20,6 +20,21 @@
         <dependencies>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
+                <artifactId>datawave-ingest-configuration</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave</groupId>
+                <artifactId>datawave-ingest-csv</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave</groupId>
+                <artifactId>datawave-ingest-json</artifactId>
+                <version>${version.datawave}</version>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-query-core</artifactId>
                 <version>${version.datawave}</version>
                 <exclusions>
@@ -97,6 +112,13 @@
                         <groupId>org.springframework.cloud</groupId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>gov.nsa.datawave</groupId>
+                <artifactId>datawave-query-core</artifactId>
+                <version>${version.datawave}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
