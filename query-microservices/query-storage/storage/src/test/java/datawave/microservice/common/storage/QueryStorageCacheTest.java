@@ -75,7 +75,7 @@ public abstract class QueryStorageCacheTest {
     @ComponentScan(basePackages = "datawave.microservice")
     public static class QueryStorageCacheTestConfiguration {
         @Bean
-        public LinkedList<QueryTaskNotification> publishedEvents() {
+        public LinkedList<QueryTaskNotification> queryTaskNotifications() {
             return new LinkedList<>();
         }
         
@@ -84,7 +84,7 @@ public abstract class QueryStorageCacheTest {
         public ApplicationEventPublisher publisher(ApplicationEventPublisher publisher) {
             return event -> {
                 if (event instanceof RemoteQueryTaskNotificationEvent)
-                    publishedEvents().push(((RemoteQueryTaskNotificationEvent) event).getNotification());
+                    queryTaskNotifications().push(((RemoteQueryTaskNotificationEvent) event).getNotification());
             };
         }
     }
