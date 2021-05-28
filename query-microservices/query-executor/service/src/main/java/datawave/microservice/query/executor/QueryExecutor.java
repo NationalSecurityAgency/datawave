@@ -4,6 +4,7 @@ import datawave.microservice.common.storage.QueryCheckpoint;
 import datawave.microservice.common.storage.QueryKey;
 import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryStatus;
+import datawave.microservice.common.storage.QueryStatusCache;
 import datawave.microservice.common.storage.QueryStorageCache;
 import datawave.microservice.common.storage.QueryStorageLock;
 import datawave.microservice.common.storage.QueryTask;
@@ -67,7 +68,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
                 // only proceed if we got the lock
                 if (gotLock) {
                     // pull the query from the cache
-                    QueryStatus queryStatus = cache.getQueryStatus(queryId);
+                    QueryStatusCache queryStatus = new QueryStatusCache(cache, queryId, executorProperties.getMaxQueryStatusAge());
                     QueryLogic<?> queryLogic;
                     switch (task.getAction()) {
                         case PLAN:
@@ -85,7 +86,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
                             }
                             String plan = queryLogic.getPlan(connector, queryStatus.getQuery(), queryStatus.getCalculatedAuthorizations(), expandFields,
                                             expandValues);
-                            updatePlan(queryId, plan);
+                            queryStatus.setPlan(plan);
                             break;
                         case CREATE:
                         case DEFINE:
@@ -96,7 +97,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
                             
                             // update the query status plan
                             if (task.getAction() != QueryTask.QUERY_ACTION.NEXT) {
-                                updatePlan(queryId, config.getQueryString());
+                                queryStatus.setPlan(config.getQueryString());
                             }
                             
                             if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
@@ -104,7 +105,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
                                 cpQueryLogic.setupQuery(connector, task.getQueryCheckpoint());
                                 
                                 if (task.getAction() == QueryTask.QUERY_ACTION.NEXT) {
-                                    taskComplete = pullResults(taskKey, queryLogic, queryStatus.getQuery(), false);
+                                    taskComplete = pullResults(taskKey, queryLogic, queryStatus, false);
                                     if (!taskComplete) {
                                         checkpoint(taskKey.getQueryKey(), cpQueryLogic);
                                         taskComplete = true;
@@ -115,7 +116,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
                                 }
                             } else {
                                 queryLogic.setupQuery(config);
-                                taskComplete = pullResults(taskKey, queryLogic, queryStatus.getQuery(), true);
+                                taskComplete = pullResults(taskKey, queryLogic, queryStatus, true);
                                 if (!taskComplete) {
                                     throw new IllegalStateException("Expected to have exhausted results.  Something went wrong here");
                                 }
@@ -158,21 +159,24 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         }
     }
     
-    private boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize) {
-        int queueSize = queues.getQueueSize(taskKey.getQueryId());
-        return (queueSize < (2.5 * maxPageSize));
-    }
-    
-    private void updatePlan(UUID queryId, String plan) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            QueryStatus queryStatus = cache.getQueryStatus(queryId);
-            queryStatus.setPlan(plan);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
+    private boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize, QueryStatusCache queryStatus) {
+        QueryStatus.QUERY_STATE state = queryStatus.getQueryState();
+        if (state == QueryStatus.QUERY_STATE.CANCELED || state == QueryStatus.QUERY_STATE.CLOSED || state == QueryStatus.QUERY_STATE.FAILED) {
+            return false;
         }
+        // if we are to exhaust the iterator, then continue generating results
+        if (exhaust) {
+            return true;
+        }
+        // get the queue size
+        long queueSize;
+        if (executorProperties.isPollQueueSize()) {
+            queueSize = queues.getQueueSize(taskKey.getQueryId());
+        } else {
+            queueSize = queryStatus.getNumResultsGenerated() - queryStatus.getNumResultsReturned();
+        }
+        // we should return results if
+        return (queueSize < (2.5 * maxPageSize));
     }
     
     private QueryStatus.QUERY_STATE getQueryState(TaskKey taskKey) {
@@ -184,34 +188,35 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         }
     }
     
-    private boolean pullResults(TaskKey taskKey, QueryLogic queryLogic, Query settings, boolean exhaustIterator) throws Exception {
-        TransformIterator iter = queryLogic.getTransformIterator(settings);
-        int pageSize = settings.getPagesize();
-        if (queryLogic.getMaxPageSize() != 0) {
-            pageSize = Math.min(pageSize, queryLogic.getMaxPageSize());
-        }
-        boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize);
-        while (running && iter.hasNext()) {
-            QueryStatus.QUERY_STATE queryState = getQueryState(taskKey);
-            // if we are canceled, then break out
-            if (queryState == QueryStatus.QUERY_STATE.CANCELED || queryState == QueryStatus.QUERY_STATE.CLOSED) {
-                log.info("Query has been cancelled, aborting query.next call");
-                // TODO this.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
-                break;
+    private boolean pullResults(TaskKey taskKey, QueryLogic queryLogic, QueryStatusCache queryStatus, boolean exhaustIterator) throws Exception {
+        // start the timer on the query status to ensure we flush numResultsGenerated updates periodically
+        queryStatus.startTimer();
+        try {
+            TransformIterator iter = queryLogic.getTransformIterator(queryStatus.getQuery());
+            int pageSize = queryStatus.getQuery().getPagesize();
+            if (queryLogic.getMaxPageSize() != 0) {
+                pageSize = Math.min(pageSize, queryLogic.getMaxPageSize());
+            }
+            boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, queryStatus);
+            while (running && iter.hasNext()) {
+                Object result = iter.next();
+                queues.sendMessage(taskKey.getQueryId(), new Result(UUID.randomUUID().toString(), new Object[] {result}));
+                queryStatus.incrementNumResultsGenerated(1);
+                
+                // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
+                // TODO
+                // if (iter.getTransformer() instanceof WritesQueryMetrics) {
+                // ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
+                // }
+                
+                running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, queryStatus);
             }
             
-            Object result = iter.next();
-            queues.sendMessage(taskKey.getQueryId(), new Result(UUID.randomUUID().toString(), new Object[] {result}));
-            
-            // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
-            // TODO
-            // if (iter.getTransformer() instanceof WritesQueryMetrics) {
-            // ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
-            // }
-            
-            running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize);
+            return !iter.hasNext();
+        } finally {
+            queryStatus.stopTimer();
+            queryStatus.forceCacheUpdateIfDirty();
         }
-        return !iter.hasNext();
     }
     
     /**

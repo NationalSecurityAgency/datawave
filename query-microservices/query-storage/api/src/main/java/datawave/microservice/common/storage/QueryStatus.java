@@ -31,6 +31,7 @@ public class QueryStatus implements Serializable {
     private String plan;
     
     private long numResultsReturned = 0L;
+    private long numResultsGenerated = 0L;
     private int concurrentNextCount = 0;
     private long lastPageNumber = 0L;
     
@@ -142,6 +143,22 @@ public class QueryStatus implements Serializable {
         this.numResultsReturned = numResultsReturned;
     }
     
+    public void incrementNumResultsReturned(long increment) {
+        this.numResultsReturned += increment;
+    }
+    
+    public long getNumResultsGenerated() {
+        return numResultsGenerated;
+    }
+    
+    public void setNumResultsGenerated(long numResultsGenerated) {
+        this.numResultsGenerated = numResultsGenerated;
+    }
+    
+    public void incrementNumResultsGenerated(long increment) {
+        this.numResultsGenerated += increment;
+    }
+    
     public int getConcurrentNextCount() {
         return concurrentNextCount;
     }
@@ -185,6 +202,7 @@ public class QueryStatus implements Serializable {
                 .append(calculatedAuthorizations)
                 .append(plan)
                 .append(numResultsReturned)
+                .append(numResultsGenerated)
                 .append(concurrentNextCount)
                 .append(lastPageNumber)
                 .append(lastUsed)
@@ -208,6 +226,7 @@ public class QueryStatus implements Serializable {
                     .append(calculatedAuthorizations, other.calculatedAuthorizations)
                     .append(plan, other.plan)
                     .append(numResultsReturned, other.numResultsReturned)
+                    .append(numResultsGenerated, other.numResultsGenerated)
                     .append(concurrentNextCount, other.concurrentNextCount)
                     .append(lastPageNumber, other.lastPageNumber)
                     .append(lastUsed, other.lastUsed)
@@ -231,6 +250,7 @@ public class QueryStatus implements Serializable {
                 .append("calculatedAuthorizations", calculatedAuthorizations)
                 .append("plan", plan)
                 .append("numResultsReturned", numResultsReturned)
+                .append("numResultsGenerated", numResultsGenerated)
                 .append("concurrentNextCount", concurrentNextCount)
                 .append("lastPageNumber", lastPageNumber)
                 .append("lastUsed", lastUsed)
