@@ -6,7 +6,6 @@ import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryStatus;
 import datawave.microservice.common.storage.QueryStatusCache;
 import datawave.microservice.common.storage.QueryStorageCache;
-import datawave.microservice.common.storage.QueryStorageLock;
 import datawave.microservice.common.storage.QueryTask;
 import datawave.microservice.common.storage.QueryTaskNotification;
 import datawave.microservice.common.storage.Result;
@@ -159,7 +158,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         }
     }
     
-    private boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize, QueryStatusCache queryStatus) {
+    private boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize, long maxResults, QueryStatusCache queryStatus) {
         QueryStatus.QUERY_STATE state = queryStatus.getQueryState();
         if (state == QueryStatus.QUERY_STATE.CANCELED || state == QueryStatus.QUERY_STATE.CLOSED || state == QueryStatus.QUERY_STATE.FAILED) {
             return false;
@@ -167,6 +166,9 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         // if we are to exhaust the iterator, then continue generating results
         if (exhaust) {
             return true;
+        }
+        if (queryStatus.getNumResultsGenerated() >= maxResults) {
+            return false;
         }
         // get the queue size
         long queueSize;
@@ -176,7 +178,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
             queueSize = queryStatus.getNumResultsGenerated() - queryStatus.getNumResultsReturned();
         }
         // we should return results if
-        return (queueSize < (2.5 * maxPageSize));
+        return (queueSize < (executorProperties.getAvailableResultsPageMultiplier() * maxPageSize));
     }
     
     private QueryStatus.QUERY_STATE getQueryState(TaskKey taskKey) {
@@ -193,11 +195,19 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         queryStatus.startTimer();
         try {
             TransformIterator iter = queryLogic.getTransformIterator(queryStatus.getQuery());
+            long maxResults = queryLogic.getResultLimit(queryStatus.getQuery().getDnList());
+            if (maxResults != queryLogic.getMaxResults()) {
+                log.info("Maximum results set to " + maxResults + " instead of default " + queryLogic.getMaxResults() + ", user "
+                                + queryStatus.getQuery().getUserDN() + " has a DN configured with a different limit");
+            }
+            if (queryStatus.getQuery().isMaxResultsOverridden()) {
+                maxResults = Math.min(maxResults, queryStatus.getQuery().getMaxResultsOverride());
+            }
             int pageSize = queryStatus.getQuery().getPagesize();
             if (queryLogic.getMaxPageSize() != 0) {
                 pageSize = Math.min(pageSize, queryLogic.getMaxPageSize());
             }
-            boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, queryStatus);
+            boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
             while (running && iter.hasNext()) {
                 Object result = iter.next();
                 queues.sendMessage(taskKey.getQueryId(), new Result(UUID.randomUUID().toString(), new Object[] {result}));
@@ -209,7 +219,7 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
                 // ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
                 // }
                 
-                running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, queryStatus);
+                running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
             }
             
             return !iter.hasNext();
