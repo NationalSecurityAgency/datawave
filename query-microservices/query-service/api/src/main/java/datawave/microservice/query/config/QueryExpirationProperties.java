@@ -1,15 +1,28 @@
 package datawave.microservice.query.config;
 
+import org.springframework.validation.annotation.Validated;
+
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
 import java.util.concurrent.TimeUnit;
 
+@Validated
 public class QueryExpirationProperties {
+    @Positive
     private long idleTimeout = 15;
+    @NotNull
     private TimeUnit idleTimeUnit = TimeUnit.MINUTES;
+    @Positive
     private long callTimeout = 60;
+    @NotNull
     private TimeUnit callTimeUnit = TimeUnit.MINUTES;
+    @Positive
     private long shortCircuitCheckTime = callTimeout / 2;
+    @NotNull
     private TimeUnit shortCircuitCheckTimeUnit = TimeUnit.MINUTES;
+    @Positive
     private long shortCircuitTimeout = Math.round(0.97 * callTimeout);
+    @NotNull
     private TimeUnit shortCircuitTimeUnit = TimeUnit.MINUTES;
     
     public long getIdleTimeout() {

@@ -5,6 +5,7 @@ import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.QueryStatus;
 import datawave.microservice.common.storage.QueryStorageCache;
 import datawave.microservice.common.storage.Result;
+import datawave.microservice.query.config.NextCallProperties;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.logic.QueryLogic;
@@ -27,7 +28,8 @@ import java.util.concurrent.Future;
 public class NextCall implements Callable<ResultsPage<Object>> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
-    private final QueryProperties queryProperties;
+    private final NextCallProperties nextCallProperties;
+    private final QueryExpirationProperties expirationProperties;
     private final QueryQueueManager queryQueueManager;
     private final QueryStorageCache queryStorageCache;
     private final String queryId;
@@ -50,34 +52,37 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     private long startTimeMillis;
     private ResultsPage.Status status = ResultsPage.Status.COMPLETE;
     
+    private long lastStatusUpdateTime = 0L;
+    private QueryStatus queryStatus;
+    
     private final BaseQueryMetric metric;
     
-    public NextCall(QueryProperties queryProperties, QueryQueueManager queryQueueManager, QueryStorageCache queryStorageCache,
-                    QueryMetricFactory queryMetricFactory, String queryId, QueryLogic<?> queryLogic, String identifier) throws QueryException {
-        this.queryProperties = queryProperties;
-        this.queryQueueManager = queryQueueManager;
-        this.queryStorageCache = queryStorageCache;
-        this.queryId = queryId;
-        this.identifier = identifier;
+    private NextCall(Builder builder) throws QueryException {
+        this.nextCallProperties = builder.nextCallProperties;
+        this.expirationProperties = builder.expirationProperties;
+        this.queryQueueManager = builder.queryQueueManager;
+        this.queryStorageCache = builder.queryStorageCache;
+        this.queryId = builder.queryId;
+        this.identifier = builder.identifier;
         
         QueryStatus status = getQueryStatus();
         this.userResultsPerPage = status.getQuery().getPagesize();
         this.maxResultsOverridden = status.getQuery().isMaxResultsOverridden();
         this.maxResultsOverride = status.getQuery().getMaxResultsOverride();
         
-        this.logicResultsPerPage = queryLogic.getMaxPageSize();
-        this.logicBytesPerPage = queryLogic.getPageByteTrigger();
-        this.logicMaxWork = queryLogic.getMaxWork();
+        this.logicResultsPerPage = builder.queryLogic.getMaxPageSize();
+        this.logicBytesPerPage = builder.queryLogic.getPageByteTrigger();
+        this.logicMaxWork = builder.queryLogic.getMaxWork();
         
         this.maxResultsPerPage = Math.min(userResultsPerPage, logicResultsPerPage);
         
-        this.maxResults = queryLogic.getResultLimit(status.getQuery().getDnList());
-        if (this.maxResults != queryLogic.getMaxResults()) {
-            log.info("Maximum results set to " + this.maxResults + " instead of default " + queryLogic.getMaxResults() + ", user "
+        this.maxResults = builder.queryLogic.getResultLimit(status.getQuery().getDnList());
+        if (this.maxResults != builder.queryLogic.getMaxResults()) {
+            log.info("Maximum results set to " + this.maxResults + " instead of default " + builder.queryLogic.getMaxResults() + ", user "
                             + status.getQuery().getUserDN() + " has a DN configured with a different limit");
         }
         
-        this.metric = queryMetricFactory.createMetric();
+        this.metric = builder.queryMetricFactory.createMetric();
     }
     
     @Override
@@ -88,7 +93,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         
         // keep waiting for results until we're finished
         while (!isFinished(queryId)) {
-            Message<Result> message = resultListener.receive(queryProperties.getResultPollRateMillis());
+            Message<Result> message = resultListener.receive(nextCallProperties.getResultPollIntervalMillis());
             if (message != null) {
                 
                 // TODO: In the past, if we got a null result we would mark the next call as finished
@@ -185,11 +190,9 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         if (!results.isEmpty()) {
             long callTimeMillis = callTimeMillis();
             
-            QueryExpirationProperties expiration = queryProperties.getExpiration();
-            
             // if after the page size short circuit check time
-            if (callTimeMillis >= expiration.getShortCircuitCheckTimeMillis()) {
-                float percentTimeComplete = (float) callTimeMillis / (float) (expiration.getCallTimeout());
+            if (callTimeMillis >= expirationProperties.getShortCircuitCheckTimeMillis()) {
+                float percentTimeComplete = (float) callTimeMillis / (float) (expirationProperties.getCallTimeout());
                 float percentResultsComplete = (float) results.size() / (float) maxResultsPerPage;
                 // if the percent results complete is less than the percent time complete, then break out
                 if (percentResultsComplete < percentTimeComplete) {
@@ -198,7 +201,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             }
             
             // if after the page short circuit timeout, then break out
-            if (callTimeMillis >= expiration.getShortCircuitTimeoutMillis()) {
+            if (callTimeMillis >= expirationProperties.getShortCircuitTimeoutMillis()) {
                 timeout = true;
             }
         }
@@ -210,10 +213,16 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         return System.currentTimeMillis() - startTimeMillis;
     }
     
-    // TODO: We may want to control the rate that we pull query status from the cache
-    // Perhaps by adding update interval properties.
     private QueryStatus getQueryStatus() {
-        return queryStorageCache.getQueryStatus(UUID.fromString(queryId));
+        if (queryStatus == null || isQueryStatusExpired()) {
+            lastStatusUpdateTime = System.currentTimeMillis();
+            queryStatus = queryStorageCache.getQueryStatus(UUID.fromString(queryId));
+        }
+        return queryStatus;
+    }
+    
+    private boolean isQueryStatusExpired() {
+        return (System.currentTimeMillis() - lastStatusUpdateTime) > nextCallProperties.getStatusUpdateIntervalMillis();
     }
     
     public void cancel() {
@@ -230,5 +239,66 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     
     public void setFuture(Future<ResultsPage<Object>> future) {
         this.future = future;
+    }
+    
+    public static class Builder {
+        private NextCallProperties nextCallProperties;
+        private QueryExpirationProperties expirationProperties;
+        private QueryQueueManager queryQueueManager;
+        private QueryStorageCache queryStorageCache;
+        private QueryMetricFactory queryMetricFactory;
+        private String queryId;
+        private QueryLogic<?> queryLogic;
+        private String identifier;
+        
+        public Builder setQueryProperties(QueryProperties queryProperties) {
+            this.nextCallProperties = queryProperties.getNextCall();
+            this.expirationProperties = queryProperties.getExpiration();
+            return this;
+        }
+        
+        public Builder setNextCallProperties(NextCallProperties nextCallProperties) {
+            this.nextCallProperties = nextCallProperties;
+            return this;
+        }
+        
+        public Builder setExpirationProperties(QueryExpirationProperties expirationProperties) {
+            this.expirationProperties = expirationProperties;
+            return this;
+        }
+        
+        public Builder setQueryQueueManager(QueryQueueManager queryQueueManager) {
+            this.queryQueueManager = queryQueueManager;
+            return this;
+        }
+        
+        public Builder setQueryStorageCache(QueryStorageCache queryStorageCache) {
+            this.queryStorageCache = queryStorageCache;
+            return this;
+        }
+        
+        public Builder setQueryMetricFactory(QueryMetricFactory queryMetricFactory) {
+            this.queryMetricFactory = queryMetricFactory;
+            return this;
+        }
+        
+        public Builder setQueryId(String queryId) {
+            this.queryId = queryId;
+            return this;
+        }
+        
+        public Builder setQueryLogic(QueryLogic<?> queryLogic) {
+            this.queryLogic = queryLogic;
+            return this;
+        }
+        
+        public Builder setIdentifier(String identifier) {
+            this.identifier = identifier;
+            return this;
+        }
+        
+        public NextCall build() throws QueryException {
+            return new NextCall(this);
+        }
     }
 }

@@ -6,7 +6,6 @@ import com.google.common.base.Throwables;
 import datawave.microservice.common.storage.QueryQueueListener;
 import datawave.microservice.common.storage.QueryQueueManager;
 import datawave.microservice.common.storage.Result;
-import org.apache.commons.math3.util.ArithmeticUtils;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.ConsumerGroupDescription;
 import org.apache.kafka.clients.admin.DeleteRecordsResult;
@@ -34,7 +33,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

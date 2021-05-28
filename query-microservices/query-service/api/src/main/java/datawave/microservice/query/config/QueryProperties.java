@@ -2,42 +2,31 @@ package datawave.microservice.query.config;
 
 import org.springframework.validation.annotation.Validated;
 
-import javax.annotation.Nonnegative;
-import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 import java.util.concurrent.TimeUnit;
 
 @Validated
 public class QueryProperties {
-    
-    @Valid
-    private QueryExpirationProperties expiration;
     @NotEmpty
     private String privilegedRole = "PrivilegedUser";
-    @Positive
-    private long resultPollRate = TimeUnit.SECONDS.toMillis(30);
-    private TimeUnit resultPollRateTimeUnit = TimeUnit.MILLISECONDS;
     // The amount of time to wait for the lock to be acquired
     @PositiveOrZero
-    private long lockWaitTimeMillis = TimeUnit.SECONDS.toMillis(5);
+    private long lockWaitTime = TimeUnit.SECONDS.toMillis(5);
+    @NotNull
+    private TimeUnit lockWaitTimeUnit = TimeUnit.MILLISECONDS;
     // The amount of time that the lock will be held before being automatically released
     @PositiveOrZero
-    private long lockLeaseTimeMillis = TimeUnit.SECONDS.toMillis(30);
+    private long lockLeaseTime = TimeUnit.SECONDS.toMillis(30);
+    @NotNull
+    private TimeUnit lockLeaseTimeUnit = TimeUnit.MILLISECONDS;
+    @NotEmpty
     private String executorServiceName = "executor";
-    private int concurrentNextLimit = 1;
-    private ExecutorProperties nextExecutor = new ExecutorProperties();
-    private DefaultParameters defaultParams = new DefaultParameters();
     
-    public QueryExpirationProperties getExpiration() {
-        return expiration;
-    }
-    
-    public void setExpiration(QueryExpirationProperties expiration) {
-        this.expiration = expiration;
-    }
+    private QueryExpirationProperties expiration;
+    private NextCallProperties nextCall = new NextCallProperties();
+    private DefaultParameterProperties defaultParams = new DefaultParameterProperties();
     
     public String getPrivilegedRole() {
         return privilegedRole;
@@ -47,40 +36,46 @@ public class QueryProperties {
         this.privilegedRole = privilegedRole;
     }
     
-    public long getResultPollRate() {
-        return resultPollRate;
-    }
-    
-    public void setResultPollRate(long resultPollRate) {
-        this.resultPollRate = resultPollRate;
-    }
-    
-    public TimeUnit getResultPollRateTimeUnit() {
-        return resultPollRateTimeUnit;
-    }
-    
-    public void setResultPollRateTimeUnit(TimeUnit resultPollRateTimeUnit) {
-        this.resultPollRateTimeUnit = resultPollRateTimeUnit;
-    }
-    
-    public long getResultPollRateMillis() {
-        return resultPollRateTimeUnit.toMillis(resultPollRate);
+    public long getLockWaitTime() {
+        return lockWaitTime;
     }
     
     public long getLockWaitTimeMillis() {
-        return lockWaitTimeMillis;
+        return lockWaitTimeUnit.toMillis(lockWaitTime);
     }
     
-    public void setLockWaitTimeMillis(long lockWaitTimeMillis) {
-        this.lockWaitTimeMillis = lockWaitTimeMillis;
+    public void setLockWaitTime(long lockWaitTime) {
+        this.lockWaitTime = lockWaitTime;
+    }
+    
+    public TimeUnit getLockWaitTimeUnit() {
+        return lockWaitTimeUnit;
+    }
+    
+    public QueryProperties setLockWaitTimeUnit(TimeUnit lockWaitTimeUnit) {
+        this.lockWaitTimeUnit = lockWaitTimeUnit;
+        return this;
+    }
+    
+    public long getLockLeaseTime() {
+        return lockLeaseTime;
     }
     
     public long getLockLeaseTimeMillis() {
-        return lockLeaseTimeMillis;
+        return lockLeaseTimeUnit.toMillis(lockLeaseTime);
     }
     
-    public void setLockLeaseTimeMillis(long lockLeaseTimeMillis) {
-        this.lockLeaseTimeMillis = lockLeaseTimeMillis;
+    public void setLockLeaseTime(long lockLeaseTime) {
+        this.lockLeaseTime = lockLeaseTime;
+    }
+    
+    public TimeUnit getLockLeaseTimeUnit() {
+        return lockLeaseTimeUnit;
+    }
+    
+    public QueryProperties setLockLeaseTimeUnit(TimeUnit lockLeaseTimeUnit) {
+        this.lockLeaseTimeUnit = lockLeaseTimeUnit;
+        return this;
     }
     
     public String getExecutorServiceName() {
@@ -91,100 +86,27 @@ public class QueryProperties {
         this.executorServiceName = executorServiceName;
     }
     
-    public int getConcurrentNextLimit() {
-        return concurrentNextLimit;
+    public QueryExpirationProperties getExpiration() {
+        return expiration;
     }
     
-    public void setConcurrentNextLimit(int concurrentNextLimit) {
-        this.concurrentNextLimit = concurrentNextLimit;
+    public void setExpiration(QueryExpirationProperties expiration) {
+        this.expiration = expiration;
     }
     
-    public ExecutorProperties getNextExecutor() {
-        return nextExecutor;
+    public NextCallProperties getNextCall() {
+        return nextCall;
     }
     
-    public void setNextExecutor(ExecutorProperties nextExecutor) {
-        this.nextExecutor = nextExecutor;
+    public void setNextCall(NextCallProperties nextCall) {
+        this.nextCall = nextCall;
     }
     
-    public DefaultParameters getDefaultParams() {
+    public DefaultParameterProperties getDefaultParams() {
         return defaultParams;
     }
     
-    public void setDefaultParams(DefaultParameters defaultParams) {
+    public void setDefaultParams(DefaultParameterProperties defaultParams) {
         this.defaultParams = defaultParams;
-    }
-    
-    @Validated
-    public static class DefaultParameters {
-        
-        @NotEmpty
-        private String pool = "unassigned";
-        
-        @Nonnegative
-        private int maxConcurrentTasks = 10;
-        
-        public String getPool() {
-            return pool;
-        }
-        
-        public void setPool(String pool) {
-            this.pool = pool;
-        }
-        
-        public int getMaxConcurrentTasks() {
-            return maxConcurrentTasks;
-        }
-        
-        public void setMaxConcurrentTasks(int maxConcurrentTasks) {
-            this.maxConcurrentTasks = maxConcurrentTasks;
-        }
-    }
-    
-    @Validated
-    public static class ExecutorProperties {
-        @PositiveOrZero
-        private int corePoolSize = 0;
-        
-        @Positive
-        private int maxPoolSize = 5;
-        
-        @PositiveOrZero
-        private int queueCapacity = 0;
-        
-        @NotNull
-        private String threadNamePrefix = "replayTask-";
-        
-        public int getCorePoolSize() {
-            return corePoolSize;
-        }
-        
-        public void setCorePoolSize(int corePoolSize) {
-            this.corePoolSize = corePoolSize;
-        }
-        
-        public int getMaxPoolSize() {
-            return maxPoolSize;
-        }
-        
-        public void setMaxPoolSize(int maxPoolSize) {
-            this.maxPoolSize = maxPoolSize;
-        }
-        
-        public int getQueueCapacity() {
-            return queueCapacity;
-        }
-        
-        public void setQueueCapacity(int queueCapacity) {
-            this.queueCapacity = queueCapacity;
-        }
-        
-        public String getThreadNamePrefix() {
-            return threadNamePrefix;
-        }
-        
-        public void setThreadNamePrefix(String threadNamePrefix) {
-            this.threadNamePrefix = threadNamePrefix;
-        }
     }
 }

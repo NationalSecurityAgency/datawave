@@ -239,8 +239,19 @@ public class QueryManagementService implements QueryRequestHandler {
             String queryLogicName = queryStatus.getQuery().getQueryLogicName();
             QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName(), currentUser.getPrimaryUser().getRoles());
             
+            // @formatter:off
+            NextCall nextCall = new NextCall.Builder()
+                    .setQueryProperties(queryProperties)
+                    .setQueryQueueManager(queryQueueManager)
+                    .setQueryStorageCache(queryStorageCache)
+                    .setQueryMetricFactory(queryMetricFactory)
+                    .setQueryId(queryId)
+                    .setQueryLogic(queryLogic)
+                    .setIdentifier(identifier)
+                    .build();
+            // @formatter:on
+            
             long pageNumber = -1L;
-            NextCall nextCall = new NextCall(queryProperties, queryQueueManager, queryStorageCache, queryMetricFactory, queryId, queryLogic, identifier);
             nextCallMap.add(queryId, nextCall);
             try {
                 // submit the next call to the executor
@@ -291,7 +302,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 // increment the concurrent next
                 queryStatus = queryStorageCache.getQueryStatus(queryUUID);
                 if (queryStatus != null) {
-                    if (queryStatus.getConcurrentNextCount() < queryProperties.getConcurrentNextLimit()) {
+                    if (queryStatus.getConcurrentNextCount() < queryProperties.getNextCall().getConcurrency()) {
                         queryStatus.setConcurrentNextCount(queryStatus.getConcurrentNextCount() + 1);
                         
                         // update the last used datetime for the query
@@ -300,7 +311,7 @@ public class QueryManagementService implements QueryRequestHandler {
                         queryStorageCache.updateQueryStatus(queryStatus);
                     } else {
                         throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR,
-                                        "Concurrent next call limit reached: " + queryProperties.getConcurrentNextLimit());
+                                        "Concurrent next call limit reached: " + queryProperties.getNextCall().getConcurrency());
                     }
                 } else {
                     throw new QueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, "Unable to find query status in cache.");
