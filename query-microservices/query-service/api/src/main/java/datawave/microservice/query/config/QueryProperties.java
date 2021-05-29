@@ -4,6 +4,7 @@ import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 import java.util.concurrent.TimeUnit;
 
@@ -17,7 +18,7 @@ public class QueryProperties {
     @NotNull
     private TimeUnit lockWaitTimeUnit = TimeUnit.MILLISECONDS;
     // The amount of time that the lock will be held before being automatically released
-    @PositiveOrZero
+    @Positive
     private long lockLeaseTime = TimeUnit.SECONDS.toMillis(30);
     @NotNull
     private TimeUnit lockLeaseTimeUnit = TimeUnit.MILLISECONDS;

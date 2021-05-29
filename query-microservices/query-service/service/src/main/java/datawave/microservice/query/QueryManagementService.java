@@ -52,6 +52,7 @@ import java.text.MessageFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CANCELED;
 import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CLOSED;
@@ -240,7 +241,7 @@ public class QueryManagementService implements QueryRequestHandler {
             QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName(), currentUser.getPrimaryUser().getRoles());
             
             // @formatter:off
-            NextCall nextCall = new NextCall.Builder()
+            final NextCall nextCall = new NextCall.Builder()
                     .setQueryProperties(queryProperties)
                     .setQueryQueueManager(queryQueueManager)
                     .setQueryStorageCache(queryStorageCache)
@@ -277,6 +278,14 @@ public class QueryManagementService implements QueryRequestHandler {
                 }
             } catch (TaskRejectedException e) {
                 throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Next task rejected by the executor for query " + queryId);
+            } catch (ExecutionException e) {
+                // try to unwrap the execution exception
+                Throwable cause = e.getCause();
+                if (cause instanceof Exception) {
+                    throw (Exception) e.getCause();
+                } else {
+                    throw e;
+                }
             } finally {
                 // remove this next call from the map, and decrement the next count for this query
                 nextCallMap.get(queryId).remove(nextCall);
