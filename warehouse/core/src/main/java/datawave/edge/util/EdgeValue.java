@@ -326,8 +326,7 @@ public class EdgeValue {
     }
     
     public static UUID convertUuidStringToUuidObj(String uuidString) {
-        UUID uuidObj = UUID.fromString(uuidString);
-        return uuidObj;
+        return UUID.fromString(uuidString);
     }
     
     public Long getCount() {

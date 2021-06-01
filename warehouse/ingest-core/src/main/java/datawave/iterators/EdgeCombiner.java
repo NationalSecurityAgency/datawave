@@ -193,8 +193,6 @@ public class EdgeCombiner extends Combiner {
         // the value corresponding to the key with the most recent timestamp will come first
         // the value corresponding to the key with the oldest timestamp will come last
         if (protoEdgeValue.hasUuid()) {
-            // previously, we took uuid from proto.EdgeValue, converted it to UUID, then to String
-            // then when encoding we converted it back to a UUID and then into a UUID builder
             builder.setUuidObj(EdgeValue.convertUuidObject(protoEdgeValue.getUuid()));
             builder.setOnlyUuidString(false);
         } else if (protoEdgeValue.hasUuidString()) {
