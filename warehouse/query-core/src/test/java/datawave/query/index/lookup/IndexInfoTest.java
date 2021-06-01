@@ -117,8 +117,7 @@ public class IndexInfoTest {
         assertEquals(1, merged.uids().size());
         assertEquals(expectedSorted, merged.uids());
         
-        assertTrue(TreeEqualityVisitor.isEqual(JexlNodeFactory.createScript(origQueryTree), JexlNodeFactory.createScript(merged.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlNodeFactory.createScript(origQueryTree), JexlNodeFactory.createScript(merged.getNode())));
     }
     
     @Test
@@ -149,8 +148,7 @@ public class IndexInfoTest {
         
         assertEquals(1, merged.uids().size());
         assertEquals(expectedSorted, merged.uids());
-        assertTrue(TreeEqualityVisitor.isEqual(JexlNodeFactory.createScript(origQueryTree), JexlNodeFactory.createScript(merged.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlNodeFactory.createScript(origQueryTree), JexlNodeFactory.createScript(merged.getNode())));
     }
     
     @Test
@@ -184,8 +182,7 @@ public class IndexInfoTest {
         
         assertEquals(1, merged.uids().size());
         assertEquals(expectedSorted, merged.uids());
-        assertTrue(TreeEqualityVisitor.isEqual(JexlNodeFactory.createScript(origQueryTree), JexlNodeFactory.createScript(merged.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlNodeFactory.createScript(origQueryTree), JexlNodeFactory.createScript(merged.getNode())));
     }
     
     @Test
@@ -219,8 +216,7 @@ public class IndexInfoTest {
         
         assertEquals(1, merged.uids().size());
         assertEquals(expectedSorted, merged.uids());
-        assertTrue(TreeEqualityVisitor.isEqual(JexlNodeFactory.createScript(origQueryTree), JexlNodeFactory.createScript(merged.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlNodeFactory.createScript(origQueryTree), JexlNodeFactory.createScript(merged.getNode())));
     }
     
     /**
