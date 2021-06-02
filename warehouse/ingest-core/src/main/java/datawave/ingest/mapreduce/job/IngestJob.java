@@ -340,11 +340,7 @@ public class IngestJob implements Tool {
                 log.error(e);
                 log.info("Deleting orphaned directory: " + workDirPath);
                 try {
-                    if (writeDirectlyToDest) {
-                        outputFs.delete(workDirPath, true);
-                    } else {
-                        inputFs.delete(workDirPath, true);
-                    }
+                    outputFs.delete(workDirPath, true);
                 } catch (Exception er) {
                     log.error("Unable to remove directory: " + workDirPath, er);
                 }
