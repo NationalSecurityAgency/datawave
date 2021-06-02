@@ -591,7 +591,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public ShardQueryConfiguration(Map<String,Object> properties) {
         Map<String,Object> setProperties = new HashMap<>(properties);
-        setProperties.put("queries", ((List) properties.get("queries")).iterator());
+        if (properties.containsKey("queries")) {
+            setProperties.put("queries", ((List) properties.get("queries")).iterator());
+        }
         List<Map<String,Object>> ivaratorCacheDirConfigs = (List) properties.get("ivaratorCacheDirConfigs");
         if (ivaratorCacheDirConfigs != null && !ivaratorCacheDirConfigs.isEmpty()) {
             List<IvaratorCacheDirConfig> configs = new ArrayList<>();

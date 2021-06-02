@@ -10,6 +10,8 @@
     <artifactId>spring-boot-starter-datawave-query</artifactId>
     <version>1.0-SNAPSHOT</version>
     <properties>
+        <version.curator>4.2.0</version.curator>
+        <version.curator.test>2.13.0</version.curator.test>
         <version.datawave>3.2.1-SNAPSHOT</version.datawave>
         <version.microservice.query>1.0-SNAPSHOT</version.microservice.query>
         <version.microservice.query-storage>1.0-SNAPSHOT</version.microservice.query-storage>
@@ -101,6 +103,39 @@
                 <version>${version.microservice.starter-metadata}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-client</artifactId>
+                <version>${version.curator}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>zookeeper</artifactId>
+                        <groupId>org.apache.zookeeper</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-framework</artifactId>
+                <version>${version.curator}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>zookeeper</artifactId>
+                        <groupId>org.apache.zookeeper</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-recipes</artifactId>
+                <version>${version.curator}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>zookeeper</artifactId>
+                        <groupId>org.apache.zookeeper</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave</artifactId>
                 <version>${version.microservice.starter}</version>
@@ -126,6 +161,13 @@
                 <version>${version.microservice.query-storage}</version>
                 <type>test-jar</type>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-test</artifactId>
+                <version>${version.curator.test}</version>
+                <scope>test</scope>
+                <optional>true</optional>
             </dependency>
         </dependencies>
     </dependencyManagement>

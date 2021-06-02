@@ -39,7 +39,7 @@ public class TaskKey extends QueryKey implements Serializable {
      */
     @JsonIgnore
     public QueryKey getQueryKey() {
-        return this;
+        return new QueryKey(getQueryPool(), getQueryId(), getQueryLogic());
     }
     
     @Override

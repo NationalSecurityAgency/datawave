@@ -129,6 +129,47 @@ public abstract class QueryStorageCacheTest {
     
     @DirtiesContext
     @Test
+    public void testLocking() throws ParseException, InterruptedException, IOException, TaskLockException {
+        UUID queryId = UUID.randomUUID();
+        QueryKey queryKey = new QueryKey(new QueryPool("default"), queryId, "EventQuery");
+        queryCache.updateQueryStatus(new QueryStatus(queryKey));
+        queryCache.updateTaskStates(new TaskStates(queryKey, 3));
+        QueryTask task = queryCache.addQueryTask(QueryTask.QUERY_ACTION.CREATE, new QueryCheckpoint(queryKey, new HashMap<>()));
+        TaskKey key = task.getTaskKey();
+        QueryStorageLock qLock = queryCache.getQueryStatusLock(queryId);
+        QueryStorageLock sLock = queryCache.getTaskStatesLock(queryId);
+        QueryStorageLock tLock = queryCache.getTaskLock(key);
+        assertFalse(qLock.isLocked());
+        assertFalse(sLock.isLocked());
+        assertFalse(tLock.isLocked());
+        qLock.lock();
+        assertTrue(qLock.isLocked());
+        assertFalse(sLock.isLocked());
+        assertFalse(tLock.isLocked());
+        sLock.lock();
+        assertTrue(qLock.isLocked());
+        assertTrue(sLock.isLocked());
+        assertFalse(tLock.isLocked());
+        tLock.lock();
+        assertTrue(qLock.isLocked());
+        assertTrue(sLock.isLocked());
+        assertTrue(tLock.isLocked());
+        qLock.unlock();
+        assertFalse(qLock.isLocked());
+        assertTrue(sLock.isLocked());
+        assertTrue(tLock.isLocked());
+        sLock.unlock();
+        assertFalse(qLock.isLocked());
+        assertFalse(sLock.isLocked());
+        assertTrue(tLock.isLocked());
+        tLock.unlock();
+        assertFalse(qLock.isLocked());
+        assertFalse(sLock.isLocked());
+        assertFalse(tLock.isLocked());
+    }
+    
+    @DirtiesContext
+    @Test
     public void testCreateQuery() throws ParseException, InterruptedException, IOException, TaskLockException {
         // ensure the message queue is empty
         assertTrue(queryTaskNotifications.isEmpty());
@@ -242,8 +283,6 @@ public abstract class QueryStorageCacheTest {
         
         task = storageService.getTask(key, 0, FIVE_MIN);
         assertQueryTask(key, QueryTask.QUERY_ACTION.NEXT, query, task);
-        assertTrue(storageService.getTaskLock(task.getTaskKey()).isLocked());
-        assertTrue(storageService.getTaskLock(task.getTaskKey()).isLocked());
         assertTrue(storageService.getTaskLock(task.getTaskKey()).isLocked());
         
         try {

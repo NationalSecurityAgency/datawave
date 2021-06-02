@@ -22,6 +22,7 @@
     <bean id="dateIndexHelper" scope="prototype" class="datawave.query.util.DateIndexHelper" />
 
     <bean id="BaseEventQuery" parent="baseQueryLogic" class="datawave.query.tables.ShardQueryLogic" abstract="true">
+        <property name="checkpointable" value="true" />
         <property name="accumuloPassword" value="${datawave.query.logic.logics.BaseEventQuery.accumuloPassword}" />
         <property name="tableName" value="${datawave.query.logic.logics.BaseEventQuery.tableName}" />
         <property name="dateIndexTableName" value="${datawave.query.logic.logics.BaseEventQuery.dateIndexTableName}" />

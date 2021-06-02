@@ -40,6 +40,7 @@ public class CachedQueryStatus extends QueryStatus {
         QueryStorageLock lock = null;
         if (super.getNumResultsGenerated() > 0 || super.getNumResultsReturned() > 0) {
             lock = cache.getQueryStatusLock(queryId);
+            lock.lock();
         }
         try {
             queryStatus = cache.getQueryStatus(queryId);

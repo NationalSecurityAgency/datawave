@@ -68,7 +68,7 @@ warehouse:
     dateIndex:
       name: 'dateIndex'
     metadata:
-      name: 'DatawaveMetadata'
+      name: 'metadata'
     model:
       name: 'DatawaveMetadata'
   defaults:
@@ -193,9 +193,9 @@ datawave:
           maxEvaluationPipelines: ${warehouse.defaults.maxEvaluationPipelines}
           maxPipelineCachedResults: ${warehouse.defaults.maxPipelineCachedResults}
           hdfsSiteConfigURLs: ${warehouse.defaults.hdfsSiteConfigURLs}
-          zookeeperConfig: ${warehouse.accumulo.zookeepers}
+          zookeeperConfig:
           ivaratorCacheDirConfigs:
-            - basePathURI: "hdfs:///IvaratorCache"
+            - basePathURI:
           ivaratorFstHdfsBaseURIs: ${warehouse.accumulo.ivaratorFstHdfsBaseURIs}
           ivaratorCacheBufferSize: ${warehouse.defaults.ivaratorCacheBufferSize}
           ivaratorMaxOpenFiles: ${warehouse.defaults.ivaratorMaxOpenFiles}

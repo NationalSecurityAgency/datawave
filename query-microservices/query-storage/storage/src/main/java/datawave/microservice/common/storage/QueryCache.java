@@ -148,7 +148,7 @@ public class QueryCache {
      */
     @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).TASK + #result.getTaskKey().toKey()")
     public QueryTask updateQueryTask(TaskKey taskKey, QueryCheckpoint checkpoint) {
-        if (!checkpoint.getQueryKey().equals(taskKey)) {
+        if (!checkpoint.getQueryKey().equals(taskKey.getQueryKey())) {
             throw new IllegalArgumentException("Checkpoint query key " + checkpoint.getQueryKey() + " does not match " + taskKey);
         }
         QueryTask task = getTask(taskKey);
@@ -517,7 +517,8 @@ public class QueryCache {
          */
         @Override
         public boolean tryLock() {
-            return cacheInspector.tryLock(CACHE_NAME, storageKey);
+            boolean locked = cacheInspector.tryLock(CACHE_NAME, storageKey);
+            return locked;
         }
         
         /**
@@ -527,7 +528,8 @@ public class QueryCache {
          */
         @Override
         public boolean isLocked() {
-            return cacheInspector.isLocked(CACHE_NAME, storageKey);
+            boolean locked = cacheInspector.isLocked(CACHE_NAME, storageKey);
+            return locked;
         }
         
         /**
@@ -539,7 +541,8 @@ public class QueryCache {
          */
         @Override
         public boolean tryLock(long waitTimeMillis) throws InterruptedException {
-            return cacheInspector.tryLock(CACHE_NAME, storageKey, waitTimeMillis, TimeUnit.MILLISECONDS);
+            boolean locked = cacheInspector.tryLock(CACHE_NAME, storageKey, waitTimeMillis, TimeUnit.MILLISECONDS);
+            return locked;
         }
         
         /**
@@ -553,7 +556,8 @@ public class QueryCache {
          */
         @Override
         public boolean tryLock(long waitTimeMillis, long leaseTimeMillis) throws InterruptedException {
-            return cacheInspector.tryLock(CACHE_NAME, storageKey, waitTimeMillis, TimeUnit.MILLISECONDS, leaseTimeMillis, TimeUnit.MILLISECONDS);
+            boolean locked = cacheInspector.tryLock(CACHE_NAME, storageKey, waitTimeMillis, TimeUnit.MILLISECONDS, leaseTimeMillis, TimeUnit.MILLISECONDS);
+            return locked;
         }
         
         /**
