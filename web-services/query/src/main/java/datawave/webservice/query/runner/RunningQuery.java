@@ -196,10 +196,14 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         touch();
         long pageStartTime = System.currentTimeMillis();
         List<Object> resultList = new ArrayList<>();
+
+        int currentPageCount = 0;
+        long currentPageBytes = 0;
+        int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
+
         try {
             addNDC();
-            int currentPageCount = 0;
-            long currentPageBytes = 0;
+
 
             // test for any exceptions prior to loop as hasNext() would likely be false;
             testForUncaughtException(resultList.size());
@@ -237,12 +241,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     log.info("Query logic max results has been reached, aborting query.next call");
                     this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
                     break;
-
-                } else if (numResults >= this.maxResults) {
-                    log.info("Results are greater than max results, aborting query.next call");
-                    this.getMetric().setLifecycle(BaseQueryMetric.Lifecycle.MAXRESULTS);
-                    break;
                 }
+
 
                 if (this.logic.getMaxWork() >= 0 && (this.getMetric().getNextCount() + this.getMetric().getSeekCount()) >= this.logic.getMaxWork()) {
                     log.info("Query logic max work has been reached, aborting query.next call");
@@ -255,10 +255,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 // this page.
                 long pageTimeInCall = (System.currentTimeMillis() - pageStartTime);
 
-                int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
                 if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
                     log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
-                                    + pageTimeInCall + " " + timing);
+                            + pageTimeInCall + " " + timing);
                     break;
                 }
 
@@ -334,13 +333,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
             }
         }
-        if (resultList.isEmpty()) {
-            return new ResultsPage();
-        } else {
-            return new ResultsPage(resultList,ResultsPage.Status.PARTIAL);
-        }
+        ResultsPage.Status status = (currentPageCount < maxPageSize) ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE;
+        return new ResultsPage(resultList, status);
     }
-
     public void cancel() {
         this.canceled = true;
         // save off the future as it could be removed at any time
