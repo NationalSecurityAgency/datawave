@@ -1,14 +1,19 @@
 package datawave.ingest.table.aggregator;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +26,7 @@ import org.slf4j.LoggerFactory;
  */
 public class GlobalIndexUidAggregator extends PropogatingCombiner {
     private static final Logger log = LoggerFactory.getLogger(GlobalIndexUidAggregator.class);
+    private static final String TIMESTAMPS_IGNORED = "timestampsIgnored";
     private Uid.List.Builder builder = Uid.List.newBuilder();
     
     /**
@@ -63,6 +69,11 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
      * representative count.
      */
     private long count = 0;
+    
+    /**
+     * Indicates whether timestamps are "ignored" where it is assumed all keys aggregated by this class share the same timestamp value.
+     */
+    private boolean timestampsIgnored = true;
     
     public GlobalIndexUidAggregator(int max) {
         this.maxUids = max;
@@ -180,7 +191,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     // A partial major compaction could lead to a protocol buffer that has a positive count as well as
                     // UIDs in the REMOVEDUID list. If we're encountering such a key here, then we need to be sure to
                     // add those removed UIDs back in to the uidsToRemove list and not just drop them.
-                    if (propogate) {
+                    if (propogate && !timestampsIgnored) {
                         for (String uid : v.getREMOVEDUIDList()) {
                             if (!uids.contains(uid))
                                 uidsToRemove.add(uid);
@@ -197,8 +208,10 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                         
                         // Don't remove the UID if it's in the uids list, since that means a newer key
                         // (larger timestamp value) added the UID and we don't want to undo that add.
-                        if (!uids.contains(uid))
+                        if (timestampsIgnored || !uids.contains(uid))
                             uidsToRemove.add(uid);
+                        if (timestampsIgnored)
+                            uids.remove(uid);
                     }
                     
                     quarantinedIds.addAll(v.getQUARANTINEUIDList());
@@ -254,5 +267,36 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
         
         // if <= 0 and uids is empty, we can safely remove
         return count > 0 || !uidsCopy.isEmpty();
+    }
+    
+    @Override
+    public boolean validateOptions(Map<String,String> options) {
+        boolean valid = super.validateOptions(options);
+        if (valid) {
+            if (options.containsKey(TIMESTAMPS_IGNORED)) {
+                timestampsIgnored = Boolean.parseBoolean(options.get(TIMESTAMPS_IGNORED));
+            }
+        }
+        return valid;
+    }
+    
+    @Override
+    public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
+        GlobalIndexUidAggregator copy = (GlobalIndexUidAggregator) super.deepCopy(env);
+        copy.timestampsIgnored = timestampsIgnored;
+        // Not copying other fields that are all cleared in the reset() method.
+        return copy;
+    }
+    
+    @Override
+    public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
+        super.init(source, options, env);
+        if (options.containsKey(TIMESTAMPS_IGNORED)) {
+            timestampsIgnored = Boolean.parseBoolean(options.get(TIMESTAMPS_IGNORED));
+        }
+    }
+    
+    public static void setTimestampsIgnoredOpt(IteratorSetting is, boolean timestampsIgnored) {
+        is.addOption(TIMESTAMPS_IGNORED, Boolean.toString(timestampsIgnored));
     }
 }

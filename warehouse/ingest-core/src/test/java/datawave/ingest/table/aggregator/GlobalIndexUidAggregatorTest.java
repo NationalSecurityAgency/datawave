@@ -234,6 +234,7 @@ public class GlobalIndexUidAggregatorTest {
     public void testRemoveAndReAddUUID() throws Exception {
         GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
         IteratorSetting is = new IteratorSetting(19, "test", GlobalIndexUidAggregator.class);
+        GlobalIndexUidAggregator.setTimestampsIgnoredOpt(is, false);
         GlobalIndexUidAggregator.setCombineAllColumns(is, true);
         localAgg.validateOptions(is.getOptions());
         
@@ -361,6 +362,7 @@ public class GlobalIndexUidAggregatorTest {
     public void testAggregateWithZeroCountAndUUIDs() throws Exception {
         GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
         IteratorSetting is = new IteratorSetting(19, "test", GlobalIndexUidAggregator.class);
+        GlobalIndexUidAggregator.setTimestampsIgnoredOpt(is, false);
         GlobalIndexUidAggregator.setCombineAllColumns(is, true);
         localAgg.validateOptions(is.getOptions());
         
@@ -420,6 +422,7 @@ public class GlobalIndexUidAggregatorTest {
     public void testAggregateWithPositiveCountAndUUIDs() throws Exception {
         GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
         IteratorSetting is = new IteratorSetting(19, "test", GlobalIndexUidAggregator.class);
+        GlobalIndexUidAggregator.setTimestampsIgnoredOpt(is, false);
         GlobalIndexUidAggregator.setCombineAllColumns(is, true);
         localAgg.validateOptions(is.getOptions());
         
