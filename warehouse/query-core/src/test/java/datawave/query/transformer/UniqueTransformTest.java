@@ -14,11 +14,15 @@ import datawave.query.attributes.DiacriticContent;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TimingMetadata;
 import datawave.query.function.LogTiming;
+import datawave.query.iterator.Util;
 import datawave.query.jexl.JexlASTHelper;
+import org.apache.accumulo.core.data.ArrayByteSequence;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -273,10 +277,16 @@ public class UniqueTransformTest {
         List<Document> input = new ArrayList<>();
         List<Document> expected = new ArrayList<>();
         
-        Document d = new Document();
+        Text MARKER_TEXT = new Text("\u2735FinalDocument\u2735");
+        ByteSequence MARKER_SEQUENCE = new ArrayByteSequence(MARKER_TEXT.getBytes(), 0, MARKER_TEXT.getLength());
+        byte EMPTY_BYTES[] = new byte[0];
+        Key key = new Key(EMPTY_BYTES, EMPTY_BYTES, MARKER_SEQUENCE.subSequence(0, MARKER_SEQUENCE.length()).toArray());
+        Document d = new Document(key, true);
+        d.getMetadata().set(key);
         TimingMetadata timingMetadata = new TimingMetadata();
         timingMetadata.setNextCount(5l);
         d.put(LogTiming.TIMING_METADATA, timingMetadata);
+        
         input.add(d);
         expected.add(d);
         

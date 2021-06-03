@@ -12,6 +12,7 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TimingMetadata;
 import datawave.query.function.LogTiming;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
@@ -99,7 +100,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         if (keyDocumentEntry != null) {
-            if (isTimingMetadata(keyDocumentEntry.getValue())) {
+            if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
                 return keyDocumentEntry;
             }
             
