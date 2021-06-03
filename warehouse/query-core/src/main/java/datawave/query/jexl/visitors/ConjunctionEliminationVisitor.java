@@ -225,7 +225,7 @@ public class ConjunctionEliminationVisitor extends RebuildingVisitor {
     // Return whether or not the two JEXL queries are equivalent.
     private boolean isEquivalent(JexlNode node, ASTJexlScript script) throws ParseException {
         ASTJexlScript nodeScript = getScript(node);
-        return TreeEqualityVisitor.isEqual(nodeScript, script, new TreeEqualityVisitor.Reason());
+        return TreeEqualityVisitor.isEqual(nodeScript, script);
     }
     
     // Return the Jexl node as a script.
