@@ -28,7 +28,6 @@ import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;

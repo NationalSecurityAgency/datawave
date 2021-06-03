@@ -13,7 +13,6 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -36,10 +35,10 @@ public class QueryStatus implements Serializable {
     private long lastPageNumber = 0L;
     
     // datetime of last user interaction
-    private Date lastUsed;
+    private long lastUsedMillis;
     
     // datetime of last service interaction
-    private Date lastUpdated;
+    private long lastUpdatedMillis;
     
     private String failureMessage;
     private String stackTrace;
@@ -48,6 +47,25 @@ public class QueryStatus implements Serializable {
     
     public QueryStatus(QueryKey queryKey) {
         setQueryKey(queryKey);
+    }
+    
+    public boolean isProgressIdle(long currentTimeMillis, long idleTimeoutMillis) {
+        // if we're processing a next request and haven't seen any activity in a while, the query is idle
+        return concurrentNextCount > 0 && (currentTimeMillis - lastUpdatedMillis) >= idleTimeoutMillis;
+    }
+    
+    public boolean isUserIdle(long currentTimeMillis, long idleTimeoutMillis) {
+        // if we aren't processing a next request and haven't seen any activity in a while, the query is idle
+        return concurrentNextCount == 0 && (currentTimeMillis - lastUsedMillis) >= idleTimeoutMillis;
+    }
+    
+    public boolean isInactive(long currentTimeMillis, long evictionTimeoutMillis) {
+        boolean isInactive = false;
+        // if the query is CLOSED, CANCELED, or FAILED and we have reached the eviction timeout, the query is inactive
+        if (queryState == QUERY_STATE.CLOSED || queryState == QUERY_STATE.CANCELED || queryState == QUERY_STATE.FAILED) {
+            isInactive = (currentTimeMillis - Math.min(lastUsedMillis, lastUpdatedMillis)) >= evictionTimeoutMillis;
+        }
+        return isInactive;
     }
     
     public void setQueryKey(QueryKey key) {
@@ -175,20 +193,20 @@ public class QueryStatus implements Serializable {
         this.lastPageNumber = lastPageNumber;
     }
     
-    public Date getLastUsed() {
-        return lastUsed;
+    public long getLastUsedMillis() {
+        return lastUsedMillis;
     }
     
-    public void setLastUsed(Date lastUsed) {
-        this.lastUsed = lastUsed;
+    public void setLastUsedMillis(long lastUsedMillis) {
+        this.lastUsedMillis = lastUsedMillis;
     }
     
-    public Date getLastUpdated() {
-        return lastUpdated;
+    public long getLastUpdatedMillis() {
+        return lastUpdatedMillis;
     }
     
-    public void setLastUpdated(Date lastUpdated) {
-        this.lastUpdated = lastUpdated;
+    public void setLastUpdatedMillis(long lastUpdatedMillis) {
+        this.lastUpdatedMillis = lastUpdatedMillis;
     }
     
     @Override
@@ -205,8 +223,8 @@ public class QueryStatus implements Serializable {
                 .append(numResultsGenerated)
                 .append(concurrentNextCount)
                 .append(lastPageNumber)
-                .append(lastUsed)
-                .append(lastUpdated)
+                .append(lastUsedMillis)
+                .append(lastUpdatedMillis)
                 .append(failureMessage)
                 .append(stackTrace)
                 .build();
@@ -229,8 +247,8 @@ public class QueryStatus implements Serializable {
                     .append(numResultsGenerated, other.numResultsGenerated)
                     .append(concurrentNextCount, other.concurrentNextCount)
                     .append(lastPageNumber, other.lastPageNumber)
-                    .append(lastUsed, other.lastUsed)
-                    .append(lastUpdated, other.lastUpdated)
+                    .append(lastUsedMillis, other.lastUsedMillis)
+                    .append(lastUpdatedMillis, other.lastUpdatedMillis)
                     .append(failureMessage, other.failureMessage)
                     .append(stackTrace, other.stackTrace)
                     .build();
@@ -253,8 +271,8 @@ public class QueryStatus implements Serializable {
                 .append("numResultsGenerated", numResultsGenerated)
                 .append("concurrentNextCount", concurrentNextCount)
                 .append("lastPageNumber", lastPageNumber)
-                .append("lastUsed", lastUsed)
-                .append("lastUpdated", lastUpdated)
+                .append("lastUsed", lastUsedMillis)
+                .append("lastUpdated", lastUpdatedMillis)
                 .append("failureMessage", failureMessage)
                 .append("stackTrace", stackTrace)
                 .build();

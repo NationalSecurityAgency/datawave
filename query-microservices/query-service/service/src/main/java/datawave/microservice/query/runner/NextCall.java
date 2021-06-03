@@ -117,30 +117,36 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     
     private boolean isFinished(String queryId) {
         boolean finished = false;
+        long callTimeMillis = System.currentTimeMillis() - startTimeMillis;
         
         // 1) was this query canceled?
         if (canceled) {
             log.info("Query [{}]: query cancelled, aborting next call", queryId);
+            
             finished = true;
         }
         
         // 2) have we hit the user's results-per-page limit?
         if (!finished && results.size() >= userResultsPerPage) {
             log.info("Query [{}]: user requested max page size has been reached, aborting next call", queryId);
+            
             finished = true;
         }
         
         // 3) have we hit the query logic's results-per-page limit?
         if (!finished && results.size() >= logicResultsPerPage) {
             log.info("Query [{}]: query logic max page size has been reached, aborting next call", queryId);
+            
             finished = true;
         }
         
         // 4) have we hit the query logic's bytes-per-page limit?
         if (!finished && pageSizeBytes >= logicBytesPerPage) {
             log.info("Query [{}]: query logic max page byte size has been reached, aborting next call", queryId);
-            finished = true;
+            
             status = ResultsPage.Status.PARTIAL;
+            
+            finished = true;
         }
         
         // 5) have we hit the max results (or the max results override)?
@@ -150,14 +156,18 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             if (this.maxResultsOverridden) {
                 if (maxResultsOverride >= 0 && numResults >= maxResultsOverride) {
                     log.info("Query [{}]: max results override has been reached, aborting next call", queryId);
+                    
                     // TODO: Figure out query metrics
                     metric.setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
+                    
                     finished = true;
                 }
             } else if (maxResults >= 0 && numResults >= maxResults) {
                 log.info("Query [{}]: logic max results has been reached, aborting next call", queryId);
+                
                 // TODO: Figure out query metrics
                 metric.setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
+                
                 finished = true;
             }
         }
@@ -166,30 +176,48 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         // This used to come from the query logic transform iterator
         // 6) have we reached the "max work" limit? (i.e. next count + seek count)
         if (!finished && logicMaxWork >= 0 && (metric.getNextCount() + metric.getSeekCount()) >= logicMaxWork) {
-            log.info("Query [{}]:  logic max work has been reached, aborting next call", queryId);
+            log.info("Query [{}]: logic max work has been reached, aborting next call", queryId);
+            
             // TODO: Figure out query metrics
             metric.setLifecycle(BaseQueryMetric.Lifecycle.MAXWORK);
+            
             finished = true;
         }
         
         // 7) are we going to timeout before getting a full page? if so, return partial results
-        if (!finished && timeout()) {
+        if (!finished && shortCircuitTimeout(callTimeMillis)) {
             log.info("Query [{}]: logic max expire before page is full, returning existing results: {} of {} results in {}ms", queryId, results.size(),
-                            maxResultsPerPage, callTimeMillis());
-            finished = true;
+                            maxResultsPerPage, callTimeMillis);
+            
             status = ResultsPage.Status.PARTIAL;
+            
+            finished = true;
+            
+        }
+        
+        // 8) have we been in this next call too long? if so, return
+        if (!finished && callExpiredTimeout(callTimeMillis)) {
+            log.info("Query [{}]: max call time reached, returning existing results: {} of {} results in {}ms", queryId, results.size(), maxResultsPerPage,
+                            callTimeMillis);
+            
+            if (!results.isEmpty()) {
+                status = ResultsPage.Status.PARTIAL;
+            }
+            
+            // TODO: Figure out query metrics
+            metric.setLifecycle(BaseQueryMetric.Lifecycle.NEXTTIMEOUT);
+            
+            finished = true;
         }
         
         return finished;
     }
     
-    protected boolean timeout() {
+    private boolean shortCircuitTimeout(long callTimeMillis) {
         boolean timeout = false;
         
         // only return prematurely if we have at least 1 result
         if (!results.isEmpty()) {
-            long callTimeMillis = callTimeMillis();
-            
             // if after the page size short circuit check time
             if (callTimeMillis >= expirationProperties.getShortCircuitCheckTimeMillis()) {
                 float percentTimeComplete = (float) callTimeMillis / (float) (expirationProperties.getCallTimeout());
@@ -209,8 +237,8 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         return timeout;
     }
     
-    private long callTimeMillis() {
-        return System.currentTimeMillis() - startTimeMillis;
+    private boolean callExpiredTimeout(long callTimeMillis) {
+        return callTimeMillis >= expirationProperties.getCallTimeoutMillis();
     }
     
     private QueryStatus getQueryStatus() {
@@ -239,6 +267,10 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     
     public void setFuture(Future<ResultsPage<Object>> future) {
         this.future = future;
+    }
+    
+    public BaseQueryMetric getMetric() {
+        return metric;
     }
     
     public static class Builder {

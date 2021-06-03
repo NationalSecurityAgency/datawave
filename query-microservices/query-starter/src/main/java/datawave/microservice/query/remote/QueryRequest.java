@@ -2,11 +2,13 @@ package datawave.microservice.query.remote;
 
 import static datawave.microservice.query.remote.QueryRequest.Method.CANCEL;
 import static datawave.microservice.query.remote.QueryRequest.Method.CLOSE;
+import static datawave.microservice.query.remote.QueryRequest.Method.CREATE;
+import static datawave.microservice.query.remote.QueryRequest.Method.NEXT;
 
 public class QueryRequest {
     
     public enum Method {
-        CANCEL, CLOSE
+        CREATE, NEXT, CANCEL, CLOSE
     }
     
     private final Method method;
@@ -32,6 +34,14 @@ public class QueryRequest {
     @Override
     public String toString() {
         return "Remote Request: method=" + method + ", queryId=" + queryId;
+    }
+    
+    public static QueryRequest create(String queryId) {
+        return new QueryRequest(CREATE, queryId);
+    }
+    
+    public static QueryRequest next(String queryId) {
+        return new QueryRequest(NEXT, queryId);
     }
     
     public static QueryRequest cancel(String queryId) {

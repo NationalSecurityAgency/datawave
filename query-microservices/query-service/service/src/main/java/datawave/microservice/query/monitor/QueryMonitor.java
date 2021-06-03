@@ -1,5 +1,9 @@
 package datawave.microservice.query.monitor;
 
+import datawave.microservice.common.storage.QueryStorageCache;
+import datawave.microservice.query.QueryManagementService;
+import datawave.microservice.query.config.QueryExpirationProperties;
+import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.monitor.cache.MonitorStatusCache;
 import datawave.microservice.query.monitor.config.MonitorProperties;
 import org.slf4j.Logger;
@@ -19,15 +23,22 @@ public class QueryMonitor {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
     private final MonitorProperties monitorProperties;
+    private final QueryExpirationProperties expirationProperties;
     private final MonitorStatusCache monitorStatusCache;
+    private final QueryStorageCache queryStorageCache;
+    private final QueryManagementService queryManagementService;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     
     private long taskStartTime;
     private Future<Void> taskFuture;
     
-    public QueryMonitor(MonitorProperties monitorProperties, MonitorStatusCache monitorStatusCache) {
+    public QueryMonitor(MonitorProperties monitorProperties, QueryProperties queryProperties, MonitorStatusCache monitorStatusCache,
+                    QueryStorageCache queryStorageCache, QueryManagementService queryManagementService) {
         this.monitorProperties = monitorProperties;
+        this.expirationProperties = queryProperties.getExpiration();
         this.monitorStatusCache = monitorStatusCache;
+        this.queryStorageCache = queryStorageCache;
+        this.queryManagementService = queryManagementService;
     }
     
     // this runs in a separate thread every 30 seconds (by default)
@@ -53,7 +64,8 @@ public class QueryMonitor {
         // schedule a new monitor task if the previous one has finished/expired
         if (taskFuture != null && isMonitorIntervalExpired()) {
             taskStartTime = System.currentTimeMillis();
-            taskFuture = executor.submit(new MonitorTask(monitorProperties, monitorStatusCache));
+            taskFuture = executor
+                            .submit(new MonitorTask(monitorProperties, expirationProperties, monitorStatusCache, queryStorageCache, queryManagementService));
         }
     }
     

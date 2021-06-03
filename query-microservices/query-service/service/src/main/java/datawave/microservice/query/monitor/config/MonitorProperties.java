@@ -26,6 +26,11 @@ public class MonitorProperties {
     private long lockLeaseTime = TimeUnit.MINUTES.toMillis(1);
     @NotNull
     private TimeUnit lockLeaseTimeUnit = TimeUnit.MILLISECONDS;
+    // The amount of time that an inactive query should remain in the query cache
+    @PositiveOrZero
+    private long inactiveQueryTimeToLive = 24;
+    @NotNull
+    private TimeUnit inactiveQueryTimeUnit = TimeUnit.HOURS;
     
     public String getSchedulerCrontab() {
         return schedulerCrontab;
@@ -93,5 +98,25 @@ public class MonitorProperties {
     
     public void setLockLeaseTimeUnit(TimeUnit lockLeaseTimeUnit) {
         this.lockLeaseTimeUnit = lockLeaseTimeUnit;
+    }
+    
+    public long getInactiveQueryTimeToLive() {
+        return inactiveQueryTimeToLive;
+    }
+    
+    public long getInactiveQueryTimeToLiveMillis() {
+        return inactiveQueryTimeUnit.toMillis(inactiveQueryTimeToLive);
+    }
+    
+    public void setInactiveQueryTimeToLive(long inactiveQueryTimeToLive) {
+        this.inactiveQueryTimeToLive = inactiveQueryTimeToLive;
+    }
+    
+    public TimeUnit getInactiveQueryTimeUnit() {
+        return inactiveQueryTimeUnit;
+    }
+    
+    public void setInactiveQueryTimeUnit(TimeUnit inactiveQueryTimeUnit) {
+        this.inactiveQueryTimeUnit = inactiveQueryTimeUnit;
     }
 }

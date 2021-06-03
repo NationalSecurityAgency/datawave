@@ -3,7 +3,6 @@ package datawave.microservice.common.storage;
 import datawave.microservice.common.storage.config.QueryStorageProperties;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.security.Authorizations;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.cloud.bus.event.RemoteQueryTaskNotificationEvent;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -95,8 +93,8 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         queryStatus.setQueryState(QueryStatus.QUERY_STATE.DEFINED);
         queryStatus.setQuery(query);
         queryStatus.setCalculatedAuthorizations(calculatedAuthorizations);
-        queryStatus.setLastUsed(new Date());
-        queryStatus.setLastUpdated(queryStatus.getLastUsed());
+        queryStatus.setLastUsedMillis(System.currentTimeMillis());
+        queryStatus.setLastUpdatedMillis(queryStatus.getLastUsedMillis());
         cache.updateQueryStatus(queryStatus);
         
         // store the initial tasks states
@@ -154,7 +152,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *            the query properties
      */
     public void updateQueryStatus(QueryStatus queryStatus) {
-        queryStatus.setLastUpdated(new Date());
+        queryStatus.setLastUpdatedMillis(System.currentTimeMillis());
         cache.updateQueryStatus(queryStatus);
     }
     

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.security.Authorizations;
 
-import java.util.Date;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -360,17 +359,17 @@ public class CachedQueryStatus extends QueryStatus {
     }
     
     @Override
-    public Date getLastUsed() {
-        return get().getLastUsed();
+    public long getLastUsedMillis() {
+        return get().getLastUsedMillis();
     }
     
     @Override
-    public synchronized void setLastUsed(Date lastUsed) {
+    public synchronized void setLastUsedMillis(long lastUsedMillis) {
         QueryStorageLock lock = cache.getQueryStatusLock(queryId);
         lock.lock();
         try {
             forceCacheUpdateInsideSetter();
-            queryStatus.setLastUsed(lastUsed);
+            queryStatus.setLastUsedMillis(lastUsedMillis);
             cache.updateQueryStatus(queryStatus);
         } finally {
             lock.unlock();
@@ -378,17 +377,17 @@ public class CachedQueryStatus extends QueryStatus {
     }
     
     @Override
-    public Date getLastUpdated() {
-        return get().getLastUpdated();
+    public long getLastUpdatedMillis() {
+        return get().getLastUpdatedMillis();
     }
     
     @Override
-    public synchronized void setLastUpdated(Date lastUpdated) {
+    public synchronized void setLastUpdatedMillis(long lastUpdatedMillis) {
         QueryStorageLock lock = cache.getQueryStatusLock(queryId);
         lock.lock();
         try {
             forceCacheUpdateInsideSetter();
-            queryStatus.setLastUpdated(lastUpdated);
+            queryStatus.setLastUpdatedMillis(lastUpdatedMillis);
             cache.updateQueryStatus(queryStatus);
         } finally {
             lock.unlock();

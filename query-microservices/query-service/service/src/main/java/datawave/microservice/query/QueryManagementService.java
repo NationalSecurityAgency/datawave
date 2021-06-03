@@ -31,7 +31,9 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NoResultsQueryException;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.exception.TimeoutQueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
+import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import datawave.webservice.result.BaseQueryResponse;
@@ -49,13 +51,14 @@ import org.springframework.util.MultiValueMap;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CANCELED;
 import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CLOSED;
+import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CREATED;
 
 @Service
 public class QueryManagementService implements QueryRequestHandler {
@@ -198,6 +201,9 @@ public class QueryManagementService implements QueryRequestHandler {
                         getMaxConcurrentTasks(queryLogic));
                 // @formatter:on
                 
+                // publish a create event to the executor pool
+                publishExecutorEvent(QueryRequest.create(taskKey.getQueryId().toString()), getPoolName());
+                
                 // TODO: JWO: Figure out how to make query tracing work with our new architecture. Datawave issue #1155
                 
                 // TODO: JWO: Figure out how to make query metrics work with our new architecture. Datawave issue #1156
@@ -234,7 +240,8 @@ public class QueryManagementService implements QueryRequestHandler {
             // before we spin up a separate thread, make sure we are allowed to call next
             QueryStatus queryStatus = incrementConcurrentNextCount(queryUUID);
             
-            // TODO: Publish a next notification?
+            // publish a next event to the executor pool
+            publishNextEvent(queryId, queryStatus.getQueryKey().getQueryPool().getName());
             
             // get the query logic
             String queryLogicName = queryStatus.getQuery().getQueryLogicName();
@@ -274,7 +281,11 @@ public class QueryManagementService implements QueryRequestHandler {
                     response.setQueryId(queryId);
                     return response;
                 } else {
-                    throw new NoResultsQueryException(DatawaveErrorCode.NO_QUERY_RESULTS_FOUND, MessageFormat.format("{0}", queryId));
+                    if (nextCall.getMetric().getLifecycle() == BaseQueryMetric.Lifecycle.NEXTTIMEOUT) {
+                        throw new TimeoutQueryException(DatawaveErrorCode.QUERY_TIMEOUT, MessageFormat.format("{0}", queryId));
+                    } else {
+                        throw new NoResultsQueryException(DatawaveErrorCode.NO_QUERY_RESULTS_FOUND, MessageFormat.format("{0}", queryId));
+                    }
                 }
             } catch (TaskRejectedException e) {
                 throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Next task rejected by the executor for query " + queryId);
@@ -308,14 +319,17 @@ public class QueryManagementService implements QueryRequestHandler {
         QueryStorageLock statusLock = queryStorageCache.getQueryStatusLock(queryUUID);
         if (statusLock.tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
             try {
-                // increment the concurrent next
                 queryStatus = queryStorageCache.getQueryStatus(queryUUID);
-                if (queryStatus != null) {
+                
+                // we can only call next on a created query
+                if (queryStatus != null && queryStatus.getQueryState() == CREATED) {
+                    
+                    // increment the concurrent next count
                     if (queryStatus.getConcurrentNextCount() < queryProperties.getNextCall().getConcurrency()) {
                         queryStatus.setConcurrentNextCount(queryStatus.getConcurrentNextCount() + 1);
                         
                         // update the last used datetime for the query
-                        queryStatus.setLastUsed(new Date());
+                        queryStatus.setLastUsedMillis(System.currentTimeMillis());
                         
                         queryStorageCache.updateQueryStatus(queryStatus);
                     } else {
@@ -339,14 +353,15 @@ public class QueryManagementService implements QueryRequestHandler {
         QueryStorageLock statusLock = queryStorageCache.getQueryStatusLock(queryUUID);
         if (statusLock.tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
             try {
-                // increment the concurrent next
                 queryStatus = queryStorageCache.getQueryStatus(queryUUID);
                 if (queryStatus != null) {
+                    
+                    // decrement the concurrent next count
                     if (queryStatus.getConcurrentNextCount() > 0) {
                         queryStatus.setConcurrentNextCount(queryStatus.getConcurrentNextCount() - 1);
                         
                         // update the last used datetime for the query
-                        queryStatus.setLastUsed(new Date());
+                        queryStatus.setLastUsedMillis(System.currentTimeMillis());
                         
                         queryStorageCache.updateQueryStatus(queryStatus);
                     } else {
@@ -370,15 +385,15 @@ public class QueryManagementService implements QueryRequestHandler {
         QueryStorageLock statusLock = queryStorageCache.getQueryStatusLock(queryUUID);
         if (statusLock.tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
             try {
-                // increment the concurrent next
                 QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryUUID);
                 if (queryStatus != null) {
+                    
                     // decrement the concurrent next count
                     if (queryStatus.getConcurrentNextCount() > 0) {
                         queryStatus.setConcurrentNextCount(queryStatus.getConcurrentNextCount() - 1);
                         
                         // update the last used datetime for the query
-                        queryStatus.setLastUsed(new Date());
+                        queryStatus.setLastUsedMillis(System.currentTimeMillis());
                         
                         queryStorageCache.updateQueryStatus(queryStatus);
                     } else {
@@ -395,7 +410,7 @@ public class QueryManagementService implements QueryRequestHandler {
                     queryStatus.setNumResultsReturned(queryStatus.getNumResultsReturned() + numResults);
                     
                     // update the last used datetime for the query
-                    queryStatus.setLastUsed(new Date());
+                    queryStatus.setLastUsedMillis(System.currentTimeMillis());
                     
                     queryStorageCache.updateQueryStatus(queryStatus);
                 } else {
@@ -422,10 +437,10 @@ public class QueryManagementService implements QueryRequestHandler {
     public void cancel(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
-            validateRequest(queryId, currentUser);
+            QueryStatus queryStatus = validateRequest(queryId, currentUser);
             
             // cancel the query
-            cancel(queryId, true);
+            cancel(queryId, queryStatus.getQueryKey().getQueryPool().getName(), true);
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
@@ -446,7 +461,24 @@ public class QueryManagementService implements QueryRequestHandler {
      * @throws InterruptedException
      * @throws QueryException
      */
-    private void cancel(String queryId, boolean publishEvent) throws InterruptedException, QueryException {
+    public void cancel(String queryId, boolean publishEvent) throws InterruptedException, QueryException {
+        cancel(queryId, null, publishEvent);
+    }
+    
+    /**
+     *
+     * Once the cancel request is validated, this method is called to actually cancel the query.
+     *
+     * @param queryId
+     *            The id of the query to cancel
+     * @param poolName
+     *            The pool name for this query
+     * @param publishEvent
+     *            If true, the cancel request will be published on the bus
+     * @throws InterruptedException
+     * @throws QueryException
+     */
+    public void cancel(String queryId, String poolName, boolean publishEvent) throws InterruptedException, QueryException {
         UUID queryUUID = UUID.fromString(queryId);
         
         // if we have an active next call for this query locally, cancel it
@@ -463,6 +495,10 @@ public class QueryManagementService implements QueryRequestHandler {
                     QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryUUID);
                     queryStatus.setQueryState(CANCELED);
                     queryStorageCache.updateQueryStatus(queryStatus);
+                    
+                    if (poolName == null) {
+                        poolName = queryStatus.getQueryKey().getQueryPool().getName();
+                    }
                 } finally {
                     statusLock.unlock();
                 }
@@ -470,17 +506,21 @@ public class QueryManagementService implements QueryRequestHandler {
                 // TODO: Instead of throwing an exception, do we want to be mean here and update the state to canceled without acquiring a lock? Probably yes...
                 throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR, "Unable to acquire lock on query");
             }
-        } else {
-            if (publishEvent) {
-                // broadcast the cancel request to all of the query services
-                appCtx.publishEvent(new RemoteQueryRequestEvent(this, busProperties.getId(), appCtx.getApplicationName(), QueryRequest.cancel(queryId)));
-            }
         }
         
         if (publishEvent) {
-            // broadcast the cancel request to all of the executor services
-            appCtx.publishEvent(
-                            new RemoteQueryRequestEvent(this, busProperties.getId(), queryProperties.getExecutorServiceName(), QueryRequest.cancel(queryId)));
+            QueryRequest cancelRequest = QueryRequest.cancel(queryId);
+            
+            // publish a cancel event to all of the query services
+            publishSelfEvent(cancelRequest);
+            
+            // get the pool name if we don't have it already
+            if (poolName == null) {
+                poolName = queryStorageCache.getQueryStatus(queryUUID).getQueryKey().getQueryPool().getName();
+            }
+            
+            // publish a cancel event to the executor pool
+            publishExecutorEvent(cancelRequest, poolName);
         }
     }
     
@@ -496,10 +536,10 @@ public class QueryManagementService implements QueryRequestHandler {
     public void close(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
-            validateRequest(queryId, currentUser);
+            QueryStatus queryStatus = validateRequest(queryId, currentUser);
             
             // close the query
-            close(queryId, true);
+            close(queryId, queryStatus.getQueryKey().getQueryPool().getName(), true);
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
@@ -520,17 +560,39 @@ public class QueryManagementService implements QueryRequestHandler {
      * @throws InterruptedException
      * @throws QueryException
      */
-    private void close(String queryId, boolean publishEvent) throws InterruptedException, QueryException {
+    public void close(String queryId, boolean publishEvent) throws InterruptedException, QueryException {
+        close(queryId, null, publishEvent);
+    }
+    
+    /**
+     *
+     * Once the close request is validated, this method is called to actually close the query.
+     *
+     * @param queryId
+     *            The id of the query to close
+     * @param poolName
+     *            The pool name for this query
+     * @param publishEvent
+     *            If true, the close request will be published on the bus
+     * @throws InterruptedException
+     * @throws QueryException
+     */
+    public void close(String queryId, String poolName, boolean publishEvent) throws InterruptedException, QueryException {
         UUID queryUUID = UUID.fromString(queryId);
         
-        if (queryStorageCache.getQueryStatusLock(queryUUID).tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
+        QueryStorageLock statusLock = queryStorageCache.getQueryStatusLock(queryUUID);
+        if (statusLock.tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {
             try {
                 // update query state to CLOSED
                 QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryUUID);
                 queryStatus.setQueryState(CLOSED);
                 queryStorageCache.updateQueryStatus(queryStatus);
+                
+                if (poolName == null) {
+                    poolName = queryStatus.getQueryKey().getQueryPool().getName();
+                }
             } finally {
-                queryStorageCache.getQueryStatusLock(queryUUID).unlock();
+                statusLock.unlock();
             }
         } else {
             // TODO: Instead of throwing an exception, do we want to be mean here and update the state to canceled without acquiring a lock? Probably yes...
@@ -538,13 +600,16 @@ public class QueryManagementService implements QueryRequestHandler {
         }
         
         if (publishEvent) {
-            // broadcast the close request to all of the executor services
-            appCtx.publishEvent(
-                            new RemoteQueryRequestEvent(this, busProperties.getId(), queryProperties.getExecutorServiceName(), QueryRequest.close(queryId)));
+            if (poolName == null) {
+                poolName = queryStorageCache.getQueryStatus(queryUUID).getQueryKey().getQueryPool().getName();
+            }
+            
+            // publish a close event to the executor pool
+            publishExecutorEvent(QueryRequest.close(queryId), poolName);
         }
     }
     
-    private void validateRequest(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+    private QueryStatus validateRequest(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         // does the query exist?
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(UUID.fromString(queryId));
         if (queryStatus == null) {
@@ -558,6 +623,8 @@ public class QueryManagementService implements QueryRequestHandler {
         if (!query.getOwner().equals(userId)) {
             throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", userId, query.getOwner()));
         }
+        
+        return queryStatus;
     }
     
     @Override
@@ -624,6 +691,36 @@ public class QueryManagementService implements QueryRequestHandler {
     
     protected String getPoolName() {
         return (queryParameters.getPool() != null) ? queryParameters.getPool() : queryProperties.getDefaultParams().getPool();
+    }
+    
+    protected String getPooledExecutorName(String poolName) {
+        return String.join("-", Arrays.asList(queryProperties.getExecutorServiceName(), poolName));
+    }
+    
+    public void publishNextEvent(String queryId, String queryPool) {
+        publishExecutorEvent(QueryRequest.next(queryId), queryPool);
+    }
+    
+    private void publishExecutorEvent(QueryRequest queryRequest, String queryPool) {
+        // @formatter:off
+        appCtx.publishEvent(
+                new RemoteQueryRequestEvent(
+                        this,
+                        busProperties.getId(),
+                        getPooledExecutorName(queryPool),
+                        queryRequest));
+        // @formatter:on
+    }
+    
+    private void publishSelfEvent(QueryRequest queryRequest) {
+        // @formatter:off
+        appCtx.publishEvent(
+                new RemoteQueryRequestEvent(
+                        this,
+                        busProperties.getId(),
+                        appCtx.getApplicationName(),
+                        queryRequest));
+        // @formatter:on
     }
     
     protected int getMaxConcurrentTasks(QueryLogic<?> queryLogic) {

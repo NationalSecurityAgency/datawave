@@ -200,7 +200,7 @@ public class QueryExpirationBean {
         query.touch(); // Since we know we're still in a call, go ahead and reset the idle time.
         long difference = currentTime - query.getTimeOfCurrentCall();
         
-        if (difference > conf.getIdleTimeoutMillis()) {
+        if (difference > conf.getCallTimeoutMillis()) {
             log.warn("Query " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " has been in a call for " + (difference / 1000)
                             + "s.  We are evicting this query from the cache.");
             return true;

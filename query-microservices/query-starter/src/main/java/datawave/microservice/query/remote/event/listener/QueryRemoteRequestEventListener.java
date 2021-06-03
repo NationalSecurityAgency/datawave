@@ -1,9 +1,9 @@
 package datawave.microservice.query.remote.event.listener;
 
+import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.cloud.bus.ConditionalOnBusEnabled;
 import org.springframework.cloud.bus.ServiceMatcher;
@@ -11,18 +11,19 @@ import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
 @ConditionalOnBusEnabled
-@ConditionalOnBean(QueryRequestHandler.class)
+@ConditionalOnBean(type = "QueryRequestHandler")
 public class QueryRemoteRequestEventListener implements ApplicationListener<RemoteQueryRequestEvent> {
     private final Logger log = LoggerFactory.getLogger(getClass());
     
-    private final QueryRequestHandler queryRequestHandler;
+    private final List<QueryRequestHandler> queryRequestHandlers;
     private final ServiceMatcher serviceMatcher;
     
-    @Autowired
-    public QueryRemoteRequestEventListener(QueryRequestHandler queryRequestHandler, ServiceMatcher serviceMatcher) {
-        this.queryRequestHandler = queryRequestHandler;
+    public QueryRemoteRequestEventListener(List<QueryRequestHandler> queryRequestHandlers, ServiceMatcher serviceMatcher) {
+        this.queryRequestHandlers = queryRequestHandlers;
         this.serviceMatcher = serviceMatcher;
     }
     
@@ -35,6 +36,17 @@ public class QueryRemoteRequestEventListener implements ApplicationListener<Remo
             return;
         }
         
-        queryRequestHandler.handleRemoteRequest(event.getRequest());
+        // process the event using each query request handler.
+        // By default, for parallelStreams java uses threads equal to the number of cores.
+        // if we need more than that, we can specify our own ForkJoinPool.
+        queryRequestHandlers.parallelStream().forEach(h -> handleRequest(h, event.getRequest()));
+    }
+    
+    private void handleRequest(QueryRequestHandler queryRequestHandler, QueryRequest queryRequest) {
+        try {
+            queryRequestHandler.handleRemoteRequest(queryRequest);
+        } catch (Exception e) {
+            log.error("Failed to handle query request with handler: " + queryRequestHandler.getClass().getName(), e);
+        }
     }
 }

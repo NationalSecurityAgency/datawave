@@ -10,4 +10,8 @@ public class MonitorStatus {
     public void setLastChecked(long lastCheckedMillis) {
         this.lastCheckedMillis = lastCheckedMillis;
     }
+    
+    public boolean isExpired(long currentTimeMillis, long expirationTimeoutMillis) {
+        return (currentTimeMillis - lastCheckedMillis) >= expirationTimeoutMillis;
+    }
 }
