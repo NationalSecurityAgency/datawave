@@ -21,6 +21,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
+import datawave.query.transformer.UniqueFields;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.TableName;
 import datawave.util.UniversalSet;
@@ -326,7 +327,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int groupFieldsBatchSize;
     private boolean accrueStats = false;
     private Set<String> groupFields = new HashSet<>(0);
-    private Set<String> uniqueFields = new HashSet<>(0);
+    private UniqueFields uniqueFields = new UniqueFields();
     private boolean cacheModel = false;
     /**
      * should the sizes of documents be tracked for this query
@@ -520,7 +521,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
         this.setGroupFields(null == other.getGroupFields() ? null : Sets.newHashSet(other.getGroupFields()));
-        this.setUniqueFields(null == other.getUniqueFields() ? null : Sets.newHashSet(other.getUniqueFields()));
+        this.setUniqueFields(UniqueFields.copyOf(other.getUniqueFields()));
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
@@ -1530,16 +1531,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return "" + groupFieldsBatchSize;
     }
     
-    public Set<String> getUniqueFields() {
+    public UniqueFields getUniqueFields() {
         return uniqueFields;
     }
     
-    public void setUniqueFields(Set<String> uniqueFields) {
-        this.uniqueFields = deconstruct(uniqueFields);
-    }
-    
-    public String getUniqueFieldsAsString() {
-        return StringUtils.join(this.getUniqueFields(), Constants.PARAM_VALUE_SEP);
+    public void setUniqueFields(UniqueFields uniqueFields) {
+        this.uniqueFields = uniqueFields;
+        // If unique fields are present, make sure they are deconstructed by this point.
+        if (uniqueFields != null) {
+            uniqueFields.deconstructIdentifierFields();
+        }
     }
     
     public boolean isHitList() {

@@ -47,6 +47,7 @@ import datawave.query.predicate.TimeFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
 import datawave.query.tracking.ActiveQueryLog;
+import datawave.query.transformer.UniqueFields;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
@@ -275,7 +276,7 @@ public class QueryOptions implements OptionDescriber {
     
     protected Set<String> groupFields = Sets.newHashSet();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
-    protected Set<String> uniqueFields = Sets.newHashSet();
+    protected UniqueFields uniqueFields = new UniqueFields();
     
     protected Set<String> hitsOnlySet = new HashSet<>();
     
@@ -934,11 +935,11 @@ public class QueryOptions implements OptionDescriber {
         this.groupFieldsBatchSize = groupFieldsBatchSize;
     }
     
-    public Set<String> getUniqueFields() {
+    public UniqueFields getUniqueFields() {
         return uniqueFields;
     }
     
-    public void setUniqueFields(Set<String> uniqueFields) {
+    public void setUniqueFields(UniqueFields uniqueFields) {
         this.uniqueFields = uniqueFields;
     }
     
@@ -1341,10 +1342,7 @@ public class QueryOptions implements OptionDescriber {
         }
         
         if (options.containsKey(UNIQUE_FIELDS)) {
-            String uniqueFields = options.get(UNIQUE_FIELDS);
-            for (String param : Splitter.on(',').omitEmptyStrings().trimResults().split(uniqueFields)) {
-                this.getUniqueFields().add(param);
-            }
+            this.setUniqueFields(UniqueFields.from(options.get(UNIQUE_FIELDS)));
         }
         
         if (options.containsKey(HIT_LIST)) {

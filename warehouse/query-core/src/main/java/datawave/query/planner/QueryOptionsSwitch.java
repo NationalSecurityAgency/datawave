@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.transformer.UniqueFields;
 import datawave.util.StringUtils;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.log4j.Logger;
@@ -42,8 +43,8 @@ public class QueryOptionsSwitch {
                     }
                     break;
                 case QueryParameters.UNIQUE_FIELDS:
-                    String[] uniqueFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
-                    config.setUniqueFields(Sets.newHashSet(uniqueFields));
+                    UniqueFields uniqueFields = UniqueFields.from(value);
+                    config.setUniqueFields(uniqueFields);
             }
         }
     }
