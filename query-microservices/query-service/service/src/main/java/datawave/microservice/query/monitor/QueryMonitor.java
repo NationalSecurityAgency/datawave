@@ -43,7 +43,7 @@ public class QueryMonitor {
     
     // this runs in a separate thread every 30 seconds (by default)
     @Scheduled(cron = "${datawave.query.monitor.scheduler-crontab:*/30 * * * * ?}")
-    public void damageReport() {
+    public void monitorTaskScheduler() {
         // perform some upkeep
         if (taskFuture != null) {
             if (taskFuture.isDone()) {
@@ -64,8 +64,15 @@ public class QueryMonitor {
         // schedule a new monitor task if the previous one has finished/expired
         if (taskFuture != null && isMonitorIntervalExpired()) {
             taskStartTime = System.currentTimeMillis();
-            taskFuture = executor
-                            .submit(new MonitorTask(monitorProperties, expirationProperties, monitorStatusCache, queryStorageCache, queryManagementService));
+            // @formatter:off
+            taskFuture = executor.submit(
+                    new MonitorTask(
+                            monitorProperties,
+                            expirationProperties,
+                            monitorStatusCache,
+                            queryStorageCache,
+                            queryManagementService));
+            // @formatter:on
         }
     }
     
