@@ -57,7 +57,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     
     private final BaseQueryMetric metric;
     
-    private NextCall(Builder builder) throws QueryException {
+    private NextCall(Builder builder) {
         this.nextCallProperties = builder.nextCallProperties;
         this.expirationProperties = builder.expirationProperties;
         this.queryQueueManager = builder.queryQueueManager;
@@ -200,9 +200,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             log.info("Query [{}]: max call time reached, returning existing results: {} of {} results in {}ms", queryId, results.size(), maxResultsPerPage,
                             callTimeMillis);
             
-            if (!results.isEmpty()) {
-                status = ResultsPage.Status.PARTIAL;
-            }
+            status = ResultsPage.Status.PARTIAL;
             
             // TODO: Figure out query metrics
             metric.setLifecycle(BaseQueryMetric.Lifecycle.NEXTTIMEOUT);
@@ -255,10 +253,6 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     
     public void cancel() {
         this.canceled = true;
-    }
-    
-    public boolean isCanceled() {
-        return canceled;
     }
     
     public Future<ResultsPage<Object>> getFuture() {
