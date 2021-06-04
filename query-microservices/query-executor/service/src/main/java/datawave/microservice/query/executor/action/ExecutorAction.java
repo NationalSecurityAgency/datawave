@@ -14,7 +14,6 @@ import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.logic.CheckpointableQueryLogic;
 import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.logic.QueryLogicFactory;
-import datawave.microservice.query.remote.QueryRequest;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.Connector;

@@ -2,12 +2,9 @@ package datawave.microservice.query.executor.action;
 
 import datawave.microservice.common.storage.CachedQueryStatus;
 import datawave.microservice.common.storage.QueryQueueManager;
-import datawave.microservice.common.storage.QueryStatus;
 import datawave.microservice.common.storage.QueryStorageCache;
 import datawave.microservice.common.storage.QueryTask;
 import datawave.microservice.common.storage.TaskKey;
-import datawave.microservice.common.storage.TaskStates;
-import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.logic.CheckpointableQueryLogic;
 import datawave.microservice.query.logic.QueryLogic;
@@ -15,7 +12,6 @@ import datawave.microservice.query.logic.QueryLogicFactory;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
 import java.util.UUID;
 
 public class Next extends ExecutorAction {
