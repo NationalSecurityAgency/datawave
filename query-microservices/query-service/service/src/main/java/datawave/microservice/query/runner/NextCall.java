@@ -24,12 +24,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public class NextCall implements Callable<ResultsPage<Object>> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
     private final NextCallProperties nextCallProperties;
-    private final QueryExpirationProperties expirationProperties;
     private final QueryQueueManager queryQueueManager;
     private final QueryStorageCache queryStorageCache;
     private final String queryId;
@@ -37,6 +37,10 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     
     private volatile boolean canceled = false;
     private volatile Future<ResultsPage<Object>> future = null;
+    
+    private final long callTimeoutMillis;
+    private final long shortCircuitCheckTimeMillis;
+    private final long shortCircuitTimeoutMillis;
     
     private final int userResultsPerPage;
     private final boolean maxResultsOverridden;
@@ -59,13 +63,24 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     
     private NextCall(Builder builder) {
         this.nextCallProperties = builder.nextCallProperties;
-        this.expirationProperties = builder.expirationProperties;
         this.queryQueueManager = builder.queryQueueManager;
         this.queryStorageCache = builder.queryStorageCache;
         this.queryId = builder.queryId;
         this.identifier = builder.identifier;
         
         QueryStatus status = getQueryStatus();
+        long pageTimeoutMillis = TimeUnit.MINUTES.toMillis(status.getQuery().getPageTimeout());
+        if (pageTimeoutMillis >= builder.expirationProperties.getPageMinTimeoutMillis()
+                        && pageTimeoutMillis <= builder.expirationProperties.getPageMaxTimeoutMillis()) {
+            callTimeoutMillis = pageTimeoutMillis;
+            shortCircuitCheckTimeMillis = callTimeoutMillis / 2;
+            shortCircuitTimeoutMillis = Math.round(0.97 * callTimeoutMillis);
+        } else {
+            callTimeoutMillis = builder.expirationProperties.getCallTimeoutMillis();
+            shortCircuitCheckTimeMillis = builder.expirationProperties.getShortCircuitCheckTimeMillis();
+            shortCircuitTimeoutMillis = builder.expirationProperties.getShortCircuitTimeoutMillis();
+        }
+        
         this.userResultsPerPage = status.getQuery().getPagesize();
         this.maxResultsOverridden = status.getQuery().isMaxResultsOverridden();
         this.maxResultsOverride = status.getQuery().getMaxResultsOverride();
@@ -86,7 +101,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     }
     
     @Override
-    public ResultsPage<Object> call() throws Exception {
+    public ResultsPage<Object> call() {
         startTimeMillis = System.currentTimeMillis();
         
         QueryQueueListener resultListener = queryQueueManager.createListener(identifier, queryId);
@@ -217,8 +232,8 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         // only return prematurely if we have at least 1 result
         if (!results.isEmpty()) {
             // if after the page size short circuit check time
-            if (callTimeMillis >= expirationProperties.getShortCircuitCheckTimeMillis()) {
-                float percentTimeComplete = (float) callTimeMillis / (float) (expirationProperties.getCallTimeout());
+            if (callTimeMillis >= shortCircuitCheckTimeMillis) {
+                float percentTimeComplete = (float) callTimeMillis / (float) (callTimeoutMillis);
                 float percentResultsComplete = (float) results.size() / (float) maxResultsPerPage;
                 // if the percent results complete is less than the percent time complete, then break out
                 if (percentResultsComplete < percentTimeComplete) {
@@ -227,7 +242,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             }
             
             // if after the page short circuit timeout, then break out
-            if (callTimeMillis >= expirationProperties.getShortCircuitTimeoutMillis()) {
+            if (callTimeMillis >= shortCircuitTimeoutMillis) {
                 timeout = true;
             }
         }
@@ -236,7 +251,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     }
     
     private boolean callExpiredTimeout(long callTimeMillis) {
-        return callTimeMillis >= expirationProperties.getCallTimeoutMillis();
+        return callTimeMillis >= callTimeoutMillis;
     }
     
     private QueryStatus getQueryStatus() {

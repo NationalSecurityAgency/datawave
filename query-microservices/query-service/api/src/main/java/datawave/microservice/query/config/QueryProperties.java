@@ -25,7 +25,7 @@ public class QueryProperties {
     @NotEmpty
     private String executorServiceName = "executor";
     
-    private QueryExpirationProperties expiration;
+    private QueryExpirationProperties expiration = new QueryExpirationProperties();
     private NextCallProperties nextCall = new NextCallProperties();
     private DefaultParameterProperties defaultParams = new DefaultParameterProperties();
     

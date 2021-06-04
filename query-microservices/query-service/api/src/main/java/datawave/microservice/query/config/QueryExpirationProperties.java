@@ -17,6 +17,14 @@ public class QueryExpirationProperties {
     @NotNull
     private TimeUnit callTimeUnit = TimeUnit.MINUTES;
     @Positive
+    private long pageMinTimeout = 1;
+    @NotNull
+    private TimeUnit pageMinTimeUnit = TimeUnit.MINUTES;
+    @Positive
+    private long pageMaxTimeout = 60;
+    @NotNull
+    private TimeUnit pageMaxTimeUnit = TimeUnit.MINUTES;
+    @Positive
     private long shortCircuitCheckTime = callTimeout / 2;
     @NotNull
     private TimeUnit shortCircuitCheckTimeUnit = TimeUnit.MINUTES;
@@ -63,6 +71,46 @@ public class QueryExpirationProperties {
     
     public void setCallTimeUnit(TimeUnit callTimeUnit) {
         this.callTimeUnit = callTimeUnit;
+    }
+    
+    public long getPageMinTimeout() {
+        return pageMinTimeout;
+    }
+    
+    public long getPageMinTimeoutMillis() {
+        return pageMinTimeUnit.toMillis(pageMinTimeout);
+    }
+    
+    public void setPageMinTimeout(long pageMinTimeout) {
+        this.pageMinTimeout = pageMinTimeout;
+    }
+    
+    public TimeUnit getPageMinTimeUnit() {
+        return pageMinTimeUnit;
+    }
+    
+    public void setPageMinTimeUnit(TimeUnit pageMinTimeUnit) {
+        this.pageMinTimeUnit = pageMinTimeUnit;
+    }
+    
+    public long getPageMaxTimeout() {
+        return pageMaxTimeout;
+    }
+    
+    public long getPageMaxTimeoutMillis() {
+        return pageMaxTimeUnit.toMillis(pageMaxTimeout);
+    }
+    
+    public void setPageMaxTimeout(long pageMaxTimeout) {
+        this.pageMaxTimeout = pageMaxTimeout;
+    }
+    
+    public TimeUnit getPageMaxTimeUnit() {
+        return pageMaxTimeUnit;
+    }
+    
+    public void setPageMaxTimeUnit(TimeUnit pageMaxTimeUnit) {
+        this.pageMaxTimeUnit = pageMaxTimeUnit;
     }
     
     public long getShortCircuitCheckTime() {

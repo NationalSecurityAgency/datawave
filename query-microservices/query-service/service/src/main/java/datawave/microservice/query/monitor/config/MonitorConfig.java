@@ -27,7 +27,7 @@ public class MonitorConfig {
     @Bean
     public MonitorStatusCache monitorStatusCache(CacheInspector cacheInspector, CacheManager cacheManager) {
         log.debug("Using " + cacheManager.getClass() + " for caching");
-        LockableCacheInspector lockableCacheInspector = null;
+        LockableCacheInspector lockableCacheInspector;
         if (cacheManager instanceof HazelcastCacheManager)
             lockableCacheInspector = new LockableHazelcastCacheInspector(cacheManager);
         else

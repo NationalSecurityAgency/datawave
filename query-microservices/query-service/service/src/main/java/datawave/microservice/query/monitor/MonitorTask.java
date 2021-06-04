@@ -69,7 +69,7 @@ public class MonitorTask implements Callable<Void> {
                     cancelQuery(queryId);
                 } else if (status.isProgressIdle(currentTimeMillis, expirationProperties.getIdleTimeoutMillis())) {
                     // if progress hasn't been made for the query in a while, apply the shock paddles
-                    defibrilateQuery(queryId, status.getQueryKey().getQueryPool().getName());
+                    defibrillateQuery(queryId, status.getQueryKey().getQueryPool().getName());
                 }
             } else {
                 if (status.isInactive(currentTimeMillis, monitorProperties.getInactiveQueryTimeToLiveMillis())) {
@@ -90,7 +90,7 @@ public class MonitorTask implements Callable<Void> {
         }
     }
     
-    private void defibrilateQuery(String queryId, String queryPool) {
+    private void defibrillateQuery(String queryId, String queryPool) {
         // publish a next event to the executor pool
         queryManagementService.publishNextEvent(queryId, queryPool);
     }

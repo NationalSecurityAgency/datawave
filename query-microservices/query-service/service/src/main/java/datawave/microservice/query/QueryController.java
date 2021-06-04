@@ -7,8 +7,6 @@ import datawave.microservice.query.web.annotation.EnrichQueryMetrics;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.MultiValueMap;
@@ -21,8 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(path = "/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class QueryController {
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
     private final QueryManagementService queryManagementService;
     
     public QueryController(QueryManagementService queryManagementService) {

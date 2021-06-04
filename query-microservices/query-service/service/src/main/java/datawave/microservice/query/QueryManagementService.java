@@ -55,6 +55,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CANCELED;
 import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CLOSED;
@@ -86,10 +87,6 @@ public class QueryManagementService implements QueryRequestHandler {
     
     private final QueryStatusUpdateHelper queryStatusUpdateHelper;
     private final MultiValueMap<String,NextCall> nextCallMap = new LinkedMultiValueMap<>();
-    
-    // TODO: JWO: Pull these from configuration instead
-    private final int PAGE_TIMEOUT_MIN = 1;
-    private final int PAGE_TIMEOUT_MAX = 60;
     
     public QueryManagementService(QueryProperties queryProperties, ApplicationContext appCtx, BusProperties busProperties, QueryParameters queryParameters,
                     SecurityMarking securityMarking, QueryLogicFactory queryLogicFactory, QueryMetricFactory queryMetricFactory,
@@ -146,7 +143,7 @@ public class QueryManagementService implements QueryRequestHandler {
             // persist the query w/ query id in the query storage cache
             // TODO: JWO: storeQuery assumes that this is a 'create' call, but this is a 'define' call.
             // @formatter:off
-            TaskKey taskKey = queryStorageCache.defineQuery(
+            return queryStorageCache.defineQuery(
                     new QueryPool(getPoolName()),
                     createQuery(queryLogicName, parameters, userDn, currentUser.getDNs()),
                     AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(), currentUser),
@@ -156,8 +153,6 @@ public class QueryManagementService implements QueryRequestHandler {
             // TODO: JWO: Figure out how to make query tracing work with our new architecture. Datawave issue #1155
             
             // TODO: JWO: Figure out how to make query metrics work with our new architecture. Datawave issue #1156
-            
-            return taskKey;
         } catch (Exception e) {
             log.error("Unknown error storing query", e);
             throw new BadRequestQueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
@@ -278,13 +273,12 @@ public class QueryManagementService implements QueryRequestHandler {
                         status.setLastPageNumber(status.getLastPageNumber() + 1);
                         status.setNumResultsReturned(status.getNumResultsReturned() + resultsPage.getResults().size());
                     });
+                    success = true;
                     
                     response.setHasResults(true);
                     response.setPageNumber(queryStatus.getLastPageNumber());
                     response.setLogicName(queryLogicName);
                     response.setQueryId(queryId);
-                    
-                    success = true;
                     return response;
                 } else {
                     if (nextCall.getMetric().getLifecycle() == BaseQueryMetric.Lifecycle.NEXTTIMEOUT) {
@@ -331,10 +325,10 @@ public class QueryManagementService implements QueryRequestHandler {
     public void cancel(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
-            QueryStatus queryStatus = validateRequest(queryId, currentUser);
+            validateRequest(queryId, currentUser);
             
             // cancel the query
-            cancel(queryId, queryStatus.getQueryKey().getQueryPool().getName(), true);
+            cancel(queryId, true);
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
@@ -355,24 +349,6 @@ public class QueryManagementService implements QueryRequestHandler {
      * @throws QueryException
      */
     public void cancel(String queryId, boolean publishEvent) throws InterruptedException, QueryException {
-        cancel(queryId, null, publishEvent);
-    }
-    
-    /**
-     * Once the cancel request is validated, this method is called to actually cancel the query.
-     *
-     * @param queryId
-     *            The id of the query to cancel
-     * @param poolName
-     *            The pool name for this query
-     * @param publishEvent
-     *            If true, the cancel request will be published on the bus
-     * @throws InterruptedException
-     * @throws QueryException
-     */
-    public void cancel(String queryId, String poolName, boolean publishEvent) throws InterruptedException, QueryException {
-        UUID queryUUID = UUID.fromString(queryId);
-        
         // if we have an active next call for this query locally, cancel it
         List<NextCall> nextCalls = nextCallMap.get(queryId);
         if (nextCalls != null) {
@@ -381,14 +357,10 @@ public class QueryManagementService implements QueryRequestHandler {
         
         if (publishEvent) {
             // only the initial event publisher should update the status
-            QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryUUID, status -> {
+            QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(UUID.fromString(queryId), status -> {
                 // update query state to CANCELED
                 status.setQueryState(CANCELED);
             });
-            
-            if (poolName == null) {
-                poolName = queryStatus.getQueryKey().getQueryPool().getName();
-            }
             
             QueryRequest cancelRequest = QueryRequest.cancel(queryId);
             
@@ -396,7 +368,7 @@ public class QueryManagementService implements QueryRequestHandler {
             publishSelfEvent(cancelRequest);
             
             // publish a cancel event to the executor pool
-            publishExecutorEvent(cancelRequest, poolName);
+            publishExecutorEvent(cancelRequest, queryStatus.getQueryKey().getQueryPool().getName());
         }
     }
     
@@ -411,10 +383,10 @@ public class QueryManagementService implements QueryRequestHandler {
     public void close(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
-            QueryStatus queryStatus = validateRequest(queryId, currentUser);
+            validateRequest(queryId, currentUser);
             
             // close the query
-            close(queryId, queryStatus.getQueryKey().getQueryPool().getName());
+            close(queryId);
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
@@ -433,36 +405,16 @@ public class QueryManagementService implements QueryRequestHandler {
      * @throws QueryException
      */
     public void close(String queryId) throws InterruptedException, QueryException {
-        close(queryId, (String) null);
-    }
-    
-    /**
-     * Once the close request is validated, this method is called to actually close the query.
-     *
-     * @param queryId
-     *            The id of the query to close
-     * @param poolName
-     *            The pool name for this query
-     * @throws InterruptedException
-     * @throws QueryException
-     */
-    public void close(String queryId, String poolName) throws InterruptedException, QueryException {
-        UUID queryUUID = UUID.fromString(queryId);
-        
-        QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryUUID, status -> {
+        QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(UUID.fromString(queryId), status -> {
             // update query state to CLOSED
             status.setQueryState(CLOSED);
         });
         
-        if (poolName == null) {
-            poolName = queryStatus.getQueryKey().getQueryPool().getName();
-        }
-        
         // publish a close event to the executor pool
-        publishExecutorEvent(QueryRequest.close(queryId), poolName);
+        publishExecutorEvent(QueryRequest.close(queryId), queryStatus.getQueryKey().getQueryPool().getName());
     }
     
-    private QueryStatus validateRequest(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+    private void validateRequest(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         // does the query exist?
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(UUID.fromString(queryId));
         if (queryStatus == null) {
@@ -476,20 +428,16 @@ public class QueryManagementService implements QueryRequestHandler {
         if (!query.getOwner().equals(userId)) {
             throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", userId, query.getOwner()));
         }
-        
-        return queryStatus;
     }
     
     @Override
     public void handleRemoteRequest(QueryRequest queryRequest) {
         try {
-            switch (queryRequest.getMethod()) {
-                case CANCEL:
-                    log.trace("Received remote cancel request.");
-                    cancel(queryRequest.getQueryId(), false);
-                    break;
-                default:
-                    log.debug("No handling specified for remote query request method: {}", queryRequest.getMethod());
+            if (queryRequest.getMethod() == QueryRequest.Method.CANCEL) {
+                log.trace("Received remote cancel request.");
+                cancel(queryRequest.getQueryId(), false);
+            } else {
+                log.debug("No handling specified for remote query request method: {}", queryRequest.getMethod());
             }
         } catch (Exception e) {
             log.error("Remote request failed:" + queryRequest);
@@ -633,15 +581,17 @@ public class QueryManagementService implements QueryRequestHandler {
         // Ensure that all required parameters exist prior to validating the values.
         queryParameters.validate(parameters);
         
-        // The pagesize and expirationDate checks will always be false when called from the RemoteQueryExecutor.
+        // The pageSize and expirationDate checks will always be false when called from the RemoteQueryExecutor.
         // Leaving for now until we can test to ensure that is always the case.
         if (queryParameters.getPagesize() <= 0) {
             log.error("Invalid page size: " + queryParameters.getPagesize());
             throw new BadRequestQueryException(DatawaveErrorCode.INVALID_PAGE_SIZE);
         }
         
-        if (queryParameters.getPageTimeout() != -1
-                        && (queryParameters.getPageTimeout() < PAGE_TIMEOUT_MIN || queryParameters.getPageTimeout() > PAGE_TIMEOUT_MAX)) {
+        long pageMinTimeoutMillis = queryProperties.getExpiration().getPageMinTimeoutMillis();
+        long pageMaxTimeoutMillis = queryProperties.getExpiration().getPageMaxTimeoutMillis();
+        long pageTimeoutMillis = TimeUnit.MINUTES.toMillis(queryParameters.getPageTimeout());
+        if (queryParameters.getPageTimeout() != -1 && (pageTimeoutMillis < pageMinTimeoutMillis || pageTimeoutMillis > pageMaxTimeoutMillis)) {
             log.error("Invalid page timeout: " + queryParameters.getPageTimeout());
             throw new BadRequestQueryException(DatawaveErrorCode.INVALID_PAGE_TIMEOUT);
         }
@@ -727,7 +677,7 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     private String writeValueAsString(Object object) {
-        String stringValue = "";
+        String stringValue;
         try {
             stringValue = mapper.writeValueAsString(object);
         } catch (JsonProcessingException e) {
