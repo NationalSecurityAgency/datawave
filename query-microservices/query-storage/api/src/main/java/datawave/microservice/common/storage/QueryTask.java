@@ -1,5 +1,6 @@
 package datawave.microservice.common.storage;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -13,7 +14,7 @@ public class QueryTask implements Serializable {
     private static final long serialVersionUID = 579211458890999398L;
     
     public enum QUERY_ACTION implements Serializable {
-        CREATE, PLAN, NEXT, CLOSE, TEST
+        CREATE, PLAN, NEXT, CLOSE, CANCEL
     }
     
     /**
@@ -23,7 +24,6 @@ public class QueryTask implements Serializable {
     public static final String EXPAND_FIELDS = "expand.fields";
     
     private final TaskKey taskKey;
-    private final QUERY_ACTION action;
     private final QueryCheckpoint queryCheckpoint;
     
     public QueryTask(QUERY_ACTION action, QueryCheckpoint queryCheckpoint) {
@@ -31,8 +31,7 @@ public class QueryTask implements Serializable {
     }
     
     public QueryTask(UUID taskId, QUERY_ACTION action, QueryCheckpoint queryCheckpoint) {
-        this.taskKey = new TaskKey(taskId, queryCheckpoint.getQueryKey());
-        this.action = action;
+        this.taskKey = new TaskKey(taskId, action, queryCheckpoint.getQueryKey());
         this.queryCheckpoint = queryCheckpoint;
     }
     
@@ -41,8 +40,9 @@ public class QueryTask implements Serializable {
      * 
      * @return the action
      */
+    @JsonIgnore
     public QUERY_ACTION getAction() {
-        return action;
+        return taskKey.getAction();
     }
     
     /**
@@ -69,12 +69,12 @@ public class QueryTask implements Serializable {
      * @return a query task notification
      */
     public QueryTaskNotification getNotification() {
-        return new QueryTaskNotification(getTaskKey(), getAction());
+        return new QueryTaskNotification(getTaskKey());
     }
     
     @Override
     public String toString() {
-        return getTaskKey() + ":" + getAction() + " on " + getQueryCheckpoint().getProperties();
+        return getTaskKey() + " on " + getQueryCheckpoint().getProperties();
     }
     
     /**
@@ -83,15 +83,14 @@ public class QueryTask implements Serializable {
      * @return A debug string
      */
     public String toDebug() {
-        return getTaskKey() + ":" + getAction();
+        return getTaskKey().toString();
     }
     
     @Override
     public boolean equals(Object o) {
         if (o instanceof QueryTask) {
             QueryTask other = (QueryTask) o;
-            return new EqualsBuilder().append(getTaskKey(), other.getTaskKey()).append(getAction(), other.getAction())
-                            .append(getQueryCheckpoint(), other.getQueryCheckpoint()).isEquals();
+            return new EqualsBuilder().append(getTaskKey(), other.getTaskKey()).append(getQueryCheckpoint(), other.getQueryCheckpoint()).isEquals();
         }
         return false;
     }

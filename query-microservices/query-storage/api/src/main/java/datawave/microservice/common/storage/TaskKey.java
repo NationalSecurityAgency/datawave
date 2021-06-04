@@ -13,9 +13,12 @@ public class TaskKey extends QueryKey implements Serializable {
     private static final long serialVersionUID = -2589618312956104322L;
     
     public static final String TASK_ID_PREFIX = "T-";
+    public static final String TASK_ACTION_PREFIX = "A-";
     
     @JsonProperty("taskId")
     private UUID taskId;
+    @JsonProperty("action")
+    private QueryTask.QUERY_ACTION action;
     
     /**
      * Default constructor for deserialization
@@ -52,22 +55,27 @@ public class TaskKey extends QueryKey implements Serializable {
     }
     
     @JsonCreator
-    public TaskKey(@JsonProperty("taskId") UUID taskId, @JsonProperty("queryPool") QueryPool queryPool, @JsonProperty("queryId") UUID queryId,
-                    @JsonProperty("queryLogic") String queryLogic) {
+    public TaskKey(@JsonProperty("taskId") UUID taskId, @JsonProperty("action") QueryTask.QUERY_ACTION action, @JsonProperty("queryPool") QueryPool queryPool,
+                    @JsonProperty("queryId") UUID queryId, @JsonProperty("queryLogic") String queryLogic) {
         super(queryPool, queryId, queryLogic);
         this.taskId = taskId;
+        this.action = action;
     }
     
-    public TaskKey(UUID taskId, QueryKey queryKey) {
-        this(taskId, queryKey.getQueryPool(), queryKey.getQueryId(), queryKey.getQueryLogic());
+    public TaskKey(UUID taskId, QueryTask.QUERY_ACTION action, QueryKey queryKey) {
+        this(taskId, action, queryKey.getQueryPool(), queryKey.getQueryId(), queryKey.getQueryLogic());
     }
     
     public UUID getTaskId() {
         return taskId;
     }
     
+    public QueryTask.QUERY_ACTION getAction() {
+        return action;
+    }
+    
     public String toKey() {
-        return super.toKey() + '.' + TASK_ID_PREFIX + taskId.toString();
+        return super.toKey() + '.' + TASK_ID_PREFIX + taskId.toString() + '.' + TASK_ACTION_PREFIX + action.name();
     }
     
     public String toRoutingKey() {
@@ -83,13 +91,13 @@ public class TaskKey extends QueryKey implements Serializable {
     public boolean equals(Object o) {
         if (o instanceof TaskKey) {
             TaskKey other = (TaskKey) o;
-            return new EqualsBuilder().appendSuper(super.equals(o)).append(getTaskId(), other.getTaskId()).isEquals();
+            return new EqualsBuilder().appendSuper(super.equals(o)).append(getTaskId(), other.getTaskId()).append(getAction(), other.getAction()).isEquals();
         }
         return false;
     }
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().appendSuper(super.hashCode()).append(getQueryPool()).append(getQueryId()).toHashCode();
+        return new HashCodeBuilder().appendSuper(super.hashCode()).append(getTaskId()).append(getAction()).toHashCode();
     }
 }

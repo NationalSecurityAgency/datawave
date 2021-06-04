@@ -1,5 +1,6 @@
 package datawave.microservice.common.storage;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -12,43 +13,42 @@ public class QueryTaskNotification implements Serializable {
     private static final long serialVersionUID = 364194052797912452L;
     
     private TaskKey taskKey;
-    private QueryTask.QUERY_ACTION action;
     
     /**
      * Default constructor for deserialization
      */
     public QueryTaskNotification() {}
     
-    public QueryTaskNotification(TaskKey taskKey, QueryTask.QUERY_ACTION action) {
+    public QueryTaskNotification(TaskKey taskKey) {
         this.taskKey = taskKey;
-        this.action = action;
     }
     
     public TaskKey getTaskKey() {
         return taskKey;
     }
     
+    @JsonIgnore
     public QueryTask.QUERY_ACTION getAction() {
-        return action;
+        return taskKey.getAction();
     }
     
     @Override
     public String toString() {
-        return taskKey.toString() + ':' + action;
+        return taskKey.toString();
     }
     
     @Override
     public boolean equals(Object o) {
         if (o instanceof QueryTaskNotification) {
             QueryTaskNotification other = (QueryTaskNotification) o;
-            return new EqualsBuilder().append(getAction(), other.getAction()).append(getTaskKey(), other.getTaskKey()).isEquals();
+            return new EqualsBuilder().append(getTaskKey(), other.getTaskKey()).isEquals();
         }
         return false;
     }
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(getAction()).append(getTaskKey()).toHashCode();
+        return new HashCodeBuilder().append(getTaskKey()).toHashCode();
     }
     
 }

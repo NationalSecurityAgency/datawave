@@ -111,7 +111,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         }
         
         // return the an empty task key
-        return new TaskKey(null, new QueryKey(queryPool, queryUuid, query.getQueryLogicName()));
+        return new TaskKey(null, QueryTask.QUERY_ACTION.CREATE, new QueryKey(queryPool, queryUuid, query.getQueryLogicName()));
     }
     
     /**
@@ -248,18 +248,6 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     }
     
     /**
-     * Get a task lock
-     *
-     * @param task
-     *            The task key
-     * @return a lock object
-     */
-    @Override
-    public QueryStorageLock getTaskLock(TaskKey task) {
-        return cache.getTaskLock(task);
-    }
-    
-    /**
      * Get the current task states.
      *
      * @param queryId
@@ -329,63 +317,38 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *
      * @param taskKey
      *            The task key
-     * @param waitMs
-     *            How long to wait to get a task lock
-     * @param leaseMs
-     *            How long to hold onto lock
      * @return The query task, null if deleted
      * @throws TaskLockException
      *             if the task is already locked
      */
     @Override
-    public QueryTask getTask(TaskKey taskKey, long waitMs, long leaseMs) throws TaskLockException, InterruptedException {
-        if (cache.getTaskLock(taskKey).tryLock(waitMs, leaseMs)) {
-            return cache.getTask(taskKey);
-        } else {
-            throw new TaskLockException("Unable to get task lock for " + taskKey);
-        }
+    public QueryTask getTask(TaskKey taskKey) {
+        return cache.getTask(taskKey);
     }
     
     /**
-     * Update a stored query task with an updated checkpoint. This will also release the lock. This will throw an exception is the task is not locked.
+     * Update a stored query task with an updated checkpoint.
      *
      * @param taskKey
      *            The task key to update
      * @param checkpoint
      *            The new query checkpoint
      * @return The updated query task
-     * @throws TaskLockException
-     *             if the task is not locked
      */
     @Override
-    public QueryTask checkpointTask(TaskKey taskKey, QueryCheckpoint checkpoint) throws TaskLockException {
-        QueryStorageLock taskLock = cache.getTaskLock(taskKey);
-        if (taskLock.isLocked()) {
-            QueryTask queryTask = cache.updateQueryTask(taskKey, checkpoint);
-            taskLock.unlock();
-            return queryTask;
-        } else {
-            throw new TaskLockException("Attempting to checkpoint a task that is not locked: " + taskKey);
-        }
+    public QueryTask checkpointTask(TaskKey taskKey, QueryCheckpoint checkpoint) {
+        return cache.updateQueryTask(taskKey, checkpoint);
     }
     
     /**
-     * Delete a query task. This will also release the lock. This will throw an exception if the task is not locked.
+     * Delete a query task.
      *
      * @param taskKey
      *            The task key
-     * @throws TaskLockException
-     *             if the task is not locked
      */
     @Override
-    public void deleteTask(TaskKey taskKey) throws TaskLockException {
-        QueryStorageLock taskLock = cache.getTaskLock(taskKey);
-        if (taskLock.isLocked()) {
-            cache.deleteTask(taskKey);
-            taskLock.unlock();
-        } else {
-            throw new TaskLockException("Attempting to delete a task that is not locked: " + taskKey);
-        }
+    public void deleteTask(TaskKey taskKey) {
+        cache.deleteTask(taskKey);
     }
     
     /**

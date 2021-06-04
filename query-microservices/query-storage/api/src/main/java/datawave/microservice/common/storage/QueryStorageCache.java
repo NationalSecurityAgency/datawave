@@ -124,15 +124,6 @@ public interface QueryStorageCache {
     QueryStorageLock getTaskStatesLock(UUID queryId);
     
     /**
-     * Get a task lock
-     *
-     * @param task
-     *            The task key
-     * @return a lock object
-     */
-    QueryStorageLock getTaskLock(TaskKey task);
-    
-    /**
      * Get the current task states.
      * 
      * @param queryId
@@ -168,43 +159,32 @@ public interface QueryStorageCache {
     public void post(QueryTaskNotification taskNotification);
     
     /**
-     * Get a task for a given task key and lock it for processing. This return null if the task no longer exists. This will throw an exception if the task is
-     * already locked.
+     * Get a task for a given task key. This return null if the task no longer exists.
      *
      * @param taskKey
      *            The task key
-     * @param waitMs
-     *            How long to wait to get a task lock
-     * @param leaseMs
-     *            How long to hold the lease before automatically reclaiming lock
      * @return The query task, null if deleted
-     * @throws TaskLockException
-     *             if the task is already locked
      */
-    QueryTask getTask(TaskKey taskKey, long waitMs, long leaseMs) throws TaskLockException, IOException, InterruptedException;
+    QueryTask getTask(TaskKey taskKey);
     
     /**
-     * Update a stored query task with an updated checkpoint. This will also release the lock. This will throw an exception is the task is not locked.
+     * Update a stored query task with an updated checkpoint.
      * 
      * @param taskKey
      *            The task key to update
      * @param checkpoint
      *            The new query checkpoint
      * @return The updated query task
-     * @throws TaskLockException
-     *             if the task is not locked
      */
-    QueryTask checkpointTask(TaskKey taskKey, QueryCheckpoint checkpoint) throws TaskLockException, IOException;
+    QueryTask checkpointTask(TaskKey taskKey, QueryCheckpoint checkpoint);
     
     /**
-     * Delete a query task. This will also release the lock. This will throw an exception if the task is not locked.
+     * Delete a query task.
      * 
      * @param taskKey
      *            The task key
-     * @throws TaskLockException
-     *             if the task is not locked
      */
-    void deleteTask(TaskKey taskKey) throws TaskLockException, IOException;
+    void deleteTask(TaskKey taskKey) throws IOException;
     
     /**
      * Delete a query

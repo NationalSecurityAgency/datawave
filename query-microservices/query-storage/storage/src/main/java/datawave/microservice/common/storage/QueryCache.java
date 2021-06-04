@@ -149,7 +149,7 @@ public class QueryCache {
     @CachePut(key = "T(datawave.microservice.common.storage.QueryCache).TASK + #result.getTaskKey().toKey()")
     public QueryTask updateQueryTask(TaskKey taskKey, QueryCheckpoint checkpoint) {
         if (!checkpoint.getQueryKey().equals(taskKey.getQueryKey())) {
-            throw new IllegalArgumentException("Checkpoint query key " + checkpoint.getQueryKey() + " does not match " + taskKey);
+            throw new IllegalArgumentException("Checkpoint query key " + checkpoint.getQueryKey() + " does not match " + taskKey.getQueryKey());
         }
         QueryTask task = getTask(taskKey);
         if (task == null) {
@@ -471,17 +471,6 @@ public class QueryCache {
     }
     
     /**
-     * Get a task lock for a given task key
-     * 
-     * @param task
-     *            the task key
-     * @return a task lock
-     */
-    public QueryStorageLock getTaskLock(TaskKey task) {
-        return new TaskLock(task);
-    }
-    
-    /**
      * A lock object for a query status
      */
     public class QueryStorageLockImpl implements QueryStorageLock {
@@ -596,12 +585,4 @@ public class QueryCache {
         }
     }
     
-    /**
-     * A lock object for a task
-     */
-    public class TaskLock extends QueryStorageLockImpl {
-        public TaskLock(TaskKey task) {
-            super(TASK + task.toKey());
-        }
-    }
 }

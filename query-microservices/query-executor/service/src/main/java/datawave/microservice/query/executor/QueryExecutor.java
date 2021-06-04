@@ -1,46 +1,49 @@
 package datawave.microservice.query.executor;
 
-import datawave.microservice.common.storage.CachedQueryStatus;
-import datawave.microservice.common.storage.QueryCheckpoint;
-import datawave.microservice.common.storage.QueryKey;
 import datawave.microservice.common.storage.QueryQueueManager;
-import datawave.microservice.common.storage.QueryStatus;
 import datawave.microservice.common.storage.QueryStorageCache;
 import datawave.microservice.common.storage.QueryTask;
-import datawave.microservice.common.storage.QueryTaskNotification;
-import datawave.microservice.common.storage.Result;
 import datawave.microservice.common.storage.TaskKey;
-import datawave.microservice.common.storage.TaskLockException;
 import datawave.microservice.common.storage.TaskStates;
-import datawave.microservice.common.storage.remote.QueryTaskNotificationHandler;
-import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.executor.action.Create;
+import datawave.microservice.query.executor.action.ExecutorAction;
+import datawave.microservice.query.executor.action.Next;
+import datawave.microservice.query.executor.action.Plan;
 import datawave.microservice.query.executor.config.ExecutorProperties;
-import datawave.microservice.query.logic.CheckpointableQueryLogic;
-import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.logic.QueryLogicFactory;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.exception.QueryException;
+import datawave.microservice.query.remote.QueryRequest;
+import datawave.microservice.query.remote.QueryRequestHandler;
 import org.apache.accumulo.core.client.Connector;
-import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class holds the business logic for handling a task notification
  *
  * TODO: Query Metrics
  **/
-public class QueryExecutor implements QueryTaskNotificationHandler {
+public class QueryExecutor implements QueryRequestHandler {
     private static final Logger log = Logger.getLogger(QueryExecutor.class);
     
-    private final Connector connector;
-    private final QueryStorageCache cache;
-    private final QueryQueueManager queues;
-    private final QueryLogicFactory queryLogicFactory;
-    private final ExecutorProperties executorProperties;
+    protected final BlockingQueue<Runnable> workQueue;
+    protected final Set<Runnable> working;
+    protected final Connector connector;
+    protected final QueryStorageCache cache;
+    protected final QueryQueueManager queues;
+    protected final QueryLogicFactory queryLogicFactory;
+    protected final ExecutorProperties executorProperties;
+    protected final ThreadPoolExecutor threadPool;
     
     public QueryExecutor(ExecutorProperties executorProperties, Connector connector, QueryStorageCache cache, QueryQueueManager queues,
                     QueryLogicFactory queryLogicFactory) {
@@ -49,203 +52,133 @@ public class QueryExecutor implements QueryTaskNotificationHandler {
         this.queues = queues;
         this.connector = connector;
         this.queryLogicFactory = queryLogicFactory;
+        this.workQueue = new LinkedBlockingDeque<>(executorProperties.getMaxQueueSize());
+        this.working = Collections.synchronizedSet(new HashSet<>());
+        threadPool = new ThreadPoolExecutor(executorProperties.getCoreThreads(), executorProperties.getMaxThreads(), executorProperties.getKeepAliveMs(),
+                        TimeUnit.MILLISECONDS, workQueue) {
+            @Override
+            protected void beforeExecute(Thread t, Runnable r) {
+                working.add(r);
+            }
+            
+            @Override
+            protected void afterExecute(Runnable r, Throwable t) {
+                working.remove(r);
+            }
+        };
+    }
+    
+    public static QueryTask.QUERY_ACTION getQueryAction(QueryRequest.Method method) {
+        switch (method) {
+            case NEXT:
+                return QueryTask.QUERY_ACTION.NEXT;
+            case CREATE:
+                return QueryTask.QUERY_ACTION.CREATE;
+            case CLOSE:
+                return QueryTask.QUERY_ACTION.CLOSE;
+            case CANCEL:
+                return QueryTask.QUERY_ACTION.CANCEL;
+            case PLAN:
+                return QueryTask.QUERY_ACTION.PLAN;
+            default:
+                throw new IllegalStateException("Cannot map " + method + " to a query action");
+        }
+    }
+    
+    public static QueryRequest.Method getQueryMethod(QueryTask.QUERY_ACTION action) {
+        switch (action) {
+            case NEXT:
+                return QueryRequest.Method.NEXT;
+            case CREATE:
+                return QueryRequest.Method.CREATE;
+            case CLOSE:
+                return QueryRequest.Method.CLOSE;
+            case CANCEL:
+                return QueryRequest.Method.CANCEL;
+            case PLAN:
+                return QueryRequest.Method.PLAN;
+            default:
+                throw new IllegalStateException("Cannot map " + action + " to a query method");
+        }
+    }
+    
+    private void removeFromWorkQueue(UUID queryId) {
+        List<Runnable> removals = new ArrayList<Runnable>();
+        for (Runnable action : workQueue) {
+            if (((ExecutorAction) action).getTaskKey().getQueryId().equals(queryId)) {
+                removals.add(action);
+            }
+        }
+        for (Runnable action : removals) {
+            threadPool.remove(action);
+        }
+    }
+    
+    private void interruptWork(UUID queryId) {
+        synchronized (working) {
+            for (Runnable action : working) {
+                if (((ExecutorAction) action).getTaskKey().getQueryId().equals(queryId)) {
+                    ((ExecutorAction) action).interrupt();
+                }
+            }
+        }
     }
     
     @Override
-    public void handleQueryTaskNotification(QueryTaskNotification taskNotification) {
-        boolean gotLock = false;
-        boolean taskComplete = false;
-        boolean taskFailed = false;
-        final TaskKey taskKey = taskNotification.getTaskKey();
-        final UUID queryId = taskKey.getQueryId();
-        try {
-            // pull the task out of the cache, locking it in the process
-            QueryTask task = cache.getTask(taskKey, executorProperties.getLockWaitTimeMillis(), executorProperties.getLockLeaseTimeMillis());
-            if (task != null) {
-                // check the states to see if we can run this now
-                gotLock = cache.updateTaskState(taskKey, TaskStates.TASK_STATE.RUNNING);
-                
-                // only proceed if we got the lock
-                if (gotLock) {
-                    // pull the query from the cache
-                    CachedQueryStatus queryStatus = new CachedQueryStatus(cache, queryId, executorProperties.getMaxQueryStatusAge());
-                    QueryLogic<?> queryLogic;
-                    switch (task.getAction()) {
-                        case PLAN:
-                            queryLogic = getQueryLogic(queryStatus.getQuery());
-                            // by default we will expand the fields but not the values.
-                            boolean expandFields = true;
-                            boolean expandValues = false;
-                            Query query = queryStatus.getQuery();
-                            for (QueryImpl.Parameter p : query.getParameters()) {
-                                if (p.getParameterName().equals(QueryTask.EXPAND_FIELDS)) {
-                                    expandFields = Boolean.valueOf(p.getParameterValue());
-                                } else if (p.getParameterName().equals(QueryTask.EXPAND_VALUES)) {
-                                    expandValues = Boolean.valueOf(p.getParameterValue());
-                                }
-                            }
-                            String plan = queryLogic.getPlan(connector, queryStatus.getQuery(), queryStatus.getCalculatedAuthorizations(), expandFields,
-                                            expandValues);
-                            queryStatus.setPlan(plan);
+    public void handleRemoteRequest(QueryRequest queryRequest) {
+        handleRemoteRequest(queryRequest, false);
+    }
+    
+    public void handleRemoteRequest(QueryRequest queryRequest, boolean wait) {
+        final UUID queryId = UUID.fromString(queryRequest.getQueryId());
+        final QueryTask.QUERY_ACTION action = getQueryAction(queryRequest.getMethod());
+        // A close request waits for the current page to finish
+        switch (action) {
+            case CLOSE:
+                removeFromWorkQueue(queryId);
+                break;
+            case CANCEL:
+                removeFromWorkQueue(queryId);
+                interruptWork(queryId);
+                break;
+            default: {
+                // get the query states from the cache
+                TaskStates taskStates = cache.getTaskStates(queryId);
+                Map<TaskStates.TASK_STATE,Set<TaskKey>> taskStateMap = taskStates.getTaskStates();
+                TaskKey taskKey = null;
+                if (taskStateMap.containsKey(TaskStates.TASK_STATE.READY)) {
+                    for (TaskKey key : taskStateMap.get(TaskStates.TASK_STATE.READY)) {
+                        if (key.getAction() == getQueryAction(queryRequest.getMethod())) {
+                            taskKey = key;
                             break;
+                        }
+                    }
+                }
+                
+                if (taskKey != null) {
+                    QueryTask task = cache.getTask(taskKey);
+                    ExecutorAction runnable = null;
+                    switch (action) {
                         case CREATE:
-                            queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName());
-                            GenericQueryConfiguration config = queryLogic.initialize(connector, queryStatus.getQuery(),
-                                            queryStatus.getCalculatedAuthorizations());
-                            
-                            // update the query status plan
-                            queryStatus.setPlan(config.getQueryString());
-                            
-                            queryLogic.setupQuery(config);
-                            
-                            if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
-                                CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
-                                queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
-                                checkpoint(taskKey.getQueryKey(), cpQueryLogic);
-                                taskComplete = true;
-                            } else {
-                                queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
-                                taskComplete = pullResults(taskKey, queryLogic, queryStatus, true);
-                                if (!taskComplete) {
-                                    Exception e = new IllegalStateException("Expected to have exhausted results.  Something went wrong here");
-                                    cache.updateFailedQueryStatus(queryId, e);
-                                    throw e;
-                                }
-                            }
+                            runnable = new Create(executorProperties, connector, cache, queues, queryLogicFactory, task);
                             break;
                         case NEXT:
-                            queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName());
-                            if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
-                                CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
-                                cpQueryLogic.setupQuery(connector, task.getQueryCheckpoint());
-                                
-                                taskComplete = pullResults(taskKey, queryLogic, queryStatus, false);
-                                if (!taskComplete) {
-                                    checkpoint(taskKey.getQueryKey(), cpQueryLogic);
-                                    taskComplete = true;
-                                }
-                            } else {
-                                Exception e = new IllegalStateException("Attempting to get results for an uninitialized, non-checkpointable query logic");
-                                cache.updateFailedQueryStatus(queryId, e);
-                                throw e;
-                            }
-                            
+                            runnable = new Next(executorProperties, connector, cache, queues, queryLogicFactory, task);
                             break;
-                        case CLOSE:
-                            taskComplete = true;
+                        case PLAN:
+                            runnable = new Plan(executorProperties, connector, cache, queues, queryLogicFactory, task);
                             break;
-                        case TEST:
-                            // we can ignore this one
                         default:
-                            throw new IllegalStateException("Unknown task action: " + task.getAction() + " for " + taskKey);
+                            throw new UnsupportedOperationException(task.getTaskKey().toString());
+                    }
+                    
+                    if (wait) {
+                        runnable.run();
+                    } else {
+                        threadPool.execute(runnable);
                     }
                 }
             }
-        } catch (TaskLockException tle) {
-            // somebody is already processing this one
-        } catch (Exception e) {
-            log.error("Failed to process task " + taskKey, e);
-            taskFailed = true;
-            cache.updateFailedQueryStatus(taskKey.getQueryId(), e);
-        } finally {
-            if (gotLock) {
-                if (taskComplete) {
-                    cache.updateTaskState(taskKey, TaskStates.TASK_STATE.COMPLETED);
-                    try {
-                        cache.deleteTask(taskKey);
-                    } catch (IOException e) {
-                        log.error("We may be leaving an orphaned task: " + taskKey, e);
-                    }
-                } else if (taskFailed) {
-                    cache.updateTaskState(taskKey, TaskStates.TASK_STATE.FAILED);
-                    cache.getTaskLock(taskKey).unlock();
-                } else {
-                    cache.updateTaskState(taskKey, TaskStates.TASK_STATE.READY);
-                    cache.getTaskLock(taskKey).unlock();
-                }
-            } else {
-                cache.post(taskNotification);
-            }
         }
     }
-    
-    protected QueryLogic<?> getQueryLogic(Query query) throws QueryException, CloneNotSupportedException {
-        return queryLogicFactory.getQueryLogic(query.getQueryLogicName());
-    }
-    
-    private boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize, long maxResults, CachedQueryStatus queryStatus) {
-        QueryStatus.QUERY_STATE state = queryStatus.getQueryState();
-        if (state == QueryStatus.QUERY_STATE.CANCELED || state == QueryStatus.QUERY_STATE.CLOSED || state == QueryStatus.QUERY_STATE.FAILED) {
-            return false;
-        }
-        // if we are to exhaust the iterator, then continue generating results
-        if (exhaust) {
-            return true;
-        }
-        if (maxResults > 0 && queryStatus.getNumResultsGenerated() >= maxResults) {
-            return false;
-        }
-        // get the queue size
-        long queueSize;
-        if (executorProperties.isPollQueueSize()) {
-            queueSize = queues.getQueueSize(taskKey.getQueryId());
-        } else {
-            queueSize = queryStatus.getNumResultsGenerated() - queryStatus.getNumResultsReturned();
-        }
-        // we should return results if
-        return (queueSize < (executorProperties.getAvailableResultsPageMultiplier() * maxPageSize));
-    }
-    
-    private boolean pullResults(TaskKey taskKey, QueryLogic queryLogic, CachedQueryStatus queryStatus, boolean exhaustIterator) throws Exception {
-        // start the timer on the query status to ensure we flush numResultsGenerated updates periodically
-        queryStatus.startTimer();
-        try {
-            TransformIterator iter = queryLogic.getTransformIterator(queryStatus.getQuery());
-            long maxResults = queryLogic.getResultLimit(queryStatus.getQuery().getDnList());
-            if (maxResults != queryLogic.getMaxResults()) {
-                log.info("Maximum results set to " + maxResults + " instead of default " + queryLogic.getMaxResults() + ", user "
-                                + queryStatus.getQuery().getUserDN() + " has a DN configured with a different limit");
-            }
-            if (queryStatus.getQuery().isMaxResultsOverridden()) {
-                maxResults = Math.max(maxResults, queryStatus.getQuery().getMaxResultsOverride());
-            }
-            int pageSize = queryStatus.getQuery().getPagesize();
-            if (queryLogic.getMaxPageSize() != 0) {
-                pageSize = Math.min(pageSize, queryLogic.getMaxPageSize());
-            }
-            boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
-            while (running && iter.hasNext()) {
-                Object result = iter.next();
-                queues.sendMessage(taskKey.getQueryId(), new Result(UUID.randomUUID().toString(), new Object[] {result}));
-                queryStatus.incrementNumResultsGenerated(1);
-                
-                // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
-                // TODO
-                // if (iter.getTransformer() instanceof WritesQueryMetrics) {
-                // ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
-                // }
-                
-                running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
-            }
-            
-            return !iter.hasNext();
-        } finally {
-            queryStatus.stopTimer();
-            queryStatus.forceCacheUpdateIfDirty();
-        }
-    }
-    
-    /**
-     * Checkpoint a query logic
-     * 
-     * @param queryKey
-     * @param cpQueryLogic
-     * @throws IOException
-     */
-    private void checkpoint(QueryKey queryKey, CheckpointableQueryLogic cpQueryLogic) throws IOException {
-        for (QueryCheckpoint cp : cpQueryLogic.checkpoint(queryKey)) {
-            cache.createTask(QueryTask.QUERY_ACTION.NEXT, cp);
-        }
-    }
-    
 }
