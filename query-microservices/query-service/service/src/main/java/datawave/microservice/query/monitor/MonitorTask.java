@@ -63,19 +63,25 @@ public class MonitorTask implements Callable<Void> {
     private void monitor(long currentTimeMillis) {
         for (QueryStatus status : queryStorageCache.getQueryStatus()) {
             String queryId = status.getQueryKey().getQueryId().toString();
-            if (status.getQueryState() == QueryStatus.QUERY_STATE.DEFINED || status.getQueryState() == QueryStatus.QUERY_STATE.CREATED) {
-                if (status.isUserIdle(currentTimeMillis, expirationProperties.getIdleTimeoutMillis())) {
-                    // if the user hasn't interacted with the query in a while, cancel it
-                    cancelQuery(queryId);
-                } else if (status.isProgressIdle(currentTimeMillis, expirationProperties.getIdleTimeoutMillis())) {
-                    // if progress hasn't been made for the query in a while, apply the shock paddles
-                    defibrillateQuery(queryId, status.getQueryKey().getQueryPool().getName());
-                }
-            } else {
-                if (status.isInactive(currentTimeMillis, monitorProperties.getInactiveQueryTimeToLiveMillis())) {
-                    // if the query has been inactive for too long, evict it
-                    deleteQuery(UUID.fromString(queryId));
-                }
+            switch (status.getQueryState()) {
+                case DEFINED:
+                case CREATED:
+                    if (status.isUserIdle(currentTimeMillis, expirationProperties.getIdleTimeoutMillis())) {
+                        // if the user hasn't interacted with the query in a while, cancel it
+                        cancelQuery(queryId);
+                    } else if (status.isProgressIdle(currentTimeMillis, expirationProperties.getIdleTimeoutMillis())) {
+                        // if progress hasn't been made for the query in a while, apply the shock paddles
+                        defibrillateQuery(queryId, status.getQueryKey().getQueryPool().getName());
+                    }
+                    break;
+                case CLOSED:
+                case CANCELED:
+                case FAILED:
+                    if (status.isInactive(currentTimeMillis, monitorProperties.getInactiveQueryTimeToLiveMillis())) {
+                        // if the query has been inactive (closed/canceled/failed) for too long, evict it
+                        deleteQuery(UUID.fromString(queryId));
+                    }
+                    break;
             }
         }
     }

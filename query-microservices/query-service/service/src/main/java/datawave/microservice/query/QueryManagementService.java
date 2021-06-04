@@ -24,6 +24,7 @@ import datawave.security.util.ProxiedEntityUtils;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.exception.BadRequestQueryException;
@@ -35,8 +36,12 @@ import datawave.webservice.query.exception.TimeoutQueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.result.logic.QueryLogicDescription;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.QueryLogicResponse;
+import datawave.webservice.result.VoidResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.bus.BusProperties;
@@ -48,12 +53,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -118,6 +129,83 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     /**
+     * List QueryLogic types that are currently available
+     *
+     * @return
+     */
+    public QueryLogicResponse listQueryLogic() {
+        QueryLogicResponse response = new QueryLogicResponse();
+        List<QueryLogic<?>> queryLogicList = queryLogicFactory.getQueryLogicList();
+        List<QueryLogicDescription> logicConfigurationList = new ArrayList<>();
+        
+        // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
+        Query q = new QueryImpl();
+        Date now = new Date();
+        q.setExpirationDate(now);
+        q.setQuery("test");
+        q.setQueryAuthorizations("ALL");
+        
+        for (QueryLogic<?> queryLogic : queryLogicList) {
+            try {
+                QueryLogicDescription logicDesc = new QueryLogicDescription(queryLogic.getLogicName());
+                logicDesc.setAuditType(queryLogic.getAuditType(null).toString());
+                logicDesc.setLogicDescription(queryLogic.getLogicDescription());
+                
+                Set<String> optionalQueryParameters = queryLogic.getOptionalQueryParameters();
+                if (optionalQueryParameters != null) {
+                    logicDesc.setSupportedParams(new ArrayList<>(optionalQueryParameters));
+                }
+                Set<String> requiredQueryParameters = queryLogic.getRequiredQueryParameters();
+                if (requiredQueryParameters != null) {
+                    logicDesc.setRequiredParams(new ArrayList<>(requiredQueryParameters));
+                }
+                Set<String> exampleQueries = queryLogic.getExampleQueries();
+                if (exampleQueries != null) {
+                    logicDesc.setExampleQueries(new ArrayList<>(exampleQueries));
+                }
+                Set<String> requiredRoles = queryLogic.getRequiredRoles();
+                if (requiredRoles != null) {
+                    List<String> requiredRolesList = new ArrayList<>(queryLogic.getRequiredRoles());
+                    logicDesc.setRequiredRoles(requiredRolesList);
+                }
+                
+                try {
+                    logicDesc.setResponseClass(queryLogic.getResponseClass(q));
+                } catch (QueryException e) {
+                    log.error("Unable to get response class for query logic: " + queryLogic.getLogicName(), e);
+                    response.addException(e);
+                    logicDesc.setResponseClass("unknown");
+                }
+                
+                List<String> querySyntax = new ArrayList<>();
+                try {
+                    Method m = queryLogic.getClass().getMethod("getQuerySyntaxParsers");
+                    Object result = m.invoke(queryLogic);
+                    if (result instanceof Map<?,?>) {
+                        Map<?,?> map = (Map<?,?>) result;
+                        for (Object o : map.keySet())
+                            querySyntax.add(o.toString());
+                    }
+                } catch (Exception e) {
+                    log.warn("Unable to get query syntax for query logic: " + queryLogic.getClass().getCanonicalName());
+                }
+                if (querySyntax.isEmpty()) {
+                    querySyntax.add("CUSTOM");
+                }
+                logicDesc.setQuerySyntax(querySyntax);
+                
+                logicConfigurationList.add(logicDesc);
+            } catch (Exception e) {
+                log.error("Error setting query logic description", e);
+            }
+        }
+        logicConfigurationList.sort(Comparator.comparing(QueryLogicDescription::getName));
+        response.setQueryLogicList(logicConfigurationList);
+        
+        return response;
+    }
+    
+    /**
      * Defines a datawave query.
      * <p>
      * Validates the query parameters using the base validation, query logic-specific validation, and markings validation. If the parameters are valid, the
@@ -129,7 +217,8 @@ public class QueryManagementService implements QueryRequestHandler {
      * @return
      * @throws QueryException
      */
-    public TaskKey define(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
+    public GenericResponse<String> define(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
+                    throws QueryException {
         // validate query and get a query logic
         QueryLogic<?> queryLogic = validateQuery(queryLogicName, parameters, currentUser);
         
@@ -144,7 +233,7 @@ public class QueryManagementService implements QueryRequestHandler {
             // persist the query w/ query id in the query storage cache
             // TODO: JWO: storeQuery assumes that this is a 'create' call, but this is a 'define' call.
             // @formatter:off
-            return queryStorageCache.defineQuery(
+            TaskKey taskKey = queryStorageCache.defineQuery(
                     new QueryPool(getPoolName()),
                     createQuery(queryLogicName, parameters, userDn, currentUser.getDNs()),
                     AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(), currentUser),
@@ -154,6 +243,10 @@ public class QueryManagementService implements QueryRequestHandler {
             // TODO: JWO: Figure out how to make query tracing work with our new architecture. Datawave issue #1155
             
             // TODO: JWO: Figure out how to make query metrics work with our new architecture. Datawave issue #1156
+            
+            GenericResponse<String> response = new GenericResponse<>();
+            response.setResult(taskKey.getQueryId().toString());
+            return response;
         } catch (Exception e) {
             log.error("Unknown error storing query", e);
             throw new BadRequestQueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
@@ -172,7 +265,8 @@ public class QueryManagementService implements QueryRequestHandler {
      * @return
      * @throws QueryException
      */
-    public TaskKey create(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
+    public GenericResponse<String> create(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
+                    throws QueryException {
         try {
             // validate query and get a query logic
             QueryLogic<?> queryLogic = validateQuery(queryLogicName, parameters, currentUser);
@@ -205,7 +299,10 @@ public class QueryManagementService implements QueryRequestHandler {
                 
                 // TODO: JWO: Figure out how to make query metrics work with our new architecture. Datawave issue #1156
                 
-                return taskKey;
+                GenericResponse<String> response = new GenericResponse<>();
+                response.setHasResults(true);
+                response.setResult(taskKey.getQueryId().toString());
+                return response;
             } catch (Exception e) {
                 log.error("Unknown error storing query", e);
                 throw new BadRequestQueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
@@ -236,8 +333,8 @@ public class QueryManagementService implements QueryRequestHandler {
     public BaseQueryResponse createAndNext(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws QueryException {
         try {
-            TaskKey taskKey = create(queryLogicName, parameters, currentUser);
-            return next(taskKey.getQueryId().toString(), currentUser.getPrimaryUser().getRoles());
+            String queryId = create(queryLogicName, parameters, currentUser).getResult();
+            return next(queryId, currentUser.getPrimaryUser().getRoles());
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
@@ -364,15 +461,49 @@ public class QueryManagementService implements QueryRequestHandler {
      *
      * @param queryId
      * @param currentUser
+     * @return
      * @throws QueryException
      */
-    public void cancel(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+    public VoidResponse cancel(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        return cancel(queryId, currentUser, false);
+    }
+    
+    /**
+     * Releases the resources associated with this query. Any currently running calls to 'next' on the query will be stopped. Calls to 'next' after a 'cancel'
+     * will start over at page 1.
+     *
+     * @param queryId
+     * @param currentUser
+     * @return
+     * @throws QueryException
+     */
+    public VoidResponse adminCancel(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        return cancel(queryId, currentUser, true);
+    }
+    
+    private VoidResponse cancel(String queryId, ProxiedUserDetails currentUser, boolean adminOverride) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
-            validateRequest(queryId, currentUser);
+            QueryStatus queryStatus = validateRequest(queryId, currentUser, adminOverride);
             
-            // cancel the query
-            cancel(queryId, true);
+            VoidResponse response = new VoidResponse();
+            switch (queryStatus.getQueryState()) {
+                case DEFINED:
+                case CREATED:
+                    // close the query
+                    cancel(queryId, true);
+                    response.addMessage(queryId + " canceled.");
+                    break;
+                // TODO: Should we throw an exception for these cases?
+                case CLOSED:
+                case CANCELED:
+                case FAILED:
+                    response.addMessage(queryId + " was not canceled because it is not running.");
+                    break;
+                default:
+                    throw new IllegalStateException("Unexpected query state: " + queryStatus.getQueryState());
+            }
+            return response;
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
@@ -422,15 +553,49 @@ public class QueryManagementService implements QueryRequestHandler {
      *
      * @param queryId
      * @param currentUser
+     * @return
      * @throws QueryException
      */
-    public void close(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+    public VoidResponse close(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        return close(queryId, currentUser, false);
+    }
+    
+    /**
+     * Releases the resources associated with this query. Any currently running calls to 'next' on the query will continue until they finish. Calls to 'next'
+     * after a 'close' will start over at page 1.
+     *
+     * @param queryId
+     * @param currentUser
+     * @return
+     * @throws QueryException
+     */
+    public VoidResponse adminClose(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        return close(queryId, currentUser, true);
+    }
+    
+    private VoidResponse close(String queryId, ProxiedUserDetails currentUser, boolean adminOverride) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
-            validateRequest(queryId, currentUser);
+            QueryStatus queryStatus = validateRequest(queryId, currentUser, adminOverride);
             
-            // close the query
-            close(queryId);
+            VoidResponse response = new VoidResponse();
+            switch (queryStatus.getQueryState()) {
+                case DEFINED:
+                case CREATED:
+                    // close the query
+                    close(queryId);
+                    response.addMessage(queryId + " closed.");
+                    break;
+                // TODO: Should we throw an exception for these cases?
+                case CLOSED:
+                case CANCELED:
+                case FAILED:
+                    response.addMessage(queryId + " was not closed because it is not running.");
+                    break;
+                default:
+                    throw new IllegalStateException("Unexpected query state: " + queryStatus.getQueryState());
+            }
+            return response;
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
@@ -458,20 +623,28 @@ public class QueryManagementService implements QueryRequestHandler {
         publishExecutorEvent(QueryRequest.close(queryId), queryStatus.getQueryKey().getQueryPool().getName());
     }
     
-    private void validateRequest(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+    private QueryStatus validateRequest(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        return validateRequest(queryId, currentUser, false);
+    }
+    
+    private QueryStatus validateRequest(String queryId, ProxiedUserDetails currentUser, boolean adminOverride) throws QueryException {
         // does the query exist?
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(UUID.fromString(queryId));
         if (queryStatus == null) {
             throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, MessageFormat.format("{0}", queryId));
         }
         
-        // TODO: Check to see if this is an admin user
-        // does the current user own this query?
-        String userId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
-        Query query = queryStatus.getQuery();
-        if (!query.getOwner().equals(userId)) {
-            throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", userId, query.getOwner()));
+        // admins requests can operate on any query, regardless of ownership
+        if (!adminOverride) {
+            // does the current user own this query?
+            String userId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+            Query query = queryStatus.getQuery();
+            if (!query.getOwner().equals(userId)) {
+                throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", userId, query.getOwner()));
+            }
         }
+        
+        return queryStatus;
     }
     
     @Override
