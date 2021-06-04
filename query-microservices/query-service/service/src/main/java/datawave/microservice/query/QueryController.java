@@ -52,6 +52,15 @@ public class QueryController {
         return resp;
     }
     
+    @Timed(name = "dw.query.createAndNext", absolute = true)
+    @EnrichQueryMetrics(methodType = EnrichQueryMetrics.MethodType.CREATE_AND_NEXT)
+    @RequestMapping(path = "{queryLogic}/createAndNext", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
+            "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public BaseQueryResponse createQueryAndNext(@PathVariable(name = "queryLogic") String queryLogic, @RequestParam MultiValueMap<String,String> parameters,
+                    @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
+        return queryManagementService.createAndNext(queryLogic, parameters, currentUser);
+    }
+    
     @Timed(name = "dw.query.next", absolute = true)
     @EnrichQueryMetrics(methodType = EnrichQueryMetrics.MethodType.NEXT)
     @RequestMapping(path = "{queryId}/next", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",

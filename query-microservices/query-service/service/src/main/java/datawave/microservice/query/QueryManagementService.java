@@ -52,6 +52,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -218,6 +219,34 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     /**
+     * Creates a datawave query and calls next.
+     * <p>
+     * Validates the query parameters using the base validation, query logic-specific validation, and markings validation. If the parameters are valid, the
+     * query will be stored in the query storage cache where it can be acted upon.
+     *
+     * Once created, gets the next page of results from the query object. The response object type is dynamic, see the listQueryLogic operation to determine
+     * what the response type object will be.
+     *
+     * @param queryLogicName
+     * @param parameters
+     * @param currentUser
+     * @return
+     * @throws QueryException
+     */
+    public BaseQueryResponse createAndNext(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
+                    throws QueryException {
+        try {
+            TaskKey taskKey = create(queryLogicName, parameters, currentUser);
+            return next(taskKey.getQueryId().toString(), currentUser.getPrimaryUser().getRoles());
+        } catch (QueryException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unknown error creating and nexting query", e);
+            throw new QueryException(DatawaveErrorCode.QUERY_SETUP_ERROR, e, "Unknown error creating and nexting query query.");
+        }
+    }
+    
+    /**
      * Gets the next page of results from the query object. If the object is no longer alive, meaning that the current session has expired, then this fail. The
      * response object type is dynamic, see the listQueryLogic operation to determine what the response type object will be.
      *
@@ -227,20 +256,41 @@ public class QueryManagementService implements QueryRequestHandler {
      * @throws QueryException
      */
     public BaseQueryResponse next(String queryId, ProxiedUserDetails currentUser) throws QueryException {
-        UUID queryUUID = UUID.fromString(queryId);
         try {
             // make sure the query is valid, and the user can act on it
             validateRequest(queryId, currentUser);
             
-            // before we spin up a separate thread, make sure we are allowed to call next
-            QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryUUID, queryStatusUpdateHelper::claimConcurrentNext);
-            
+            return next(queryId, currentUser.getPrimaryUser().getRoles());
+        } catch (QueryException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unknown error getting next page for query " + queryId, e);
+            throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error getting next page for query " + queryId);
+        }
+    }
+    
+    /**
+     * Gets the next page of results from the query object. If the object is no longer alive, meaning that the current session has expired, then this fail. The
+     * response object type is dynamic, see the listQueryLogic operation to determine what the response type object will be.
+     *
+     * @param queryId
+     * @param userRoles
+     * @return
+     * @throws QueryException
+     */
+    private BaseQueryResponse next(String queryId, Collection<String> userRoles) throws Exception {
+        UUID queryUUID = UUID.fromString(queryId);
+        
+        // before we spin up a separate thread, make sure we are allowed to call next
+        boolean success = false;
+        QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryUUID, queryStatusUpdateHelper::claimConcurrentNext);
+        try {
             // publish a next event to the executor pool
             publishNextEvent(queryId, queryStatus.getQueryKey().getQueryPool().getName());
             
             // get the query logic
             String queryLogicName = queryStatus.getQuery().getQueryLogicName();
-            QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName(), currentUser.getPrimaryUser().getRoles());
+            QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName(), userRoles);
             
             // @formatter:off
             final NextCall nextCall = new NextCall.Builder()
@@ -254,7 +304,6 @@ public class QueryManagementService implements QueryRequestHandler {
                     .build();
             // @formatter:on
             
-            boolean success = false;
             nextCallMap.add(queryId, nextCall);
             try {
                 // submit the next call to the executor
@@ -300,17 +349,12 @@ public class QueryManagementService implements QueryRequestHandler {
             } finally {
                 // remove this next call from the map, and decrement the next count for this query
                 nextCallMap.get(queryId).remove(nextCall);
-                
-                // update query status if we failed
-                if (!success) {
-                    queryStatusUpdateHelper.lockedUpdate(queryUUID, queryStatusUpdateHelper::releaseConcurrentNext);
-                }
             }
-        } catch (QueryException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Unknown error getting next page for query " + queryId, e);
-            throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error getting next page for query " + queryId);
+        } finally {
+            // update query status if we failed
+            if (!success) {
+                queryStatusUpdateHelper.lockedUpdate(queryUUID, queryStatusUpdateHelper::releaseConcurrentNext);
+            }
         }
     }
     
