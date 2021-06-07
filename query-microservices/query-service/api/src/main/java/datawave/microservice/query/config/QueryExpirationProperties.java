@@ -13,6 +13,10 @@ public class QueryExpirationProperties {
     @NotNull
     private TimeUnit idleTimeUnit = TimeUnit.MINUTES;
     @Positive
+    private long progressTimeout = 5;
+    @NotNull
+    private TimeUnit progressTimeUnit = TimeUnit.MINUTES;
+    @Positive
     private long callTimeout = 60;
     @NotNull
     private TimeUnit callTimeUnit = TimeUnit.MINUTES;
@@ -51,6 +55,26 @@ public class QueryExpirationProperties {
     
     public void setIdleTimeUnit(TimeUnit idleTimeUnit) {
         this.idleTimeUnit = idleTimeUnit;
+    }
+    
+    public long getProgressTimeout() {
+        return progressTimeout;
+    }
+    
+    public long getProgressTimeoutMillis() {
+        return progressTimeUnit.toMillis(progressTimeout);
+    }
+    
+    public void setProgressTimeout(long progressTimeout) {
+        this.progressTimeout = progressTimeout;
+    }
+    
+    public TimeUnit getProgressTimeUnit() {
+        return progressTimeUnit;
+    }
+    
+    public void setProgressTimeUnit(TimeUnit progressTimeUnit) {
+        this.progressTimeUnit = progressTimeUnit;
     }
     
     public long getCallTimeout() {

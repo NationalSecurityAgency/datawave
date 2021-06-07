@@ -3,6 +3,7 @@ package datawave.microservice.query;
 import com.codahale.metrics.annotation.Timed;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.web.annotation.EnrichQueryMetrics;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.QueryLogicResponse;
@@ -39,7 +40,7 @@ public class QueryController {
     @RequestMapping(path = "{queryLogic}/define", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public GenericResponse<String> define(@PathVariable(name = "queryLogic") String queryLogic, @RequestParam MultiValueMap<String,String> parameters,
-                    @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
+                    @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
         return queryManagementService.define(queryLogic, parameters, currentUser);
     }
     
@@ -48,7 +49,7 @@ public class QueryController {
     @RequestMapping(path = "{queryLogic}/create", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public GenericResponse<String> create(@PathVariable(name = "queryLogic") String queryLogic, @RequestParam MultiValueMap<String,String> parameters,
-                    @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
+                    @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
         return queryManagementService.create(queryLogic, parameters, currentUser);
     }
     
@@ -57,7 +58,7 @@ public class QueryController {
     @RequestMapping(path = "{queryLogic}/createAndNext", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
             "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public BaseQueryResponse createQueryAndNext(@PathVariable(name = "queryLogic") String queryLogic, @RequestParam MultiValueMap<String,String> parameters,
-                    @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
+                    @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
         return queryManagementService.createAndNext(queryLogic, parameters, currentUser);
     }
     
@@ -65,14 +66,15 @@ public class QueryController {
     @EnrichQueryMetrics(methodType = EnrichQueryMetrics.MethodType.NEXT)
     @RequestMapping(path = "{queryId}/next", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
-    public BaseQueryResponse next(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
+    public BaseQueryResponse next(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser)
+                    throws QueryException {
         return queryManagementService.next(queryId, currentUser);
     }
     
     @Timed(name = "dw.query.cancel", absolute = true)
     @RequestMapping(path = "{queryId}/cancel", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
             "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
-    public VoidResponse cancel(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
+    public VoidResponse cancel(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
         return queryManagementService.cancel(queryId, currentUser);
     }
     
@@ -80,14 +82,15 @@ public class QueryController {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "{queryId}/adminCancel", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml",
             "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
-    public VoidResponse adminCancel(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
+    public VoidResponse adminCancel(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser)
+                    throws QueryException {
         return queryManagementService.adminCancel(queryId, currentUser);
     }
     
     @Timed(name = "dw.query.close", absolute = true)
     @RequestMapping(path = "{queryId}/close", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
             "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
-    public VoidResponse close(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
+    public VoidResponse close(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
         return queryManagementService.close(queryId, currentUser);
     }
     
@@ -95,7 +98,30 @@ public class QueryController {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "{queryId}/adminClose", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml",
             "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
-    public VoidResponse adminClose(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws Exception {
+    public VoidResponse adminClose(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser)
+                    throws QueryException {
         return queryManagementService.adminClose(queryId, currentUser);
+    }
+    
+    @Timed(name = "dw.query.reset", absolute = true)
+    @RequestMapping(path = "{queryId}/reset", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
+            "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public VoidResponse reset(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
+        return queryManagementService.reset(queryId, currentUser);
+    }
+    
+    @Timed(name = "dw.query.remove", absolute = true)
+    @RequestMapping(path = "{queryId}/remove", method = {RequestMethod.DELETE}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+            "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public VoidResponse remove(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
+        return queryManagementService.remove(queryId, currentUser);
+    }
+    
+    @Timed(name = "dw.query.update", absolute = true)
+    @RequestMapping(path = "{queryId}/update", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
+            "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public GenericResponse<String> update(@PathVariable(name = "queryId") String queryId, @RequestParam MultiValueMap<String,String> parameters,
+                    @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
+        return queryManagementService.update(queryId, parameters, currentUser);
     }
 }

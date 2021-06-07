@@ -64,17 +64,24 @@ public class MonitorTask implements Callable<Void> {
         for (QueryStatus status : queryStorageCache.getQueryStatus()) {
             String queryId = status.getQueryKey().getQueryId().toString();
             switch (status.getQueryState()) {
-                case DEFINED:
                 case CREATED:
-                    if (status.isUserIdle(currentTimeMillis, expirationProperties.getIdleTimeoutMillis())) {
-                        // if the user hasn't interacted with the query in a while, cancel it
-                        cancelQuery(queryId);
-                    } else if (status.isProgressIdle(currentTimeMillis, expirationProperties.getIdleTimeoutMillis())) {
+                    if (status.isProgressIdle(currentTimeMillis, expirationProperties.getProgressTimeoutMillis())) {
                         // if progress hasn't been made for the query in a while, apply the shock paddles
                         defibrillateQuery(queryId, status.getQueryKey().getQueryPool().getName());
                     }
+                    // fall through
+                case DEFINED:
+                    if (status.isUserIdle(currentTimeMillis, expirationProperties.getIdleTimeoutMillis())) {
+                        // if the user hasn't interacted with the query in a while, cancel it
+                        cancelQuery(queryId);
+                    }
                     break;
                 case CLOSED:
+                    if (status.getConcurrentNextCount() > 0 && status.isProgressIdle(currentTimeMillis, expirationProperties.getProgressTimeoutMillis())) {
+                        // if there are next calls waiting for results, and progress hasn't been made for the query in a while, apply the shock paddles
+                        defibrillateQuery(queryId, status.getQueryKey().getQueryPool().getName());
+                    }
+                    // fall through
                 case CANCELED:
                 case FAILED:
                     if (status.isInactive(currentTimeMillis, monitorProperties.getInactiveQueryTimeToLiveMillis())) {
