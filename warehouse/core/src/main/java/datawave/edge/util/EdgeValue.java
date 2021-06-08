@@ -409,7 +409,7 @@ public class EdgeValue {
     }
     
     public static UUID convertUuidObject(EdgeData.EdgeValue.UUID rawUuid) {
-        return new UUID(rawUuid.getLeastSignificantBits(), rawUuid.getMostSignificantBits());
+        return new UUID(rawUuid.getMostSignificantBits(), rawUuid.getLeastSignificantBits());
     }
     
     public static EdgeData.EdgeValue.UUID convertUuidObject(UUID rawUuid) {
