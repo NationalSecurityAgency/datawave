@@ -22,6 +22,21 @@ public class UniqueFields implements Serializable {
     
     private Multimap<String,ValueTransformer> fieldMap;
     
+    /**
+     * Returns a new {@link UniqueFields} parsed from this string. The provided string is expected to have the format returned by
+     * {@link UniqueFields#toFormattedString()}. Any fields not specified with a {@link ValueTransformer} name will be added with the default ORIGINAL
+     * transformer. All whitespace will be stripped before parsing. See below for certain edge cases:
+     * <ul>
+     * <li>Given null, null will be returned.</li>
+     * <li>Given an empty or blank string, an empty {@link UniqueFields} will be returned.</li>
+     * <li>Given {@code field1:[],field2:[DAY]}, or {@code field1,field2:[DAY]}, or {@code field1:[ORIGINAL],field2:[DAY]}, a {@link UniqueFields} will be
+     * returned where field1 is added with {@link ValueTransformer#ORIGINAL}, and field2 is added with {@link ValueTransformer#TRUNCATE_TEMPORAL_TO_DAY}.</li>
+     * </ul>
+     * 
+     * @param string
+     *            the string to parse
+     * @return the parsed {@link UniqueFields}
+     */
     @JsonCreator
     public static UniqueFields from(String string) {
         if (string == null) {
