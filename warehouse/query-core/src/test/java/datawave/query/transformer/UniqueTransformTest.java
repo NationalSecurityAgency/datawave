@@ -8,6 +8,8 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.DiacriticContent;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.attributes.ValueTransformer;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.collections4.Transformer;

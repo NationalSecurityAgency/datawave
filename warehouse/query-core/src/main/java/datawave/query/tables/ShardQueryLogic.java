@@ -40,7 +40,7 @@ import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.transformer.GroupingTransform;
-import datawave.query.transformer.UniqueFields;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;

@@ -47,7 +47,7 @@ import datawave.query.predicate.TimeFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
 import datawave.query.tracking.ActiveQueryLog;
-import datawave.query.transformer.UniqueFields;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;

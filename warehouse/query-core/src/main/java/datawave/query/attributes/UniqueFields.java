@@ -1,4 +1,4 @@
-package datawave.query.transformer;
+package datawave.query.attributes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;

@@ -10,6 +10,8 @@ import com.google.common.hash.PrimitiveSink;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.attributes.ValueTransformer;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;

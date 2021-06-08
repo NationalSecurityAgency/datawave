@@ -4,7 +4,7 @@ import com.google.common.collect.Sets;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.transformer.UniqueFields;
+import datawave.query.attributes.UniqueFields;
 import datawave.util.StringUtils;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.log4j.Logger;
