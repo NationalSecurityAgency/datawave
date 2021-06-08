@@ -11,13 +11,14 @@ import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
 
-public class UniqueFields {
+public class UniqueFields implements Serializable {
     
     private Multimap<String,ValueTransformer> fieldMap;
     
