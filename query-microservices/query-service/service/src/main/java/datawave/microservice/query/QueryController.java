@@ -102,7 +102,14 @@ public class QueryController {
                     throws QueryException {
         return queryManagementService.adminClose(queryId, currentUser);
     }
-    
+
+    @Timed(name = "dw.query.reset", absolute = true)
+    @RequestMapping(path = "{queryId}/reset", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
+            "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public GenericResponse<String> reset(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
+        return queryManagementService.reset(queryId, currentUser);
+    }
+
     @Timed(name = "dw.query.remove", absolute = true)
     @RequestMapping(path = "{queryId}/remove", method = {RequestMethod.DELETE}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
@@ -116,5 +123,13 @@ public class QueryController {
     public GenericResponse<String> update(@PathVariable(name = "queryId") String queryId, @RequestParam MultiValueMap<String,String> parameters,
                     @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
         return queryManagementService.update(queryId, parameters, currentUser);
+    }
+
+    @Timed(name = "dw.query.duplicate", absolute = true)
+    @RequestMapping(path = "{queryId}/duplicate", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
+            "application/x-protostuff"})
+    public GenericResponse<String> duplicate(@PathVariable(name = "queryId") String queryId, @RequestParam MultiValueMap<String,String> parameters,
+                                          @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
+        return queryManagementService.duplicate(queryId, parameters, currentUser);
     }
 }
