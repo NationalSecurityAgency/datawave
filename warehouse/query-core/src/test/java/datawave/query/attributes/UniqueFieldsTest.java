@@ -271,6 +271,24 @@ public class UniqueFieldsTest {
     }
     
     /**
+     * Verify that whitespace does not cause parsing to fail.
+     */
+    @Test
+    public void testParsingTransformersIsCaseInsensitive() {
+        UniqueFields expected = new UniqueFields();
+        expected.put("fieldA", ValueTransformer.ORIGINAL);
+        expected.put("fieldB", ValueTransformer.ORIGINAL);
+        expected.put("fieldB", ValueTransformer.TRUNCATE_TEMPORAL_TO_DAY);
+        expected.put("fieldC", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
+        
+        UniqueFields actual = UniqueFields.from("fieldA:[original], fieldB:[ORIGINAL, day], fieldC:[Hour],fieldD:[HOUR, minute]");
+        
+        assertEquals(expected, actual);
+    }
+    
+    /**
      * Verify that when a {@link UniqueFields} is serialized, it is serialized as a formatted string.
      */
     @Test

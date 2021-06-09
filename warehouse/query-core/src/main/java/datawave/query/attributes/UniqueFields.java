@@ -106,7 +106,7 @@ public class UniqueFields implements Serializable {
                     //
                     // field:[HOUR,ORIGINAL]
                     String valueTransformer = string.substring(currentIndex, nextEndBracket);
-                    uniqueFields.put(field, ValueTransformer.of(valueTransformer));
+                    uniqueFields.put(field, ValueTransformer.of(valueTransformer.toUpperCase()));
                     break; // There are no more fields to be parsed.
                 } else {
                     if (nextComma < nextEndBracket) {
@@ -115,14 +115,14 @@ public class UniqueFields implements Serializable {
                         //
                         // HOUR in field:[HOUR,ORIGINAL],field2[DAY]
                         String valueTransformer = string.substring(currentIndex, nextComma);
-                        uniqueFields.put(field, ValueTransformer.of(valueTransformer));
+                        uniqueFields.put(field, ValueTransformer.of(valueTransformer.toUpperCase()));
                         currentIndex = nextComma + 1; // Advance to the start of the next transformer.
                     } else {
                         // If an end bracket was found before the next comma, we are on the last transformer in the list, e.g.
                         //
                         // ORIGINAL in field:[HOUR,ORIGINAL],field2[DAY]
                         String valueTransformer = string.substring(currentIndex, nextEndBracket);
-                        uniqueFields.put(field, ValueTransformer.of(valueTransformer));
+                        uniqueFields.put(field, ValueTransformer.of(valueTransformer.toUpperCase()));
                         currentIndex = nextComma + 1; // Advance past the bracket and comma to the start of the next field.
                         field = null; // This was the last transformer for the current field. Reset the field.
                     }
