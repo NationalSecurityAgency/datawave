@@ -103,13 +103,6 @@ public class QueryController {
         return queryManagementService.adminClose(queryId, currentUser);
     }
     
-    @Timed(name = "dw.query.reset", absolute = true)
-    @RequestMapping(path = "{queryId}/reset", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
-            "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
-    public VoidResponse reset(@PathVariable(name = "queryId") String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
-        return queryManagementService.reset(queryId, currentUser);
-    }
-    
     @Timed(name = "dw.query.remove", absolute = true)
     @RequestMapping(path = "{queryId}/remove", method = {RequestMethod.DELETE}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})

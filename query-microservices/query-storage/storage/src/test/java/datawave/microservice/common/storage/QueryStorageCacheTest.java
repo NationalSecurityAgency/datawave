@@ -514,7 +514,7 @@ public abstract class QueryStorageCacheTest {
         UUID queryId = taskKey.getQueryId();
         createdQueries.add(queryId);
         
-        assertEquals(QueryStatus.QUERY_STATE.DEFINED, storageService.getQueryStatus(queryId).getQueryState());
+        assertEquals(QueryStatus.QUERY_STATE.CREATED, storageService.getQueryStatus(queryId).getQueryState());
         storageService.updateQueryStatus(queryId, QueryStatus.QUERY_STATE.CANCELED);
         assertEquals(QueryStatus.QUERY_STATE.CANCELED, storageService.getQueryStatus(queryId).getQueryState());
     }

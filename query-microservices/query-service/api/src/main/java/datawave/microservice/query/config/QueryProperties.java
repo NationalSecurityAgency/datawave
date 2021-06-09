@@ -6,7 +6,14 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static datawave.microservice.query.QueryParameters.QUERY_EXPIRATION;
+import static datawave.microservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE;
+import static datawave.microservice.query.QueryParameters.QUERY_PAGESIZE;
+import static datawave.microservice.query.QueryParameters.QUERY_PAGETIMEOUT;
 
 @Validated
 public class QueryProperties {
@@ -24,6 +31,8 @@ public class QueryProperties {
     private TimeUnit lockLeaseTimeUnit = TimeUnit.MILLISECONDS;
     @NotEmpty
     private String executorServiceName = "executor";
+    // These are the only parameters that can be updated for a running query
+    private List<String> updatableParams = Arrays.asList(QUERY_EXPIRATION, QUERY_PAGESIZE, QUERY_PAGETIMEOUT, QUERY_MAX_RESULTS_OVERRIDE);
     
     private QueryExpirationProperties expiration = new QueryExpirationProperties();
     private NextCallProperties nextCall = new NextCallProperties();
@@ -85,6 +94,14 @@ public class QueryProperties {
     
     public void setExecutorServiceName(String executorServiceName) {
         this.executorServiceName = executorServiceName;
+    }
+    
+    public List<String> getUpdatableParams() {
+        return updatableParams;
+    }
+    
+    public void setUpdatableParams(List<String> updatableParams) {
+        this.updatableParams = updatableParams;
     }
     
     public QueryExpirationProperties getExpiration() {

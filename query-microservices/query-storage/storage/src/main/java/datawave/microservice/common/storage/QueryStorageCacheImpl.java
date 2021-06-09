@@ -52,7 +52,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public TaskKey defineQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
-        return storeQuery(queryPool, query, calculatedAuthorizations, count, false);
+        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.DEFINED);
     }
     
     /**
@@ -71,10 +71,10 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public TaskKey createQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
-        return storeQuery(queryPool, query, calculatedAuthorizations, count, true);
+        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATED);
     }
     
-    private TaskKey storeQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count, boolean sendCreateTask)
+    private TaskKey storeQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count, QueryStatus.QUERY_STATE queryState)
                     throws IOException {
         UUID queryUuid = query.getId();
         if (queryUuid == null) {
@@ -90,22 +90,23 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         
         // store the initial query properties
         QueryStatus queryStatus = new QueryStatus(checkpoint.getQueryKey());
-        queryStatus.setQueryState(QueryStatus.QUERY_STATE.DEFINED);
+        queryStatus.setQueryState(queryState);
         queryStatus.setQuery(query);
         queryStatus.setCalculatedAuthorizations(calculatedAuthorizations);
         queryStatus.setLastUsedMillis(System.currentTimeMillis());
         queryStatus.setLastUpdatedMillis(queryStatus.getLastUsedMillis());
         cache.updateQueryStatus(queryStatus);
         
-        // store the initial tasks states
-        TaskStates taskStates = new TaskStates(queryKey, count);
-        cache.updateTaskStates(taskStates);
-        
-        // create the results queue
-        queue.ensureQueueCreated(queryKey.getQueryId());
-        
-        // create and store the initial create task with the checkpoint. This will send out the task notification.
-        if (sendCreateTask) {
+        // only create tasks if we are creating a query
+        if (queryState == QueryStatus.QUERY_STATE.CREATED) {
+            // store the initial tasks states
+            TaskStates taskStates = new TaskStates(queryKey, count);
+            cache.updateTaskStates(taskStates);
+            
+            // create the results queue
+            queue.ensureQueueCreated(queryKey.getQueryId());
+            
+            // create and store the initial create task with the checkpoint. This will send out the task notification.
             QueryTask task = createTask(QueryTask.QUERY_ACTION.CREATE, checkpoint);
             return task.getTaskKey();
         }

@@ -53,6 +53,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -73,7 +74,9 @@ import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CANCE
 import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CLOSED;
 import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CREATED;
 import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.DEFINED;
+import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
 import static io.undertow.util.StatusCodes.BAD_REQUEST;
+import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 
 @Service
 public class QueryManagementService implements QueryRequestHandler {
@@ -222,7 +225,17 @@ public class QueryManagementService implements QueryRequestHandler {
      */
     public GenericResponse<String> define(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws QueryException {
-        return storeQuery(queryLogicName, parameters, currentUser, false);
+        try {
+            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, false);
+            GenericResponse<String> response = new GenericResponse<>();
+            response.setResult(taskKey.getQueryId().toString());
+            return response;
+        } catch (QueryException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unknown error defining query", e);
+            throw new QueryException(DatawaveErrorCode.QUERY_SETUP_ERROR, e, "Unknown error defining query.");
+        }
     }
     
     /**
@@ -239,79 +252,76 @@ public class QueryManagementService implements QueryRequestHandler {
      */
     public GenericResponse<String> create(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws QueryException {
-        return storeQuery(queryLogicName, parameters, currentUser, true);
-    }
-    
-    private GenericResponse<String> storeQuery(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser,
-                    boolean isCreateRequest) throws QueryException {
-        return storeQuery(queryLogicName, parameters, currentUser, isCreateRequest, null);
-    }
-    
-    private GenericResponse<String> storeQuery(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser,
-                    boolean isCreateRequest, String queryId) throws QueryException {
         try {
-            // validate query and get a query logic
-            QueryLogic<?> queryLogic = validateQuery(queryLogicName, parameters, currentUser);
-            
-            String userId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
-            log.trace(userId + " has authorizations " + currentUser.getPrimaryUser().getAuths());
-            
-            // set some audit parameters which are used internally
-            String userDn = currentUser.getPrimaryUser().getDn().subjectDN();
-            setInternalAuditParameters(queryLogicName, userDn, parameters);
-            
-            Query query = createQuery(queryLogicName, parameters, userDn, currentUser.getDNs());
-            
-            // if this is a create request, send an audit record to the auditor
-            if (isCreateRequest) {
-                audit(query, queryLogic, parameters, currentUser);
-            }
-            
-            try {
-                // persist the query w/ query id in the query storage cache
-                TaskKey taskKey;
-                if (isCreateRequest) {
-                    // @formatter:off
-                    taskKey = queryStorageCache.createQuery(
-                            new QueryPool(getPoolName()),
-                            query,
-                            AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(), currentUser),
-                            getMaxConcurrentTasks(queryLogic));
-                    // @formatter:on
-                } else {
-                    // @formatter:off
-                    taskKey = queryStorageCache.defineQuery(
-                            new QueryPool(getPoolName()),
-                            query,
-                            AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(), currentUser),
-                            getMaxConcurrentTasks(queryLogic));
-                    // @formatter:on
-                }
-                
-                // publish a create event to the executor pool
-                publishExecutorEvent(QueryRequest.create(taskKey.getQueryId().toString()), getPoolName());
-                
-                // TODO: JWO: Figure out how to make query tracing work with our new architecture. Datawave issue #1155
-                
-                // TODO: JWO: Figure out how to make query metrics work with our new architecture. Datawave issue #1156
-                
-                GenericResponse<String> response = new GenericResponse<>();
-                response.setResult(taskKey.getQueryId().toString());
-                
-                if (isCreateRequest) {
-                    response.setHasResults(true);
-                }
-                
-                return response;
-            } catch (Exception e) {
-                log.error("Unknown error storing query", e);
-                throw new BadRequestQueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
-            }
+            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, true);
+            GenericResponse<String> response = new GenericResponse<>();
+            response.setResult(taskKey.getQueryId().toString());
+            response.setHasResults(true);
+            return response;
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unknown error creating query", e);
             throw new QueryException(DatawaveErrorCode.QUERY_SETUP_ERROR, e, "Unknown error creating query.");
+        }
+    }
+    
+    private TaskKey storeQuery(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser, boolean isCreateRequest)
+                    throws QueryException {
+        return storeQuery(queryLogicName, parameters, currentUser, isCreateRequest, null);
+    }
+    
+    private TaskKey storeQuery(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser, boolean isCreateRequest,
+                    String queryId) throws QueryException {
+        // validate query and get a query logic
+        QueryLogic<?> queryLogic = validateQuery(queryLogicName, parameters, currentUser);
+        
+        String userId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        log.trace(userId + " has authorizations " + currentUser.getPrimaryUser().getAuths());
+        
+        // set some audit parameters which are used internally
+        String userDn = currentUser.getPrimaryUser().getDn().subjectDN();
+        setInternalAuditParameters(queryLogicName, userDn, parameters);
+        
+        Query query = createQuery(queryLogicName, parameters, userDn, currentUser.getDNs(), queryId);
+        
+        // if this is a create request, send an audit record to the auditor
+        if (isCreateRequest) {
+            audit(query, queryLogic, parameters, currentUser);
+        }
+        
+        try {
+            // persist the query w/ query id in the query storage cache
+            TaskKey taskKey;
+            if (isCreateRequest) {
+                // @formatter:off
+                taskKey = queryStorageCache.createQuery(
+                        new QueryPool(getPoolName()),
+                        query,
+                        AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(), currentUser),
+                        getMaxConcurrentTasks(queryLogic));
+                // @formatter:on
+                
+                // publish a create event to the executor pool
+                publishExecutorEvent(QueryRequest.create(taskKey.getQueryId().toString()), getPoolName());
+            } else {
+                // @formatter:off
+                taskKey = queryStorageCache.defineQuery(
+                        new QueryPool(getPoolName()),
+                        query,
+                        AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(), currentUser),
+                        getMaxConcurrentTasks(queryLogic));
+                // @formatter:on
+            }
+            
+            // TODO: JWO: Figure out how to make query tracing work with our new architecture. Datawave issue #1155
+            
+            // TODO: JWO: Figure out how to make query metrics work with our new architecture. Datawave issue #1156
+            
+            return taskKey;
+        } catch (Exception e) {
+            log.error("Unknown error storing query", e);
+            throw new BadRequestQueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
         }
     }
     
@@ -629,49 +639,6 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     /**
-     * Resets the query named by {@code queryId}. If the query is not alive, meaning that the current session has expired (due to either timeout, or server
-     * failure), then this will reload the query and start it over. If the query is alive, it closes it and starts the query over.
-     *
-     * @param queryId
-     * @return
-     * @throws QueryException
-     */
-    public VoidResponse reset(String queryId, ProxiedUserDetails currentUser) throws QueryException {
-        try {
-            // make sure the query is valid, and the user can act on it
-            QueryStatus queryStatus = validateRequest(queryId, currentUser);
-            
-            // cancel the query if it is defined or running
-            if (queryStatus.getQueryState() == DEFINED || queryStatus.getQueryState() == CREATED) {
-                cancel(queryStatus.getQueryKey().getQueryId().toString(), true);
-            }
-            
-            // remove the existing cache entry
-            queryStorageCache.deleteQuery(queryStatus.getQueryKey().getQueryId());
-            
-            // TODO: Are we losing anything by recreating the parameters this way?
-            // recreate the query parameters
-            MultiValueMap<String,String> parameters = new LinkedMultiValueMap<>();
-            parameters.addAll(queryStatus.getQuery().getOptionalQueryParameters());
-            queryStatus.getQuery().getParameters().forEach(x -> {
-                parameters.add(x.getParameterName(), x.getParameterValue());
-            });
-            
-            // create the query
-            storeQuery(queryStatus.getQuery().getQueryLogicName(), parameters, currentUser, true, queryId);
-            
-            VoidResponse response = new VoidResponse();
-            response.addMessage(queryId + " reset.");
-            return response;
-        } catch (QueryException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Unknown error resetting query " + queryId, e);
-            throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error resetting query " + queryId);
-        }
-    }
-    
-    /**
      * Remove (delete) the query
      *
      * @param queryId
@@ -683,9 +650,8 @@ public class QueryManagementService implements QueryRequestHandler {
             // make sure the query is valid, and the user can act on it
             QueryStatus queryStatus = validateRequest(queryId, currentUser);
             
-            // remove the query from the cache if it is not running
-            if (queryStatus.getQueryState() != CREATED) {
-                queryStorageCache.deleteQuery(queryStatus.getQueryKey().getQueryId());
+            if (!remove(queryStatus)) {
+                throw new QueryException("Failed to remove " + queryId, INTERNAL_SERVER_ERROR + "-1");
             }
             
             VoidResponse response = new VoidResponse();
@@ -698,33 +664,124 @@ public class QueryManagementService implements QueryRequestHandler {
             throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error removing query " + queryId);
         }
     }
-
-    // TODO: Flesh this out
+    
+    private boolean remove(QueryStatus queryStatus) throws IOException {
+        boolean success = false;
+        // remove the query from the cache if it is not running
+        if (queryStatus.getQueryState() != CREATED) {
+            success = queryStorageCache.deleteQuery(queryStatus.getQueryKey().getQueryId());
+        }
+        return success;
+    }
+    
     public GenericResponse<String> update(String queryId, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
             QueryStatus queryStatus = validateRequest(queryId, currentUser);
             
-            switch (queryStatus.getQueryState()) {
-                case DEFINED:
-                case CLOSED:
-                case CANCELED:
-                case FAILED:
-                    // unsafe updates that can only be made to a query that is not running
-                    // fall through
-                case CREATED:
-                    // safe updates that can be made to a running query
-                    break;
+            GenericResponse<String> response = new GenericResponse<>();
+            if (!parameters.isEmpty()) {
+                // TODO: Are we losing anything by recreating the parameters this way?
+                // recreate the query parameters
+                MultiValueMap<String,String> currentParams = new LinkedMultiValueMap<>();
+                currentParams.addAll(queryStatus.getQuery().getOptionalQueryParameters());
+                queryStatus.getQuery().getParameters().forEach(x -> {
+                    currentParams.add(x.getParameterName(), x.getParameterValue());
+                });
                 
+                boolean updated = false;
+                if (queryStatus.getQueryState() == DEFINED) {
+                    // update all parameters if the state is defined
+                    updated = updateParameters(parameters, currentParams);
+                    
+                    // redefine the query
+                    if (updated) {
+                        storeQuery(queryStatus.getQuery().getQueryLogicName(), currentParams, currentUser, false, queryId);
+                    }
+                } else if (queryStatus.getQueryState() == CREATED) {
+                    // if the query is created/running, update safe parameters only
+                    List<String> ignoredParams = new ArrayList<>(parameters.keySet());
+                    List<String> safeParams = new ArrayList<>(queryProperties.getUpdatableParams());
+                    safeParams.retainAll(parameters.keySet());
+                    ignoredParams.removeAll(safeParams);
+                    
+                    // only update the safe parameters if the query is running
+                    updated = updateParameters(safeParams, parameters, currentParams);
+                    
+                    if (updated) {
+                        // validate the update
+                        String queryLogicName = queryStatus.getQuery().getQueryLogicName();
+                        validateQuery(queryLogicName, parameters, currentUser);
+                        
+                        // create a new query object
+                        String userDn = currentUser.getPrimaryUser().getDn().subjectDN();
+                        Query query = createQuery(queryLogicName, parameters, userDn, currentUser.getDNs(), queryId);
+                        
+                        // save the new query object in the cache
+                        queryStatusUpdateHelper.lockedUpdate(UUID.fromString(queryId), status -> {
+                            status.setQuery(query);
+                        });
+                    }
+                    
+                    if (!ignoredParams.isEmpty()) {
+                        response.addMessage("The following parameters cannot be updated for a running query: " + String.join(",", ignoredParams));
+                    }
+                } else {
+                    throw new QueryException("Cannot update a query unless it is defined or running.", BAD_REQUEST + "-1");
+                }
+                
+                if (updated) {
+                    response.addMessage(queryId + " updated.");
+                } else {
+                    response.addMessage(queryId + " unchanged.");
+                }
+            } else {
+                throw new QueryException("No parameters specified for update.", BAD_REQUEST + "-1");
             }
             
-            return null;
+            return response;
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unknown error updating query " + queryId, e);
             throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error updating query " + queryId);
         }
+    }
+    
+    /**
+     * Updates the current params with the new params.
+     *
+     * @param newParameters
+     * @param currentParams
+     * @return true if current params was modified
+     */
+    private boolean updateParameters(MultiValueMap<String,String> newParameters, MultiValueMap<String,String> currentParams) throws QueryException {
+        return updateParameters(newParameters.keySet(), newParameters, currentParams);
+    }
+    
+    /**
+     * Updates the current params with the new params for the given parameter names.
+     *
+     * @param parameterNames
+     * @param newParameters
+     * @param currentParams
+     * @return true if current params was modified
+     */
+    private boolean updateParameters(Collection<String> parameterNames, MultiValueMap<String,String> newParameters, MultiValueMap<String,String> currentParams)
+                    throws QueryException {
+        boolean paramsUpdated = false;
+        for (String paramName : parameterNames) {
+            if (newParameters.get(paramName) != null && !newParameters.get(paramName).isEmpty()) {
+                if (!newParameters.get(paramName).get(0).equals(currentParams.getFirst(paramName))) {
+                    // if the new value differs from the old value, update the old value
+                    currentParams.put(paramName, newParameters.remove(paramName));
+                    paramsUpdated = true;
+                }
+            } else {
+                throw new QueryException("Cannot update a query parameter without a value: " + paramName, BAD_REQUEST + "-1");
+            }
+        }
+        return paramsUpdated;
     }
     
     private QueryStatus validateRequest(String queryId, ProxiedUserDetails currentUser) throws QueryException {
@@ -892,7 +949,7 @@ public class QueryManagementService implements QueryRequestHandler {
     
     protected void validateParameters(String queryLogicName, MultiValueMap<String,String> parameters) throws QueryException {
         // add query logic name to parameters
-        parameters.add(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+        parameters.add(QUERY_LOGIC_NAME, queryLogicName);
         
         log.debug(writeValueAsString(parameters));
         
