@@ -637,7 +637,7 @@ public class QueryManagementService implements QueryRequestHandler {
         // publish a close event to the executor pool
         publishExecutorEvent(QueryRequest.close(queryId), queryStatus.getQueryKey().getQueryPool().getName());
     }
-
+    
     /**
      * Resets the query named by {@code queryId}. If the query is not alive, meaning that the current session has expired (due to either timeout, or server
      * failure), then this will reload the query and start it over. If the query is alive, it closes it and starts the query over.
@@ -650,15 +650,15 @@ public class QueryManagementService implements QueryRequestHandler {
         try {
             // make sure the query is valid, and the user can act on it
             QueryStatus queryStatus = validateRequest(queryId, currentUser);
-
+            
             // cancel the query if it is running
             if (queryStatus.getQueryState() == CREATED) {
                 cancel(queryStatus.getQueryKey().getQueryId().toString(), true);
             }
-
+            
             // create a new query which is an exact copy of the specified query
             TaskKey taskKey = duplicate(queryStatus, new LinkedMultiValueMap<>(), currentUser);
-
+            
             GenericResponse<String> response = new GenericResponse<>();
             response.addMessage(queryId + " reset.");
             response.setResult(taskKey.getQueryId().toString());
@@ -671,7 +671,7 @@ public class QueryManagementService implements QueryRequestHandler {
             throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error resetting query " + queryId);
         }
     }
-
+    
     /**
      * Remove (delete) the query
      *
@@ -777,15 +777,15 @@ public class QueryManagementService implements QueryRequestHandler {
             throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error updating query " + queryId);
         }
     }
-
+    
     public GenericResponse<String> duplicate(String queryId, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
             QueryStatus queryStatus = validateRequest(queryId, currentUser);
-
+            
             // define a duplicate query from the existing query
             TaskKey taskKey = duplicate(queryStatus, parameters, currentUser);
-
+            
             GenericResponse<String> response = new GenericResponse<>();
             response.addMessage(queryId + " duplicated.");
             response.setResult(taskKey.getQueryId().toString());
@@ -798,7 +798,7 @@ public class QueryManagementService implements QueryRequestHandler {
             throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error resetting query " + queryId);
         }
     }
-
+    
     private TaskKey duplicate(QueryStatus queryStatus, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
         // TODO: Are we losing anything by recreating the parameters this way?
         // recreate the query parameters
@@ -807,14 +807,14 @@ public class QueryManagementService implements QueryRequestHandler {
         queryStatus.getQuery().getParameters().forEach(x -> {
             currentParams.add(x.getParameterName(), x.getParameterValue());
         });
-
+        
         // updated all of the passed in parameters
         updateParameters(parameters, currentParams);
-
+        
         // define a duplicate query
         return storeQuery(queryStatus.getQuery().getQueryLogicName(), currentParams, currentUser, true);
     }
-
+    
     /**
      * Updates the current params with the new params.
      *
