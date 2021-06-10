@@ -60,12 +60,8 @@ public class QueryStatus implements Serializable {
     }
     
     public boolean isInactive(long currentTimeMillis, long evictionTimeoutMillis) {
-        boolean isInactive = false;
-        // if the query is CLOSED, CANCELED, or FAILED and we have reached the eviction timeout, the query is inactive
-        if (queryState == QUERY_STATE.CLOSED || queryState == QUERY_STATE.CANCELED || queryState == QUERY_STATE.FAILED) {
-            isInactive = (currentTimeMillis - Math.min(lastUsedMillis, lastUpdatedMillis)) >= evictionTimeoutMillis;
-        }
-        return isInactive;
+        // if the query is not running and we have reached the eviction timeout, the query is inactive
+        return (currentTimeMillis - Math.min(lastUsedMillis, lastUpdatedMillis)) >= evictionTimeoutMillis;
     }
     
     public void setQueryKey(QueryKey key) {

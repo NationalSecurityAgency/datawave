@@ -40,6 +40,7 @@ import datawave.webservice.query.result.logic.QueryLogicDescription;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.QueryImplListResponse;
 import datawave.webservice.result.QueryLogicResponse;
 import datawave.webservice.result.VoidResponse;
 import org.slf4j.Logger;
@@ -69,6 +70,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CANCELED;
 import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CLOSED;
@@ -496,6 +498,26 @@ public class QueryManagementService implements QueryRequestHandler {
         return cancel(queryId, currentUser, true);
     }
     
+    public VoidResponse adminCancelAll(ProxiedUserDetails currentUser) throws QueryException {
+        try {
+            List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
+            queryStatuses.removeIf(s -> s.getQueryState() != CREATED);
+            
+            VoidResponse response = new VoidResponse();
+            for (QueryStatus queryStatus : queryStatuses) {
+                cancel(queryStatus.getQueryKey().getQueryId().toString(), true);
+                response.addMessage(queryStatus.getQueryKey().getQueryId().toString() + " canceled.");
+            }
+            return response;
+        } catch (QueryException e) {
+            throw e;
+        } catch (Exception e) {
+            QueryException queryException = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, "Error encountered while canceling all queries.");
+            log.error("Error encountered while canceling all queries", queryException);
+            throw queryException;
+        }
+    }
+    
     private VoidResponse cancel(String queryId, ProxiedUserDetails currentUser, boolean adminOverride) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
@@ -503,13 +525,13 @@ public class QueryManagementService implements QueryRequestHandler {
             
             VoidResponse response = new VoidResponse();
             switch (queryStatus.getQueryState()) {
-                case DEFINED:
                 case CREATED:
-                    // close the query
+                    // cancel the query
                     cancel(queryId, true);
                     response.addMessage(queryId + " canceled.");
                     break;
                 // TODO: Should we throw an exception for these cases?
+                case DEFINED:
                 case CLOSED:
                 case CANCELED:
                 case FAILED:
@@ -588,6 +610,26 @@ public class QueryManagementService implements QueryRequestHandler {
         return close(queryId, currentUser, true);
     }
     
+    public VoidResponse adminCloseAll(ProxiedUserDetails currentUser) throws QueryException {
+        try {
+            List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
+            queryStatuses.removeIf(s -> s.getQueryState() != CREATED);
+            
+            VoidResponse response = new VoidResponse();
+            for (QueryStatus queryStatus : queryStatuses) {
+                close(queryStatus.getQueryKey().getQueryId().toString());
+                response.addMessage(queryStatus.getQueryKey().getQueryId().toString() + " closed.");
+            }
+            return response;
+        } catch (QueryException e) {
+            throw e;
+        } catch (Exception e) {
+            QueryException queryException = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, "Error encountered while closing all queries.");
+            log.error("Error encountered while closing all queries", queryException);
+            throw queryException;
+        }
+    }
+    
     private VoidResponse close(String queryId, ProxiedUserDetails currentUser, boolean adminOverride) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
@@ -595,13 +637,13 @@ public class QueryManagementService implements QueryRequestHandler {
             
             VoidResponse response = new VoidResponse();
             switch (queryStatus.getQueryState()) {
-                case DEFINED:
                 case CREATED:
                     // close the query
                     close(queryId);
                     response.addMessage(queryId + " closed.");
                     break;
                 // TODO: Should we throw an exception for these cases?
+                case DEFINED:
                 case CLOSED:
                 case CANCELED:
                 case FAILED:
@@ -680,12 +722,49 @@ public class QueryManagementService implements QueryRequestHandler {
      * @return
      */
     public VoidResponse remove(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        return remove(queryId, currentUser, false);
+    }
+    
+    /**
+     * Remove (delete) the query
+     *
+     * @param queryId
+     * @param currentUser
+     * @return
+     */
+    public VoidResponse adminRemove(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        return remove(queryId, currentUser, true);
+    }
+    
+    public VoidResponse adminRemoveAll(ProxiedUserDetails currentUser) throws QueryException {
+        try {
+            List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
+            queryStatuses.removeIf(s -> s.getQueryState() == CREATED);
+            
+            VoidResponse response = new VoidResponse();
+            for (QueryStatus queryStatus : queryStatuses) {
+                response.addMessage(queryStatus.getQueryKey().getQueryId().toString() + " removed.");
+            }
+            return response;
+        } catch (Exception e) {
+            QueryException queryException = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, "Error encountered while canceling all queries.");
+            log.error("Error encountered while canceling all queries", queryException);
+            throw queryException;
+        }
+    }
+    
+    private VoidResponse remove(String queryId, ProxiedUserDetails currentUser, boolean adminOverride) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
-            QueryStatus queryStatus = validateRequest(queryId, currentUser);
+            QueryStatus queryStatus = validateRequest(queryId, currentUser, adminOverride);
             
-            if (!remove(queryStatus)) {
-                throw new QueryException("Failed to remove " + queryId, INTERNAL_SERVER_ERROR + "-1");
+            // remove the query if it is not running
+            if (queryStatus.getQueryState() != CREATED) {
+                if (!remove(queryStatus)) {
+                    throw new QueryException("Failed to remove " + queryId, INTERNAL_SERVER_ERROR + "-1");
+                }
+            } else {
+                throw new QueryException("Cannot remove a running query.", BAD_REQUEST + "-1");
             }
             
             VoidResponse response = new VoidResponse();
@@ -700,12 +779,7 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     private boolean remove(QueryStatus queryStatus) throws IOException {
-        boolean success = false;
-        // remove the query from the cache if it is not running
-        if (queryStatus.getQueryState() != CREATED) {
-            success = queryStorageCache.deleteQuery(queryStatus.getQueryKey().getQueryId());
-        }
-        return success;
+        return queryStorageCache.deleteQuery(queryStatus.getQueryKey().getQueryId());
     }
     
     public GenericResponse<String> update(String queryId, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
@@ -849,6 +923,57 @@ public class QueryManagementService implements QueryRequestHandler {
             }
         }
         return paramsUpdated;
+    }
+    
+    // list all queries for the user matching the query name, if specified
+    public QueryImplListResponse list(String queryId, String queryName, ProxiedUserDetails currentUser) throws QueryException {
+        try {
+            // looking up queries for this user
+            String userId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+            
+            // get all of the query statuses for this user
+            List<Query> queries = list(queryId, queryName, userId);
+            
+            QueryImplListResponse response = new QueryImplListResponse();
+            response.setQuery(queries);
+            return response;
+        } catch (Exception e) {
+            String userId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+            log.error("Unknown error listing queries for " + userId, e);
+            throw new QueryException(DatawaveErrorCode.QUERY_LISTING_ERROR, e, "Unknown error listing queries for " + userId);
+        }
+    }
+    
+    // list all queries
+    public QueryImplListResponse adminList(String queryId, String queryName, String userId, ProxiedUserDetails currentUser) throws QueryException {
+        try {
+            // get all of the query statuses for this user
+            List<Query> queries = list(queryId, queryName, userId);
+            
+            QueryImplListResponse response = new QueryImplListResponse();
+            response.setQuery(queries);
+            return response;
+        } catch (Exception e) {
+            log.error("Unknown error listing queries for " + userId, e);
+            throw new QueryException(DatawaveErrorCode.QUERY_LISTING_ERROR, e, "Unknown error listing queries for " + userId);
+        }
+    }
+    
+    private List<Query> list(String queryId, String queryName, String userId) {
+        List<Query> queries;
+        if (queryId != null && !queryId.isEmpty()) {
+            // get the query for the given id
+            queries = new ArrayList<>();
+            queries.add(queryStorageCache.getQueryState(UUID.fromString(queryId)).getQueryStatus().getQuery());
+        } else {
+            // get all of the queries
+            queries = queryStorageCache.getQueryStatus().stream().map(QueryStatus::getQuery).collect(Collectors.toList());
+        }
+        
+        // only keep queries with the given userId and query name
+        queries.removeIf(q -> (userId != null && !q.getOwner().equals(userId)) || (queryName != null && !q.getQueryName().equals(queryName)));
+        
+        return queries;
     }
     
     private QueryStatus validateRequest(String queryId, ProxiedUserDetails currentUser) throws QueryException {
@@ -1042,11 +1167,6 @@ public class QueryManagementService implements QueryRequestHandler {
         if (queryParameters.getPageTimeout() != -1 && (pageTimeoutMillis < pageMinTimeoutMillis || pageTimeoutMillis > pageMaxTimeoutMillis)) {
             log.error("Invalid page timeout: " + queryParameters.getPageTimeout());
             throw new BadRequestQueryException(DatawaveErrorCode.INVALID_PAGE_TIMEOUT);
-        }
-        
-        if (System.currentTimeMillis() >= queryParameters.getExpirationDate().getTime()) {
-            log.error("Invalid expiration date: " + queryParameters.getExpirationDate());
-            throw new BadRequestQueryException(DatawaveErrorCode.INVALID_EXPIRATION_DATE);
         }
         
         // Ensure begin date does not occur after the end date (if dates are not null)

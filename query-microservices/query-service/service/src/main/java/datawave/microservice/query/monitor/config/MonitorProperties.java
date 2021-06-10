@@ -28,9 +28,9 @@ public class MonitorProperties {
     private TimeUnit lockLeaseTimeUnit = TimeUnit.MILLISECONDS;
     // The amount of time that an inactive query should remain in the query cache
     @PositiveOrZero
-    private long inactiveQueryTimeToLive = 24;
+    private long inactiveQueryTimeToLive = 1;
     @NotNull
-    private TimeUnit inactiveQueryTimeUnit = TimeUnit.HOURS;
+    private TimeUnit inactiveQueryTimeUnit = TimeUnit.DAYS;
     
     public String getSchedulerCrontab() {
         return schedulerCrontab;

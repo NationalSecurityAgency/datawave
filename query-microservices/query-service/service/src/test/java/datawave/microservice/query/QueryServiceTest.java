@@ -67,9 +67,7 @@ public class QueryServiceTest {
         MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
         map.set(DefaultQueryParameters.QUERY_STRING, "FIELD:SOME_VALUE");
         map.set(DefaultQueryParameters.QUERY_NAME, "The Greatest Query in the World - Tribute");
-        map.set(DefaultQueryParameters.QUERY_PERSISTENCE, "PERSISTENT");
         map.set(DefaultQueryParameters.QUERY_AUTHORIZATIONS, "ALL");
-        map.set(DefaultQueryParameters.QUERY_EXPIRATION, "20500101 000000.000");
         map.set(DefaultQueryParameters.QUERY_BEGIN, "20000101 000000.000");
         map.set(DefaultQueryParameters.QUERY_END, "20500101 000000.000");
         map.set(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, "ALL");
@@ -98,9 +96,7 @@ public class QueryServiceTest {
         MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
         map.set(DefaultQueryParameters.QUERY_STRING, "FIELD:SOME_VALUE");
         map.set(DefaultQueryParameters.QUERY_NAME, "The Greatest Query in the World - Tribute");
-        map.set(DefaultQueryParameters.QUERY_PERSISTENCE, "PERSISTENT");
         map.set(DefaultQueryParameters.QUERY_AUTHORIZATIONS, "ALL");
-        map.set(DefaultQueryParameters.QUERY_EXPIRATION, "20500101 000000.000");
         map.set(DefaultQueryParameters.QUERY_BEGIN, "20000101 000000.000");
         map.set(DefaultQueryParameters.QUERY_END, "20500101 000000.000");
         map.set(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, "ALL");

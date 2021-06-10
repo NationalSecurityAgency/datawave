@@ -20,7 +20,9 @@ public class QueryServiceConfig {
     @ConditionalOnMissingBean
     @RequestScope
     public QueryParameters queryParameters() {
-        return new DefaultQueryParameters();
+        DefaultQueryParameters queryParameters = new DefaultQueryParameters();
+        queryParameters.clear();
+        return queryParameters;
     }
     
     @Bean

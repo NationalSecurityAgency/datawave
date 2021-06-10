@@ -15,6 +15,9 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
+import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CLOSED;
+import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CREATED;
+
 public class MonitorTask implements Callable<Void> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
@@ -63,32 +66,19 @@ public class MonitorTask implements Callable<Void> {
     private void monitor(long currentTimeMillis) {
         for (QueryStatus status : queryStorageCache.getQueryStatus()) {
             String queryId = status.getQueryKey().getQueryId().toString();
-            switch (status.getQueryState()) {
-                case CREATED:
-                    if (status.isProgressIdle(currentTimeMillis, expirationProperties.getProgressTimeoutMillis())) {
-                        // if progress hasn't been made for the query in a while, apply the shock paddles
-                        defibrillateQuery(queryId, status.getQueryKey().getQueryPool().getName());
-                    }
-                    // fall through
-                case DEFINED:
-                    if (status.isUserIdle(currentTimeMillis, expirationProperties.getIdleTimeoutMillis())) {
-                        // if the user hasn't interacted with the query in a while, cancel it
-                        cancelQuery(queryId);
-                    }
-                    break;
-                case CLOSED:
-                    if (status.getConcurrentNextCount() > 0 && status.isProgressIdle(currentTimeMillis, expirationProperties.getProgressTimeoutMillis())) {
-                        // if there are next calls waiting for results, and progress hasn't been made for the query in a while, apply the shock paddles
-                        defibrillateQuery(queryId, status.getQueryKey().getQueryPool().getName());
-                    }
-                    // fall through
-                case CANCELED:
-                case FAILED:
-                    if (status.isInactive(currentTimeMillis, monitorProperties.getInactiveQueryTimeToLiveMillis())) {
-                        // if the query has been inactive (closed/canceled/failed) for too long, evict it
-                        deleteQuery(UUID.fromString(queryId));
-                    }
-                    break;
+            
+            // if the query is not running, and has been inactive for too long, evict it
+            if (status.getQueryState() != CREATED && status.isInactive(currentTimeMillis, monitorProperties.getInactiveQueryTimeToLiveMillis())) {
+                deleteQuery(UUID.fromString(queryId));
+            }
+            // if the query is running, or closed and in the process of finishing up it's last next call, but it isn't making progress, poke it
+            else if ((status.getQueryState() == CREATED || (status.getQueryState() == CLOSED && status.getConcurrentNextCount() > 0)
+                            && status.isProgressIdle(currentTimeMillis, expirationProperties.getProgressTimeoutMillis()))) {
+                defibrillateQuery(queryId, status.getQueryKey().getQueryPool().getName());
+            }
+            // if the query is running, but the user hasn't interacted with it in a while, cancel it
+            else if (status.getQueryState() == CREATED && status.isUserIdle(currentTimeMillis, expirationProperties.getIdleTimeoutMillis())) {
+                cancelQuery(queryId);
             }
         }
     }
