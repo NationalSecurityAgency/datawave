@@ -495,10 +495,12 @@ public class QueryManagementService implements QueryRequestHandler {
      * @throws QueryException
      */
     public VoidResponse adminCancel(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        log.info("Cancel '" + queryId + "'called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
         return cancel(queryId, currentUser, true);
     }
     
     public VoidResponse adminCancelAll(ProxiedUserDetails currentUser) throws QueryException {
+        log.info("Cancel All called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
         try {
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
             queryStatuses.removeIf(s -> s.getQueryState() != CREATED);
@@ -607,10 +609,12 @@ public class QueryManagementService implements QueryRequestHandler {
      * @throws QueryException
      */
     public VoidResponse adminClose(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        log.info("Close '" + queryId + "'called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
         return close(queryId, currentUser, true);
     }
     
     public VoidResponse adminCloseAll(ProxiedUserDetails currentUser) throws QueryException {
+        log.info("Close All called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
         try {
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
             queryStatuses.removeIf(s -> s.getQueryState() != CREATED);
@@ -733,10 +737,12 @@ public class QueryManagementService implements QueryRequestHandler {
      * @return
      */
     public VoidResponse adminRemove(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        log.info("Remove '" + queryId + "'called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
         return remove(queryId, currentUser, true);
     }
     
     public VoidResponse adminRemoveAll(ProxiedUserDetails currentUser) throws QueryException {
+        log.info("Remove All called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
         try {
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
             queryStatuses.removeIf(s -> s.getQueryState() == CREATED);
@@ -927,28 +933,30 @@ public class QueryManagementService implements QueryRequestHandler {
     
     // list all queries for the user matching the query name, if specified
     public QueryImplListResponse list(String queryId, String queryName, ProxiedUserDetails currentUser) throws QueryException {
-        try {
-            // looking up queries for this user
-            String userId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
-            
-            // get all of the query statuses for this user
-            List<Query> queries = list(queryId, queryName, userId);
-            
-            QueryImplListResponse response = new QueryImplListResponse();
-            response.setQuery(queries);
-            return response;
-        } catch (Exception e) {
-            String userId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
-            log.error("Unknown error listing queries for " + userId, e);
-            throw new QueryException(DatawaveErrorCode.QUERY_LISTING_ERROR, e, "Unknown error listing queries for " + userId);
-        }
+        return list(queryId, queryName, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
     }
     
     // list all queries
     public QueryImplListResponse adminList(String queryId, String queryName, String userId, ProxiedUserDetails currentUser) throws QueryException {
+        log.info("List '" + String.join(",", Arrays.asList(queryId, queryName, userId)) + "'called by admin: "
+                        + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        return list(queryId, queryName, userId);
+    }
+    
+    private QueryImplListResponse list(String queryId, String queryName, String userId) throws QueryException {
         try {
-            // get all of the query statuses for this user
-            List<Query> queries = list(queryId, queryName, userId);
+            List<Query> queries;
+            if (queryId != null && !queryId.isEmpty()) {
+                // get the query for the given id
+                queries = new ArrayList<>();
+                queries.add(queryStorageCache.getQueryState(UUID.fromString(queryId)).getQueryStatus().getQuery());
+            } else {
+                // get all of the queries
+                queries = queryStorageCache.getQueryStatus().stream().map(QueryStatus::getQuery).collect(Collectors.toList());
+            }
+            
+            // only keep queries with the given userId and query name
+            queries.removeIf(q -> (userId != null && !q.getOwner().equals(userId)) || (queryName != null && !q.getQueryName().equals(queryName)));
             
             QueryImplListResponse response = new QueryImplListResponse();
             response.setQuery(queries);
@@ -957,23 +965,6 @@ public class QueryManagementService implements QueryRequestHandler {
             log.error("Unknown error listing queries for " + userId, e);
             throw new QueryException(DatawaveErrorCode.QUERY_LISTING_ERROR, e, "Unknown error listing queries for " + userId);
         }
-    }
-    
-    private List<Query> list(String queryId, String queryName, String userId) {
-        List<Query> queries;
-        if (queryId != null && !queryId.isEmpty()) {
-            // get the query for the given id
-            queries = new ArrayList<>();
-            queries.add(queryStorageCache.getQueryState(UUID.fromString(queryId)).getQueryStatus().getQuery());
-        } else {
-            // get all of the queries
-            queries = queryStorageCache.getQueryStatus().stream().map(QueryStatus::getQuery).collect(Collectors.toList());
-        }
-        
-        // only keep queries with the given userId and query name
-        queries.removeIf(q -> (userId != null && !q.getOwner().equals(userId)) || (queryName != null && !q.getQueryName().equals(queryName)));
-        
-        return queries;
     }
     
     private QueryStatus validateRequest(String queryId, ProxiedUserDetails currentUser) throws QueryException {
