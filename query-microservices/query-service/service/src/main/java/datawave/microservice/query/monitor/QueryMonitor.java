@@ -1,6 +1,6 @@
 package datawave.microservice.query.monitor;
 
-import datawave.microservice.common.storage.QueryStorageCache;
+import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.QueryManagementService;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.config.QueryProperties;

@@ -1,10 +1,10 @@
 package datawave.microservice.query.executor.action;
 
-import datawave.microservice.common.storage.CachedQueryStatus;
-import datawave.microservice.common.storage.QueryQueueManager;
-import datawave.microservice.common.storage.QueryStorageCache;
-import datawave.microservice.common.storage.QueryTask;
-import datawave.microservice.common.storage.TaskKey;
+import datawave.microservice.query.storage.CachedQueryStatus;
+import datawave.microservice.query.storage.QueryQueueManager;
+import datawave.microservice.query.storage.QueryStorageCache;
+import datawave.microservice.query.storage.QueryTask;
+import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.logic.QueryLogicFactory;

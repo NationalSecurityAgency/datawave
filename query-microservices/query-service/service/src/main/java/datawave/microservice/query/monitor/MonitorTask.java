@@ -1,7 +1,7 @@
 package datawave.microservice.query.monitor;
 
-import datawave.microservice.common.storage.QueryStatus;
-import datawave.microservice.common.storage.QueryStorageCache;
+import datawave.microservice.query.storage.QueryStatus;
+import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.QueryManagementService;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.monitor.cache.MonitorStatus;
@@ -15,8 +15,8 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 
-import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CLOSED;
-import static datawave.microservice.common.storage.QueryStatus.QUERY_STATE.CREATED;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSED;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATED;
 
 public class MonitorTask implements Callable<Void> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());

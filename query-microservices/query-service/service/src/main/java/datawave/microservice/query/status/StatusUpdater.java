@@ -1,6 +1,6 @@
 package datawave.microservice.query.status;
 
-import datawave.microservice.common.storage.QueryStatus;
+import datawave.microservice.query.storage.QueryStatus;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 

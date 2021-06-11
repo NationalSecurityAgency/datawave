@@ -1,5 +1,8 @@
 package datawave.microservice.common.storage;
 
+import datawave.microservice.query.storage.QueryState;
+import datawave.microservice.query.storage.TaskDescription;
+
 import java.util.List;
 
 /**

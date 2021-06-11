@@ -1,10 +1,10 @@
 package datawave.microservice.query.runner;
 
-import datawave.microservice.common.storage.QueryQueueListener;
-import datawave.microservice.common.storage.QueryQueueManager;
-import datawave.microservice.common.storage.QueryStatus;
-import datawave.microservice.common.storage.QueryStorageCache;
-import datawave.microservice.common.storage.Result;
+import datawave.microservice.query.storage.QueryQueueListener;
+import datawave.microservice.query.storage.QueryQueueManager;
+import datawave.microservice.query.storage.QueryStatus;
+import datawave.microservice.query.storage.QueryStorageCache;
+import datawave.microservice.query.storage.Result;
 import datawave.microservice.query.config.NextCallProperties;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.config.QueryProperties;

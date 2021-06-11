@@ -2,9 +2,7 @@
 
 [![Apache License][li]][ll] ![Build Status](https://github.com/NationalSecurityAgency/datawave-query-state-service/workflows/Tests/badge.svg)
 
-The Query State Service is used to store the current state of a query's executioni
-such that any of the query exection services can pick up a query and continue
-its execution.
+The Query State Service is used to view the current state of queries in the query storage cache
 
 ### Getting Started
 

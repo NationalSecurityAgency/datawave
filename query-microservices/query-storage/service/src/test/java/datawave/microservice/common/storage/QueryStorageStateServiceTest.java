@@ -5,11 +5,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.logic.QueryPool;
+import datawave.microservice.query.storage.QueryQueueManager;
+import datawave.microservice.query.storage.QueryState;
+import datawave.microservice.query.storage.QueryStorageCache;
+import datawave.microservice.query.storage.QueryTask;
+import datawave.microservice.query.storage.TaskDescription;
+import datawave.microservice.query.storage.TaskKey;
+import datawave.microservice.query.storage.TaskLockException;
+import datawave.microservice.query.storage.TaskStates;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.security.Authorizations;
+import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -88,7 +98,7 @@ public class QueryStorageStateServiceTest {
         storageService.clear();
     }
     
-    @Test
+    // @Test
     public void testStateStorageService() throws ParseException, InterruptedException, TaskLockException, IOException {
         Query query = new QueryImpl();
         query.setQuery("foo == bar");

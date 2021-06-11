@@ -1,7 +1,5 @@
 package datawave.microservice.query.logic;
 
-import datawave.microservice.common.storage.QueryCheckpoint;
-import datawave.microservice.common.storage.QueryKey;
 import org.apache.accumulo.core.client.Connector;
 
 import java.util.List;

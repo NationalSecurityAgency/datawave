@@ -177,7 +177,7 @@ public class SharedCacheCoordinatorTest {
             
             testingZooKeeperServer.kill();
             
-            for (int i = 0; i < 15; ++i) {
+            for (int i = 0; i < 20; ++i) {
                 if (ConnectionState.LOST.equals(state[0]))
                     break;
                 Thread.sleep(3000L);
@@ -186,7 +186,7 @@ public class SharedCacheCoordinatorTest {
             
             testingZooKeeperServer.restart();
             
-            for (int i = 0; i < 15; ++i) {
+            for (int i = 0; i < 20; ++i) {
                 if (ConnectionState.RECONNECTED.equals(state[0]))
                     break;
                 Thread.sleep(3000L);

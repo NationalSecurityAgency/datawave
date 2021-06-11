@@ -1,6 +1,9 @@
 package datawave.microservice.common.storage;
 
-import datawave.microservice.common.storage.config.QueryStorageProperties;
+import datawave.microservice.query.storage.QueryCache;
+import datawave.microservice.query.storage.QueryState;
+import datawave.microservice.query.storage.TaskDescription;
+import datawave.microservice.query.storage.config.QueryStorageProperties;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

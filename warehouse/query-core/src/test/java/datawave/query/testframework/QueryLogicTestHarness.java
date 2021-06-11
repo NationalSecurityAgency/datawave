@@ -1,12 +1,12 @@
 package datawave.query.testframework;
 
 import datawave.data.type.Type;
-import datawave.microservice.common.storage.QueryCheckpoint;
-import datawave.microservice.common.storage.QueryKey;
-import datawave.microservice.common.storage.QueryPool;
 import datawave.microservice.query.configuration.QueryData;
 import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.QueryCheckpoint;
+import datawave.microservice.query.logic.QueryKey;
 import datawave.microservice.query.logic.QueryLogicFactory;
+import datawave.microservice.query.logic.QueryPool;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Attributes;

@@ -13,7 +13,6 @@
         <version.microservice.audit-api>1.10-SNAPSHOT</version.microservice.audit-api>
         <version.microservice.base-rest-responses>1.3-SNAPSHOT</version.microservice.base-rest-responses>
         <version.microservice.common>1.0-SNAPSHOT</version.microservice.common>
-        <version.microservice.query-storage-api>1.0-SNAPSHOT</version.microservice.query-storage-api>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -48,11 +47,6 @@
                 <version>${version.microservice.common}</version>
             </dependency>
             <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>query-storage-api</artifactId>
-                <version>${version.microservice.query-storage-api}</version>
-            </dependency>
-            <dependency>
                 <groupId>gov.nsa.datawave.webservices</groupId>
                 <artifactId>datawave-ws-client</artifactId>
                 <version>${version.datawave}</version>
@@ -85,10 +79,6 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>query-storage-api</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>

@@ -90,7 +90,6 @@
         <version.microservice.metrics-reporter>1.4-SNAPSHOT</version.microservice.metrics-reporter>
         <version.microservice.query>1.0-SNAPSHOT</version.microservice.query>
         <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
-        <version.microservice.query-storage-api>1.0-SNAPSHOT</version.microservice.query-storage-api>
         <version.microservice.type-utils>1.9-SNAPSHOT</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mysql-connector>8.0.16</version.mysql-connector>
@@ -355,11 +354,6 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query-api</artifactId>
                 <version>${version.microservice.query-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>query-storage-api</artifactId>
-                <version>${version.microservice.query-storage-api}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>

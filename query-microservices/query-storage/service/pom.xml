@@ -12,32 +12,32 @@
     <description>DATAWAVE Query State Storage Service</description>
     <properties>
         <start-class>datawave.microservice.common.storage.QueryStorageService</start-class>
-        <version.microservice.query-storage>1.0-SNAPSHOT</version.microservice.query-storage>
-        <version.microservice.starter>1.6.6-SNAPSHOT</version.microservice.starter>
+        <version.microservice.query.starter>1.0-SNAPSHOT</version.microservice.query.starter>
+        <version.microservice.query.storage.api>1.0-SNAPSHOT</version.microservice.query.storage.api>
     </properties>
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>query-storage</artifactId>
-                <version>${version.microservice.query-storage}</version>
+                <artifactId>query-storage-api</artifactId>
+                <version>${version.microservice.query.storage.api}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>spring-boot-starter-datawave</artifactId>
-                <version>${version.microservice.starter}</version>
+                <artifactId>spring-boot-starter-datawave-query</artifactId>
+                <version>${version.microservice.query.starter}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>spring-boot-starter-datawave</artifactId>
-                <version>${version.microservice.starter}</version>
+                <artifactId>spring-boot-starter-datawave-query</artifactId>
+                <version>${version.microservice.query.starter}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>query-storage</artifactId>
-                <version>${version.microservice.query-storage}</version>
+                <artifactId>spring-boot-starter-datawave-query</artifactId>
+                <version>${version.microservice.query.starter}</version>
                 <type>test-jar</type>
                 <scope>test</scope>
             </dependency>
@@ -46,15 +46,15 @@
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>query-storage</artifactId>
+            <artifactId>query-storage-api</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>spring-boot-starter-datawave</artifactId>
+            <artifactId>spring-boot-starter-datawave-query</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>query-storage</artifactId>
+            <artifactId>spring-boot-starter-datawave-query</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>

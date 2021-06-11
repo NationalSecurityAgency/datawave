@@ -36,9 +36,19 @@ server:
     trust-store-password: ${server.ssl.trust-store-password}
     trust-store-type: ${server.ssl.trust-store-type}
 
+management:
+  endpoints:
+    web:
+      base-path: "/mgmt"
+
 logging:
   level:
-    datawave.microservice: DEBUG
+    root: warn
+    datawave.microservice.common.storage: ERROR
+    io.undertow.request: FATAL
+    org.apache.kafka: ERROR
+    kafka: FATAL
+
 
 warehouse:
   accumulo:
@@ -217,3 +227,84 @@ audit-client:
   discovery:
     enabled: false
   uri: '${AUDIT_SERVER_URL:http://localhost:11111/audit}'
+
+---
+
+spring.config.activate.on-profile: sync-disabled
+
+query:
+  storage:
+    syncStorage:
+      false
+
+---
+
+spring.config.activate.on-profile: sync-enabled
+
+query:
+  storage:
+    syncStorage:
+      true
+
+---
+
+spring.config.activate.on-profile: send-notifications
+
+query:
+  storage:
+    sendNotifications:
+      true
+
+---
+
+spring.config.activate.on-profile: no-notifications
+
+query:
+  storage:
+    sendNotifications:
+      false
+
+---
+
+spring.config.activate.on-profile: use-rabbit
+
+query:
+  storage:
+    backend:
+      rabbit
+
+---
+
+spring.config.activate.on-profile: use-kafka
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: KafkaQueryQueueManager
+      autoOffsetReset: latest
+
+query:
+  storage:
+    backend:
+      kafka
+
+---
+
+spring.config.activate.on-profile: use-embedded-kafka
+
+spring:
+  kafka:
+    bootstrap-servers: "${spring.embedded.kafka.brokers}"
+    consumer:
+      group-id: KafkaQueryQueueManager
+      autoOffsetReset: latest
+query:
+  storage:
+    backend:
+      kafka
+
+---
+
+spring.config.activate.on-profile: missing
+

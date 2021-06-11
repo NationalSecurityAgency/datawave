@@ -1,10 +1,10 @@
 package datawave.query.scheduler;
 
 import com.google.common.collect.Lists;
-import datawave.microservice.common.storage.QueryCheckpoint;
-import datawave.microservice.common.storage.QueryKey;
 import datawave.microservice.query.configuration.QueryData;
 import datawave.microservice.query.configuration.Result;
+import datawave.microservice.query.logic.QueryCheckpoint;
+import datawave.microservice.query.logic.QueryKey;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
