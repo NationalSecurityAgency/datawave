@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.DefaultQueryParameters;
-import datawave.microservice.query.logic.QueryPool;
+import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryState;
 import datawave.microservice.query.storage.QueryStorageCache;
@@ -47,7 +47,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import static datawave.security.authorization.DatawaveUser.UserType.USER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -105,7 +104,7 @@ public class QueryStorageStateServiceTest {
         query.setQueryLogicName("EventQuery");
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
-        QueryPool queryPool = new QueryPool(TEST_POOL);
+        String queryPool = TEST_POOL;
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
         TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
@@ -130,23 +129,23 @@ public class QueryStorageStateServiceTest {
         assertQueryCreate(key.getQueryId(), queryPool, query, tasks.get(0));
     }
     
-    private void assertQueryCreate(UUID queryId, QueryPool queryPool, QueryState state) {
-        assertEquals(queryId, state.getQueryId());
-        assertEquals(queryPool, state.getQueryPool());
+    private void assertQueryCreate(String queryId, String queryPool, QueryState state) {
+        assertEquals(queryId, state.getQueryStatus().getQueryKey().getQueryId());
+        assertEquals(queryPool, state.getQueryStatus().getQueryKey().getQueryPool());
         TaskStates tasks = state.getTaskStates();
     }
     
-    private void assertQueryCreate(UUID queryId, QueryPool queryPool, Query query, TaskDescription task) throws ParseException {
+    private void assertQueryCreate(String queryId, String queryPool, Query query, TaskDescription task) throws ParseException {
         assertNotNull(task.getTaskKey());
         assertEquals(queryId, task.getTaskKey().getQueryId());
         assertEquals(queryPool, task.getTaskKey().getQueryPool());
-        assertEquals(QueryTask.QUERY_ACTION.CREATE, task.getAction());
+        assertEquals(QueryRequest.Method.CREATE, task.getTaskKey().getAction());
         assertEquals(query.getQuery(), task.getParameters().get(QueryImpl.QUERY));
         assertEquals(DefaultQueryParameters.formatDate(query.getBeginDate()), task.getParameters().get(QueryImpl.BEGIN_DATE));
         assertEquals(DefaultQueryParameters.formatDate(query.getEndDate()), task.getParameters().get(QueryImpl.END_DATE));
     }
     
-    private void assertQueryTask(TaskKey key, QueryTask.QUERY_ACTION action, Query query, QueryTask task) throws ParseException {
+    private void assertQueryTask(TaskKey key, QueryRequest.Method action, Query query, QueryTask task) throws ParseException {
         assertEquals(key, task.getTaskKey());
         assertEquals(action, task.getAction());
         assertEquals(task.getQueryCheckpoint().getQueryKey(), key);

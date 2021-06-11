@@ -12,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSED;
@@ -69,12 +68,12 @@ public class MonitorTask implements Callable<Void> {
             
             // if the query is not running, and has been inactive for too long, evict it
             if (status.getQueryState() != CREATED && status.isInactive(currentTimeMillis, monitorProperties.getInactiveQueryTimeToLiveMillis())) {
-                deleteQuery(UUID.fromString(queryId));
+                deleteQuery(queryId);
             }
             // if the query is running, or closed and in the process of finishing up it's last next call, but it isn't making progress, poke it
             else if ((status.getQueryState() == CREATED || (status.getQueryState() == CLOSED && status.getConcurrentNextCount() > 0)
                             && status.isProgressIdle(currentTimeMillis, expirationProperties.getProgressTimeoutMillis()))) {
-                defibrillateQuery(queryId, status.getQueryKey().getQueryPool().getName());
+                defibrillateQuery(queryId, status.getQueryKey().getQueryPool());
             }
             // if the query is running, but the user hasn't interacted with it in a while, cancel it
             else if (status.getQueryState() == CREATED && status.isUserIdle(currentTimeMillis, expirationProperties.getIdleTimeoutMillis())) {
@@ -98,11 +97,11 @@ public class MonitorTask implements Callable<Void> {
         queryManagementService.publishNextEvent(queryId, queryPool);
     }
     
-    private void deleteQuery(UUID queryUUID) {
+    private void deleteQuery(String queryId) {
         try {
-            queryStorageCache.deleteQuery(queryUUID);
+            queryStorageCache.deleteQuery(queryId);
         } catch (IOException e) {
-            log.error("Encountered error while trying to evict inactive query: " + queryUUID.toString(), e);
+            log.error("Encountered error while trying to evict inactive query: " + queryId, e);
         }
     }
     

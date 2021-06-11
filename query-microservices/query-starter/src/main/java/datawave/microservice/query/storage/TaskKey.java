@@ -4,12 +4,11 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import datawave.microservice.query.logic.QueryKey;
-import datawave.microservice.query.logic.QueryPool;
+import datawave.microservice.query.remote.QueryRequest;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 public class TaskKey extends QueryKey implements Serializable {
     private static final long serialVersionUID = -2589618312956104322L;
@@ -18,9 +17,9 @@ public class TaskKey extends QueryKey implements Serializable {
     public static final String TASK_ACTION_PREFIX = "A-";
     
     @JsonProperty("taskId")
-    private UUID taskId;
+    private String taskId;
     @JsonProperty("action")
-    private QueryTask.QUERY_ACTION action;
+    private QueryRequest.Method action;
     
     /**
      * Default constructor for deserialization
@@ -50,29 +49,29 @@ public class TaskKey extends QueryKey implements Serializable {
     @Override
     public void setPart(String part) {
         if (part.startsWith(TASK_ID_PREFIX)) {
-            taskId = UUID.fromString(part.substring(TASK_ID_PREFIX.length()));
+            taskId = part.substring(TASK_ID_PREFIX.length());
         } else {
             super.setPart(part);
         }
     }
     
     @JsonCreator
-    public TaskKey(@JsonProperty("taskId") UUID taskId, @JsonProperty("action") QueryTask.QUERY_ACTION action, @JsonProperty("queryPool") QueryPool queryPool,
-                    @JsonProperty("queryId") UUID queryId, @JsonProperty("queryLogic") String queryLogic) {
+    public TaskKey(@JsonProperty("taskId") String taskId, @JsonProperty("action") QueryRequest.Method action, @JsonProperty("queryPool") String queryPool,
+                    @JsonProperty("queryId") String queryId, @JsonProperty("queryLogic") String queryLogic) {
         super(queryPool, queryId, queryLogic);
         this.taskId = taskId;
         this.action = action;
     }
     
-    public TaskKey(UUID taskId, QueryTask.QUERY_ACTION action, QueryKey queryKey) {
+    public TaskKey(String taskId, QueryRequest.Method action, QueryKey queryKey) {
         this(taskId, action, queryKey.getQueryPool(), queryKey.getQueryId(), queryKey.getQueryLogic());
     }
     
-    public UUID getTaskId() {
+    public String getTaskId() {
         return taskId;
     }
     
-    public QueryTask.QUERY_ACTION getAction() {
+    public QueryRequest.Method getAction() {
         return action;
     }
     

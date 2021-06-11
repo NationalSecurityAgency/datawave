@@ -1,21 +1,20 @@
 package datawave.microservice.query.storage;
 
 import datawave.microservice.query.logic.QueryCheckpoint;
-import datawave.microservice.query.logic.QueryPool;
+import datawave.microservice.query.remote.QueryRequest;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.security.Authorizations;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * This is an interface to the query storage service
  */
 public interface QueryStorageCache {
     /**
-     * Store/cache a new query. This will create a query task containing the query with a DEFINE query action and send out a task notification.
+     * Store/cache a new query. This will create a query task containing the query with a DEFINE query action.
      * 
      * @param queryPool
      *            The query pool
@@ -27,10 +26,10 @@ public interface QueryStorageCache {
      *            The number of available locks which equates to the number of concurrent executors that can act on this query
      * @return The create task key
      */
-    TaskKey defineQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
+    TaskKey defineQuery(String queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
     
     /**
-     * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification.
+     * Store/cache a new query. This will create a query task containing the query with a CREATE query action.
      *
      * @param queryPool
      *            The query pool
@@ -42,7 +41,7 @@ public interface QueryStorageCache {
      *            The number of available locks which equates to the number of concurrent executors that can act on this query
      * @return The create task key
      */
-    TaskKey createQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
+    TaskKey createQuery(String queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
     
     /**
      * Get the current query state. This includes the query status and the task statuses
@@ -51,7 +50,7 @@ public interface QueryStorageCache {
      *            the query id
      * @return query stats
      */
-    QueryState getQueryState(UUID queryId);
+    QueryState getQueryState(String queryId);
     
     /**
      * Get the current query status.
@@ -60,7 +59,7 @@ public interface QueryStorageCache {
      *            the query id
      * @return the query status
      */
-    QueryStatus getQueryStatus(UUID queryId);
+    QueryStatus getQueryStatus(String queryId);
     
     /**
      * Get all of the query status
@@ -85,7 +84,7 @@ public interface QueryStorageCache {
      * @param state
      *            The updated state
      */
-    void updateQueryStatus(UUID queryId, QueryStatus.QUERY_STATE state);
+    void updateQueryStatus(String queryId, QueryStatus.QUERY_STATE state);
     
     /**
      * Update the query status state
@@ -95,7 +94,7 @@ public interface QueryStorageCache {
      * @param e
      *            The exception
      */
-    void updateFailedQueryStatus(UUID queryId, Exception e);
+    void updateFailedQueryStatus(String queryId, Exception e);
     
     /**
      * Update a task state
@@ -114,7 +113,7 @@ public interface QueryStorageCache {
      *            the query id
      * @return a lock object
      */
-    QueryStorageLock getQueryStatusLock(UUID queryId);
+    QueryStorageLock getQueryStatusLock(String queryId);
     
     /**
      * Get a task states lock
@@ -123,7 +122,7 @@ public interface QueryStorageCache {
      *            the query id
      * @return a lock object
      */
-    QueryStorageLock getTaskStatesLock(UUID queryId);
+    QueryStorageLock getTaskStatesLock(String queryId);
     
     /**
      * Get the current task states.
@@ -132,7 +131,7 @@ public interface QueryStorageCache {
      *            the query id
      * @return the task states
      */
-    TaskStates getTaskStates(UUID queryId);
+    TaskStates getTaskStates(String queryId);
     
     /**
      * update the query status
@@ -143,7 +142,7 @@ public interface QueryStorageCache {
     void updateTaskStates(TaskStates taskStates);
     
     /**
-     * Create a new query task. This will create a new query task, store it, and send out a task notification.
+     * Create a new query task. This will create a new query task, store it.
      * 
      * @param action
      *            The query action
@@ -151,14 +150,7 @@ public interface QueryStorageCache {
      *            The query checkpoint
      * @return The new query task
      */
-    QueryTask createTask(QueryTask.QUERY_ACTION action, QueryCheckpoint checkpoint) throws IOException;
-    
-    /**
-     * Post a task notification
-     * 
-     * @param taskNotification
-     */
-    public void post(QueryTaskNotification taskNotification);
+    QueryTask createTask(QueryRequest.Method action, QueryCheckpoint checkpoint) throws IOException;
     
     /**
      * Get a task for a given task key. This return null if the task no longer exists.
@@ -195,7 +187,7 @@ public interface QueryStorageCache {
      *            the query id
      * @return true if deleted
      */
-    public boolean deleteQuery(UUID queryId) throws IOException;
+    public boolean deleteQuery(String queryId) throws IOException;
     
     /**
      * Clear the cache
@@ -209,7 +201,7 @@ public interface QueryStorageCache {
      *            The query id
      * @return The list of task keys
      */
-    public List<TaskKey> getTasks(UUID queryId) throws IOException;
+    public List<TaskKey> getTasks(String queryId) throws IOException;
     
     /************** Some convenience methods for query status locking ************/
     
@@ -221,7 +213,7 @@ public interface QueryStorageCache {
      * @deprecated try getQueryStatusLock(queryId).lock()
      */
     @Deprecated
-    default void lockQueryStatus(UUID queryId) {
+    default void lockQueryStatus(String queryId) {
         getQueryStatusLock(queryId).lock();
     }
     
@@ -235,7 +227,7 @@ public interface QueryStorageCache {
      * @deprecated try getQueryStatusLock(queryId).lock(leaseTimeMillis)
      */
     @Deprecated
-    default void lockQueryStatus(UUID queryId, long leaseTimeMillis) {
+    default void lockQueryStatus(String queryId, long leaseTimeMillis) {
         getQueryStatusLock(queryId).lock(leaseTimeMillis);
     }
     
@@ -248,7 +240,7 @@ public interface QueryStorageCache {
      * @deprecated try getQueryStatusLock(queryId).tryLock()
      */
     @Deprecated
-    default boolean tryLockQueryStatus(UUID queryId) {
+    default boolean tryLockQueryStatus(String queryId) {
         return getQueryStatusLock(queryId).tryLock();
     }
     
@@ -263,7 +255,7 @@ public interface QueryStorageCache {
      * @deprecated try getQueryStatusLock(queryId).tryLock(waitTimeMillis)
      */
     @Deprecated
-    default boolean tryLockQueryStatus(UUID queryId, long waitTimeMillis) throws InterruptedException {
+    default boolean tryLockQueryStatus(String queryId, long waitTimeMillis) throws InterruptedException {
         return getQueryStatusLock(queryId).tryLock(waitTimeMillis);
     }
     
@@ -280,7 +272,7 @@ public interface QueryStorageCache {
      * @deprecated try getQueryStatusLock(queryId).tryLock(waitTimeMillis, leaseTimeMillis)
      */
     @Deprecated
-    default boolean tryLockQueryStatus(UUID queryId, long waitTimeMillis, long leaseTimeMillis) throws InterruptedException {
+    default boolean tryLockQueryStatus(String queryId, long waitTimeMillis, long leaseTimeMillis) throws InterruptedException {
         return getQueryStatusLock(queryId).tryLock(waitTimeMillis, leaseTimeMillis);
     }
     
@@ -292,7 +284,7 @@ public interface QueryStorageCache {
      * @deprecated try getQueryStatusLock(queryId).unlock()
      */
     @Deprecated
-    default void unlockQueryStatus(UUID queryId) {
+    default void unlockQueryStatus(String queryId) {
         getQueryStatusLock(queryId).unlock();
     }
     
@@ -305,7 +297,7 @@ public interface QueryStorageCache {
      * @deprecated try getQueryStatusLock(queryId).forceUnlock()
      */
     @Deprecated
-    default void forceUnlockQueryStatus(UUID queryId) {
+    default void forceUnlockQueryStatus(String queryId) {
         getQueryStatusLock(queryId).forceUnlock();
     }
     

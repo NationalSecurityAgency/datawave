@@ -1,5 +1,7 @@
 package datawave.microservice.query.executor.action;
 
+import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.CachedQueryStatus;
 import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStorageCache;
@@ -12,24 +14,25 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
-
-import java.util.UUID;
+import org.springframework.cloud.bus.BusProperties;
+import org.springframework.context.ApplicationEventPublisher;
 
 public class Plan extends ExecutorAction {
     private static final Logger log = Logger.getLogger(Plan.class);
     
-    public Plan(ExecutorProperties executorProperties, Connector connector, QueryStorageCache cache, QueryQueueManager queues,
-                    QueryLogicFactory queryLogicFactory, QueryTask task) {
-        super(executorProperties, connector, cache, queues, queryLogicFactory, task);
+    public Plan(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, Connector connector,
+                    QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher,
+                    QueryTask task) {
+        super(executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory, publisher, task);
     }
     
     @Override
     public boolean executeTask() throws Exception {
         
-        assert (QueryTask.QUERY_ACTION.PLAN.equals(task.getAction()));
+        assert (QueryRequest.Method.PLAN.equals(task.getAction()));
         
         TaskKey taskKey = task.getTaskKey();
-        UUID queryId = taskKey.getQueryId();
+        String queryId = taskKey.getQueryId();
         CachedQueryStatus queryStatus = new CachedQueryStatus(cache, queryId, executorProperties.getQueryStatusExpirationMs());
         QueryLogic<?> queryLogic = getQueryLogic(queryStatus.getQuery());
         // by default we will expand the fields but not the values.

@@ -1,5 +1,7 @@
 package datawave.microservice.query.executor.action;
 
+import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.CachedQueryStatus;
 import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStorageCache;
@@ -11,25 +13,26 @@ import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.logic.QueryLogicFactory;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
-
-import java.util.UUID;
+import org.springframework.cloud.bus.BusProperties;
+import org.springframework.context.ApplicationEventPublisher;
 
 public class Next extends ExecutorAction {
     private static final Logger log = Logger.getLogger(Next.class);
     
-    public Next(ExecutorProperties executorProperties, Connector connector, QueryStorageCache cache, QueryQueueManager queues,
-                    QueryLogicFactory queryLogicFactory, QueryTask task) {
-        super(executorProperties, connector, cache, queues, queryLogicFactory, task);
+    public Next(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, Connector connector,
+                    QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher,
+                    QueryTask task) {
+        super(executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory, publisher, task);
     }
     
     @Override
     public boolean executeTask() throws Exception {
         
-        assert (QueryTask.QUERY_ACTION.NEXT.equals(task.getAction()));
+        assert (QueryRequest.Method.NEXT.equals(task.getAction()));
         
         boolean taskComplete = false;
         TaskKey taskKey = task.getTaskKey();
-        UUID queryId = taskKey.getQueryId();
+        String queryId = taskKey.getQueryId();
         CachedQueryStatus queryStatus = new CachedQueryStatus(cache, queryId, executorProperties.getQueryStatusExpirationMs());
         
         QueryLogic<?> queryLogic = getQueryLogic(queryStatus.getQuery());

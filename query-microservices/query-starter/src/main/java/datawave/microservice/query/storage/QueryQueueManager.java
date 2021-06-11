@@ -1,7 +1,5 @@
 package datawave.microservice.query.storage;
 
-import java.util.UUID;
-
 /**
  * This is the interface for a query queue manager which handles sending and listening for query task notificatgions
  */
@@ -24,7 +22,7 @@ public interface QueryQueueManager {
      * @param queryId
      *            the query ID
      */
-    void ensureQueueCreated(UUID queryId);
+    void ensureQueueCreated(String queryId);
     
     /**
      * Delete a queue for a query
@@ -32,7 +30,7 @@ public interface QueryQueueManager {
      * @param queryId
      *            the query ID
      */
-    void deleteQueue(UUID queryId);
+    void deleteQueue(String queryId);
     
     /**
      * Empty a queue for a query
@@ -40,7 +38,7 @@ public interface QueryQueueManager {
      * @param queryId
      *            the query ID
      */
-    void emptyQueue(UUID queryId);
+    void emptyQueue(String queryId);
     
     /**
      * Get the queue size
@@ -49,7 +47,7 @@ public interface QueryQueueManager {
      *            The query Id
      * @return the number of elements.
      */
-    int getQueueSize(UUID queryId);
+    int getQueueSize(String queryId);
     
     /**
      * This will send a result message. This will call ensureQueueCreated before sending the message.
@@ -59,6 +57,6 @@ public interface QueryQueueManager {
      * @param result
      *            the result
      */
-    void sendMessage(UUID queryId, Result result);
+    void sendMessage(String queryId, Result result);
     
 }

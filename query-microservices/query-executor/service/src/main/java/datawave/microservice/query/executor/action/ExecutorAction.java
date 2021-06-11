@@ -1,5 +1,7 @@
 package datawave.microservice.query.executor.action;
 
+import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.CachedQueryStatus;
 import datawave.microservice.query.logic.QueryCheckpoint;
 import datawave.microservice.query.logic.QueryKey;
@@ -19,8 +21,12 @@ import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
+import org.springframework.cloud.bus.BusProperties;
+import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.UUID;
 
 public abstract class ExecutorAction implements Runnable {
@@ -31,17 +37,24 @@ public abstract class ExecutorAction implements Runnable {
     protected final QueryStorageCache cache;
     protected final QueryQueueManager queues;
     protected final QueryLogicFactory queryLogicFactory;
+    protected final BusProperties busProperties;
+    protected final QueryProperties queryProperties;
     protected final ExecutorProperties executorProperties;
+    protected final ApplicationEventPublisher publisher;
     protected final QueryTask task;
     protected boolean interrupted = false;
     
-    public ExecutorAction(ExecutorProperties executorProperties, Connector connector, QueryStorageCache cache, QueryQueueManager queues,
-                    QueryLogicFactory queryLogicFactory, QueryTask task) {
+    public ExecutorAction(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, Connector connector,
+                    QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher,
+                    QueryTask task) {
         this.executorProperties = executorProperties;
+        this.queryProperties = queryProperties;
+        this.busProperties = busProperties;
         this.cache = cache;
         this.queues = queues;
         this.connector = connector;
         this.queryLogicFactory = queryLogicFactory;
+        this.publisher = publisher;
         this.task = task;
     }
     
@@ -111,11 +124,12 @@ public abstract class ExecutorAction implements Runnable {
     protected void checkpoint(QueryKey queryKey, CheckpointableQueryLogic cpQueryLogic) throws IOException {
         boolean createdTask = false;
         for (QueryCheckpoint cp : cpQueryLogic.checkpoint(queryKey)) {
-            cache.createTask(QueryTask.QUERY_ACTION.NEXT, cp);
+            cache.createTask(QueryRequest.Method.NEXT, cp);
             createdTask = true;
         }
         if (createdTask) {
             // TODO : post next event
+            publishExecutorEvent(QueryRequest.create(queryKey.toString()), queryKey.getQueryPool());
         }
     }
     
@@ -183,6 +197,21 @@ public abstract class ExecutorAction implements Runnable {
             queryStatus.stopTimer();
             queryStatus.forceCacheUpdateIfDirty();
         }
+    }
+    
+    private void publishExecutorEvent(QueryRequest queryRequest, String queryPool) {
+        // @formatter:off
+        publisher.publishEvent(
+                new RemoteQueryRequestEvent(
+                        this,
+                        busProperties.getId(),
+                        getPooledExecutorName(queryPool),
+                        queryRequest));
+        // @formatter:on
+    }
+    
+    protected String getPooledExecutorName(String poolName) {
+        return String.join("-", Arrays.asList(queryProperties.getExecutorServiceName(), poolName));
     }
     
 }

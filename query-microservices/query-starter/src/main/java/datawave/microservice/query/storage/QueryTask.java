@@ -3,6 +3,7 @@ package datawave.microservice.query.storage;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import datawave.microservice.query.logic.QueryCheckpoint;
 import datawave.microservice.query.logic.QueryKey;
+import datawave.microservice.query.remote.QueryRequest;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
@@ -15,26 +16,29 @@ import java.util.UUID;
 public class QueryTask implements Serializable {
     private static final long serialVersionUID = 579211458890999398L;
     
-    public enum QUERY_ACTION implements Serializable {
-        CREATE, PLAN, NEXT, CLOSE, CANCEL
-    }
-    
     /**
      * Parameter names used when getting a plan prior to creating a query
      */
     public static final String EXPAND_VALUES = "expand.values";
     public static final String EXPAND_FIELDS = "expand.fields";
     
-    private final TaskKey taskKey;
+    private final String taskId;
+    private final QueryRequest.Method action;
     private final QueryCheckpoint queryCheckpoint;
     
-    public QueryTask(QUERY_ACTION action, QueryCheckpoint queryCheckpoint) {
-        this(UUID.randomUUID(), action, queryCheckpoint);
+    public QueryTask(QueryRequest.Method action, QueryCheckpoint queryCheckpoint) {
+        this(UUID.randomUUID().toString(), action, queryCheckpoint);
     }
     
-    public QueryTask(UUID taskId, QUERY_ACTION action, QueryCheckpoint queryCheckpoint) {
-        this.taskKey = new TaskKey(taskId, action, queryCheckpoint.getQueryKey());
+    public QueryTask(String taskId, QueryRequest.Method action, QueryCheckpoint queryCheckpoint) {
+        this.taskId = taskId;
+        this.action = action;
         this.queryCheckpoint = queryCheckpoint;
+    }
+    
+    @JsonIgnore
+    public TaskKey getTaskKey() {
+        return new TaskKey(taskId, action, queryCheckpoint.getQueryKey());
     }
     
     /**
@@ -42,9 +46,8 @@ public class QueryTask implements Serializable {
      * 
      * @return the action
      */
-    @JsonIgnore
-    public QUERY_ACTION getAction() {
-        return taskKey.getAction();
+    public QueryRequest.Method getAction() {
+        return action;
     }
     
     /**
@@ -57,26 +60,17 @@ public class QueryTask implements Serializable {
     }
     
     /**
-     * Get the task key
+     * Get the task id
      *
-     * @return The task key
+     * @return The task id
      */
-    public TaskKey getTaskKey() {
-        return taskKey;
-    }
-    
-    /**
-     * Get a task notification for this task
-     * 
-     * @return a query task notification
-     */
-    public QueryTaskNotification getNotification() {
-        return new QueryTaskNotification(getTaskKey());
+    public String getTaskId() {
+        return taskId;
     }
     
     @Override
     public String toString() {
-        return getTaskKey() + " on " + getQueryCheckpoint().getProperties();
+        return getTaskKey() + " with " + getQueryCheckpoint().getProperties();
     }
     
     /**
@@ -92,14 +86,15 @@ public class QueryTask implements Serializable {
     public boolean equals(Object o) {
         if (o instanceof QueryTask) {
             QueryTask other = (QueryTask) o;
-            return new EqualsBuilder().append(getTaskKey(), other.getTaskKey()).append(getQueryCheckpoint(), other.getQueryCheckpoint()).isEquals();
+            return new EqualsBuilder().append(getTaskId(), other.getTaskId()).append(getAction(), other.getAction())
+                            .append(getQueryCheckpoint(), other.getQueryCheckpoint()).isEquals();
         }
         return false;
     }
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(getTaskKey()).toHashCode();
+        return new HashCodeBuilder().append(getTaskId()).toHashCode();
     }
     
     /**
@@ -111,7 +106,7 @@ public class QueryTask implements Serializable {
      *            The query key
      * @return a key
      */
-    public static String toKey(UUID taskId, QueryKey queryKey) {
+    public static String toKey(String taskId, QueryKey queryKey) {
         return queryKey.toKey() + ':' + taskId.toString();
     }
 }

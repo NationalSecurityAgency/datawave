@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.security.RolesAllowed;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * The QueryStorageController presents the REST endpoints for the query storage service.
@@ -47,7 +46,7 @@ public class QueryStorageStateServiceController implements QueryStorageStateServ
     @RequestMapping(path = "/query/{id}", method = RequestMethod.GET)
     @Override
     public QueryState getQuery(@PathVariable("id") String queryId) {
-        return cache.getQuery(UUID.fromString(queryId));
+        return cache.getQuery(queryId);
     }
     
     @ApiOperation(value = "Get the list of tasks for a query")
@@ -55,6 +54,6 @@ public class QueryStorageStateServiceController implements QueryStorageStateServ
     @RequestMapping(path = "/tasks/{id}", method = RequestMethod.GET)
     @Override
     public List<TaskDescription> getTasks(@PathVariable("id") String queryId) {
-        return cache.getTaskDescriptions(UUID.fromString(queryId));
+        return cache.getTaskDescriptions(queryId);
     }
 }

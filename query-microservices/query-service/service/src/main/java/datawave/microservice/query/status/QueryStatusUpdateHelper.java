@@ -52,7 +52,7 @@ public class QueryStatusUpdateHelper {
         }
     }
     
-    public QueryStatus lockedUpdate(UUID queryUUID, StatusUpdater updater) throws QueryException, InterruptedException {
+    public QueryStatus lockedUpdate(String queryUUID, StatusUpdater updater) throws QueryException, InterruptedException {
         QueryStatus queryStatus = null;
         QueryStorageLock statusLock = queryStorageCache.getQueryStatusLock(queryUUID);
         if (statusLock.tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {

@@ -8,7 +8,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.UUID;
 
 /**
  * This class will cache a QueryStatus object for a specified query. The underlying storage will be polled at a specified interval, or on demand if the current
@@ -19,14 +18,14 @@ import java.util.UUID;
  */
 public class CachedQueryStatus extends QueryStatus {
     private final QueryStorageCache cache;
-    private final UUID queryId;
+    private final String queryId;
     private final long invalidCacheMs;
     
     private QueryStatus queryStatus = null;
     private volatile long queryStatusTimeStamp = -1;
     private Timer timer = null;
     
-    public CachedQueryStatus(QueryStorageCache cache, UUID queryId, long invalidCacheMs) {
+    public CachedQueryStatus(QueryStorageCache cache, String queryId, long invalidCacheMs) {
         this.cache = cache;
         this.queryId = queryId;
         this.invalidCacheMs = invalidCacheMs;

@@ -21,7 +21,6 @@ import org.springframework.messaging.Message;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -257,7 +256,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     private QueryStatus getQueryStatus() {
         if (queryStatus == null || isQueryStatusExpired()) {
             lastStatusUpdateTime = System.currentTimeMillis();
-            queryStatus = queryStorageCache.getQueryStatus(UUID.fromString(queryId));
+            queryStatus = queryStorageCache.getQueryStatus(queryId);
         }
         return queryStatus;
     }

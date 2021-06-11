@@ -18,7 +18,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -56,7 +55,8 @@ public class TestQueryQueueManager implements QueryQueueManager {
         return listener;
     }
     
-    private void ensureQueueCreated(String name) {
+    @Override
+    public void ensureQueueCreated(String name) {
         synchronized (queues) {
             if (!queues.containsKey(name)) {
                 queues.put(name, new ArrayBlockingQueue<>(10));
@@ -64,7 +64,8 @@ public class TestQueryQueueManager implements QueryQueueManager {
         }
     }
     
-    private void deleteQueue(String name) {
+    @Override
+    public void deleteQueue(String name) {
         synchronized (listenerToQueue) {
             for (Set<String> queues : listenerToQueue.values()) {
                 queues.remove(name);
@@ -73,7 +74,8 @@ public class TestQueryQueueManager implements QueryQueueManager {
         queues.remove(name);
     }
     
-    private void emptyQueue(String name) {
+    @Override
+    public void emptyQueue(String name) {
         synchronized (queues) {
             Queue queue = queues.get(name);
             if (queue != null) {
@@ -82,7 +84,8 @@ public class TestQueryQueueManager implements QueryQueueManager {
         }
     }
     
-    private int getQueueSize(String name) {
+    @Override
+    public int getQueueSize(String name) {
         synchronized (queues) {
             Queue queue = queues.get(name);
             if (queue != null) {
@@ -103,51 +106,6 @@ public class TestQueryQueueManager implements QueryQueueManager {
     }
     
     /**
-     * Ensure a queue is created for a query results queue. This will create an exchange, a queue, and a binding between them for the results queue.
-     *
-     * @param queryId
-     *            the query ID
-     */
-    @Override
-    public void ensureQueueCreated(UUID queryId) {
-        ensureQueueCreated(queryId.toString());
-    }
-    
-    /**
-     * Delete a queue for a query
-     *
-     * @param queryId
-     *            the query ID
-     */
-    @Override
-    public void deleteQueue(UUID queryId) {
-        deleteQueue(queryId.toString());
-    }
-    
-    /**
-     * Empty a queue for a query
-     *
-     * @param queryId
-     *            the query ID
-     */
-    @Override
-    public void emptyQueue(UUID queryId) {
-        emptyQueue(queryId.toString());
-    }
-    
-    /**
-     * Get the queue size
-     *
-     * @param queryId
-     *            The query Id
-     * @return the number of elements
-     */
-    @Override
-    public int getQueueSize(UUID queryId) {
-        return getQueueSize(queryId.toString());
-    }
-    
-    /**
      * This will send a result message. This will call ensureQueueCreated before sending the message.
      * <p>
      *
@@ -156,7 +114,7 @@ public class TestQueryQueueManager implements QueryQueueManager {
      * @param result
      */
     @Override
-    public void sendMessage(UUID queryId, Result result) {
+    public void sendMessage(String queryId, Result result) {
         Message<Result> message = null;
         MessageHeaderAccessor header = new MessageHeaderAccessor();
         header.setHeader(MESSAGE_KEY, queryId);

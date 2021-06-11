@@ -1,5 +1,6 @@
 package datawave.microservice.query.executor;
 
+import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.QueryTask;
@@ -15,6 +16,8 @@ import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
+import org.springframework.cloud.bus.BusProperties;
+import org.springframework.context.ApplicationContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,11 +25,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import static datawave.microservice.query.remote.QueryRequest.Method.CLOSE;
 
 /**
  * This class holds the business logic for handling a task notification
@@ -43,15 +47,21 @@ public class QueryExecutor implements QueryRequestHandler {
     protected final QueryQueueManager queues;
     protected final QueryLogicFactory queryLogicFactory;
     protected final ExecutorProperties executorProperties;
+    protected final QueryProperties queryProperties;
+    protected final BusProperties busProperties;
     protected final ThreadPoolExecutor threadPool;
+    protected final ApplicationContext publisher;
     
-    public QueryExecutor(ExecutorProperties executorProperties, Connector connector, QueryStorageCache cache, QueryQueueManager queues,
-                    QueryLogicFactory queryLogicFactory) {
+    public QueryExecutor(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, Connector connector,
+                    QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory, ApplicationContext publisher) {
         this.executorProperties = executorProperties;
+        this.queryProperties = queryProperties;
+        this.busProperties = busProperties;
         this.cache = cache;
         this.queues = queues;
         this.connector = connector;
         this.queryLogicFactory = queryLogicFactory;
+        this.publisher = publisher;
         this.workQueue = new LinkedBlockingDeque<>(executorProperties.getMaxQueueSize());
         this.working = Collections.synchronizedSet(new HashSet<>());
         threadPool = new ThreadPoolExecutor(executorProperties.getCoreThreads(), executorProperties.getMaxThreads(), executorProperties.getKeepAliveMs(),
@@ -68,41 +78,7 @@ public class QueryExecutor implements QueryRequestHandler {
         };
     }
     
-    public static QueryTask.QUERY_ACTION getQueryAction(QueryRequest.Method method) {
-        switch (method) {
-            case NEXT:
-                return QueryTask.QUERY_ACTION.NEXT;
-            case CREATE:
-                return QueryTask.QUERY_ACTION.CREATE;
-            case CLOSE:
-                return QueryTask.QUERY_ACTION.CLOSE;
-            case CANCEL:
-                return QueryTask.QUERY_ACTION.CANCEL;
-            case PLAN:
-                return QueryTask.QUERY_ACTION.PLAN;
-            default:
-                throw new IllegalStateException("Cannot map " + method + " to a query action");
-        }
-    }
-    
-    public static QueryRequest.Method getQueryMethod(QueryTask.QUERY_ACTION action) {
-        switch (action) {
-            case NEXT:
-                return QueryRequest.Method.NEXT;
-            case CREATE:
-                return QueryRequest.Method.CREATE;
-            case CLOSE:
-                return QueryRequest.Method.CLOSE;
-            case CANCEL:
-                return QueryRequest.Method.CANCEL;
-            case PLAN:
-                return QueryRequest.Method.PLAN;
-            default:
-                throw new IllegalStateException("Cannot map " + action + " to a query method");
-        }
-    }
-    
-    private void removeFromWorkQueue(UUID queryId) {
+    private void removeFromWorkQueue(String queryId) {
         List<Runnable> removals = new ArrayList<Runnable>();
         for (Runnable action : workQueue) {
             if (((ExecutorAction) action).getTaskKey().getQueryId().equals(queryId)) {
@@ -114,7 +90,7 @@ public class QueryExecutor implements QueryRequestHandler {
         }
     }
     
-    private void interruptWork(UUID queryId) {
+    private void interruptWork(String queryId) {
         synchronized (working) {
             for (Runnable action : working) {
                 if (((ExecutorAction) action).getTaskKey().getQueryId().equals(queryId)) {
@@ -130,8 +106,8 @@ public class QueryExecutor implements QueryRequestHandler {
     }
     
     public void handleRemoteRequest(QueryRequest queryRequest, boolean wait) {
-        final UUID queryId = UUID.fromString(queryRequest.getQueryId());
-        final QueryTask.QUERY_ACTION action = getQueryAction(queryRequest.getMethod());
+        final String queryId = queryRequest.getQueryId();
+        final QueryRequest.Method action = queryRequest.getMethod();
         // A close request waits for the current page to finish
         switch (action) {
             case CLOSE:
@@ -148,7 +124,7 @@ public class QueryExecutor implements QueryRequestHandler {
                 TaskKey taskKey = null;
                 if (taskStateMap.containsKey(TaskStates.TASK_STATE.READY)) {
                     for (TaskKey key : taskStateMap.get(TaskStates.TASK_STATE.READY)) {
-                        if (key.getAction() == getQueryAction(queryRequest.getMethod())) {
+                        if (key.getAction() == queryRequest.getMethod()) {
                             taskKey = key;
                             break;
                         }
@@ -160,13 +136,16 @@ public class QueryExecutor implements QueryRequestHandler {
                     ExecutorAction runnable = null;
                     switch (action) {
                         case CREATE:
-                            runnable = new Create(executorProperties, connector, cache, queues, queryLogicFactory, task);
+                            runnable = new Create(executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory, publisher,
+                                            task);
                             break;
                         case NEXT:
-                            runnable = new Next(executorProperties, connector, cache, queues, queryLogicFactory, task);
+                            runnable = new Next(executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory, publisher,
+                                            task);
                             break;
                         case PLAN:
-                            runnable = new Plan(executorProperties, connector, cache, queues, queryLogicFactory, task);
+                            runnable = new Plan(executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory, publisher,
+                                            task);
                             break;
                         default:
                             throw new UnsupportedOperationException(task.getTaskKey().toString());

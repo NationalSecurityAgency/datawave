@@ -6,7 +6,6 @@ import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.microservice.query.logic.QueryCheckpoint;
 import datawave.microservice.query.logic.QueryKey;
 import datawave.microservice.query.logic.QueryLogicFactory;
-import datawave.microservice.query.logic.QueryPool;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Attributes;
@@ -102,7 +101,7 @@ public class QueryLogicTestHarness {
         if (!disableCheckpoint && logic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) logic).isCheckpointable() && factory != null) {
             Queue<QueryCheckpoint> cps = new LinkedList<>();
             Connector connection = logic.getConfig().getConnector();
-            QueryKey queryKey = new QueryKey(new QueryPool("default"), logic.getConfig().getQuery().getId(), logic.getLogicName());
+            QueryKey queryKey = new QueryKey("default", logic.getConfig().getQuery().getId().toString(), logic.getLogicName());
             cps.addAll(((CheckpointableQueryLogic) logic).checkpoint(queryKey));
             while (!cps.isEmpty()) {
                 QueryCheckpoint cp = cps.remove();

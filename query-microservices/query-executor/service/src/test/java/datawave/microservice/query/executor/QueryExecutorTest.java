@@ -1,13 +1,11 @@
 package datawave.microservice.query.executor;
 
+import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.storage.QueryCache;
-import datawave.microservice.query.logic.QueryPool;
 import datawave.microservice.query.storage.QueryQueueListener;
 import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
-import datawave.microservice.query.storage.QueryTask;
-import datawave.microservice.query.storage.QueryTaskNotification;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskLockException;
 import datawave.microservice.query.storage.TaskStates;
@@ -43,7 +41,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.bus.event.RemoteQueryTaskNotificationEvent;
+import org.springframework.cloud.bus.BusProperties;
+import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -68,7 +68,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.TimeZone;
-import java.util.UUID;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
@@ -94,6 +93,15 @@ public abstract class QueryExecutorTest {
     private ExecutorProperties executorProperties;
     
     @Autowired
+    private QueryProperties queryProperties;
+    
+    @Autowired
+    private BusProperties busProperties;
+    
+    @Autowired
+    private ApplicationContext publisher;
+    
+    @Autowired
     private QueryCache queryCache;
     
     @Autowired
@@ -103,7 +111,7 @@ public abstract class QueryExecutorTest {
     private QueryQueueManager queueManager;
     
     @Autowired
-    private LinkedList<QueryTaskNotification> queryTaskNotifications;
+    private LinkedList<QueryRequest> queryRequests;
     
     protected Connector connector;
     private QueryExecutor queryExecutor;
@@ -111,7 +119,7 @@ public abstract class QueryExecutorTest {
     public String TEST_POOL = "TestPool";
     
     private Queue<QueryQueueListener> listeners = new LinkedList<>();
-    private Queue<UUID> createdQueries = new LinkedList<>();
+    private Queue<String> createdQueries = new LinkedList<>();
     
     static {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -148,7 +156,7 @@ public abstract class QueryExecutorTest {
     @ComponentScan(basePackages = "datawave.microservice")
     public static class QueryExecutorTestConfiguration {
         @Bean
-        public LinkedList<QueryTaskNotification> queryTaskNotifications() {
+        public LinkedList<QueryRequest> queryTaskNotifications() {
             return new LinkedList<>();
         }
         
@@ -156,8 +164,8 @@ public abstract class QueryExecutorTest {
         @Primary
         public ApplicationEventPublisher publisher(ApplicationEventPublisher publisher) {
             return event -> {
-                if (event instanceof RemoteQueryTaskNotificationEvent)
-                    queryTaskNotifications().push(((RemoteQueryTaskNotificationEvent) event).getNotification());
+                if (event instanceof RemoteQueryRequestEvent)
+                    queryTaskNotifications().push(((RemoteQueryRequestEvent) event).getRequest());
             };
         }
     }
@@ -185,7 +193,8 @@ public abstract class QueryExecutorTest {
         accumuloSetup.beforeEach(null);
         accumuloSetup.setData(FileType.CSV, dataType);
         connector = accumuloSetup.loadTables(log);
-        queryExecutor = new QueryExecutor(executorProperties, connector, storageService, queueManager, queryLogicFactory);
+        queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, connector, storageService, queueManager, queryLogicFactory,
+                        publisher);
     }
     
     @AfterEach
@@ -210,7 +219,7 @@ public abstract class QueryExecutorTest {
     @Test
     public void testCheckpointableQuery() throws ParseException, InterruptedException, IOException, TaskLockException {
         // ensure the message queue is empty
-        assertTrue(queryTaskNotifications.isEmpty());
+        assertTrue(queryRequests.isEmpty());
         
         String city = "rome";
         String country = "italy";
@@ -231,7 +240,7 @@ public abstract class QueryExecutorTest {
         query.setUserDN("test user");
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
-        QueryPool queryPool = new QueryPool(TEST_POOL);
+        String queryPool = new String(TEST_POOL);
         TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 3);
         createdQueries.add(key.getQueryId());
         assertNotNull(key);
@@ -240,12 +249,12 @@ public abstract class QueryExecutorTest {
         assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
         
         // ensure we got a task notification
-        QueryTaskNotification notification = queryTaskNotifications.pop();
+        QueryRequest notification = queryRequests.pop();
         assertNotNull(notification);
-        assertEquals(key, notification.getTaskKey());
+        assertEquals(key.getQueryId().toString(), notification.getQueryId());
         
         // pass the notification to the query executor
-        QueryRequest request = QueryRequest.request(QueryExecutor.getQueryMethod(notification.getAction()), notification.getTaskKey().getQueryId().toString());
+        QueryRequest request = QueryRequest.request(notification.getMethod(), notification.getQueryId());
         queryExecutor.handleRemoteRequest(request, true);
         // now we need to wait for its completion
         
@@ -255,18 +264,18 @@ public abstract class QueryExecutorTest {
         
         QueryQueueListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId().toString());
         
-        notification = queryTaskNotifications.poll();
+        notification = queryRequests.poll();
         assertNotNull(notification);
         while (notification != null) {
-            assertEquals(key.getQueryKey(), notification.getTaskKey().getQueryKey());
-            assertEquals(QueryTask.QUERY_ACTION.NEXT, notification.getAction());
+            assertEquals(key.getQueryId(), notification.getQueryId());
+            assertEquals(QueryRequest.Method.NEXT, notification.getMethod());
             
-            request = QueryRequest.request(QueryExecutor.getQueryMethod(notification.getAction()), notification.getTaskKey().getQueryId().toString());
+            request = QueryRequest.request(notification.getMethod(), notification.getQueryId());
             queryExecutor.handleRemoteRequest(request, true);
             
             queryStatus = storageService.getQueryStatus(key.getQueryId());
             assertEquals(QueryStatus.QUERY_STATE.CREATED, queryStatus.getQueryState());
-            notification = queryTaskNotifications.poll();
+            notification = queryRequests.poll();
         }
         
         // count the results
@@ -281,7 +290,7 @@ public abstract class QueryExecutorTest {
     @Test
     public void testNonCheckpointableQuery() throws ParseException, InterruptedException, IOException, TaskLockException {
         // ensure the message queue is empty
-        assertTrue(queryTaskNotifications.isEmpty());
+        assertTrue(queryRequests.isEmpty());
         
         String city = "rome";
         String country = "italy";
@@ -302,7 +311,7 @@ public abstract class QueryExecutorTest {
         query.setUserDN("test user");
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
-        QueryPool queryPool = new QueryPool(TEST_POOL);
+        String queryPool = new String(TEST_POOL);
         TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 3);
         createdQueries.add(key.getQueryId());
         assertNotNull(key);
@@ -311,38 +320,39 @@ public abstract class QueryExecutorTest {
         assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
         
         // ensure we got a task notification
-        QueryTaskNotification notification = queryTaskNotifications.pop();
+        QueryRequest notification = queryRequests.pop();
         assertNotNull(notification);
-        assertEquals(key, notification.getTaskKey());
+        assertEquals(key.getQueryId(), notification.getQueryId());
         
         // pass the notification to the query executor
-        QueryExecutor queryExecutor = new QueryExecutor(executorProperties, connector, storageService, queueManager, new QueryLogicFactory() {
-            
-            @Override
-            public QueryLogic<?> getQueryLogic(String name, Collection<String> userRoles)
-                            throws QueryException, IllegalArgumentException, CloneNotSupportedException {
-                QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(name, userRoles);
-                if (queryLogic instanceof CheckpointableQueryLogic) {
-                    ((CheckpointableQueryLogic) queryLogic).setCheckpointable(false);
-                }
-                return queryLogic;
-            }
-            
-            @Override
-            public QueryLogic<?> getQueryLogic(String name) throws QueryException, IllegalArgumentException, CloneNotSupportedException {
-                QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(name);
-                if (queryLogic instanceof CheckpointableQueryLogic) {
-                    ((CheckpointableQueryLogic) queryLogic).setCheckpointable(false);
-                }
-                return queryLogic;
-            }
-            
-            @Override
-            public List<QueryLogic<?>> getQueryLogicList() {
-                return queryLogicFactory.getQueryLogicList();
-            }
-        });
-        QueryRequest request = QueryRequest.request(QueryExecutor.getQueryMethod(notification.getAction()), notification.getTaskKey().getQueryId().toString());
+        QueryExecutor queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, connector, storageService, queueManager,
+                        new QueryLogicFactory() {
+                            
+                            @Override
+                            public QueryLogic<?> getQueryLogic(String name, Collection<String> userRoles)
+                                            throws QueryException, IllegalArgumentException, CloneNotSupportedException {
+                                QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(name, userRoles);
+                                if (queryLogic instanceof CheckpointableQueryLogic) {
+                                    ((CheckpointableQueryLogic) queryLogic).setCheckpointable(false);
+                                }
+                                return queryLogic;
+                            }
+                            
+                            @Override
+                            public QueryLogic<?> getQueryLogic(String name) throws QueryException, IllegalArgumentException, CloneNotSupportedException {
+                                QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(name);
+                                if (queryLogic instanceof CheckpointableQueryLogic) {
+                                    ((CheckpointableQueryLogic) queryLogic).setCheckpointable(false);
+                                }
+                                return queryLogic;
+                            }
+                            
+                            @Override
+                            public List<QueryLogic<?>> getQueryLogicList() {
+                                return queryLogicFactory.getQueryLogicList();
+                            }
+                        }, publisher);
+        QueryRequest request = QueryRequest.request(notification.getMethod(), notification.getQueryId());
         queryExecutor.handleRemoteRequest(request, true);
         
         QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
@@ -351,7 +361,7 @@ public abstract class QueryExecutorTest {
         
         QueryQueueListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId().toString());
         
-        notification = queryTaskNotifications.poll();
+        notification = queryRequests.poll();
         assertNull(notification);
         
         // count the results

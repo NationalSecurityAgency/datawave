@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -85,42 +84,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      *            the query ID
      */
     @Override
-    public void ensureQueueCreated(UUID queryId) {
-        ensureQueueCreated(queryId.toString(), queryId.toString(), queryId.toString());
-    }
-    
-    /**
-     * Delete a queue for a query
-     *
-     * @param queryId
-     *            the query ID
-     */
-    @Override
-    public void deleteQueue(UUID queryId) {
-        deleteQueue(queryId.toString());
-    }
-    
-    /**
-     * Empty a queue for a query
-     *
-     * @param queryId
-     *            the query ID
-     */
-    @Override
-    public void emptyQueue(UUID queryId) {
-        emptyQueue(queryId.toString());
-    }
-    
-    /**
-     * Get the queue size
-     *
-     * @param queryId
-     *            The query Id
-     * @return the number of elements
-     */
-    @Override
-    public int getQueueSize(UUID queryId) {
-        return getQueueSize(queryId.toString());
+    public void ensureQueueCreated(String queryId) {
+        ensureQueueCreated(queryId, queryId, queryId);
     }
     
     /**
@@ -134,15 +99,15 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      *            the result
      */
     @Override
-    public void sendMessage(UUID queryId, Result result) {
+    public void sendMessage(String queryId, Result result) {
         ensureQueueCreated(queryId);
         
-        String exchangeName = queryId.toString();
+        String exchangeName = queryId;
         if (log.isDebugEnabled()) {
             log.debug("Publishing message to " + exchangeName);
         }
         try {
-            rabbitTemplate.convertAndSend(exchangeName, queryId.toString(), result);
+            rabbitTemplate.convertAndSend(exchangeName, queryId, result);
         } catch (Exception e) {
             throw new RuntimeException("Unable to serialize results", e);
         }
@@ -281,7 +246,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         }
     }
     
-    private void deleteQueue(String exchangeQueueName) {
+    @Override
+    public void deleteQueue(String exchangeQueueName) {
         try {
             rabbitAdmin.deleteExchange(exchangeQueueName);
             rabbitAdmin.deleteQueue(exchangeQueueName);
@@ -291,7 +257,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         }
     }
     
-    private void emptyQueue(String exchangeQueueName) {
+    @Override
+    public void emptyQueue(String exchangeQueueName) {
         try {
             rabbitAdmin.purgeQueue(exchangeQueueName);
         } catch (AmqpIOException e) {
@@ -300,7 +267,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         }
     }
     
-    private int getQueueSize(String exchangeQueueName) {
+    @Override
+    public int getQueueSize(String exchangeQueueName) {
         QueueInformation info = rabbitAdmin.getQueueInfo(exchangeQueueName);
         if (info != null) {
             return info.getMessageCount();

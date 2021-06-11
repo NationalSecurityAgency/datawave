@@ -16,10 +16,6 @@ public class QueryStoragePropertiesTest {
         assertTrue(props.isSynchStorage());
         props.setSynchStorage(false);
         assertFalse(props.isSynchStorage());
-        props.setSendNotifications(true);
-        assertTrue(props.isSendNotifications());
-        props.setSendNotifications(false);
-        assertFalse(props.isSendNotifications());
         props.setLockManager(QueryStorageProperties.LOCKMGR.ZOO);
         assertEquals(QueryStorageProperties.LOCKMGR.ZOO, props.getLockManager());
         props.setZookeeperConnectionString("localhost:199999");

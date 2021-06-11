@@ -7,7 +7,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 public class QueryKey implements Serializable {
     private static final long serialVersionUID = -2589618312956104322L;
@@ -17,9 +16,9 @@ public class QueryKey implements Serializable {
     public static final String LOGIC_PREFIX = "L-";
     
     @JsonProperty
-    private QueryPool queryPool;
+    private String queryPool;
     @JsonProperty
-    private UUID queryId;
+    private String queryId;
     @JsonProperty
     private String queryLogic;
     
@@ -43,26 +42,26 @@ public class QueryKey implements Serializable {
     
     protected void setPart(String part) {
         if (part.startsWith(QUERY_ID_PREFIX)) {
-            queryId = UUID.fromString(part.substring(QUERY_ID_PREFIX.length()));
+            queryId = part.substring(QUERY_ID_PREFIX.length());
         } else if (part.startsWith(POOL_PREFIX)) {
-            queryPool = new QueryPool(part.substring(POOL_PREFIX.length()));
+            queryPool = part.substring(POOL_PREFIX.length());
         } else if (part.startsWith(LOGIC_PREFIX)) {
             queryLogic = part.substring(LOGIC_PREFIX.length());
         }
     }
     
     @JsonCreator
-    public QueryKey(@JsonProperty("queryPool") QueryPool queryPool, @JsonProperty("queryId") UUID queryId, @JsonProperty("queryLogic") String queryLogic) {
+    public QueryKey(@JsonProperty("queryPool") String queryPool, @JsonProperty("queryId") String queryId, @JsonProperty("queryLogic") String queryLogic) {
         this.queryPool = queryPool;
         this.queryId = queryId;
         this.queryLogic = queryLogic;
     }
     
-    public QueryPool getQueryPool() {
+    public String getQueryPool() {
         return queryPool;
     }
     
-    public UUID getQueryId() {
+    public String getQueryId() {
         return queryId;
     }
     
@@ -70,8 +69,8 @@ public class QueryKey implements Serializable {
         return queryLogic;
     }
     
-    public static String toUUIDKey(UUID queryId) {
-        return QUERY_ID_PREFIX + queryId.toString();
+    public static String toUUIDKey(String queryId) {
+        return QUERY_ID_PREFIX + queryId;
     }
     
     public String toUUIDKey() {
@@ -79,11 +78,11 @@ public class QueryKey implements Serializable {
     }
     
     public String toKey() {
-        return toUUIDKey() + '.' + POOL_PREFIX + queryPool.getName() + '.' + LOGIC_PREFIX + queryLogic;
+        return toUUIDKey() + '.' + POOL_PREFIX + queryPool + '.' + LOGIC_PREFIX + queryLogic;
     }
     
     public String toRoutingKey() {
-        return "*." + POOL_PREFIX + queryPool.getName() + ".*";
+        return "*." + POOL_PREFIX + queryPool + ".*";
     }
     
     @Override

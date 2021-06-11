@@ -7,7 +7,6 @@ import datawave.microservice.audit.AuditClient;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.common.audit.PrivateAuditConstants;
-import datawave.microservice.query.logic.QueryPool;
 import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
@@ -298,7 +297,7 @@ public class QueryManagementService implements QueryRequestHandler {
             if (isCreateRequest) {
                 // @formatter:off
                 taskKey = queryStorageCache.createQuery(
-                        new QueryPool(getPoolName()),
+                        getPoolName(),
                         query,
                         AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(), currentUser),
                         getMaxConcurrentTasks(queryLogic));
@@ -309,7 +308,7 @@ public class QueryManagementService implements QueryRequestHandler {
             } else {
                 // @formatter:off
                 taskKey = queryStorageCache.defineQuery(
-                        new QueryPool(getPoolName()),
+                        getPoolName(),
                         query,
                         AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(), currentUser),
                         getMaxConcurrentTasks(queryLogic));
@@ -393,14 +392,12 @@ public class QueryManagementService implements QueryRequestHandler {
      * @throws QueryException
      */
     private BaseQueryResponse next(String queryId, Collection<String> userRoles) throws Exception {
-        UUID queryUUID = UUID.fromString(queryId);
-        
         // before we spin up a separate thread, make sure we are allowed to call next
         boolean success = false;
-        QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryUUID, queryStatusUpdateHelper::claimConcurrentNext);
+        QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryId, queryStatusUpdateHelper::claimConcurrentNext);
         try {
             // publish a next event to the executor pool
-            publishNextEvent(queryId, queryStatus.getQueryKey().getQueryPool().getName());
+            publishNextEvent(queryId, queryStatus.getQueryKey().getQueryPool());
             
             // get the query logic
             String queryLogicName = queryStatus.getQuery().getQueryLogicName();
@@ -431,7 +428,7 @@ public class QueryManagementService implements QueryRequestHandler {
                     BaseQueryResponse response = queryLogic.getTransformer(queryStatus.getQuery()).createResponse(resultsPage);
                     
                     // after all of our work is done, perform our final query status update for this next call
-                    queryStatus = queryStatusUpdateHelper.lockedUpdate(queryUUID, status -> {
+                    queryStatus = queryStatusUpdateHelper.lockedUpdate(queryId, status -> {
                         queryStatusUpdateHelper.releaseConcurrentNext(status);
                         status.setLastPageNumber(status.getLastPageNumber() + 1);
                         status.setNumResultsReturned(status.getNumResultsReturned() + resultsPage.getResults().size());
@@ -467,7 +464,7 @@ public class QueryManagementService implements QueryRequestHandler {
         } finally {
             // update query status if we failed
             if (!success) {
-                queryStatusUpdateHelper.lockedUpdate(queryUUID, queryStatusUpdateHelper::releaseConcurrentNext);
+                queryStatusUpdateHelper.lockedUpdate(queryId, queryStatusUpdateHelper::releaseConcurrentNext);
             }
         }
     }
@@ -571,7 +568,7 @@ public class QueryManagementService implements QueryRequestHandler {
         
         if (publishEvent) {
             // only the initial event publisher should update the status
-            QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(UUID.fromString(queryId), status -> {
+            QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryId, status -> {
                 // update query state to CANCELED
                 status.setQueryState(CANCELED);
             });
@@ -582,7 +579,7 @@ public class QueryManagementService implements QueryRequestHandler {
             publishSelfEvent(cancelRequest);
             
             // publish a cancel event to the executor pool
-            publishExecutorEvent(cancelRequest, queryStatus.getQueryKey().getQueryPool().getName());
+            publishExecutorEvent(cancelRequest, queryStatus.getQueryKey().getQueryPool());
         }
     }
     
@@ -675,13 +672,13 @@ public class QueryManagementService implements QueryRequestHandler {
      * @throws QueryException
      */
     public void close(String queryId) throws InterruptedException, QueryException {
-        QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(UUID.fromString(queryId), status -> {
+        QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryId, status -> {
             // update query state to CLOSED
             status.setQueryState(CLOSED);
         });
         
         // publish a close event to the executor pool
-        publishExecutorEvent(QueryRequest.close(queryId), queryStatus.getQueryKey().getQueryPool().getName());
+        publishExecutorEvent(QueryRequest.close(queryId), queryStatus.getQueryKey().getQueryPool());
     }
     
     /**
@@ -830,7 +827,7 @@ public class QueryManagementService implements QueryRequestHandler {
                         Query query = createQuery(queryLogicName, parameters, userDn, currentUser.getDNs(), queryId);
                         
                         // save the new query object in the cache
-                        queryStatusUpdateHelper.lockedUpdate(UUID.fromString(queryId), status -> status.setQuery(query));
+                        queryStatusUpdateHelper.lockedUpdate(queryId, status -> status.setQuery(query));
                     }
                     
                     if (!ignoredParams.isEmpty()) {
@@ -949,7 +946,7 @@ public class QueryManagementService implements QueryRequestHandler {
             if (queryId != null && !queryId.isEmpty()) {
                 // get the query for the given id
                 queries = new ArrayList<>();
-                queries.add(queryStorageCache.getQueryState(UUID.fromString(queryId)).getQueryStatus().getQuery());
+                queries.add(queryStorageCache.getQueryState(queryId).getQueryStatus().getQuery());
             } else {
                 // get all of the queries
                 queries = queryStorageCache.getQueryStatus().stream().map(QueryStatus::getQuery).collect(Collectors.toList());
@@ -973,7 +970,7 @@ public class QueryManagementService implements QueryRequestHandler {
     
     private QueryStatus validateRequest(String queryId, ProxiedUserDetails currentUser, boolean adminOverride) throws QueryException {
         // does the query exist?
-        QueryStatus queryStatus = queryStorageCache.getQueryStatus(UUID.fromString(queryId));
+        QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         if (queryStatus == null) {
             throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, MessageFormat.format("{0}", queryId));
         }

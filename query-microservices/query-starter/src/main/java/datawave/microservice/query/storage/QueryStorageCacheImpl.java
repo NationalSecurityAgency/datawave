@@ -2,13 +2,12 @@ package datawave.microservice.query.storage;
 
 import datawave.microservice.query.logic.QueryCheckpoint;
 import datawave.microservice.query.logic.QueryKey;
-import datawave.microservice.query.logic.QueryPool;
+import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.config.QueryStorageProperties;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.security.Authorizations;
 import org.springframework.cloud.bus.BusProperties;
-import org.springframework.cloud.bus.event.RemoteQueryTaskNotificationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -40,8 +39,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     }
     
     /**
-     * Store/cache a new query. This will create a query task containing the query with a DEFINE query action and send out a task notification on a channel
-     * using the name of the query logic.
+     * Store/cache a new query. This will create a query task containing the query with a DEFINE query action.
      *
      * @param queryPool
      *            The query pool
@@ -54,13 +52,12 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return The task key
      */
     @Override
-    public TaskKey defineQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
+    public TaskKey defineQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
         return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.DEFINED);
     }
     
     /**
-     * Store/cache a new query. This will create a query task containing the query with a CREATE query action and send out a task notification on a channel
-     * using the name of the query logic.
+     * Store/cache a new query. This will create a query task containing the query with a CREATE query action.
      *
      * @param queryPool
      *            The query pool
@@ -73,20 +70,21 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return The task key
      */
     @Override
-    public TaskKey createQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
+    public TaskKey createQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
         return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATED);
     }
     
-    private TaskKey storeQuery(QueryPool queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count, QueryStatus.QUERY_STATE queryState)
+    private TaskKey storeQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count, QueryStatus.QUERY_STATE queryState)
                     throws IOException {
         UUID queryUuid = query.getId();
         if (queryUuid == null) {
-            // create the query UUID
+            // create the query String
             queryUuid = UUID.randomUUID();
             query.setId(queryUuid);
         }
+        String queryId = queryUuid.toString();
         
-        QueryKey queryKey = new QueryKey(queryPool, queryUuid, query.getQueryLogicName());
+        QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
         
         // create the initial query checkpoint
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
@@ -107,15 +105,15 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
             cache.updateTaskStates(taskStates);
             
             // create the results queue
-            queue.ensureQueueCreated(queryKey.getQueryId());
+            queue.ensureQueueCreated(queryId);
             
-            // create and store the initial create task with the checkpoint. This will send out the task notification.
-            QueryTask task = createTask(QueryTask.QUERY_ACTION.CREATE, checkpoint);
+            // create and store the initial create task with the checkpoint
+            QueryTask task = createTask(QueryRequest.Method.CREATE, checkpoint);
             return task.getTaskKey();
         }
         
         // return the an empty task key
-        return new TaskKey(null, QueryTask.QUERY_ACTION.CREATE, new QueryKey(queryPool, queryUuid, query.getQueryLogicName()));
+        return new TaskKey(null, QueryRequest.Method.CREATE, new QueryKey(queryPool, queryId, query.getQueryLogicName()));
     }
     
     /**
@@ -125,7 +123,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *            the query id
      * @return query stats
      */
-    public QueryState getQueryState(UUID queryId) {
+    public QueryState getQueryState(String queryId) {
         return cache.getQuery(queryId);
     }
     
@@ -136,7 +134,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *            the query id
      * @return the query properties
      */
-    public QueryStatus getQueryStatus(UUID queryId) {
+    public QueryStatus getQueryStatus(String queryId) {
         return cache.getQueryStatus(queryId);
     }
     
@@ -169,7 +167,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *            the query state
      */
     @Override
-    public void updateQueryStatus(UUID queryId, QueryStatus.QUERY_STATE state) {
+    public void updateQueryStatus(String queryId, QueryStatus.QUERY_STATE state) {
         QueryStorageLock lock = cache.getQueryStatusLock(queryId);
         lock.lock();
         try {
@@ -190,7 +188,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *            the exception
      */
     @Override
-    public void updateFailedQueryStatus(UUID queryId, Exception e) {
+    public void updateFailedQueryStatus(String queryId, Exception e) {
         QueryStorageLock lock = cache.getQueryStatusLock(queryId);
         lock.lock();
         try {
@@ -235,7 +233,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return a lock object
      */
     @Override
-    public QueryStorageLock getQueryStatusLock(UUID queryId) {
+    public QueryStorageLock getQueryStatusLock(String queryId) {
         return cache.getQueryStatusLock(queryId);
     }
     
@@ -247,7 +245,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return a lock object
      */
     @Override
-    public QueryStorageLock getTaskStatesLock(UUID queryId) {
+    public QueryStorageLock getTaskStatesLock(String queryId) {
         return cache.getTaskStatesLock(queryId);
     }
     
@@ -259,7 +257,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return the task states
      */
     @Override
-    public TaskStates getTaskStates(UUID queryId) {
+    public TaskStates getTaskStates(String queryId) {
         return cache.getTaskStates(queryId);
     }
     
@@ -275,7 +273,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     }
     
     /**
-     * Create a new query task. This will create a new query task, store it, and send out a task notification.
+     * Create a new query task. This will create a new query task, store it.
      * 
      * @param action
      *            The query action
@@ -284,35 +282,17 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return The new query task
      */
     @Override
-    public QueryTask createTask(QueryTask.QUERY_ACTION action, QueryCheckpoint checkpoint) {
+    public QueryTask createTask(QueryRequest.Method action, QueryCheckpoint checkpoint) {
         // create a query task in the cache
         QueryTask task = cache.addQueryTask(action, checkpoint);
         
         // Set the initial ready state in the task states
-        TaskStates states = cache.getTaskStates(task.getTaskKey().getQueryId());
+        TaskStates states = cache.getTaskStates(checkpoint.getQueryKey().getQueryId());
         states.setState(task.getTaskKey(), TaskStates.TASK_STATE.READY);
         cache.updateTaskStates(states);
         
-        // publish a task notification event
-        post(task.getNotification());
-        
         // return the task
         return task;
-    }
-    
-    /**
-     * Post a task notification
-     * 
-     * @param taskNotification
-     */
-    @Override
-    public void post(QueryTaskNotification taskNotification) {
-        // publish a task notification event
-        if (properties.isSendNotifications()) {
-            // broadcast the notification to the executor services
-            publisher.publishEvent(
-                            new RemoteQueryTaskNotificationEvent(this, busProperties.getId(), queryProperties.getExecutorServiceName(), taskNotification));
-        }
     }
     
     /**
@@ -363,7 +343,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return true if deleted
      */
     @Override
-    public boolean deleteQuery(UUID queryId) {
+    public boolean deleteQuery(String queryId) {
         int deleted = cache.deleteQuery(queryId);
         queue.deleteQueue(queryId);
         return (deleted > 0);
@@ -375,7 +355,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     @Override
     public void clear() {
         for (QueryState queries : cache.getQueries()) {
-            queue.emptyQueue(queries.getQueryId());
+            queue.emptyQueue(queries.getQueryStatus().getQueryKey().getQueryId());
         }
         cache.clear();
     }
@@ -388,7 +368,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return The list of task keys
      */
     @Override
-    public List<TaskKey> getTasks(UUID queryId) {
+    public List<TaskKey> getTasks(String queryId) {
         List<TaskKey> tasks = new ArrayList<>();
         for (QueryTask task : cache.getTasks(queryId)) {
             tasks.add(task.getTaskKey());

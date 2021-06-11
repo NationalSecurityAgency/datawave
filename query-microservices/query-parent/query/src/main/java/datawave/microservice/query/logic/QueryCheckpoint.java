@@ -13,7 +13,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -26,11 +25,11 @@ public class QueryCheckpoint implements Serializable {
     private final QueryKey queryKey;
     private final Map<String,Object> properties;
     
-    public QueryCheckpoint(QueryPool queryPool, UUID queryId, String queryLogic, Query query) {
+    public QueryCheckpoint(String queryPool, String queryId, String queryLogic, Query query) {
         this(queryPool, queryId, queryLogic, queryToProperties(query));
     }
     
-    public QueryCheckpoint(QueryPool queryPool, UUID queryId, String queryLogic, Map<String,Object> properties) {
+    public QueryCheckpoint(String queryPool, String queryId, String queryLogic, Map<String,Object> properties) {
         this(new QueryKey(queryPool, queryId, queryLogic), properties);
     }
     

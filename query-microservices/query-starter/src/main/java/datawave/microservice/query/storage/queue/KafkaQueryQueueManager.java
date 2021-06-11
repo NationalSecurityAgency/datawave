@@ -37,7 +37,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -88,8 +87,8 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
      *            the query ID
      */
     @Override
-    public void ensureQueueCreated(UUID queryId) {
-        ensureTopicCreated(queryId.toString(), queryId.toString(), queryId.toString());
+    public void ensureQueueCreated(String queryId) {
+        ensureTopicCreated(queryId, queryId, queryId);
     }
     
     /**
@@ -99,31 +98,8 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
      *            the query ID
      */
     @Override
-    public void deleteQueue(UUID queryId) {
-        deleteTopic(queryId.toString());
-    }
-    
-    /**
-     * Empty a queue for a query
-     *
-     * @param queryId
-     *            the query ID
-     */
-    @Override
-    public void emptyQueue(UUID queryId) {
-        emptyQueue(queryId.toString());
-    }
-    
-    /**
-     * Get the queue size
-     *
-     * @param queryId
-     *            The query Id
-     * @return the number of elements.
-     */
-    @Override
-    public int getQueueSize(UUID queryId) {
-        return getQueueSize(queryId.toString());
+    public void deleteQueue(String queryId) {
+        deleteTopic(queryId);
     }
     
     /**
@@ -137,10 +113,10 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
      *            the result
      */
     @Override
-    public void sendMessage(UUID queryId, Result result) {
+    public void sendMessage(String queryId, Result result) {
         ensureQueueCreated(queryId);
         
-        String exchangeName = queryId.toString();
+        String exchangeName = queryId;
         if (log.isDebugEnabled()) {
             log.debug("Publishing message to " + exchangeName);
         }
@@ -306,7 +282,8 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         }
     }
     
-    private void emptyQueue(String name) {
+    @Override
+    public void emptyQueue(String name) {
         TopicDescription topic = describeTopic(name);
         if (topic != null) {
             Map<TopicPartition,RecordsToDelete> partitions = new HashMap<>();
@@ -324,7 +301,8 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         }
     }
     
-    private int getQueueSize(final String topic) {
+    @Override
+    public int getQueueSize(final String topic) {
         TopicDescription topicDescription = describeTopic(topic);
         Set<TopicPartition> partitions = topicDescription.partitions().stream().map(d -> new TopicPartition(topic, d.partition())).collect(Collectors.toSet());
         Consumer consumer = kafkaConsumerFactory.createConsumer();

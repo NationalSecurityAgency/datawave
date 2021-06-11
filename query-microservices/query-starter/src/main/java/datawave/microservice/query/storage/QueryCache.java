@@ -3,7 +3,7 @@ package datawave.microservice.query.storage;
 import datawave.microservice.cached.LockableCacheInspector;
 import datawave.microservice.query.logic.QueryCheckpoint;
 import datawave.microservice.query.logic.QueryKey;
-import datawave.microservice.query.logic.QueryPool;
+import datawave.microservice.query.remote.QueryRequest;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -56,7 +55,7 @@ public class QueryCache {
      *            The query id
      */
     @CacheEvict(key = "T(datawave.microservice.query.storage.QueryCache).QUERY + T(datawave.microservice.query.logic.QueryKey).toUUIDKey(#queryId)")
-    public void deleteQueryStatus(UUID queryId) {
+    public void deleteQueryStatus(String queryId) {
         String key = QUERY + QueryKey.toUUIDKey(queryId);
         if (log.isDebugEnabled()) {
             log.debug("Deleted query status for " + queryId);
@@ -70,7 +69,7 @@ public class QueryCache {
      *            The query id
      * @return The query status
      */
-    public QueryStatus getQueryStatus(UUID queryId) {
+    public QueryStatus getQueryStatus(String queryId) {
         QueryStatus props = cacheInspector.list(CACHE_NAME, QueryStatus.class, QUERY + QueryKey.toUUIDKey(queryId));
         logStatus("Retrieved", props, queryId);
         return props;
@@ -105,7 +104,7 @@ public class QueryCache {
      *            The query id
      */
     @CacheEvict(key = "T(datawave.microservice.query.storage.QueryCache).TASKS + T(datawave.microservice.query.logic.QueryKey).toUUIDKey(#queryId)")
-    public void deleteTaskStates(UUID queryId) {
+    public void deleteTaskStates(String queryId) {
         if (log.isDebugEnabled()) {
             log.debug("Deleted task statuses for " + queryId);
         }
@@ -118,7 +117,7 @@ public class QueryCache {
      *            The query id
      * @return The task states
      */
-    public TaskStates getTaskStates(UUID queryId) {
+    public TaskStates getTaskStates(String queryId) {
         TaskStates states = cacheInspector.list(CACHE_NAME, TaskStates.class, TASKS + QueryKey.toUUIDKey(queryId));
         logStatus("Retrieved", states, queryId);
         return states;
@@ -134,7 +133,7 @@ public class QueryCache {
      * @return The new query task
      */
     @CachePut(key = "T(datawave.microservice.query.storage.QueryCache).TASK + #result.getTaskKey().toKey() ")
-    public QueryTask addQueryTask(QueryTask.QUERY_ACTION action, QueryCheckpoint checkpoint) {
+    public QueryTask addQueryTask(QueryRequest.Method action, QueryCheckpoint checkpoint) {
         QueryTask task = new QueryTask(action, checkpoint);
         logTask("Adding task", task);
         return task;
@@ -196,7 +195,7 @@ public class QueryCache {
      *            The query id
      * @return A list of tasks
      */
-    public List<QueryTask> getTasks(UUID queryId) {
+    public List<QueryTask> getTasks(String queryId) {
         List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, TASK + QueryKey.toUUIDKey(queryId));
         if (tasks == null) {
             tasks = Collections.EMPTY_LIST;
@@ -232,9 +231,9 @@ public class QueryCache {
      *            The query key
      * @return A list of tasks
      */
-    public Map<QueryTask.QUERY_ACTION,Integer> getTaskCounts(QueryKey queryKey) {
-        Map<QueryTask.QUERY_ACTION,MutableInt> taskCounts = new HashMap<>();
-        for (QueryTask.QUERY_ACTION action : QueryTask.QUERY_ACTION.values()) {
+    public Map<QueryRequest.Method,Integer> getTaskCounts(QueryKey queryKey) {
+        Map<QueryRequest.Method,MutableInt> taskCounts = new HashMap<>();
+        for (QueryRequest.Method action : QueryRequest.Method.values()) {
             taskCounts.put(action, new MutableInt());
         }
         List<QueryTask> tasks = getTasks(queryKey);
@@ -242,24 +241,6 @@ public class QueryCache {
             taskCounts.get(task.getAction()).increment();
         }
         return taskCounts.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getValue()));
-    }
-    
-    /**
-     * Get the query tasks for a query pool
-     *
-     * @param queryPool
-     *            The query pool
-     * @return A list of tasks
-     */
-    public List<QueryTask> getTasks(QueryPool queryPool) {
-        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listMatching(CACHE_NAME, QueryTask.class, QueryKey.POOL_PREFIX + queryPool.getName());
-        if (tasks == null) {
-            tasks = Collections.EMPTY_LIST;
-        }
-        if (log.isDebugEnabled()) {
-            log.debug("Retrieved " + tasks.size() + "tasks for query pool " + queryPool);
-        }
-        return tasks;
     }
     
     /**
@@ -302,7 +283,7 @@ public class QueryCache {
      *            A query id
      * @return the query state
      */
-    public QueryState getQuery(UUID queryId) {
+    public QueryState getQuery(String queryId) {
         QueryStatus props = getQueryStatus(queryId);
         return getQuery(props);
     }
@@ -315,7 +296,7 @@ public class QueryCache {
      * @return A query stat
      */
     private QueryState getQuery(QueryStatus status) {
-        return new QueryState(status.getQueryKey(), status, getTaskStates(status.getQueryKey().getQueryId()));
+        return new QueryState(status, getTaskStates(status.getQueryKey().getQueryId()));
     }
     
     /**
@@ -325,7 +306,7 @@ public class QueryCache {
      *            The query id
      * @return a list of task descriptions
      */
-    public List<TaskDescription> getTaskDescriptions(UUID queryId) {
+    public List<TaskDescription> getTaskDescriptions(String queryId) {
         List<TaskDescription> tasks = getTaskDescriptions(getTasks(queryId));
         if (log.isDebugEnabled()) {
             log.debug("Retrieved " + tasks.size() + " task descriptions for queryId " + queryId);
@@ -343,7 +324,7 @@ public class QueryCache {
     private List<TaskDescription> getTaskDescriptions(List<QueryTask> tasks) {
         List<TaskDescription> descriptions = new ArrayList<>();
         for (QueryTask task : tasks) {
-            descriptions.add(new TaskDescription(task.getTaskKey(), task.getAction(), task.getQueryCheckpoint().getProperties().entrySet().stream()
+            descriptions.add(new TaskDescription(task.getTaskKey(), task.getQueryCheckpoint().getProperties().entrySet().stream()
                             .collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())))));
         }
         return descriptions;
@@ -356,7 +337,7 @@ public class QueryCache {
      *            the query id
      * @return the number of items deleted
      */
-    public int deleteQuery(UUID queryId) {
+    public int deleteQuery(String queryId) {
         int deleted = cacheInspector.evictMatching(CACHE_NAME, QueryTask.class, QueryKey.toUUIDKey(queryId));
         if (log.isDebugEnabled()) {
             log.debug("Deleted all ( " + deleted + ") tasks for query " + queryId);
@@ -425,7 +406,7 @@ public class QueryCache {
      * @param key
      *            the query id
      */
-    private void logStatus(String msg, QueryStatus status, UUID key) {
+    private void logStatus(String msg, QueryStatus status, String key) {
         if (log.isTraceEnabled()) {
             log.trace(msg + ' ' + (status == null ? "null query for " + key : status.toString()));
         } else if (log.isDebugEnabled()) {
@@ -443,7 +424,7 @@ public class QueryCache {
      * @param key
      *            the query id
      */
-    private void logStatus(String msg, TaskStates status, UUID key) {
+    private void logStatus(String msg, TaskStates status, String key) {
         if (log.isTraceEnabled()) {
             log.trace(msg + ' ' + (status == null ? "null tasks for " + key : status.toString()));
         } else if (log.isDebugEnabled()) {
@@ -458,7 +439,7 @@ public class QueryCache {
      *            the query id
      * @return a query status lock
      */
-    public QueryStorageLock getQueryStatusLock(UUID queryId) {
+    public QueryStorageLock getQueryStatusLock(String queryId) {
         return new QueryStatusLock(queryId);
     }
     
@@ -469,7 +450,7 @@ public class QueryCache {
      *            the query id
      * @return a task states lock
      */
-    public QueryStorageLock getTaskStatesLock(UUID queryId) {
+    public QueryStorageLock getTaskStatesLock(String queryId) {
         return new TaskStatesLock(queryId);
     }
     
@@ -574,7 +555,7 @@ public class QueryCache {
      * A lock object for a query status
      */
     public class QueryStatusLock extends QueryStorageLockImpl {
-        public QueryStatusLock(UUID queryId) {
+        public QueryStatusLock(String queryId) {
             super(QUERY + QueryKey.toUUIDKey(queryId));
         }
     }
@@ -583,7 +564,7 @@ public class QueryCache {
      * A lock object for the task states
      */
     public class TaskStatesLock extends QueryStorageLockImpl {
-        public TaskStatesLock(UUID queryId) {
+        public TaskStatesLock(String queryId) {
             super(TASKS + QueryKey.toUUIDKey(queryId));
         }
     }
