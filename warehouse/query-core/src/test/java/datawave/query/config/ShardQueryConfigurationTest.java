@@ -19,7 +19,7 @@ import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.model.QueryModel;
 import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.ValueTransformer;
+import datawave.query.attributes.UniqueGranularity;
 import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import org.junit.Assert;
@@ -246,7 +246,7 @@ public class ShardQueryConfigurationTest {
         QueryImpl query = new QueryImpl();
         Set<String> groupFields = Sets.newHashSet("groupFieldA");
         UniqueFields uniqueFields = new UniqueFields();
-        uniqueFields.put("uniqueFieldA", ValueTransformer.ORIGINAL);
+        uniqueFields.put("uniqueFieldA", UniqueGranularity.ALL);
         List<String> contentFieldNames = Lists.newArrayList("fieldA");
         
         // Set collections on 'other' ShardQueryConfiguration
@@ -309,7 +309,7 @@ public class ShardQueryConfigurationTest {
         queryModel.addTermToModel("aliasA", "diskNameA");
         query.setId(UUID.randomUUID());
         groupFields.add("groupFieldB");
-        uniqueFields.put("uniqueFieldB", ValueTransformer.ORIGINAL);
+        uniqueFields.put("uniqueFieldB", UniqueGranularity.ALL);
         contentFieldNames.add("fieldB");
         
         // Assert that copied collections were deep copied and remain unchanged
@@ -367,7 +367,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(expectedQuery, config.getQuery());
         Assert.assertEquals(Sets.newHashSet("groupFieldA"), config.getGroupFields());
         UniqueFields expectedUniqueFields = new UniqueFields();
-        expectedUniqueFields.put("uniqueFieldA", ValueTransformer.ORIGINAL);
+        expectedUniqueFields.put("uniqueFieldA", UniqueGranularity.ALL);
         Assert.assertEquals(expectedUniqueFields, config.getUniqueFields());
         Assert.assertEquals(Lists.newArrayList("fieldA"), config.getContentFieldNames());
     }

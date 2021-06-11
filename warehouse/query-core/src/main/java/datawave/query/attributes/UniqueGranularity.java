@@ -9,27 +9,27 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.function.Function;
 
-public enum ValueTransformer {
+public enum UniqueGranularity {
     
     /**
-     * A {@link ValueTransformer} implementation that will always return the original value.
+     * A {@link UniqueGranularity} implementation that will always return the original value.
      */
-    ORIGINAL("ORIGINAL", Function.identity()),
+    ALL("ALL", Function.identity()),
     
     /**
-     * A {@link ValueTransformer} implementation that, if provided a datetime value, will return the datetime truncated to the day. Otherwise, the original
+     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the day. Otherwise, the original
      * value will be returned.
      */
     TRUNCATE_TEMPORAL_TO_DAY("DAY", new DateTimeValueFormatter("yyyy-MM-dd")),
     
     /**
-     * A {@link ValueTransformer} implementation that, if provided a datetime value, will return the datetime truncated to the hour. Otherwise, the original
+     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the hour. Otherwise, the original
      * value will be returned.
      */
     TRUNCATE_TEMPORAL_TO_HOUR("HOUR", new DateTimeValueFormatter("yyyy-MM-dd'T'HH")),
     
     /**
-     * A {@link ValueTransformer} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the original
+     * A {@link UniqueGranularity} implementation that, if provided a datetime value, will return the datetime truncated to the minute. Otherwise, the original
      * value will be returned.
      */
     TRUNCATE_TEMPORAL_TO_MINUTE("MINUTE", new DateTimeValueFormatter("yyyy-MM-dd'T'HH:mm"));
@@ -38,28 +38,28 @@ public enum ValueTransformer {
     private final Function<String,String> function;
     
     @JsonCreator
-    public static ValueTransformer of(String name) {
+    public static UniqueGranularity of(String name) {
         switch (name) {
-            case "ORIGINAL":
-                return ValueTransformer.ORIGINAL;
+            case "ALL":
+                return UniqueGranularity.ALL;
             case "DAY":
-                return ValueTransformer.TRUNCATE_TEMPORAL_TO_DAY;
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY;
             case "HOUR":
-                return ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR;
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR;
             case "MINUTE":
-                return ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE;
+                return UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE;
             default:
-                throw new IllegalArgumentException("No " + ValueTransformer.class.getSimpleName() + " exists with the name " + name);
+                throw new IllegalArgumentException("No " + UniqueGranularity.class.getSimpleName() + " exists with the name " + name);
         }
     }
     
-    ValueTransformer(String name, Function<String,String> function) {
+    UniqueGranularity(String name, Function<String,String> function) {
         this.name = name;
         this.function = function;
     }
     
     /**
-     * Return the unique name of this {@link ValueTransformer}.
+     * Return the unique name of this {@link UniqueGranularity}.
      * 
      * @return the name
      */

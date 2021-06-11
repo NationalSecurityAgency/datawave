@@ -17,6 +17,7 @@ import java.util.SortedSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class UniqueFieldsTest {
@@ -42,7 +43,7 @@ public class UniqueFieldsTest {
     @Test
     public void testIsEmptyForNonEmptyUniqueFields() {
         UniqueFields uniqueFields = new UniqueFields();
-        uniqueFields.put("fieldA", ValueTransformer.ORIGINAL);
+        uniqueFields.put("fieldA", UniqueGranularity.ALL);
         
         assertFalse(uniqueFields.isEmpty());
     }
@@ -51,25 +52,25 @@ public class UniqueFieldsTest {
      * Verify formatting an empty {@link UniqueFields} returns an empty string.
      */
     @Test
-    public void testFormattingEmptyUniqueFieldsToString() {
+    public void testEmptyUniqueFieldsToString() {
         UniqueFields uniqueFields = new UniqueFields();
-        assertEquals("", uniqueFields.toFormattedString());
+        assertEquals("", uniqueFields.toString());
     }
     
     /**
      * Test formatting a non-empty {@link UniqueFields} to a string.
      */
     @Test
-    public void testFormattingNonEmptyUniqueFieldsToString() {
+    public void testNonEmptyUniqueFieldsToString() {
         UniqueFields uniqueFields = new UniqueFields();
-        uniqueFields.put("fieldA", ValueTransformer.ORIGINAL);
-        uniqueFields.put("fieldB", ValueTransformer.ORIGINAL);
-        uniqueFields.put("fieldB", ValueTransformer.TRUNCATE_TEMPORAL_TO_DAY);
-        uniqueFields.put("fieldC", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        uniqueFields.put("fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        uniqueFields.put("fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
+        uniqueFields.put("fieldA", UniqueGranularity.ALL);
+        uniqueFields.put("fieldB", UniqueGranularity.ALL);
+        uniqueFields.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        uniqueFields.put("fieldC", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        uniqueFields.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        uniqueFields.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         
-        assertEquals("fieldA:[ORIGINAL],fieldB:[ORIGINAL,DAY],fieldC:[HOUR],fieldD:[HOUR,MINUTE]", uniqueFields.toFormattedString());
+        assertEquals("fieldA[ALL],fieldB[ALL,DAY],fieldC[HOUR],fieldD[HOUR,MINUTE]", uniqueFields.toString());
     }
     
     /**
@@ -89,12 +90,12 @@ public class UniqueFieldsTest {
     }
     
     /**
-     * Verify that a single field with no specified value transformer is added with an ORIGINAL transformer.
+     * Verify that a single field with no specified value transformer is added with an ALL transformer.
      */
     @Test
     public void testParsingSingleFieldWithoutValueTransformer() {
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", ValueTransformer.ORIGINAL);
+        expected.put("fieldA", UniqueGranularity.ALL);
         
         UniqueFields actual = UniqueFields.from("fieldA");
         assertEquals(expected, actual);
@@ -103,9 +104,9 @@ public class UniqueFieldsTest {
     @Test
     public void testParsingMultipleFieldsWithoutValueTransformers() {
         UniqueFields expected = new UniqueFields();
-        expected.put("DEATH_DATE", ValueTransformer.ORIGINAL);
-        expected.put("$MAGIC", ValueTransformer.ORIGINAL);
-        expected.put("$BIRTH_DATE", ValueTransformer.ORIGINAL);
+        expected.put("DEATH_DATE", UniqueGranularity.ALL);
+        expected.put("$MAGIC", UniqueGranularity.ALL);
+        expected.put("$BIRTH_DATE", UniqueGranularity.ALL);
         
         UniqueFields actual = UniqueFields.from("DEATH_DATE,$MAGIC,$BIRTH_DATE");
         
@@ -118,101 +119,101 @@ public class UniqueFieldsTest {
     @Test
     public void testParsingSingleFieldWithValueTransformer() {
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldA", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
         
-        UniqueFields actual = UniqueFields.from("fieldA:[HOUR]");
+        UniqueFields actual = UniqueFields.from("fieldA[HOUR]");
         assertEquals(expected, actual);
     }
     
     /**
-     * Verify that a field with no transformer located at the start of a string with multiple fields is added with an ORIGINAL transformer.
+     * Verify that a field with no transformer located at the start of a string with multiple fields is added with an ALL transformer.
      */
     @Test
     public void testParsingFieldWithNoTransformerAtStartOfMixedFields() {
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", ValueTransformer.ORIGINAL);
-        expected.put("fieldB", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
+        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         
-        UniqueFields actual = UniqueFields.from("fieldA,fieldB:[MINUTE]");
+        UniqueFields actual = UniqueFields.from("fieldA,fieldB[MINUTE]");
         assertEquals(expected, actual);
     }
     
     /**
-     * Verify that a field with no transformer located at the end of a string with multiple fields is added with an ORIGINAL transformer.
+     * Verify that a field with no transformer located at the end of a string with multiple fields is added with an ALL transformer.
      */
     @Test
     public void testParsingFieldWithNoTransformerAtEndOfMixedFields() {
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", ValueTransformer.ORIGINAL);
-        expected.put("fieldB", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
+        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         
-        UniqueFields actual = UniqueFields.from("fieldB:[MINUTE],fieldA");
+        UniqueFields actual = UniqueFields.from("fieldB[MINUTE],fieldA");
         assertEquals(expected, actual);
     }
     
     /**
-     * Verify that a field with no transformer located between two different fields in a string with multiple fields is added with an ORIGINAL transformer.
+     * Verify that a field with no transformer located between two different fields in a string with multiple fields is added with an ALL transformer.
      */
     @Test
     public void testParsingFieldWithNoTransformerInMiddleOfEndOfMixedFields() {
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", ValueTransformer.ORIGINAL);
-        expected.put("fieldB", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
-        expected.put("fieldC", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
+        expected.put("fieldC", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
         
-        UniqueFields actual = UniqueFields.from("fieldB:[MINUTE],fieldA,fieldC:[HOUR]");
+        UniqueFields actual = UniqueFields.from("fieldB[MINUTE],fieldA,fieldC[HOUR]");
         assertEquals(expected, actual);
     }
     
     /**
-     * Verify that a single field with an empty transformer list is added with the ORIGINAL transformer.
+     * Verify that a single field with an empty transformer list is added with the ALL transformer.
      */
     @Test
     public void testParsingSingleFieldWithEmptyTransformerList() {
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", ValueTransformer.ORIGINAL);
+        expected.put("fieldA", UniqueGranularity.ALL);
         
-        UniqueFields actual = UniqueFields.from("fieldA:[]");
+        UniqueFields actual = UniqueFields.from("fieldA[]");
         assertEquals(expected, actual);
     }
     
     /**
-     * Verify that a field with an empty transformer list located at the start of a string with multiple fields is added with the ORIGINAL transformer.
+     * Verify that a field with an empty transformer list located at the start of a string with multiple fields is added with the ALL transformer.
      */
     @Test
     public void testParsingFieldWithEmptyTransformerListAtStartOfMixedFields() {
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", ValueTransformer.ORIGINAL);
-        expected.put("fieldB", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
+        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         
-        UniqueFields actual = UniqueFields.from("fieldA:[],fieldB:[MINUTE]");
+        UniqueFields actual = UniqueFields.from("fieldA[],fieldB[MINUTE]");
         assertEquals(expected, actual);
     }
     
     /**
-     * Verify that a field with an empty transformer list located at the end of a string with multiple fields is added with the ORIGINAL transformer.
+     * Verify that a field with an empty transformer list located at the end of a string with multiple fields is added with the ALL transformer.
      */
     @Test
     public void testParsingFieldWithEmptyTransformerListAtEndOfMixedFields() {
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", ValueTransformer.ORIGINAL);
-        expected.put("fieldB", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
+        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         
-        UniqueFields actual = UniqueFields.from("fieldB:[MINUTE],fieldA:[]");
+        UniqueFields actual = UniqueFields.from("fieldB[MINUTE],fieldA[]");
         assertEquals(expected, actual);
     }
     
     /**
-     * Verify that a field with an empty transformer list located between two different fields is added with the ORIGINAL transformer.
+     * Verify that a field with an empty transformer list located between two different fields is added with the ALL transformer.
      */
     @Test
     public void testParsingFieldWithEmptyTransformerListInMiddleOfMixedFields() {
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", ValueTransformer.ORIGINAL);
-        expected.put("fieldB", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
-        expected.put("fieldC", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
+        expected.put("fieldC", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
         
-        UniqueFields actual = UniqueFields.from("fieldB:[MINUTE],fieldA:[],fieldC:[HOUR]");
+        UniqueFields actual = UniqueFields.from("fieldB[MINUTE],fieldA[],fieldC[HOUR]");
         assertEquals(expected, actual);
     }
     
@@ -222,14 +223,14 @@ public class UniqueFieldsTest {
     @Test
     public void testParsingMixedFieldsAndTransformers() {
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", ValueTransformer.ORIGINAL);
-        expected.put("fieldB", ValueTransformer.ORIGINAL);
-        expected.put("fieldB", ValueTransformer.TRUNCATE_TEMPORAL_TO_DAY);
-        expected.put("fieldC", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        expected.put("fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        expected.put("fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
+        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        expected.put("fieldC", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         
-        UniqueFields actual = UniqueFields.from("fieldA:[ORIGINAL],fieldB:[ORIGINAL,DAY],fieldC:[HOUR],fieldD:[HOUR,MINUTE]");
+        UniqueFields actual = UniqueFields.from("fieldA[ALL],fieldB[ALL,DAY],fieldC[HOUR],fieldD[HOUR,MINUTE]");
         
         assertEquals(expected, actual);
     }
@@ -240,14 +241,14 @@ public class UniqueFieldsTest {
     @Test
     public void testParsingNonDeconstructedIdentifiers() {
         UniqueFields expected = new UniqueFields();
-        expected.put("$fieldA", ValueTransformer.ORIGINAL);
-        expected.put("$fieldB", ValueTransformer.ORIGINAL);
-        expected.put("$fieldB", ValueTransformer.TRUNCATE_TEMPORAL_TO_DAY);
-        expected.put("$fieldC", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        expected.put("$fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        expected.put("$fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
+        expected.put("$fieldA", UniqueGranularity.ALL);
+        expected.put("$fieldB", UniqueGranularity.ALL);
+        expected.put("$fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        expected.put("$fieldC", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("$fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("$fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         
-        UniqueFields actual = UniqueFields.from("$fieldA:[ORIGINAL],$fieldB:[ORIGINAL,DAY],$fieldC:[HOUR],$fieldD:[HOUR,MINUTE]");
+        UniqueFields actual = UniqueFields.from("$fieldA[ALL],$fieldB[ALL,DAY],$fieldC[HOUR],$fieldD[HOUR,MINUTE]");
         
         assertEquals(expected, actual);
     }
@@ -258,14 +259,14 @@ public class UniqueFieldsTest {
     @Test
     public void testParsingWithWhitespace() {
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", ValueTransformer.ORIGINAL);
-        expected.put("fieldB", ValueTransformer.ORIGINAL);
-        expected.put("fieldB", ValueTransformer.TRUNCATE_TEMPORAL_TO_DAY);
-        expected.put("fieldC", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        expected.put("fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        expected.put("fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
+        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        expected.put("fieldC", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         
-        UniqueFields actual = UniqueFields.from("fieldA:[ORIGINAL], fieldB:[ORIGINAL, DAY], fieldC:[HOUR],fieldD:[HOUR, MINUTE]");
+        UniqueFields actual = UniqueFields.from("fieldA[ALL], fieldB[ALL, DAY], fieldC[HOUR],fieldD[HOUR, MINUTE]");
         
         assertEquals(expected, actual);
     }
@@ -276,35 +277,74 @@ public class UniqueFieldsTest {
     @Test
     public void testParsingTransformersIsCaseInsensitive() {
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", ValueTransformer.ORIGINAL);
-        expected.put("fieldB", ValueTransformer.ORIGINAL);
-        expected.put("fieldB", ValueTransformer.TRUNCATE_TEMPORAL_TO_DAY);
-        expected.put("fieldC", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        expected.put("fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        expected.put("fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
+        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        expected.put("fieldC", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         
-        UniqueFields actual = UniqueFields.from("fieldA:[original], fieldB:[ORIGINAL, day], fieldC:[Hour],fieldD:[HOUR, minute]");
+        UniqueFields actual = UniqueFields.from("fieldA[all], fieldB[ALL, day], fieldC[Hour],fieldD[HOUR, minute]");
         
         assertEquals(expected, actual);
     }
     
     /**
-     * Verify that when a {@link UniqueFields} is serialized, it is serialized as a formatted string.
+     * Verify that consecutive commas are ignored.
+     */
+    @Test
+    public void testParsingConsecutiveCommas() {
+        // Test consecutive commas at the start.
+        UniqueFields expected = new UniqueFields();
+        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        
+        UniqueFields actual = UniqueFields.from(",,fieldA,fieldB[DAY]");
+        
+        assertEquals(expected, actual);
+        
+        // Test consecutive commas in the middle.
+        expected = new UniqueFields();
+        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        
+        actual = UniqueFields.from("fieldA,,fieldB[DAY]");
+        
+        assertEquals(expected, actual);
+        
+        // Test consecutive commas at the end.
+        expected = new UniqueFields();
+        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        
+        actual = UniqueFields.from("fieldA,fieldB[DAY],,");
+        
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void testParsingInvalidGranularity() {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> UniqueFields.from("fieldA[BAD]"));
+        assertEquals("Invalid unique granularity given: BAD", exception.getMessage());
+    }
+    
+    /**
+     * Verify that when a {@link UniqueFields} is serialized, it is serialized as the result of {@link UniqueFields#toString()}.
      */
     @Test
     public void testSerialization() throws JsonProcessingException {
-        SortedSetMultimap<String,ValueTransformer> sortedFields = TreeMultimap.create();
-        sortedFields.put("fieldA", ValueTransformer.ORIGINAL);
-        sortedFields.put("fieldB", ValueTransformer.ORIGINAL);
-        sortedFields.put("fieldB", ValueTransformer.TRUNCATE_TEMPORAL_TO_DAY);
-        sortedFields.put("fieldC", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        sortedFields.put("fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        sortedFields.put("fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
+        SortedSetMultimap<String,UniqueGranularity> sortedFields = TreeMultimap.create();
+        sortedFields.put("fieldA", UniqueGranularity.ALL);
+        sortedFields.put("fieldB", UniqueGranularity.ALL);
+        sortedFields.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        sortedFields.put("fieldC", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        sortedFields.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        sortedFields.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         
         UniqueFields uniqueFields = new UniqueFields(sortedFields);
         
         String json = objectMapper.writeValueAsString(uniqueFields);
-        assertEquals("\"fieldA:[ORIGINAL],fieldB:[ORIGINAL,DAY],fieldC:[HOUR],fieldD:[HOUR,MINUTE]\"", json);
+        assertEquals("\"fieldA[ALL],fieldB[ALL,DAY],fieldC[HOUR],fieldD[HOUR,MINUTE]\"", json);
     }
     
     /**
@@ -313,14 +353,14 @@ public class UniqueFieldsTest {
     @Test
     public void testDeserialization() throws JsonProcessingException {
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", ValueTransformer.ORIGINAL);
-        expected.put("fieldB", ValueTransformer.ORIGINAL);
-        expected.put("fieldB", ValueTransformer.TRUNCATE_TEMPORAL_TO_DAY);
-        expected.put("fieldC", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        expected.put("fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        expected.put("fieldD", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
+        expected.put("fieldA", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.ALL);
+        expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        expected.put("fieldC", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldD", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         
-        String json = "\"fieldA:[ORIGINAL],fieldB:[ORIGINAL,DAY],fieldC:[HOUR],fieldD:[HOUR,MINUTE]\"";
+        String json = "\"fieldA[ALL],fieldB[ALL,DAY],fieldC[HOUR],fieldD[HOUR,MINUTE]\"";
         UniqueFields actual = objectMapper.readValue(json, UniqueFields.class);
         
         assertEquals(expected, actual);
@@ -340,10 +380,10 @@ public class UniqueFieldsTest {
         expected.add("nonDateValue");
         
         UniqueFields uniqueFields = new UniqueFields();
-        uniqueFields.put("fieldA", ValueTransformer.ORIGINAL);
-        uniqueFields.put("fieldA", ValueTransformer.TRUNCATE_TEMPORAL_TO_DAY);
-        uniqueFields.put("fieldA", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        uniqueFields.put("fieldA", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
+        uniqueFields.put("fieldA", UniqueGranularity.ALL);
+        uniqueFields.put("fieldA", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+        uniqueFields.put("fieldA", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        uniqueFields.put("fieldA", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         Set<String> values = Sets.newHashSet("2020-01-12 15:30:45", "nonDateValue");
         
         SortedSet<String> actual = Sets.newTreeSet(uniqueFields.transformValues("fieldA", values));
@@ -362,9 +402,9 @@ public class UniqueFieldsTest {
         expected.add("FIELDC");
         
         UniqueFields uniqueFields = new UniqueFields();
-        uniqueFields.put("$FIELDA", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        uniqueFields.put("$FIELDB", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        uniqueFields.put("FIELDC", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
+        uniqueFields.put("$FIELDA", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        uniqueFields.put("$FIELDB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        uniqueFields.put("FIELDC", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
         
         uniqueFields.deconstructIdentifierFields();
         
@@ -379,7 +419,7 @@ public class UniqueFieldsTest {
     @Test
     public void testRemapFields() {
         UniqueFields actual = new UniqueFields();
-        actual.put("fieldA", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
+        actual.put("fieldA", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
         
         Multimap<String,String> model = HashMultimap.create();
         model.put("FIELDA", "FIELDB");
@@ -388,9 +428,9 @@ public class UniqueFieldsTest {
         actual.remapFields(model);
         
         UniqueFields expected = new UniqueFields();
-        expected.put("fieldA", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        expected.put("FIELDB", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-        expected.put("fieldc", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldA", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("FIELDB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+        expected.put("fieldc", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
         
         assertEquals(expected, actual);
     }

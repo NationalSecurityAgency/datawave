@@ -2,17 +2,17 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
+import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.ValueTransformer;
+import datawave.query.attributes.UniqueGranularity;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,8 +26,8 @@ import java.util.Set;
 public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     
     private static final Set<String> RESERVED = ImmutableSet.of(QueryFunctions.QUERY_FUNCTION_NAMESPACE, QueryFunctions.OPTIONS_FUNCTION,
-                    QueryFunctions.UNIQUE_FUNCTION, QueryFunctions.UNIQUE_BY_ORIGINAL_FUNCTION, QueryFunctions.UNIQUE_BY_DAY_FUNCTION,
-                    QueryFunctions.UNIQUE_BY_HOUR_FUNCTION, QueryFunctions.UNIQUE_BY_MINUTE_FUNCTION, QueryFunctions.GROUPBY_FUNCTION);
+                    QueryFunctions.UNIQUE_FUNCTION, QueryFunctions.UNIQUE_BY_DAY_FUNCTION, QueryFunctions.UNIQUE_BY_HOUR_FUNCTION,
+                    QueryFunctions.UNIQUE_BY_MINUTE_FUNCTION, QueryFunctions.GROUPBY_FUNCTION);
     
     /**
      * If the passed userData is a Map, type cast and call the method to begin collection of the function arguments
@@ -74,25 +74,32 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     return null;
                 }
                 case QueryFunctions.UNIQUE_FUNCTION: {
+                    // Get the list of declared fields and join them into a comma-delimited string.
+                    List<String> fieldList = new ArrayList<>();
+                    this.visit(node, fieldList);
+                    String fieldString = String.join(Constants.COMMA, fieldList);
+                    
+                    // Parse the unique fields.
+                    UniqueFields uniqueFields = UniqueFields.from(fieldString);
+                    updateUniqueFieldsOption(optionsMap, uniqueFields);
+                    return null;
+                }
+                case QueryFunctions.UNIQUE_BY_DAY_FUNCTION: {
                     UniqueFields uniqueFields = new UniqueFields();
-                    // Any fields not declared in a sub-function should be added with the default ORIGINAL transformer.
-                    for (JexlNode child : JexlNodes.children(node)) {
-                        if (!containsFunctionNode(child)) {
-                            putFieldsFromChildren(child, uniqueFields, ValueTransformer.ORIGINAL);
-                        }
-                    }
-                    
-                    // Add fields declared in sub-functions.
-                    super.visit(node, uniqueFields);
-                    
-                    // Combine with any previously found unique fields.
-                    if (optionsMap.containsKey(QueryParameters.UNIQUE_FIELDS)) {
-                        UniqueFields existingFields = UniqueFields.from(optionsMap.get(QueryParameters.UNIQUE_FIELDS));
-                        uniqueFields.putAll(existingFields.getFieldMap());
-                    }
-                    
-                    // Add/update the unique field parameter.
-                    optionsMap.put(QueryParameters.UNIQUE_FIELDS, uniqueFields.toFormattedString());
+                    putFieldsFromChildren(node, uniqueFields, UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
+                    updateUniqueFieldsOption(optionsMap, uniqueFields);
+                    return null;
+                }
+                case QueryFunctions.UNIQUE_BY_HOUR_FUNCTION: {
+                    UniqueFields uniqueFields = new UniqueFields();
+                    putFieldsFromChildren(node, uniqueFields, UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
+                    updateUniqueFieldsOption(optionsMap, uniqueFields);
+                    return null;
+                }
+                case QueryFunctions.UNIQUE_BY_MINUTE_FUNCTION: {
+                    UniqueFields uniqueFields = new UniqueFields();
+                    putFieldsFromChildren(node, uniqueFields, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
+                    updateUniqueFieldsOption(optionsMap, uniqueFields);
                     return null;
                 }
                 case QueryFunctions.GROUPBY_FUNCTION: {
@@ -106,45 +113,6 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         return super.visit(node, optionsMap);
     }
     
-    private Object visit(ASTFunctionNode node, UniqueFields uniqueFields) {
-        if (node.jjtGetChild(0).image.equals(QueryFunctions.QUERY_FUNCTION_NAMESPACE)) {
-            switch (node.jjtGetChild(1).image) {
-                case QueryFunctions.UNIQUE_BY_ORIGINAL_FUNCTION:
-                    putFieldsFromChildren(node, uniqueFields, ValueTransformer.ORIGINAL);
-                    return null;
-                case QueryFunctions.UNIQUE_BY_DAY_FUNCTION:
-                    putFieldsFromChildren(node, uniqueFields, ValueTransformer.TRUNCATE_TEMPORAL_TO_DAY);
-                    return null;
-                case QueryFunctions.UNIQUE_BY_HOUR_FUNCTION:
-                    putFieldsFromChildren(node, uniqueFields, ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
-                    return null;
-                case QueryFunctions.UNIQUE_BY_MINUTE_FUNCTION:
-                    putFieldsFromChildren(node, uniqueFields, ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
-                    return null;
-            }
-        }
-        return super.visit(node, uniqueFields);
-    }
-    
-    /**
-     * Return whether or not the provided node is a or contains a {@link ASTFunctionNode}.
-     * 
-     * @param node
-     *            the node to check
-     * @return true if the node itself or any of its children are a function node, or false otherwise.
-     */
-    private boolean containsFunctionNode(JexlNode node) {
-        if (node instanceof ASTFunctionNode) {
-            return true;
-        }
-        for (JexlNode child : JexlNodes.children(node)) {
-            if (containsFunctionNode(child)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
     /**
      * Find all unique fields declared in the provided node and add them to the provided {@link UniqueFields} with the specified transformer.
      * 
@@ -155,10 +123,27 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
      * @param transformer
      *            the transformer to add any identified fields with.
      */
-    private void putFieldsFromChildren(JexlNode node, UniqueFields uniqueFields, ValueTransformer transformer) {
+    private void putFieldsFromChildren(JexlNode node, UniqueFields uniqueFields, UniqueGranularity transformer) {
         List<String> fields = new ArrayList<>();
         this.visit(node, fields);
         fields.forEach((field) -> uniqueFields.put(field, transformer));
+    }
+    
+    /**
+     * Update the {@value QueryParameters#UNIQUE_FIELDS} option to include the given unique fields.
+     * 
+     * @param optionsMap
+     *            the options map
+     * @param uniqueFields
+     *            the unique fields to include
+     */
+    private void updateUniqueFieldsOption(Map<String,String> optionsMap, UniqueFields uniqueFields) {
+        // Combine with any previously found unique fields.
+        if (optionsMap.containsKey(QueryParameters.UNIQUE_FIELDS)) {
+            UniqueFields existingFields = UniqueFields.from(optionsMap.get(QueryParameters.UNIQUE_FIELDS));
+            uniqueFields.putAll(existingFields.getFieldMap());
+        }
+        optionsMap.put(QueryParameters.UNIQUE_FIELDS, uniqueFields.toString());
     }
     
     /**

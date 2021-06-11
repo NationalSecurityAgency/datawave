@@ -9,7 +9,7 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.DiacriticContent;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.ValueTransformer;
+import datawave.query.attributes.UniqueGranularity;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.collections4.Transformer;
@@ -65,7 +65,7 @@ public class UniqueTransformTest {
     
     @Test
     public void testTransformingNullReturnsNull() {
-        givenValueTransformerForFields(ValueTransformer.ORIGINAL, "Attr0");
+        givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0");
         
         UniqueTransform uniqueTransform = getUniqueTransform();
         
@@ -90,7 +90,7 @@ public class UniqueTransformTest {
             expectedUniqueDocuments = countUniqueness(inputDocuments, fields);
         }
         
-        givenValueTransformerForFields(ValueTransformer.ORIGINAL, fields.toArray(new String[0]));
+        givenValueTransformerForFields(UniqueGranularity.ALL, fields.toArray(new String[0]));
         
         List<Document> uniqueDocuments = getUniqueDocuments(inputDocuments);
         assertEquals(expectedUniqueDocuments, uniqueDocuments.size());
@@ -149,7 +149,7 @@ public class UniqueTransformTest {
         givenInputDocument().withKeyValue("attr2", randomValues.get(0)).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("attr2", randomValues.get(4));
         
-        givenValueTransformerForFields(ValueTransformer.ORIGINAL, "attr0", "Attr1", "ATTR2");
+        givenValueTransformerForFields(UniqueGranularity.ALL, "attr0", "Attr1", "ATTR2");
         
         assertUniqueDocuments();
     }
@@ -165,7 +165,7 @@ public class UniqueTransformTest {
         givenInputDocument().withKeyValue("Attr0", "2001-03-12 05:04:20").isExpectedToBeUnique();
         givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
         
-        givenValueTransformerForFields(ValueTransformer.TRUNCATE_TEMPORAL_TO_DAY, "Attr0");
+        givenValueTransformerForFields(UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY, "Attr0");
         
         assertUniqueDocuments();
     }
@@ -181,7 +181,7 @@ public class UniqueTransformTest {
         givenInputDocument().withKeyValue("Attr0", "2001-03-10 05:04:30");
         givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
         
-        givenValueTransformerForFields(ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR, "Attr0");
+        givenValueTransformerForFields(UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR, "Attr0");
         
         assertUniqueDocuments();
     }
@@ -197,7 +197,7 @@ public class UniqueTransformTest {
         givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:04:15");
         givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
         
-        givenValueTransformerForFields(ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE, "Attr0");
+        givenValueTransformerForFields(UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE, "Attr0");
         
         assertUniqueDocuments();
     }
@@ -221,9 +221,9 @@ public class UniqueTransformTest {
         givenInputDocument().withKeyValue("Attr2", "2001-03-10 10:04:20").isExpectedToBeUnique();
         givenInputDocument().withKeyValue("Attr2", "2001-03-10 10:04:15");
         
-        givenValueTransformerForFields(ValueTransformer.TRUNCATE_TEMPORAL_TO_DAY, "Attr0");
-        givenValueTransformerForFields(ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR, "Attr1");
-        givenValueTransformerForFields(ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE, "Attr2");
+        givenValueTransformerForFields(UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY, "Attr0");
+        givenValueTransformerForFields(UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR, "Attr1");
+        givenValueTransformerForFields(UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE, "Attr2");
         
         assertUniqueDocuments();
     }
@@ -241,7 +241,7 @@ public class UniqueTransformTest {
         givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:04");
         givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
         
-        givenValueTransformersForField("Attr0", ValueTransformer.ORIGINAL, ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE);
+        givenValueTransformersForField("Attr0", UniqueGranularity.ALL, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
         
         assertUniqueDocuments();
     }
@@ -259,7 +259,7 @@ public class UniqueTransformTest {
         givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:04:20");
         givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
         
-        givenValueTransformersForField("Attr0", ValueTransformer.TRUNCATE_TEMPORAL_TO_MINUTE, ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR);
+        givenValueTransformersForField("Attr0", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE, UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
         
         assertUniqueDocuments();
     }
@@ -277,7 +277,7 @@ public class UniqueTransformTest {
         givenInputDocument().withKeyValue("Attr0", "2001-03-10 13:20:15");
         givenInputDocument().withKeyValue("Attr0", "nonDateValue").isExpectedToBeUnique();
         
-        givenValueTransformersForField("Attr0", ValueTransformer.TRUNCATE_TEMPORAL_TO_HOUR, ValueTransformer.TRUNCATE_TEMPORAL_TO_DAY);
+        givenValueTransformersForField("Attr0", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR, UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY);
         
         assertUniqueDocuments();
     }
@@ -308,7 +308,7 @@ public class UniqueTransformTest {
                         .withKeyValue("Attr1", randomValues.get(3));
         // @formatter:on
         
-        givenValueTransformerForFields(ValueTransformer.ORIGINAL, "Attr0", "Attr1");
+        givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1");
         
         assertOrderedFieldSets();
     }
@@ -343,7 +343,7 @@ public class UniqueTransformTest {
                         .withKeyValue("Attr3", randomValues.get(4));
         // @formatter:on
         
-        givenValueTransformerForFields(ValueTransformer.ORIGINAL, "Attr0", "Attr1", "Attr3");
+        givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1", "Attr3");
         
         assertOrderedFieldSets();
     }
@@ -378,7 +378,7 @@ public class UniqueTransformTest {
                         .withKeyValue("Attr3", randomValues.get(4));
         // @formatter:on
         
-        givenValueTransformerForFields(ValueTransformer.ORIGINAL, "Attr0", "Attr1", "Attr3");
+        givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1", "Attr3");
         
         assertOrderedFieldSets();
     }
@@ -423,7 +423,7 @@ public class UniqueTransformTest {
                         .withKeyValue("Attr3", randomValues.get(0));
         // @formatter:on
         
-        givenValueTransformerForFields(ValueTransformer.ORIGINAL, "Attr0", "Attr1", "Attr3");
+        givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1", "Attr3");
         
         assertOrderedFieldSets();
     }
@@ -463,7 +463,7 @@ public class UniqueTransformTest {
                         .withKeyValue("Attr3", randomValues.get(0));
         // @formatter:on
         
-        givenValueTransformerForFields(ValueTransformer.ORIGINAL, "Attr0", "Attr1", "Attr3");
+        givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1", "Attr3");
         
         assertOrderedFieldSets();
     }
@@ -493,11 +493,11 @@ public class UniqueTransformTest {
         assertEquals("Ordered field sets do not match expected", expectedOrderedFieldSets, actual);
     }
     
-    private void givenValueTransformerForFields(ValueTransformer transformer, String... fields) {
+    private void givenValueTransformerForFields(UniqueGranularity transformer, String... fields) {
         Arrays.stream(fields).forEach((field) -> uniqueFields.put(field, transformer));
     }
     
-    private void givenValueTransformersForField(String field, ValueTransformer... transformers) {
+    private void givenValueTransformersForField(String field, UniqueGranularity... transformers) {
         Arrays.stream(transformers).forEach((transformer) -> uniqueFields.put(field, transformer));
     }
     

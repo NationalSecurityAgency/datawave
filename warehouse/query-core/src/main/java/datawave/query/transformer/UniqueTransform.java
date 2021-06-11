@@ -11,7 +11,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.ValueTransformer;
+import datawave.query.attributes.UniqueGranularity;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
@@ -62,7 +62,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     public UniqueTransform(Set<String> fields) {
         this.uniqueFields = new UniqueFields();
         for (String field : fields) {
-            uniqueFields.put(JexlASTHelper.deconstructIdentifier(field), ValueTransformer.ORIGINAL);
+            uniqueFields.put(JexlASTHelper.deconstructIdentifier(field), UniqueGranularity.ALL);
         }
         this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         if (log.isTraceEnabled()) {
