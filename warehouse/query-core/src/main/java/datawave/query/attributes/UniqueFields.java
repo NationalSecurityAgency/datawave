@@ -265,8 +265,11 @@ public class UniqueFields implements Serializable {
     /**
      * Returns a set that contains the result of each value transformed by each granularity defined for specified field. If no granularity is found, a copy of
      * the original value set will be returned.
-     * @param field the field
-     * @param values the values to transform
+     * 
+     * @param field
+     *            the field
+     * @param values
+     *            the values to transform
      * @return a set containing the result of each transformation
      */
     public Set<String> transformValues(String field, Collection<String> values) {
