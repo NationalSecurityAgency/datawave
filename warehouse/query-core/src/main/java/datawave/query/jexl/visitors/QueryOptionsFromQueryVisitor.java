@@ -43,7 +43,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         if (data instanceof Map) {
             return this.visit(node, (Map) data);
         } else if (data instanceof UniqueFields) {
-            return this.visit(node, (UniqueFields) data);
+            return this.visit(node, data);
         }
         return super.visit(node, data);
     }

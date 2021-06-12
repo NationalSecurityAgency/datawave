@@ -229,11 +229,11 @@ public class UniqueTransformTest {
     }
     
     /**
-     * Verify that the ORIGINAL function finds more unique documents than MINUTE when they are provided for the same field. Query: #UNIQUE(Attr0) AND
+     * Verify that the ALL function finds more unique documents than MINUTE when they are provided for the same field. Query: #UNIQUE(Attr0) AND
      * #UNIQUE(#MINUTE(Attr0))
      */
     @Test
-    public void testThatValueTransformer_ORIGINAL_Supersedes_MINUTE() {
+    public void testThatValueTransformer_ALL_Supersedes_MINUTE() {
         givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:01").isExpectedToBeUnique();
         givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:02").isExpectedToBeUnique();
         givenInputDocument().withKeyValue("Attr0", "2001-03-10 10:15:03").isExpectedToBeUnique();
