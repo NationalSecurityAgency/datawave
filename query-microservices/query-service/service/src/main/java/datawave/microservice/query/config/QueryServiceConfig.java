@@ -1,6 +1,7 @@
 package datawave.microservice.query.config;
 
-import datawave.marking.MarkingFunctions;
+import datawave.marking.ColumnVisibilitySecurityMarking;
+import datawave.marking.SecurityMarking;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryParameters;
 import datawave.webservice.query.cache.QueryMetricFactory;
@@ -28,8 +29,10 @@ public class QueryServiceConfig {
     @Bean
     @ConditionalOnMissingBean
     @RequestScope
-    public MarkingFunctions markingFunctions() {
-        return new MarkingFunctions.Default();
+    public SecurityMarking securityMarking() {
+        SecurityMarking securityMarking = new ColumnVisibilitySecurityMarking();
+        securityMarking.clear();
+        return securityMarking;
     }
     
     @Bean

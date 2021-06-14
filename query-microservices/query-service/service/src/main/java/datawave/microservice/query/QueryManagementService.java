@@ -30,6 +30,7 @@ import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NoResultsQueryException;
 import datawave.webservice.query.exception.NotFoundQueryException;
+import datawave.webservice.query.exception.QueryCanceledQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.TimeoutQueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
@@ -76,8 +77,6 @@ import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSED
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATED;
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.DEFINED;
 import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
-import static io.undertow.util.StatusCodes.BAD_REQUEST;
-import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
 
 @Service
 public class QueryManagementService implements QueryRequestHandler {
@@ -136,9 +135,11 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     /**
-     * List QueryLogic types that are currently available
+     * Gets a list of descriptions for the configured query logics, sorted by query logic name.
+     * <p>
+     * The descriptions include things like the audit type, optional and required parameters, required roles, and response class.
      *
-     * @return
+     * @return the query logic descriptions
      */
     public QueryLogicResponse listQueryLogic() {
         QueryLogicResponse response = new QueryLogicResponse();
@@ -213,23 +214,41 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     /**
-     * Defines a datawave query.
+     * Defines a query using the given query logic and parameters.
      * <p>
-     * Validates the query parameters using the base validation, query logic-specific validation, and markings validation. If the parameters are valid, the
-     * query will be stored in the query storage cache where it can be acted upon in a subsequent call.
+     * Defined queries cannot be started and run. <br>
+     * Auditing is not performed when defining a query. <br>
+     * Updates can be made to any parameter using {@link #update}. <br>
+     * Create a runnable query from a defined query using {@link #duplicate} or {@link #reset}. <br>
+     * Delete a defined query using {@link #remove}. <br>
+     * Aside from a limited set of admin actions, only the query owner can act on a defined query.
      *
      * @param queryLogicName
+     *            the requested query logic, not null
      * @param parameters
+     *            the query parameters, not null
      * @param currentUser
-     * @return
+     *            the user who called this method, not null
+     * @return a generic response containing the query id
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
      * @throws QueryException
+     *             if query storage fails
+     * @throws QueryException
+     *             if there is an unknown error
      */
     public GenericResponse<String> define(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws QueryException {
         try {
             TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, false);
             GenericResponse<String> response = new GenericResponse<>();
-            response.setResult(taskKey.getQueryId().toString());
+            response.setResult(taskKey.getQueryId());
             return response;
         } catch (QueryException e) {
             throw e;
@@ -240,23 +259,45 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     /**
-     * Creates a datawave query.
+     * Creates a query using the given query logic and parameters.
      * <p>
-     * Validates the query parameters using the base validation, query logic-specific validation, and markings validation. If the parameters are valid, the
-     * query will be stored in the query storage cache where it can be acted upon in a subsequent call.
+     * Created queries will start running immediately. <br>
+     * Auditing is performed before the query is started. <br>
+     * Query results can be retrieved using {@link #next}.<br>
+     * Updates can be made to any parameter which doesn't affect the scope of the query using {@link #update}. <br>
+     * Stop a running query gracefully using {@link #close} or forcefully using {@link #cancel}. <br>
+     * Stop, and restart a running query using {@link #reset}. <br>
+     * Create a copy of a running query using {@link #duplicate}. <br>
+     * Aside from a limited set of admin actions, only the query owner can act on a running query.
      *
      * @param queryLogicName
+     *            the requested query logic, not null
      * @param parameters
+     *            the query parameters, not null
      * @param currentUser
-     * @return
+     *            the user who called this method, not null
+     * @return a generic response containing the query id
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
+     * @throws BadRequestQueryException
+     *             if auditing fails
      * @throws QueryException
+     *             if query storage fails
+     * @throws QueryException
+     *             if there is an unknown error
      */
     public GenericResponse<String> create(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws QueryException {
         try {
             TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, true);
             GenericResponse<String> response = new GenericResponse<>();
-            response.setResult(taskKey.getQueryId().toString());
+            response.setResult(taskKey.getQueryId());
             response.setHasResults(true);
             return response;
         } catch (QueryException e) {
@@ -272,6 +313,39 @@ public class QueryManagementService implements QueryRequestHandler {
         return storeQuery(queryLogicName, parameters, currentUser, isCreateRequest, null);
     }
     
+    /**
+     * Validates the query request, creates an entry in the query storage cache, and publishes a create event to the executor service.
+     * <p>
+     * Validation is run against the requested logic, the parameters, and the security markings in {@link #validateQuery}. <br>
+     * Auditing is performed when {@param isCreateRequest} is <code>true</code> using {@link #audit}. <br>
+     * If {@param queryId} is null, a query id will be generated automatically.
+     *
+     * @param queryLogicName
+     *            the requested query logic, not null
+     * @param parameters
+     *            the query parameters, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @param isCreateRequest
+     *            whether this is a create call <code>true</code>, or a define call <code>false</code>
+     * @param queryId
+     *            the desired query id, may be null
+     * @return the task key returned from query storage
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
+     * @throws BadRequestQueryException
+     *             if auditing fails
+     * @throws QueryException
+     *             if query storage fails
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     private TaskKey storeQuery(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser, boolean isCreateRequest,
                     String queryId) throws QueryException {
         // validate query and get a query logic
@@ -304,7 +378,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 // @formatter:on
                 
                 // publish a create event to the executor pool
-                publishExecutorEvent(QueryRequest.create(taskKey.getQueryId().toString()), getPoolName());
+                publishExecutorEvent(QueryRequest.create(taskKey.getQueryId()), getPoolName());
             } else {
                 // @formatter:off
                 taskKey = queryStorageCache.defineQuery(
@@ -322,24 +396,49 @@ public class QueryManagementService implements QueryRequestHandler {
             return taskKey;
         } catch (Exception e) {
             log.error("Unknown error storing query", e);
-            throw new BadRequestQueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
+            throw new QueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
         }
     }
     
     /**
-     * Creates a datawave query and calls next.
+     * Creates a query using the given query logic and parameters, and returns the first page of results.
      * <p>
-     * Validates the query parameters using the base validation, query logic-specific validation, and markings validation. If the parameters are valid, the
-     * query will be stored in the query storage cache where it can be acted upon.
-     *
-     * Once created, gets the next page of results from the query object. The response object type is dynamic, see the listQueryLogic operation to determine
-     * what the response type object will be.
+     * Created queries will start running immediately. <br>
+     * Auditing is performed before the query is started. <br>
+     * Subsequent query results can be retrieved using {@link #next}. <br>
+     * Updates can be made to any parameter which doesn't affect the scope of the query using {@link #update}. <br>
+     * Stop a running query gracefully using {@link #close} or forcefully using {@link #cancel}. <br>
+     * Stop, and restart a running query using {@link #reset}. <br>
+     * Create a copy of a running query using {@link #duplicate}. <br>
+     * Aside from a limited set of admin actions, only the query owner can act on a running query.
      *
      * @param queryLogicName
+     *            the requested query logic, not null
      * @param parameters
+     *            the query parameters, not null
      * @param currentUser
-     * @return
+     *            the user who called this method, not null
+     * @return a base query response containing the first page of results
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
+     * @throws BadRequestQueryException
+     *             if auditing fails
      * @throws QueryException
+     *             if query storage fails
+     * @throws TimeoutQueryException
+     *             if the next call times out
+     * @throws NoResultsQueryException
+     *             if no query results are found
+     * @throws QueryException
+     *             if this next task is rejected by the executor
+     * @throws QueryException
+     *             if there is an unknown error
      */
     public BaseQueryResponse createAndNext(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws QueryException {
@@ -349,19 +448,45 @@ public class QueryManagementService implements QueryRequestHandler {
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Unknown error creating and nexting query", e);
-            throw new QueryException(DatawaveErrorCode.QUERY_SETUP_ERROR, e, "Unknown error creating and nexting query query.");
+            log.error("Unknown error calling create and next.", e);
+            throw new QueryException(DatawaveErrorCode.QUERY_SETUP_ERROR, e, "Unknown error calling create and next.");
         }
     }
     
     /**
-     * Gets the next page of results from the query object. If the object is no longer alive, meaning that the current session has expired, then this fail. The
-     * response object type is dynamic, see the listQueryLogic operation to determine what the response type object will be.
+     * Gets the next page of results for the specified query.
+     * <p>
+     * Next can only be called on a running query. <br>
+     * If configuration allows, multiple next calls may be run concurrently for a query. <br>
+     * Only the query owner can call next on the specified query.
      *
      * @param queryId
+     *            the query id, not null
      * @param currentUser
-     * @return
+     *            the user who called this method, not null
+     * @return a base query response containing the next page of results
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't own the query
+     * @throws BadRequestQueryException
+     *             if the query is not running
      * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws QueryException
+     *             if the next call is interrupted
+     * @throws TimeoutQueryException
+     *             if the query times out
+     * @throws NoResultsQueryException
+     *             if no query results are found
+     * @throws QueryException
+     *             if this next task is rejected by the executor
+     * @throws QueryException
+     *             if next call execution fails
+     * @throws QueryException
+     *             if query logic creation fails
+     * @throws QueryException
+     *             if there is an unknown error
      */
     public BaseQueryResponse next(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         try {
@@ -372,7 +497,7 @@ public class QueryManagementService implements QueryRequestHandler {
             if (queryStatus.getQueryState() == CREATED) {
                 return next(queryId, currentUser.getPrimaryUser().getRoles());
             } else {
-                throw new QueryException("Cannot call next on a query with state: " + queryStatus.getQueryState().name(), BAD_REQUEST + "-1");
+                throw new BadRequestQueryException("Cannot call next on a query that is not running");
             }
         } catch (QueryException e) {
             throw e;
@@ -383,15 +508,33 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     /**
-     * Gets the next page of results from the query object. If the object is no longer alive, meaning that the current session has expired, then this fail. The
-     * response object type is dynamic, see the listQueryLogic operation to determine what the response type object will be.
+     * Gets the next page of results for the given query, and publishes a next event to the executor service.
+     * <p>
+     * If configuration allows, multiple next calls may be run concurrently for a query.
      *
      * @param queryId
+     *            the query id, not null
      * @param userRoles
-     * @return
+     *            the roles of the user who called this method, not null
+     * @return a base query response containing the next page of results
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
      * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws InterruptedException
+     *             if the next call is interrupted
+     * @throws TimeoutQueryException
+     *             if the query times out
+     * @throws NoResultsQueryException
+     *             if no query results are found
+     * @throws QueryException
+     *             if this next task is rejected by the executor
+     * @throws QueryException
+     *             if next call execution fails
+     * @throws QueryException
+     *             if query logic creation fails
      */
-    private BaseQueryResponse next(String queryId, Collection<String> userRoles) throws Exception {
+    private BaseQueryResponse next(String queryId, Collection<String> userRoles) throws InterruptedException, QueryException {
         // before we spin up a separate thread, make sure we are allowed to call next
         boolean success = false;
         QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryId, queryStatusUpdateHelper::claimConcurrentNext);
@@ -441,8 +584,10 @@ public class QueryManagementService implements QueryRequestHandler {
                     response.setQueryId(queryId);
                     return response;
                 } else {
-                    if (nextCall.getMetric().getLifecycle() == BaseQueryMetric.Lifecycle.NEXTTIMEOUT) {
-                        throw new TimeoutQueryException(DatawaveErrorCode.QUERY_TIMEOUT, MessageFormat.format("{0}", queryId));
+                    if (nextCall.isCanceled()) {
+                        throw new QueryCanceledQueryException(DatawaveErrorCode.QUERY_CANCELED, MessageFormat.format("{0} canceled;", queryId));
+                    } else if (nextCall.getMetric().getLifecycle() == BaseQueryMetric.Lifecycle.NEXTTIMEOUT) {
+                        throw new TimeoutQueryException(DatawaveErrorCode.QUERY_TIMEOUT, MessageFormat.format("{0} timed out.", queryId));
                     } else {
                         throw new NoResultsQueryException(DatawaveErrorCode.NO_QUERY_RESULTS_FOUND, MessageFormat.format("{0}", queryId));
                     }
@@ -450,17 +595,15 @@ public class QueryManagementService implements QueryRequestHandler {
             } catch (TaskRejectedException e) {
                 throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Next task rejected by the executor for query " + queryId);
             } catch (ExecutionException e) {
-                // try to unwrap the execution exception
-                Throwable cause = e.getCause();
-                if (cause instanceof Exception) {
-                    throw (Exception) e.getCause();
-                } else {
-                    throw e;
-                }
+                // try to unwrap the execution exception and throw a query exception
+                throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e.getCause(), "Next call execution failed");
             } finally {
                 // remove this next call from the map, and decrement the next count for this query
                 nextCallMap.get(queryId).remove(nextCall);
             }
+        } catch (CloneNotSupportedException e) {
+            throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e,
+                            "Unable to create instance of the requested query logic " + queryStatus.getQuery().getQueryLogicName());
         } finally {
             // update query status if we failed
             if (!success) {
@@ -470,32 +613,82 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     /**
-     * Releases the resources associated with this query. Any currently running calls to 'next' on the query will be stopped. Calls to 'next' after a 'cancel'
-     * will start over at page 1.
+     * Cancels the specified query.
+     * <p>
+     * Cancel can only be called on a running query, or a query that is in the process of closing. <br>
+     * Outstanding next calls will be stopped immediately, but will return partial results if applicable. <br>
+     * Aside from admins, only the query owner can cancel the specified query.
      *
      * @param queryId
+     *            the query id, not null
      * @param currentUser
-     * @return
+     *            the user who called this method, not null
+     * @return a void response indicating that the query was canceled
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't own the query
+     * @throws BadRequestQueryException
+     *             if the query is not running
      * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws QueryException
+     *             if the cancel call is interrupted
+     * @throws QueryException
+     *             if there is an unknown error
      */
     public VoidResponse cancel(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         return cancel(queryId, currentUser, false);
     }
     
     /**
-     * Releases the resources associated with this query. Any currently running calls to 'next' on the query will be stopped. Calls to 'next' after a 'cancel'
-     * will start over at page 1.
+     * Cancels the specified query using admin privileges.
+     * <p>
+     * Cancel can only be called on a running query, or a query that is in the process of closing. <br>
+     * Outstanding next calls will be stopped immediately, but will return partial results if applicable. <br>
+     * Only admin users should be allowed to call this method.
      *
      * @param queryId
+     *            the query id, not null
      * @param currentUser
-     * @return
+     *            the user who called this method, not null
+     * @return a void response indicating that the query was canceled
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws BadRequestQueryException
+     *             if the query is not running
      * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws QueryException
+     *             if the cancel call is interrupted
+     * @throws QueryException
+     *             if there is an unknown error
      */
     public VoidResponse adminCancel(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         log.info("Cancel '" + queryId + "'called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
         return cancel(queryId, currentUser, true);
     }
     
+    /**
+     * Cancels all queries using admin privileges.
+     * <p>
+     * Cancel can only be called on a running query, or a query that is in the process of closing. <br>
+     * Queries that are not running will be ignored by this method. <br>
+     * Outstanding next calls will be stopped immediately, but will return partial results if applicable. <br>
+     * Only admin users should be allowed to call this method.
+     *
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a void response specifying which queries were canceled
+     * @throws NotFoundQueryException
+     *             if a query cannot be found
+     * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws QueryException
+     *             if the cancel call is interrupted
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     public VoidResponse adminCancelAll(ProxiedUserDetails currentUser) throws QueryException {
         log.info("Cancel All called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
         try {
@@ -504,8 +697,8 @@ public class QueryManagementService implements QueryRequestHandler {
             
             VoidResponse response = new VoidResponse();
             for (QueryStatus queryStatus : queryStatuses) {
-                cancel(queryStatus.getQueryKey().getQueryId().toString(), true);
-                response.addMessage(queryStatus.getQueryKey().getQueryId().toString() + " canceled.");
+                cancel(queryStatus.getQueryKey().getQueryId(), true);
+                response.addMessage(queryStatus.getQueryKey().getQueryId() + " canceled.");
             }
             return response;
         } catch (QueryException e) {
@@ -517,47 +710,76 @@ public class QueryManagementService implements QueryRequestHandler {
         }
     }
     
+    /**
+     * Cancels the specified query.
+     * <p>
+     * Cancel can only be called on a running query, or a query that is in the process of closing. <br>
+     * Outstanding next calls will be stopped immediately, but will return partial results if applicable. <br>
+     * Publishes a cancel event to the query and executor services. <br>
+     * Query ownership will only be validated when {@param adminOverride} is set to <code>true</code>.
+     *
+     * @param queryId
+     *            the query id, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @param adminOverride
+     *            whether or not this is an admin action
+     * @return a void response indicating that the query was canceled
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't own the query
+     * @throws BadRequestQueryException
+     *             if the query is not running
+     * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws QueryException
+     *             if the cancel call is interrupted
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     private VoidResponse cancel(String queryId, ProxiedUserDetails currentUser, boolean adminOverride) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
             QueryStatus queryStatus = validateRequest(queryId, currentUser, adminOverride);
             
-            VoidResponse response = new VoidResponse();
-            switch (queryStatus.getQueryState()) {
-                case CREATED:
-                    // cancel the query
-                    cancel(queryId, true);
-                    response.addMessage(queryId + " canceled.");
-                    break;
-                // TODO: Should we throw an exception for these cases?
-                case DEFINED:
-                case CLOSED:
-                case CANCELED:
-                case FAILED:
-                    response.addMessage(queryId + " was not canceled because it is not running.");
-                    break;
-                default:
-                    throw new IllegalStateException("Unexpected query state: " + queryStatus.getQueryState());
+            // if the query is running, or if the query is closing and finishing up a next call
+            if (queryStatus.getQueryState() == CREATED || (queryStatus.getQueryState() == CLOSED && queryStatus.getConcurrentNextCount() > 0)) {
+                cancel(queryId, true);
+            } else {
+                throw new BadRequestQueryException(queryId + " cannot be canceled because it is not running.");
             }
+            
+            VoidResponse response = new VoidResponse();
+            response.addMessage(queryId + " canceled.");
             return response;
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
-            QueryException queryException = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, "query_id: " + queryId);
-            log.error("Unable to cancel query with id " + queryId, queryException);
+            QueryException queryException = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, "Unknown error canceling query " + queryId);
+            log.error("Unknown error canceling query " + queryId, queryException);
             throw queryException;
         }
     }
     
     /**
-     * Once the cancel request is validated, this method is called to actually cancel the query.
+     * Cancels the specified query, and optionally publishes a cancel event to the query and executor services.
+     * <p>
+     * Cancels any locally-running next calls. <br>
+     * Called with {@param publishEvent} set to <code>true</code> when the user calls cancel. <br>
+     * When {@param publishEvent} is <code>true</code>, changes the query state to {@link QueryStatus.QUERY_STATE#CANCELED}. <br>
+     * Called with {@param publishEvent} set to <code>false</code> when handling a remote cancel event.
      *
      * @param queryId
-     *            The id of the query to cancel
+     *            the query id, not null
      * @param publishEvent
-     *            If true, the cancel request will be published on the bus
-     * @throws InterruptedException
+     *            whether or not to publish an event
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
      * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws InterruptedException
+     *             if the cancel call is interrupted
      */
     public void cancel(String queryId, boolean publishEvent) throws InterruptedException, QueryException {
         // if we have an active next call for this query locally, cancel it
@@ -584,32 +806,82 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     /**
-     * Releases the resources associated with this query. Any currently running calls to 'next' on the query will continue until they finish. Calls to 'next'
-     * after a 'close' will start over at page 1.
+     * Closes the specified query.
+     * <p>
+     * Close can only be called on a running query. <br>
+     * Outstanding next calls will be allowed to run until they can return a full page, or they timeout. <br>
+     * Aside from admins, only the query owner can close the specified query.
      *
      * @param queryId
+     *            the query id, not null
      * @param currentUser
-     * @return
+     *            the user who called this method, not null
+     * @return a void response indicating that the query was closed
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't own the query
+     * @throws BadRequestQueryException
+     *             if the query is not running
      * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws QueryException
+     *             if the cancel call is interrupted
+     * @throws QueryException
+     *             if there is an unknown error
      */
     public VoidResponse close(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         return close(queryId, currentUser, false);
     }
     
     /**
-     * Releases the resources associated with this query. Any currently running calls to 'next' on the query will continue until they finish. Calls to 'next'
-     * after a 'close' will start over at page 1.
+     * Closes the specified query using admin privileges.
+     * <p>
+     * Close can only be called on a running query. <br>
+     * Outstanding next calls will be allowed to run until they can return a full page, or they timeout. <br>
+     * Only admin users should be allowed to call this method.
      *
      * @param queryId
+     *            the query id, not null
      * @param currentUser
-     * @return
+     *            the user who called this method, not null
+     * @return a void response indicating that the query was closed
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws BadRequestQueryException
+     *             if the query is not running
      * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws QueryException
+     *             if the cancel call is interrupted
+     * @throws QueryException
+     *             if there is an unknown error
      */
     public VoidResponse adminClose(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         log.info("Close '" + queryId + "'called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
         return close(queryId, currentUser, true);
     }
     
+    /**
+     * Closes all queries using admin privileges.
+     * <p>
+     * Close can only be called on a running query. <br>
+     * Queries that are not running will be ignored by this method. <br>
+     * Outstanding next calls will be allowed to run until they can return a full page, or they timeout. <br>
+     * Only admin users should be allowed to call this method.
+     *
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a void response specifying which queries were closed
+     * @throws NotFoundQueryException
+     *             if a query cannot be found
+     * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws QueryException
+     *             if the cancel call is interrupted
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     public VoidResponse adminCloseAll(ProxiedUserDetails currentUser) throws QueryException {
         log.info("Close All called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
         try {
@@ -618,58 +890,82 @@ public class QueryManagementService implements QueryRequestHandler {
             
             VoidResponse response = new VoidResponse();
             for (QueryStatus queryStatus : queryStatuses) {
-                close(queryStatus.getQueryKey().getQueryId().toString());
-                response.addMessage(queryStatus.getQueryKey().getQueryId().toString() + " closed.");
+                close(queryStatus.getQueryKey().getQueryId());
+                response.addMessage(queryStatus.getQueryKey().getQueryId() + " closed.");
             }
             return response;
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
-            QueryException queryException = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, "Error encountered while closing all queries.");
+            QueryException queryException = new QueryException(DatawaveErrorCode.QUERY_CLOSE_ERROR, e, "Error encountered while closing all queries.");
             log.error("Error encountered while closing all queries", queryException);
             throw queryException;
         }
     }
     
+    /**
+     * Closes the specified query.
+     * <p>
+     * Close can only be called on a running query. <br>
+     * Outstanding next calls will be allowed to run until they can return a full page, or they timeout. <br>
+     * Query ownership will only be validated when {@param adminOverride} is set to <code>true</code>.
+     *
+     * @param queryId
+     *            the query id, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @param adminOverride
+     *            whether or not this is an admin action
+     * @return a void response indicating that the query was closed
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't own the query
+     * @throws BadRequestQueryException
+     *             if the query is not running
+     * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws QueryException
+     *             if the cancel call is interrupted
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     private VoidResponse close(String queryId, ProxiedUserDetails currentUser, boolean adminOverride) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
             QueryStatus queryStatus = validateRequest(queryId, currentUser, adminOverride);
             
-            VoidResponse response = new VoidResponse();
-            switch (queryStatus.getQueryState()) {
-                case CREATED:
-                    // close the query
-                    close(queryId);
-                    response.addMessage(queryId + " closed.");
-                    break;
-                // TODO: Should we throw an exception for these cases?
-                case DEFINED:
-                case CLOSED:
-                case CANCELED:
-                case FAILED:
-                    response.addMessage(queryId + " was not closed because it is not running.");
-                    break;
-                default:
-                    throw new IllegalStateException("Unexpected query state: " + queryStatus.getQueryState());
+            if (queryStatus.getQueryState() == CREATED) {
+                close(queryId);
+            } else {
+                throw new BadRequestQueryException(queryId + " cannot be closed because it is not running.");
             }
+            
+            VoidResponse response = new VoidResponse();
+            response.addMessage(queryId + " closed.");
             return response;
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
-            QueryException queryException = new QueryException(DatawaveErrorCode.CLOSE_ERROR, e, "query_id: " + queryId);
-            log.error("Unable to close query with id " + queryId, queryException);
+            QueryException queryException = new QueryException(DatawaveErrorCode.QUERY_CLOSE_ERROR, e, "Unknown error closing query " + queryId);
+            log.error("Unknown error closing query " + queryId, queryException);
             throw queryException;
         }
     }
     
     /**
-     * Once the close request is validated, this method is called to actually close the query.
+     * Closes the specified query, and publishes a close event to the executor services.
+     * <p>
+     * Changes the query state to {@link QueryStatus.QUERY_STATE#CLOSED}.
      *
      * @param queryId
-     *            The id of the query to close
-     * @throws InterruptedException
+     *            the query id, not null
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
      * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws InterruptedException
+     *             if the cancel call is interrupted
      */
     public void close(String queryId) throws InterruptedException, QueryException {
         QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryId, status -> {
@@ -682,12 +978,41 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     /**
-     * Resets the query named by {@code queryId}. If the query is not alive, meaning that the current session has expired (due to either timeout, or server
-     * failure), then this will reload the query and start it over. If the query is alive, it closes it and starts the query over.
+     * Stops, and restarts the specified query.
+     * <p>
+     * Reset can be called on any query, whether it's running or not. <br>
+     * If the specified query is still running, it will be canceled. See {@link #cancel}. <br>
+     * Reset creates a new, identical query, with a new query id. <br>
+     * Reset queries will start running immediately. <br>
+     * Auditing is performed before the new query is started.
      *
      * @param queryId
-     * @return
+     *            the query id, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a generic response containing the new query id
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't own the query
      * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws QueryException
+     *             if the cancel call is interrupted
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
+     * @throws BadRequestQueryException
+     *             if auditing fails
+     * @throws QueryException
+     *             if query storage fails
+     * @throws QueryException
+     *             if there is an unknown error
      */
     public GenericResponse<String> reset(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         try {
@@ -696,7 +1021,7 @@ public class QueryManagementService implements QueryRequestHandler {
             
             // cancel the query if it is running
             if (queryStatus.getQueryState() == CREATED) {
-                cancel(queryStatus.getQueryKey().getQueryId().toString(), true);
+                cancel(queryStatus.getQueryKey().getQueryId(), true);
             }
             
             // create a new query which is an exact copy of the specified query
@@ -704,40 +1029,79 @@ public class QueryManagementService implements QueryRequestHandler {
             
             GenericResponse<String> response = new GenericResponse<>();
             response.addMessage(queryId + " reset.");
-            response.setResult(taskKey.getQueryId().toString());
+            response.setResult(taskKey.getQueryId());
             response.setHasResults(true);
             return response;
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unknown error resetting query " + queryId, e);
-            throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error resetting query " + queryId);
+            throw new QueryException(DatawaveErrorCode.QUERY_RESET_ERROR, e, "Unknown error resetting query " + queryId);
         }
     }
     
     /**
-     * Remove (delete) the query
+     * Removes the specified query from query storage.
+     * <p>
+     * Remove can only be called on a query that is not running. <br>
+     * Aside from admins, only the query owner can remove the specified query.
      *
      * @param queryId
+     *            the query id, not null
      * @param currentUser
-     * @return
+     *            the user who called this method, not null
+     * @return a void response indicating that the query was removed
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't own the query
+     * @throws BadRequestQueryException
+     *             if the query is running
+     * @throws QueryException
+     *             if there is an unknown error
      */
     public VoidResponse remove(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         return remove(queryId, currentUser, false);
     }
     
     /**
-     * Remove (delete) the query
+     * Removes the specified query from query storage using admin privileges.
+     * <p>
+     * Remove can only be called on a query that is not running. <br>
+     * Only admin users should be allowed to call this method.
      *
      * @param queryId
+     *            the query id, not null
      * @param currentUser
-     * @return
+     *            the user who called this method, not null
+     * @return a void response indicating that the query was removed
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws BadRequestQueryException
+     *             if the query is running
+     * @throws QueryException
+     *             if there is an unknown error
      */
     public VoidResponse adminRemove(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         log.info("Remove '" + queryId + "'called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
         return remove(queryId, currentUser, true);
     }
     
+    /**
+     * Removes all queries from query storage using admin privileges.
+     * <p>
+     * Remove can only be called on a query that is not running. <br>
+     * Queries that are running will be ignored by this method. <br>
+     * Only admin users should be allowed to call this method.
+     *
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a void response specifying which queries were removed
+     * @throws NotFoundQueryException
+     *             if a query cannot be found
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     public VoidResponse adminRemoveAll(ProxiedUserDetails currentUser) throws QueryException {
         log.info("Remove All called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
         try {
@@ -746,16 +1110,38 @@ public class QueryManagementService implements QueryRequestHandler {
             
             VoidResponse response = new VoidResponse();
             for (QueryStatus queryStatus : queryStatuses) {
-                response.addMessage(queryStatus.getQueryKey().getQueryId().toString() + " removed.");
+                response.addMessage(queryStatus.getQueryKey().getQueryId() + " removed.");
             }
             return response;
         } catch (Exception e) {
-            QueryException queryException = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, "Error encountered while canceling all queries.");
-            log.error("Error encountered while canceling all queries", queryException);
+            QueryException queryException = new QueryException(DatawaveErrorCode.QUERY_REMOVAL_ERROR, e, "Error encountered while removing all queries.");
+            log.error("Error encountered while removing all queries", queryException);
             throw queryException;
         }
     }
     
+    /**
+     * Removes the specified query from query storage.
+     * <p>
+     * Remove can only be called on a query that is not running. <br>
+     * Query ownership will only be validated when {@param adminOverride} is set to <code>true</code>.
+     *
+     * @param queryId
+     *            the query id, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @param adminOverride
+     *            whether or not this is an admin action
+     * @return a void response indicating that the query was removed
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't own the query
+     * @throws BadRequestQueryException
+     *             if the query is running
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     private VoidResponse remove(String queryId, ProxiedUserDetails currentUser, boolean adminOverride) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
@@ -764,10 +1150,10 @@ public class QueryManagementService implements QueryRequestHandler {
             // remove the query if it is not running
             if (queryStatus.getQueryState() != CREATED) {
                 if (!remove(queryStatus)) {
-                    throw new QueryException("Failed to remove " + queryId, INTERNAL_SERVER_ERROR + "-1");
+                    throw new QueryException("Failed to remove " + queryId);
                 }
             } else {
-                throw new QueryException("Cannot remove a running query.", BAD_REQUEST + "-1");
+                throw new BadRequestQueryException("Cannot remove a running query.");
             }
             
             VoidResponse response = new VoidResponse();
@@ -777,7 +1163,7 @@ public class QueryManagementService implements QueryRequestHandler {
             throw e;
         } catch (Exception e) {
             log.error("Unknown error removing query " + queryId, e);
-            throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error removing query " + queryId);
+            throw new QueryException(DatawaveErrorCode.QUERY_REMOVAL_ERROR, e, "Unknown error removing query " + queryId);
         }
     }
     
@@ -785,6 +1171,51 @@ public class QueryManagementService implements QueryRequestHandler {
         return queryStorageCache.deleteQuery(queryStatus.getQueryKey().getQueryId());
     }
     
+    /**
+     * Updates the specified query.
+     * <p>
+     * Update can only be called on a defined, or running query. <br>
+     * Auditing is not performed when updating a defined query. <br>
+     * No auditable parameters should be updated when updating a running query. <br>
+     * Any query parameter can be updated for a defined query. <br>
+     * Query parameters which don't affect the scope of the query can be updated for a running query. <br>
+     * The list of parameters that can be updated for a running query is configurable. <br>
+     * Auditable parameters should never be added to the updatable parameters configuration. <br>
+     * Query string, date range, query logic, and auths should never be updated for a running query. <br>
+     * Only the query owner can call update on the specified query.
+     *
+     * @param queryId
+     *            the query id, not null
+     * @param parameters
+     *            the query parameter updates, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a generic response containing the query id
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't own the query
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
+     * @throws BadRequestQueryException
+     *             if the query is not defined, or running
+     * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws QueryException
+     *             if the update call is interrupted
+     * @throws BadRequestQueryException
+     *             if no parameters are specified
+     * @throws QueryException
+     *             if query storage fails
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     public GenericResponse<String> update(String queryId, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
@@ -798,7 +1229,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 currentParams.addAll(queryStatus.getQuery().getOptionalQueryParameters());
                 queryStatus.getQuery().getParameters().forEach(x -> currentParams.add(x.getParameterName(), x.getParameterValue()));
                 
-                boolean updated = false;
+                boolean updated;
                 if (queryStatus.getQueryState() == DEFINED) {
                     // update all parameters if the state is defined
                     updated = updateParameters(parameters, currentParams);
@@ -834,16 +1265,17 @@ public class QueryManagementService implements QueryRequestHandler {
                         response.addMessage("The following parameters cannot be updated for a running query: " + String.join(",", ignoredParams));
                     }
                 } else {
-                    throw new QueryException("Cannot update a query unless it is defined or running.", BAD_REQUEST + "-1");
+                    throw new BadRequestQueryException("Cannot update a query unless it is defined or running.");
                 }
                 
+                response.setResult(queryId);
                 if (updated) {
                     response.addMessage(queryId + " updated.");
                 } else {
                     response.addMessage(queryId + " unchanged.");
                 }
             } else {
-                throw new QueryException("No parameters specified for update.", BAD_REQUEST + "-1");
+                throw new BadRequestQueryException("No parameters specified for update.");
             }
             
             return response;
@@ -851,10 +1283,47 @@ public class QueryManagementService implements QueryRequestHandler {
             throw e;
         } catch (Exception e) {
             log.error("Unknown error updating query " + queryId, e);
-            throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error updating query " + queryId);
+            throw new QueryException(DatawaveErrorCode.QUERY_UPDATE_ERROR, e, "Unknown error updating query " + queryId);
         }
     }
     
+    /**
+     * Creates a copy of the specified query.
+     * <p>
+     * Duplicate can be called on any query, whether it's running or not. <br>
+     * Duplicate creates a new, identical query, with a new query id. <br>
+     * Provided parameter updates will be applied to the new query. <br>
+     * Duplicated queries will start running immediately. <br>
+     * Auditing is performed before the new query is started.
+     *
+     * @param queryId
+     *            the query id, not null
+     * @param parameters
+     *            the query parameter updates, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a generic response containing the new query id
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't own the query
+     * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
+     * @throws BadRequestQueryException
+     *             if auditing fails
+     * @throws QueryException
+     *             if query storage fails
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     public GenericResponse<String> duplicate(String queryId, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
         try {
             // make sure the query is valid, and the user can act on it
@@ -865,25 +1334,58 @@ public class QueryManagementService implements QueryRequestHandler {
             
             GenericResponse<String> response = new GenericResponse<>();
             response.addMessage(queryId + " duplicated.");
-            response.setResult(taskKey.getQueryId().toString());
+            response.setResult(taskKey.getQueryId());
             response.setHasResults(true);
             return response;
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Unknown error resetting query " + queryId, e);
-            throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error resetting query " + queryId);
+            log.error("Unknown error duplicating query " + queryId, e);
+            throw new QueryException(DatawaveErrorCode.QUERY_DUPLICATION_ERROR, e, "Unknown error duplicating query " + queryId);
         }
     }
     
+    /**
+     * Creates a copy of the specified query.
+     * <p>
+     * Duplicate can be called on any query, whether it's running or not. <br>
+     * Duplicate creates a new, identical query, with a new query id. <br>
+     * Provided parameter updates will be applied to the new query. <br>
+     * Duplicated queries will start running immediately. <br>
+     * Auditing is performed before the new query is started.
+     *
+     * @param queryStatus
+     *            the query status, not null
+     * @param parameters
+     *            the query parameter updates, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a generic response containing the new query id
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't own the query
+     * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
+     * @throws BadRequestQueryException
+     *             if auditing fails
+     * @throws QueryException
+     *             if query storage fails
+     */
     private TaskKey duplicate(QueryStatus queryStatus, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
         // TODO: Are we losing anything by recreating the parameters this way?
         // recreate the query parameters
         MultiValueMap<String,String> currentParams = new LinkedMultiValueMap<>();
         currentParams.addAll(queryStatus.getQuery().getOptionalQueryParameters());
-        queryStatus.getQuery().getParameters().forEach(x -> {
-            currentParams.add(x.getParameterName(), x.getParameterValue());
-        });
+        queryStatus.getQuery().getParameters().forEach(x -> currentParams.add(x.getParameterName(), x.getParameterValue()));
         
         // updated all of the passed in parameters
         updateParameters(parameters, currentParams);
@@ -892,27 +1394,25 @@ public class QueryManagementService implements QueryRequestHandler {
         return storeQuery(queryStatus.getQuery().getQueryLogicName(), currentParams, currentUser, true);
     }
     
-    /**
-     * Updates the current params with the new params.
-     *
-     * @param newParameters
-     * @param currentParams
-     * @return true if current params was modified
-     */
-    private boolean updateParameters(MultiValueMap<String,String> newParameters, MultiValueMap<String,String> currentParams) throws QueryException {
+    private boolean updateParameters(MultiValueMap<String,String> newParameters, MultiValueMap<String,String> currentParams) throws BadRequestQueryException {
         return updateParameters(newParameters.keySet(), newParameters, currentParams);
     }
     
     /**
-     * Updates the current params with the new params for the given parameter names.
+     * Updates the current parameters with the new parameters, limited to the specified parameter names.
      *
      * @param parameterNames
+     *            the parameters names to override, not null
      * @param newParameters
+     *            the new parameters, may be null
      * @param currentParams
-     * @return true if current params was modified
+     *            the current parameters, not null
+     * @return true is the current parameters were changed
+     * @throws BadRequestQueryException
+     *             if a parameter is passed without a value
      */
     private boolean updateParameters(Collection<String> parameterNames, MultiValueMap<String,String> newParameters, MultiValueMap<String,String> currentParams)
-                    throws QueryException {
+                    throws BadRequestQueryException {
         boolean paramsUpdated = false;
         for (String paramName : parameterNames) {
             if (newParameters.get(paramName) != null && !newParameters.get(paramName).isEmpty()) {
@@ -922,24 +1422,68 @@ public class QueryManagementService implements QueryRequestHandler {
                     paramsUpdated = true;
                 }
             } else {
-                throw new QueryException("Cannot update a query parameter without a value: " + paramName, BAD_REQUEST + "-1");
+                throw new BadRequestQueryException("Cannot update a query parameter without a value: " + paramName);
             }
         }
         return paramsUpdated;
     }
     
-    // list all queries for the user matching the query name, if specified
+    /**
+     * Gets a list of queries for the calling user.
+     * <p>
+     * Returns all matching queries owned by the calling user, filtering by query id and query name.
+     *
+     * @param queryId
+     *            the query id, may be null
+     * @param queryName
+     *            the query name, may be null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a list response containing the matching queries
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     public QueryImplListResponse list(String queryId, String queryName, ProxiedUserDetails currentUser) throws QueryException {
         return list(queryId, queryName, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
     }
     
-    // list all queries
+    /**
+     * Gets a list of queries for the specified user using admin privileges.
+     * <p>
+     * Returns all matching queries owned by any user, filtered by user ID, query ID, and query name. <br>
+     * Only admin users should be allowed to call this method.
+     *
+     * @param queryId
+     *            the query id, may be null
+     * @param queryName
+     *            the query name, may be null
+     * @param userId
+     *            the user whose queries we want to list, may be null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a list response containing the matching queries
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     public QueryImplListResponse adminList(String queryId, String queryName, String userId, ProxiedUserDetails currentUser) throws QueryException {
         log.info("List '" + String.join(",", Arrays.asList(queryId, queryName, userId)) + "'called by admin: "
                         + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
         return list(queryId, queryName, userId);
     }
     
+    /**
+     * Gets a list of all matching queries, filtered by user ID, query ID, and query name.
+     *
+     * @param queryId
+     *            the query id, may be null
+     * @param queryName
+     *            the query name, may be null
+     * @param userId
+     *            the user whose queries we want to list, may be null
+     * @return a list response containing the matching queries
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     private QueryImplListResponse list(String queryId, String queryName, String userId) throws QueryException {
         try {
             List<Query> queries;
@@ -968,7 +1512,23 @@ public class QueryManagementService implements QueryRequestHandler {
         return validateRequest(queryId, currentUser, false);
     }
     
-    private QueryStatus validateRequest(String queryId, ProxiedUserDetails currentUser, boolean adminOverride) throws QueryException {
+    /**
+     * Validates the user request by ensuring that the query exists, and the user owns the query or is an admin.
+     *
+     * @param queryId
+     *            the query id, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @param adminOverride
+     *            whether or not this is an admin request
+     * @return a query status object for the specified query
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't own the query
+     */
+    private QueryStatus validateRequest(String queryId, ProxiedUserDetails currentUser, boolean adminOverride)
+                    throws NotFoundQueryException, UnauthorizedQueryException {
         // does the query exist?
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         if (queryStatus == null) {
@@ -988,6 +1548,15 @@ public class QueryManagementService implements QueryRequestHandler {
         return queryStatus;
     }
     
+    /**
+     * Receives remote query requests and handles them.
+     * <p>
+     * Cancels any running next calls when the request method is {@link QueryRequest.Method#CANCEL}. <br>
+     * Takes no action for other remote query requests.
+     *
+     * @param queryRequest
+     *            the remote query request, not null
+     */
     @Override
     public void handleRemoteRequest(QueryRequest queryRequest) {
         try {
@@ -998,11 +1567,30 @@ public class QueryManagementService implements QueryRequestHandler {
                 log.debug("No handling specified for remote query request method: {}", queryRequest.getMethod());
             }
         } catch (Exception e) {
-            log.error("Remote request failed:" + queryRequest);
+            log.error("Unknown error handling remote request:" + queryRequest);
         }
     }
     
-    protected void audit(Query query, QueryLogic<?> queryLogic, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
+    /**
+     * Creates and submits an audit record to the audit service.
+     * <p>
+     * The audit request submission will fail if the audit service is unable to validate the audit message.
+     *
+     * @param query
+     *            the query to be audited, not null
+     * @param queryLogic
+     *            the query logic, not null
+     * @param parameters
+     *            the query parameters, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @throws BadRequestQueryException
+     *             if the audit parameters fail validation
+     * @throws BadRequestQueryException
+     *             if there is an error auditing the query
+     */
+    protected void audit(Query query, QueryLogic<?> queryLogic, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
+                    throws BadRequestQueryException {
         Auditor.AuditType auditType = queryLogic.getAuditType(query);
         
         parameters.add(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
@@ -1044,14 +1632,36 @@ public class QueryManagementService implements QueryRequestHandler {
         }
     }
     
+    /**
+     * Gets the pool name for this request.
+     * <p>
+     * If no pool is specified in the query parameters, the default pool will be used.
+     *
+     * @return the pool name for this query
+     */
     protected String getPoolName() {
         return (queryParameters.getPool() != null) ? queryParameters.getPool() : queryProperties.getDefaultParams().getPool();
     }
     
+    /**
+     * Gets the pool-specific executor service name.
+     *
+     * @param poolName
+     *            the pool name, null returns *-null
+     * @return the pool-specific executor service name
+     */
     protected String getPooledExecutorName(String poolName) {
         return String.join("-", Arrays.asList(queryProperties.getExecutorServiceName(), poolName));
     }
     
+    /**
+     * Publishes a next event for the given query id and pool.
+     *
+     * @param queryId
+     *            the query id, not null
+     * @param queryPool
+     *            the pool to use, not null
+     */
     public void publishNextEvent(String queryId, String queryPool) {
         publishExecutorEvent(QueryRequest.next(queryId), queryPool);
     }
@@ -1078,6 +1688,16 @@ public class QueryManagementService implements QueryRequestHandler {
         // @formatter:on
     }
     
+    /**
+     * Gets the maximum number of concurrent query tasks allowed for this logic.
+     * <p>
+     * If the max concurrent tasks is overridden, that value will be used. <br>
+     * Otherwise, the value is determined via the query logic, if defined, or via the configuration default.
+     *
+     * @param queryLogic
+     *            the requested query logic, not null
+     * @return the maximum concurrent tasks limit
+     */
     protected int getMaxConcurrentTasks(QueryLogic<?> queryLogic) {
         // if there's an override, use it
         if (queryParameters.isMaxConcurrentTasksOverridden()) {
@@ -1093,6 +1713,23 @@ public class QueryManagementService implements QueryRequestHandler {
         }
     }
     
+    /**
+     * Creates and initializes a query object using the provided query parameters.
+     * <p>
+     * If a query id is not specified, then a random one will be generated.
+     *
+     * @param queryLogicName
+     *            the requested query logic, not null
+     * @param parameters
+     *            the query parameters, not null
+     * @param userDn
+     *            the user dn, not null
+     * @param dnList
+     *            the user dn list, not null
+     * @param queryId
+     *            the desired query id, may be null
+     * @return an instantiated query object
+     */
     protected Query createQuery(String queryLogicName, MultiValueMap<String,String> parameters, String userDn, List<String> dnList, String queryId) {
         Query q = responseObjectFactory.getQueryImpl();
         q.initialize(userDn, dnList, queryLogicName, queryParameters, queryParameters.getUnknownParameters(parameters));
@@ -1106,10 +1743,28 @@ public class QueryManagementService implements QueryRequestHandler {
     }
     
     /**
-     * This method will provide some initial query validation for the define and create query calls.
+     * Validates the query parameters, security markings, and instantiates the requested query logic.
+     * <p>
+     * If the query is not valid, an exception will be thrown.
+     *
+     * @param queryLogicName
+     *            the requested query logic, not null
+     * @param parameters
+     *            the query parameters, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return the query logic
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
      */
     protected QueryLogic<?> validateQuery(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
-                    throws QueryException {
+                    throws BadRequestQueryException, UnauthorizedQueryException {
         // validate the query parameters
         validateParameters(queryLogicName, parameters);
         
@@ -1123,7 +1778,25 @@ public class QueryManagementService implements QueryRequestHandler {
         return queryLogic;
     }
     
-    protected void validateParameters(String queryLogicName, MultiValueMap<String,String> parameters) throws QueryException {
+    /**
+     * Performs query parameter validation.
+     * <p>
+     * If the parameters are not valid, an exception will be thrown.
+     *
+     * @param queryLogicName
+     *            the requested query logic, not null
+     * @param parameters
+     *            the query parameters, not null
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if an invalid page size was requested
+     * @throws BadRequestQueryException
+     *             if an invalid page timeout was requested
+     * @throws BadRequestQueryException
+     *             if an invalid begin and end date was requested
+     */
+    protected void validateParameters(String queryLogicName, MultiValueMap<String,String> parameters) throws BadRequestQueryException {
         // add query logic name to parameters
         parameters.add(QUERY_LOGIC_NAME, queryLogicName);
         
@@ -1165,7 +1838,22 @@ public class QueryManagementService implements QueryRequestHandler {
         }
     }
     
-    protected QueryLogic<?> createQueryLogic(String queryLogicName, ProxiedUserDetails currentUser) throws QueryException {
+    /**
+     * Creates a query logic instance for the given user.
+     * <p>
+     * The user's roles will be checked when instantiating the query logic.
+     *
+     * @param queryLogicName
+     *            the requested query logic, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return the requested query logic
+     * @throws BadRequestQueryException
+     *             if the query logic does not exist
+     * @throws BadRequestQueryException
+     *             if the user does not have the required roles for the query logic
+     */
+    protected QueryLogic<?> createQueryLogic(String queryLogicName, ProxiedUserDetails currentUser) throws BadRequestQueryException {
         // will throw IllegalArgumentException if not defined
         try {
             return queryLogicFactory.getQueryLogic(queryLogicName, currentUser.getPrimaryUser().getRoles());
@@ -1175,7 +1863,28 @@ public class QueryManagementService implements QueryRequestHandler {
         }
     }
     
-    protected void validateQueryLogic(QueryLogic<?> queryLogic, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
+    /**
+     * Performs query parameter validation using the query logic.
+     * 
+     * @param queryLogic
+     *            the requested query logic, not null
+     * @param parameters
+     *            the query parameters, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws BadRequestQueryException
+     *             if an invalid page size was requested
+     * @throws BadRequestQueryException
+     *             if an invalid max results override was requested
+     * @throws BadRequestQueryException
+     *             if an invalid max concurrent tasks override was requested
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     */
+    protected void validateQueryLogic(QueryLogic<?> queryLogic, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
+                    throws BadRequestQueryException, UnauthorizedQueryException {
         queryLogic.validate(parameters);
         
         // always check against the max
@@ -1213,9 +1922,16 @@ public class QueryManagementService implements QueryRequestHandler {
         }
     }
     
-    protected void validateSecurityMarkings(MultiValueMap<String,String> parameters) throws QueryException {
+    /**
+     * Performs security marking validation using the configured security markings. See {@link SecurityMarking#validate}.
+     *
+     * @param parameters
+     *            the query parameters, not null
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
+     */
+    protected void validateSecurityMarkings(MultiValueMap<String,String> parameters) throws BadRequestQueryException {
         try {
-            securityMarking.clear();
             securityMarking.validate(parameters);
         } catch (IllegalArgumentException e) {
             log.error("Failed security markings validation", e);
@@ -1223,6 +1939,18 @@ public class QueryManagementService implements QueryRequestHandler {
         }
     }
     
+    /**
+     * Sets some audit parameters which are used internally to assist with auditing.
+     * <p>
+     * If any of these parameters exist in the current parameter map, they will first be removed.
+     *
+     * @param queryLogicName
+     *            the requested query logic, not null
+     * @param userDn
+     *            the user dn, not null
+     * @param parameters
+     *            the query parameters, not null
+     */
     protected void setInternalAuditParameters(String queryLogicName, String userDn, MultiValueMap<String,String> parameters) {
         // Set private audit-related parameters, stripping off any that the user might have passed in first.
         // These are parameters that aren't passed in by the user, but rather are computed from other sources.

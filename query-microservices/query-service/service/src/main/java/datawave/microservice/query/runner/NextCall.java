@@ -12,7 +12,6 @@ import datawave.microservice.query.logic.QueryLogic;
 import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.data.ObjectSizeOf;
-import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.QueryMetric;
 import org.slf4j.Logger;
@@ -265,6 +264,10 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         return (System.currentTimeMillis() - lastStatusUpdateTime) > nextCallProperties.getStatusUpdateIntervalMillis();
     }
     
+    public boolean isCanceled() {
+        return canceled;
+    }
+    
     public void cancel() {
         this.canceled = true;
     }
@@ -337,7 +340,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             return this;
         }
         
-        public NextCall build() throws QueryException {
+        public NextCall build() {
             return new NextCall(this);
         }
     }

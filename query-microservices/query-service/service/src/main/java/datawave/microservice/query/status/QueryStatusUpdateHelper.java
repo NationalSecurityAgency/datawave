@@ -5,6 +5,7 @@ import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.QueryStorageLock;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
 
 import java.util.UUID;
@@ -62,7 +63,7 @@ public class QueryStatusUpdateHelper {
                     updater.apply(queryStatus);
                     queryStorageCache.updateQueryStatus(queryStatus);
                 } else {
-                    throw new QueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, "Unable to find query status in cache.");
+                    throw new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, "Unable to find query status in cache.");
                 }
             } finally {
                 statusLock.unlock();
