@@ -12,7 +12,7 @@ public class QueryStorageProperties {
     }
     
     // should storage be synched to disk on every call
-    private boolean synchStorage = false;
+    private boolean syncStorage = false;
     
     // the zookeeper connection string if needed
     private String zookeeperConnectionString = "localhost:2181";
@@ -20,12 +20,12 @@ public class QueryStorageProperties {
     // which lock manager should be used
     private LOCKMGR lockManager = LOCKMGR.LOCAL;
     
-    public boolean isSynchStorage() {
-        return synchStorage;
+    public boolean isSyncStorage() {
+        return syncStorage;
     }
     
-    public void setSynchStorage(boolean synchStorage) {
-        this.synchStorage = synchStorage;
+    public void setSyncStorage(boolean syncStorage) {
+        this.syncStorage = syncStorage;
     }
     
     public LOCKMGR getLockManager() {

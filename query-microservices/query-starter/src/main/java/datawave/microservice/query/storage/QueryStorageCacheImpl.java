@@ -1,10 +1,10 @@
 package datawave.microservice.query.storage;
 
+import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.logic.QueryCheckpoint;
 import datawave.microservice.query.logic.QueryKey;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.config.QueryStorageProperties;
-import datawave.microservice.query.config.QueryProperties;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.security.Authorizations;
 import org.springframework.cloud.bus.BusProperties;

@@ -1,6 +1,11 @@
 package datawave.microservice.query.executor;
 
 import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.query.executor.config.ExecutorProperties;
+import datawave.microservice.query.logic.CheckpointableQueryLogic;
+import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.QueryLogicFactory;
+import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryCache;
 import datawave.microservice.query.storage.QueryQueueListener;
 import datawave.microservice.query.storage.QueryQueueManager;
@@ -9,11 +14,6 @@ import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskLockException;
 import datawave.microservice.query.storage.TaskStates;
-import datawave.microservice.query.executor.config.ExecutorProperties;
-import datawave.microservice.query.logic.CheckpointableQueryLogic;
-import datawave.microservice.query.logic.QueryLogic;
-import datawave.microservice.query.logic.QueryLogicFactory;
-import datawave.microservice.query.remote.QueryRequest;
 import datawave.query.AnyFieldQueryTest;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;

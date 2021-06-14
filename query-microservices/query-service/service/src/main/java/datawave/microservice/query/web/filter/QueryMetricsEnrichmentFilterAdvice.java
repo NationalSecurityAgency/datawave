@@ -1,8 +1,8 @@
 package datawave.microservice.query.web.filter;
 
+import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.storage.QueryState;
 import datawave.microservice.query.storage.QueryStorageCache;
-import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.web.QueryMetrics;
 import datawave.microservice.query.web.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.metric.BaseQueryMetric;

@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.messaging.Message;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -51,9 +52,9 @@ public abstract class QueryStorageCacheTest {
     @ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications"})
     public static class LocalQueryStorageCacheTest extends QueryStorageCacheTest {}
     
-    // @EmbeddedKafka
-    // @ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications", "use-embedded-kafka"})
-    // public static class EmbeddedKafkaQueryStorageCacheTest extends QueryStorageCacheTest {}
+    @EmbeddedKafka
+    @ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications", "use-embedded-kafka"})
+    public static class EmbeddedKafkaQueryStorageCacheTest extends QueryStorageCacheTest {}
     
     @Disabled("Cannot run this test without an externally deployed RabbitMQ instance.")
     @ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications", "use-rabbit"})

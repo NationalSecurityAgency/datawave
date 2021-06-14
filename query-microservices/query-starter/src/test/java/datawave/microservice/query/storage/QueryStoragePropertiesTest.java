@@ -12,10 +12,10 @@ public class QueryStoragePropertiesTest {
     @Test
     public void testQueryStorageProperties() {
         QueryStorageProperties props = new QueryStorageProperties();
-        props.setSynchStorage(true);
-        assertTrue(props.isSynchStorage());
-        props.setSynchStorage(false);
-        assertFalse(props.isSynchStorage());
+        props.setSyncStorage(true);
+        assertTrue(props.isSyncStorage());
+        props.setSyncStorage(false);
+        assertFalse(props.isSyncStorage());
         props.setLockManager(QueryStorageProperties.LOCKMGR.ZOO);
         assertEquals(QueryStorageProperties.LOCKMGR.ZOO, props.getLockManager());
         props.setZookeeperConnectionString("localhost:199999");

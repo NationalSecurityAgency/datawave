@@ -7,10 +7,6 @@ import datawave.microservice.audit.AuditClient;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.common.audit.PrivateAuditConstants;
-import datawave.microservice.query.storage.QueryQueueManager;
-import datawave.microservice.query.storage.QueryStatus;
-import datawave.microservice.query.storage.QueryStorageCache;
-import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.logic.QueryLogicFactory;
@@ -18,6 +14,10 @@ import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
 import datawave.microservice.query.runner.NextCall;
 import datawave.microservice.query.status.QueryStatusUpdateHelper;
+import datawave.microservice.query.storage.QueryQueueManager;
+import datawave.microservice.query.storage.QueryStatus;
+import datawave.microservice.query.storage.QueryStorageCache;
+import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.util.QueryUtil;
 import datawave.security.util.ProxiedEntityUtils;
 import datawave.webservice.common.audit.AuditParameters;
@@ -72,11 +72,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CANCELED;
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSED;
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATED;
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.DEFINED;
-import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
 
 @Service
 public class QueryManagementService implements QueryRequestHandler {

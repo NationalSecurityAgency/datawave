@@ -233,8 +233,8 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
                     if (log.isInfoEnabled()) {
                         log.debug("Creating exchange/queue " + exchangeQueueName + " with routing pattern " + routingPattern);
                     }
-                    TopicExchange exchange = new TopicExchange(exchangeQueueName, properties.isSynchStorage(), false);
-                    Queue queue = new Queue(exchangeQueueName, properties.isSynchStorage(), false, false);
+                    TopicExchange exchange = new TopicExchange(exchangeQueueName, properties.isSyncStorage(), false);
+                    Queue queue = new Queue(exchangeQueueName, properties.isSyncStorage(), false, false);
                     Binding binding = BindingBuilder.bind(queue).to(exchange).with(routingPattern);
                     rabbitAdmin.declareExchange(exchange);
                     rabbitAdmin.declareQueue(queue);

@@ -1,11 +1,6 @@
 package datawave.microservice.query.executor;
 
 import datawave.microservice.query.config.QueryProperties;
-import datawave.microservice.query.storage.QueryQueueManager;
-import datawave.microservice.query.storage.QueryStorageCache;
-import datawave.microservice.query.storage.QueryTask;
-import datawave.microservice.query.storage.TaskKey;
-import datawave.microservice.query.storage.TaskStates;
 import datawave.microservice.query.executor.action.Create;
 import datawave.microservice.query.executor.action.ExecutorAction;
 import datawave.microservice.query.executor.action.Next;
@@ -14,6 +9,11 @@ import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
+import datawave.microservice.query.storage.QueryQueueManager;
+import datawave.microservice.query.storage.QueryStorageCache;
+import datawave.microservice.query.storage.QueryTask;
+import datawave.microservice.query.storage.TaskKey;
+import datawave.microservice.query.storage.TaskStates;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.springframework.cloud.bus.BusProperties;
@@ -29,8 +29,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import static datawave.microservice.query.remote.QueryRequest.Method.CLOSE;
 
 /**
  * This class holds the business logic for handling a task notification

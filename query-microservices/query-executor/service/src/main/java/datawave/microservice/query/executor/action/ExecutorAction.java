@@ -1,10 +1,14 @@
 package datawave.microservice.query.executor.action;
 
 import datawave.microservice.query.config.QueryProperties;
-import datawave.microservice.query.remote.QueryRequest;
-import datawave.microservice.query.storage.CachedQueryStatus;
+import datawave.microservice.query.executor.config.ExecutorProperties;
+import datawave.microservice.query.logic.CheckpointableQueryLogic;
 import datawave.microservice.query.logic.QueryCheckpoint;
 import datawave.microservice.query.logic.QueryKey;
+import datawave.microservice.query.logic.QueryLogic;
+import datawave.microservice.query.logic.QueryLogicFactory;
+import datawave.microservice.query.remote.QueryRequest;
+import datawave.microservice.query.storage.CachedQueryStatus;
 import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
@@ -12,10 +16,6 @@ import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.Result;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskStates;
-import datawave.microservice.query.executor.config.ExecutorProperties;
-import datawave.microservice.query.logic.CheckpointableQueryLogic;
-import datawave.microservice.query.logic.QueryLogic;
-import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.Connector;

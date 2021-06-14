@@ -36,19 +36,13 @@ server:
     trust-store-password: ${server.ssl.trust-store-password}
     trust-store-type: ${server.ssl.trust-store-type}
 
-management:
-  endpoints:
-    web:
-      base-path: "/mgmt"
-
 logging:
   level:
     root: warn
-    datawave.microservice.common.storage: ERROR
+    datawave.microservice.query.storage: ERROR
     io.undertow.request: FATAL
     org.apache.kafka: ERROR
     kafka: FATAL
-
 
 warehouse:
   accumulo:

@@ -1,14 +1,12 @@
 package datawave.microservice.query.status;
 
+import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.QueryStorageLock;
-import datawave.microservice.query.config.QueryProperties;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
-
-import java.util.UUID;
 
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATED;
 

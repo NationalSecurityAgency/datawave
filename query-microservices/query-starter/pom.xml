@@ -46,6 +46,10 @@
                     </exclusion>
                     <exclusion>
                         <artifactId>*</artifactId>
+                        <groupId>org.apache.zookeeper</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
                         <groupId>org.slf4j</groupId>
                     </exclusion>
                     <exclusion>
@@ -87,6 +91,7 @@
                 <artifactId>hazelcast-client</artifactId>
                 <version>${version.microservice.hazelcast-client}</version>
                 <exclusions>
+                    <!-- Excluded to ensure that the transitive starter dependency doesn't override our direct dependency  -->
                     <exclusion>
                         <artifactId>spring-boot-starter-datawave</artifactId>
                         <groupId>gov.nsa.datawave.microservice</groupId>
@@ -147,12 +152,6 @@
                 <version>${version.microservice.starter}</version>
                 <type>pom</type>
                 <scope>import</scope>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>spring-cloud-starter-stream-rabbit</artifactId>
-                        <groupId>org.springframework.cloud</groupId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
@@ -192,14 +191,6 @@
             <artifactId>spring-boot-starter-datawave-metadata</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-amqp</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-bus</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
         </dependency>
@@ -216,11 +207,6 @@
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
