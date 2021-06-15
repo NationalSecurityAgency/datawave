@@ -20,8 +20,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+
+import static org.hamcrest.CoreMatchers.any;
+import static org.hamcrest.CoreMatchers.anything;
 
 public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     private ShardQueryConfiguration config;
@@ -564,7 +568,11 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     }
     
     @Test
-    public void testEvaluationOnlyReferenceNode() throws ParseException {
+    public void testEvaluationOnlyReferenceNode() throws ParseException, TableNotFoundException {
+        EasyMock.expect(helper.getNonEventFields(null)).andReturn(Collections.emptySet());
+        
+        replayAll();
+        
         JexlNode query = ASTEvaluationOnly.create(JexlASTHelper.parseJexlQuery("FOO == FOO2"));
         Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, ExecutableDeterminationVisitor.getState(query, config, helper));
     }
