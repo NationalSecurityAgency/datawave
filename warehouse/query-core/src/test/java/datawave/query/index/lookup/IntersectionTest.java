@@ -251,10 +251,9 @@ public class IntersectionTest {
         assertEquals(ii.second().uids.iterator().next().uid, "a.b.c");
         assertEquals(ii.second().uids.iterator().next().type, IndexMatchType.AND);
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(ii.second().uids.iterator().next().getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(ii.second().uids.iterator().next().getNode())));
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -273,7 +272,7 @@ public class IntersectionTest {
         Intersection i = new Intersection(toMerge, new IndexInfo());
         assertFalse(i.hasNext());
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -316,13 +315,13 @@ public class IntersectionTest {
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode())));
         m = all.get(1);
         assertEquals(m.uid, "a.b.z");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode())));
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -364,13 +363,13 @@ public class IntersectionTest {
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
         assertEquals(m.type, IndexMatchType.OR);
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode())));
         m = all.get(1);
         assertEquals(m.uid, "a.b.z");
         assertEquals(m.type, IndexMatchType.OR);
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode())));
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -416,13 +415,13 @@ public class IntersectionTest {
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode())));
         m = all.get(1);
         assertEquals(m.uid, "a.b.z");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode())));
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -473,25 +472,21 @@ public class IntersectionTest {
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3'"), JexlNodeFactory.createScript(m.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3'"), JexlNodeFactory.createScript(m.getNode())));
         m = all.get(1);
         assertEquals(m.uid, "a.b.z");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3'"), JexlNodeFactory.createScript(m.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3'"), JexlNodeFactory.createScript(m.getNode())));
         m = all.get(2);
         assertEquals(m.uid, "x.y.z");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("B == '2' && C == '3'"), JexlNodeFactory.createScript(m.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("B == '2' && C == '3'"), JexlNodeFactory.createScript(m.getNode())));
         m = all.get(3);
         assertEquals(m.uid, "x.y.z.1");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("B == '2' && C == '3'"), JexlNodeFactory.createScript(m.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("B == '2' && C == '3'"), JexlNodeFactory.createScript(m.getNode())));
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -541,9 +536,9 @@ public class IntersectionTest {
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode())));
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -604,12 +599,11 @@ public class IntersectionTest {
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3' && G == '7'"), JexlNodeFactory.createScript(m.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3' && G == '7'"), JexlNodeFactory.createScript(m.getNode())));
         
         assertTrue(TreeEqualityVisitor.isEqual(
                         JexlASTHelper.parseJexlQuery("G =='7' && ((A == '1' && C == '3') || (B == '2' && C == '3') || (D == '4' && F == '6'))"),
-                        JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+                        JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -673,16 +667,14 @@ public class IntersectionTest {
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3' && G == '7'"), JexlNodeFactory.createScript(m.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3' && G == '7'"), JexlNodeFactory.createScript(m.getNode())));
         m = all.get(1);
         assertEquals(m.uid, "x.y.z.1");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("B == '2' && C == '3' && G == '7'"), JexlNodeFactory.createScript(m.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("B == '2' && C == '3' && G == '7'"), JexlNodeFactory.createScript(m.getNode())));
         
         assertTrue(TreeEqualityVisitor.isEqual(
                         JexlASTHelper.parseJexlQuery("G =='7' && ((A == '1' && C == '3') || (B == '2' && C == '3') || (D == '4' && F == '6'))"),
-                        JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+                        JexlNodeFactory.createScript(i.currentNode())));
     }
 }
