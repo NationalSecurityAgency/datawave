@@ -565,8 +565,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // define the base hit for an index only test.
         List<Map.Entry<Key,Map<String,List<String>>>> expectedHits = new ArrayList<>();
         Map.Entry<Key,Map<String,List<String>>> hit = getBaseExpectedEvent("123.345.456");
-        // Note: INDEX_ONLY_FIELD1 is not added to the hit because it is evaluated in a separate context
-        // and not aggregated into the main context.
+        hit.getValue().put("INDEX_ONLY_FIELD1", Arrays.asList(new String[] {"apple"}));
         expectedHits.add(hit);
         
         indexOnly_test(seekRange, query, source, expectedHits);
@@ -583,8 +582,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // define the base hit for an index only test.
         List<Map.Entry<Key,Map<String,List<String>>>> expectedHits = new ArrayList<>();
         Map.Entry<Key,Map<String,List<String>>> hit = getBaseExpectedEvent("123.345.456");
-        // Note: INDEX_ONLY_FIELD1 is not added to the hit because it is evaluated in a separate context
-        // and not aggregated into the main context.
+        hit.getValue().put("INDEX_ONLY_FIELD1", Arrays.asList(new String[] {"apple"}));
         expectedHits.add(hit);
         
         indexOnly_test(seekRange, query, source, expectedHits);
@@ -1513,7 +1511,7 @@ public class QueryIteratorIT extends EasyMockSupport {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
         String query = "EVENT_FIELD1 == 'a' && ((_Delayed_ = true) && INDEX_ONLY_FIELD1 == 'apple')";
-        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        indexOnly_test(seekRange, query, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     protected Map.Entry<Key,Map<String,List<String>>> getBaseExpectedEvent(String uid) {
