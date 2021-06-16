@@ -1,15 +1,13 @@
 package datawave.edge.util;
 
-import java.util.List;
-import java.util.UUID;
-
+import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.edge.protobuf.EdgeData;
 import datawave.edge.protobuf.EdgeData.EdgeValue.Builder;
-
 import org.apache.accumulo.core.data.Value;
-
-import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.commons.lang.StringUtils;
+
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Utility class for serializing edge table protocol buffer. Previously, the EdgeValueHelper class was sufficient for handling the edge values, but with the
@@ -24,8 +22,7 @@ public class EdgeValue {
     private final List<Long> hours;
     private final List<Long> duration;
     private String loadDate;
-    // uuidObj allows us to avoid decoding the UUID into a String unless necessary
-    private EdgeData.EdgeValue.UUID uuidObj;
+    private UUID uuidObj;
     // see EdgeData.proto. hasOnlyUuidString is true if uuid_string is/should be set in the protobuf message, meaning that uuid is not set because a UUID object
     // couldn't be created from the original uuid
     private boolean hasOnlyUuidString;
@@ -38,7 +35,7 @@ public class EdgeValue {
     }
     
     private EdgeValue(Long count, Integer bitmask, String sourceValue, String sinkValue, List<Long> hours, List<Long> duration, String loadDate,
-                    String uuidString, boolean hasOnlyUuidString, EdgeData.EdgeValue.UUID uuidObj, Boolean badActivityDate) {
+                    String uuidString, boolean hasOnlyUuidString, UUID uuidObj, Boolean badActivityDate) {
         
         if (count == 0) {
             this.count = null;
@@ -73,7 +70,7 @@ public class EdgeValue {
         private List<Long> hours = null;
         private List<Long> duration = null;
         private String loadDate = null;
-        private EdgeData.EdgeValue.UUID uuidObj = null;
+        private UUID uuidObj = null;
         private boolean hasOnlyUuidString = false;
         private String uuidString = null;
         private Boolean badActivityDate = null;
@@ -172,7 +169,7 @@ public class EdgeValue {
             this.loadDate = loadDate;
         }
         
-        public EdgeData.EdgeValue.UUID getUuidObj() {
+        public UUID getUuidObj() {
             if (this.hasOnlyUuidString) {
                 return null;
             }
@@ -187,7 +184,7 @@ public class EdgeValue {
             return uuidObj;
         }
         
-        public void setUuidObj(EdgeData.EdgeValue.UUID uuidObj) {
+        public void setUuidObj(UUID uuidObj) {
             this.uuidObj = uuidObj;
         }
         
@@ -266,7 +263,7 @@ public class EdgeValue {
         }
         if (proto.hasUuid()) {
             builder.setOnlyUuidString(false);
-            builder.setUuidObj(proto.getUuid());
+            builder.setUuidObj(convertUuidObject(proto.getUuid()));
         } else if (proto.hasUuidString()) {
             // if there is a uuid string in the protobuf data, it means that we shouldn't have a uuid object at all
             builder.setOnlyUuidString(true);
@@ -309,11 +306,11 @@ public class EdgeValue {
                 builder.setUuidString(this.uuidString);
             }
         } else if (this.uuidObj != null) { // already have the uuid object, so there's no reason to reparse the string
-            builder.setUuid(this.uuidObj);
+            builder.setUuid(convertUuidObject(this.uuidObj));
         } else if (StringUtils.isNotBlank(this.uuidString)) {
             try { // try to parse the uuid string to a UUID object
                 this.uuidObj = convertUuidStringToUuidObj(this.uuidString);
-                builder.setUuid(this.uuidObj);
+                builder.setUuid(convertUuidObject(this.uuidObj));
             } catch (Exception e) {
                 // if it failed to parse, settle for the uuid_string
                 this.hasOnlyUuidString = true;
@@ -328,12 +325,8 @@ public class EdgeValue {
         return new Value(builder.build().toByteArray());
     }
     
-    public static EdgeData.EdgeValue.UUID convertUuidStringToUuidObj(String uuidString) throws IllegalArgumentException {
-        UUID uuidObj = UUID.fromString(uuidString);
-        EdgeData.EdgeValue.UUID.Builder uuidBuilder = EdgeData.EdgeValue.UUID.newBuilder();
-        uuidBuilder.setLeastSignificantBits(uuidObj.getLeastSignificantBits());
-        uuidBuilder.setMostSignificantBits(uuidObj.getMostSignificantBits());
-        return uuidBuilder.build();
+    public static UUID convertUuidStringToUuidObj(String uuidString) {
+        return UUID.fromString(uuidString);
     }
     
     public Long getCount() {
@@ -388,7 +381,7 @@ public class EdgeValue {
         return loadDate;
     }
     
-    public EdgeData.EdgeValue.UUID getUuidObject() {
+    public UUID getUuidObject() {
         if (this.hasOnlyUuidString) {
             return null;
         }
@@ -411,9 +404,19 @@ public class EdgeValue {
         return this.uuidString;
     }
     
-    private static String convertUuidObjectToString(EdgeData.EdgeValue.UUID rawUuid) {
-        UUID uuidObj = new UUID(rawUuid.getMostSignificantBits(), rawUuid.getLeastSignificantBits());
-        return uuidObj.toString();
+    public static String convertUuidObjectToString(UUID rawUuid) {
+        return rawUuid.toString();
+    }
+    
+    public static UUID convertUuidObject(EdgeData.EdgeValue.UUID rawUuid) {
+        return new UUID(rawUuid.getMostSignificantBits(), rawUuid.getLeastSignificantBits());
+    }
+    
+    public static EdgeData.EdgeValue.UUID convertUuidObject(UUID rawUuid) {
+        EdgeData.EdgeValue.UUID.Builder builder = EdgeData.EdgeValue.UUID.newBuilder();
+        builder.setLeastSignificantBits(rawUuid.getLeastSignificantBits());
+        builder.setMostSignificantBits(rawUuid.getMostSignificantBits());
+        return builder.build();
     }
     
     public Boolean isBadActivityDate() {
