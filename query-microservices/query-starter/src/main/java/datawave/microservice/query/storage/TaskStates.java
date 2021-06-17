@@ -83,6 +83,10 @@ public class TaskStates implements Serializable {
         return true;
     }
     
+    public boolean hasUnfinishedTasks() {
+        return taskStates.keySet().stream().anyMatch(state -> state == TASK_STATE.READY || state == TASK_STATE.RUNNING);
+    }
+    
     @Override
     public int hashCode() {
         return new HashCodeBuilder().append(queryKey).append(maxRunning).append(taskStates).build();

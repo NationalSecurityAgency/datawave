@@ -9,6 +9,7 @@ import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.Result;
+import datawave.microservice.query.storage.TaskStates;
 import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.data.ObjectSizeOf;
@@ -54,8 +55,12 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     private long startTimeMillis;
     private ResultsPage.Status status = ResultsPage.Status.COMPLETE;
     
-    private long lastStatusUpdateTime = 0L;
+    private long lastQueryStatusUpdateTime = 0L;
     private QueryStatus queryStatus;
+    private long lastTaskStatesUpdateTime = 0L;
+    private TaskStates taskStates;
+    private boolean tasksFinished = false;
+    private long prevResultCount = 0L;
     
     private final BaseQueryMetric metric;
     
@@ -108,9 +113,6 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         while (!isFinished(queryId)) {
             Message<Result> message = resultListener.receive(nextCallProperties.getResultPollIntervalMillis());
             if (message != null) {
-                
-                // TODO: In the past, if we got a null result we would mark the next call as finished
-                // Should we continue to do that, or something else?
                 Object result = message.getPayload().getPayload();
                 if (result != null) {
                     results.add(result);
@@ -132,23 +134,25 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         boolean finished = false;
         long callTimeMillis = System.currentTimeMillis() - startTimeMillis;
         
-        // 1) was this query canceled?
-        if (canceled) {
-            log.info("Query [{}]: query cancelled, aborting next call", queryId);
-            
-            finished = true;
-        }
-        
-        // 2) have we hit the user's results-per-page limit?
-        if (!finished && results.size() >= userResultsPerPage) {
+        // 1) have we hit the user's results-per-page limit?
+        if (results.size() >= userResultsPerPage) {
             log.info("Query [{}]: user requested max page size has been reached, aborting next call", queryId);
             
             finished = true;
         }
         
-        // 3) have we hit the query logic's results-per-page limit?
+        // 2) have we hit the query logic's results-per-page limit?
         if (!finished && results.size() >= logicResultsPerPage) {
             log.info("Query [{}]: query logic max page size has been reached, aborting next call", queryId);
+            
+            finished = true;
+        }
+        
+        // 3) was this query canceled?
+        if (!finished && canceled) {
+            log.info("Query [{}]: query cancelled, aborting next call", queryId);
+            
+            status = ResultsPage.Status.PARTIAL;
             
             finished = true;
         }
@@ -162,7 +166,24 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             finished = true;
         }
         
-        // 5) have we hit the max results (or the max results override)?
+        // 5) have we retrieved all of the results?
+        if (!finished && !getTaskStates().hasUnfinishedTasks()) {
+            // if all tasks have completed (or failed), start keeping track of the result count
+            if (tasksFinished) {
+                // if we stop getting results, we are done
+                if (prevResultCount == results.size()) {
+                    log.info("Query [{}]: all query tasks complete, and all results retrieved, aborting next call", queryId);
+                    
+                    status = ResultsPage.Status.PARTIAL;
+                    
+                    finished = true;
+                }
+            } else {
+                tasksFinished = true;
+            }
+        }
+        
+        // 6) have we hit the max results (or the max results override)?
         if (!finished) {
             long numResultsReturned = getQueryStatus().getNumResultsReturned();
             long numResults = numResultsReturned + results.size();
@@ -173,6 +194,8 @@ public class NextCall implements Callable<ResultsPage<Object>> {
                     // TODO: Figure out query metrics
                     metric.setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
                     
+                    status = ResultsPage.Status.PARTIAL;
+                    
                     finished = true;
                 }
             } else if (maxResults >= 0 && numResults >= maxResults) {
@@ -181,23 +204,27 @@ public class NextCall implements Callable<ResultsPage<Object>> {
                 // TODO: Figure out query metrics
                 metric.setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
                 
+                status = ResultsPage.Status.PARTIAL;
+                
                 finished = true;
             }
         }
         
         // TODO: Do I need to pull query metrics to get the next/seek count?
         // This used to come from the query logic transform iterator
-        // 6) have we reached the "max work" limit? (i.e. next count + seek count)
+        // 7) have we reached the "max work" limit? (i.e. next count + seek count)
         if (!finished && logicMaxWork >= 0 && (metric.getNextCount() + metric.getSeekCount()) >= logicMaxWork) {
             log.info("Query [{}]: logic max work has been reached, aborting next call", queryId);
             
             // TODO: Figure out query metrics
             metric.setLifecycle(BaseQueryMetric.Lifecycle.MAXWORK);
             
+            status = ResultsPage.Status.PARTIAL;
+            
             finished = true;
         }
         
-        // 7) are we going to timeout before getting a full page? if so, return partial results
+        // 8) are we going to timeout before getting a full page? if so, return partial results
         if (!finished && shortCircuitTimeout(callTimeMillis)) {
             log.info("Query [{}]: logic max expire before page is full, returning existing results: {} of {} results in {}ms", queryId, results.size(),
                             maxResultsPerPage, callTimeMillis);
@@ -205,21 +232,23 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             status = ResultsPage.Status.PARTIAL;
             
             finished = true;
-            
         }
         
-        // 8) have we been in this next call too long? if so, return
+        // 9) have we been in this next call too long? if so, return
         if (!finished && callExpiredTimeout(callTimeMillis)) {
             log.info("Query [{}]: max call time reached, returning existing results: {} of {} results in {}ms", queryId, results.size(), maxResultsPerPage,
                             callTimeMillis);
             
-            status = ResultsPage.Status.PARTIAL;
-            
             // TODO: Figure out query metrics
             metric.setLifecycle(BaseQueryMetric.Lifecycle.NEXTTIMEOUT);
             
+            status = ResultsPage.Status.PARTIAL;
+            
             finished = true;
         }
+        
+        // save the previous result count
+        prevResultCount = results.size();
         
         return finished;
     }
@@ -254,14 +283,26 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     
     private QueryStatus getQueryStatus() {
         if (queryStatus == null || isQueryStatusExpired()) {
-            lastStatusUpdateTime = System.currentTimeMillis();
+            lastQueryStatusUpdateTime = System.currentTimeMillis();
             queryStatus = queryStorageCache.getQueryStatus(queryId);
         }
         return queryStatus;
     }
     
+    private TaskStates getTaskStates() {
+        if (taskStates == null || isTaskStatesExpired()) {
+            lastTaskStatesUpdateTime = System.currentTimeMillis();
+            taskStates = queryStorageCache.getTaskStates(queryId);
+        }
+        return taskStates;
+    }
+    
     private boolean isQueryStatusExpired() {
-        return (System.currentTimeMillis() - lastStatusUpdateTime) > nextCallProperties.getStatusUpdateIntervalMillis();
+        return (System.currentTimeMillis() - lastQueryStatusUpdateTime) > nextCallProperties.getStatusUpdateIntervalMillis();
+    }
+    
+    private boolean isTaskStatesExpired() {
+        return (System.currentTimeMillis() - lastTaskStatesUpdateTime) > nextCallProperties.getStatusUpdateIntervalMillis();
     }
     
     public boolean isCanceled() {
