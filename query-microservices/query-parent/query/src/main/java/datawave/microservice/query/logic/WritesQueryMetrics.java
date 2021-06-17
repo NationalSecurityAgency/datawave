@@ -1,4 +1,4 @@
-package datawave.webservice.query.logic;
+package datawave.microservice.query.logic;
 
 import datawave.webservice.query.metric.BaseQueryMetric;
 

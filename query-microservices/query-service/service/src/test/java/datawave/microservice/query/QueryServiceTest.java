@@ -6,19 +6,24 @@ import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.service.RemoteAuthorizationServiceUserDetailsService;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
+import datawave.microservice.query.storage.Result;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskStates;
+import datawave.microservice.query.storage.queue.TestQueryQueueManager;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryExceptionType;
+import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.DirectFieldAccessor;
@@ -26,8 +31,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -54,7 +64,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static datawave.microservice.query.QueryParameters.QUERY_MAX_CONCURRENT_TASKS;
 import static datawave.microservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE;
@@ -64,6 +77,7 @@ import static datawave.webservice.common.audit.AuditParameters.AUDIT_ID;
 import static datawave.webservice.common.audit.AuditParameters.QUERY_STRING;
 import static datawave.webservice.query.QueryImpl.BEGIN_DATE;
 import static org.springframework.test.web.client.ExpectedCount.never;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.anything;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
@@ -94,10 +108,16 @@ public class QueryServiceTest {
     private QueryStorageCache queryStorageCache;
     
     @Autowired
+    private TestQueryQueueManager queryQueueManager;
+    
+    @Autowired
     private AuditClient auditClient;
     
     @Autowired
     private QueryProperties queryProperties;
+    
+    @Autowired
+    private LinkedList<RemoteQueryRequestEvent> queryRequestEvents;
     
     private List<String> auditIds;
     private MockRestServiceServer mockServer;
@@ -112,6 +132,8 @@ public class QueryServiceTest {
         
         RestTemplate auditorRestTemplate = (RestTemplate) new DirectFieldAccessor(auditClient).getPropertyValue("jwtRestTemplate");
         mockServer = MockRestServiceServer.createServer(auditorRestTemplate);
+        
+        queryRequestEvents.clear();
     }
     
     @DirtiesContext
@@ -505,6 +527,16 @@ public class QueryServiceTest {
         String queryId = genericResponse.getResult();
         Assert.assertNotNull(queryId);
         
+        // verify that the create event was published
+        Assert.assertEquals(1, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+        
         // verify that query status was created correctly
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
@@ -538,15 +570,6 @@ public class QueryServiceTest {
         
         // verify that query tasks were created
         assertTasksCreated(queryId);
-        
-        // TODO: Things to test
-        // successful query definition
-        // failed parameter validation
-        // query logic parameter validation
-        // missing required roles
-        // failed security marking validation
-        // failed query storage
-        // unknown error
     }
     
     @Test
@@ -904,6 +927,74 @@ public class QueryServiceTest {
         assertAuditNotSent();
     }
     
+    // Next tests
+    // successful next
+    // query not found
+    // query not running
+    // query ownership failure
+    // query lock failure
+    // interrupted next call
+    // next call timeout
+    // no results
+    // executor task rejection
+    // more
+    @Ignore
+    @Test
+    public void testNextSuccess() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser);
+        
+        UriComponents uri = createUri(queryId + "/next");
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, null, null, HttpMethod.GET, uri);
+        
+        // make the next call asynchronously
+        Future<ResponseEntity<BaseQueryResponse>> future = Executors.newSingleThreadExecutor()
+                        .submit(() -> jwtRestTemplate.exchange(requestEntity, BaseQueryResponse.class));
+        
+        // pump enough results into the queue to trigger a complete page
+        int pageSize = queryStorageCache.getQueryStatus(queryId).getQuery().getPagesize();
+        for (int resultId = 0; resultId < pageSize; resultId++) {
+            queryQueueManager.sendMessage(queryId, new Result(Integer.toString(resultId), new String[] {"this", "that"}));
+        }
+        
+        // the response should come back right away
+        ResponseEntity<BaseQueryResponse> response = future.get();
+        
+        // TODO: Work through the missing classpath entries needed for DocumentTransformer.java
+        // TODO: Update the result payload to be BaseEvent
+        
+        // verify that the next event was published
+        Assert.assertEquals(1, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.NEXT,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+        
+        System.out.println("done");
+        
+    }
+    
+    private String createQuery(ProxiedUserDetails authUser) {
+        UriComponents uri = createUri("EventQuery/create");
+        MultiValueMap<String,String> map = createParams();
+        
+        // not testing audit with this method
+        auditIgnoreSetup();
+        
+        RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
+        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        
+        // remove the create event
+        queryRequestEvents.clear();
+        
+        return (String) resp.getBody().getResult();
+    }
+    
     private ProxiedUserDetails createUserDetails() {
         return createUserDetails(null, null);
     }
@@ -931,6 +1022,12 @@ public class QueryServiceTest {
         map.set(QUERY_MAX_RESULTS_OVERRIDE, Long.toString(1234));
         map.set(QUERY_PAGESIZE, Long.toString(123));
         return map;
+    }
+    
+    private void assertQueryRequestEvent(String destination, QueryRequest.Method method, String queryId, RemoteQueryRequestEvent queryRequestEvent) {
+        Assert.assertEquals(destination, queryRequestEvent.getDestinationService());
+        Assert.assertEquals(queryId, queryRequestEvent.getRequest().getQueryId());
+        Assert.assertEquals(method, queryRequestEvent.getRequest().getMethod());
     }
     
     private void assertQueryStatus(QueryStatus.QUERY_STATE queryState, long numResultsReturned, long numResultsGenerated, long concurrentNextCount,
@@ -982,6 +1079,10 @@ public class QueryServiceTest {
         };
     }
     
+    private void auditIgnoreSetup() {
+        mockServer.expect(anything()).andRespond(withSuccess());
+    }
+    
     private void auditSentSetup() {
         mockServer.expect(requestTo(EXPECTED_AUDIT_URI)).andExpect(auditIdGrabber()).andRespond(withSuccess());
     }
@@ -1028,6 +1129,31 @@ public class QueryServiceTest {
     @Profile("QueryServiceTest")
     @ComponentScan(basePackages = "datawave.microservice")
     public static class QueryServiceTestConfiguration {
+        @Bean
+        public LinkedList<RemoteQueryRequestEvent> queryRequestEvents() {
+            return new LinkedList<>();
+        }
         
+        @Bean
+        @Primary
+        public ApplicationEventPublisher eventPublisher(ApplicationEventPublisher eventPublisher) {
+            return new ApplicationEventPublisher() {
+                @Override
+                public void publishEvent(ApplicationEvent event) {
+                    saveEvent(event);
+                }
+                
+                @Override
+                public void publishEvent(Object event) {
+                    saveEvent(event);
+                }
+                
+                private void saveEvent(Object event) {
+                    if (event instanceof RemoteQueryRequestEvent) {
+                        queryRequestEvents().push(((RemoteQueryRequestEvent) event));
+                    }
+                }
+            };
+        }
     }
 }

@@ -50,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -89,6 +90,7 @@ public class QueryManagementService implements QueryRequestHandler {
     private final QueryProperties queryProperties;
     
     private final ApplicationContext appCtx;
+    private final ApplicationEventPublisher eventPublisher;
     private final BusProperties busProperties;
     
     // Note: QueryParameters need to be request scoped
@@ -108,12 +110,13 @@ public class QueryManagementService implements QueryRequestHandler {
     private final QueryStatusUpdateHelper queryStatusUpdateHelper;
     private final MultiValueMap<String,NextCall> nextCallMap = new LinkedMultiValueMap<>();
     
-    public QueryManagementService(QueryProperties queryProperties, ApplicationContext appCtx, BusProperties busProperties, QueryParameters queryParameters,
-                    SecurityMarking securityMarking, QueryLogicFactory queryLogicFactory, QueryMetricFactory queryMetricFactory,
-                    ResponseObjectFactory responseObjectFactory, QueryStorageCache queryStorageCache, QueryQueueManager queryQueueManager,
-                    AuditClient auditClient, ThreadPoolTaskExecutor nextCallExecutor) {
+    public QueryManagementService(QueryProperties queryProperties, ApplicationContext appCtx, ApplicationEventPublisher eventPublisher,
+                    BusProperties busProperties, QueryParameters queryParameters, SecurityMarking securityMarking, QueryLogicFactory queryLogicFactory,
+                    QueryMetricFactory queryMetricFactory, ResponseObjectFactory responseObjectFactory, QueryStorageCache queryStorageCache,
+                    QueryQueueManager queryQueueManager, AuditClient auditClient, ThreadPoolTaskExecutor nextCallExecutor) {
         this.queryProperties = queryProperties;
         this.appCtx = appCtx;
+        this.eventPublisher = eventPublisher;
         this.busProperties = busProperties;
         this.queryParameters = queryParameters;
         this.securityMarking = securityMarking;
@@ -565,7 +568,6 @@ public class QueryManagementService implements QueryRequestHandler {
                     .setQueryMetricFactory(queryMetricFactory)
                     .setQueryId(queryId)
                     .setQueryLogic(queryLogic)
-                    .setIdentifier(identifier)
                     .build();
             // @formatter:on
             
@@ -1549,7 +1551,7 @@ public class QueryManagementService implements QueryRequestHandler {
         // admins requests can operate on any query, regardless of ownership
         if (!adminOverride) {
             // does the current user own this query?
-            String userId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+            String userId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getDn().subjectDN());
             Query query = queryStatus.getQuery();
             if (!query.getOwner().equals(userId)) {
                 throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", userId, query.getOwner()));
@@ -1678,7 +1680,7 @@ public class QueryManagementService implements QueryRequestHandler {
     
     private void publishExecutorEvent(QueryRequest queryRequest, String queryPool) {
         // @formatter:off
-        appCtx.publishEvent(
+        eventPublisher.publishEvent(
                 new RemoteQueryRequestEvent(
                         this,
                         busProperties.getId(),
@@ -1689,7 +1691,7 @@ public class QueryManagementService implements QueryRequestHandler {
     
     private void publishSelfEvent(QueryRequest queryRequest) {
         // @formatter:off
-        appCtx.publishEvent(
+        eventPublisher.publishEvent(
                 new RemoteQueryRequestEvent(
                         this,
                         busProperties.getId(),

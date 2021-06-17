@@ -59,7 +59,7 @@ public class TestQueryQueueManager implements QueryQueueManager {
     public void ensureQueueCreated(String name) {
         synchronized (queues) {
             if (!queues.containsKey(name)) {
-                queues.put(name, new ArrayBlockingQueue<>(10));
+                queues.put(name, new ArrayBlockingQueue<>(1500));
             }
         }
     }
@@ -128,7 +128,7 @@ public class TestQueryQueueManager implements QueryQueueManager {
     public class TestQueueListener implements Runnable, QueryQueueListener {
         private static final long WAIT_MS_DEFAULT = 100;
         
-        private ArrayBlockingQueue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
+        private ArrayBlockingQueue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(1500);
         private final String listenerId;
         private Thread thread;
         
@@ -174,7 +174,11 @@ public class TestQueryQueueManager implements QueryQueueManager {
         }
         
         public void message(Message<Result> message) {
-            messageQueue.add(message);
+            try {
+                messageQueue.offer(message, 10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                throw new IllegalStateException(e);
+            }
         }
         
         @Override

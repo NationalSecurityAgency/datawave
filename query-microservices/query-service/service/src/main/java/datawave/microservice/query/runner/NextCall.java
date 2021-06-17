@@ -21,6 +21,7 @@ import org.springframework.messaging.Message;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +33,6 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     private final QueryQueueManager queryQueueManager;
     private final QueryStorageCache queryStorageCache;
     private final String queryId;
-    private final String identifier;
     
     private volatile boolean canceled = false;
     private volatile Future<ResultsPage<Object>> future = null;
@@ -69,7 +69,6 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         this.queryQueueManager = builder.queryQueueManager;
         this.queryStorageCache = builder.queryStorageCache;
         this.queryId = builder.queryId;
-        this.identifier = builder.identifier;
         
         QueryStatus status = getQueryStatus();
         long pageTimeoutMillis = TimeUnit.MINUTES.toMillis(status.getQuery().getPageTimeout());
@@ -107,7 +106,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     public ResultsPage<Object> call() {
         startTimeMillis = System.currentTimeMillis();
         
-        QueryQueueListener resultListener = queryQueueManager.createListener(identifier, queryId);
+        QueryQueueListener resultListener = queryQueueManager.createListener(UUID.randomUUID().toString(), queryId);
         
         // keep waiting for results until we're finished
         while (!isFinished(queryId)) {
@@ -142,7 +141,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         }
         
         // 2) have we hit the query logic's results-per-page limit?
-        if (!finished && results.size() >= logicResultsPerPage) {
+        if (!finished && logicResultsPerPage > 0 && results.size() >= logicResultsPerPage) {
             log.info("Query [{}]: query logic max page size has been reached, aborting next call", queryId);
             
             finished = true;
@@ -158,7 +157,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         }
         
         // 4) have we hit the query logic's bytes-per-page limit?
-        if (!finished && pageSizeBytes >= logicBytesPerPage) {
+        if (!finished && logicBytesPerPage > 0 && pageSizeBytes >= logicBytesPerPage) {
             log.info("Query [{}]: query logic max page byte size has been reached, aborting next call", queryId);
             
             status = ResultsPage.Status.PARTIAL;
@@ -213,7 +212,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         // TODO: Do I need to pull query metrics to get the next/seek count?
         // This used to come from the query logic transform iterator
         // 7) have we reached the "max work" limit? (i.e. next count + seek count)
-        if (!finished && logicMaxWork >= 0 && (metric.getNextCount() + metric.getSeekCount()) >= logicMaxWork) {
+        if (!finished && logicMaxWork > 0 && (metric.getNextCount() + metric.getSeekCount()) >= logicMaxWork) {
             log.info("Query [{}]: logic max work has been reached, aborting next call", queryId);
             
             // TODO: Figure out query metrics
@@ -333,7 +332,6 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         private QueryMetricFactory queryMetricFactory;
         private String queryId;
         private QueryLogic<?> queryLogic;
-        private String identifier;
         
         public Builder setQueryProperties(QueryProperties queryProperties) {
             this.nextCallProperties = queryProperties.getNextCall();
@@ -373,11 +371,6 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         
         public Builder setQueryLogic(QueryLogic<?> queryLogic) {
             this.queryLogic = queryLogic;
-            return this;
-        }
-        
-        public Builder setIdentifier(String identifier) {
-            this.identifier = identifier;
             return this;
         }
         
