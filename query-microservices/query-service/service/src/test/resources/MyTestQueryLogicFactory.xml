@@ -147,6 +147,10 @@
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
 
         <property name="evaluationOnlyFields" value="${datawave.query.logic.logics.BaseEventQuery.evaluationOnlyFields}" />
+        <property name="maxConcurrentTasks" value="${datawave.query.logic.logics.BaseEventQuery.maxConcurrentTasks}" />
+
+        <!-- This is injected via BaseEventQueryConfiguration.java and configured via configuration properties -->
+        <property name="requiredRoles" ref="baseEventQueryRequiredRoles" />
     </bean>
 
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >

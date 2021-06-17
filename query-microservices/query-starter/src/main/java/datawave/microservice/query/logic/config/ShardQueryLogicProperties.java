@@ -4,8 +4,10 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Additional configuration for complex types used to configure ShardQueryLogic instances.
@@ -20,6 +22,7 @@ public class ShardQueryLogicProperties {
     private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = new ArrayList<>();
     private DataDecoratorTransformerConfig dataDecoratorTransformerConfig = new DataDecoratorTransformerConfig();
     private Map<String,String> querySyntaxParsers = new HashMap<>();
+    private Set<String> requiredRoles = new HashSet<>();
     
     public static class DataDecoratorTransformerConfig {
         private List<String> requestedDecorators = new ArrayList<>();
@@ -112,5 +115,13 @@ public class ShardQueryLogicProperties {
     
     public void setQuerySyntaxParsers(Map<String,String> querySyntaxParsers) {
         this.querySyntaxParsers = querySyntaxParsers;
+    }
+    
+    public Set<String> getRequiredRoles() {
+        return requiredRoles;
+    }
+    
+    public void setRequiredRoles(Set<String> requiredRoles) {
+        this.requiredRoles = requiredRoles;
     }
 }

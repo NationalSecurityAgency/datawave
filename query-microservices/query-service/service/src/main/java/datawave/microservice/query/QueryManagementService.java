@@ -43,6 +43,8 @@ import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.QueryImplListResponse;
 import datawave.webservice.result.QueryLogicResponse;
 import datawave.webservice.result.VoidResponse;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.bus.BusProperties;
@@ -347,7 +349,7 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     private TaskKey storeQuery(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser, boolean isCreateRequest,
-                    String queryId) throws QueryException {
+                    String queryId) throws BadRequestQueryException, QueryException {
         // validate query and get a query logic
         QueryLogic<?> queryLogic = validateQuery(queryLogicName, parameters, currentUser);
         
@@ -359,6 +361,15 @@ public class QueryManagementService implements QueryRequestHandler {
         setInternalAuditParameters(queryLogicName, userDn, parameters);
         
         Query query = createQuery(queryLogicName, parameters, userDn, currentUser.getDNs(), queryId);
+        
+        // TODO: Downgrade the auths before or after auditing???
+        // downgrade the auths
+        Set<Authorizations> downgradedAuthorizations;
+        try {
+            downgradedAuthorizations = AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(), currentUser);
+        } catch (Exception e) {
+            throw new BadRequestQueryException("Unable to downgrade authorizations", e, HttpStatus.SC_BAD_REQUEST + "-1");
+        }
         
         // if this is a create request, send an audit record to the auditor
         if (isCreateRequest) {
@@ -373,7 +384,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 taskKey = queryStorageCache.createQuery(
                         getPoolName(),
                         query,
-                        AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(), currentUser),
+                        downgradedAuthorizations,
                         getMaxConcurrentTasks(queryLogic));
                 // @formatter:on
                 
@@ -384,7 +395,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 taskKey = queryStorageCache.defineQuery(
                         getPoolName(),
                         query,
-                        AuthorizationsUtil.getDowngradedAuthorizations(queryParameters.getAuths(), currentUser),
+                        downgradedAuthorizations,
                         getMaxConcurrentTasks(queryLogic));
                 // @formatter:on
             }
@@ -497,7 +508,7 @@ public class QueryManagementService implements QueryRequestHandler {
             if (queryStatus.getQueryState() == CREATED) {
                 return next(queryId, currentUser.getPrimaryUser().getRoles());
             } else {
-                throw new BadRequestQueryException("Cannot call next on a query that is not running");
+                throw new BadRequestQueryException("Cannot call next on a query that is not running", HttpStatus.SC_BAD_REQUEST + "-1");
             }
         } catch (QueryException e) {
             throw e;
@@ -747,7 +758,7 @@ public class QueryManagementService implements QueryRequestHandler {
             if (queryStatus.getQueryState() == CREATED || (queryStatus.getQueryState() == CLOSED && queryStatus.getConcurrentNextCount() > 0)) {
                 cancel(queryId, true);
             } else {
-                throw new BadRequestQueryException(queryId + " cannot be canceled because it is not running.");
+                throw new BadRequestQueryException(queryId + " cannot be canceled because it is not running.", HttpStatus.SC_BAD_REQUEST + "-1");
             }
             
             VoidResponse response = new VoidResponse();
@@ -938,7 +949,7 @@ public class QueryManagementService implements QueryRequestHandler {
             if (queryStatus.getQueryState() == CREATED) {
                 close(queryId);
             } else {
-                throw new BadRequestQueryException(queryId + " cannot be closed because it is not running.");
+                throw new BadRequestQueryException(queryId + " cannot be closed because it is not running.", HttpStatus.SC_BAD_REQUEST + "-1");
             }
             
             VoidResponse response = new VoidResponse();
@@ -1153,7 +1164,7 @@ public class QueryManagementService implements QueryRequestHandler {
                     throw new QueryException("Failed to remove " + queryId);
                 }
             } else {
-                throw new BadRequestQueryException("Cannot remove a running query.");
+                throw new BadRequestQueryException("Cannot remove a running query.", HttpStatus.SC_BAD_REQUEST + "-1");
             }
             
             VoidResponse response = new VoidResponse();
@@ -1265,7 +1276,7 @@ public class QueryManagementService implements QueryRequestHandler {
                         response.addMessage("The following parameters cannot be updated for a running query: " + String.join(",", ignoredParams));
                     }
                 } else {
-                    throw new BadRequestQueryException("Cannot update a query unless it is defined or running.");
+                    throw new BadRequestQueryException("Cannot update a query unless it is defined or running.", HttpStatus.SC_BAD_REQUEST + "-1");
                 }
                 
                 response.setResult(queryId);
@@ -1275,7 +1286,7 @@ public class QueryManagementService implements QueryRequestHandler {
                     response.addMessage(queryId + " unchanged.");
                 }
             } else {
-                throw new BadRequestQueryException("No parameters specified for update.");
+                throw new BadRequestQueryException("No parameters specified for update.", HttpStatus.SC_BAD_REQUEST + "-1");
             }
             
             return response;
@@ -1422,7 +1433,7 @@ public class QueryManagementService implements QueryRequestHandler {
                     paramsUpdated = true;
                 }
             } else {
-                throw new BadRequestQueryException("Cannot update a query parameter without a value: " + paramName);
+                throw new BadRequestQueryException("Cannot update a query parameter without a value: " + paramName, HttpStatus.SC_BAD_REQUEST + "-1");
             }
         }
         return paramsUpdated;
@@ -1611,7 +1622,6 @@ public class QueryManagementService implements QueryRequestHandler {
                     parameters.set(AuditParameters.AUDIT_ID, query.getId().toString());
                 }
                 
-                // TODO: Write a test to ensure that the audit id we set is used
                 // @formatter:off
                 auditClient.submit(new AuditClient.Request.Builder()
                         .withParams(parameters)
@@ -1813,7 +1823,12 @@ public class QueryManagementService implements QueryRequestHandler {
         parameters.remove(AuditParameters.QUERY_AUDIT_TYPE);
         
         // Ensure that all required parameters exist prior to validating the values.
-        queryParameters.validate(parameters);
+        try {
+            queryParameters.validate(parameters);
+        } catch (IllegalArgumentException e) {
+            log.error("Unable to validate query parameters", e);
+            throw new BadRequestQueryException("Unable to validate query parameters.", e, HttpStatus.SC_BAD_REQUEST + "-1");
+        }
         
         // The pageSize and expirationDate checks will always be false when called from the RemoteQueryExecutor.
         // Leaving for now until we can test to ensure that is always the case.
@@ -1885,7 +1900,12 @@ public class QueryManagementService implements QueryRequestHandler {
      */
     protected void validateQueryLogic(QueryLogic<?> queryLogic, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws BadRequestQueryException, UnauthorizedQueryException {
-        queryLogic.validate(parameters);
+        try {
+            queryLogic.validate(parameters);
+        } catch (IllegalArgumentException e) {
+            log.error("Unable to validate query parameters with query logic", e);
+            throw new BadRequestQueryException("Unable to validate query parameters with query logic.", e, HttpStatus.SC_BAD_REQUEST + "-1");
+        }
         
         // always check against the max
         if (queryLogic.getMaxPageSize() > 0 && queryParameters.getPagesize() > queryLogic.getMaxPageSize()) {
@@ -1900,7 +1920,8 @@ public class QueryManagementService implements QueryRequestHandler {
             if (queryParameters.isMaxResultsOverridden() && queryLogic.getMaxResults() >= 0) {
                 if (queryParameters.getMaxResultsOverride() < 0 || (queryLogic.getMaxResults() < queryParameters.getMaxResultsOverride())) {
                     log.error("Invalid max results override: " + queryParameters.getMaxResultsOverride() + " vs " + queryLogic.getMaxResults());
-                    throw new BadRequestQueryException(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE);
+                    throw new BadRequestQueryException(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE,
+                                    MessageFormat.format("Max = {0}.", queryLogic.getMaxResults()));
                 }
             }
             
@@ -1910,7 +1931,8 @@ public class QueryManagementService implements QueryRequestHandler {
                 if (queryParameters.getMaxConcurrentTasks() < 0 || (queryLogic.getMaxConcurrentTasks() < queryParameters.getMaxConcurrentTasks())) {
                     log.error("Invalid max concurrent tasks override: " + queryParameters.getMaxConcurrentTasks() + " vs "
                                     + queryLogic.getMaxConcurrentTasks());
-                    throw new BadRequestQueryException(DatawaveErrorCode.INVALID_MAX_CONCURRENT_TASKS_OVERRIDE);
+                    throw new BadRequestQueryException(DatawaveErrorCode.INVALID_MAX_CONCURRENT_TASKS_OVERRIDE,
+                                    MessageFormat.format("Max = {0}.", queryLogic.getMaxConcurrentTasks()));
                 }
             }
         }

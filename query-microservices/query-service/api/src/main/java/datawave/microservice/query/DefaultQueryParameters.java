@@ -19,7 +19,7 @@ public class DefaultQueryParameters implements QueryParameters {
     
     private static final List<String> KNOWN_PARAMS = Arrays.asList(QUERY_STRING, QUERY_NAME, QUERY_PERSISTENCE, QUERY_PAGESIZE, QUERY_PAGETIMEOUT,
                     QUERY_AUTHORIZATIONS, QUERY_EXPIRATION, QUERY_TRACE, QUERY_BEGIN, QUERY_END, QUERY_VISIBILITY, QUERY_LOGIC_NAME, QUERY_POOL,
-                    QUERY_MAX_RESULTS_OVERRIDE);
+                    QUERY_MAX_RESULTS_OVERRIDE, QUERY_MAX_CONCURRENT_TASKS);
     
     protected String query;
     protected String queryName;
@@ -523,7 +523,7 @@ public class DefaultQueryParameters implements QueryParameters {
     
     @Override
     public boolean isMaxConcurrentTasksOverridden() {
-        return false;
+        return isMaxConcurrentTasksOverridden;
     }
     
     @Override

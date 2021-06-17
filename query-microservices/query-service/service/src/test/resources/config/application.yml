@@ -40,7 +40,7 @@ management:
 
 logging:
   level:
-    datawave.microservice: DEBUG
+    datawave.microservice: FATAL
 
 warehouse:
   accumulo:
@@ -142,7 +142,7 @@ datawave:
           metadataTableName: ${warehouse.tables.metadata.name}
           indexTableName: ${warehouse.tables.index.name}
           reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
-          maxResults: -1
+          maxResults: 1000000
           queryThreads: ${warehouse.defaults.queryThreads}
           indexLookupThreads: ${warehouse.defaults.indexLookupThreads}
           dateIndexThreads: ${warehouse.defaults.dateIndexThreads}
@@ -170,7 +170,7 @@ datawave:
             - 'foo.bar'
           filterOptions:
             'bar': "foo"
-          auditType: "NONE"
+          auditType: "ACTIVE"
           logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
           eventPerDayThreshold: ${warehouse.defaults.eventPerDayThreshold}
           shardsPerDayThreshold: ${warehouse.defaults.shardsPerDayThreshold}
@@ -219,6 +219,9 @@ datawave:
           statsdHost: ${warehouse.statsd.host}
           statsdPort: ${warehouse.statsd.port}
           evaluationOnlyFields: ""
+          maxConcurrentTasks: 10
+          requiredRoles:
+            - "AuthorizedUser"
 
 audit-client:
   discovery:
