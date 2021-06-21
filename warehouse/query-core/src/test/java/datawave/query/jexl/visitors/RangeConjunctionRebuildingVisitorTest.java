@@ -189,6 +189,17 @@ public class RangeConjunctionRebuildingVisitorTest {
         assertExpected(query, expected);
     }
     
+    // If the range traverses too many entries it will fail to expand and mark the node as "value exceeded"
+    @Test
+    public void testMaxExpansionCase() throws ParseException {
+        String query = "((_Bounded_ = true) && (FOO >= 'bar' && FOO <= 'bas'))";
+        String expected = "((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'bar' && FOO <= 'bas')))";
+        setBeginEndDates("20200101", "20200731");
+        // Set scan time to 1 ms to simulate traversing too many index entries
+        config.setMaxIndexScanTimeMillis(1);
+        assertExpected(query, expected);
+    }
+    
     public void assertExpected(String query, String expected) throws ParseException {
         
         ASTJexlScript parsedScript = JexlASTHelper.parseJexlQuery(query);
