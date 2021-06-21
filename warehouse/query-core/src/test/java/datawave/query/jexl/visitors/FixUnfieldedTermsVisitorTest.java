@@ -3,6 +3,7 @@ package datawave.query.jexl.visitors;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
@@ -11,6 +12,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -50,23 +52,20 @@ public class FixUnfieldedTermsVisitorTest {
     private static int months = 3;
     private static int shardsPerDay = 17;
     
-    private static Connector connector;
+    private static AccumuloClient client;
     private static ScannerFactory scannerFactory;
     private static ShardQueryConfiguration config;
     private static MockMetadataHelper metadataHelper;
     
     @BeforeClass
     public static void beforeClass() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance();
-        connector = instance.getConnector("", new PasswordToken(new byte[0]));
-        connector.tableOperations().create(SHARD_INDEX);
-        connector.tableOperations().create(SHARD_RINDEX);
-        connector.tableOperations().create(METADATA);
-        
-        scannerFactory = new ScannerFactory(connector);
+        client = new InMemoryAccumuloClient("", new InMemoryInstance());
+        client.tableOperations().create(SHARD_INDEX);
+        client.tableOperations().create(SHARD_RINDEX);
+        client.tableOperations().create(METADATA);
         
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1024L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-        BatchWriter bw = connector.createBatchWriter(SHARD_INDEX, bwConfig);
+        BatchWriter bw = client.createBatchWriter(SHARD_INDEX, bwConfig);
         
         // Load data according to years and shardsPerDay
         List<String> docIds = Arrays.asList("uid0", "uid1", "uid2", "uid3");
@@ -125,6 +124,10 @@ public class FixUnfieldedTermsVisitorTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         config.setIndexedFields(dataTypes);
+        
+        config.setClient(client);
+        
+        scannerFactory = new ScannerFactory(config.getClient());
     }
     
     public static Mutation buildMutation(String fieldName, String fieldValue, String shard, String datatype, List<String> docIds) {
@@ -212,7 +215,7 @@ public class FixUnfieldedTermsVisitorTest {
         
         // MaxValueExpansionThreshold should be respected.
         config.setMaxUnfieldedExpansionThreshold(2);
-        expected = "((ExceededTermThresholdMarkerJexlNode = true) && (_ANYFIELD_ == 'fluffy'))";
+        expected = "((_Term_ = true) && (_ANYFIELD_ == 'fluffy'))";
         assertExpected(query, expected);
     }
     

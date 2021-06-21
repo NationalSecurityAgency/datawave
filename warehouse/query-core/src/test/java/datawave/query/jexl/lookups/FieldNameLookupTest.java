@@ -3,15 +3,15 @@ package datawave.query.jexl.lookups;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -37,20 +37,17 @@ public class FieldNameLookupTest {
     private static int years = 1;
     private static int shardsPerDay = 17;
     
-    private static Connector connector;
+    private static AccumuloClient client;
     private static ScannerFactory scannerFactory;
     private static ShardQueryConfiguration config;
     
     @BeforeClass
     public static void beforeClass() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance();
-        connector = instance.getConnector("", new PasswordToken(new byte[0]));
-        connector.tableOperations().create(SHARD_INDEX);
-        
-        scannerFactory = new ScannerFactory(connector, 1);
+        client = new InMemoryAccumuloClient("", new InMemoryInstance());
+        client.tableOperations().create(SHARD_INDEX);
         
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1024L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-        BatchWriter bw = connector.createBatchWriter(SHARD_INDEX, bwConfig);
+        BatchWriter bw = client.createBatchWriter(SHARD_INDEX, bwConfig);
         
         // Load data according to years and shardsPerDay
         List<String> docIds = Arrays.asList("uid0", "uid1", "uid2", "uid3");
@@ -106,6 +103,10 @@ public class FieldNameLookupTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         config.setIndexedFields(dataTypes);
+        
+        config.setClient(client);
+        
+        scannerFactory = new ScannerFactory(config.getClient(), 1);
     }
     
     // Set the begin/end dates in yyyyMMdd.

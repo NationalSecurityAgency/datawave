@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
@@ -10,16 +11,16 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -46,23 +47,20 @@ public class RangeConjunctionRebuildingVisitorTest {
     private static int months = 7;
     private static int shardsPerDay = 5;
     
-    private static Connector connector;
+    private static AccumuloClient client;
     private static ScannerFactory scannerFactory;
     private static ShardQueryConfiguration config;
     private static MockMetadataHelper metadataHelper;
     
     @BeforeClass
     public static void beforeClass() throws Exception {
-        InMemoryInstance instance = new InMemoryInstance();
-        connector = instance.getConnector("", new PasswordToken(new byte[0]));
-        connector.tableOperations().create(SHARD_INDEX);
-        connector.tableOperations().create(SHARD_RINDEX);
-        connector.tableOperations().create(METADATA);
-        
-        scannerFactory = new ScannerFactory(connector);
+        client = new InMemoryAccumuloClient("", new InMemoryInstance());
+        client.tableOperations().create(SHARD_INDEX);
+        client.tableOperations().create(SHARD_RINDEX);
+        client.tableOperations().create(METADATA);
         
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1024L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-        BatchWriter bw = connector.createBatchWriter(SHARD_INDEX, bwConfig);
+        BatchWriter bw = client.createBatchWriter(SHARD_INDEX, bwConfig);
         
         // Load data according to years and shardsPerDay
         List<String> docIds = Arrays.asList("uid0", "uid1", "uid2", "uid3");
@@ -110,8 +108,16 @@ public class RangeConjunctionRebuildingVisitorTest {
         bw.flush();
         bw.close();
         
-        // Setup ShardQueryConfiguration
+        metadataHelper = new MockMetadataHelper();
+        metadataHelper.setIndexedFields(Collections.singleton("FOO"));
+    }
+    
+    @Before
+    public void setupTest() {
         config = new ShardQueryConfiguration();
+        config.setClient(client);
+        
+        // Setup ShardQueryConfiguration
         config.setDatatypeFilter(Collections.singleton("datatype"));
         
         // Set begin/end date for query
@@ -125,8 +131,7 @@ public class RangeConjunctionRebuildingVisitorTest {
         config.setQueryFieldsDatatypes(dataTypes);
         config.setIndexedFields(dataTypes);
         
-        metadataHelper = new MockMetadataHelper();
-        metadataHelper.setIndexedFields(Collections.singleton("FOO"));
+        scannerFactory = new ScannerFactory(config);
     }
     
     public static Mutation buildMutation(String fieldName, String fieldValue, String shard, String datatype, List<String> docIds) {
@@ -160,7 +165,7 @@ public class RangeConjunctionRebuildingVisitorTest {
     // Should expand to all terms that start with 'bar'
     @Test
     public void testRangeQueryAgainstFullDateRange() throws ParseException {
-        String query = "FOO >= 'bar' && FOO <= 'bas'";
+        String query = "((_Bounded_ = true) && (FOO >= 'bar' && FOO <= 'bas'))";
         String expected = "(FOO == 'bar' || FOO == 'barge' || FOO == 'barz' || FOO == 'barstool' || FOO == 'bard')";
         setBeginEndDates("20200101", "20200731");
         assertExpected(query, expected);
@@ -169,17 +174,17 @@ public class RangeConjunctionRebuildingVisitorTest {
     // Should expand query to three discreet terms found within the date range
     @Test
     public void testRangeQueryAgainstSmallDateRange() throws ParseException {
-        String query = "FOO >= 'bar' && FOO <= 'bas'";
+        String query = "((_Bounded_ = true) && (FOO >= 'bar' && FOO <= 'bas'))";
         String expected = "(FOO == 'bar' || FOO == 'barz' || FOO == 'bard')";
         setBeginEndDates("20200201", "20200430");
         assertExpected(query, expected);
     }
     
-    // If the index lookup has no results the original query structure should be preserved.
+    // If the index lookup has no results the expression is pruned to false
     @Test
     public void testRangeAgainstInvalidDateRange() throws ParseException {
-        String query = "FOO >= 'bar' && FOO <= 'bas'";
-        String expected = "FOO >= 'bar' && FOO <= 'bas'";
+        String query = "((_Bounded_ = true) && (FOO >= 'bar' && FOO <= 'bas'))";
+        String expected = "false";
         setBeginEndDates("20000101", "20000102");
         assertExpected(query, expected);
     }
