@@ -59,35 +59,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
     }
     
-    public UniqueTransform(Set<String> fields) {
-        this.uniqueFields = new UniqueFields();
-        for (String field : fields) {
-            uniqueFields.put(JexlASTHelper.deconstructIdentifier(field), UniqueGranularity.ALL);
-        }
-        this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
-        if (log.isTraceEnabled()) {
-            log.trace("unique fields: " + this.uniqueFields.getFields());
-        }
-    }
-    
     /**
-     * If passing the logic in, then the model being used by the logic then capture the reverse field mapping
-     *
-     * @param logic
-     * @param fields
+     * Create a new {@link UniqueTransform} that will capture the reverse field mapping defined within the model being used by the logic (if present).
+     * @param logic the logic
+     * @param uniqueFields the set of fields to find unique values for
      */
-    public UniqueTransform(BaseQueryLogic<Entry<Key,Value>> logic, Set<String> fields) {
-        this(fields);
-        QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
-        if (model != null) {
-            modelMapping = HashMultimap.create();
-            // reverse the reverse query mapping which will give us a mapping from the final field name to the original field name(s)
-            for (Map.Entry<String,String> entry : model.getReverseQueryMapping().entrySet()) {
-                modelMapping.put(entry.getValue(), entry.getKey());
-            }
-        }
-    }
-    
     public UniqueTransform(BaseQueryLogic<Entry<Key,Value>> logic, UniqueFields uniqueFields) {
         this(uniqueFields);
         QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
