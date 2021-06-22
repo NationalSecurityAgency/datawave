@@ -1083,6 +1083,16 @@ public class QueryIteratorIT extends EasyMockSupport {
         indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
+    // The term fetched by the delayed context is not added to the returned document.
+    @Test
+    public void test_fetchDelayedIndexOnlyTerm_addTermToHitTerms() throws IOException {
+        options.put(JexlEvaluation.HIT_TERM_FIELD, "true");
+        // build the seek range for a document specific pull
+        Range seekRange = getDocumentRange("123.345.456");
+        String query = "EVENT_FIELD1 == 'a' && ((_Delayed_ = true) && INDEX_ONLY_FIELD1 == 'apple')";
+        indexOnly_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
     protected Map.Entry<Key,Map<String,List<String>>> getBaseExpectedEvent(String uid) {
         return getBaseExpectedEvent(DEFAULT_ROW, DEFAULT_DATATYPE, uid);
     }

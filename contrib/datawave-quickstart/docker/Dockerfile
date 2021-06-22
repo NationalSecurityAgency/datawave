@@ -70,7 +70,7 @@ RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/data"]
 
 # In case user wants to rebuild DW
-VOLUME ["~/.m2/repository"]
+VOLUME ["$HOME/.m2/repository"]
 
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/hadoop/logs"]
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/accumulo/logs"]
