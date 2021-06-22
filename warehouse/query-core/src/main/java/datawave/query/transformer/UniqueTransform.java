@@ -59,8 +59,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     
     /**
      * Create a new {@link UniqueTransform} that will capture the reverse field mapping defined within the model being used by the logic (if present).
-     * @param logic the logic
-     * @param uniqueFields the set of fields to find unique values for
+     * 
+     * @param logic
+     *            the logic
+     * @param uniqueFields
+     *            the set of fields to find unique values for
      */
     public UniqueTransform(BaseQueryLogic<Entry<Key,Value>> logic, UniqueFields uniqueFields) {
         this(uniqueFields);
