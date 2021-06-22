@@ -11,14 +11,12 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.UniqueGranularity;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.util.StringUtils;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
