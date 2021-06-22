@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.mr.bulk.RfileResource;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -152,6 +153,10 @@ public class PushdownScheduler extends Scheduler {
         
         try {
             session = scannerFactory.newQueryScanner(tableName, auths, config.getQuery());
+            
+            if (config.getBypassAccumulo()) {
+                session.setDelegatedInitializer(RfileResource.class);
+            }
             
             if (config.getSpeculativeScanning()) {
                 session.setSpeculativeScanning(true);
