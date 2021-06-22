@@ -8,6 +8,9 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 
+/**
+ * Function to return a unique result for every day for a given list of fields. This function is equivalent to {@code #unique(field[DAY])}.
+ */
 public class UniqueByDay extends JexlQueryFunction {
     
     public UniqueByDay() {

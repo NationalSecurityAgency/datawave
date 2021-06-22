@@ -17,6 +17,12 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Represents a set of fields that have been specified within a {@code #unique()} function, as well any specified granularity levels for each individual field
+ * that should be used when determining uniqueness for the values of each field within a {@link Document}. An instance of {@link UniqueFields} can easily be
+ * captured as a parameter string using {@link UniqueFields#toString()}, and transformed back into a {@link UniqueFields} instance via
+ * {@link UniqueFields#from(String)}.
+ */
 public class UniqueFields implements Serializable {
     
     private Multimap<String,UniqueGranularity> fieldMap;
@@ -201,8 +207,7 @@ public class UniqueFields implements Serializable {
     }
     
     /**
-     * Return a copy of the fields contained within this {@link UniqueFields}. Modifications to this set will not modify the fields in this {@link UniqueFields}
-     * .
+     * Return a copy of the fields within this {@link UniqueFields}. Modifications to this set will not modify the fields in this {@link UniqueFields}.
      * 
      * @return the
      */

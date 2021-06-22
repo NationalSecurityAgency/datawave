@@ -9,6 +9,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.function.Function;
 
+/**
+ * Represents different levels of granularity supported by the {@code #unique()} function. This class is also responsible for providing the functionality to
+ * transform values such that they conform to the specified granularity.
+ */
 public enum UniqueGranularity {
     
     /**

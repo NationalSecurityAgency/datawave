@@ -10,6 +10,11 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
+/**
+ * Function to determine uniqueness among documents given a set of fields and the levels of granularity that should be used for each fields. This function
+ * accepts a list of fields with specified granularity levels in the format {@code field[ALL],dateField[DAY,HOUR,MINUTE]}. See {@link UniqueFields} for
+ * additional documentation on supported formatting.
+ */
 public class Unique extends JexlQueryFunction {
     
     public Unique() {
