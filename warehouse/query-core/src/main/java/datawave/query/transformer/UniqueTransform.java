@@ -52,7 +52,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     
     public UniqueTransform(UniqueFields uniqueFields) {
         this.uniqueFields = uniqueFields;
-        uniqueFields.deconstructIdentifierFields();
+        this.uniqueFields.deconstructIdentifierFields();
         this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         if (log.isTraceEnabled()) {
             log.trace("unique fields: " + this.uniqueFields.getFields());
