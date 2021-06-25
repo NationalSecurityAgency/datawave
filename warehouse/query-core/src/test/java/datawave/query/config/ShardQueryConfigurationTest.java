@@ -196,6 +196,8 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Lists.newArrayList(), config.getContentFieldNames());
         Assert.assertNull(config.getActiveQueryLogNameSource());
         Assert.assertEquals("", config.getActiveQueryLogName());
+        Assert.assertEquals(Sets.newHashSet(), config.getWhindexMappingFields());
+        Assert.assertEquals(Maps.newHashMap(), config.getWhindexFieldMappings());
     }
     
     /**
@@ -443,7 +445,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 177;
+        int expectedObjectCount = 179;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

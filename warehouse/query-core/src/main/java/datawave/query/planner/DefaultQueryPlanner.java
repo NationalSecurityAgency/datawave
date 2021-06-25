@@ -86,6 +86,7 @@ import datawave.query.jexl.visitors.UniqueExpressionTermsVisitor;
 import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
+import datawave.query.jexl.visitors.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
 import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
@@ -184,6 +185,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Disables the test for non existent fields.
      */
     protected boolean disableTestNonExistentFields = false;
+    
+    /**
+     * Disables Whindex (value-specific) field mappings for GeoWave functions.
+     */
+    protected boolean disableWhindexFieldMappings = false;
     
     /**
      * Disables the index expansion function
@@ -967,6 +973,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         ASTJexlScript queryTree = originalQueryTree;
         
         TraceStopwatch stopwatch = null;
+        
+        if (!disableWhindexFieldMappings) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Apply Whindex field mappings");
+            
+            // apply the value-specific field mappings for GeoWave functions
+            queryTree = WhindexVisitor.apply(queryTree, config.getWhindexMappingFields(), config.getWhindexFieldMappings(), metadataHelper);
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after Whindex field mappings are applied:");
+            }
+            
+            stopwatch.stop();
+        }
         
         if (!disableExpandIndexFunction) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand function index queries");
@@ -2471,6 +2489,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     public boolean getDisableTestNonExistentFields() {
         return disableTestNonExistentFields;
+    }
+    
+    public void setDisableWhindexFieldMappings(boolean disableWhindexFieldMappings) {
+        this.disableWhindexFieldMappings = disableWhindexFieldMappings;
+    }
+    
+    public boolean getDisableWhindexFieldMappings() {
+        return disableWhindexFieldMappings;
     }
     
     public void setDisableExpandIndexFunction(boolean disableExpandIndexFunction) {
