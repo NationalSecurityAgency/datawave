@@ -210,6 +210,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
     private Set<String> evaluationOnlyFields = new HashSet<>(0);
     
+    private Set<String> whindexMappingFields = new HashSet<>();
+    private Map<String,Map<String,List<String>>> whindexFieldMappings = new HashMap<>();
+    
     private boolean sortedUIDs = true;
     // The fields in the the query that are tf fields
     private Set<String> queryTermFrequencyFields = Collections.emptySet();
@@ -504,6 +507,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
         this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
+        this.setWhindexMappingFields(other.getWhindexMappingFields());
+        this.setWhindexFieldMappings(other.getWhindexFieldMappings());
     }
     
     /**
@@ -2046,6 +2051,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public Set<String> getEvaluationOnlyFields() {
         return this.evaluationOnlyFields;
+    }
+    
+    public Set<String> getWhindexMappingFields() {
+        return whindexMappingFields;
+    }
+    
+    public void setWhindexMappingFields(Set<String> whindexMappingFields) {
+        this.whindexMappingFields = whindexMappingFields;
+    }
+    
+    public Map<String,Map<String,List<String>>> getWhindexFieldMappings() {
+        return whindexFieldMappings;
+    }
+    
+    public void setWhindexFieldMappings(Map<String,Map<String,List<String>>> whindexFieldMappings) {
+        this.whindexFieldMappings = whindexFieldMappings;
     }
     
     public boolean isGeneratePlanOnly() {
