@@ -25,6 +25,7 @@ public interface QueryQueueListener {
      * Receive a message
      * 
      * @param waitMs
+     *            The milliseconds to wait for an available result
      * @return the message, or null if none available within waitMs
      */
     Message<Result> receive(long waitMs);

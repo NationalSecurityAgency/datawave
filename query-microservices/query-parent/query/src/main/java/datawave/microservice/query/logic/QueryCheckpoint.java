@@ -64,6 +64,8 @@ public class QueryCheckpoint implements Serializable {
      * Return the properties as a Query object.
      *
      * @return a Query
+     * @throws ParseException
+     *             if checkpoint could not be parsed into a Query settings object
      */
     public Query getPropertiesAsQuery() throws ParseException {
         return propertiesToQuery(properties);
@@ -106,6 +108,8 @@ public class QueryCheckpoint implements Serializable {
      * @param props
      *            The properties
      * @return the query
+     * @throws ParseException
+     *             if properties could not be parsed into a Query settings object
      */
     public static Query propertiesToQuery(Map<String,Object> props) throws ParseException {
         Query query = new QueryImpl();

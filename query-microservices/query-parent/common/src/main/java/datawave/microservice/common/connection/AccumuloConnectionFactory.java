@@ -30,8 +30,11 @@ public interface AccumuloConnectionFactory {
      *
      * @param priority
      *            the connection's Priority
+     * @param trackingMap
+     *            the tracking map
      * @return accumulo connection
      * @throws Exception
+     *             on failure
      */
     Connector getConnection(Priority priority, Map<String,String> trackingMap) throws Exception;
     
@@ -46,6 +49,7 @@ public interface AccumuloConnectionFactory {
      *            the tracking map
      * @return Accumulo connection
      * @throws Exception
+     *             on failure
      */
     Connector getConnection(String poolName, Priority priority, Map<String,String> trackingMap) throws Exception;
     
@@ -55,6 +59,7 @@ public interface AccumuloConnectionFactory {
      * @param connection
      *            The connection to return
      * @throws Exception
+     *             on failure
      */
     void returnConnection(Connector connection) throws Exception;
     

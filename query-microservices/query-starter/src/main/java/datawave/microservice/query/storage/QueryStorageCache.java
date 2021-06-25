@@ -25,6 +25,8 @@ public interface QueryStorageCache {
      * @param count
      *            The number of available locks which equates to the number of concurrent executors that can act on this query
      * @return The create task key
+     * @throws IOException
+     *             underlying storage error
      */
     TaskKey defineQuery(String queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
     
@@ -40,6 +42,8 @@ public interface QueryStorageCache {
      * @param count
      *            The number of available locks which equates to the number of concurrent executors that can act on this query
      * @return The create task key
+     * @throws IOException
+     *             underlying storage error
      */
     TaskKey createQuery(String queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
     
@@ -103,6 +107,7 @@ public interface QueryStorageCache {
      *            The task key
      * @param state
      *            The updated state
+     * @return false if no more running state slots available, true otherwise.
      */
     boolean updateTaskState(TaskKey taskKey, TaskStates.TASK_STATE state);
     
@@ -149,6 +154,8 @@ public interface QueryStorageCache {
      * @param checkpoint
      *            The query checkpoint
      * @return The new query task
+     * @throws IOException
+     *             underlying storage error
      */
     QueryTask createTask(QueryRequest.Method action, QueryCheckpoint checkpoint) throws IOException;
     
@@ -177,6 +184,8 @@ public interface QueryStorageCache {
      * 
      * @param taskKey
      *            The task key
+     * @throws IOException
+     *             underlying storage error
      */
     void deleteTask(TaskKey taskKey) throws IOException;
     
@@ -186,11 +195,16 @@ public interface QueryStorageCache {
      * @param queryId
      *            the query id
      * @return true if deleted
+     * @throws IOException
+     *             underlying storage error
      */
     public boolean deleteQuery(String queryId) throws IOException;
     
     /**
      * Clear the cache
+     * 
+     * @throws IOException
+     *             underlying storage error
      */
     public void clear() throws IOException;
     
@@ -200,6 +214,8 @@ public interface QueryStorageCache {
      * @param queryId
      *            The query id
      * @return The list of task keys
+     * @throws IOException
+     *             underlying storage error
      */
     public List<TaskKey> getTasks(String queryId) throws IOException;
     
@@ -253,6 +269,8 @@ public interface QueryStorageCache {
      *            The wait time in millis
      * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
      * @deprecated try getQueryStatusLock(queryId).tryLock(waitTimeMillis)
+     * @throws InterruptedException
+     *             if interrupted
      */
     @Deprecated
     default boolean tryLockQueryStatus(String queryId, long waitTimeMillis) throws InterruptedException {
@@ -270,6 +288,8 @@ public interface QueryStorageCache {
      *            Time to wait before releasing the lock
      * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
      * @deprecated try getQueryStatusLock(queryId).tryLock(waitTimeMillis, leaseTimeMillis)
+     * @throws InterruptedException
+     *             if interrupted
      */
     @Deprecated
     default boolean tryLockQueryStatus(String queryId, long waitTimeMillis, long leaseTimeMillis) throws InterruptedException {

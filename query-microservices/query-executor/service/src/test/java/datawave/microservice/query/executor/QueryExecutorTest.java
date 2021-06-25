@@ -14,7 +14,6 @@ import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskLockException;
 import datawave.microservice.query.storage.TaskStates;
-import datawave.query.AnyFieldQueryTest;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -81,7 +80,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ContextConfiguration(classes = QueryExecutorTest.QueryExecutorTestConfiguration.class)
 public abstract class QueryExecutorTest {
-    private static final Logger log = Logger.getLogger(AnyFieldQueryTest.class);
+    private static final Logger log = Logger.getLogger(QueryExecutorTest.class);
     
     public static DataTypeHadoopConfig dataType;
     public TestAccumuloSetup accumuloSetup;

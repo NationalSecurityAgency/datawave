@@ -118,7 +118,9 @@ public abstract class ExecutorAction implements Runnable {
      * Checkpoint a query logic
      *
      * @param queryKey
+     *            The query key
      * @param cpQueryLogic
+     *            The checkpointable query logic
      * @throws IOException
      */
     protected void checkpoint(QueryKey queryKey, CheckpointableQueryLogic cpQueryLogic) throws IOException {
@@ -137,18 +139,37 @@ public abstract class ExecutorAction implements Runnable {
         return queryLogicFactory.getQueryLogic(query.getQueryLogicName());
     }
     
-    private boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize, long maxResults, CachedQueryStatus queryStatus) {
+    protected boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize, long maxResults, QueryStatus queryStatus) {
         QueryStatus.QUERY_STATE state = queryStatus.getQueryState();
-        if (state == QueryStatus.QUERY_STATE.CANCELED || state == QueryStatus.QUERY_STATE.CLOSED || state == QueryStatus.QUERY_STATE.FAILED) {
+        int concurrentNextCalls = queryStatus.getConcurrentNextCount();
+        float bufferMultiplier = executorProperties.getAvailableResultsPageMultiplier();
+        long numResultsGenerated = queryStatus.getNumResultsGenerated();
+        
+        // if the state is closed AND we don't have any ongoing next calls, then stop
+        if (state == QueryStatus.QUERY_STATE.CLOSED) {
+            if (concurrentNextCalls == 0) {
+                return false;
+            } else {
+                // we know these are the last next calls, so cap the buffer multiplier to 1
+                bufferMultiplier = 1.0f;
+            }
+        }
+        
+        // if the state is canceled or failed, then stop
+        if (state == QueryStatus.QUERY_STATE.CANCELED || state == QueryStatus.QUERY_STATE.FAILED) {
             return false;
         }
+        
+        // if we have reached the max results for this query, then stop
+        if (maxResults > 0 && queryStatus.getNumResultsGenerated() >= maxResults) {
+            return false;
+        }
+        
         // if we are to exhaust the iterator, then continue generating results
         if (exhaust) {
             return true;
         }
-        if (maxResults > 0 && queryStatus.getNumResultsGenerated() >= maxResults) {
-            return false;
-        }
+        
         // get the queue size
         long queueSize;
         if (executorProperties.isPollQueueSize()) {
@@ -156,8 +177,17 @@ public abstract class ExecutorAction implements Runnable {
         } else {
             queueSize = queryStatus.getNumResultsGenerated() - queryStatus.getNumResultsReturned();
         }
-        // we should return results if
-        return (queueSize < (executorProperties.getAvailableResultsPageMultiplier() * maxPageSize));
+        
+        // calculate a result buffer size (pagesize * multiplier) adjusting for concurrent next calls
+        long bufferSize = (long) (maxPageSize * Math.max(1, concurrentNextCalls) * bufferMultiplier);
+        
+        // cap the buffer size by max results
+        if (maxResults > 0) {
+            bufferSize = Math.min(bufferSize, maxResults - numResultsGenerated);
+        }
+        
+        // we should return results if we have less than what we want to have buffered
+        return (queueSize < bufferSize);
     }
     
     protected boolean pullResults(TaskKey taskKey, QueryLogic queryLogic, CachedQueryStatus queryStatus, boolean exhaustIterator) throws Exception {

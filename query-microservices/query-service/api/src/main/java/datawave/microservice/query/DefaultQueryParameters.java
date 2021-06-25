@@ -68,6 +68,7 @@ public class DefaultQueryParameters implements QueryParameters {
      * @param parameters
      *            - a Map of QueryParameters
      * @throws IllegalArgumentException
+     *             if not exactly 1 value per parameter
      */
     public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         for (String param : KNOWN_PARAMS) {
@@ -302,14 +303,16 @@ public class DefaultQueryParameters implements QueryParameters {
      * @param pagesize
      *            -
      * @param pageTimeout
+     *            -
      * @param maxResultsOverride
+     *            -
      * @param persistenceMode
      *            -
      * @param parameters
      *            - additional parameters passed in as map
      * @param trace
      *            -
-     * @return
+     * @return the parameters
      * @throws ParseException
      *             on date parse/format error
      */

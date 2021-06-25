@@ -86,7 +86,7 @@ public abstract class GenericQueryConfiguration {
     /**
      * Return the configured {@code Iterator<QueryData>}
      *
-     * @return
+     * @return An iterator of query ranges
      */
     public Iterator<QueryData> getQueries() {
         return Iterators.unmodifiableIterator(this.queries);
@@ -96,6 +96,7 @@ public abstract class GenericQueryConfiguration {
      * Set the queries to be run.
      *
      * @param queries
+     *            An iterator of query ranges
      */
     public void setQueries(Iterator<QueryData> queries) {
         this.queries = queries;

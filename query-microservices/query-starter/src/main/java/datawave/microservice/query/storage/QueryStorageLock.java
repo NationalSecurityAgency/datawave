@@ -35,6 +35,8 @@ public interface QueryStorageLock {
      * @param waitTimeMillis
      *            The wait time in millis
      * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
+     * @throws InterruptedException
+     *             if interrupted
      */
     boolean tryLock(long waitTimeMillis) throws InterruptedException;
     
@@ -46,6 +48,8 @@ public interface QueryStorageLock {
      * @param leaseTimeMillis
      *            Time to wait before automatically releasing the lock
      * @return true if the lock was acquired, false if the waiting time elapsed before the lock was acquired
+     * @throws InterruptedException
+     *             if interrupted
      */
     boolean tryLock(long waitTimeMillis, long leaseTimeMillis) throws InterruptedException;
     

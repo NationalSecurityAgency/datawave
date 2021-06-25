@@ -112,6 +112,7 @@ public class TestQueryQueueManager implements QueryQueueManager {
      * @param queryId
      *            the query ID
      * @param result
+     *            the result to send
      */
     @Override
     public void sendMessage(String queryId, Result result) {
