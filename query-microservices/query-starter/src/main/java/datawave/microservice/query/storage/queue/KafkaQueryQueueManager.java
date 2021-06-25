@@ -21,12 +21,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.integration.acks.SimpleAcknowledgment;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaAdmin;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.AcknowledgingMessageListener;
 import org.springframework.kafka.listener.ConcurrentMessageListenerContainer;
 import org.springframework.kafka.listener.ContainerProperties;
-import org.springframework.kafka.listener.MessageListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.converter.MessagingMessageConverter;
 import org.springframework.messaging.Message;
@@ -369,7 +370,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     /**
      * A listener for local queues
      */
-    public class KafkaQueueListener implements QueryQueueListener, MessageListener<String,String> {
+    public class KafkaQueueListener implements QueryQueueListener, AcknowledgingMessageListener<String,String> {
         private ArrayBlockingQueue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
         private final String listenerId;
         private final String topicId;
@@ -387,6 +388,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
             ContainerProperties props = new ContainerProperties(topicId);
             props.setMessageListener(this);
             props.setGroupId(groupId);
+            props.setAckMode(ContainerProperties.AckMode.MANUAL);
             
             container = new ConcurrentMessageListenerContainer<>(kafkaConsumerFactory, props);
             
@@ -449,18 +451,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
          */
         @Override
         public void onMessage(ConsumerRecord<String,String> data) {
-            if (log.isTraceEnabled()) {
-                log.trace("Listener " + getListenerId() + " got message " + data.key());
-            }
-            MessagingMessageConverter converter = new MessagingMessageConverter();
-            Message<String> message = (Message<String>) converter.toMessage(data, null, null, String.class);
-            Message<Result> resultMessage = null;
-            try {
-                resultMessage = new GenericMessage<>(new ObjectMapper().readerFor(Result.class).readValue(message.getPayload()), message.getHeaders());
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException("Unable to deserialize results", e);
-            }
-            messageQueue.add(resultMessage);
+            onMessage(data, null, null);
         }
         
         /**
@@ -472,9 +463,8 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
          *            the acknowledgment.
          */
         @Override
-        public void onMessage(ConsumerRecord<String,String> data, Acknowledgment acknowledgment) {
-            onMessage(data);
-            acknowledgment.acknowledge();
+        public void onMessage(ConsumerRecord<String,String> data, final Acknowledgment acknowledgment) {
+            onMessage(data, acknowledgment, null);
         }
         
         /**
@@ -488,7 +478,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
          */
         @Override
         public void onMessage(ConsumerRecord<String,String> data, Consumer<?,?> consumer) {
-            onMessage(data);
+            onMessage(data, null, consumer);
         }
         
         /**
@@ -503,8 +493,28 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
          * @since 2.0
          */
         @Override
-        public void onMessage(ConsumerRecord<String,String> data, Acknowledgment acknowledgment, Consumer<?,?> consumer) {
-            onMessage(data, acknowledgment);
+        public void onMessage(ConsumerRecord<String,String> data, final Acknowledgment acknowledgment, Consumer<?,?> consumer) {
+            if (log.isTraceEnabled()) {
+                log.trace("Listener " + getListenerId() + " got message " + data.key());
+            }
+            MessagingMessageConverter converter = new MessagingMessageConverter();
+            Message<String> message = (Message<String>) converter.toMessage(data, acknowledgment, consumer, String.class);
+            Message<Result> resultMessage = null;
+            try {
+                Result result = new ObjectMapper().readerFor(Result.class).readValue(message.getPayload());
+                if (acknowledgment != null) {
+                    result.setAcknowledgement(new SimpleAcknowledgment() {
+                        @Override
+                        public void acknowledge() {
+                            acknowledgment.acknowledge();
+                        }
+                    });
+                }
+                resultMessage = new GenericMessage<>(result, message.getHeaders());
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException("Unable to deserialize results", e);
+            }
+            messageQueue.add(resultMessage);
         }
     }
     

@@ -1,16 +1,18 @@
 package datawave.microservice.query.storage.queue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rabbitmq.client.Channel;
 import datawave.microservice.query.storage.QueryQueueListener;
 import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.Result;
 import datawave.microservice.query.storage.config.QueryStorageProperties;
+import org.apache.logging.log4j.core.util.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpIOException;
+import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.MessageListener;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueInformation;
 import org.springframework.amqp.core.TopicExchange;
@@ -21,8 +23,10 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.AbstractMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
+import org.springframework.amqp.rabbit.listener.api.ChannelAwareMessageListener;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.integration.acks.SimpleAcknowledgment;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.stereotype.Component;
@@ -286,7 +290,7 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
     /**
      * A listener for local queues
      */
-    public class RabbitQueueListener implements QueryQueueListener, MessageListener {
+    public class RabbitQueueListener implements QueryQueueListener, ChannelAwareMessageListener {
         private ArrayBlockingQueue<org.springframework.messaging.Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
         private final String listenerId;
         
@@ -299,6 +303,7 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
             endpoint.setMessageListener(this);
             endpoint.setQueueNames(queueName);
             endpoint.setGroup(queueName);
+            endpoint.setAckMode(AcknowledgeMode.MANUAL);
             DirectRabbitListenerContainerFactory listenerContainerFactory = new DirectRabbitListenerContainerFactory();
             listenerContainerFactory.setConnectionFactory(connectionFactory);
             rabbitListenerEndpointRegistry.registerListenerContainer(endpoint, listenerContainerFactory, true);
@@ -321,13 +326,23 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
         }
         
         @Override
-        public void onMessage(org.springframework.amqp.core.Message message) {
-            try {
-                messageQueue.add(new GenericMessage<>(new ObjectMapper().readerFor(Result.class).readValue(message.getBody()),
-                                message.getMessageProperties().getHeaders()));
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to deserialize payload as a Result", e);
-            }
+        public void onMessage(org.springframework.amqp.core.Message message, final Channel channel) throws Exception {
+            final long deliveryTag = message.getMessageProperties().getDeliveryTag();
+            Result result = new ObjectMapper().readerFor(Result.class).readValue(message.getBody());
+            result.setAcknowledgement(new SimpleAcknowledgment() {
+                @Override
+                public void acknowledge() {
+                    try {
+                        channel.basicAck(deliveryTag, true);
+                        if (rabbitTemplate.isChannelTransacted()) {
+                            channel.txCommit();
+                        }
+                    } catch (IOException e) {
+                        Throwables.rethrow(e);
+                    }
+                }
+            });
+            messageQueue.add(new GenericMessage<>(result, message.getMessageProperties().getHeaders()));
         }
         
         @Override

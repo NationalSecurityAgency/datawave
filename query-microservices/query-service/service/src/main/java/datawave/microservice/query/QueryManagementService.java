@@ -322,8 +322,8 @@ public class QueryManagementService implements QueryRequestHandler {
      * Validates the query request, creates an entry in the query storage cache, and publishes a create event to the executor service.
      * <p>
      * Validation is run against the requested logic, the parameters, and the security markings in {@link #validateQuery}. <br>
-     * Auditing is performed when {@param isCreateRequest} is <code>true</code> using {@link #audit}. <br>
-     * If {@param queryId} is null, a query id will be generated automatically.
+     * Auditing is performed when {@code isCreateRequest} is <code>true</code> using {@link #audit}. <br>
+     * If {@code queryId} is null, a query id will be generated automatically.
      *
      * @param queryLogicName
      *            the requested query logic, not null
@@ -729,7 +729,7 @@ public class QueryManagementService implements QueryRequestHandler {
      * Cancel can only be called on a running query, or a query that is in the process of closing. <br>
      * Outstanding next calls will be stopped immediately, but will return partial results if applicable. <br>
      * Publishes a cancel event to the query and executor services. <br>
-     * Query ownership will only be validated when {@param adminOverride} is set to <code>true</code>.
+     * Query ownership will only be validated when {@code adminOverride} is set to <code>true</code>.
      *
      * @param queryId
      *            the query id, not null
@@ -779,9 +779,9 @@ public class QueryManagementService implements QueryRequestHandler {
      * Cancels the specified query, and optionally publishes a cancel event to the query and executor services.
      * <p>
      * Cancels any locally-running next calls. <br>
-     * Called with {@param publishEvent} set to <code>true</code> when the user calls cancel. <br>
-     * When {@param publishEvent} is <code>true</code>, changes the query state to {@link QueryStatus.QUERY_STATE#CANCELED}. <br>
-     * Called with {@param publishEvent} set to <code>false</code> when handling a remote cancel event.
+     * Called with {@code publishEvent} set to <code>true</code> when the user calls cancel. <br>
+     * When {@code publishEvent} is <code>true</code>, changes the query state to {@link QueryStatus.QUERY_STATE#CANCELED}. <br>
+     * Called with {@code publishEvent} set to <code>false</code> when handling a remote cancel event.
      *
      * @param queryId
      *            the query id, not null
@@ -921,7 +921,7 @@ public class QueryManagementService implements QueryRequestHandler {
      * <p>
      * Close can only be called on a running query. <br>
      * Outstanding next calls will be allowed to run until they can return a full page, or they timeout. <br>
-     * Query ownership will only be validated when {@param adminOverride} is set to <code>true</code>.
+     * Query ownership will only be validated when {@code adminOverride} is set to <code>true</code>.
      *
      * @param queryId
      *            the query id, not null
@@ -1137,7 +1137,7 @@ public class QueryManagementService implements QueryRequestHandler {
      * Removes the specified query from query storage.
      * <p>
      * Remove can only be called on a query that is not running. <br>
-     * Query ownership will only be validated when {@param adminOverride} is set to <code>true</code>.
+     * Query ownership will only be validated when {@code adminOverride} is set to <code>true</code>.
      *
      * @param queryId
      *            the query id, not null

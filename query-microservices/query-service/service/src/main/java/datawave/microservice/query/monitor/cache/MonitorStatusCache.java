@@ -21,7 +21,7 @@ public class MonitorStatusCache {
     /**
      * Get the query monitor status
      * 
-     * @return
+     * @return the stored monitor status
      */
     public MonitorStatus getStatus() {
         return cacheInspector.list(CACHE_NAME, MonitorStatus.class, CACHE_KEY);
@@ -31,7 +31,8 @@ public class MonitorStatusCache {
      * Store the query monitor status
      * 
      * @param monitorStatus
-     * @return
+     *            The monitor status to store
+     * @return the stored monitor status
      */
     @CachePut(key = CACHE_KEY)
     public MonitorStatus setStatus(MonitorStatus monitorStatus) {
