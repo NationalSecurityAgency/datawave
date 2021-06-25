@@ -496,12 +496,12 @@ public class ContentFunctionQueryTest {
         @Override
         public boolean isIndexListField(String field) {
             return false;
-        };
+        }
         
         @Override
         public boolean isReverseIndexListField(String field) {
             return false;
-        };
+        }
         
         @Override
         public String getListDelimiter() {
