@@ -16,6 +16,7 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import javax.sql.DataSource;
@@ -1063,7 +1064,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             else
                 ps.setString(x++, StringUtils.join(this.fixedFieldsInEvent, ","));
             
-            MultiValueMap<String,String> optionalQueryParameters = query.getOptionalQueryParameters();
+            MultiValueMap<String,String> optionalQueryParameters = new LinkedMultiValueMap<>(query.getOptionalQueryParameters());
             if (optionalQueryParameters == null || optionalQueryParameters.isEmpty())
                 ps.setNull(x++, Types.BLOB);
             else
