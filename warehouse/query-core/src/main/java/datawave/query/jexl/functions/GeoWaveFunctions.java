@@ -68,27 +68,33 @@ public class GeoWaveFunctions {
     }
     
     private static Geometry getGeometryFromFieldValue(Object fieldValue) {
+        Geometry geometry = null;
         if (fieldValue instanceof Geometry) {
-            return (Geometry) fieldValue;
+            geometry = (Geometry) fieldValue;
         } else if (fieldValue instanceof GeoNormalizer.GeoPoint) {
-            return geoPointToGeometry((GeoNormalizer.GeoPoint) fieldValue);
+            geometry = geoPointToGeometry((GeoNormalizer.GeoPoint) fieldValue);
         } else if (fieldValue instanceof String) {
-            return parseGeometry((String) fieldValue);
+            geometry = parseGeometry((String) fieldValue);
         } else if (fieldValue instanceof ValueTuple) {
             ValueTuple t = (ValueTuple) fieldValue;
             Object o = t.second();
             if (o instanceof AbstractGeometryType) {
                 AbstractGeometryType<?> gt = (AbstractGeometryType<?>) o;
-                return ((AbstractGeometry<?>) gt.getDelegate()).getJTSGeometry();
+                geometry = ((AbstractGeometry<?>) gt.getDelegate()).getJTSGeometry();
             } else if (o instanceof GeoType) {
-                return parseGeometryFromGeoType(ValueTuple.getNormalizedStringValue(fieldValue));
+                geometry = parseGeometryFromGeoType(ValueTuple.getNormalizedStringValue(fieldValue));
             }
         } else if (fieldValue instanceof FunctionalSet) {
             FunctionalSet<?> funcSet = (FunctionalSet<?>) fieldValue;
             Geometry[] geometries = funcSet.stream().map(GeoWaveFunctions::getGeometryFromFieldValue).toArray(Geometry[]::new);
-            return new GeometryCollection(geometries, geometryFactory);
+            geometry = new GeometryCollection(geometries, geometryFactory);
         }
-        throw new IllegalArgumentException("Field Value:" + fieldValue + " cannot be recognized as a geometry");
+        
+        if (geometry == null) {
+            throw new IllegalArgumentException("Field Value:" + fieldValue + " cannot be recognized as a geometry");
+        }
+        
+        return geometry;
     }
     
     private static Geometry parseGeometry(String geomString) {
@@ -98,6 +104,11 @@ public class GeoWaveFunctions {
         } catch (IllegalArgumentException e) {
             geom = parseGeometryFromGeoType(geomString);
         }
+        
+        if (geom == null) {
+            throw new IllegalArgumentException("Geom string:" + geomString + " cannot be recognized as a geometry");
+        }
+        
         return geom;
     }
     
