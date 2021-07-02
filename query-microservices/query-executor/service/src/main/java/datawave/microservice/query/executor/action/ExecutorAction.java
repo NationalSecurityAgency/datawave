@@ -122,6 +122,7 @@ public abstract class ExecutorAction implements Runnable {
      * @param cpQueryLogic
      *            The checkpointable query logic
      * @throws IOException
+     *             if checkpointing fails
      */
     protected void checkpoint(QueryKey queryKey, CheckpointableQueryLogic cpQueryLogic) throws IOException {
         boolean createdTask = false;
