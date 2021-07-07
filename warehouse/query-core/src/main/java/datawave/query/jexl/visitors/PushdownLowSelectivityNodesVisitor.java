@@ -39,7 +39,7 @@ public class PushdownLowSelectivityNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         // if not already delayed somehow
-        if (!QueryPropertyMarker.instanceOf(node, null)) {
+        if (!QueryPropertyMarker.findInstance(node).isAnyType()) {
             return super.visit(node, data);
         }
         return data;
@@ -48,7 +48,7 @@ public class PushdownLowSelectivityNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         // if not already delayed somehow
-        if (!QueryPropertyMarker.instanceOf(node, null)) {
+        if (!QueryPropertyMarker.findInstance(node).isAnyType()) {
             return super.visit(node, data);
         }
         return data;

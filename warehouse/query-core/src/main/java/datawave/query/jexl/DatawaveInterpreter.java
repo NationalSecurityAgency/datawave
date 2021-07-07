@@ -6,6 +6,7 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.Interpreter;
@@ -355,7 +356,7 @@ public class DatawaveInterpreter extends Interpreter {
     
     public Object visit(ASTAndNode node, Object data) {
         // we could have arrived here after the node was dereferenced
-        if (ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
+        if (QueryPropertyMarker.findInstance(node).isType(ExceededOrThresholdMarkerJexlNode.class)) {
             return visitExceededOrThresholdMarker(node);
         }
         
@@ -470,7 +471,7 @@ public class DatawaveInterpreter extends Interpreter {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
+        if (QueryPropertyMarker.findInstance(node).isType(ExceededOrThresholdMarkerJexlNode.class)) {
             return visitExceededOrThresholdMarker(node);
         } else {
             return super.visit(node, data);

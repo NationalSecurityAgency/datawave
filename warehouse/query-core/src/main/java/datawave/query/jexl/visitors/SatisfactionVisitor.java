@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.collect.Lists;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.util.UniversalSet;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
@@ -105,7 +106,7 @@ public class SatisfactionVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReference node, Object o) {
         // Recurse only if not delayed
-        if (!ASTDelayedPredicate.instanceOf(node)) {
+        if (!QueryPropertyMarker.findInstance(node).isType(ASTDelayedPredicate.class)) {
             super.visit(node, o);
         } else {
             isQueryFullySatisfied = false;
@@ -117,7 +118,7 @@ public class SatisfactionVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTAndNode and, Object data) {
         
-        if (!ExceededOrThresholdMarkerJexlNode.instanceOf(and) && !ExceededValueThresholdMarkerJexlNode.instanceOf(and)) {
+        if (QueryPropertyMarker.findInstance(and).isNotAnyTypeOf(ExceededOrThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
             and.childrenAccept(this, data);
         }
         return null;

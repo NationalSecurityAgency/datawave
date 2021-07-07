@@ -1,21 +1,19 @@
 package datawave.query.jexl.visitors;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
-
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BoundedRangeDetectionVisitor extends BaseVisitor {
     
@@ -39,7 +37,7 @@ public class BoundedRangeDetectionVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (BoundedRange.instanceOf(node)) {
+        if (QueryPropertyMarker.findInstance(node).isType(BoundedRange.class)) {
             LiteralRange range = JexlASTHelper.findRange().getRange(node);
             try {
                 if (helper.getNonEventFields(config.getDatatypeFilter()).contains(range.getFieldName())) {

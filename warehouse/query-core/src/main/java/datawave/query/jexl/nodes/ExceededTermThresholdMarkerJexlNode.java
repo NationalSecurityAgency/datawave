@@ -38,26 +38,4 @@ public class ExceededTermThresholdMarkerJexlNode extends QueryPropertyMarker {
     public String getLabel() {
         return LABEL;
     }
-    
-    /**
-     * A routine to determine whether an and node is actually an exceeded term threshold marker. The reason for this routine is that if the query is serialized
-     * and deserialized, then only the underlying assignment will persist.
-     * 
-     * @param node
-     * @return true if this and node is an exceeded term marker
-     */
-    public static boolean instanceOf(JexlNode node) {
-        return QueryPropertyMarker.instanceOf(node, ExceededTermThresholdMarkerJexlNode.class);
-    }
-    
-    /**
-     * A routine to determine get the node which is the source of the exceeded value threshold (i.e. the underlying anyfield expression)
-     * 
-     * @param node
-     * @return the source node or null if not an an exceededValueThreshold Marker
-     */
-    public static JexlNode getExceededTermThresholdSource(JexlNode node) {
-        return QueryPropertyMarker.getQueryPropertySource(node, ExceededTermThresholdMarkerJexlNode.class);
-    }
-    
 }

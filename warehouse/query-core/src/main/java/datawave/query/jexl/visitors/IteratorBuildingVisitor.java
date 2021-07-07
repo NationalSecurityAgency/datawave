@@ -22,6 +22,7 @@ import datawave.query.iterator.logic.OrIterator;
 import datawave.query.jexl.functions.EventFieldAggregator;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.EventDataQueryExpressionFilter;
 import datawave.query.util.sortedset.FileSortedSet;
@@ -234,9 +235,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTAndNode and, Object data) {
-        
-        if (ExceededOrThresholdMarkerJexlNode.instanceOf(and)) {
-            JexlNode source = ExceededOrThresholdMarkerJexlNode.getExceededOrThresholdSource(and);
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(and);
+        if (instance.isType(ExceededOrThresholdMarkerJexlNode.class)) {
+            JexlNode source = instance.getSource();
             // if the parent is our ExceededOrThreshold marker, then use an
             // Ivarator to get the job done
             if (source instanceof ASTAndNode) {
@@ -250,7 +251,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                                 "Limited ExceededOrThresholdMarkerJexlNode"));
                 throw new DatawaveFatalQueryException(qe);
             }
-        } else if (null != data && data instanceof IndexRangeIteratorBuilder) {
+        } else if (data instanceof IndexRangeIteratorBuilder) {
             // index checking has already been done, otherwise we would not have
             // an "ExceededValueThresholdMarker"
             // hence the "IndexAgnostic" method can be used here
@@ -260,10 +261,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 throw new DatawaveFatalQueryException(qe);
             }
             ((IndexRangeIteratorBuilder) data).setRange(range);
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(and)) {
+        } else if (instance.isType(ExceededValueThresholdMarkerJexlNode.class)) {
             // if the parent is our ExceededValueThreshold marker, then use an
             // Ivarator to get the job done unless we don't have to
-            JexlNode source = ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(and);
+            JexlNode source = instance.getSource();
             
             String identifier = null;
             LiteralRange<?> range = null;
@@ -864,11 +865,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTReference node, Object o) {
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         // Recurse only if not delayed or evaluation only
-        if (!ASTDelayedPredicate.instanceOf(node) && !ASTEvaluationOnly.instanceOf(node)) {
+        if (instance.isNotAnyTypeOf(ASTDelayedPredicate.class, ASTEvaluationOnly.class)) {
             super.visit(node, o);
-        } else if (ASTDelayedPredicate.instanceOf(node)) {
-            JexlNode subNode = ASTDelayedPredicate.getQueryPropertySource(node, ASTDelayedPredicate.class);
+        } else if (instance.isType(ASTDelayedPredicate.class)) {
+            JexlNode subNode = instance.getSource();
             if (subNode instanceof ASTEQNode) {
                 delayedEqNodes.add(subNode);
             }

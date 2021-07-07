@@ -1,15 +1,11 @@
 package datawave.query.planner.pushdown.rules;
 
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
+import com.google.common.base.Preconditions;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.planner.pushdown.Cost;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.planner.pushdown.PushDownVisitor;
 import datawave.query.util.Tuple2;
-
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -17,7 +13,10 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Purpose: Rule that pulls up top level delayed predicates based upon cost
@@ -49,7 +48,7 @@ public class DelayedPredicatePushDown extends PushDownRule {
         
         JexlNode child = node.jjtGetChild(0);
         
-        if (ASTDelayedPredicate.instanceOf(child)) {
+        if (QueryPropertyMarker.findInstance(node).isType(ASTDelayedPredicate.class)) {
             child = child.jjtGetChild(0);
             child = (JexlNode) child.jjtAccept(this, data);
             child.jjtSetParent(newScript);

@@ -105,7 +105,7 @@ public class NodeTransformVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         // do not recurse on a marker node
-        if (QueryPropertyMarker.instanceOf(node, null)) {
+        if (QueryPropertyMarker.findInstance(node).isAnyType()) {
             return applyTransforms(RebuildingVisitor.copy(node));
         } else {
             return applyTransforms(super.visit(node, data));

@@ -18,7 +18,6 @@ import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
@@ -26,7 +25,6 @@ import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
@@ -227,7 +225,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     public Object visit(ASTAndNode node, Object data) {
         
         // ignore already marked expressions
-        if (QueryPropertyMarker.instanceOf(node, null)) {
+        if (QueryPropertyMarker.findInstance(node).isAnyType()) {
             return node;
         }
         

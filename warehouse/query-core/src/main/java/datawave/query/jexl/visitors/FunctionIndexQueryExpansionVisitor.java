@@ -5,6 +5,7 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.functions.arguments.RebuildingJexlArgumentDescriptor;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl2.parser.ASTAndNode;
@@ -114,12 +115,12 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // if we know from a parent that this is evaluation only, pass that forward. if we don't know, check.
-        return super.visit(node, (data instanceof Boolean && (Boolean) data) || ASTEvaluationOnly.instanceOf(node));
+        return super.visit(node, (data instanceof Boolean && (Boolean) data) || QueryPropertyMarker.findInstance(node).isType(ASTEvaluationOnly.class));
     }
     
     @Override
     public Object visit(ASTReference node, Object data) {
         // if we know from a parent that this is evaluation only, pass that forward. if we don't know, check.
-        return super.visit(node, (data instanceof Boolean && (Boolean) data) || ASTEvaluationOnly.instanceOf(node));
+        return super.visit(node, (data instanceof Boolean && (Boolean) data) || QueryPropertyMarker.findInstance(node).isType(ASTEvaluationOnly.class));
     }
 }

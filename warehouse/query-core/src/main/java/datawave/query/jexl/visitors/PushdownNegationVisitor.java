@@ -2,7 +2,6 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAndNode;
@@ -16,7 +15,6 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Pushdown negations until they are either wrapping leaf nodes or bounded ranges. The purpose of this class is to remove edge cases from evaluating
@@ -112,17 +110,15 @@ public class PushdownNegationVisitor extends BaseVisitor {
             
             if (state.isNegated()) {
                 // look for any markers because we don't want to flip an AND associated with a marker
-                if (QueryPropertyMarker.instanceOf(node, null)) {
-                    // do not propagate inside an ivarator marker
-                    if (JexlASTHelper.isIvaratorMarker(node)) {
-                        // don't propagate inside
-                        return data;
-                    } else if (BoundedRange.instanceOf(node)) {
+                QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+                if (instance.isAnyType()) {
+                    // do not propagate inside an ivarator marker or bounded range
+                    if (instance.isIvarator() || instance.isType(BoundedRange.class)) {
                         // don't propagate inside
                         return data;
                     }
                     // move inside to the source node
-                    JexlNode source = QueryPropertyMarker.getQueryPropertySource(node, null);
+                    JexlNode source = instance.getSource();
                     return source.jjtAccept(this, data);
                 }
                 

@@ -54,25 +54,4 @@ public class ASTEvaluationOnly extends QueryPropertyMarker {
         
         return expr;
     }
-    
-    /**
-     * A routine to determine whether an and node is actually an evaluation only marker. The reason for this routine is that if the query is serialized and
-     * deserialized, then only the underlying assignment will persist.
-     *
-     * @param node
-     * @return true if this and node is a composite predicate marker
-     */
-    public static boolean instanceOf(JexlNode node) {
-        return QueryPropertyMarker.instanceOf(node, ASTEvaluationOnly.class);
-    }
-    
-    /**
-     * A routine to get the node which is the source of the evaluation only marker
-     *
-     * @param node
-     * @return the source node or null if not an a composite predicate marker
-     */
-    public static JexlNode getEvaluationOnlySource(JexlNode node) {
-        return QueryPropertyMarker.getQueryPropertySource(node, ASTEvaluationOnly.class);
-    }
 }

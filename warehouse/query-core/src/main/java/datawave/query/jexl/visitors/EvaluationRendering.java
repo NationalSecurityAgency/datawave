@@ -1,13 +1,12 @@
 package datawave.query.jexl.visitors;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import com.google.common.base.Preconditions;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
-
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
@@ -15,7 +14,7 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 
@@ -78,11 +77,8 @@ public class EvaluationRendering extends BaseVisitor {
     }
     
     protected boolean isDelayedPredicate(JexlNode currNode) {
-        if (ExceededOrThresholdMarkerJexlNode.instanceOf(currNode) || ExceededValueThresholdMarkerJexlNode.instanceOf(currNode)
-                        || ExceededTermThresholdMarkerJexlNode.instanceOf(currNode))
-            return true;
-        else
-            return false;
+        return QueryPropertyMarker.findInstance(currNode).isAnyTypeOf(ExceededTermThresholdMarkerJexlNode.class, ExceededOrThresholdMarkerJexlNode.class,
+                        ExceededValueThresholdMarkerJexlNode.class);
     }
     
     @Override

@@ -253,6 +253,11 @@ public class QueryPruningVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
+        // do not process query property markers
+        if (QueryPropertyMarker.findInstance(node).isAnyType()) {
+            return TruthState.UNKNOWN;
+        }
+        
         // grab the node string before recursion so the original is intact
         String originalString = null;
         if (rewrite && debugPrune) {

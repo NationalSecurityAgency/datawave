@@ -1,11 +1,10 @@
 package datawave.query.jexl.visitors;
 
-import java.util.Set;
-
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -17,6 +16,8 @@ import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
+
+import java.util.Set;
 
 /**
  * A visitor that checks the query tree to determine if sorting the UIDs coming from the field index is required. Normally they are, however if the query
@@ -87,9 +88,10 @@ public class SortedUIDsRequiredVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         // delayed predicates are not run against the index (if acknowledging them)
-        if (!(acknowledgeDelayedPredicates && ASTDelayedPredicate.instanceOf(node))) {
-            if (!IndexHoleMarkerJexlNode.instanceOf(node)) {
-                if (ExceededOrThresholdMarkerJexlNode.instanceOf(node) || ExceededValueThresholdMarkerJexlNode.instanceOf(node)) {
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+        if (!(acknowledgeDelayedPredicates && instance.isType(ASTDelayedPredicate.class))) {
+            if (!instance.isType(IndexHoleMarkerJexlNode.class)) {
+                if (instance.isAnyTypeOf(ExceededOrThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
                     ivarators++;
                     indexedFieldCount++;
                 } else {

@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
@@ -13,25 +14,25 @@ public class FieldToFieldComparisonVisitorTest {
     @Test
     public void testEq() throws ParseException {
         ASTJexlScript query = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("FOO == BAR"));
-        assertTrue(ASTEvaluationOnly.instanceOf(query));
+        assertTrue(QueryPropertyMarker.findInstance(query).isType(ASTEvaluationOnly.class));
     }
     
     @Test
     public void testEqDoNothing() throws ParseException {
         ASTJexlScript query = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("FOO == 'bar'"));
-        assertFalse(ASTEvaluationOnly.instanceOf(query));
+        assertFalse(QueryPropertyMarker.findInstance(query).isType(ASTEvaluationOnly.class));
     }
     
     @Test
     public void testEqDoNothingFieldsToLiteral() throws ParseException {
         ASTJexlScript query = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("(FOO || BAR).min().hashCode() == 0"));
-        assertFalse(ASTEvaluationOnly.instanceOf(query));
+        assertFalse(QueryPropertyMarker.findInstance(query).isType(ASTEvaluationOnly.class));
     }
     
     @Test
     public void testEqDoNothing2() throws ParseException {
         ASTJexlScript query = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("(UUID =~ 'C.*?' || UUID =~ 'S.*?')"));
-        assertFalse(ASTEvaluationOnly.instanceOf(query));
+        assertFalse(QueryPropertyMarker.findInstance(query).isType(ASTEvaluationOnly.class));
     }
     
     @Test(expected = ParseException.class)

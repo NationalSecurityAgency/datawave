@@ -1,12 +1,19 @@
 package datawave.query.index.lookup;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
+import com.google.common.base.Objects;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.RebuildingVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.language.parser.jexl.JexlNodeSet;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTOrNode;
@@ -18,19 +25,12 @@ import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.visitors.RebuildingVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * This class represents information about hits in the index.
@@ -192,19 +192,10 @@ public class IndexInfo implements Writable, UidIntersector {
     }
     
     public static JexlNode getSourceNode(JexlNode delayedNode) {
-        
-        if (ASTDelayedPredicate.instanceOf(delayedNode)) {
-            
-            return ASTDelayedPredicate.getQueryPropertySource(delayedNode, ASTDelayedPredicate.class);
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(delayedNode)) {
-            
-            return ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(delayedNode);
-        } else if (ExceededTermThresholdMarkerJexlNode.instanceOf(delayedNode)) {
-            
-            return ExceededTermThresholdMarkerJexlNode.getExceededTermThresholdSource(delayedNode);
-        } else if (IndexHoleMarkerJexlNode.instanceOf(delayedNode)) {
-            
-            return IndexHoleMarkerJexlNode.getIndexHoleSource(delayedNode);
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(delayedNode);
+        if (instance.isAnyTypeOf(ASTDelayedPredicate.class, ExceededOrThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class,
+                        ExceededTermThresholdMarkerJexlNode.class, IndexHoleMarkerJexlNode.class)) {
+            return instance.getSource();
         } else {
             return delayedNode;
         }

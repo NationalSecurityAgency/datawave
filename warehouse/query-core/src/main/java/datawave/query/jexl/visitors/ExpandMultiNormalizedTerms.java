@@ -2,7 +2,6 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
@@ -15,10 +14,7 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -43,12 +39,9 @@ import org.apache.log4j.Logger;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static org.apache.commons.jexl2.parser.JexlNodes.id;
 
 /**
  * When more than one normalizer exists for a field, we want to transform the single term into a conjunction of the term with each normalizer applied to it. If
@@ -146,7 +139,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         /**
          * If we have a delayed predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types
          */
-        if (QueryPropertyMarkerVisitor.isDelayedPredicate(node) || this.expandedNodes.contains(node)) {
+        if (QueryPropertyMarker.findInstance(node).isDelayedPredicate() || this.expandedNodes.contains(node)) {
             return node;
         }
         

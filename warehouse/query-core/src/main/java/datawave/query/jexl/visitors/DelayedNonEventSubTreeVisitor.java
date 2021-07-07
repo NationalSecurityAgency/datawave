@@ -53,16 +53,13 @@ public class DelayedNonEventSubTreeVisitor extends BaseVisitor {
      */
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        if (ASTDelayedPredicate.instanceOf(node) || (data != null && (boolean) data)) {
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+        if (instance.isType(ASTDelayedPredicate.class) || (data != null && (boolean) data)) {
             // strip off only the delayed predicate, leave any other markers intact since they may be necessary to properly process inside the
             // IteratorBuildingVisitor
-            JexlNode candidate = QueryPropertyMarker.getQueryPropertySource(node, ASTDelayedPredicate.class);
+            JexlNode candidate = instance.isType(ASTDelayedPredicate.class) ? instance.getSource() : node;
             
-            if (candidate == null) {
-                // we are in a recursive situation inside an delayed predicate, evaluate the node
-                candidate = node;
-            }
-            
+            // noinspection ConstantConditions
             extractDelayedFields(candidate);
             
             // continue processing the tree in case the IteratorBuildingVisitor decided to discard leafs. The IteratorBuildingVisitor will only identify a root

@@ -90,27 +90,6 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
     }
     
     /**
-     * A routine to determine whether an and node is actually an exceeded or threshold marker. The reason for this routine is that if the query is serialized
-     * and deserialized, then only the underlying assignment will persist.
-     * 
-     * @param node
-     * @return true if this and node is an exceeded or marker
-     */
-    public static boolean instanceOf(JexlNode node) {
-        return QueryPropertyMarker.instanceOf(node, ExceededOrThresholdMarkerJexlNode.class);
-    }
-    
-    /**
-     * A routine to determine get the node which is the source of the exceeded or threshold (i.e. the underlying regex or range)
-     * 
-     * @param node
-     * @return the source node or null if not an an exceededOrThreshold Marker
-     */
-    public static JexlNode getExceededOrThresholdSource(JexlNode node) {
-        return QueryPropertyMarker.getQueryPropertySource(node, ExceededOrThresholdMarkerJexlNode.class);
-    }
-    
-    /**
      * Get the parameters for this marker node (see constructors)
      * 
      * @param source
