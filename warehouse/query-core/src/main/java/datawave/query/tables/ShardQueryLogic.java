@@ -8,6 +8,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import datawave.query.config.FieldIndexHole;
+import datawave.query.config.ValueIndexHole;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
@@ -16,7 +18,6 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
 import datawave.query.cardinality.CardinalityConfiguration;
-import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.enrich.DataEnricher;
@@ -29,10 +30,7 @@ import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
-import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.MetadataHelperQueryModelProvider;
-import datawave.query.planner.QueryModelProvider;
-import datawave.query.planner.QueryPlanner;
+import datawave.query.planner.*;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
@@ -447,9 +445,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
         
-        if (this.queries != null) {
+        if (this.queries != null)
             config.setQueries(this.queries.iterator());
-        }
         
         config.setQueryString(getQueryPlanner().getPlannedScript());
         
@@ -1726,7 +1723,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public QueryPlanner getQueryPlanner() {
         if (null == planner) {
-            planner = new DefaultQueryPlanner();
+            planner = new FederatedQueryPlanner();
         }
         
         return planner;
@@ -2090,12 +2087,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setCacheModel(cacheModel);
     }
     
-    public List<IndexHole> getIndexHoles() {
-        return getConfig().getIndexHoles();
+    public List<ValueIndexHole> getValueIndexHoles() {
+        return getConfig().getValueIndexHoles();
     }
     
-    public void setIndexHoles(List<IndexHole> indexHoles) {
-        getConfig().setIndexHoles(indexHoles);
+    public void setValueIndexHoles(List<ValueIndexHole> indexHoles) {
+        getConfig().setValueIndexHoles(indexHoles);
+    }
+    
+    public List<FieldIndexHole> getFieldIndexHoles() {
+        return getConfig().getFieldIndexHoles();
+    }
+    
+    public void setFieldIndexHoles(List<FieldIndexHole> indexHoles) {
+        getConfig().setFieldIndexHoles(indexHoles);
     }
     
     public CardinalityConfiguration getCardinalityConfiguration() {
