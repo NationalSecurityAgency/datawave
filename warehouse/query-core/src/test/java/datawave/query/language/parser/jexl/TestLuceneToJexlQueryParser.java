@@ -11,6 +11,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public class TestLuceneToJexlQueryParser {
     
@@ -567,5 +569,17 @@ public class TestLuceneToJexlQueryParser {
         assertEquals("f:unique_by_day('field1','field2','field3')", parser.parse("#unique_by_day(field1,field2,field3)").getOriginalQuery());
         assertEquals("f:unique_by_hour('field1','field2','field3')", parser.parse("#unique_by_hour(field1,field2,field3)").getOriginalQuery());
         assertEquals("f:unique_by_minute('field1','field2','field3')", parser.parse("#unique_by_minute(field1,field2,field3)").getOriginalQuery());
+        
+        Throwable exception = assertThrows(ParseException.class, () -> parser.parse("#unique_by_day('field[HOUR]')")).getCause();
+        assertTrue(exception.getMessage().contains(
+                        "unique_by_day does not support the advanced unique syntax, only a simple comma-delimited list of fields is allowed"));
+        
+        exception = assertThrows(ParseException.class, () -> parser.parse("#unique_by_hour('field[MINUTE>]')")).getCause();
+        assertTrue(exception.getMessage().contains(
+                        "unique_by_hour does not support the advanced unique syntax, only a simple comma-delimited list of fields is allowed"));
+        
+        exception = assertThrows(ParseException.class, () -> parser.parse("#unique_by_minute('field[HOUR]')")).getCause();
+        assertTrue(exception.getMessage().contains(
+                        "unique_by_minute does not support the advanced unique syntax, only a simple comma-delimited list of fields is allowed"));
     }
 }

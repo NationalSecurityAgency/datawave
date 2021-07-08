@@ -11,42 +11,10 @@ import java.util.ArrayList;
 /**
  * Function to return a unique result for every day for a given list of fields. This function is equivalent to {@code #unique(field[DAY])}.
  */
-public class UniqueByDay extends JexlQueryFunction {
+public class UniqueByDay extends UniqueByFunction {
     
     public UniqueByDay() {
         super(QueryFunctions.UNIQUE_BY_DAY_FUNCTION, new ArrayList<>());
-    }
-    
-    /**
-     * query options contain a list of fields. Cannot be the empty list.
-     * 
-     * @throws IllegalArgumentException
-     */
-    @Override
-    public void validate() throws IllegalArgumentException {
-        if (this.parameterList.isEmpty()) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));
-            throw new IllegalArgumentException(qe);
-        }
-    }
-    
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        
-        sb.append(QueryFunctions.QUERY_FUNCTION_NAMESPACE).append(':').append(this.name);
-        if (parameterList.isEmpty()) {
-            sb.append("()");
-        } else {
-            char separator = '(';
-            for (String parm : parameterList) {
-                sb.append(separator).append(escapeString(parm));
-                separator = ',';
-            }
-            sb.append(')');
-        }
-        
-        return sb.toString();
     }
     
     @Override
