@@ -37,7 +37,7 @@ public class UniqueFields implements Serializable {
      * <li>Given {@code field1[],field2[DAY]}, or {@code field1,field2[DAY]}, or {@code field1[ALL],field2[DAY]}, a {@link UniqueFields} will be returned where
      * field1 is added with {@link UniqueGranularity#ALL}, and field2 is added with {@link UniqueGranularity#TRUNCATE_TEMPORAL_TO_DAY}.</li>
      * </ul>
-     * 
+     *
      * @param string
      *            the string to parse
      * @return the parsed {@link UniqueFields}
@@ -55,95 +55,68 @@ public class UniqueFields implements Serializable {
         }
         
         UniqueFields uniqueFields = new UniqueFields();
-        
         final int finalIndex = string.length() - 1;
         int currentIndex = 0;
-        String field = null;
         
         while (currentIndex < finalIndex) {
-            if (field == null) {
-                int nextComma = string.indexOf(Constants.COMMA, currentIndex);
-                int nextStartBracket = string.indexOf(Constants.BRACKET_START, currentIndex);
-                if (nextComma == -1 && nextStartBracket == -1) {
-                    // If there is no comma or start bracket to be found, we have a trailing field at the end of the string with no specified granularity,
-                    // e.g.
-                    //
-                    // field1[ALL],field2[HOUR],field3
-                    //
-                    // Add the field with the ALL granularity.
-                    field = string.substring(currentIndex);
-                    if (!field.isEmpty()) {
-                        // Add the field only if its not blank. Ignore cases with consecutive trailing commas like field1[ALL],,
+            int nextComma = string.indexOf(Constants.COMMA, currentIndex);
+            int nextStartBracket = string.indexOf(Constants.BRACKET_START, currentIndex);
+            // If there is no comma or start bracket to be found, we have a trailing field at the end of the string with no specified granularity,
+            // e.g.
+            //
+            // field1[ALL],field2[HOUR],field3
+            //
+            // Add the field with the ALL granularity.
+            if (nextComma == -1 && nextStartBracket == -1) {
+                String field = string.substring(currentIndex);
+                if (!field.isEmpty()) {
+                    // Add the field only if its not blank. Ignore cases with consecutive trailing commas like field1[ALL],,
+                    uniqueFields.put(field, UniqueGranularity.ALL);
+                }
+                break; // There are no more fields to be parsed.
+            } else if (nextComma != -1 && (nextStartBracket == -1 || nextComma < nextStartBracket)) {
+                // If a comma is located before the next starting bracket, we have a field without a granularity located somewhere before the end of the
+                // string, e.g.
+                //
+                // field1,field2[HOUR,DAY]
+                // field1[MINUTE],field2,field3[HOUR,DAY]
+                // field1,field2
+                //
+                // Add the field with the ALL granularity.
+                String field = string.substring(currentIndex, nextComma);
+                if (!field.isEmpty()) {
+                    // Add the field only if its not blank. Ignore cases with consecutive commas like field1,,field2[DAY]
+                    uniqueFields.put(field, UniqueGranularity.ALL);
+                }
+                currentIndex = nextComma + 1; // Advance to the start of the next field.
+            } else {
+                // The current field has granularities defined within brackets, e.g.
+                //
+                // field[DAY,MINUTE]
+                //
+                // Parse and add each granularity for the field.
+                String field = string.substring(currentIndex, nextStartBracket);
+                int nextEndBracket = string.indexOf(Constants.BRACKET_END, currentIndex);
+                if (!field.isEmpty()) {
+                    String granularityList = string.substring((nextStartBracket + 1), nextEndBracket);
+                    // An empty granularity list, e.g. field[] is equivalent to field[ALL].
+                    if (granularityList.isEmpty()) {
                         uniqueFields.put(field, UniqueGranularity.ALL);
-                    }
-                    break; // There are no more fields to be parsed.
-                } else if (nextComma != -1 && (nextStartBracket == -1 || nextComma < nextStartBracket)) {
-                    // If a comma is located before the next starting bracket, we have a field without a granularity located somewhere before the end of the
-                    // string, e.g.
-                    //
-                    // field1,field2[HOUR,DAY]
-                    // field1[MINUTE],field2,field3[HOUR,DAY]
-                    //
-                    // Add the field with the ALL granularity.
-                    field = string.substring(currentIndex, nextComma);
-                    if (!field.isEmpty()) {
-                        // Add the field only if its not blank. Ignore cases with consecutive commas like field1,,field2[DAY]
-                        uniqueFields.put(field, UniqueGranularity.ALL);
-                    }
-                    currentIndex = nextComma + 1; // Advanced to the start of the next field.
-                    field = null; // Reset the field so that we attempt to find the next field in the following loop iteration.
-                } else {
-                    // The current field has the standard format, e.g. field[HOUR,DAY].
-                    field = string.substring(currentIndex, nextStartBracket);
-                    
-                    int nextEndBracket = string.indexOf(Constants.BRACKET_END, currentIndex);
-                    
-                    currentIndex = nextStartBracket + 1; // Advanced past the starting bracket
-                    if (currentIndex == nextEndBracket) {
-                        // If the current index is the next end bracket, we have the case of a string with an empty list of granularities, e.g. field[]
-                        // Add it with the ALL granularity.
-                        uniqueFields.put(field, UniqueGranularity.ALL);
-                        field = null;
-                        if (nextComma != -1) {
-                            currentIndex = nextComma + 1; // Advance to the start of the next field.
-                        } else {
-                            break; // There are no more fields to parse.
+                    } else {
+                        String[] granularities = StringUtils.split(granularityList, Constants.COMMA);
+                        for (String granularity : granularities) {
+                            uniqueFields.put(field, parseGranularity(granularity));
                         }
                     }
                 }
-            } else {
-                int nextEndBracket = string.indexOf(Constants.BRACKET_END, currentIndex);
-                int nextComma = string.indexOf(Constants.COMMA, currentIndex);
-                if (nextComma == -1) {
-                    // If there is no comma to be found, this is the last granularity in the list for the current field, and there are no more field
-                    // pairs, e.g. ALL in
-                    //
-                    // field[HOUR,ALL]
-                    uniqueFields.put(field, parseGranularity(string.substring(currentIndex, nextEndBracket)));
-                    break; // There are no more fields to be parsed.
-                } else {
-                    if (nextComma < nextEndBracket) {
-                        // If a comma was found before the next end bracket, there is at least one additional granularity in the list after the current
-                        // one, e.g.
-                        //
-                        // HOUR in field[HOUR,ALL],field2[DAY]
-                        uniqueFields.put(field, parseGranularity(string.substring(currentIndex, nextComma)));
-                        currentIndex = nextComma + 1; // Advance to the start of the next granularity.
-                    } else {
-                        // If an end bracket was found before the next comma, we are on the last granularity in the list, e.g.
-                        //
-                        // ALL in field[HOUR,ALL],field2[DAY]
-                        uniqueFields.put(field, parseGranularity(string.substring(currentIndex, nextEndBracket)));
-                        currentIndex = nextComma + 1; // Advance past the bracket and comma to the start of the next field.
-                        field = null; // This was the last granularity for the current field. Reset the field.
-                    }
-                }
+                currentIndex = nextEndBracket + 1; // Advance to the start of the next field.
             }
         }
         
         return uniqueFields;
     }
     
+    // Return the parsed granularity instance, or throw an exception if one could not be parsed.
     private static UniqueGranularity parseGranularity(String granularity) {
         try {
             return UniqueGranularity.of(granularity.toUpperCase());

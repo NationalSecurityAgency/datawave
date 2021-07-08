@@ -90,10 +90,10 @@ public class UniqueFieldsTest {
     }
     
     /**
-     * Verify that a single field with no specified value transformer is added with an ALL transformer.
+     * Verify that a single field with no specified value granularity is added with an ALL granularity.
      */
     @Test
-    public void testParsingSingleFieldWithoutValueTransformer() {
+    public void testParsingSingleFieldWithoutValueGranularity() {
         UniqueFields expected = new UniqueFields();
         expected.put("fieldA", UniqueGranularity.ALL);
         
@@ -102,7 +102,7 @@ public class UniqueFieldsTest {
     }
     
     @Test
-    public void testParsingMultipleFieldsWithoutValueTransformers() {
+    public void testParsingMultipleFieldsWithoutValueGranularities() {
         UniqueFields expected = new UniqueFields();
         expected.put("DEATH_DATE", UniqueGranularity.ALL);
         expected.put("$MAGIC", UniqueGranularity.ALL);
@@ -114,10 +114,10 @@ public class UniqueFieldsTest {
     }
     
     /**
-     * Verify that a single field with a value transformer is parsed correctly.
+     * Verify that a single field with a value granularity is parsed correctly.
      */
     @Test
-    public void testParsingSingleFieldWithValueTransformer() {
+    public void testParsingSingleFieldWithValueGranularity() {
         UniqueFields expected = new UniqueFields();
         expected.put("fieldA", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
         
@@ -126,10 +126,10 @@ public class UniqueFieldsTest {
     }
     
     /**
-     * Verify that a field with no transformer located at the start of a string with multiple fields is added with an ALL transformer.
+     * Verify that a field with no granularity located at the start of a string with multiple fields is added with an ALL granularity.
      */
     @Test
-    public void testParsingFieldWithNoTransformerAtStartOfMixedFields() {
+    public void testParsingFieldWithNoGranularityAtStartOfMixedFields() {
         UniqueFields expected = new UniqueFields();
         expected.put("fieldA", UniqueGranularity.ALL);
         expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
@@ -139,10 +139,10 @@ public class UniqueFieldsTest {
     }
     
     /**
-     * Verify that a field with no transformer located at the end of a string with multiple fields is added with an ALL transformer.
+     * Verify that a field with no granularity located at the end of a string with multiple fields is added with an ALL granularity.
      */
     @Test
-    public void testParsingFieldWithNoTransformerAtEndOfMixedFields() {
+    public void testParsingFieldWithNoGranularityAtEndOfMixedFields() {
         UniqueFields expected = new UniqueFields();
         expected.put("fieldA", UniqueGranularity.ALL);
         expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
@@ -152,10 +152,10 @@ public class UniqueFieldsTest {
     }
     
     /**
-     * Verify that a field with no transformer located between two different fields in a string with multiple fields is added with an ALL transformer.
+     * Verify that a field with no granularity located between two different fields in a string with multiple fields is added with an ALL granularity.
      */
     @Test
-    public void testParsingFieldWithNoTransformerInMiddleOfEndOfMixedFields() {
+    public void testParsingFieldWithNoGranularityInMiddleOfEndOfMixedFields() {
         UniqueFields expected = new UniqueFields();
         expected.put("fieldA", UniqueGranularity.ALL);
         expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
@@ -166,10 +166,10 @@ public class UniqueFieldsTest {
     }
     
     /**
-     * Verify that a single field with an empty transformer list is added with the ALL transformer.
+     * Verify that a single field with an empty granularity list is added with the ALL granularity.
      */
     @Test
-    public void testParsingSingleFieldWithEmptyTransformerList() {
+    public void testParsingSingleFieldWithEmptyGranularityList() {
         UniqueFields expected = new UniqueFields();
         expected.put("fieldA", UniqueGranularity.ALL);
         
@@ -178,10 +178,10 @@ public class UniqueFieldsTest {
     }
     
     /**
-     * Verify that a field with an empty transformer list located at the start of a string with multiple fields is added with the ALL transformer.
+     * Verify that a field with an empty granularity list located at the start of a string with multiple fields is added with the ALL granularity.
      */
     @Test
-    public void testParsingFieldWithEmptyTransformerListAtStartOfMixedFields() {
+    public void testParsingFieldWithEmptyGranularityListAtStartOfMixedFields() {
         UniqueFields expected = new UniqueFields();
         expected.put("fieldA", UniqueGranularity.ALL);
         expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
@@ -191,10 +191,10 @@ public class UniqueFieldsTest {
     }
     
     /**
-     * Verify that a field with an empty transformer list located at the end of a string with multiple fields is added with the ALL transformer.
+     * Verify that a field with an empty granularity list located at the end of a string with multiple fields is added with the ALL granularity.
      */
     @Test
-    public void testParsingFieldWithEmptyTransformerListAtEndOfMixedFields() {
+    public void testParsingFieldWithEmptyGranularityListAtEndOfMixedFields() {
         UniqueFields expected = new UniqueFields();
         expected.put("fieldA", UniqueGranularity.ALL);
         expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
@@ -204,10 +204,10 @@ public class UniqueFieldsTest {
     }
     
     /**
-     * Verify that a field with an empty transformer list located between two different fields is added with the ALL transformer.
+     * Verify that a field with an empty granularity list located between two different fields is added with the ALL granularity.
      */
     @Test
-    public void testParsingFieldWithEmptyTransformerListInMiddleOfMixedFields() {
+    public void testParsingFieldWithEmptyGranularityListInMiddleOfMixedFields() {
         UniqueFields expected = new UniqueFields();
         expected.put("fieldA", UniqueGranularity.ALL);
         expected.put("fieldB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE);
@@ -218,10 +218,10 @@ public class UniqueFieldsTest {
     }
     
     /**
-     * Verify that a string with a variety of fields and transformers is parsed correctly.
+     * Verify that a string with a variety of fields and granularities is parsed correctly.
      */
     @Test
-    public void testParsingMixedFieldsAndTransformers() {
+    public void testParsingMixedFieldsAndGranularities() {
         UniqueFields expected = new UniqueFields();
         expected.put("fieldA", UniqueGranularity.ALL);
         expected.put("fieldB", UniqueGranularity.ALL);
@@ -275,7 +275,7 @@ public class UniqueFieldsTest {
      * Verify that whitespace does not cause parsing to fail.
      */
     @Test
-    public void testParsingTransformersIsCaseInsensitive() {
+    public void testParsingGranularitiesIsCaseInsensitive() {
         UniqueFields expected = new UniqueFields();
         expected.put("fieldA", UniqueGranularity.ALL);
         expected.put("fieldB", UniqueGranularity.ALL);
@@ -367,7 +367,7 @@ public class UniqueFieldsTest {
     }
     
     /**
-     * Verify that passing in a set of values to be transformed for a particular field returns a set that contains the transformations for each transformer
+     * Verify that passing in a set of values to be transformed for a particular field returns a set that contains the transformations for each granularity
      * found for the field.
      */
     @Test
