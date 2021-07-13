@@ -1207,7 +1207,7 @@ public class RangeStreamTest {
         Range range3 = makeTestRange("20190315_49", "datatype1\u0000a.b.c");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
@@ -1249,7 +1249,7 @@ public class RangeStreamTest {
         Range range3 = makeTestRange("20190315_49", "datatype1\u0000a.b.c");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
@@ -1293,7 +1293,7 @@ public class RangeStreamTest {
         Range range6 = makeTestRange("20190317_1", "datatype1\u0000a.b.c");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3, range4, range5, range6);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
@@ -1340,7 +1340,7 @@ public class RangeStreamTest {
         expectedRanges.add(makeTestRange("20190315_33", "datatype1\u0000a.b.c"));
         expectedRanges.add(makeTestRange("20190317_1", "datatype1\u0000a.b.c"));
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
@@ -1384,7 +1384,7 @@ public class RangeStreamTest {
             }
         }
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
@@ -1429,7 +1429,7 @@ public class RangeStreamTest {
         Range range6 = makeTestRange("20190317_1", "datatype1\u0000a.b.c");
         Set<Range> expectedRanges = Sets.newHashSet(range1, range2, range3, range4, range5, range6);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
@@ -1473,7 +1473,7 @@ public class RangeStreamTest {
         // Range range2 = makeTestRange("20190315_51", "datatype1\u0000a.b.c");
         Set<Range> expectedRanges = Sets.newHashSet(range1);
         
-        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(config.getConnector(), 1), helper);
+        RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
         CloseableIterable<QueryPlan> queryPlans = rangeStream.streamPlans(script);
         assertEquals(IndexStream.StreamContext.PRESENT, rangeStream.context());
