@@ -258,8 +258,8 @@ public class QueryParametersImpl implements QueryParameters {
     }
     
     /**
-     * Convenience method to generate a Map<String,List<String>> from the specified arguments. If an argument is null, it's associated parameter name (key) will
-     * not be added to the map, which is why Integer and Boolean wrappers are used for greater flexibility.
+     * Convenience method to generate a {@code Map<String,List<String>>} from the specified arguments. If an argument is null, it's associated parameter name
+     * (key) will not be added to the map, which is why Integer and Boolean wrappers are used for greater flexibility.
      * 
      * The 'parameters' argument will not be parsed, so its internal elements will not be placed into the map. If non-null, the 'parameters' value will be
      * mapped directly to the QUERY_PARAMS key.
