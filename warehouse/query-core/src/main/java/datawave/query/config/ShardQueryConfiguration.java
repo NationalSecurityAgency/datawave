@@ -215,8 +215,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
     private Set<String> evaluationOnlyFields = new HashSet<>(0);
     
+    private boolean disableWhindexFieldMappings = false;
     private Set<String> whindexMappingFields = new HashSet<>();
-    private Map<String,Map<String,List<String>>> whindexFieldMappings = new HashMap<>();
+    private Map<String,Map<String,String>> whindexFieldMappings = new HashMap<>();
     
     private boolean sortedUIDs = true;
     // The fields in the the query that are tf fields
@@ -532,6 +533,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setActiveQueryLogNameSource(other.getActiveQueryLogNameSource());
         this.setEnforceUniqueConjunctionsWithinExpression(other.getEnforceUniqueConjunctionsWithinExpression());
         this.setEnforceUniqueDisjunctionsWithinExpression(other.getEnforceUniqueDisjunctionsWithinExpression());
+        this.setDisableWhindexFieldMappings(other.isDisableWhindexFieldMappings());
         this.setWhindexMappingFields(other.getWhindexMappingFields());
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
     }
@@ -2111,6 +2113,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
 
+    public boolean isDisableWhindexFieldMappings() {
+        return disableWhindexFieldMappings;
+    }
+    
+    public void setDisableWhindexFieldMappings(boolean disableWhindexFieldMappings) {
+        this.disableWhindexFieldMappings = disableWhindexFieldMappings;
+    }
+    
     public Set<String> getWhindexMappingFields() {
         return whindexMappingFields;
     }
@@ -2119,11 +2129,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.whindexMappingFields = whindexMappingFields;
     }
     
-    public Map<String,Map<String,List<String>>> getWhindexFieldMappings() {
+    public Map<String,Map<String,String>> getWhindexFieldMappings() {
         return whindexFieldMappings;
     }
     
-    public void setWhindexFieldMappings(Map<String,Map<String,List<String>>> whindexFieldMappings) {
+    public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         this.whindexFieldMappings = whindexFieldMappings;
     }
     
