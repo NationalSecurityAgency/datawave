@@ -970,7 +970,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Apply Whindex field mappings");
             
             // apply the value-specific field mappings for GeoWave functions
-            queryTree = WhindexVisitor.apply(queryTree, config.getWhindexMappingFields(), config.getWhindexFieldMappings(), metadataHelper);
+            queryTree = WhindexVisitor.apply(queryTree, config, settings.getBeginDate(), metadataHelper);
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after Whindex field mappings are applied:");
             }
