@@ -3,8 +3,11 @@ package datawave.query.jexl.functions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import datawave.data.normalizer.AbstractGeometryNormalizer;
+import datawave.data.normalizer.GeoNormalizer;
 import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.normalizer.PointNormalizer;
+import datawave.data.type.GeoType;
+import datawave.data.type.GeometryType;
 import datawave.data.type.PointType;
 import datawave.data.type.Type;
 import datawave.query.attributes.AttributeFactory;
@@ -39,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +55,10 @@ import java.util.stream.Collectors;
  *
  */
 public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
+    
+    private enum IndexType {
+        GEOWAVE_GEOMETRY, GEOWAVE_POINT, GEO_POINT, UNKNOWN
+    }
     
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
@@ -92,13 +100,28 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             return TRUE_NODE;
         }
         
-        private static boolean isOnlyPointType(String field, MetadataHelper helper) {
+        private static Set<IndexType> getIndexTypes(String field, MetadataHelper helper) {
+            Set<IndexType> dataTypes = new HashSet<>();
             try {
-                Set<Type<?>> dataTypes = helper.getDatatypesForField(field);
-                return !dataTypes.isEmpty() && dataTypes.stream().allMatch(type -> type instanceof PointType);
+                for (Type<?> type : helper.getDatatypesForField(field)) {
+                    dataTypes.add(typeToIndexType(type));
+                }
             } catch (IllegalAccessException | InstantiationException | TableNotFoundException e) {
-                return false;
+                LOGGER.debug("Unable to retrieve data types for field " + field);
             }
+            return dataTypes;
+        }
+        
+        private static IndexType typeToIndexType(Type<?> type) {
+            IndexType indexType = IndexType.UNKNOWN;
+            if (type instanceof GeometryType) {
+                indexType = IndexType.GEOWAVE_GEOMETRY;
+            } else if (type instanceof PointType) {
+                indexType = IndexType.GEOWAVE_POINT;
+            } else if (type instanceof GeoType) {
+                indexType = IndexType.GEO_POINT;
+            }
+            return indexType;
         }
         
         protected static JexlNode getIndexNode(JexlNode node, Geometry geometry, Envelope env, ShardQueryConfiguration config, MetadataHelper helper) {
@@ -144,16 +167,42 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         }
         
         protected static JexlNode getIndexNode(String fieldName, Geometry geometry, List<Envelope> envs, ShardQueryConfiguration config, MetadataHelper helper) {
-            Index index;
-            int maxExpansion;
-            if (isOnlyPointType(fieldName, helper)) {
-                index = PointNormalizer.index;
-                maxExpansion = config.getPointMaxExpansion();
-            } else {
-                index = GeometryNormalizer.index;
-                maxExpansion = config.getGeometryMaxExpansion();
+            List<JexlNode> indexNodes = new ArrayList<>();
+            Set<IndexType> indexTypes = getIndexTypes(fieldName, helper);
+            // generate ranges for geowave geometries and points
+            if (indexTypes.remove(IndexType.GEOWAVE_GEOMETRY)) {
+                // point index ranges are covered by geometry index
+                // ranges so we can remove GEOWAVE_POINT
+                indexTypes.remove(IndexType.GEOWAVE_POINT);
+                
+                indexNodes.add(generateGeoWaveRanges(fieldName, geometry, envs, config, GeometryNormalizer.index, config.getGeometryMaxExpansion()));
+            }
+            // generate ranges for geowave points
+            else if (indexTypes.remove(IndexType.GEOWAVE_POINT)) {
+                indexNodes.add(generateGeoWaveRanges(fieldName, geometry, envs, config, PointNormalizer.index, config.getPointMaxExpansion()));
             }
             
+            // generate ranges for geo points
+            if (indexTypes.remove(IndexType.GEO_POINT)) {
+                indexNodes.add(generateGeoRanges(fieldName, envs));
+            }
+            
+            JexlNode indexNode;
+            if (!indexNodes.isEmpty()) {
+                if (indexNodes.size() > 1) {
+                    indexNode = JexlNodeFactory.createOrNode(indexNodes);
+                } else {
+                    indexNode = indexNodes.get(0);
+                }
+            } else {
+                throw new IllegalArgumentException("Unable to create index node for geowave function.");
+            }
+            
+            return indexNode;
+        }
+        
+        protected static JexlNode generateGeoWaveRanges(String fieldName, Geometry geometry, List<Envelope> envs, ShardQueryConfiguration config, Index index,
+                        int maxExpansion) {
             Collection<ByteArrayRange> allRanges = new ArrayList<>();
             int maxRanges = maxExpansion / envs.size();
             for (Envelope env : envs) {
@@ -172,6 +221,35 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             
             // now link em up
             return JexlNodeFactory.createOrNode(rangeNodes);
+        }
+        
+        protected static JexlNode generateGeoRanges(String fieldName, List<Envelope> envs) {
+            JexlNode indexNode;
+            List<JexlNode> indexNodes = new ArrayList<>();
+            for (Envelope env : envs) {
+                // @formatter:off
+                indexNodes.add(
+                        GeoFunctionsDescriptor.GeoJexlArgumentDescriptor.getIndexNode(
+                                fieldName,
+                                env.getMinX(),
+                                env.getMaxX(),
+                                env.getMinY(),
+                                env.getMaxY(),
+                                GeoNormalizer.separator));
+                // @formatter:on
+            }
+            
+            if (!indexNodes.isEmpty()) {
+                if (indexNodes.size() > 1) {
+                    indexNode = JexlNodeFactory.createOrNode(indexNodes);
+                } else {
+                    indexNode = indexNodes.get(0);
+                }
+            } else {
+                throw new IllegalArgumentException("Failed to generate index nodes for geo field using geowave function.");
+            }
+            
+            return indexNode;
         }
         
         @Override
@@ -269,7 +347,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
     }
     
     private static class ByteArrayRangeToJexlNode implements com.google.common.base.Function<ByteArrayRange,JexlNode> {
-        private String fieldName;
+        private final String fieldName;
         
         public ByteArrayRangeToJexlNode(String fieldName) {
             this.fieldName = fieldName;
@@ -324,7 +402,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         // compute the envelope for the intersected geometries and the source geometry, and look for more intersections
         if (!intersected.isEmpty()) {
             intersected.add(srcGeom);
-            Geometry mergedGeom = new GeometryCollection(intersected.toArray(new Geometry[intersected.size()]), new GeometryFactory()).getEnvelope();
+            Geometry mergedGeom = new GeometryCollection(intersected.toArray(new Geometry[0]), new GeometryFactory()).getEnvelope();
             return findIntersectedGeoms(mergedGeom, geometries);
         }
         
@@ -339,7 +417,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             if (combineIntersectedGeometries(geometries, intersectedGeometries, maxEnvelopes))
                 return intersectedGeometries.stream().map(Geometry::getEnvelopeInternal).collect(Collectors.toList());
         }
-        return Arrays.asList(geom.getEnvelopeInternal());
+        return Collections.singletonList(geom.getEnvelopeInternal());
     }
     
 }
