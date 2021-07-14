@@ -79,11 +79,6 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         /** acceptAll indicates that all values should be returned */
         boolean acceptAll;
         
-        final Set<Type> seenTypes;
-        final Set<String> allNormalizedValues;
-        final Set<Matcher> allNormalizedPatterns;
-        final Set<LiteralRange> allNormalizedRanges;
-        
         public ExpressionFilter(AttributeFactory attributeFactory, String fieldName) {
             this.attributeFactory = attributeFactory;
             this.fieldName = fieldName;
@@ -93,11 +88,6 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
             this.nullValueFlag = false;
             this.nonNullValueSeen = false;
             this.acceptAll = false;
-            
-            this.seenTypes = new HashSet<>();
-            this.allNormalizedValues = new HashSet<>();
-            this.allNormalizedPatterns = new HashSet<>();
-            this.allNormalizedRanges = new HashSet<>();
         }
         
         public ExpressionFilter(ExpressionFilter other) {
@@ -111,11 +101,6 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
             this.nullValueFlag = other.nullValueFlag;
             this.nonNullValueSeen = other.nonNullValueSeen;
             this.acceptAll = other.acceptAll;
-            
-            this.seenTypes.addAll(other.seenTypes);
-            this.allNormalizedValues.addAll(other.allNormalizedValues);
-            this.allNormalizedPatterns.addAll(other.allNormalizedPatterns);
-            this.allNormalizedRanges.addAll(other.allNormalizedRanges);
         }
         
         @Override
@@ -161,7 +146,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
          *
          * @param key
          *            the key to evaluate, must be parsable by DatawaveKey
-         * @return true if the key should be kept in order to evaluate the query, false otherwise
+         * @return true if the key should be kept in order to evaluare the query, false otherwise
          */
         @Override
         public boolean apply(Key key) {
@@ -186,32 +171,70 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                 final Set<Type> types = EventDataQueryExpressionVisitor.extractTypes(attributeFactory, keyFieldName, keyFieldValue, key);
                 // always add the NoOpType to ensure the original value gets propagated through
                 types.add(new NoOpType(keyFieldValue));
-                
+                final Set<Matcher> normalizedPatternMatchers = new HashSet<>();
+                final Set<String> normalizedFieldValues = new HashSet<>();
+                final Set<LiteralRange> normalizedRanges = new HashSet<>();
                 for (Type type : types) {
+                    // normalize all patterns
+                    for (Pattern fieldPattern : fieldPatterns.keySet()) {
+                        try {
+                            String normalizedPattern = type.normalizeRegex(fieldPattern.toString());
+                            if (normalizedPattern != null) {
+                                normalizedPatternMatchers.add(Pattern.compile(normalizedPattern).matcher(EMPTY_STRING));
+                            } else {
+                                // can't normalize so add the original matcher
+                                normalizedPatternMatchers.add(fieldPatterns.get(fieldPattern));
+                            }
+                        } catch (Exception e) {
+                            // can't normalize this pattern, add the original matcher
+                            normalizedPatternMatchers.add(fieldPatterns.get(fieldPattern));
+                        }
+                    }
                     
-                    if (!seenTypes.contains(type)) {
-                        
-                        // Check for value normalization
-                        if (!fieldValues.isEmpty())
-                            allNormalizedValues.addAll(normalizeValuesForType(type));
-                        
-                        // Check for pattern normalization
-                        if (!fieldPatterns.isEmpty())
-                            allNormalizedPatterns.addAll(normalizePatternsForType(type));
-                        
-                        // Check for range normalization
-                        if (!fieldRanges.isEmpty())
-                            allNormalizedRanges.addAll(normalizeRangesForType(type));
-                        
-                        // Add this type to seen types.
-                        seenTypes.add(type);
+                    // normalize all values
+                    for (String fieldValue : fieldValues) {
+                        try {
+                            String normalizedValue = type.normalize(fieldValue);
+                            if (normalizedValue != null) {
+                                normalizedFieldValues.add(normalizedValue);
+                            } else {
+                                // can't normalize this value, add the original
+                                normalizedFieldValues.add(fieldValue);
+                            }
+                        } catch (Exception e) {
+                            // can't normalize this value, add the original
+                            normalizedFieldValues.add(fieldValue);
+                        }
+                    }
+                    
+                    // normalize all ranges
+                    for (LiteralRange range : fieldRanges) {
+                        try {
+                            LiteralRange normalizedRange = new LiteralRange(range.getFieldName(), range.getNodeOperand());
+                            
+                            String normalizedLower = type.normalize(range.getLower().toString());
+                            String normalizedUpper = type.normalize(range.getUpper().toString());
+                            
+                            if (normalizedLower != null && normalizedUpper != null) {
+                                normalizedRange.updateLower(normalizedLower, range.isLowerInclusive(), range.getLowerNode());
+                                normalizedRange.updateUpper(normalizedUpper, range.isUpperInclusive(), range.getUpperNode());
+                                
+                                normalizedRanges.add(normalizedRange);
+                            } else {
+                                // can't normalize the range values, add the original
+                                normalizedRanges.add(range);
+                            }
+                        } catch (Exception e) {
+                            // can't normalize the range values, add the original
+                            normalizedRanges.add(range);
+                        }
                     }
                 }
                 
                 Set<String> fieldValuesToEvaluate = EventDataQueryExpressionVisitor.extractNormalizedValues(types);
                 
                 for (String normalizedFieldValue : fieldValuesToEvaluate) {
-                    if (allNormalizedValues.contains(normalizedFieldValue)) {
+                    if (normalizedFieldValues.contains(normalizedFieldValue)) {
                         // field name matches and field value matches, keep.
                         if (update) {
                             nonNullValueSeen = true;
@@ -219,7 +242,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                         return true;
                     }
                     
-                    for (Matcher m : allNormalizedPatterns) {
+                    for (Matcher m : normalizedPatternMatchers) {
                         m.reset(normalizedFieldValue);
                         if (m.matches()) {
                             // field name matches and field pattern matches, keep.
@@ -230,7 +253,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                         }
                     }
                     
-                    for (LiteralRange r : allNormalizedRanges) {
+                    for (LiteralRange r : normalizedRanges) {
                         if (r.contains(normalizedFieldValue)) {
                             // field name patches and value is within range, keep.
                             if (update) {
@@ -255,94 +278,6 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
             // field name does not match any of the rules above, reject this key.
             return false;
             
-        }
-        
-        /**
-         * Normalize existing ranges for the provided type
-         *
-         * @param type
-         *            a data type
-         * @return set of ranges normalized for the type
-         */
-        private Set<LiteralRange> normalizeRangesForType(Type type) {
-            Set<LiteralRange> normalized = new HashSet<>(fieldRanges.size());
-            // normalize all ranges
-            for (LiteralRange range : fieldRanges) {
-                try {
-                    LiteralRange normalizedRange = new LiteralRange(range.getFieldName(), range.getNodeOperand());
-                    
-                    String normalizedLower = type.normalize(range.getLower().toString());
-                    String normalizedUpper = type.normalize(range.getUpper().toString());
-                    
-                    if (normalizedLower != null && normalizedUpper != null) {
-                        normalizedRange.updateLower(normalizedLower, range.isLowerInclusive(), range.getLowerNode());
-                        normalizedRange.updateUpper(normalizedUpper, range.isUpperInclusive(), range.getUpperNode());
-                        
-                        normalized.add(normalizedRange);
-                    } else {
-                        // can't normalize the range values, add the original
-                        normalized.add(range);
-                    }
-                } catch (Exception e) {
-                    // can't normalize the range values, add the original
-                    normalized.add(range);
-                }
-            }
-            return normalized;
-        }
-        
-        /**
-         * Normalize existing values for the provided type
-         *
-         * @param type
-         *            a data type
-         * @return a set of normalized values for the type
-         */
-        private Set<String> normalizeValuesForType(Type type) {
-            Set<String> normalized = new HashSet<>(fieldValues.size());
-            // normalize all values
-            for (String fieldValue : fieldValues) {
-                try {
-                    String normalizedValue = type.normalize(fieldValue);
-                    if (normalizedValue != null) {
-                        normalized.add(normalizedValue);
-                    } else {
-                        // can't normalize this value, add the original
-                        normalized.add(fieldValue);
-                    }
-                } catch (Exception e) {
-                    // can't normalize this value, add the original
-                    normalized.add(fieldValue);
-                }
-            }
-            return normalized;
-        }
-        
-        /**
-         * Normalize existing patterns for the provided type
-         *
-         * @param type
-         *            a data type
-         * @return a set of normalized patterns for the type
-         */
-        private Set<Matcher> normalizePatternsForType(Type type) {
-            Set<Matcher> normalized = new HashSet<>(fieldPatterns.keySet().size());
-            // normalize all patterns
-            for (Pattern fieldPattern : fieldPatterns.keySet()) {
-                try {
-                    String normalizedPattern = type.normalizeRegex(fieldPattern.toString());
-                    if (normalizedPattern != null) {
-                        normalized.add(Pattern.compile(normalizedPattern).matcher(EMPTY_STRING));
-                    } else {
-                        // can't normalize so add the original matcher
-                        normalized.add(fieldPatterns.get(fieldPattern));
-                    }
-                } catch (Exception e) {
-                    // can't normalize this pattern, add the original matcher
-                    normalized.add(fieldPatterns.get(fieldPattern));
-                }
-            }
-            return normalized;
         }
         
         /**
