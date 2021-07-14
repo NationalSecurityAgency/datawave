@@ -37,7 +37,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
-import org.springframework.util.LinkedMultiValueMap;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -106,7 +105,7 @@ public class Persister {
     public Query create(String userDN, List<String> dnList, SecurityMarking marking, String queryLogicName, QueryParameters qp,
                     MultivaluedMap<String,String> optionalQueryParameters) {
         Query q = responseObjectFactory.getQueryImpl();
-        q.initialize(userDN, dnList, queryLogicName, qp, new LinkedMultiValueMap<>(optionalQueryParameters));
+        q.initialize(userDN, dnList, queryLogicName, qp, optionalQueryParameters);
         q.setColumnVisibility(marking.toColumnVisibilityString());
         q.setUncaughtExceptionHandler(new QueryUncaughtExceptionHandler());
         Thread.currentThread().setUncaughtExceptionHandler(q.getUncaughtExceptionHandler());
