@@ -86,7 +86,7 @@ import datawave.query.jexl.visitors.UniqueExpressionTermsVisitor;
 import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
-import datawave.query.jexl.visitors.WhindexVisitor;
+import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
 import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
@@ -188,6 +188,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * Disables Whindex (value-specific) field mappings for GeoWave functions.
+     * 
+     * @see WhindexVisitor
      */
     protected boolean disableWhindexFieldMappings = false;
     

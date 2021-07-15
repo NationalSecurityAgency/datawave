@@ -18,6 +18,7 @@ import datawave.query.QueryParameters;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
@@ -215,6 +216,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
     private Set<String> evaluationOnlyFields = new HashSet<>(0);
     
+    /**
+     * Disables Whindex (value-specific) field mappings for GeoWave functions.
+     * 
+     * @see WhindexVisitor
+     */
     private boolean disableWhindexFieldMappings = false;
     private Set<String> whindexMappingFields = new HashSet<>();
     private Map<String,Map<String,String>> whindexFieldMappings = new HashMap<>();
