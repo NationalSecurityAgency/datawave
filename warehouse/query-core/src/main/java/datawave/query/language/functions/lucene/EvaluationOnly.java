@@ -10,6 +10,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 public class EvaluationOnly extends LuceneQueryFunction {
     private LuceneToJexlQueryParser parser;
     
