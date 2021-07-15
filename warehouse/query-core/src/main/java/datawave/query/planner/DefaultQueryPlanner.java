@@ -67,6 +67,7 @@ import datawave.query.jexl.visitors.PushFunctionsIntoExceededValueRanges;
 import datawave.query.jexl.visitors.PushdownLowSelectivityNodesVisitor;
 import datawave.query.jexl.visitors.PushdownMissingIndexRangeNodesVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
+import datawave.query.jexl.visitors.QueryFieldsVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
@@ -438,7 +439,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         if (!config.isGeneratePlanOnly()) {
             while (null == cfg) {
-                cfg = getQueryIterator(metadataHelper, config, settings, "", false);
+                cfg = getQueryIterator(metadataHelper, config, settings, newQueryString, false);
             }
             configureIterator(config, cfg, newQueryString, isFullTable);
         }
@@ -507,7 +508,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFieldsAsString(), true);
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
-        addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
+        Set<String> queryFields = QueryFieldsVisitor.parseQueryFields(newQueryString, metadataHelper);
+        addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(filterFields(config.getQueryTermFrequencyFields(), queryFields)), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), true);
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
         addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
@@ -1762,10 +1764,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     protected Future<IteratorSetting> loadQueryIterator(final MetadataHelper metadataHelper, final ShardQueryConfiguration config, final Query settings,
-                    final String queryString, final Boolean isFullTable) throws DatawaveQueryException {
+                    final String queryString, final Set<String> queryFields, final Boolean isFullTable) throws DatawaveQueryException {
         
         return builderThread.submit(() -> {
             // VersioningIterator is typically set at 20 on the table
+                        
                         IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 40, "query", getQueryIteratorClass());
                         
                         addOption(cfg, Constants.RETURN_TYPE, config.getReturnType().toString(), false);
@@ -1818,13 +1821,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         configureAdditionalOptions(config, cfg);
                         
                         try {
-                            addOption(cfg, QueryOptions.INDEX_ONLY_FIELDS,
-                                            QueryOptions.buildFieldStringFromSet(metadataHelper.getIndexOnlyFields(config.getDatatypeFilter())), true);
+                            addOption(cfg, QueryOptions.INDEX_ONLY_FIELDS, QueryOptions.buildFieldStringFromSet(filterFields(
+                                            metadataHelper.getIndexOnlyFields(config.getDatatypeFilter()), queryFields)), true);
                             addOption(cfg, QueryOptions.COMPOSITE_FIELDS,
                                             QueryOptions.buildFieldStringFromSet(metadataHelper.getCompositeToFieldMap(config.getDatatypeFilter()).keySet()),
                                             true);
-                            addOption(cfg, QueryOptions.INDEXED_FIELDS,
-                                            QueryOptions.buildFieldStringFromSet(metadataHelper.getIndexedFields(config.getDatatypeFilter())), true);
+                            addOption(cfg, QueryOptions.INDEXED_FIELDS, QueryOptions.buildFieldStringFromSet(filterFields(
+                                            metadataHelper.getIndexedFields(config.getDatatypeFilter()), queryFields)), true);
                         } catch (TableNotFoundException e) {
                             QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
                             throw new DatawaveQueryException(qe);
@@ -1869,6 +1872,38 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     /**
+     * Extract fields from a query string
+     *
+     * @param query
+     *            the query represented as a string
+     * @return a set of all fields in the query
+     */
+    private Set<String> getQueryFields(String query) {
+        Set<String> queryFields = new HashSet<>();
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(query)) {
+            queryFields = QueryFieldsVisitor.parseQueryFields(query, metadataHelper);
+        }
+        return queryFields;
+    }
+    
+    /**
+     * Filter a set of fields by the fields present in the query
+     * 
+     * @param fieldsToFilter
+     *            the set of fields to filter
+     * @param queryFields
+     *            set of fields present in the query
+     * @return the intersection of query fields and an arbitrary set of fields
+     */
+    private Set<String> filterFields(Set<String> fieldsToFilter, Set<String> queryFields) {
+        if (queryFields.isEmpty()) {
+            return fieldsToFilter;
+        } else {
+            return Sets.intersection(queryFields, fieldsToFilter);
+        }
+    }
+    
+    /**
      * Get the list of ivarator cache dirs, randomizing the order (while respecting priority) so that the tservers spread out the disk usage.
      */
     private List<IvaratorCacheDirConfig> getShuffledIvaratoCacheDirConfigs(ShardQueryConfiguration config) {
@@ -1890,8 +1925,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     protected IteratorSetting getQueryIterator(MetadataHelper metadataHelper, ShardQueryConfiguration config, Query settings, String queryString,
                     Boolean isFullTable) throws DatawaveQueryException {
-        if (null == settingFuture)
-            settingFuture = loadQueryIterator(metadataHelper, config, settings, queryString, isFullTable);
+        if (null == settingFuture) {
+            Set<String> queryFields = getQueryFields(queryString);
+            settingFuture = loadQueryIterator(metadataHelper, config, settings, queryString, queryFields, isFullTable);
+        }
         if (settingFuture.isDone())
             try {
                 return settingFuture.get();

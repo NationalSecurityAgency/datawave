@@ -61,7 +61,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
     private Multimap<Type,String> fatalErrors = HashMultimap.create();
     private Multimap<Type,IgnorableErrorHelperInterface> ignorableErrorHelpers = HashMultimap.create();
     
-    private long eventDate = 0;
+    private long eventDate = Long.MIN_VALUE;
     private Type dataType = null;
     private UID uid = null;
     private UIDBuilder<UID> uidBuilder;
@@ -708,7 +708,7 @@ public class RawRecordContainerImpl implements Writable, Configurable, RawRecord
      * Resets state for re-use.
      */
     public void clear() {
-        eventDate = 0;
+        eventDate = Long.MIN_VALUE;
         dataType = null;
         uid = null;
         errors.clear();

@@ -30,6 +30,7 @@ import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
 
+@Deprecated
 public class LuceneQueryParser implements QueryParser {
     private static Logger log = Logger.getLogger(LuceneQueryParser.class.getName());
     private Map<String,String> filters = new HashMap<>();

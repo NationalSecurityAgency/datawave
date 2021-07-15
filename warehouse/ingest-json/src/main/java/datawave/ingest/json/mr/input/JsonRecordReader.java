@@ -230,7 +230,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
         
         event.setRawData(currentJsonObj.toString().getBytes());
         
-        if (0 == event.getDate()) {
+        if (Long.MIN_VALUE == event.getDate()) {
             event.setDate(System.currentTimeMillis());
         }
         
