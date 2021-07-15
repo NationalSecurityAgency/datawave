@@ -20,9 +20,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class IntersectionTest {
@@ -251,10 +254,9 @@ public class IntersectionTest {
         assertEquals(ii.second().uids.iterator().next().uid, "a.b.c");
         assertEquals(ii.second().uids.iterator().next().type, IndexMatchType.AND);
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(ii.second().uids.iterator().next().getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(ii.second().uids.iterator().next().getNode())));
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -273,11 +275,11 @@ public class IntersectionTest {
         Intersection i = new Intersection(toMerge, new IndexInfo());
         assertFalse(i.hasNext());
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
-    public void testIntersection_uidAndinfinite() throws ParseException {
+    public void testIntersection_uidAndInfinite() throws ParseException {
         // A && B && C
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("A == '1' && B == '2' && C == '3'");
         
@@ -316,13 +318,13 @@ public class IntersectionTest {
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode())));
         m = all.get(1);
         assertEquals(m.uid, "a.b.z");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode())));
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -364,13 +366,13 @@ public class IntersectionTest {
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
         assertEquals(m.type, IndexMatchType.OR);
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode())));
         m = all.get(1);
         assertEquals(m.uid, "a.b.z");
         assertEquals(m.type, IndexMatchType.OR);
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode())));
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -416,13 +418,13 @@ public class IntersectionTest {
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode())));
         m = all.get(1);
         assertEquals(m.uid, "a.b.z");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode())));
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -473,25 +475,21 @@ public class IntersectionTest {
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3'"), JexlNodeFactory.createScript(m.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3'"), JexlNodeFactory.createScript(m.getNode())));
         m = all.get(1);
         assertEquals(m.uid, "a.b.z");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3'"), JexlNodeFactory.createScript(m.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3'"), JexlNodeFactory.createScript(m.getNode())));
         m = all.get(2);
         assertEquals(m.uid, "x.y.z");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("B == '2' && C == '3'"), JexlNodeFactory.createScript(m.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("B == '2' && C == '3'"), JexlNodeFactory.createScript(m.getNode())));
         m = all.get(3);
         assertEquals(m.uid, "x.y.z.1");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("B == '2' && C == '3'"), JexlNodeFactory.createScript(m.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("B == '2' && C == '3'"), JexlNodeFactory.createScript(m.getNode())));
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -541,9 +539,9 @@ public class IntersectionTest {
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(m.getNode())));
         
-        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(script, JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -604,12 +602,11 @@ public class IntersectionTest {
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3' && G == '7'"), JexlNodeFactory.createScript(m.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3' && G == '7'"), JexlNodeFactory.createScript(m.getNode())));
         
         assertTrue(TreeEqualityVisitor.isEqual(
                         JexlASTHelper.parseJexlQuery("G =='7' && ((A == '1' && C == '3') || (B == '2' && C == '3') || (D == '4' && F == '6'))"),
-                        JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+                        JexlNodeFactory.createScript(i.currentNode())));
     }
     
     @Test
@@ -673,16 +670,402 @@ public class IntersectionTest {
         m = all.get(0);
         assertEquals(m.uid, "a.b.c");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3' && G == '7'"), JexlNodeFactory.createScript(m.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("A == '1' && C == '3' && G == '7'"), JexlNodeFactory.createScript(m.getNode())));
         m = all.get(1);
         assertEquals(m.uid, "x.y.z.1");
         assertEquals(m.type, IndexMatchType.AND);
-        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("B == '2' && C == '3' && G == '7'"), JexlNodeFactory.createScript(m.getNode()),
-                        new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(JexlASTHelper.parseJexlQuery("B == '2' && C == '3' && G == '7'"), JexlNodeFactory.createScript(m.getNode())));
         
         assertTrue(TreeEqualityVisitor.isEqual(
                         JexlASTHelper.parseJexlQuery("G =='7' && ((A == '1' && C == '3') || (B == '2' && C == '3') || (D == '4' && F == '6'))"),
-                        JexlNodeFactory.createScript(i.currentNode()), new TreeEqualityVisitor.Reason()));
+                        JexlNodeFactory.createScript(i.currentNode())));
+    }
+    
+    @Test
+    public void testSeekBeyondEndOfIntersection() throws ParseException {
+        // A && B && C
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("A == '1' && B == '2' && C == '3'");
+        
+        // A - uids
+        ScannerStream s1 = buildScannerStream("20090101_1", "A", "1", Arrays.asList("a.b.c"));
+        
+        // B - uids
+        ScannerStream s2 = buildScannerStream("20090101_1", "B", "2", Arrays.asList("a.b.c", "a.b.c.d"));
+        
+        // C - uids
+        ScannerStream s3 = buildScannerStream("20090101_1", "C", "3", Arrays.asList("a.b.c", "az"));
+        
+        List<? extends IndexStream> toMerge = Arrays.asList(s1, s2, s3);
+        
+        Intersection i = new Intersection(toMerge, new IndexInfo());
+        assertTrue(i.hasNext());
+        
+        assertNull(i.seek("20091231_1"));
+        assertFalse(i.hasNext());
+        assertNull(i.next());
+    }
+    
+    // A && B
+    @Test
+    public void testIntersectionOfShards_seekBeforeStreamStart() {
+        // Seek to a day range before the IndexStream
+        Intersection intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190301_0", intersection.seek("20190202"));
+        assertEquals("20190301_0", intersection.next().first());
+        
+        // Seek to a day-underscore range before the IndexStream
+        intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190301_0", intersection.seek("20190202_"));
+        assertEquals("20190301_0", intersection.next().first());
+        
+        // Seek to a shard range before the IndexStream
+        intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190301_0", intersection.seek("20190202_0"));
+        assertEquals("20190301_0", intersection.next().first());
+    }
+    
+    // A && B
+    @Test
+    public void testIntersectionOfShards_seekToStreamStart() {
+        // Seek to a day range at the start of the IndexStream
+        Intersection intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190301_0", intersection.seek("20190301"));
+        assertEquals("20190301_0", intersection.next().first());
+        
+        // Seek to a day-underscore range at the start of the IndexStream
+        intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190301_0", intersection.seek("20190301_"));
+        assertEquals("20190301_0", intersection.next().first());
+        
+        // Seek to a shard range before at the start of the IndexStream
+        intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190301_0", intersection.seek("20190301_0"));
+        assertEquals("20190301_0", intersection.next().first());
+    }
+    
+    // A && B
+    @Test
+    public void testIntersectionOfShards_seekToMiddleOfStream() {
+        // Seek to a day range in the middle of the IndexStream
+        Intersection intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190303_0", intersection.seek("20190303"));
+        assertEquals("20190303_0", intersection.next().first());
+        
+        // Seek to a day-underscore range in the middle of the IndexStream
+        intersection = buildIntersectionOfShards();
+        assertEquals("20190303_0", intersection.seek("20190303_"));
+        assertEquals("20190303_0", intersection.next().first());
+        
+        // Seek to a shard range in the middle of the IndexStream
+        intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190303_3", intersection.seek("20190303_3"));
+        assertEquals("20190303_3", intersection.next().first());
+    }
+    
+    // A && B
+    @Test
+    public void testIntersectionOfShards_seekToNonExistentMiddleOfStream() {
+        // Seek to a non-existent day range in the middle of the IndexStream
+        Intersection intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190307_0", intersection.seek("20190305"));
+        assertEquals("20190307_0", intersection.next().first());
+        
+        // Seek to a non-existent day-underscore range to the middle of the IndexStream
+        intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190307_0", intersection.seek("20190305_"));
+        assertEquals("20190307_0", intersection.next().first());
+        
+        // Seek to a non-existent shard range to the middle of of the IndexStream
+        intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190307_0", intersection.seek("20190305_0"));
+        assertEquals("20190307_0", intersection.next().first());
+    }
+    
+    // A && B
+    @Test
+    public void testIntersectionOfShards_seekToEndOfStream() {
+        // Seek to the last day range in this IndexStream
+        Intersection intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190309_0", intersection.seek("20190309"));
+        assertEquals("20190309_0", intersection.next().first());
+        
+        // Seek to the last day-underscore range in this IndexStream
+        intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190309_0", intersection.seek("20190309_"));
+        assertEquals("20190309_0", intersection.next().first());
+        
+        // Seek to the last shard range in this IndexStream
+        intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190309_9", intersection.seek("20190309_9"));
+        assertEquals("20190309_9", intersection.next().first());
+    }
+    
+    // A && B
+    @Test
+    public void testIntersectionOfShards_seekBeyondEndOfStream() {
+        // Seek to a day range beyond the end of this IndexStream
+        Intersection intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertNull(intersection.seek("20190310"));
+        assertFalse(intersection.hasNext());
+        assertNull(intersection.next());
+        
+        // Seek to a day-underscore range beyond the end of this IndexStream
+        intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertNull(intersection.seek("20190310_"));
+        assertFalse(intersection.hasNext());
+        assertNull(intersection.next());
+        
+        // Seek to a shard range beyond the end of this IndexStream
+        intersection = buildIntersectionOfShards();
+        assertTrue(intersection.hasNext());
+        assertNull(intersection.seek("20190309_99"));
+        assertFalse(intersection.hasNext());
+        assertNull(intersection.next());
+    }
+    
+    // A && B
+    @Test
+    public void testIntersectionOfDays_seekBeforeStreamStart() {
+        // Seek to a day range before the IndexStream
+        Intersection intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190301", intersection.seek("20190202"));
+        assertEquals("20190301", intersection.next().first());
+        
+        // Seek to a day-underscore range before the IndexStream
+        intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190301", intersection.seek("20190202_"));
+        assertEquals("20190301", intersection.next().first());
+        
+        // Seek to a shard range before the IndexStream
+        intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190301", intersection.seek("20190202_0"));
+        assertEquals("20190301", intersection.next().first());
+    }
+    
+    // A && B
+    @Test
+    public void testIntersectionOfDays_seekToStreamStart() {
+        // Seek to a day range at the start of the IndexStream
+        Intersection intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190301", intersection.seek("20190301"));
+        assertEquals("20190301", intersection.next().first());
+        
+        // Seek to a day-underscore range at the start of the IndexStream
+        intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190301", intersection.seek("20190301_"));
+        assertEquals("20190301", intersection.next().first());
+        
+        // Seek to a shard range before at the start of the IndexStream
+        intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190301_0", intersection.seek("20190301_0"));
+        assertEquals("20190301_0", intersection.next().first());
+    }
+    
+    // A && B
+    @Test
+    public void testIntersectionOfDays_seekToMiddleOfStream() {
+        // Seek to a day range in the middle of the IndexStream
+        Intersection intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190303", intersection.seek("20190303"));
+        assertEquals("20190303", intersection.next().first());
+        
+        // Seek to a day-underscore range in the middle of the IndexStream
+        intersection = buildIntersectionOfDays();
+        assertEquals("20190303", intersection.seek("20190303_"));
+        assertEquals("20190303", intersection.next().first());
+        
+        // Seek to a shard range in the middle of the IndexStream
+        intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190303_3", intersection.seek("20190303_3"));
+        assertEquals("20190303_3", intersection.next().first());
+    }
+    
+    // A && B
+    @Test
+    public void testIntersectionOfDays_seekToNonExistentMiddleOfStream() {
+        // Seek to a non-existent day range in the middle of the IndexStream
+        Intersection intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190307", intersection.seek("20190305"));
+        assertEquals("20190307", intersection.next().first());
+        
+        // Seek to a non-existent day-underscore range to the middle of the IndexStream
+        intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190307", intersection.seek("20190305_"));
+        assertEquals("20190307", intersection.next().first());
+        
+        // Seek to a non-existent shard range to the middle of of the IndexStream
+        intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190307", intersection.seek("20190305_0"));
+        assertEquals("20190307", intersection.next().first());
+    }
+    
+    // A && B
+    @Test
+    public void testIntersectionOfDays_seekToEndOfStream() {
+        // Seek to the last day range in this IndexStream
+        Intersection intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190309", intersection.seek("20190309"));
+        assertEquals("20190309", intersection.next().first());
+        
+        // Seek to the last day-underscore range in this IndexStream
+        intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190309", intersection.seek("20190309_"));
+        assertEquals("20190309", intersection.next().first());
+        
+        // Seek to the last shard range in this IndexStream
+        intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertEquals("20190309_9", intersection.seek("20190309_9"));
+        assertEquals("20190309_9", intersection.next().first());
+    }
+    
+    // A && B
+    @Test
+    public void testIntersectionOfDays_seekBeyondEndOfStream() {
+        // Seek to a day range beyond the end of this IndexStream
+        Intersection intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertNull(intersection.seek("20190310"));
+        assertFalse(intersection.hasNext());
+        assertNull(intersection.next());
+        
+        // Seek to a day-underscore range beyond the end of this IndexStream
+        intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertNull(intersection.seek("20190310_"));
+        assertFalse(intersection.hasNext());
+        assertNull(intersection.next());
+        
+        // Seek to a shard range beyond the end of this IndexStream
+        intersection = buildIntersectionOfDays();
+        assertTrue(intersection.hasNext());
+        assertNull(intersection.seek("20190310_0"));
+        assertFalse(intersection.hasNext());
+        assertNull(intersection.next());
+    }
+    
+    @Test
+    public void testTopElementMatch_topIsShard() {
+        Intersection intersection = buildIntersectionOfShards();
+        
+        // Match on same shard
+        assertEquals("20190301_0", intersection.isTopElementAMatch("20190301_0"));
+        
+        // Match on same day
+        assertEquals("20190301_0", intersection.isTopElementAMatch("20190301"));
+        
+        // No match on same day, different shard
+        assertNull(intersection.isTopElementAMatch("20190301_9"));
+        
+        // No match on different day
+        assertNull(intersection.isTopElementAMatch("20190302"));
+    }
+    
+    @Test
+    public void testTopElementMatch_topIsDay() {
+        Intersection intersection = buildIntersectionOfDays();
+        
+        // Match on shard within the day
+        assertEquals("20190301_0", intersection.isTopElementAMatch("20190301_0"));
+        
+        // Match on same day
+        assertEquals("20190301", intersection.isTopElementAMatch("20190301"));
+        
+        // Match on different shard within day
+        assertEquals("20190301_9", intersection.isTopElementAMatch("20190301_9"));
+        
+        // No match on different day
+        assertNull(intersection.isTopElementAMatch("20190302"));
+    }
+    
+    private Intersection buildIntersectionOfShards() {
+        List<String> ignoredDays = Lists.newArrayList("20190304", "20190305", "20190306");
+        SortedSet<String> shards = buildShards(ignoredDays);
+        
+        ScannerStream s1 = buildFullScannerStream(shards, "A", "1");
+        ScannerStream s2 = buildFullScannerStream(shards, "B", "2");
+        
+        return new Intersection(Arrays.asList(s1, s2), new IndexInfo());
+    }
+    
+    private Intersection buildIntersectionOfDays() {
+        List<String> ignoredDays = Lists.newArrayList("20190304", "20190305", "20190306");
+        SortedSet<String> shards = buildDays(ignoredDays);
+        
+        ScannerStream s1 = buildFullScannerStream(shards, "A", "1");
+        ScannerStream s2 = buildFullScannerStream(shards, "B", "2");
+        
+        return new Intersection(Arrays.asList(s1, s2), new IndexInfo());
+    }
+    
+    // Build a set of shards for the first 9 days in march, with the option to ignore days.
+    private SortedSet<String> buildShards(List<String> ignoredDays) {
+        SortedSet<String> shards = new TreeSet<>();
+        for (int ii = 1; ii < 10; ii++) {
+            String day = "2019030" + ii;
+            if (ignoredDays.contains(day)) {
+                continue;
+            }
+            for (int jj = 0; jj < 20; jj++) {
+                shards.add(day + "_" + jj);
+            }
+        }
+        return shards;
+    }
+    
+    // Build a set of day shards for the first 9 days in march, with the option to ignore days.
+    private SortedSet<String> buildDays(List<String> ignoredDays) {
+        SortedSet<String> shards = new TreeSet<>();
+        for (int ii = 1; ii < 10; ii++) {
+            String day = "2019030" + ii;
+            if (ignoredDays.contains(day)) {
+                continue;
+            }
+            shards.add(day);
+        }
+        return shards;
+    }
+    
+    // Build a ScannerStream specifically for testing the ability to seek through the stream.
+    private ScannerStream buildFullScannerStream(SortedSet<String> shards, String field, String value) {
+        JexlNode node = JexlNodeFactory.buildEQNode(field, value);
+        
+        List<Tuple2<String,IndexInfo>> elements = new ArrayList<>();
+        for (String shard : shards) {
+            IndexInfo info = new IndexInfo(-1);
+            info.applyNode(node);
+            elements.add(new Tuple2<>(shard, info));
+        }
+        
+        return ScannerStream.variable(elements.iterator(), node);
     }
 }

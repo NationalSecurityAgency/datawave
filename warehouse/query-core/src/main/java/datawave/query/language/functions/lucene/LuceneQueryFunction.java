@@ -8,6 +8,7 @@ import datawave.query.search.WildcardFieldedFilter;
 
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
+@Deprecated
 public abstract class LuceneQueryFunction implements QueryFunction {
     
     protected String name = null;
