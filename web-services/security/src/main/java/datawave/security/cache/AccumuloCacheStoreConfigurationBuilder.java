@@ -12,6 +12,8 @@ import static datawave.security.cache.AccumuloCacheStoreConfiguration.MAX_MEMORY
 import static datawave.security.cache.AccumuloCacheStoreConfiguration.AGEOFF_TTL;
 import static datawave.security.cache.AccumuloCacheStoreConfiguration.AGEOFF_PRIORITY;
 
+import static org.infinispan.configuration.cache.AbstractStoreConfiguration.SHARED;
+
 import java.util.List;
 
 import org.infinispan.commons.configuration.Builder;
@@ -87,7 +89,10 @@ public class AccumuloCacheStoreConfigurationBuilder extends
     
     @Override
     public AccumuloCacheStoreConfiguration create() {
-        return new AccumuloCacheStoreConfiguration(attributes.protect(), async.create(), singletonStore.create());
+        // Singleton store config removed in infinispan 10.x
+        // See https://infinispan.org/docs/stable/titles/upgrading/upgrading.html#persistence_changes
+        attributes.attribute(SHARED).set(true);
+        return new AccumuloCacheStoreConfiguration(attributes.protect(), async.create());
     }
     
     @Override
