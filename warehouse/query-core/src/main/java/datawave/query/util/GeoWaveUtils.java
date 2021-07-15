@@ -11,6 +11,7 @@ import org.locationtech.jts.geom.Polygon;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -95,7 +96,7 @@ public class GeoWaveUtils {
         
         List<ByteArrayRange> optimizedRanges = new ArrayList<>();
         for (ByteArrayRange byteArrayRange : byteArrayRanges) {
-            if (!byteArrayRange.isSingleValue()) {
+            if (!Arrays.equals(byteArrayRange.getStart(), byteArrayRange.getEnd())) {
                 optimizedRanges.addAll(optimizeByteArrayRange(queryGeometry, byteArrayRange, rangeSplitThreshold, maxRangeOverlap, longBuffer));
             } else {
                 optimizedRanges.add(byteArrayRange);

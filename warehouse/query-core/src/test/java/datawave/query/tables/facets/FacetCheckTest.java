@@ -244,13 +244,12 @@ public class FacetCheckTest {
     
     private void assertScriptEquality(ASTJexlScript actual, String expected) throws ParseException {
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
-        boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actual, reason);
-        if (!equal) {
+        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedScript, actual);
+        if (!comparison.isEqual()) {
             log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
             log.error("Actual " + PrintingVisitor.formattedQueryString(actual));
         }
-        assertTrue(reason.reason, equal);
+        assertTrue(comparison.getReason(), comparison.isEqual());
     }
     
     private void assertLineage(JexlNode node) {
