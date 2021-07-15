@@ -386,9 +386,8 @@ public class MultiRFileOutputFormatterTest {
                 tableConfigs = new HashMap<>();
                 tableConfigs.put(TableName.SHARD, null);
                 tableConfigs.put(TableName.SHARD_INDEX, null);
-                tableIds = new HashMap<>();
-                tableIds.put(TableName.SHARD, "1");
-                tableIds.put(TableName.SHARD_INDEX, "2");
+                tableIds = new String[] {TableName.SHARD, TableName.SHARD_INDEX};
+                
             }
             
             @Override
