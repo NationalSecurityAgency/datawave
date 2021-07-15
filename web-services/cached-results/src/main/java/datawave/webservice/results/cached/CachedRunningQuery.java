@@ -1,5 +1,7 @@
 package datawave.webservice.results.cached;
 
+import datawave.microservice.query.cachedresults.CacheableLogic;
+import datawave.microservice.query.cachedresults.CacheableQueryRowReader;
 import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.logic.QueryLogicTransformer;
@@ -8,9 +10,7 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
-import datawave.webservice.query.cachedresults.CacheableQueryRowReader;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.metric.BaseQueryMetric;

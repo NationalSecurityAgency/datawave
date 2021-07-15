@@ -17,6 +17,8 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryExceptionType;
+import datawave.webservice.query.result.event.DefaultEvent;
+import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import org.apache.http.NameValuePair;
@@ -938,7 +940,8 @@ public class QueryServiceTest {
     // no results
     // executor task rejection
     // more
-    @Ignore
+    // @Ignore
+    @DirtiesContext
     @Test
     public void testNextSuccess() throws Exception {
         ProxiedUserDetails authUser = createUserDetails();
@@ -956,7 +959,15 @@ public class QueryServiceTest {
         // pump enough results into the queue to trigger a complete page
         int pageSize = queryStorageCache.getQueryStatus(queryId).getQuery().getPagesize();
         for (int resultId = 0; resultId < pageSize; resultId++) {
-            queryQueueManager.sendMessage(queryId, new Result(Integer.toString(resultId), new String[] {"this", "that"}));
+            DefaultEvent[] events = new DefaultEvent[1];
+            events[0] = new DefaultEvent();
+            long currentTime = System.currentTimeMillis();
+            // @formatter:off
+            events[0].setFields(Arrays.asList(
+                    new DefaultField("LOKI", "ALL", currentTime, "ALLIGATOR"),
+                    new DefaultField("LOKI", "ALL", currentTime, "CLASSIC")));
+            // @formatter:on
+            queryQueueManager.sendMessage(queryId, new Result(Integer.toString(resultId), events));
         }
         
         // the response should come back right away

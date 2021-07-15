@@ -2,15 +2,15 @@ package datawave.query.transformer;
 
 import datawave.data.hash.UID;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.cachedresults.CacheableLogic;
 import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.microservice.query.logic.BaseQueryLogicTransformer;
 import datawave.query.Constants;
 import datawave.query.tables.shard.FieldIndexCountQueryLogic.Tuple;
 import datawave.util.TextUtil;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;

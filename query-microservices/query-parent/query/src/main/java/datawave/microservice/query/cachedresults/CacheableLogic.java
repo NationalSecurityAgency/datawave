@@ -1,8 +1,9 @@
-package datawave.webservice.query.cachedresults;
+package datawave.microservice.query.cachedresults;
+
+import datawave.webservice.query.cachedresults.CacheableQueryRow;
+import datawave.webservice.query.exception.QueryException;
 
 import java.util.List;
-
-import datawave.webservice.query.exception.QueryException;
 
 public interface CacheableLogic {
     

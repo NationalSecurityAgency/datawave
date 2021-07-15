@@ -1,5 +1,10 @@
-package datawave.webservice.query.cachedresults;
+package datawave.microservice.query.cachedresults;
 
+import datawave.marking.MarkingFunctions;
+import datawave.webservice.query.cachedresults.CacheableQueryRow;
+import org.apache.log4j.Logger;
+
+import javax.sql.rowset.CachedRowSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -7,12 +12,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
-import javax.sql.rowset.CachedRowSet;
-
-import datawave.marking.MarkingFunctions;
-
-import org.apache.log4j.Logger;
 
 public class CacheableQueryRowReader {
     

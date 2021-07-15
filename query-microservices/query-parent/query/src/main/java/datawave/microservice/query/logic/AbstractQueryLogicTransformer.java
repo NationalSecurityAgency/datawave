@@ -1,6 +1,5 @@
-package datawave.webservice.query.logic;
+package datawave.microservice.query.logic;
 
-import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.result.BaseQueryResponse;
 

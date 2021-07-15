@@ -85,7 +85,8 @@ warehouse:
     maxEvaluationPipelines: 16
     maxPipelineCachedResults: 16
     hdfsSiteConfigURLs: 'file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml'
-    ivaratorFstHdfsBaseURIs: 'hdfs:///IvaratorCache'
+    ivaratorFstHdfsBaseURIs:
+      - basePathURI: 'hdfs:///IvaratorCache'
     ivaratorCacheBufferSize: 10000
     ivaratorMaxOpenFiles: 100
     ivaratorCacheScanPersistThreshold: 100000
