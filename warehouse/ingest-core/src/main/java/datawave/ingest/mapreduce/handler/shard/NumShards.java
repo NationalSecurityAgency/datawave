@@ -79,7 +79,7 @@ public class NumShards {
         minNumShards = this.defaultNumShards;
         
         // populating cache with default numShards
-        milliToNumShardsCache.put(0L, this.defaultNumShards);
+        milliToNumShardsCache.put(Long.MIN_VALUE, this.defaultNumShards);
         yyyyMMddToNumShardsCache.put("", this.defaultNumShards);
         
         shardCount++;

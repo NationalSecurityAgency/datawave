@@ -1,6 +1,7 @@
 package datawave.query.util;
 
 import datawave.data.normalizer.GeometryNormalizer;
+import datawave.data.normalizer.PointNormalizer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.locationtech.geowave.core.geotime.util.GeometryUtils;
@@ -19,6 +20,22 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class GeoWaveUtilsTest {
+    
+    @Test
+    public void optimizeSinglePointTest() throws Exception {
+        String wktString = "POINT(12.34567890123 9.87654321098)";
+        Geometry geom = new WKTReader().read(wktString);
+        
+        List<ByteArrayRange> byteArrayRanges = new ArrayList<>();
+        for (MultiDimensionalNumericData range : GeometryUtils.basicConstraintsFromEnvelope(geom.getEnvelopeInternal()).getIndexConstraints(
+                        PointNormalizer.index)) {
+            byteArrayRanges.addAll(PointNormalizer.index.getIndexStrategy().getQueryRanges(range, 32).getCompositeQueryRanges());
+        }
+        
+        List<ByteArrayRange> optimizedByteArrayRanges = GeoWaveUtils.optimizeByteArrayRanges(geom, byteArrayRanges, 16, 0.25);
+        
+        Assert.assertEquals(1, optimizedByteArrayRanges.size());
+    }
     
     @Test
     public void optimizeByteArrayRangesTest() throws Exception {
