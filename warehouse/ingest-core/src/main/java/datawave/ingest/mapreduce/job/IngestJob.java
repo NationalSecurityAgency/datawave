@@ -104,7 +104,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Observer;
 import java.util.Set;
 
@@ -307,7 +306,7 @@ public class IngestJob implements Tool {
         }
         
         try {
-            tableConfigUtil.serializeAggregatorConfiguration(cbHelper, conf, log);
+            tableConfigUtil.serializeConfiguration(cbHelper, conf, log);
         } catch (TableNotFoundException tnf) {
             log.error("One or more configured DataWave tables are missing in Accumulo. If this is a new system or if new tables have recently been introduced, run a job using the '-createTables' flag before attempting to ingest more data",
                             tnf);
