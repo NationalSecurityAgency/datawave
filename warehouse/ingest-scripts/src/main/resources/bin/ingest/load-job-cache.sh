@@ -11,8 +11,8 @@ THIS_SCRIPT=`eval $READLINK_CMD $0`
 THIS_DIR="${THIS_SCRIPT%/*}"
 cd $THIS_DIR
 
-. ../ingest/job-cache-env.sh
 . ../ingest/ingest-env.sh
+. ../ingest/job-cache-env.sh
 
 #read from the datawave metadata table to create the edge key version file and save it locally with the rest of the config files
 ./create-edgekey-version-cache.sh --update ../../config
