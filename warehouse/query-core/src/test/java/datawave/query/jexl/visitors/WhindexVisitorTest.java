@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.util.MockMetadataHelper;
 import datawave.util.time.DateHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;

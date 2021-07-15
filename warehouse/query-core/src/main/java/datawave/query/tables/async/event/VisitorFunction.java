@@ -17,7 +17,7 @@ import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
-import datawave.query.jexl.visitors.WhindexVisitor;
+import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;

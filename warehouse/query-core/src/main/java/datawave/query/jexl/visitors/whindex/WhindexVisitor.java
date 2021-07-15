@@ -1,4 +1,4 @@
-package datawave.query.jexl.visitors;
+package datawave.query.jexl.visitors.whindex;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
@@ -10,11 +10,14 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
 import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
+import datawave.query.jexl.visitors.RebuildingVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.util.MetadataHelper;
 import datawave.util.time.DateHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -25,7 +28,6 @@ import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
@@ -44,13 +46,26 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * The 'WhindexVisitor' is used to replace wide-scoped geowave fields with value-specific, narrow-scoped geowave fields where appropriate.
+ * <p>
+ * For example, assume you have a wide-scope geowave field (e.g. GEOWAVE_FIELD), a narrow-scope geowave field(s) (e.g. MARS_GEOWAVE_FIELD or
+ * EARTH_GEOWAVE_FIELD), and a separate field whose value is specific to each narrow-scoped field (e.g. PLANET == 'MARS' or PLANET == 'EARTH').
+ * <p>
+ * If a query comes in with the following form: geowave:intersects(GEOWAVE_FIELD, '...some wkt...) &amp;&amp; PLANET == 'MARS'
+ * <p>
+ * The WhindexVisitor would turn that into this: geowave:intersects(MARS_GEOWAVE_FIELD, '...some wkt')
+ * <p>
+ * The update function uses the value-specific geowave field, and drops the anded term (since all of the data indexed under the value-specific geowave field
+ * already satisfies that term).
+ *
+ */
 public class WhindexVisitor extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(WhindexVisitor.class);
     
@@ -112,7 +127,7 @@ public class WhindexVisitor extends RebuildingVisitor {
     @SuppressWarnings("unchecked")
     private static <T extends JexlNode> T apply(T script, WhindexVisitor visitor) {
         // if there are any geowave functions with multiple fields, split them up into individual functions
-        script = SplitGeoWaveFunctionVisitor.apply(script);
+        script = SplitGeoWaveFunctionVisitor.apply(script, visitor.metadataHelper);
         
         // need to flatten the tree so i get all and nodes at the same level
         script = TreeFlatteningRebuildingVisitor.flatten(script);
@@ -302,7 +317,7 @@ public class WhindexVisitor extends RebuildingVisitor {
                         leafNodesToDistribute.removeAll(whindexTerms.stream().map(x -> JexlASTHelper.dereference(x.getMappableNode()))
                                         .collect(Collectors.toList()));
                         
-                        rebuiltNode = DistributeAndedNodes.distributeAndedNode(rebuiltNode, leafNodesToDistribute, jexlNodeToWhindexMap);
+                        rebuiltNode = DistributeAndedNodesVisitor.distributeAndedNode(rebuiltNode, leafNodesToDistribute, jexlNodeToWhindexMap);
                     }
                     
                     return rebuiltNode;
@@ -883,7 +898,7 @@ public class WhindexVisitor extends RebuildingVisitor {
      *            The nodes to 'and' together
      * @return An 'and' node comprised of the jexlNodes, or if a single jexlNode was passed in, we simply return that node.
      */
-    private static JexlNode createUnwrappedAndNode(Collection<JexlNode> jexlNodes) {
+    static JexlNode createUnwrappedAndNode(Collection<JexlNode> jexlNodes) {
         if (jexlNodes != null && !jexlNodes.isEmpty()) {
             if (jexlNodes.size() == 1)
                 return jexlNodes.stream().findFirst().get();
@@ -901,7 +916,7 @@ public class WhindexVisitor extends RebuildingVisitor {
      *            The nodes to 'or' together
      * @return An 'or' node comprised of the jexlNodes, or if a single jexlNode was passed in, we simply return that node.
      */
-    private static JexlNode createUnwrappedOrNode(Collection<JexlNode> jexlNodes) {
+    static JexlNode createUnwrappedOrNode(Collection<JexlNode> jexlNodes) {
         if (jexlNodes != null && !jexlNodes.isEmpty()) {
             if (jexlNodes.size() == 1)
                 return jexlNodes.stream().findFirst().get();
@@ -934,372 +949,5 @@ public class WhindexVisitor extends RebuildingVisitor {
             }
         }
         return value;
-    }
-    
-    private static class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
-        @SuppressWarnings("unchecked")
-        public static <T extends JexlNode> T apply(T script) {
-            SplitGeoWaveFunctionVisitor visitor = new SplitGeoWaveFunctionVisitor();
-            return (T) script.jjtAccept(visitor, null);
-        }
-        
-        @Override
-        public Object visit(ASTFunctionNode node, Object data) {
-            JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
-            if (descriptor instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {
-                List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
-                if (identifiers.size() > 1) {
-                    List<JexlNode> functionNodes = new ArrayList<>();
-                    
-                    FunctionJexlNodeVisitor functionVisitor = new FunctionJexlNodeVisitor();
-                    node.jjtAccept(functionVisitor, null);
-                    
-                    for (ASTIdentifier identifier : identifiers) {
-                        List<JexlNode> args = new ArrayList<>();
-                        for (JexlNode arg : functionVisitor.args()) {
-                            args.add(RebuildingVisitor.copy(arg));
-                        }
-                        args.set(0, RebuildingVisitor.copy(identifier));
-                        
-                        functionNodes.add(JexlNodes.makeRef(FunctionJexlNodeVisitor.makeFunctionFrom(functionVisitor.namespace(), functionVisitor.name(),
-                                        args.toArray(new JexlNode[0]))));
-                    }
-                    return JexlNodeFactory.createUnwrappedOrNode(functionNodes);
-                }
-            }
-            return super.visit(node, data);
-        }
-    }
-    
-    /**
-     * This is a visitor which is used to fully distribute anded nodes into a given node. The visitor will only distribute the anded nodes to those descendant
-     * nodes within the tree with which they are not already anded (via a whindex).
-     *
-     */
-    private static class DistributeAndedNodes extends RebuildingVisitor {
-        private JexlNode initialNode = null;
-        private final List<JexlNode> andedNodes;
-        private final Map<JexlNode,WhindexTerm> whindexNodes;
-        
-        private static class DistAndData {
-            Set<JexlNode> usedAndedNodes = new HashSet<>();
-        }
-        
-        private DistributeAndedNodes(List<JexlNode> andedNodes, Map<JexlNode,WhindexTerm> whindexNodes) {
-            this.andedNodes = andedNodes;
-            this.whindexNodes = whindexNodes;
-        }
-        
-        /**
-         * Distribute the anded node, making sure to 'and' it in at the highest possible level of the tree. This version takes a map of whindex nodes to their
-         * component nodes, so that we can better check whindex nodes to see if they already include the anded node. That is to say, we will not 'and' a whindex
-         * node with one of it's component nodes.
-         *
-         * @param script
-         *            The node that we will be distributing the anded nodes into
-         * @param andedNodes
-         *            The nodes which we will be distributing into the root node
-         * @param whindexNodes
-         *            A map of generated whindex jexl nodes to the whindex term used to create that node
-         * @return An updated script with the anded nodes distributed throughout
-         */
-        public static JexlNode distributeAndedNode(JexlNode script, List<JexlNode> andedNodes, Map<JexlNode,WhindexTerm> whindexNodes) {
-            DistributeAndedNodes visitor = new DistributeAndedNodes(andedNodes, whindexNodes);
-            DistributeAndedNodes.DistAndData foundData = new DistributeAndedNodes.DistAndData();
-            JexlNode resultNode = (JexlNode) script.jjtAccept(visitor, foundData);
-            
-            if (!foundData.usedAndedNodes.containsAll(andedNodes)) {
-                List<JexlNode> nodes = andedNodes.stream().filter(node -> !foundData.usedAndedNodes.contains(node)).map(RebuildingVisitor::copy)
-                                .collect(Collectors.toList());
-                nodes.add(resultNode);
-                
-                return createUnwrappedAndNode(nodes);
-            }
-            
-            return resultNode;
-        }
-        
-        /**
-         * Checks each of the child nodes, and determines how the anded nodes should be applied.
-         *
-         * @param node
-         *            The node that we will be distributing the anded nodes into
-         * @param data
-         *            The nodes which we will be distributing into the root node
-         * @return An updated script with the anded nodes distributed throughout
-         */
-        @Override
-        public Object visit(ASTOrNode node, Object data) {
-            DistributeAndedNodes.DistAndData parentData = (DistributeAndedNodes.DistAndData) data;
-            
-            if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
-                initialNode = node;
-            
-            // if this node is one of the anded nodes, or a whindex
-            // comprised of one of the anded nodes, halt recursion
-            List<JexlNode> usedAndedNodes = usesAndedNodes(node);
-            if (!usedAndedNodes.isEmpty()) {
-                parentData.usedAndedNodes.addAll(usedAndedNodes);
-                return node;
-            }
-            
-            // don't descend into whindex nodes, and don't copy them
-            // this logic is dependent upon identifying whindex nodes by their address
-            if (whindexNodes.containsKey(node)) {
-                return node;
-            }
-            
-            boolean rebuildNode = false;
-            
-            // check each child node
-            List<JexlNode> nodesMissingEverything = new ArrayList<>();
-            List<JexlNode> nodesWithEverything = new ArrayList<>();
-            Map<JexlNode,List<JexlNode>> nodesMissingSomething = new LinkedHashMap<>();
-            for (JexlNode child : JexlNodes.children(node)) {
-                DistributeAndedNodes.DistAndData foundData = new DistributeAndedNodes.DistAndData();
-                JexlNode processedChild = (JexlNode) child.jjtAccept(this, foundData);
-                
-                if (processedChild != child)
-                    rebuildNode = true;
-                
-                if (foundData.usedAndedNodes.isEmpty())
-                    nodesMissingEverything.add(processedChild);
-                else if (!foundData.usedAndedNodes.containsAll(andedNodes)) {
-                    List<JexlNode> missingAndedNodes = new ArrayList<>(andedNodes);
-                    missingAndedNodes.removeAll(foundData.usedAndedNodes);
-                    nodesMissingSomething.put(processedChild, missingAndedNodes);
-                } else
-                    nodesWithEverything.add(processedChild);
-            }
-            
-            // if none of the children are missing anything, we're done
-            if (nodesWithEverything.size() == node.jjtGetNumChildren()) {
-                parentData.usedAndedNodes.addAll(andedNodes);
-                if (rebuildNode)
-                    return createUnwrappedOrNode(nodesWithEverything);
-                else
-                    return node;
-            }
-            // if all of the children are missing everything, we're done
-            // note: we shouldn't need to rebuild the or node because if the children
-            // are missing everything, it implies that the children were left as-is
-            else if (nodesMissingEverything.size() == node.jjtGetNumChildren()) {
-                return node;
-            }
-            
-            // if we got here, then there are some nodes missing SOMETHING, and we have work to do
-            List<JexlNode> rebuiltChildren = new ArrayList<>();
-            
-            // for children missing at least one andedNode -> go through each one, and make a new call to 'distributeAndedNode' passing only the missing
-            // andedNodes
-            for (Map.Entry<JexlNode,List<JexlNode>> childEntry : nodesMissingSomething.entrySet())
-                rebuiltChildren.add(DistributeAndedNodes.distributeAndedNode(childEntry.getKey(), childEntry.getValue(), whindexNodes));
-            
-            // for children missing everything -> 'or' them together, then 'and' them with the full set of andedNodes
-            List<JexlNode> nodeList = andedNodes.stream().map(RebuildingVisitor::copy).collect(Collectors.toList());
-            
-            if (!nodesMissingEverything.isEmpty()) {
-                nodeList.add(createUnwrappedOrNode(nodesMissingEverything));
-            }
-            
-            rebuiltChildren.add(createUnwrappedAndNode(nodeList));
-            
-            // for children with everything -> keep those as-is
-            rebuiltChildren.addAll(nodesWithEverything);
-            
-            parentData.usedAndedNodes.addAll(andedNodes);
-            
-            return createUnwrappedOrNode(rebuiltChildren);
-        }
-        
-        /**
-         * Checks each of the child nodes, and determines how the anded nodes should be applied.
-         *
-         * @param node
-         *            The node that we will be distributing the anded nodes into
-         * @param data
-         *            The nodes which we will be distributing into the root node
-         * @return An updated script with the anded nodes distributed throughout
-         */
-        @Override
-        public Object visit(ASTAndNode node, Object data) {
-            DistributeAndedNodes.DistAndData parentData = (DistributeAndedNodes.DistAndData) data;
-            
-            if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
-                initialNode = node;
-            
-            // if this node is one of the anded nodes, or a whindex
-            // comprised of one of the anded nodes, halt recursion
-            List<JexlNode> usedAndedNodes = usesAndedNodes(node);
-            if (!usedAndedNodes.isEmpty()) {
-                parentData.usedAndedNodes.addAll(usedAndedNodes);
-                return node;
-            }
-            
-            // don't descend into whindex nodes, and don't copy them
-            // this logic is dependent upon identifying whindex nodes by their address
-            if (whindexNodes.containsKey(node)) {
-                return node;
-            }
-            
-            // check each child node to see how many of the desired andedNodes are present
-            List<JexlNode> rebuiltChildren = new ArrayList<>();
-            for (JexlNode child : JexlNodes.children(node)) {
-                DistributeAndedNodes.DistAndData foundData = new DistributeAndedNodes.DistAndData();
-                rebuiltChildren.add((JexlNode) child.jjtAccept(this, foundData));
-                
-                parentData.usedAndedNodes.addAll(foundData.usedAndedNodes);
-            }
-            
-            // are some anded nodes missing, and is this the initial node?
-            if (!parentData.usedAndedNodes.containsAll(andedNodes) && node.equals(initialNode)) {
-                // 'and' with the missing anded nodes, and return
-                List<JexlNode> nodes = andedNodes.stream().filter(andedNode -> !parentData.usedAndedNodes.contains(andedNode)).map(RebuildingVisitor::copy)
-                                .collect(Collectors.toList());
-                nodes.add(node);
-                
-                // this is probably unnecessary, but to be safe, let's set it
-                parentData.usedAndedNodes.addAll(andedNodes);
-                
-                return createUnwrappedAndNode(nodes);
-            }
-            
-            return createUnwrappedAndNode(rebuiltChildren);
-        }
-        
-        @Override
-        public Object visit(ASTEQNode node, Object data) {
-            visitInternal(node, data);
-            return node;
-        }
-        
-        @Override
-        public Object visit(ASTNENode node, Object data) {
-            visitInternal(node, data);
-            return node;
-        }
-        
-        @Override
-        public Object visit(ASTLTNode node, Object data) {
-            visitInternal(node, data);
-            return node;
-        }
-        
-        @Override
-        public Object visit(ASTGTNode node, Object data) {
-            visitInternal(node, data);
-            return node;
-        }
-        
-        @Override
-        public Object visit(ASTLENode node, Object data) {
-            visitInternal(node, data);
-            return node;
-        }
-        
-        @Override
-        public Object visit(ASTGENode node, Object data) {
-            visitInternal(node, data);
-            return node;
-        }
-        
-        @Override
-        public Object visit(ASTERNode node, Object data) {
-            visitInternal(node, data);
-            return node;
-        }
-        
-        @Override
-        public Object visit(ASTNRNode node, Object data) {
-            visitInternal(node, data);
-            return node;
-        }
-        
-        @Override
-        public Object visit(ASTFunctionNode node, Object data) {
-            visitInternal(node, data);
-            return node;
-        }
-        
-        @Override
-        public Object visit(ASTReference node, Object data) {
-            visitInternal(node, data);
-            return super.visit(node, data);
-        }
-        
-        @Override
-        public Object visit(ASTReferenceExpression node, Object data) {
-            visitInternal(node, data);
-            return super.visit(node, data);
-        }
-        
-        /**
-         * Used to determine whether this is a whindex node, and if so, which of the anded nodes does it have as components
-         *
-         * @param node
-         *            The node to check for anded components
-         * @return A list of anded jexl nodes used to create the whindex node
-         */
-        private List<JexlNode> usesAndedNodes(JexlNode node) {
-            List<JexlNode> usedAndedNodes = new ArrayList<>();
-            for (JexlNode andedNode : andedNodes)
-                if (whindexNodes.containsKey(node) && whindexNodes.get(node).contains(andedNode))
-                    usedAndedNodes.add(andedNode);
-            return usedAndedNodes;
-        }
-        
-        private void visitInternal(JexlNode node, Object data) {
-            if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
-                initialNode = node;
-            
-            DistributeAndedNodes.DistAndData parentData = (DistributeAndedNodes.DistAndData) data;
-            parentData.usedAndedNodes.addAll(usesAndedNodes(node));
-        }
-    }
-    
-    private static class WhindexTerm {
-        
-        private final JexlNode fieldValueNode;
-        private final JexlNode mappableNode;
-        private final String newFieldName;
-        
-        public WhindexTerm(JexlNode fieldValueNode, JexlNode mappableNode, String newFieldName) {
-            this.fieldValueNode = fieldValueNode;
-            this.mappableNode = mappableNode;
-            this.newFieldName = newFieldName;
-        }
-        
-        public JexlNode getFieldValueNode() {
-            return fieldValueNode;
-        }
-        
-        public JexlNode getMappableNode() {
-            return mappableNode;
-        }
-        
-        public JexlNode createWhindexNode() {
-            JexlNode copiedNode = RebuildingVisitor.copy(mappableNode);
-            List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(copiedNode);
-            Set<String> fieldNames = new HashSet<>();
-            
-            identifiers.forEach(x -> fieldNames.add(JexlASTHelper.getIdentifier(x)));
-            
-            if (fieldNames.size() == 1) {
-                for (ASTIdentifier identifier : identifiers) {
-                    JexlNodes.replaceChild(identifier.jjtGetParent(), identifier, JexlNodes.makeIdentifierWithImage(newFieldName));
-                }
-            } else {
-                throw new RuntimeException("Cannot create a Whindex term using multiple identifiers.");
-            }
-            
-            return copiedNode;
-        }
-        
-        public boolean contains(JexlNode node) {
-            // @formatter:off
-            return fieldValueNode == node || JexlASTHelper.dereference(fieldValueNode) == node ||
-                    mappableNode == node || JexlASTHelper.dereference(mappableNode) == node;
-            // @formatter:on
-        }
     }
 }
