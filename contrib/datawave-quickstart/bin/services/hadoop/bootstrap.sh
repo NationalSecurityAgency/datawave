@@ -56,7 +56,7 @@ yarn.nodemanager.log-dirs ${DW_CLOUD_DATA}/hadoop/yarn/log
 yarn.nodemanager.aux-services mapreduce_shuffle
 yarn.nodemanager.pmem-check-enabled false
 yarn.nodemanager.vmem-check-enabled false
-yarn.nodemanager.resource.memory-mb 4096
+yarn.nodemanager.resource.memory-mb 6144
 yarn.app.mapreduce.am.resource.mb 1024
 yarn.log.server.url http://localhost:8070/jobhistory/logs"
 
