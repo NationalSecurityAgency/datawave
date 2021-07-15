@@ -64,6 +64,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     protected Map<Text,Boolean> useAggregators = new HashMap<>();
     protected HashSet<Text> noTSDedupTables = new HashSet<>();
     protected HashSet<Text> TSDedupTables = new HashSet<>();
+    TableConfigurationUtil tcu;
     
     private static final Logger log = Logger.getLogger(AggregatingReducer.class);
     
@@ -87,7 +88,8 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         /**
          * Grab the tables that do not require timestamp deduping, but require aggregating
          */
-        
+        tcu = new TableConfigurationUtil(conf);
+        tcu.setTableItersPrioritiesAndOpts();
         String[] tables = conf.getStrings(INGEST_VALUE_DEDUP_AGGREGATION_KEY);
         if (tables != null) {
             for (String table : tables) {
@@ -120,7 +122,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     private void configureReductionInterface(Configuration conf) {
         // Build a map of table => sorted sets of aggregator options (in increasing priority order for
         // each set of aggregator options).
-        
+        // TODO tableconfigutil parseIteratorConfigs?
         configureAggregators(conf);
         
         configureCombiners(conf);
@@ -128,50 +130,29 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     }
     
     protected void configureCombiners(Configuration conf) {
-        Map<String,TreeMap<Integer,Map<String,String>>> allOptions = new HashMap<>();
-        Pattern p = Pattern.compile("combiner" + PROPERTY_REGEX_FOR_AGGREGATOR);
-        for (Entry<String,String> prop : conf) {
-            Matcher m = p.matcher(prop.getKey());
-            if (m.matches()) {
-                String tableName = m.group(1);
-                Integer priority = Integer.valueOf(m.group(2));
-                String option = m.group(3);
-                
-                TreeMap<Integer,Map<String,String>> priorityOptions = allOptions.get(tableName);
-                if (priorityOptions == null) {
-                    priorityOptions = new TreeMap<>();
-                    allOptions.put(tableName, priorityOptions);
-                }
-                
-                Map<String,String> options = priorityOptions.get(priority);
-                if (options == null) {
-                    options = new HashMap<>();
-                    priorityOptions.put(priority, options);
-                }
-                
-                options.put(option, prop.getValue());
-            }
-        }
         
         // Now construct the aggregator classes that are specified in the configuration, and add them
         // to a map of table => priority list of column=>class mappings. Users can just call the
         // method getAggregator with a key, and get back a list of aggregators that should be applied
         // to the corresponding value. The return list aggregators should be applied in order.
-        Set<String> tables = TableConfigurationUtil.getTables(conf);
+        Set<String> tables = tcu.getTables(conf);
         for (String table : tables) {
             
-            TreeMap<Integer,Map<String,String>> priorityOptions = allOptions.get(table);
+            Map<Integer,Map<String,String>> priorityOptions = tcu.getTableCombiners(table);
             if (priorityOptions != null) {
                 SortedSet<CustomColumnToClassMapping> list = Sets.newTreeSet();
                 for (Integer priority : priorityOptions.keySet()) {
                     Map<String,String> options = Maps.newHashMap();
                     
                     options.putAll(priorityOptions.get(priority));
+                    log.info(table + " " + priority + " " + options.entrySet());
                     
                     String clazz = options.get("iterClazz");
                     
                     if (null == clazz) {
-                        throw new RuntimeException("Unable to instantiate combiner class. Config item 'iterClazz' not present ");
+                        // throw new RuntimeException("Unable to instantiate combiner class. Config item 'iterClazz' not present " + priority + " "
+                        // + options.entrySet());
+                        continue;
                     }
                     
                     options.remove("iterClazz");
@@ -215,30 +196,6 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     }
     
     protected void configureAggregators(Configuration conf) {
-        Map<String,TreeMap<Integer,Map<String,String>>> allOptions = new HashMap<>();
-        Pattern p = Pattern.compile("aggregator" + PROPERTY_REGEX_FOR_AGGREGATOR);
-        for (Entry<String,String> prop : conf) {
-            Matcher m = p.matcher(prop.getKey());
-            if (m.matches()) {
-                String tableName = m.group(1);
-                Integer priority = Integer.valueOf(m.group(2));
-                String option = m.group(3);
-                
-                TreeMap<Integer,Map<String,String>> priorityOptions = allOptions.get(tableName);
-                if (priorityOptions == null) {
-                    priorityOptions = new TreeMap<>();
-                    allOptions.put(tableName, priorityOptions);
-                }
-                
-                Map<String,String> options = priorityOptions.get(priority);
-                if (options == null) {
-                    options = new HashMap<>();
-                    priorityOptions.put(priority, options);
-                }
-                
-                options.put(option, prop.getValue());
-            }
-        }
         
         // Now construct the aggregator classes that are specified in the configuration, and add them
         // to a map of table => priority list of column=>class mappings. Users can just call the
@@ -247,7 +204,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         Set<String> tables = TableConfigurationUtil.getTables(conf);
         for (String table : tables) {
             
-            TreeMap<Integer,Map<String,String>> priorityOptions = allOptions.get(table);
+            Map<Integer,Map<String,String>> priorityOptions = tcu.getTableAggregators(table);
             if (priorityOptions != null) {
                 SortedSet<CustomColumnToClassMapping> list = Sets.newTreeSet();
                 for (Entry<Integer,Map<String,String>> entry : priorityOptions.entrySet()) {

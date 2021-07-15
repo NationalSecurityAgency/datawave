@@ -20,28 +20,40 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
+
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorUtil;
+
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class TableConfigurationUtil {
     
     protected static final Logger log = Logger.getLogger(TableConfigurationUtil.class.getName());
     private String[] tableNames;
     private AccumuloHelper accumuloHelper;
+    private TreeMap<String,Map<Integer,Map<String,String>>> combiners = new TreeMap<>();
+    private TreeMap<String,Map<Integer,Map<String,String>>> aggregators = new TreeMap<>();
+    Configuration conf;
+    private TableConfigCache cache;
     
     public TableConfigurationUtil(Configuration conf) {
         registerTableNames(conf);
         accumuloHelper = new AccumuloHelper();
         accumuloHelper.setup(conf);
+        this.conf = conf;
+        
     }
     
     public String[] getTableNames() {
@@ -89,6 +101,7 @@ public class TableConfigurationUtil {
                     try {
                         handler = handlerClass.newInstance();
                     } catch (InstantiationException e) {
+                        e.printStackTrace();
                         throw new IllegalArgumentException("Unable to instantiate " + handlerClassName, e);
                     } catch (IllegalAccessException e) {
                         throw new IllegalArgumentException("Unable to access default constructor for " + handlerClassName, e);
@@ -338,34 +351,71 @@ public class TableConfigurationUtil {
      * @throws TableNotFoundException
      * @throws ClassNotFoundException
      */
-    void serializeAggregatorConfiguration(AccumuloHelper accumuloHelper, Configuration conf, Logger log) throws AccumuloException, ClassNotFoundException,
+    // TODO decide if we even need this anymore. serializeConfigIntoConf? vs read into Map
+    void serializeConfiguration(AccumuloHelper accumuloHelper, Configuration conf, Logger log) throws AccumuloException, ClassNotFoundException,
                     TableNotFoundException, AccumuloSecurityException {
         
         if (conf.getBoolean(TableConfigCache.ACCUMULO_CONFIG_CACHE_ENABLE_PROPERTY, false)) {
             TableConfigCache cache = new TableConfigCache(conf);
             try {
+                // sets values in conf
                 cache.read();
                 return;
             } catch (Exception e) {
                 log.error("Unable to read accumulo config cache at " + cache.getCacheFilePath() + ". Proceeding to read directly from Accumulo.");
             }
         }
-        Map<String,String> configMap = getTableAggregatorConfigs(accumuloHelper, log, tableNames);
+        Map<String,Map<String,String>> configMap = getTableConfigs(accumuloHelper, log, tableNames);
         for (Map.Entry entry : configMap.entrySet()) {
             conf.set(entry.getKey().toString(), entry.getValue().toString());
         }
         
     }
     
-    public Map<String,String> getTableAggregatorConfigs() throws AccumuloException, ClassNotFoundException, TableNotFoundException, AccumuloSecurityException {
-        return getTableAggregatorConfigs(accumuloHelper, log, tableNames);
+    public Map<String,Map<String,String>> getTableConfigs() throws AccumuloException, ClassNotFoundException, TableNotFoundException, AccumuloSecurityException {
+        return getTableConfigs(accumuloHelper, log, tableNames);
     }
     
-    private static Map<String,String> getTableAggregatorConfigs(AccumuloHelper accumuloHelper, Logger log, String[] tableNames)
+    private static Map<String,Map<String,String>> getTableConfigs(AccumuloHelper accumuloHelper, Logger log, String[] tableNames)
                     throws AccumuloSecurityException, AccumuloException, TableNotFoundException, ClassNotFoundException {
         
-        Map<String,String> configMap = new HashMap<>();
+        Map<String,Map<String,String>> configMap = new HashMap<>();
         TableOperations tops = accumuloHelper.getConnector().tableOperations();
+        
+        for (String table : tableNames) {
+            Map<String,String> tempmap = new HashMap<>();
+            Iterator it = tops.getProperties(table).iterator();
+            
+            while (it.hasNext()) {
+                Map.Entry<String,String> entry = (Map.Entry) it.next();
+                tempmap.put(entry.getKey(), entry.getValue());
+                
+            }
+            configMap.put(table, tempmap);
+        }
+        return configMap;
+    }
+    
+    private void setTableCombiners(String tableName, Map<Integer,Map<String,String>> list) {
+        this.combiners.put(tableName, list);
+    }
+    
+    private void setTableAggregators(String tableName, Map<Integer,Map<String,String>> list) {
+        this.aggregators.put(tableName, list);
+    }
+    
+    public Map<Integer,Map<String,String>> getTableCombiners(String tableName) {
+        return this.combiners.get(tableName);
+    }
+    
+    public Map<Integer,Map<String,String>> getTableAggregators(String tableName) {
+        return this.aggregators.get(tableName);
+    }
+    
+    public void setTableItersPrioritiesAndOpts() throws IOException {
+        
+        ArrayList<IteratorSetting> iters = new ArrayList<>();
+        HashMap<String,Map<String,String>> allOptions = new HashMap<>();
         
         // We're arbitrarily choosing the scan scope for gathering aggregator information.
         // For the aggregators configured in this job, that's ok since they are added to all
@@ -374,15 +424,24 @@ public class TableConfigurationUtil {
         // since any aggregation we care about in the reducer doesn't make sense unless the
         // aggregator is a scan aggregator.
         IteratorUtil.IteratorScope scope = IteratorUtil.IteratorScope.scan;
+        // TODO maybe not new, but init when TCU inited
+        TableConfigCache cache = new TableConfigCache(conf);
+        
+        // Go through all of the configuration properties of this table and figure out which
+        // properties represent iterator configuration. For those that do, store the iterator
+        // setup and options in a map so that we can group together all of the options for each
+        // iterator.
+        
         for (String table : tableNames) {
-            ArrayList<IteratorSetting> iters = new ArrayList<>();
-            HashMap<String,Map<String,String>> allOptions = new HashMap<>();
+            Map<Integer,Map<String,String>> aggregatorMap = new HashMap<>();
+            Map<Integer,Map<String,String>> combinerMap = new HashMap<>();
             
-            // Go through all of the configuration properties of this table and figure out which
-            // properties represent iterator configuration. For those that do, store the iterator
-            // setup and options in a map so that we can group together all of the options for each
-            // iterator.
-            for (Map.Entry<String,String> entry : tops.getProperties(table)) {
+            Map<String,String> tableProps = cache.getTableProperties(table);
+            if (null == tableProps || tableProps.isEmpty()) {
+                log.warn("No table properties found for " + table);
+                continue;
+            }
+            for (Map.Entry<String,String> entry : cache.getTableProperties(table).entrySet()) {
                 
                 if (entry.getKey().startsWith(Property.TABLE_ITERATOR_PREFIX.getKey())) {
                     
@@ -394,11 +453,14 @@ public class TableConfigurationUtil {
                     }
                     
                     if (suffixSplit.length == 2) {
+                        // get the Iterator priority and class
                         String sa[] = entry.getValue().split(",");
                         int prio = Integer.parseInt(sa[0]);
                         String className = sa[1];
                         iters.add(new IteratorSetting(prio, suffixSplit[1], className));
+                        
                     } else if (suffixSplit.length == 4 && suffixSplit[2].equals("opt")) {
+                        // get the iterator options
                         String iterName = suffixSplit[1];
                         String optName = suffixSplit[3];
                         
@@ -414,45 +476,78 @@ public class TableConfigurationUtil {
                         log.warn("Unrecognizable option: " + entry.getKey());
                     }
                 }
+                
             }
             
             // Now go through all of the iterators, and for those that are aggregators, store
-            // the options in the Hadoop config so that we can parse it back out in the reducer.
-            for (IteratorSetting iter : iters) {
-                Class<?> klass = Class.forName(iter.getIteratorClass());
-                if (PropogatingIterator.class.isAssignableFrom(klass)) {
-                    Map<String,String> options = allOptions.get(iter.getName());
-                    if (null != options) {
-                        for (Map.Entry<String,String> option : options.entrySet()) {
-                            String key = String.format("aggregator.%s.%d.%s", table, iter.getPriority(), option.getKey());
-                            configMap.put(key, option.getValue());
+            try {
+                for (IteratorSetting iter : iters) {
+                    
+                    Class<?> klass = Class.forName(iter.getIteratorClass());
+                    if (PropogatingIterator.class.isAssignableFrom(klass)) {
+                        Map<String,String> options = allOptions.get(iter.getName());
+                        if (null != options) {
+                            aggregatorMap.put(iter.getPriority(), options);
+                        } else
+                            log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
+                        
+                    } else {
+                        log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't appear to be a combiner.");
+                    }
+                }
+                
+                for (IteratorSetting iter : iters) {
+                    Class<?> klass = Class.forName(iter.getIteratorClass());
+                    if (Combiner.class.isAssignableFrom(klass)) {
+                        Map<String,String> options = allOptions.get(iter.getName());
+                        if (null != options) {
+                            combinerMap.put(iter.getPriority(), options);
                         }
                     } else
                         log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
                     
-                } else {
-                    log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't appear to be a combiner.");
                 }
+                
+                setTableAggregators(table, aggregatorMap);
+                setTableCombiners(table, combinerMap);
+                
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Unable to configure iterators for " + table, e);
             }
-            
-            for (IteratorSetting iter : iters) {
-                Class<?> klass = Class.forName(iter.getIteratorClass());
-                if (Combiner.class.isAssignableFrom(klass)) {
-                    Map<String,String> options = allOptions.get(iter.getName());
-                    if (null != options) {
-                        String key = String.format("combiner.%s.%d.iterClazz", table, iter.getPriority());
-                        configMap.put(key, iter.getIteratorClass());
-                        for (Map.Entry<String,String> option : options.entrySet()) {
-                            key = String.format("combiner.%s.%d.%s", table, iter.getPriority(), option.getKey());
-                            configMap.put(key, option.getValue());
-                        }
-                    } else
-                        log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
+        }
+        
+    }
+    
+    public Map<String,String> getTableProperties(String tableName) throws IOException {
+        // TODO maybe not new, but init when TCU inited
+        TableConfigCache cache = new TableConfigCache(conf);
+        return cache.getTableProperties(tableName);
+        
+    }
+    
+    public Map<String,Set<Text>> getLocalityGroups(String tableName) throws IOException {
+        // TODO maybe not new, but init when TCU inited
+        TableConfigCache cache = new TableConfigCache(conf);
+        String prefix = Property.TABLE_LOCALITY_GROUP_PREFIX.getKey();
+        Map<String,Set<Text>> groupsNfams = new HashMap<>();
+        for (Map.Entry<String,String> entry : cache.getTableProperties(tableName).entrySet()) {
+            if (entry.getKey().startsWith(prefix)) {
+                
+                String group = entry.getValue().substring(prefix.length());
+                String[] parts = group.split("\\.");
+                String[] famStr = entry.getValue().split(",");
+                Set<Text> colFams = new HashSet<>();
+                for (String fam : famStr) {
+                    colFams.add(new Text(fam));
                     
                 }
+                groupsNfams.put(parts[0], colFams);
+                
             }
             
         }
-        return configMap;
+        return groupsNfams;
+        
     }
+    
 }
