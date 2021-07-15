@@ -6,7 +6,7 @@ ARG DATAWAVE_JAVA_HOME
 
 USER root
 
-ENV YARN_IDENT_STRING=root HADOOP_MAPRED_IDENT_STRING=root
+ENV HADOOP_IDENT_STRING=root
 ENV HDFS_NAMENODE_USER=root HDFS_DATANODE_USER=root
 ENV HDFS_SECONDARYNAMENODE_USER=root YARN_RESOURCEMANAGER_USER=root
 ENV YARN_NODEMANAGER_USER=root
@@ -17,7 +17,7 @@ COPY . /opt/datawave
 
 # Install dependencies, configure password-less/zero-prompt SSH...
 
-RUN yum -y install openssl openssh openssh-server openssh-clients openssl-libs which bc wget git java-1.8.0-openjdk-devel  && \
+RUN yum -y install openssl openssh openssh-server openssh-clients openssl-libs which bc wget git java-1.8.0-openjdk-devel iproute  && \
     yum clean all && \
     ssh-keygen -q -N "" -t rsa -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
