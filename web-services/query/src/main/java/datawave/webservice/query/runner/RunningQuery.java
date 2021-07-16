@@ -196,12 +196,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         touch();
         long pageStartTime = System.currentTimeMillis();
         List<Object> resultList = new ArrayList<>();
-        boolean hitPageByteTrigger = false;
-        boolean hitPageTimeTrigger = false;
+        
+        int currentPageCount = 0;
+        long currentPageBytes = 0;
+        int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
+        
         try {
             addNDC();
-            int currentPageCount = 0;
-            long currentPageBytes = 0;
             
             // test for any exceptions prior to loop as hasNext() would likely be false;
             testForUncaughtException(resultList.size());
@@ -226,7 +227,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 // if the logic had a page byte trigger and we have readed that, then break out
                 if (this.logic.getPageByteTrigger() > 0 && currentPageBytes >= this.logic.getPageByteTrigger()) {
                     log.info("Query logic max page byte trigger has been reached, aborting query.next call");
-                    hitPageByteTrigger = true;
                     break;
                 }
                 // if the logic had a max num results (across all pages) and we have reached that (or the maxResultsOverride if set), then break out
@@ -241,6 +241,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
                     break;
                 }
+                
                 if (this.logic.getMaxWork() >= 0 && (this.getMetric().getNextCount() + this.getMetric().getSeekCount()) >= this.logic.getMaxWork()) {
                     log.info("Query logic max work has been reached, aborting query.next call");
                     this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXWORK);
@@ -252,11 +253,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 // this page.
                 long pageTimeInCall = (System.currentTimeMillis() - pageStartTime);
                 
-                int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
                 if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
                     log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
                                     + pageTimeInCall + " " + timing);
-                    hitPageTimeTrigger = true;
                     break;
                 }
                 
@@ -332,10 +331,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
             }
         }
+        
         if (resultList.isEmpty()) {
             return new ResultsPage();
-        } else {
-            return new ResultsPage(resultList, ((hitPageByteTrigger || hitPageTimeTrigger) ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE));
+        } else if (iter.hasNext() && numResults < this.maxResults && currentPageCount < maxPageSize)
+            return new ResultsPage(resultList, ResultsPage.Status.PARTIAL);
+        else {
+            return new ResultsPage(resultList, ResultsPage.Status.COMPLETE);
         }
     }
     
@@ -449,6 +451,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     @Override
     public long getLastPageNumber() {
         return this.lastPageNumber;
+        
     }
     
     @Override
