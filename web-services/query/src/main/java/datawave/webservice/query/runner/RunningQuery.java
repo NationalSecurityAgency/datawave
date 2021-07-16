@@ -26,7 +26,6 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.htrace.TraceInfo;
 import org.apache.log4j.Logger;
-import org.infinispan.configuration.parsing.ParseUtils;
 import org.jboss.logging.NDC;
 
 import java.security.Principal;
