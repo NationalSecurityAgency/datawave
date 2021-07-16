@@ -168,7 +168,11 @@ public class ExtendedRunningQueryTest {
             expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
             expect(this.transformIterator.next()).andReturn(iterator.next());
             expect(this.transformIterator.getTransformer()).andReturn(transformer);
+
         }
+        expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
+
+
         expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
         expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
@@ -256,7 +260,8 @@ public class ExtendedRunningQueryTest {
             count++;
         }
         expect(this.transformIterator.getTransformer()).andReturn(transformer).times(count);
-        
+        expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
+
         expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
         expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
@@ -294,7 +299,7 @@ public class ExtendedRunningQueryTest {
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER, Collections.singleton(methodAuths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         long maxResults = 100L;
-        
+
         // Set expectations
         expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
         this.query.populateMetric(isA(QueryMetric.class));
@@ -312,7 +317,7 @@ public class ExtendedRunningQueryTest {
         expect(this.genericConfiguration.getQueryString()).andReturn("query").once();
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
-        
+
         // Run the test
         PowerMock.replayAll();
         RunningQuery subject = new RunningQuery(this.queryMetrics, this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
@@ -433,7 +438,8 @@ public class ExtendedRunningQueryTest {
             count++;
         }
         expect(this.transformIterator.getTransformer()).andReturn(transformer).times(count);
-        
+        expect(this.transformIterator.hasNext()).andReturn(iterator.hasNext());
+
         expect(this.query.getPagesize()).andReturn(pageSize).anyTimes();
         expect(this.queryLogic.getMaxPageSize()).andReturn(maxPageSize).anyTimes();
         expect(this.queryLogic.getPageByteTrigger()).andReturn(pageByteTrigger).anyTimes();
