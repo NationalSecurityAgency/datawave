@@ -9,6 +9,7 @@ import datawave.query.tables.AccumuloResource;
 import datawave.query.tables.BatchResource;
 import datawave.query.tables.SessionOptions;
 
+import datawave.webservice.common.connection.WrappedAccumuloClient;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.conf.ClientProperty;
@@ -69,6 +70,9 @@ public class RfileResource extends BatchResource {
         conf = new Configuration();
         
         AccumuloClient client = getClient();
+        if (client instanceof WrappedAccumuloClient) {
+            client = ((WrappedAccumuloClient) client).getReal();
+        }
         
         Properties clientProperties = client.properties();
         final String instanceName = clientProperties.getProperty(ClientProperty.INSTANCE_NAME.getKey());

@@ -28,6 +28,9 @@ import org.apache.accumulo.core.conf.DefaultConfiguration;
 import org.apache.accumulo.core.conf.IterConfigUtil;
 import org.apache.accumulo.core.conf.IterLoad;
 import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.conf.SiteConfiguration;
+import org.apache.accumulo.core.crypto.CryptoServiceFactory;
+import org.apache.accumulo.core.crypto.CryptoServiceFactory.ClassloaderType;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -46,6 +49,7 @@ import org.apache.accumulo.core.iterators.system.MultiIterator;
 import org.apache.accumulo.core.iterators.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.accumulo.core.spi.crypto.CryptoService;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -75,6 +79,16 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
     public static final String RECORDITER_FAILURE_COUNT_MAX = "recorditer.failure.count.max";
     
     public static final String RECORDITER_FAILURE_SLEEP_INTERVAL = "recorditer.failure.sleep.interval";
+    
+    protected static final CryptoService CRYPTO_SERVICE;
+    
+    static {
+        // Use our default properties from the classpath, if necessary, as required by SiteConfiguration
+        if (System.getProperty("accumulo.properties") == null) {
+            System.setProperty("accumulo.properties", "accumulo-default.properties");
+        }
+        CRYPTO_SERVICE = CryptoServiceFactory.newInstance(new SiteConfiguration(), ClassloaderType.ACCUMULO);
+    }
     
     protected TabletSplitSplit fileSplit;
     
@@ -450,8 +464,15 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                 
                 long length = fs.getFileStatus(path).getLen();
                 
-                CachableBlockFile.CachableBuilder builder = new CachableBlockFile.CachableBuilder().fsPath(fs, path).input(closeable.getInputStream())
-                                .length(length).conf(conf);
+                //@formatter:off
+                CachableBlockFile.CachableBuilder builder = new CachableBlockFile.CachableBuilder()
+                        .cryptoService(CRYPTO_SERVICE)
+                        .fsPath(fs, path)
+                        .input(closeable.getInputStream())
+                        .length(length)
+                        .conf(conf);
+                //@formatter:on
+                
                 closeable.setBlockFile(new Reader(builder));
                 
                 fileIterator = new RFile.Reader(closeable.getReader());

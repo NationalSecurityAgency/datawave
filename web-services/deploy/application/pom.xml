@@ -595,6 +595,10 @@
                                             <artifactId>protobuf-java</artifactId>
                                         </artifactItem>
                                         <artifactItem>
+                                            <groupId>commons-beanutils</groupId>
+                                            <artifactId>commons-beanutils</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
                                             <groupId>org.apache.commons</groupId>
                                             <artifactId>commons-configuration2</artifactId>
                                         </artifactItem>
