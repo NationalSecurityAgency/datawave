@@ -16,7 +16,7 @@ import java.util.TreeSet;
  * Specialty AncestorIndexStream implementation. Wraps existing IndexStream delegate to prevent returning overlapping ranges from ancestors during expansions
  * which would otherwise result in duplicate hits
  */
-public class AncestorIndexStream implements IndexStream {
+public class AncestorIndexStream extends BaseIndexStream {
     private final IndexStream delegate;
     private final JexlNode parent;
     
