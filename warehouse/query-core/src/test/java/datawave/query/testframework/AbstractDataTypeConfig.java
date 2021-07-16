@@ -17,11 +17,14 @@ import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.policy.IngestPolicyEnforcer;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -136,6 +139,14 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
         // RawDataManager manager = mgr;
         URL url = this.getClass().getClassLoader().getResource(ingestFile);
         Assert.assertNotNull("unable to resolve ingest file(" + ingestFile + ")", url);
+        // if this url is not a file (e.g. nested in a jar), then make it a file
+        if (url.getProtocol().startsWith("jar")) {
+            InputStream in = this.getClass().getClassLoader().getResourceAsStream(ingestFile);
+            File tempFile = File.createTempFile(String.valueOf(in.hashCode()), ".tmp");
+            tempFile.deleteOnExit();
+            FileUtils.copyInputStreamToFile(in, tempFile);
+            url = tempFile.toURI().toURL();
+        }
         this.ingestPath = url.toURI();
         this.dataType = dt;
         this.fieldConfig = config;
