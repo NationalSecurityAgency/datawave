@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator;
 import datawave.ingest.table.config.ShardTableConfigHelper.ShardTableType;
 
 import org.apache.accumulo.core.client.AccumuloException;
@@ -549,4 +550,34 @@ public class ShardTableConfigHelperTest {
         }
     }
     
+    @Test
+    public void testKeepOnlyShardIndexTable() throws Exception {
+        testKeepCountOnlyConfig(ShardedDataTypeHandler.SHARD_GIDX_TNAME);
+    }
+    
+    @Test
+    public void testKeepOnlyShardReverseIndexTable() throws Exception {
+        testKeepCountOnlyConfig(ShardedDataTypeHandler.SHARD_GRIDX_TNAME);
+    }
+    
+    private void testKeepCountOnlyConfig(String tableProperty) throws Exception {
+        Configuration config = createMockConfiguration();
+        Logger log = createMockLogger();
+        TableOperations tops = mockUpTableOperations();
+        
+        ShardTableConfigHelper uut = new ShardTableConfigHelper();
+        
+        this.configuration.put(tableProperty, ShardTableConfigHelperTest.TABLE_NAME);
+        this.configuration.put(ShardTableConfigHelper.KEEP_COUNT_ONLY_INDEX_ENTRIES, "true");
+        
+        this.tableProperties.clear();
+        this.localityGroups.clear();
+        
+        uut.setup(ShardTableConfigHelperTest.TABLE_NAME, config, log);
+        uut.configure(tops);
+        
+        Assert.assertEquals(KeepCountOnlyUidAggregator.class.getName(), tableProperties.get("table.iterator.majc.UIDAggregator.opt.*"));
+        Assert.assertEquals(KeepCountOnlyUidAggregator.class.getName(), tableProperties.get("table.iterator.minc.UIDAggregator.opt.*"));
+        Assert.assertEquals(KeepCountOnlyUidAggregator.class.getName(), tableProperties.get("table.iterator.scan.UIDAggregator.opt.*"));
+    }
 }

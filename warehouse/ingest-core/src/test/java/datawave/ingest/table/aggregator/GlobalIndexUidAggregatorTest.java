@@ -1,19 +1,15 @@
 package datawave.ingest.table.aggregator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
 
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.protobuf.Uid.List.Builder;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
@@ -22,8 +18,18 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
+import static datawave.ingest.table.aggregator.UidTestUtils.countOnlyList;
+import static datawave.ingest.table.aggregator.UidTestUtils.legacyRemoveUidList;
+import static datawave.ingest.table.aggregator.UidTestUtils.quarantineUidList;
+import static datawave.ingest.table.aggregator.UidTestUtils.releaseUidList;
+import static datawave.ingest.table.aggregator.UidTestUtils.removeUidList;
+import static datawave.ingest.table.aggregator.UidTestUtils.uidList;
+import static datawave.ingest.table.aggregator.UidTestUtils.valueToUidList;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class GlobalIndexUidAggregatorTest {
     
@@ -768,5 +774,108 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(1, resultList.getREMOVEDUIDCount());
         assertEquals(1, resultList.getREMOVEDUIDList().size());
         assertEquals(0, resultList.getCOUNT());
+    }
+    
+    @Test
+    public void testQuarantineAndRelease() {
+        // First quarantine uid1
+        List<Value> values = asList(uidList("uid1"), quarantineUidList("uid1"));
+        
+        Value firstPassValue = agg(values);
+        Uid.List result = valueToUidList(firstPassValue);
+        
+        assertTrue(result.getQUARANTINEUIDList().contains("uid1"));
+        assertFalse(result.getUIDList().contains("uid1"));
+        
+        // Now release uid1
+        values = asList(firstPassValue, releaseUidList("uid1"));
+        Value secondPassValue = agg(values);
+        result = valueToUidList(secondPassValue);
+        
+        assertFalse(result.getQUARANTINEUIDList().contains("uid1"));
+        assertTrue(result.getUIDList().contains("uid1"));
+    }
+
+    @Test
+    public void testLegacyRemoval() {
+        List<Value> values = asList(uidList("uid1", "uid2"), legacyRemoveUidList("uid1"));
+        Uid.List result = valueToUidList(agg(values));
+        
+        assertEquals(1, result.getUIDList().size());
+        assertTrue(result.getUIDList().contains("uid2"));
+    }
+    
+    @Test
+    public void testCombineLegacyAndNewRemovals() {
+        List<Value> values = asList(removeUidList("uid1", "uid2"), legacyRemoveUidList("uid3"));
+        Uid.List result = valueToUidList(agg(values));
+        
+        assertEquals(3, result.getREMOVEDUIDCount());
+        assertTrue(result.getREMOVEDUIDList().contains("uid1"));
+        assertTrue(result.getREMOVEDUIDList().contains("uid2"));
+        assertTrue(result.getREMOVEDUIDList().contains("uid3"));
+    }
+    
+    @Test
+    public void testCombineCountAndUidListAndRemoval() {
+        List<Value> values = asList(countOnlyList(100), uidList("uid1", "uid2"), removeUidList("uid3", "uid4", "uid5"));
+        Uid.List result = valueToUidList(agg(values));
+        
+        assertEquals(99, result.getCOUNT());
+        assertTrue(result.getIGNORE());
+        assertTrue(result.getREMOVEDUIDList().isEmpty());
+        assertTrue(result.getUIDList().isEmpty());
+    }
+    
+    @Test
+    public void testDropKeyWhenUidListIsEmpty() {
+        List<Value> values = asList(uidList("uid1", "uid2"), removeUidList("uid1", "uid2"));
+        Uid.List result = valueToUidList(agg(values));
+        
+        assertTrue(result.getUIDList().isEmpty());
+        assertFalse(agg.propogateKey());
+    }
+    
+    @Test
+    public void testDropKeyWhenCountReachesZero() {
+        List<Value> values = asList(countOnlyList(2), removeUidList("uid1", "uid2"));
+        Uid.List result = valueToUidList(agg(values));
+        
+        assertEquals(0, result.getCOUNT());
+        assertTrue(result.getIGNORE());
+        assertFalse(agg.propogateKey());
+    }
+    
+    @Test
+    public void testDropKeyWhenCountReachesZeroWithCount() {
+        List<Value> values = asList(countOnlyList(100), countOnlyList(-100));
+        Uid.List result = valueToUidList(agg(values));
+        
+        assertEquals(0, result.getCOUNT());
+        assertFalse(agg.propogateKey());
+    }
+    
+    @Test
+    public void testDropKeyWhenCountGoesNegative() {
+        List<Value> values = asList(countOnlyList(1), removeUidList("uid1", "uid2"));
+        Uid.List result = valueToUidList(agg(values));
+        
+        assertEquals(-1, result.getCOUNT());
+        assertTrue(result.getIGNORE());
+        assertFalse(agg.propogateKey());
+    }
+    
+    @Test
+    public void testWeKeepUidListDuringDoubleRemovals() {
+        List<Value> values = asList(uidList("uid1"), removeUidList("uid2"), removeUidList("uid2"));
+        Uid.List result = valueToUidList(agg(values));
+        
+        assertEquals(1, result.getUIDList().size());
+        assertTrue(agg.propogateKey());
+    }
+    
+    private Value agg(List<Value> values) {
+        agg.reset();
+        return agg.reduce(new Key("row"), values.iterator());
     }
 }

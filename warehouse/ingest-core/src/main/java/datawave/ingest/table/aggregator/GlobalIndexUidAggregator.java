@@ -70,6 +70,13 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
         this.maxUids = MAX;
     }
     
+    /**
+     * @return True if we saw a "count only" protobuf during the last reduce operation.
+     */
+    protected boolean isSeenIgnore() {
+        return seenIgnore;
+    }
+    
     public Value aggregate() {
         
         Builder builder = Uid.List.newBuilder();
