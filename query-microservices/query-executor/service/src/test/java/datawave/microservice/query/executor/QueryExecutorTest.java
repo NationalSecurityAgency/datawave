@@ -12,7 +12,6 @@ import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.TaskKey;
-import datawave.microservice.query.storage.TaskLockException;
 import datawave.microservice.query.storage.TaskStates;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -27,15 +26,12 @@ import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.AfterEachCallback;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.ExtensionContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -43,13 +39,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
-import org.springframework.kafka.test.context.EmbeddedKafka;
+//import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -57,9 +54,12 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Collections;
@@ -83,7 +83,7 @@ public abstract class QueryExecutorTest {
     private static final Logger log = Logger.getLogger(QueryExecutorTest.class);
     
     public static DataTypeHadoopConfig dataType;
-    public TestAccumuloSetup accumuloSetup;
+    public static TestAccumuloSetup accumuloSetup;
     
     @Autowired
     private QueryLogicFactory queryLogicFactory;
@@ -98,7 +98,7 @@ public abstract class QueryExecutorTest {
     private BusProperties busProperties;
     
     @Autowired
-    private ApplicationContext publisher;
+    private ApplicationEventPublisher publisher;
     
     @Autowired
     private QueryCache queryCache;
@@ -110,10 +110,10 @@ public abstract class QueryExecutorTest {
     private QueryQueueManager queueManager;
     
     @Autowired
-    private LinkedList<QueryRequest> queryRequests;
+    private LinkedList<RemoteQueryRequestEvent> queryRequestsEvents;
     
+    @Autowired
     protected Connector connector;
-    private QueryExecutor queryExecutor;
     
     public String TEST_POOL = "TestPool";
     
@@ -138,36 +138,18 @@ public abstract class QueryExecutorTest {
     @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications"})
     public static class LocalQueryExecutorTest extends QueryExecutorTest {}
     
-    @EmbeddedKafka
-    @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-embedded-kafka"})
-    public static class EmbeddedKafkaQueryExecutorTest extends QueryExecutorTest {}
-    
-    @Disabled("Cannot run this test without an externally deployed RabbitMQ instance.")
-    @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-rabbit"})
-    public static class RabbitQueryExecutorTest extends QueryExecutorTest {}
-    
-    @Disabled("Cannot run this test without an externally deployed Kafka instance.")
-    @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-kafka"})
-    public static class KafkaQueryExecutorTest extends QueryExecutorTest {}
-    
-    @Configuration
-    @Profile("QueryExecutorTest")
-    @ComponentScan(basePackages = "datawave.microservice")
-    public static class QueryExecutorTestConfiguration {
-        @Bean
-        public LinkedList<QueryRequest> queryTaskNotifications() {
-            return new LinkedList<>();
-        }
-        
-        @Bean
-        @Primary
-        public ApplicationEventPublisher publisher(ApplicationEventPublisher publisher) {
-            return event -> {
-                if (event instanceof RemoteQueryRequestEvent)
-                    queryTaskNotifications().push(((RemoteQueryRequestEvent) event).getRequest());
-            };
-        }
-    }
+    // @Disabled("Temporarily disabled until local is running")
+    // @EmbeddedKafka
+    // @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-embedded-kafka"})
+    // public static class EmbeddedKafkaQueryExecutorTest extends QueryExecutorTest {}
+    //
+    // @Disabled("Cannot run this test without an externally deployed RabbitMQ instance.")
+    // @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-rabbit"})
+    // public static class RabbitQueryExecutorTest extends QueryExecutorTest {}
+    //
+    // @Disabled("Cannot run this test without an externally deployed Kafka instance.")
+    // @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-kafka"})
+    // public static class KafkaQueryExecutorTest extends QueryExecutorTest {}
     
     @SpringBootApplication(scanBasePackages = "datawave.microservice")
     public static class TestApplication {
@@ -177,27 +159,31 @@ public abstract class QueryExecutorTest {
     }
     
     @BeforeAll
-    public static void setupData() throws IOException, URISyntaxException {
-        FieldConfig generic = new GenericCityFields();
-        generic.addReverseIndexField(CitiesDataType.CityField.STATE.name());
-        generic.addReverseIndexField(CitiesDataType.CityField.CONTINENT.name());
-        dataType = new CitiesDataType(CitiesDataType.CityEntry.generic, generic);
+    public static void setupData() throws Exception {
+        try {
+            FieldConfig generic = new GenericCityFields();
+            generic.addReverseIndexField(CitiesDataType.CityField.STATE.name());
+            generic.addReverseIndexField(CitiesDataType.CityField.CONTINENT.name());
+            dataType = new CitiesDataType(CitiesDataType.CityEntry.generic, generic);
+            accumuloSetup = new TestAccumuloSetup();
+            accumuloSetup.before();
+            accumuloSetup.setData(FileType.CSV, dataType);
+        } catch (Exception e) {
+            log.error("Failed to setup data", e);
+            e.printStackTrace(System.err);
+            e.printStackTrace(System.out);
+            throw e;
+        }
     }
     
-    @BeforeEach
-    public void filterSetup() throws Exception {
-        // Logger.getLogger(PrintUtility.class).setLevel(Level.DEBUG);
-        
-        accumuloSetup = new TestAccumuloSetup();
-        accumuloSetup.beforeEach(null);
-        accumuloSetup.setData(FileType.CSV, dataType);
-        connector = accumuloSetup.loadTables(log);
-        queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, connector, storageService, queueManager, queryLogicFactory,
-                        publisher);
+    @AfterAll
+    public static void cleanupData() {
+        accumuloSetup.after();
+        System.out.println("cleanupData finish");
     }
     
     @AfterEach
-    public void cleanup() throws Exception {
+    public void cleanup() {
         while (!listeners.isEmpty()) {
             listeners.remove().stop();
         }
@@ -208,17 +194,14 @@ public abstract class QueryExecutorTest {
                 log.error("Failed to delete query", e);
             }
         }
-        if (accumuloSetup != null) {
-            accumuloSetup.afterEach(null);
-            accumuloSetup = null;
-        }
+        System.out.println("cleanup finish");
     }
     
     @DirtiesContext
     @Test
-    public void testCheckpointableQuery() throws ParseException, InterruptedException, IOException, TaskLockException {
+    public void testCheckpointableQuery() throws Exception {
         // ensure the message queue is empty
-        assertTrue(queryRequests.isEmpty());
+        assertTrue(queryRequestsEvents.isEmpty());
         
         String city = "rome";
         String country = "italy";
@@ -247,13 +230,12 @@ public abstract class QueryExecutorTest {
         TaskStates states = storageService.getTaskStates(key.getQueryId());
         assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
         
-        // ensure we got a task notification
-        QueryRequest notification = queryRequests.pop();
-        assertNotNull(notification);
-        assertEquals(key.getQueryId().toString(), notification.getQueryId());
+        // create our query executor
+        QueryExecutor queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, connector, storageService, queueManager,
+                        queryLogicFactory, publisher);
         
-        // pass the notification to the query executor
-        QueryRequest request = QueryRequest.request(notification.getMethod(), notification.getQueryId());
+        // pass a create request to the executor
+        QueryRequest request = QueryRequest.request(QueryRequest.Method.CREATE, key.getQueryId());
         queryExecutor.handleRemoteRequest(request, true);
         // now we need to wait for its completion
         
@@ -263,18 +245,21 @@ public abstract class QueryExecutorTest {
         
         QueryQueueListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId().toString());
         
-        notification = queryRequests.poll();
+        RemoteQueryRequestEvent notification = queryRequestsEvents.poll();
         assertNotNull(notification);
-        while (notification != null) {
-            assertEquals(key.getQueryId(), notification.getQueryId());
-            assertEquals(QueryRequest.Method.NEXT, notification.getMethod());
-            
-            request = QueryRequest.request(notification.getMethod(), notification.getQueryId());
+        assertEquals(key.getQueryId(), notification.getRequest().getQueryId());
+        assertEquals(QueryRequest.Method.NEXT, notification.getRequest().getMethod());
+        request = QueryRequest.request(notification.getRequest().getMethod(), notification.getRequest().getQueryId());
+        
+        // while the query
+        states = storageService.getTaskStates(key.getQueryId());
+        while (states.hasReadyTasks()) {
             queryExecutor.handleRemoteRequest(request, true);
             
             queryStatus = storageService.getQueryStatus(key.getQueryId());
             assertEquals(QueryStatus.QUERY_STATE.CREATED, queryStatus.getQueryState());
-            notification = queryRequests.poll();
+            
+            states = storageService.getTaskStates(key.getQueryId());
         }
         
         // count the results
@@ -287,9 +272,9 @@ public abstract class QueryExecutorTest {
     
     @DirtiesContext
     @Test
-    public void testNonCheckpointableQuery() throws ParseException, InterruptedException, IOException, TaskLockException {
+    public void testNonCheckpointableQuery() throws Exception {
         // ensure the message queue is empty
-        assertTrue(queryRequests.isEmpty());
+        assertTrue(queryRequestsEvents.isEmpty());
         
         String city = "rome";
         String country = "italy";
@@ -317,11 +302,6 @@ public abstract class QueryExecutorTest {
         
         TaskStates states = storageService.getTaskStates(key.getQueryId());
         assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
-        
-        // ensure we got a task notification
-        QueryRequest notification = queryRequests.pop();
-        assertNotNull(notification);
-        assertEquals(key.getQueryId(), notification.getQueryId());
         
         // pass the notification to the query executor
         QueryExecutor queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, connector, storageService, queueManager,
@@ -351,7 +331,8 @@ public abstract class QueryExecutorTest {
                                 return queryLogicFactory.getQueryLogicList();
                             }
                         }, publisher);
-        QueryRequest request = QueryRequest.request(notification.getMethod(), notification.getQueryId());
+        // pass a create request to the executor
+        QueryRequest request = QueryRequest.request(QueryRequest.Method.CREATE, key.getQueryId());
         queryExecutor.handleRemoteRequest(request, true);
         
         QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
@@ -360,7 +341,7 @@ public abstract class QueryExecutorTest {
         
         QueryQueueListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId().toString());
         
-        notification = queryRequests.poll();
+        RemoteQueryRequestEvent notification = queryRequestsEvents.poll();
         assertNull(notification);
         
         // count the results
@@ -371,20 +352,59 @@ public abstract class QueryExecutorTest {
         assertTrue(count >= 1);
     }
     
-    public class TestAccumuloSetup extends AccumuloSetup implements BeforeEachCallback, AfterEachCallback {
+    public static class TestAccumuloSetup extends AccumuloSetup {
         
         @Override
-        public void afterEach(ExtensionContext extensionContext) throws Exception {
-            after();
+        public void after() {
+            super.after();
         }
         
         @Override
-        public void beforeEach(ExtensionContext extensionContext) throws Exception {
+        public void before() {
             try {
-                before();
+                super.before();
             } catch (Throwable throwable) {
                 throw new RuntimeException(throwable);
             }
         }
     }
+    
+    @Configuration
+    @Profile("QueryExecutorTest")
+    @ComponentScan(basePackages = "datawave.microservice")
+    public static class QueryExecutorTestConfiguration {
+        @Bean
+        public LinkedList<RemoteQueryRequestEvent> queryRequestEvents() {
+            return new LinkedList<>();
+        }
+        
+        @Bean
+        @Primary
+        public ApplicationEventPublisher publisher() {
+            return new ApplicationEventPublisher() {
+                @Override
+                public void publishEvent(ApplicationEvent event) {
+                    saveEvent(event);
+                }
+                
+                @Override
+                public void publishEvent(Object event) {
+                    saveEvent(event);
+                }
+                
+                private void saveEvent(Object event) {
+                    if (event instanceof RemoteQueryRequestEvent) {
+                        queryRequestEvents().push(((RemoteQueryRequestEvent) event));
+                    }
+                }
+            };
+        }
+        
+        @Bean
+        @Primary
+        public Connector connector() throws Exception {
+            return accumuloSetup.loadTables(log);
+        }
+    }
+    
 }

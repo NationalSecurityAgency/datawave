@@ -83,8 +83,20 @@ public class TaskStates implements Serializable {
         return true;
     }
     
+    public boolean hasTasksForState(TASK_STATE state) {
+        return taskStates.get(state) != null && !taskStates.get(state).isEmpty();
+    }
+    
+    public boolean hasReadyTasks() {
+        return hasTasksForState(TASK_STATE.READY);
+    }
+    
+    public boolean hasRunningTasks() {
+        return hasTasksForState(TASK_STATE.RUNNING);
+    }
+    
     public boolean hasUnfinishedTasks() {
-        return taskStates.keySet().stream().anyMatch(state -> state == TASK_STATE.READY || state == TASK_STATE.RUNNING);
+        return hasReadyTasks() || hasRunningTasks();
     }
     
     @Override

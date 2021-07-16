@@ -17,7 +17,8 @@ import datawave.microservice.query.storage.TaskStates;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.springframework.cloud.bus.BusProperties;
-import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,6 +36,7 @@ import java.util.concurrent.TimeUnit;
  *
  * TODO: Query Metrics
  **/
+@Service
 public class QueryExecutor implements QueryRequestHandler {
     private static final Logger log = Logger.getLogger(QueryExecutor.class);
     
@@ -48,10 +50,10 @@ public class QueryExecutor implements QueryRequestHandler {
     protected final QueryProperties queryProperties;
     protected final BusProperties busProperties;
     protected final ThreadPoolExecutor threadPool;
-    protected final ApplicationContext publisher;
+    protected final ApplicationEventPublisher publisher;
     
     public QueryExecutor(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, Connector connector,
-                    QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory, ApplicationContext publisher) {
+                    QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher) {
         this.executorProperties = executorProperties;
         this.queryProperties = queryProperties;
         this.busProperties = busProperties;
@@ -134,16 +136,16 @@ public class QueryExecutor implements QueryRequestHandler {
                     ExecutorAction runnable = null;
                     switch (action) {
                         case CREATE:
-                            runnable = new Create(executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory, publisher,
-                                            task);
+                            runnable = new Create(this, executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory,
+                                            publisher, task);
                             break;
                         case NEXT:
-                            runnable = new Next(executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory, publisher,
-                                            task);
+                            runnable = new Next(this, executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory,
+                                            publisher, task);
                             break;
                         case PLAN:
-                            runnable = new Plan(executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory, publisher,
-                                            task);
+                            runnable = new Plan(this, executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory,
+                                            publisher, task);
                             break;
                         default:
                             throw new UnsupportedOperationException(task.getTaskKey().toString());

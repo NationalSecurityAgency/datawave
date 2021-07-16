@@ -2,6 +2,7 @@ package datawave.microservice.query.executor.action;
 
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.executor.QueryExecutor;
 import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.logic.CheckpointableQueryLogic;
 import datawave.microservice.query.logic.QueryLogic;
@@ -21,10 +22,10 @@ import org.springframework.context.ApplicationEventPublisher;
 public class Create extends ExecutorAction {
     private static final Logger log = Logger.getLogger(Create.class);
     
-    public Create(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, Connector connector,
-                    QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher,
-                    QueryTask task) {
-        super(executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory, publisher, task);
+    public Create(QueryExecutor source, ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties,
+                    Connector connector, QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory,
+                    ApplicationEventPublisher publisher, QueryTask task) {
+        super(source, executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory, publisher, task);
     }
     
     @Override

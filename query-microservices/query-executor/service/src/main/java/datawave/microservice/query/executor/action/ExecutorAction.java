@@ -1,6 +1,7 @@
 package datawave.microservice.query.executor.action;
 
 import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.query.executor.QueryExecutor;
 import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.logic.CheckpointableQueryLogic;
 import datawave.microservice.query.logic.QueryCheckpoint;
@@ -33,6 +34,7 @@ public abstract class ExecutorAction implements Runnable {
     
     private static final Logger log = Logger.getLogger(ExecutorAction.class);
     
+    protected final QueryExecutor source;
     protected final Connector connector;
     protected final QueryStorageCache cache;
     protected final QueryQueueManager queues;
@@ -44,9 +46,10 @@ public abstract class ExecutorAction implements Runnable {
     protected final QueryTask task;
     protected boolean interrupted = false;
     
-    public ExecutorAction(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, Connector connector,
-                    QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher,
-                    QueryTask task) {
+    public ExecutorAction(QueryExecutor source, ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties,
+                    Connector connector, QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory,
+                    ApplicationEventPublisher publisher, QueryTask task) {
+        this.source = source;
         this.executorProperties = executorProperties;
         this.queryProperties = queryProperties;
         this.busProperties = busProperties;
@@ -131,8 +134,7 @@ public abstract class ExecutorAction implements Runnable {
             createdTask = true;
         }
         if (createdTask) {
-            // TODO : post next event
-            publishExecutorEvent(QueryRequest.create(queryKey.toString()), queryKey.getQueryPool());
+            publishExecutorEvent(QueryRequest.next(queryKey.getQueryId()), queryKey.getQueryPool());
         }
     }
     
@@ -234,7 +236,7 @@ public abstract class ExecutorAction implements Runnable {
         // @formatter:off
         publisher.publishEvent(
                 new RemoteQueryRequestEvent(
-                        this,
+                        source,
                         busProperties.getId(),
                         getPooledExecutorName(queryPool),
                         queryRequest));

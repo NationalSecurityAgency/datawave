@@ -1,6 +1,7 @@
 package datawave.microservice.query.executor.action;
 
 import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.query.executor.QueryExecutor;
 import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.logic.QueryLogicFactory;
@@ -20,10 +21,10 @@ import org.springframework.context.ApplicationEventPublisher;
 public class Plan extends ExecutorAction {
     private static final Logger log = Logger.getLogger(Plan.class);
     
-    public Plan(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, Connector connector,
+    public Plan(QueryExecutor source, ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, Connector connector,
                     QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher,
                     QueryTask task) {
-        super(executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory, publisher, task);
+        super(source, executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory, publisher, task);
     }
     
     @Override

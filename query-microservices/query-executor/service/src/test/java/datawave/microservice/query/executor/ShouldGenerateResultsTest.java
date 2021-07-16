@@ -103,7 +103,7 @@ public class ShouldGenerateResultsTest {
     
     public class TestExecutorShouldGenerateResults extends ExecutorAction {
         public TestExecutorShouldGenerateResults(ExecutorProperties executorProperties, QueryQueueManager queues) {
-            super(executorProperties, null, null, null, null, queues, null, null, null);
+            super(null, executorProperties, null, null, null, null, queues, null, null, null);
         }
         
         @Override
