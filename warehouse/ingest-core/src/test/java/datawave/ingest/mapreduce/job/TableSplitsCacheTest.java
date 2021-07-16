@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+
 import org.apache.accumulo.fate.zookeeper.ZooCache;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
@@ -662,6 +663,18 @@ public class TableSplitsCacheTest {
             Assert.assertTrue("split size", (split - lastsplit) <= 402);
             lastsplit = split;
         }
+    }
+    
+    @Test
+    public void testLocs() throws IOException {
+        setSplitsCacheDir();
+        TableSplitsCache splitsCache = new TableSplitsCache(createMockJobConf());
+        
+        splitsCache.getSplitsAndLocation();
+        Assert.assertEquals(5, splitsCache.getSplitsAndLocationByTable("shard").size());
+        Assert.assertEquals(1, splitsCache.getSplitsAndLocationByTable("shard1").size());
+        Assert.assertEquals(0, splitsCache.getSplitsAndLocationByTable("someOtherTable").size());
+        
     }
     
 }

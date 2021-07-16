@@ -5,6 +5,24 @@ import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -13,34 +31,18 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.StringUtils;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 public class ShardedTableMapFileTest {
     private static final Log LOG = LogFactory.getLog(ShardedTableMapFileTest.class);
@@ -59,6 +61,11 @@ public class ShardedTableMapFileTest {
         conf = new Configuration();
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, TableName.SHARD);
+    }
+    
+    @AfterClass
+    public static void cleanup() {
+        
     }
     
     @Test
@@ -81,6 +88,26 @@ public class ShardedTableMapFileTest {
         TreeMap<Text,String> result = ShardedTableMapFile.getShardIdToLocations(conf, TABLE_NAME);
         Assert.assertEquals("location2_1234", result.get(new Text("zEndRow")).toString());
         Assert.assertEquals(1, result.size());
+    }
+    
+    @Test
+    public void testUsingSplitsCache() throws Exception {
+        Configuration conf = new Configuration();
+        URL url = ShardedTableMapFileTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
+        conf.set(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf(Path.SEPARATOR)));
+        conf.set(FileSystem.FS_DEFAULT_NAME_KEY, URI.create("file:///").toString());
+        conf.setLong("fs.local.block.size", 32 * 1024 * 1024);
+        
+        conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, "shard1,shard,someOtherTableName");
+        
+        String[] tableNames = new String[] {TABLE_NAME};
+        conf.set(ShardedTableMapFile.TABLE_NAMES, "shard1,shard,someOtherTableName");
+        
+        setWorkingDirectory(conf);
+        ShardedTableMapFile.setupFile(conf);
+        TreeMap<Text,String> result = ShardedTableMapFile.getShardIdToLocations(conf, "shard");
+        Assert.assertEquals(5, result.size());
+        
     }
     
     @Test(timeout = 240000)
