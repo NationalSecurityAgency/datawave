@@ -21,6 +21,7 @@ import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,7 +96,7 @@ public class QueryStorageStateServiceTest {
         storageService.clear();
     }
     
-    // @Test
+    @Test
     public void testStateStorageService() throws ParseException, InterruptedException, TaskLockException, IOException {
         Query query = new QueryImpl();
         query.setQuery("foo == bar");
@@ -165,21 +166,21 @@ public class QueryStorageStateServiceTest {
         @Override
         public List<QueryState> getRunningQueries() {
             UriComponents getQueryUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                            .path("/QueryStorage/v1/queries").build();
+                            .path("/query-storage-test/v1/queries").build();
             return toStates(jwtRestTemplate.exchange(authUser, HttpMethod.GET, getQueryUri, String.class));
         }
         
         @Override
         public QueryState getQuery(String queryId) {
             UriComponents getQueryUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                            .path("/QueryStorage/v1/query/" + queryId).build();
+                            .path("/query-storage-test/v1/query/" + queryId).build();
             return toState(jwtRestTemplate.exchange(authUser, HttpMethod.GET, getQueryUri, String.class));
         }
         
         @Override
         public List<TaskDescription> getTasks(String queryId) {
             UriComponents getQueryUri = UriComponentsBuilder.newInstance().scheme("https").host("localhost").port(webServicePort)
-                            .path("/QueryStorage/v1/tasks/" + queryId).build();
+                            .path("/query-storage-test/v1/tasks/" + queryId).build();
             return toTaskDescriptions(jwtRestTemplate.exchange(authUser, HttpMethod.GET, getQueryUri, String.class));
             
         }
