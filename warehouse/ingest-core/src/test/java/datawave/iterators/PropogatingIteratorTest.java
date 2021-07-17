@@ -38,12 +38,19 @@ public class PropogatingIteratorTest {
     private static final String FIELD_TO_AGGREGATE = "UUID";
     private static final long TIMESTAMP = 1349541830;
     
+    private void validateOverfullUidList(Value topValue, int count) throws InvalidProtocolBufferException {
+        Uid.List v = Uid.List.parseFrom(topValue.get());
+        
+        Assert.assertEquals(count, v.getCOUNT());
+        Assert.assertEquals(0, v.getUIDList().size());
+    }
+    
     private void validateUids(Value topValue, String... uids) throws InvalidProtocolBufferException {
         Uid.List v = Uid.List.parseFrom(topValue.get());
         
         Assert.assertEquals(uids.length, v.getCOUNT());
         for (String uid : uids) {
-            v.getUIDList().contains(uid);
+            Assert.assertTrue(uid + " missing from UIDs list", v.getUIDList().contains(uid));
         }
     }
     
@@ -52,7 +59,7 @@ public class PropogatingIteratorTest {
         
         Assert.assertEquals(-uids.length, v.getCOUNT());
         for (String uid : uids) {
-            v.getREMOVEDUIDList().contains(uid);
+            Assert.assertTrue(uid + " missing from Removed UIDs list", v.getREMOVEDUIDList().contains(uid));
         }
     }
     
@@ -207,6 +214,44 @@ public class PropogatingIteratorTest {
         
         Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
         validateUids(iter.getTopValue(), "abc.1", "abc.2", "abc.3", "abc.4");
+        iter.next();
+        topKey = iter.getTopKey();
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
+        validateUids(iter.getTopValue(), "abc.3");
+        
+    }
+    
+    @Test
+    public void testAggregateOptions() throws IOException {
+        TreeMultimap<Key,Value> map = TreeMultimap.create();
+        
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.1").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.2").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.3").build().toByteArray()));
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), new Value(createValueWithUid("abc.4").build().toByteArray()));
+        
+        map.put(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), new Value(createValueWithUid("abc.3").build().toByteArray()));
+        
+        SortedMultiMapIterator data = new SortedMultiMapIterator(map);
+        
+        PropogatingIterator iter = new PropogatingIterator();
+        Map<String,String> options = Maps.newHashMap();
+        
+        String encodedOptions = "all=true;maxuids=2";
+        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName() + " " + encodedOptions);
+        
+        IteratorEnvironment env = new MockIteratorEnvironment(false);
+        
+        iter.init(data, options, env);
+        
+        iter.seek(new Range(), Collections.emptyList(), false);
+        
+        Assert.assertTrue(iter.hasTop());
+        
+        Key topKey = iter.getTopKey();
+        
+        Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abc"), topKey);
+        validateOverfullUidList(iter.getTopValue(), 4);
         iter.next();
         topKey = iter.getTopKey();
         Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
