@@ -3,6 +3,7 @@ package datawave.core.iterators;
 import com.google.common.base.Objects;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Multimap;
+import datawave.core.iterators.key.FiKey;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.query.Constants;
 import datawave.query.composite.CompositeMetadata;
@@ -261,6 +262,17 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     private final Predicate<Key> datatypeFilter;
     // a time filter
     private final TimeFilter timeFilter;
+    
+    // construct selective bounding ranges if handed a document range
+    protected String uid;
+    protected String datatype;
+    // support for determining if we are in a high cardinality field value
+    protected long consecutiveFieldValueHits = 0L;
+    protected long consecutiveHitsThreshold = 40L; // based on intra-index block cost of a seek vs next
+    // support for determining consecutive field-value hits
+    protected Text lastCF = null;
+    protected String lastValue = null;
+    protected FiKey fiKey = new FiKey();
     
     // Are we to negate the result of the "matches(key)" method
     private final boolean negated;
@@ -580,8 +592,27 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 // seek our underlying source to the start of the incoming range
                 // expand the range as the underlying table may not actually contain the keys in this range as we are only returning keys
                 // as specified by the returnKeyType
-                Range seekRange = new Range(lastRangeSeeked.getStartKey(), lastRangeSeeked.isStartKeyInclusive(), (lastRangeSeeked.getEndKey() == null ? null
-                                : new Key(lastRangeSeeked.getEndKey().getRow()).followingKey(PartialKey.ROW)), false);
+                
+                // Parse datatype\0uid from seek range, if they exist
+                String lastCF = lastRangeSeeked.getStartKey().getColumnFamily().toString();
+                int index = lastCF.indexOf('\u0000');
+                if (index != -1) {
+                    this.datatype = lastCF.substring(0, index);
+                    this.uid = lastCF.substring(index + 1);
+                } else {
+                    this.datatype = null;
+                    this.uid = null;
+                }
+                
+                Key endKey;
+                if (lastRangeSeeked.getEndKey() == null) {
+                    endKey = null;
+                } else {
+                    endKey = new Key(lastRangeSeeked.getEndKey().getRow()).followingKey(PartialKey.ROW);
+                }
+                
+                Range seekRange = new Range(lastRangeSeeked.getStartKey(), lastRangeSeeked.isStartKeyInclusive(), endKey, false);
+                
                 source.seek(seekRange, EMPTY_CFS, false);
                 scannedKeys.incrementAndGet();
                 if (log.isTraceEnabled()) {
@@ -1042,7 +1073,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         if (log.isTraceEnabled()) {
             log.trace("addKey evaluating " + topFiKey);
         }
-        if ((timeFilter == null || timeFilter.apply(topFiKey)) && (datatypeFilter == null || datatypeFilter.apply(topFiKey)) && (matches(topFiKey) != negated)) {
+        //  @formatter:off
+        if ((uid == null || uidMatches(uid, topFiKey)) &&
+                (timeFilter == null || timeFilter.apply(topFiKey)) &&
+                (datatypeFilter == null || datatypeFilter.apply(topFiKey)) &&
+                (matches(topFiKey) != negated)) {
+            //  @formatter:on
             if (log.isTraceEnabled()) {
                 log.trace("addKey matched " + topFiKey);
             }
@@ -1064,6 +1100,44 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             }
         }
         return false;
+    }
+    
+    /**
+     * Key structure like fi\0FIELD:value\0datatype\0uid. Effectively implements "fiUid.startsWith(targetUid)" which will pick up child uid matches for the TLD
+     * case.
+     *
+     * @param uid
+     *            a uid from the initial seek range
+     * @param topFiKey
+     *            the current top key
+     * @return true if the top uid starts with the uid from the seek range
+     */
+    protected boolean uidMatches(String uid, Key topFiKey) {
+        ByteSequence bytes = topFiKey.getColumnQualifierData();
+        int nullIndex = bytes.length();
+        for (int i = bytes.length() - 1; i > 0; i--) {
+            if (bytes.byteAt(i) == '\u0000') {
+                nullIndex = i;
+                break;
+            }
+        }
+        
+        int fiUidIndex = nullIndex + 1;
+        
+        int fiUidLength = bytes.length() - fiUidIndex;
+        if (fiUidLength < uid.length()) {
+            // 'tis difficult to match a uid that is shorter than the target
+            return false;
+        }
+        
+        for (int i = 0; i < uid.length(); i++) {
+            if (uid.charAt(i) != bytes.byteAt(fiUidIndex)) {
+                return false;
+            }
+            fiUidIndex++;
+        }
+        
+        return true;
     }
     
     /**
@@ -1169,6 +1243,73 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     if (DatawaveFieldIndexCachingIteratorJexl.this.setControl.isCancelledQuery()) {
                         break;
                     }
+                    
+                    // handle case where an ivarator is running against a document range
+                    if (datatype != null && uid != null) {
+                        
+                        fiKey.parse(top.getColumnQualifier());
+                        
+                        // book keeping for uid filtering
+                        if (lastCF == null) {
+                            lastCF = top.getColumnFamily();
+                        } else if (!lastCF.equals(top.getColumnFamily())) {
+                            // new field found, reset count
+                            consecutiveFieldValueHits = 0L;
+                            lastCF = top.getColumnFamily();
+                        }
+                        
+                        if (lastValue == null) {
+                            lastValue = fiKey.getValue();
+                        } else if (!lastValue.equals(fiKey.getValue())) {
+                            // new value found, reset count
+                            consecutiveFieldValueHits = 0L;
+                            lastValue = fiKey.getValue();
+                        }
+                        
+                        if (lastCF.equals(top.getColumnFamily()) && lastValue.equals(fiKey.getValue())) {
+                            consecutiveFieldValueHits++;
+                        }
+                        
+                        if (consecutiveFieldValueHits > consecutiveHitsThreshold) {
+                            
+                            Text targetCQ = new Text(fiKey.getValue() + '\u0000' + datatype + '\u0000' + uid);
+                            Key start = new Key(top.getRow(), top.getColumnFamily(), targetCQ);
+                            
+                            // Check if top key is before estimated start key
+                            if (top.compareTo(start, PartialKey.ROW_COLFAM_COLQUAL) < 0) {
+                                Range r = new Range(start, true, boundingFiRange.getEndKey(), boundingFiRange.isEndKeyInclusive());
+                                source.seek(r, EMPTY_CFS, false);
+                                scanned++;
+                                scannedKeys.incrementAndGet();
+                                continue;
+                            } else {
+                                
+                                Text endCQ = new Text(fiKey.getValue() + '\u0000' + fiKey.getDatatype() + '\u0000' + uid + Constants.MAX_UNICODE_STRING);
+                                Key end = new Key(top.getRow(), top.getColumnFamily(), endCQ);
+                                
+                                // Check if top key is after estimated end key
+                                if (top.compareTo(end, PartialKey.ROW_COLFAM_COLQUAL) > 0) {
+                                    
+                                    // Skip to the next value
+                                    Key next = new Key(top.getRow(), top.getColumnFamily(), new Text(fiKey.getValue() + '\1'));
+                                    if (next.compareTo(boundingFiRange.getEndKey(), PartialKey.ROW_COLFAM) > 0) {
+                                        if (log.isTraceEnabled()) {
+                                            log.trace("Breaking as the current key is beyond the initial range.");
+                                        }
+                                        // If the computed skip key falls beyond the bounds of the original boundingFiRange, then we're done.
+                                        break;
+                                    }
+                                    
+                                    Range r = new Range(next, false, boundingFiRange.getEndKey(), boundingFiRange.isEndKeyInclusive());
+                                    source.seek(r, EMPTY_CFS, false);
+                                    scanned++;
+                                    scannedKeys.incrementAndGet();
+                                    continue;
+                                }
+                                // Else we are in the middle of the estimated start-end keys for this document range.
+                            }
+                        }
+                    } // end handling of doc ranges
                     
                     if (addKey(top, source.getTopValue())) {
                         matched++;

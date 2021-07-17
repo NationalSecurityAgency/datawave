@@ -11,6 +11,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +58,8 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("z");
         expectedDocument.getValue().put("TF_FIELD3", tfField1Hits);
         
-        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", false, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", configureTestData(11), Arrays.asList(expectedDocument),
+                        configureTLDTestData(11), Collections.EMPTY_LIST);
     }
     
     @Test
@@ -72,7 +74,8 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         tfField1Hits.add("z");
         expectedDocument.getValue().put("TF_FIELD3", tfField1Hits);
         
-        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", false, expectedDocument, configureTLDTestData(11), Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(TF_FIELD3 == null)", configureTLDTestData(11), Arrays.asList(expectedDocument),
+                        configureTLDTestData(11), Collections.EMPTY_LIST);
     }
     
     /**

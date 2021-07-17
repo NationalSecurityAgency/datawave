@@ -4,6 +4,7 @@ import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.Constants;
 import datawave.query.jexl.DatawaveArithmetic;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -126,7 +127,11 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
         } else {
             List<Range> ranges = new ArrayList<>();
             for (String value : values) {
-                ranges.add(buildBoundingRange(rowId, fiName, new Text(value)));
+                if (datatype != null && uid != null) {
+                    ranges.add(buildBoundingRange(rowId, fiName, value, datatype, uid));
+                } else {
+                    ranges.add(buildBoundingRange(rowId, fiName, new Text(value)));
+                }
             }
             // TODO: reduce (or expand) ranges by maxRangeSplit
             return ranges;
@@ -150,6 +155,26 @@ public class DatawaveFieldIndexListIteratorJexl extends DatawaveFieldIndexCachin
         this.boundingFiRangeStringBuilder.setLength(len);
         this.boundingFiRangeStringBuilder.append(ONE_BYTE);
         Key endKey = new Key(rowId, fiName, new Text(this.boundingFiRangeStringBuilder.toString()));
+        return new Range(startKey, true, endKey, false);
+    }
+    
+    /**
+     * Build a single bounding range for a field value for a document-specific range.
+     *
+     * @param row
+     * @return
+     */
+    protected Range buildBoundingRange(Text row, Text fiName, String fieldValue, String datatype, String uid) {
+        // construct new range
+        this.boundingFiRangeStringBuilder.setLength(0);
+        this.boundingFiRangeStringBuilder.append(fieldValue);
+        this.boundingFiRangeStringBuilder.append(NULL_BYTE);
+        this.boundingFiRangeStringBuilder.append(datatype);
+        this.boundingFiRangeStringBuilder.append(NULL_BYTE);
+        this.boundingFiRangeStringBuilder.append(uid);
+        
+        Key startKey = new Key(row, fiName, new Text(this.boundingFiRangeStringBuilder.toString()));
+        Key endKey = startKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL);
         return new Range(startKey, true, endKey, false);
     }
     
