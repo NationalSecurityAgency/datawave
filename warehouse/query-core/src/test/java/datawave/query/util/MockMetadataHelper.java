@@ -280,7 +280,8 @@ public class MockMetadataHelper extends MetadataHelper {
     
     @Override
     public long getCardinalityForField(String fieldName, String datatype, Date begin, Date end) throws TableNotFoundException {
-        throw new UnsupportedOperationException("not imeplemented in MockMetadataHelper");
+        
+        throw new UnsupportedOperationException("not implemented in MockMetadataHelper");
     }
     
     @Override

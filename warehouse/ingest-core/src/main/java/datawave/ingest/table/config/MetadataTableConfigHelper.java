@@ -3,8 +3,10 @@ package datawave.ingest.table.config;
 import datawave.data.ColumnFamilyConstants;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
+import datawave.iterators.FrequencyColumnIterator;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
@@ -12,6 +14,8 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
+
+import java.util.HashMap;
 
 public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
     
@@ -23,9 +27,9 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
     public void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         if (tableName != null) {
             for (IteratorScope scope : IteratorScope.values()) {
-                setFrequencyCombiner(tops, scope.name());
                 setCombinerForCountMetadata(tops, scope.name());
                 setCombinerForEdgeMetadata(tops, scope.name());
+                setFrequencyColumnIterator(tops, scope.name());
             }
         }
         
@@ -49,12 +53,14 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
         return stem;
     }
     
-    // add the EdgeMetadataCombiner to the edge column
-    private String setFrequencyCombiner(TableOperations tops, String scopeName) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
-        String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "FrequencyCombiner");
-        setPropertyIfNecessary(tableName, stem, "10," + SummingCombiner.class.getName(), tops, log);
+    // add the CountMetadataCombiner to the count column
+    private String setFrequencyColumnIterator(TableOperations tops, String scopeName) throws AccumuloException, AccumuloSecurityException,
+                    TableNotFoundException {
+        String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "FrequencyColumnIterator");
+        setPropertyIfNecessary(tableName, stem, "10,datawave.iterators.FrequencyColumnIterator", tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_F.toString(), tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.type", "VARLEN", tops, log);
+        setPropertyIfNecessary(tableName, stem + ".opt.ageOffDate", "20100101", tops, log);
         return stem;
     }
     
