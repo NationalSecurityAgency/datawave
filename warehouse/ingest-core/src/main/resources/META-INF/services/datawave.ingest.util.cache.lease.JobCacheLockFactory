@@ -1,0 +1,2 @@
+datawave.ingest.util.cache.lease.JobCacheZkLockFactory
+datawave.ingest.util.cache.lease.JobCacheNoOpLockFactory
