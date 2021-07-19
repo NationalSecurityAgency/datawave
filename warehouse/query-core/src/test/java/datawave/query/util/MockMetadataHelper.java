@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -33,6 +34,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
@@ -347,6 +349,12 @@ public class MockMetadataHelper extends MetadataHelper {
         }
         
         return sum;
+    }
+    
+    // Stub, FixUnfieldedTermsVisitorTest
+    @Override
+    public Multimap<String,String> getCompositeToFieldMap() throws TableNotFoundException {
+        return LinkedHashMultimap.create();
     }
     
     @Override
