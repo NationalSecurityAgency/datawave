@@ -306,8 +306,6 @@ public class PushdownNegationVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         ASTJexlScript result = (ASTJexlScript) PushdownNegationVisitor.pushdownNegations(script);
         
-        // Really? Double wrapping? That's very untidy and this is very passive aggressive.
-        // But also read the room. At most you need one wrapping. And if there are no siblings you need no wrapping!
         String expected = "(!(FOO == 'bar') || !(FOO == 'baz'))";
         Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(result));
     }

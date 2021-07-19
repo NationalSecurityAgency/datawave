@@ -38,11 +38,8 @@ public class PushdownNegationVisitor extends BaseVisitor {
         
         flattened.jjtAccept(new PushdownNegationVisitor(), new NegationState(false));
         
-        // flatten the result
-        flattened = TreeFlatteningRebuildingVisitor.flatten(flattened);
-        
-        // remove extra parens and return
-        return RemoveExtraParensVisitor.remove(flattened);
+        // flatten the result, including extra parens picked up during the pushdown
+        return TreeFlatteningRebuildingVisitor.flatten(flattened);
     }
     
     @Override
