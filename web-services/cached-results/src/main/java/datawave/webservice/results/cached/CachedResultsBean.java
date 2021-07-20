@@ -445,7 +445,8 @@ public class CachedResultsBean {
             AuditType auditType = logic.getAuditType(q);
             if (!auditType.equals(AuditType.NONE)) {
                 try {
-                    MultivaluedMap<String,String> queryMap = q.toMap();
+                    MultivaluedMap<String,String> queryMap = new MultivaluedMapImpl<>();
+                    queryMap.putAll(q.toMap());
                     marking.validate(queryMap);
                     queryMap.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
                     queryMap.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
@@ -1302,7 +1303,8 @@ public class CachedResultsBean {
                 auditMessage.append("User running secondary query on cached results of original query,");
                 auditMessage.append(" original query: ").append(query.getQuery());
                 auditMessage.append(", secondary query: ").append(sqlQuery);
-                MultivaluedMap<String,String> params = query.toMap();
+                MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
+                params.putAll(query.toMap());
                 marking.validate(params);
                 PrivateAuditConstants.stripPrivateParameters(queryParameters);
                 params.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, marking.toColumnVisibilityString());
