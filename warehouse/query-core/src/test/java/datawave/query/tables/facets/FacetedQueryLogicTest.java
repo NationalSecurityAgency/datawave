@@ -1,24 +1,21 @@
 package datawave.query.tables.facets;
 
 import com.google.common.collect.Sets;
-import datawave.data.type.Type;
 import datawave.helpers.PrintUtility;
 import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
-import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.RebuildingScannerTestHelper.INTERRUPT;
 import datawave.query.RebuildingScannerTestHelper.TEARDOWN;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import datawave.query.planner.FacetedQueryPlanner;
-import datawave.query.tables.IndexQueryLogicTest;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.QueryLogicTestHarness.DocumentChecker;
@@ -32,9 +29,9 @@ import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -48,13 +45,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertTrue;
 
 public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
+    
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(FacetedQueryLogicTest.class);
     
     public FacetedQueryLogicTest() {
@@ -74,8 +73,8 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         dataTypes.add(new FacetedCitiesDataType(CitiesDataType.CityEntry.paris, generic));
         dataTypes.add(new FacetedCitiesDataType(CitiesDataType.CityEntry.rome, generic));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log, TEARDOWN.EVERY_OTHER, INTERRUPT.NEVER);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        connector = accumuloSetup.loadTables(log, TEARDOWN.EVERY_OTHER, INTERRUPT.NEVER);
     }
     
     @Before

@@ -46,6 +46,7 @@ import org.apache.lucene.search.Query;
  * <br>
  * It takes in consideration if the children is a {@link ModifierQueryNode} to define the {@link BooleanClause}.
  */
+@Deprecated
 public class BooleanQueryNodeBuilder implements QueryBuilder {
     
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {

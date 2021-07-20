@@ -7,6 +7,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.data.type.NoOpType;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.iterator.EventFieldIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.core.iterators.querylock.QueryLock;
@@ -15,6 +18,8 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.logic.OrIterator;
+import datawave.query.jexl.functions.EventFieldAggregator;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
@@ -98,6 +103,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -424,7 +430,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      */
     private NestedIterator<Key> buildExceededFromTermFrequency(String identifier, JexlNode rootNode, JexlNode sourceNode, LiteralRange<?> range, Object data) {
         if (limitLookup) {
-            
+            ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(identifier, sourceNode, attrFilter);
+            NestedIterator<Key> eventFieldIterator = new EventFieldIterator(rangeLimiter, source.deepCopy(env), identifier, new AttributeFactory(
+                            this.typeMetadata), getEventFieldAggregator(identifier, wrapped));
             TermFrequencyIndexBuilder builder = new TermFrequencyIndexBuilder();
             builder.setSource(source.deepCopy(env));
             builder.setTypeMetadata(typeMetadata);
@@ -441,12 +449,18 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setRange(fiRange);
             builder.setField(identifier);
             
-            return builder.build();
+            NestedIterator<Key> tfIterator = builder.build();
+            OrIterator tfMerge = new OrIterator(Arrays.asList(tfIterator, eventFieldIterator));
+            return tfMerge;
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}", "buildExceededFromTermFrequency"));
             throw new DatawaveFatalQueryException(qe);
         }
         
+    }
+    
+    protected EventFieldAggregator getEventFieldAggregator(String field, ChainableEventDataQueryFilter filter) {
+        return new EventFieldAggregator(field, filter, attrFilter != null ? attrFilter.getMaxNextCount() : -1, typeMetadata, NoOpType.class.getName());
     }
     
     /**
@@ -1018,23 +1032,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return null;
     }
     
-    private boolean isUsable(Path path) throws IOException {
-        try {
-            if (!hdfsFileSystem.getFileSystem(path.toUri()).mkdirs(path)) {
-                throw new IOException("Unable to mkdirs: fs.mkdirs(" + path + ")->false");
-            }
-        } catch (MalformedURLException e) {
-            throw new IOException("Unable to load hadoop configuration", e);
-        } catch (Exception e) {
-            log.warn("Unable to access " + path, e);
-            return false;
-        }
-        return true;
-    }
-    
     /**
-     * Create a cache directory path for a specified regex node. If alternatives have been specified, then random alternatives will be attempted until one is
-     * found that can be written to.
+     * Build a list of potential hdfs directories based on each ivarator cache dir configs.
      * 
      * @return A path
      */
@@ -1056,10 +1055,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         path = new Path(path, scanId);
                     }
                     path = new Path(path, subdirectory);
-                    if (isUsable(path)) {
-                        URI uri = path.toUri();
-                        pathAndFs.add(new IvaratorCacheDir(config, hdfsFileSystem.getFileSystem(uri), uri.toString()));
-                    }
+                    URI uri = path.toUri();
+                    pathAndFs.add(new IvaratorCacheDir(config, hdfsFileSystem.getFileSystem(uri), uri.toString()));
                 }
             }
         }
@@ -1161,7 +1158,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             
             builder.setField(field);
         } catch (IOException | URISyntaxException | NullPointerException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_EXCEEDED_OR_PARAMS, MessageFormat.format("Class: {0}",
+            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_EXCEEDED_OR_PARAMS, e, MessageFormat.format("Class: {0}",
                             ExceededOrThresholdMarkerJexlNode.class.getSimpleName()));
             throw new DatawaveFatalQueryException(qe);
         }

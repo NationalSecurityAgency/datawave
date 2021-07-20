@@ -9,6 +9,7 @@ import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
+import datawave.util.TableName;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -77,7 +78,7 @@ public class WiseGuysIngest {
         
         try {
             // write the shard table :
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
+            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
             mutation = new Mutation(shard);
             
             mutation.put(datatype + "\u0000" + corleoneUID, "NOME.0" + "\u0000" + "SANTINO", columnVisibility, timeStamp, emptyValue);
@@ -161,7 +162,7 @@ public class WiseGuysIngest {
         
         try {
             // write shard index table:
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_INDEX_TABLE_NAME, bwConfig);
+            bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
             // corleones
             // uuid
             mutation = new Mutation(lcNoDiacriticsType.normalize("CORLEONE"));
@@ -353,7 +354,7 @@ public class WiseGuysIngest {
         
         try {
             
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_RINDEX_TABLE_NAME, bwConfig);
+            bw = con.createBatchWriter(TableName.SHARD_RINDEX, bwConfig);
             // write the reverse index table:
             // corleones
             mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("CORLEONE")).reverse());
@@ -559,7 +560,7 @@ public class WiseGuysIngest {
             
             // write the field index table:
             
-            bw = con.createBatchWriter(QueryTestTableHelper.SHARD_TABLE_NAME, bwConfig);
+            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
             
             mutation = new Mutation(shard);
             // corleones
