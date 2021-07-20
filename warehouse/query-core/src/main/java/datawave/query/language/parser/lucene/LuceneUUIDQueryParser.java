@@ -12,6 +12,7 @@ import datawave.query.search.WildcardFieldedTerm;
 
 import org.apache.log4j.Logger;
 
+@Deprecated
 public class LuceneUUIDQueryParser extends LuceneQueryParser {
     private static Logger log = Logger.getLogger(LuceneUUIDQueryParser.class.getName());
     private List<UUIDType> uuidTypes = new ArrayList<>();
