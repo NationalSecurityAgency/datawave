@@ -199,7 +199,7 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
             }
         }
         // if we set the date with id, don't overwrite it
-        if (!(fieldName.equals(eventDateFieldName) && event.getDate() > 0L)) {
+        if (!(fieldName.equals(eventDateFieldName) && event.getDate() > Long.MIN_VALUE)) {
             super.checkField(fieldName, fieldValue);
         }
         
