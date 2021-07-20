@@ -12,6 +12,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 public class GroupBy extends LuceneQueryFunction {
     public GroupBy() {
         super(QueryFunctions.GROUPBY_FUNCTION, new ArrayList<>());
