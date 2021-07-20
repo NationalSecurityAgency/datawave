@@ -22,7 +22,6 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.slf4j.Logger;
 import org.springframework.util.Assert;
-import sun.reflect.generics.tree.Tree;
 
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
