@@ -2,27 +2,35 @@ package datawave.query.tables.async.event;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.*;
+import datawave.query.jexl.visitors.DateIndexCleanupVisitor;
+import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.PrintingVisitor;
+import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
+import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
+import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
+import datawave.query.jexl.visitors.TreeEqualityVisitor;
+import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.SessionOptions;
-import datawave.query.tables.async.RangeDefinition;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
 import datawave.util.StringUtils;
+import datawave.util.time.DateHelper;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.fs.FileSystem;
@@ -33,6 +41,9 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -92,6 +103,26 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         
     }
     
+    private Date getEarliestBeginDate(Collection<Range> ranges) {
+        SimpleDateFormat sdf = new SimpleDateFormat(DateHelper.DATE_FORMAT_STRING_TO_DAY);
+        Date minDate = null;
+        try {
+            for (Range range : ranges) {
+                String stringDate = range.getStartKey().getRow().toString();
+                if (stringDate.length() >= DateHelper.DATE_FORMAT_STRING_TO_DAY.length()) {
+                    stringDate = stringDate.substring(0, DateHelper.DATE_FORMAT_STRING_TO_DAY.length());
+                    Date date = sdf.parse(stringDate);
+                    if (minDate == null || date.compareTo(minDate) < 0) {
+                        minDate = date;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new DatawaveFatalQueryException(e);
+        }
+        return minDate;
+    }
+    
     @Override
     @Nullable
     public ScannerChunk apply(@Nullable ScannerChunk input) {
@@ -128,6 +159,21 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     List<String> debug = null;
                     if (log.isTraceEnabled())
                         debug = Lists.newArrayList();
+                    
+                    if (!config.isDisableWhindexFieldMappings() && !evaluatedPreviously) {
+                        if (null == script)
+                            script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                        
+                        // apply the whindex using the shard date
+                        ASTJexlScript rebuiltScript = WhindexVisitor.apply(script, config, getEarliestBeginDate(newSettings.getRanges()), metadataHelper);
+                        
+                        // if the query changed, save it, and mark it as such
+                        if (!TreeEqualityVisitor.isEqual(script, rebuiltScript, new TreeEqualityVisitor.Reason())) {
+                            script = rebuiltScript;
+                            madeChange = true;
+                        }
+                    }
+                    
                     if (!config.isBypassExecutabilityCheck() || !evaluatedPreviously) {
                         if (null == script)
                             script = JexlASTHelper.parseAndFlattenJexlQuery(query);

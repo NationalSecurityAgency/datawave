@@ -18,6 +18,7 @@ import datawave.query.QueryParameters;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
@@ -209,6 +210,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Map<String,Date> compositeTransitionDates = new HashMap<>();
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
     private Set<String> evaluationOnlyFields = new HashSet<>(0);
+    
+    /**
+     * Disables Whindex (value-specific) field mappings for GeoWave functions.
+     * 
+     * @see WhindexVisitor
+     */
+    private boolean disableWhindexFieldMappings = false;
+    private Set<String> whindexMappingFields = new HashSet<>();
+    private Map<String,Map<String,String>> whindexFieldMappings = new HashMap<>();
     
     private boolean sortedUIDs = true;
     // The fields in the the query that are tf fields
@@ -504,6 +514,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
         this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
+        this.setDisableWhindexFieldMappings(other.isDisableWhindexFieldMappings());
+        this.setWhindexMappingFields(other.getWhindexMappingFields());
+        this.setWhindexFieldMappings(other.getWhindexFieldMappings());
     }
     
     /**
@@ -2046,6 +2059,30 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public Set<String> getEvaluationOnlyFields() {
         return this.evaluationOnlyFields;
+    }
+    
+    public boolean isDisableWhindexFieldMappings() {
+        return disableWhindexFieldMappings;
+    }
+    
+    public void setDisableWhindexFieldMappings(boolean disableWhindexFieldMappings) {
+        this.disableWhindexFieldMappings = disableWhindexFieldMappings;
+    }
+    
+    public Set<String> getWhindexMappingFields() {
+        return whindexMappingFields;
+    }
+    
+    public void setWhindexMappingFields(Set<String> whindexMappingFields) {
+        this.whindexMappingFields = whindexMappingFields;
+    }
+    
+    public Map<String,Map<String,String>> getWhindexFieldMappings() {
+        return whindexFieldMappings;
+    }
+    
+    public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
+        this.whindexFieldMappings = whindexFieldMappings;
     }
     
     public boolean isGeneratePlanOnly() {
