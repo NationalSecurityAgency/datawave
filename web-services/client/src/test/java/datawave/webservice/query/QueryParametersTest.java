@@ -1,15 +1,17 @@
 package datawave.webservice.query;
 
+import java.text.ParseException;
+import java.util.Date;
+
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-
-import java.text.ParseException;
-import java.util.Date;
 
 public class QueryParametersTest {
     
@@ -24,7 +26,7 @@ public class QueryParametersTest {
     private QueryPersistence persistenceMode;
     private String query;
     private String queryName;
-    private MultiValueMap<String,String> requestHeaders;
+    private MultivaluedMap<String,String> requestHeaders;
     private boolean trace;
     
     private long accumuloDate = 1470528000000l; // Accumulo - Aug 7, 2016
@@ -49,7 +51,7 @@ public class QueryParametersTest {
         persistenceMode = QueryPersistence.PERSISTENT;
         query = "WHEREIS:Waldo";
         queryName = "myQueryForTests";
-        requestHeaders = new LinkedMultiValueMap<>();
+        requestHeaders = new MultivaluedHashMap<String,String>();
         requestHeaders.add(headerName, headerValue);
         trace = true;
         
@@ -106,7 +108,7 @@ public class QueryParametersTest {
         }
         
         // Test the QueryParametersImpl.validate(QueryParametersImpl params) method
-        MultiValueMap<String,String> params = new LinkedMultiValueMap<>();
+        MultivaluedMap<String,String> params = new MultivaluedMapImpl<String,String>();
         
         // Reset the MulivaluedMap for a QueryParametersImpl.validate() call
         try {
@@ -128,8 +130,7 @@ public class QueryParametersTest {
         // Add an unknown parameter
         params.add("key", "value");
         
-        MultiValueMap<String,String> unknownParams = new LinkedMultiValueMap<>();
-        unknownParams.putAll(qp.getUnknownParameters(params));
+        MultivaluedMap<String,String> unknownParams = qp.getUnknownParameters(params);
         Assert.assertEquals("params", unknownParams.getFirst(QueryParameters.QUERY_PARAMS));
         Assert.assertEquals("value", unknownParams.getFirst("key"));
         Assert.assertEquals(2, unknownParams.size());
