@@ -2186,6 +2186,30 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setPointMaxExpansion(pointMaxExpansion);
     }
     
+    public int getGeoWaveRangeSplitThreshold() {
+        return getConfig().getGeoWaveRangeSplitThreshold();
+    }
+    
+    public void setGeoWaveRangeSplitThreshold(int geoWaveRangeSplitThreshold) {
+        getConfig().setGeoWaveRangeSplitThreshold(geoWaveRangeSplitThreshold);
+    }
+    
+    public double getGeoWaveMaxRangeOverlap() {
+        return getConfig().getGeoWaveMaxRangeOverlap();
+    }
+    
+    public void setGeoWaveMaxRangeOverlap(double geoWaveMaxRangeOverlap) {
+        getConfig().setGeoWaveMaxRangeOverlap(geoWaveMaxRangeOverlap);
+    }
+    
+    public boolean isOptimizeGeoWaveRanges() {
+        return getConfig().isOptimizeGeoWaveRanges();
+    }
+    
+    public void setOptimizeGeoWaveRanges(boolean optimizeGeoWaveRanges) {
+        getConfig().setOptimizeGeoWaveRanges(optimizeGeoWaveRanges);
+    }
+    
     public int getGeoWaveMaxEnvelopes() {
         return getConfig().getGeoWaveMaxEnvelopes();
     }
