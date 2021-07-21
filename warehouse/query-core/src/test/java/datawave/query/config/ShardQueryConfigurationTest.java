@@ -18,6 +18,8 @@ import datawave.query.DocumentSerialization;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.model.QueryModel;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.attributes.UniqueGranularity;
 import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import org.junit.Assert;
@@ -188,7 +190,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(0, config.getGroupFieldsBatchSize());
         Assert.assertFalse(config.getAccrueStats());
         Assert.assertEquals(Sets.newHashSet(), config.getGroupFields());
-        Assert.assertEquals(Sets.newHashSet(), config.getUniqueFields());
+        Assert.assertEquals(new UniqueFields(), config.getUniqueFields());
         Assert.assertFalse(config.getCacheModel());
         Assert.assertTrue(config.isTrackSizes());
         Assert.assertEquals(Lists.newArrayList(), config.getContentFieldNames());
@@ -243,7 +245,8 @@ public class ShardQueryConfigurationTest {
         QueryModel queryModel = new QueryModel();
         QueryImpl query = new QueryImpl();
         Set<String> groupFields = Sets.newHashSet("groupFieldA");
-        Set<String> uniqueFields = Sets.newHashSet("uniqueFieldA");
+        UniqueFields uniqueFields = new UniqueFields();
+        uniqueFields.put("uniqueFieldA", UniqueGranularity.ALL);
         List<String> contentFieldNames = Lists.newArrayList("fieldA");
         
         // Set collections on 'other' ShardQueryConfiguration
@@ -306,7 +309,7 @@ public class ShardQueryConfigurationTest {
         queryModel.addTermToModel("aliasA", "diskNameA");
         query.setId(UUID.randomUUID());
         groupFields.add("groupFieldB");
-        uniqueFields.add("uniqueFieldB");
+        uniqueFields.put("uniqueFieldB", UniqueGranularity.ALL);
         contentFieldNames.add("fieldB");
         
         // Assert that copied collections were deep copied and remain unchanged
@@ -363,7 +366,9 @@ public class ShardQueryConfigurationTest {
         expectedQuery.setId(config.getQuery().getId());
         Assert.assertEquals(expectedQuery, config.getQuery());
         Assert.assertEquals(Sets.newHashSet("groupFieldA"), config.getGroupFields());
-        Assert.assertEquals(Sets.newHashSet("uniqueFieldA"), config.getUniqueFields());
+        UniqueFields expectedUniqueFields = new UniqueFields();
+        expectedUniqueFields.put("uniqueFieldA", UniqueGranularity.ALL);
+        Assert.assertEquals(expectedUniqueFields, config.getUniqueFields());
         Assert.assertEquals(Lists.newArrayList("fieldA"), config.getContentFieldNames());
     }
     
@@ -438,7 +443,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 178;
+        int expectedObjectCount = 177;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

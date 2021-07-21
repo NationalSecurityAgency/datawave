@@ -1,5 +1,6 @@
 package datawave.query.language.functions.jexl;
 
+import datawave.query.attributes.UniqueFields;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.language.functions.QueryFunction;
 import datawave.webservice.query.exception.BadRequestQueryException;
@@ -7,7 +8,13 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
+/**
+ * Function to determine uniqueness among documents given a set of fields and the levels of granularity that should be used for each fields. This function
+ * accepts a list of fields with specified granularity levels in the format {@code field[ALL],dateField[DAY,HOUR,MINUTE]}. See {@link UniqueFields} for
+ * additional documentation on supported formatting.
+ */
 public class Unique extends JexlQueryFunction {
     
     public Unique() {
@@ -22,8 +29,18 @@ public class Unique extends JexlQueryFunction {
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.isEmpty()) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", this.name));
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format(
+                            "{0} requires at least one argument", this.name));
             throw new IllegalArgumentException(qe);
+        } else {
+            String parameters = String.join(",", parameterList);
+            try {
+                UniqueFields.from(parameters);
+            } catch (Exception e) {
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format(
+                                "Unable to parse unique fields from arguments for function {0}", this.name));
+                throw new IllegalArgumentException(qe);
+            }
         }
     }
     
@@ -50,4 +67,5 @@ public class Unique extends JexlQueryFunction {
     public QueryFunction duplicate() {
         return new Unique();
     }
+    
 }

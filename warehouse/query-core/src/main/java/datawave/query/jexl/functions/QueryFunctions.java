@@ -21,6 +21,9 @@ public class QueryFunctions {
     public static final String QUERY_FUNCTION_NAMESPACE = "f";
     public static final String OPTIONS_FUNCTION = "options";
     public static final String UNIQUE_FUNCTION = "unique";
+    public static final String UNIQUE_BY_DAY_FUNCTION = "unique_by_day";
+    public static final String UNIQUE_BY_HOUR_FUNCTION = "unique_by_hour";
+    public static final String UNIQUE_BY_MINUTE_FUNCTION = "unique_by_minute";
     public static final String GROUPBY_FUNCTION = "groupby";
     
     protected static Logger log = Logger.getLogger(QueryFunctions.class);
