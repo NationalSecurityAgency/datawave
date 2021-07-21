@@ -134,9 +134,8 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
         
         PropogatingCombiner aggr = getAggregator(workKey);
         
-        Value aggregatedValue = new Value(iterator.getTopValue());
+        Value aggregatedValue;
         
-        // always propogate deletes
         if (aggr != null) {
             
             if (log.isTraceEnabled()) {
@@ -148,6 +147,7 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
             
             aggregatedValue = aggr.reduce(keyToAggregate, new ValueCombiner(iterator));
             
+            // always propagate deletes
             if (aggr.propogateKey() || workKey.isDeleted()) {
                 if (log.isTraceEnabled())
                     log.trace("propogating " + workKey);
@@ -157,6 +157,8 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
                     log.trace("Not propogating " + workKey);
                 return false;
             }
+        } else {
+            aggregatedValue = new Value(iterator.getTopValue());
         }
         
         aggrKey = new Key(workKey);
@@ -303,7 +305,10 @@ public class PropogatingIterator implements SortedKeyValueIterator<Key,Value>, O
         Preconditions.checkNotNull(env);
         Preconditions.checkNotNull(options);
         
-        shouldPropogate = !(env.getIteratorScope() == IteratorScope.majc && env.isFullMajorCompaction());
+        // Don't propagate for either scan or full major compaction. In either case, the aggregated result has combined
+        // all existing values for a key so we don't need to propagate temporary state that is only used to combine
+        // partial results with new info.
+        shouldPropogate = !(env.getIteratorScope() == IteratorScope.majc && env.isFullMajorCompaction()) && !(env.getIteratorScope() == IteratorScope.scan);
         
         PropogatingCombiner propAgg = null;
         
