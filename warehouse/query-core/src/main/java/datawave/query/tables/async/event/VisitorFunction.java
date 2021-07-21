@@ -211,7 +211,12 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                 if (null == script)
                                     script = JexlASTHelper.parseAndFlattenJexlQuery(query);
                                 try {
-                                    script = pushdownLargeFieldedLists(config, script);
+                                    
+                                    long sourceLimit = -1;
+                                    if (setting.getOptions().containsKey(QueryOptions.LIMIT_SOURCES) && config.getReduceQueryBelowSourceLimit()) {
+                                        sourceLimit = Long.parseLong(setting.getOptions().get(QueryOptions.LIMIT_SOURCES));
+                                    }
+                                    script = pushdownLargeFieldedLists(config, script, sourceLimit);
                                     madeChange = true;
                                 } catch (IOException ioe) {
                                     log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
@@ -278,7 +283,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     
     // push down large fielded lists. Assumes that the hdfs query cache uri and
     // site config urls are configured
-    protected ASTJexlScript pushdownLargeFieldedLists(ShardQueryConfiguration config, ASTJexlScript queryTree) throws IOException {
+    protected ASTJexlScript pushdownLargeFieldedLists(ShardQueryConfiguration config, ASTJexlScript queryTree, long sourceLimit) throws IOException {
         Query settings = config.getQuery();
         
         if (config.canHandleExceededValueThreshold()) {
@@ -296,7 +301,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             
             // check term limits and use the capacity map to reduce further if necessary
             int termCount = TermCountingVisitor.countTerms(script);
-            if (termCount > config.getMaxTermThreshold()) {
+            boolean overTermThreshold = (termCount > config.getMaxTermThreshold());
+            boolean overSourceLimit = (sourceLimit != -1 && termCount > sourceLimit);
+            if (overTermThreshold || overSourceLimit) {
                 // check if the capacity is available to get under the term limit
                 // determine if its possible to reduce enough to meet the threshold
                 int capacitySum = 0;
@@ -304,7 +311,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     capacitySum += capacity;
                 }
                 
-                if (termCount - capacitySum <= config.getMaxTermThreshold()) {
+                boolean reduceUnderMaxTerms = termCount - capacitySum <= config.getMaxTermThreshold();
+                boolean reduceUnderSourceLimit = termCount - capacitySum <= sourceLimit;
+                if (reduceUnderMaxTerms || reduceUnderSourceLimit) {
                     // preserve the original config and set minimum thresholds for creating Value and Range ivarators
                     int originalMaxOrExpansionThreshold = config.getMaxOrExpansionThreshold();
                     int originalMaxOrRangeThreshold = config.getMaxOrRangeThreshold();
@@ -323,7 +332,14 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         
                         // sort from largest to smallest reductions and make reductions until under the threshold
                         Set<String> fieldsToReduce = new HashSet<>();
-                        int toReduce = termCount - config.getMaxTermThreshold();
+                        int toReduce;
+                        if (termCount > config.getMaxTermThreshold()) {
+                            toReduce = termCount - config.getMaxTermThreshold();
+                        } else {
+                            // else reducing to get under source limit
+                            toReduce = termCount - (int) sourceLimit;
+                        }
+                        
                         while (toReduce > 0) {
                             // get the highest value field out of the map
                             Integer reduction = sortedMap.lastKey();

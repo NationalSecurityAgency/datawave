@@ -2249,4 +2249,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public Set<String> getEvaluationOnlyFields() {
         return getConfig().getEvaluationOnlyFields();
     }
+    
+    public void setReduceQueryBelowSourceLimit(boolean reduceQueryBelowSourceLimit) {
+        getConfig().setReduceQueryBelowSourceLimit(reduceQueryBelowSourceLimit);
+    }
+    
+    public boolean getReduceQueryBelowSourceLimit() {
+        return getConfig().getReduceQueryBelowSourceLimit();
+    }
 }

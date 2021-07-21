@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
  * Count the number of terms where bounded ranges count as 1 term
  */
 public class TermCountingVisitor extends BaseVisitor {
+    
     private static final Logger log = ThreadConfigurableLogger.getLogger(TermCountingVisitor.class);
     
     public static int countTerms(JexlNode script) {

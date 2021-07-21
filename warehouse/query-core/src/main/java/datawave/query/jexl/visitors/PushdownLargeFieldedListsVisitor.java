@@ -91,9 +91,6 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         return (T) script.jjtAccept(visitor, data);
     }
     
-    // OTHER_NODES sorts before all other field names
-    private static final String OTHER_NODES = "!" + PushdownLargeFieldedListsVisitor.class.getName() + ".otherNodes";
-    
     @Override
     public Object visit(ASTOrNode node, Object data) {
         ASTOrNode newNode = newInstanceOfType(node);

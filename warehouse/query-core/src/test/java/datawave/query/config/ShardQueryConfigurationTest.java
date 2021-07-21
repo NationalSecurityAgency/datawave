@@ -194,6 +194,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Lists.newArrayList(), config.getContentFieldNames());
         Assert.assertNull(config.getActiveQueryLogNameSource());
         Assert.assertEquals("", config.getActiveQueryLogName());
+        Assert.assertFalse(config.getReduceQueryBelowSourceLimit());
     }
     
     /**
@@ -276,6 +277,7 @@ public class ShardQueryConfigurationTest {
         other.setGroupFields(groupFields);
         other.setUniqueFields(uniqueFields);
         other.setContentFieldNames(contentFieldNames);
+        other.setReduceQueryBelowSourceLimit(true);
         
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
@@ -365,6 +367,8 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Sets.newHashSet("groupFieldA"), config.getGroupFields());
         Assert.assertEquals(Sets.newHashSet("uniqueFieldA"), config.getUniqueFields());
         Assert.assertEquals(Lists.newArrayList("fieldA"), config.getContentFieldNames());
+        
+        Assert.assertTrue(config.getReduceQueryBelowSourceLimit());
     }
     
     @Test
@@ -438,7 +442,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 178;
+        int expectedObjectCount = 179;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

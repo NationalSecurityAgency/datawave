@@ -56,6 +56,8 @@ public class VisitorFunctionTest extends EasyMockSupport {
         
         File tmpFile = File.createTempFile("Ivarator", ".cache");
         File tmpDir = new File(tmpFile.getAbsoluteFile() + File.separator);
+        tmpFile.deleteOnExit();
+        tmpDir.deleteOnExit();
         tmpFile.delete();
         tmpDir.mkdir();
         
@@ -285,5 +287,54 @@ public class VisitorFunctionTest extends EasyMockSupport {
         Assert.assertTrue(updatedQuery, updatedQuery.contains("_List_"));
         Assert.assertTrue(updatedQuery, updatedQuery.contains("field = 'FIELD1'"));
         Assert.assertTrue(updatedQuery, updatedQuery.contains("ranges\":[[\"(a\",\"z)\"]"));
+    }
+    
+    // Query with six terms has the largest expression pushed down to get under the source limit of five
+    @Test
+    public void testPushdownUnderSourceLimit_viaVisitorFunction() throws IOException, TableNotFoundException, URISyntaxException {
+        setupExpects();
+        
+        config.setCleanupShardsAndDaysQueryHints(false);
+        config.setBypassExecutabilityCheck(true);
+        config.setSerializeQueryIterator(false);
+        
+        Query mockQuery = createMock(Query.class);
+        config.setQuery(mockQuery);
+        EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
+        EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
+        
+        // set thresholds so they don't trigger. Reduce based on 'sources.limit.count'
+        config.setMaxTermThreshold(10);
+        config.setMaxDepthThreshold(10);
+        config.setMaxOrExpansionFstThreshold(100);
+        config.setMaxOrExpansionThreshold(20);
+        config.setMaxOrRangeThreshold(20);
+        config.setMaxRangesPerRangeIvarator(50);
+        config.setMaxOrRangeThreshold(20);
+        // Pushdown based on source limit
+        config.setReduceQueryBelowSourceLimit(true);
+        
+        SessionOptions options = new SessionOptions();
+        IteratorSetting iteratorSetting = new IteratorSetting(10, "itr", QueryIterator.class);
+        String query = "(FIELD1 == 'a' || FIELD1 == 'b' || FIELD1 == 'c') && (FIELD2 == 'x' || FIELD2 == 'y') && FIELD3 == 'tank man'";
+        iteratorSetting.addOption(QueryOptions.QUERY, query);
+        iteratorSetting.addOption(QueryOptions.LIMIT_SOURCES, "5");
+        options.addScanIterator(iteratorSetting);
+        
+        ScannerChunk chunk = new ScannerChunk(options, Collections.singleton(new Range()));
+        
+        replayAll();
+        
+        function = new VisitorFunction(config, helper);
+        ScannerChunk updatedChunk = function.apply(chunk);
+        
+        verifyAll();
+        
+        Assert.assertNotEquals(chunk, updatedChunk);
+        String updatedQuery = updatedChunk.getOptions().getIterators().iterator().next().getOptions().get(QueryOptions.QUERY);
+        Assert.assertNotEquals(query, updatedQuery);
+        Assert.assertTrue(updatedQuery, updatedQuery.contains("_List_"));
+        Assert.assertTrue(updatedQuery, updatedQuery.contains("field = 'FIELD1'"));
+        Assert.assertTrue(updatedQuery, updatedQuery.contains("values\":[\"a\",\"b\",\"c\"]"));
     }
 }

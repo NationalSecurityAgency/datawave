@@ -183,6 +183,8 @@
         <property name="rangeBufferTimeoutMillis" value="15000" />
         <property name="rangeBufferPollMillis" value="100" />
         <property name="evaluationOnlyFields" value="_ANYFIELD_" />
+        <!-- Should the visitor function attempt to reduce the query terms below the source limit -->
+        <property name="reduceQueryBelowSourceLimit" value="false" />
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
