@@ -289,7 +289,7 @@ public class JexlNodeSetTest {
         JexlNode sourceNode = JexlASTHelper.parseJexlQuery(source);
         assertEquals(source, JexlStringBuildingVisitor.buildQueryWithoutParse(sourceNode));
         
-        String delayed = "((ASTDelayedPredicate = true) && (FOO == 'bar'))";
+        String delayed = "((_Delayed_ = true) && (FOO == 'bar'))";
         JexlNode delayedNode = ASTDelayedPredicate.create(sourceNode);
         assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(delayedNode));
         
@@ -308,7 +308,7 @@ public class JexlNodeSetTest {
         JexlNode sourceNode = JexlASTHelper.parseJexlQuery(source);
         assertEquals(source, JexlStringBuildingVisitor.buildQueryWithoutParse(sourceNode));
         
-        String delayed = "((ASTDelayedPredicate = true) && (FOO == 'bar'))";
+        String delayed = "((_Delayed_ = true) && (FOO == 'bar'))";
         JexlNode delayedNode = ASTDelayedPredicate.create(sourceNode);
         assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(delayedNode));
         

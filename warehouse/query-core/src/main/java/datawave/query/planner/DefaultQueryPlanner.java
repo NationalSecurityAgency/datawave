@@ -41,7 +41,9 @@ import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.CaseSensitivityVisitor;
+import datawave.query.jexl.visitors.ConjunctionEliminationVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
+import datawave.query.jexl.visitors.DisjunctionEliminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
 import datawave.query.jexl.visitors.ExecutableExpansionVisitor;
@@ -511,6 +513,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
         addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), true);
+        addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), true);
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, compressMappings);
     }
@@ -579,9 +582,32 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
     
+    /**
+     * NOT THREAD SAFE - relies on QueryStopwatch which is not thread safe
+     * 
+     * @param lastOperation
+     * @param queryTree
+     * @param config
+     */
     public static void validateQuerySize(String lastOperation, JexlNode queryTree, ShardQueryConfiguration config) {
-        final QueryStopwatch timers = config.getTimers();
-        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Validate against term and depth thresholds");
+        validateQuerySize(lastOperation, queryTree, config, true);
+    }
+    
+    /**
+     * NOT THREAD SAFE when called with timed=true
+     * 
+     * @param lastOperation
+     * @param queryTree
+     * @param config
+     * @param timed
+     */
+    public static void validateQuerySize(String lastOperation, JexlNode queryTree, ShardQueryConfiguration config, boolean timed) {
+        TraceStopwatch stopwatch = null;
+        
+        if (timed) {
+            final QueryStopwatch timers = config.getTimers();
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Validate against term and depth thresholds");
+        }
         
         // check the query depth (up to config.getMaxDepthThreshold() + 1)
         int depth = DepthVisitor.getDepth(queryTree, config.getMaxDepthThreshold());
@@ -598,7 +624,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                             "{0} > {1}, last operation: {2}", termCount, config.getMaxTermThreshold(), lastOperation));
             throw new DatawaveFatalQueryException(qe);
         }
-        stopwatch.stop();
+        
+        if (timed) {
+            stopwatch.stop();
+        }
     }
     
     protected ASTJexlScript updateQueryTree(ScannerFactory scannerFactory, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
@@ -750,6 +779,26 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             queryTree = UniqueExpressionTermsVisitor.enforce(queryTree);
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after duplicate terms removed from AND and OR expressions:");
+            }
+            stopwatch.stop();
+        }
+        
+        // Enforce unique AND'd terms within OR expressions.
+        if (config.getEnforceUniqueConjunctionsWithinExpression()) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Enforce unique AND'd terms within OR expressions");
+            queryTree = ConjunctionEliminationVisitor.optimize(queryTree);
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after duplicate AND'd terms remove from OR expressions.");
+            }
+            stopwatch.stop();
+        }
+        
+        // Enforce unique OR'd terms within AND expressions.
+        if (config.getEnforceUniqueDisjunctionsWithinExpression()) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Enforce unique OR'd terms within AND expressions");
+            queryTree = DisjunctionEliminationVisitor.optimize(queryTree);
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after duplicate OR'd terms remove from AND expressions.");
             }
             stopwatch.stop();
         }
