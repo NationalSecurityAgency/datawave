@@ -276,9 +276,97 @@ public class GlobalIndexUidAggregatorTest {
     }
     
     @Test
+    public void testNegativeCountWithPartialMajorCompaction() throws Exception {
+        GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
+        IteratorSetting is = new IteratorSetting(19, "test", GlobalIndexUidAggregator.class);
+        GlobalIndexUidAggregator.setCombineAllColumns(is, true);
+        localAgg.validateOptions(is.getOptions());
+        
+        localAgg.reset();
+        
+        UUID uuid1 = UUID.randomUUID();
+        UUID uuid2 = UUID.randomUUID();
+        UUID uuid3 = UUID.randomUUID();
+        UUID uuid4 = UUID.randomUUID();
+        
+        // Collect the addition of uuid1 and the removal of uuid 2, 3, and 4 together.
+        ArrayList<Value> values = Lists.newArrayList();
+        Builder b = createNewUidList();
+        b.setIGNORE(false);
+        b.setCOUNT(1);
+        b.addUID(uuid1.toString());
+        values.add(new Value(b.build().toByteArray()));
+        
+        b = createNewUidList();
+        b.setIGNORE(false);
+        b.setCOUNT(-1);
+        b.addREMOVEDUID(uuid2.toString());
+        values.add(new Value(b.build().toByteArray()));
+        
+        b = createNewUidList();
+        b.setIGNORE(false);
+        b.setCOUNT(-1);
+        b.addREMOVEDUID(uuid3.toString());
+        values.add(new Value(b.build().toByteArray()));
+        
+        b = createNewUidList();
+        b.setIGNORE(false);
+        b.setCOUNT(-1);
+        b.addREMOVEDUID(uuid4.toString());
+        values.add(new Value(b.build().toByteArray()));
+        
+        Collections.reverse(values);
+        Value result = localAgg.reduce(new Key("key"), values.iterator());
+        Uid.List resultList = Uid.List.parseFrom(result.get());
+        assertEquals(-2, resultList.getCOUNT());
+        assertEquals(1, resultList.getUIDCount());
+        assertEquals(1, resultList.getUIDList().size());
+        assertEquals(3, resultList.getREMOVEDUIDCount());
+        assertEquals(3, resultList.getREMOVEDUIDList().size());
+        assertTrue(resultList.getUIDList().contains(uuid1.toString()));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid2.toString()));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid3.toString()));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid4.toString()));
+        
+        localAgg.reset();
+        values.clear();
+        values.add(result);
+        
+        // Simulate a partial major compaction by taking the previous combined result (the partial major compaction
+        // output) and include the original adds for uuid1
+        b = createNewUidList();
+        b.setIGNORE(false);
+        b.setCOUNT(1);
+        b.addUID(uuid2.toString());
+        values.add(new Value(b.build().toByteArray()));
+        
+        b = createNewUidList();
+        b.setIGNORE(false);
+        b.setCOUNT(1);
+        b.addUID(uuid3.toString());
+        values.add(new Value(b.build().toByteArray()));
+        
+        b = createNewUidList();
+        b.setIGNORE(false);
+        b.setCOUNT(1);
+        b.addUID(uuid4.toString());
+        values.add(new Value(b.build().toByteArray()));
+        
+        Collections.reverse(values);
+        result = localAgg.reduce(new Key("key"), values.iterator());
+        resultList = Uid.List.parseFrom(result.get());
+        assertEquals(1, resultList.getCOUNT());
+        assertEquals(1, resultList.getUIDCount());
+        assertEquals(1, resultList.getUIDList().size());
+        assertEquals(3, resultList.getREMOVEDUIDList().size());
+        assertEquals(uuid1.toString(), resultList.getUID(0));
+    }
+    
+    @Test
     public void testRemoveAndReAddUUIDWithPartialMajorCompaction() throws Exception {
         GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
         IteratorSetting is = new IteratorSetting(19, "test", GlobalIndexUidAggregator.class);
+        GlobalIndexUidAggregator.setTimestampsIgnoredOpt(is, false);
         GlobalIndexUidAggregator.setCombineAllColumns(is, true);
         localAgg.validateOptions(is.getOptions());
         
