@@ -12,11 +12,17 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.DiacriticContent;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.TimingMetadata;
+import datawave.query.function.LogTiming;
+import datawave.query.iterator.Util;
 import datawave.query.jexl.JexlASTHelper;
+import org.apache.accumulo.core.data.ArrayByteSequence;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
@@ -250,6 +256,62 @@ public class UniqueTransformTest {
         };
         TransformIterator inputIterator = new TransformIterator(input.iterator(), docToEntry);
         // fields = fields.stream().map(field -> (random.nextBoolean() ? '$' + field : field)).collect(Collectors.toSet());
+        UniqueTransform transform = new UniqueTransform(fields);
+        Iterator iter = Iterators.transform(inputIterator, transform);
+        
+        List<Document> eventList = Lists.newArrayList();
+        while (iter.hasNext()) {
+            // Object next = iter.next();
+            Map.Entry<Key,Document> next = (Map.Entry<Key,Document>) iter.next();
+            if (next != null) {
+                eventList.add(next.getValue());
+            }
+        }
+        
+        Assert.assertEquals(expectedCount, eventList.size());
+        Assert.assertEquals(expected, eventList);
+    }
+    
+    @Test
+    public void testUniquenessWithTimingMetric() {
+        List<Document> input = new ArrayList<>();
+        List<Document> expected = new ArrayList<>();
+        
+        Text MARKER_TEXT = new Text("\u2735FinalDocument\u2735");
+        ByteSequence MARKER_SEQUENCE = new ArrayByteSequence(MARKER_TEXT.getBytes(), 0, MARKER_TEXT.getLength());
+        byte EMPTY_BYTES[] = new byte[0];
+        Key key = new Key(EMPTY_BYTES, EMPTY_BYTES, MARKER_SEQUENCE.subSequence(0, MARKER_SEQUENCE.length()).toArray());
+        Document d = new Document(key, true);
+        d.getMetadata().set(key);
+        TimingMetadata timingMetadata = new TimingMetadata();
+        timingMetadata.setNextCount(5l);
+        d.put(LogTiming.TIMING_METADATA, timingMetadata);
+        
+        input.add(d);
+        expected.add(d);
+        
+        d = new Document();
+        d.put("ATTR0", new DiacriticContent(values.get(0), d.getMetadata(), true), true, false);
+        input.add(d);
+        expected.add(d);
+        
+        d = new Document();
+        d.put("ATTR1", new DiacriticContent(values.get(1), d.getMetadata(), true), true, false);
+        input.add(d);
+        expected.add(d);
+        
+        d = new Document();
+        d.put("ATTR2", new DiacriticContent(values.get(1), d.getMetadata(), true), true, false);
+        input.add(d);
+        
+        Set<String> fields = new HashSet<>(Arrays.asList("ATTR0"));
+        int expectedCount = 3;
+        
+        Transformer docToEntry = input1 -> {
+            Document doc = (Document) input1;
+            return Maps.immutableEntry(doc.getMetadata(), doc);
+        };
+        TransformIterator inputIterator = new TransformIterator(input.iterator(), docToEntry);
         UniqueTransform transform = new UniqueTransform(fields);
         Iterator iter = Iterators.transform(inputIterator, transform);
         
