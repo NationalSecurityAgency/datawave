@@ -1,31 +1,26 @@
 package datawave.query.postprocessing.tf;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import datawave.core.iterators.TermFrequencyIterator;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
+import com.google.protobuf.InvalidProtocolBufferException;
+import datawave.core.iterators.TermFrequencyOffsetIterator;
+import datawave.core.iterators.key.TFKey;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
-import datawave.query.jexl.functions.TermFrequencyList;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.Constants;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.jexl.functions.ContentFunctions;
+import datawave.query.jexl.functions.TermFrequencyList;
 import datawave.query.jexl.visitors.LiteralNodeSubsetVisitor;
-
-import datawave.util.StringUtils;
+import datawave.query.predicate.EventDataQueryFilter;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
@@ -35,18 +30,24 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.Sets;
-import com.google.common.collect.TreeMultimap;
-import com.google.protobuf.InvalidProtocolBufferException;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
+
+import static datawave.query.Constants.TERM_FREQUENCY_COLUMN_FAMILY;
+import static datawave.query.Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME;
 
 public class TermOffsetPopulator {
+    
     private static final Logger log = Logger.getLogger(TermOffsetPopulator.class);
     
-    private static final Set<String> phraseFunctions;
+    public static final Set<String> phraseFunctions;
     
     static {
         Set<String> _phraseFunctions = Sets.newHashSet();
@@ -84,8 +85,8 @@ public class TermOffsetPopulator {
         Map<String,Object> map = new HashMap<>();
         Map<String,TermFrequencyList> termOffsetMap = Maps.newHashMap();
         
-        Map<String,TermFrequencyList> termOffsetMap1 = (Map<String,TermFrequencyList>) (map1.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
-        Map<String,TermFrequencyList> termOffsetMap2 = (Map<String,TermFrequencyList>) (map2.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
+        Map<String,TermFrequencyList> termOffsetMap1 = (Map<String,TermFrequencyList>) (map1.get(TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
+        Map<String,TermFrequencyList> termOffsetMap2 = (Map<String,TermFrequencyList>) (map2.get(TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
         
         if (termOffsetMap1 == null) {
             if (termOffsetMap2 != null) {
@@ -108,29 +109,9 @@ public class TermOffsetPopulator {
         }
         
         // Load the actual map into map that will be put into the JexlContext
-        map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffsetMap);
+        map.put(TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffsetMap);
         
         return map;
-    }
-    
-    protected Range getRange(Set<Key> keys) {
-        // building a range from the beginning of the term frequencies for the first datatype\0uid
-        // to the end of the term frequencies for the last datatype\0uid
-        List<String> dataTypeUids = new ArrayList<>();
-        Text row = null;
-        for (Key key : keys) {
-            row = key.getRow();
-            dataTypeUids.add(key.getColumnFamily().toString());
-        }
-        Collections.sort(dataTypeUids);
-        
-        Key startKey = new Key(row, Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(dataTypeUids.get(0)));
-        Key endKey = new Key(row, Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(dataTypeUids.get(dataTypeUids.size() - 1) + '\1'));
-        return new Range(startKey, true, endKey, true);
-    }
-    
-    public Map<String,Object> getContextMap(Key key) {
-        return getContextMap(key, Collections.singleton(key), null);
     }
     
     /**
@@ -138,34 +119,26 @@ public class TermOffsetPopulator {
      *
      * @param docKey
      *            key that maps to a document
-     * @param keys
-     *            set of keys that map to hits on tf fields
-     * @param fields
-     *            set of fields to remove from the search space
+     * @param searchSpace
+     *            set of tf keys that define the search space
      * @return
      */
-    public Map<String,Object> getContextMap(Key docKey, Set<Key> keys, Set<String> fields) {
+    public Map<String,Object> getContextMap(Key docKey, TreeSet<Text> searchSpace) {
         document = new Document();
         
-        TermFrequencyIterator tfSource;
-        // Do not prune if no fields exist or if the tf fields would prune to nothing. TODO skip tf entirely if this would prune to zero
-        if (fields == null || fields.isEmpty() || fields.size() == termFrequencyFieldValues.keySet().size()) {
-            tfSource = new TermFrequencyIterator(termFrequencyFieldValues, keys);
-        } else {
-            // There are fields to remove, reduce the search space and continue
-            Multimap<String,String> tfFVs = HashMultimap.create(termFrequencyFieldValues);
-            fields.forEach(tfFVs::removeAll);
-            tfSource = new TermFrequencyIterator(tfFVs, keys);
-            
-            if (tfFVs.size() == 0) {
-                log.error("Created a TFIter with no field values. Orig fields: " + termFrequencyFieldValues.keySet() + " fields to remove: " + fields);
-            }
+        // Handle case where there are no hits
+        if (searchSpace.isEmpty()) {
+            Map<String,Object> map = new HashMap<>();
+            map.put(TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new HashMap<>());
+            return map;
         }
         
-        Range range = getRange(keys);
+        Range range = getRangeFromSearchSpace(docKey.getRow(), searchSpace);
+        
+        TermFrequencyOffsetIterator offsetIter = new TermFrequencyOffsetIterator(searchSpace);
         try {
-            tfSource.init(source, null, null);
-            tfSource.seek(getRange(keys), null, false);
+            offsetIter.init(source, null, null);
+            offsetIter.seek(range, null, false);
         } catch (IOException e) {
             log.error("Seek to the range failed: " + range, e);
         }
@@ -175,49 +148,40 @@ public class TermOffsetPopulator {
             evaluationFilter.startNewDocument(docKey);
         }
         
+        String field;
+        String value;
+        TFKey tfKey = new TFKey();
         Map<String,TermFrequencyList> termOffsetMap = Maps.newHashMap();
         
-        while (tfSource.hasTop()) {
-            Key key = tfSource.getTopKey();
-            FieldValue fv = FieldValue.getFieldValue(key);
+        while (offsetIter.hasTop()) {
+            Key key = offsetIter.getTopKey();
+            tfKey.parse(key);
             
-            // add the zone and term to our internal document
-            Content attr = new Content(fv.getValue(), source.getTopKey(), evaluationFilter == null || evaluationFilter.keep(key));
+            field = tfKey.getField();
+            value = tfKey.getValue();
             
-            // no need to apply the evaluation filter here as the TermFrequencyIterator above is already doing more filtering than we can do here.
-            // So this filter is simply extraneous. However if the an EventDataQueryFilter implementation gets smarter somehow, then it can be added back in
-            // here.
-            // For example the AncestorQueryLogic may require this....
-            // if (evaluationFilter == null || evaluationFilter.apply(Maps.immutableEntry(key, StringUtils.EMPTY_STRING))) {
-            
-            this.document.put(fv.getField(), attr);
-            
-            TreeMultimap<TermFrequencyList.Zone,TermWeightPosition> offsets = TreeMultimap.create();
-            try {
-                TermWeight.Info twInfo = TermWeight.Info.parseFrom(tfSource.getTopValue().get());
-                
-                // if no content expansion fields then assume every field is permitted for unfielded content functions
-                TermFrequencyList.Zone twZone = new TermFrequencyList.Zone(fv.getField(),
-                                (contentExpansionFields == null || contentExpansionFields.isEmpty() || contentExpansionFields.contains(fv.getField())),
-                                TermFrequencyList.getEventId(key));
-                
-                TermWeightPosition.Builder position = new TermWeightPosition.Builder();
-                for (int i = 0; i < twInfo.getTermOffsetCount(); i++) {
-                    position.setTermWeightOffsetInfo(twInfo, i);
-                    offsets.put(twZone, position.build());
-                    position.reset();
+            // Malformed keys will fail to parse, skip them.
+            if (field == null || value == null) {
+                log.error("Malformed term frequency key: " + key.toStringNoTime());
+                try {
+                    offsetIter.next();
+                } catch (IOException ioe) {
+                    log.error("Next failed: " + range, ioe);
                 }
-                
-            } catch (InvalidProtocolBufferException e) {
-                log.error("Could not deserialize TermWeight protocol buffer for: " + source.getTopKey());
-                
-                return null;
+                continue;
             }
             
+            // add the zone and term to our internal document
+            Content attr = new Content(value, source.getTopKey(), evaluationFilter == null || evaluationFilter.keep(key));
+            
+            this.document.put(field, attr);
+            
+            TreeMultimap<TermFrequencyList.Zone,TermWeightPosition> offsets = getOffsetFromValue(field, key, offsetIter.getTopValue());
+            
             // First time looking up this term in a field
-            TermFrequencyList tfl = termOffsetMap.get(fv.getValue());
+            TermFrequencyList tfl = termOffsetMap.get(value);
             if (null == tfl) {
-                termOffsetMap.put(fv.getValue(), new TermFrequencyList(offsets));
+                termOffsetMap.put(value, new TermFrequencyList(offsets));
             } else {
                 // Merge in the offsets for the current field+term with all previous
                 // offsets from other fields in the same term
@@ -225,7 +189,7 @@ public class TermOffsetPopulator {
             }
             
             try {
-                tfSource.next();
+                offsetIter.next();
             } catch (IOException ioe) {
                 log.error("Next failed: " + range, ioe);
                 break;
@@ -234,9 +198,46 @@ public class TermOffsetPopulator {
         
         // Load the actual map into map that will be put into the JexlContext
         Map<String,Object> map = new HashMap<>();
-        map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffsetMap);
-        
+        map.put(TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffsetMap);
         return map;
+    }
+    
+    /**
+     * Build a range from the search space.
+     *
+     * @param row
+     *            the shard
+     * @param searchSpace
+     *            a sorted set of TF column qualifiers
+     * @return a range encompassing the full search space
+     */
+    public static Range getRangeFromSearchSpace(Text row, TreeSet<Text> searchSpace) {
+        Key start = new Key(row, TERM_FREQUENCY_COLUMN_FAMILY, searchSpace.first());
+        Key end = new Key(row, TERM_FREQUENCY_COLUMN_FAMILY, searchSpace.last());
+        return new Range(start, true, end.followingKey(PartialKey.ROW_COLFAM_COLQUAL), false);
+    }
+    
+    private TreeMultimap<TermFrequencyList.Zone,TermWeightPosition> getOffsetFromValue(String field, Key key, Value value) {
+        TreeMultimap<TermFrequencyList.Zone,TermWeightPosition> offsets = TreeMultimap.create();
+        try {
+            TermWeight.Info twInfo = TermWeight.Info.parseFrom(value.get());
+            
+            // if no content expansion fields then assume every field is permitted for unfielded content functions
+            TermFrequencyList.Zone twZone = new TermFrequencyList.Zone(field,
+                            (contentExpansionFields == null || contentExpansionFields.isEmpty() || contentExpansionFields.contains(field)),
+                            TermFrequencyList.getEventId(key));
+            
+            TermWeightPosition.Builder position = new TermWeightPosition.Builder();
+            for (int i = 0; i < twInfo.getTermOffsetCount(); i++) {
+                position.setTermWeightOffsetInfo(twInfo, i);
+                offsets.put(twZone, position.build());
+                position.reset();
+            }
+        } catch (InvalidProtocolBufferException e) {
+            log.error("Could not deserialize TermWeight protocol buffer for: " + key.toStringNoTime());
+            return null;
+        }
+        return offsets;
     }
     
     public static boolean isContentFunctionTerm(String functionName) {
@@ -389,130 +390,5 @@ public class TermOffsetPopulator {
             }
         }
         return termFrequencyFieldValues;
-    }
-    
-    /**
-     * A field name and value which is sorted on {@code <value>\0<name>}
-     */
-    public static class FieldValue implements Comparable<FieldValue> {
-        private int nullOffset;
-        private String valueField;
-        
-        public FieldValue(String field, String value) {
-            this.nullOffset = value.length();
-            this.valueField = value + '\0' + field;
-        }
-        
-        /**
-         * A distance between this field value and another. Here we want a distance that correlates with the number of keys between here and there for the same.
-         * Essentially we want the inverse of the number of bytes that match. document.
-         *
-         * @param fv
-         * @return a distance between here and there (negative means there is before here)
-         */
-        public double distance(FieldValue fv) {
-            byte[] s1 = getValueField().getBytes();
-            byte[] s2 = fv.getValueField().getBytes();
-            int len = Math.min(s1.length, s2.length);
-            
-            int matches = 0;
-            int lastCharDiff = 0;
-            
-            for (int i = 0; i <= len; i++) {
-                lastCharDiff = getValue(s2, i) - getValue(s1, i);
-                if (lastCharDiff == 0) {
-                    matches++;
-                } else {
-                    break;
-                }
-            }
-            
-            return Math.copySign(1.0d / (matches + 1), lastCharDiff);
-        }
-        
-        private int getValue(byte[] bytes, int index) {
-            if (index >= bytes.length) {
-                return 0;
-            } else {
-                return bytes[index];
-            }
-        }
-        
-        public String getValueField() {
-            return valueField;
-        }
-        
-        public String getField() {
-            return valueField.substring(nullOffset + 1);
-        }
-        
-        public String getValue() {
-            return valueField.substring(0, nullOffset);
-        }
-        
-        @Override
-        public int compareTo(FieldValue o) {
-            return valueField.compareTo(o.valueField);
-        }
-        
-        @Override
-        public int hashCode() {
-            return valueField.hashCode();
-        }
-        
-        @Override
-        public boolean equals(Object obj) {
-            if (obj instanceof FieldValue) {
-                return valueField.equals(((FieldValue) obj).valueField);
-            }
-            return false;
-        }
-        
-        @Override
-        public String toString() {
-            return getField() + " -> " + getValue();
-        }
-        
-        public static FieldValue getFieldValue(Key key) {
-            return getFieldValue(key.getColumnQualifier());
-        }
-        
-        public static FieldValue getFieldValue(Text cqText) {
-            if (cqText == null) {
-                return null;
-            }
-            return getFieldValue(cqText.toString());
-        }
-        
-        public static FieldValue getFieldValue(String cq) {
-            if (cq == null) {
-                return null;
-            }
-            
-            // pull apart the cq
-            String[] cqParts = StringUtils.split(cq, '\0');
-            
-            // if we do not even have the first datatype\0uid, then lets find it
-            if (cqParts.length <= 2) {
-                return null;
-            }
-            
-            // get the value and field
-            String value = "";
-            String field = "";
-            if (cqParts.length >= 4) {
-                field = cqParts[cqParts.length - 1];
-                value = cqParts[2];
-                // in case the value had null characters therein
-                for (int i = 3; i < (cqParts.length - 1); i++) {
-                    value = value + '\0' + cqParts[i];
-                }
-            } else if (cqParts.length == 3) {
-                value = cqParts[2];
-            }
-            
-            return new FieldValue(field, value);
-        }
-        
     }
 }

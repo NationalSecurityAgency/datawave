@@ -38,8 +38,7 @@ public class ValueToAttribute implements Function<Entry<Key,String>,Entry<Key,En
     public Entry<Key,Entry<String,Attribute<? extends Comparable<?>>>> apply(Entry<Key,String> from) {
         String origFieldName = from.getValue();
         String modifiedFieldName = JexlASTHelper.deconstructIdentifier(from.getValue(), false);
-        return Maps.<Key,Entry<String,Attribute<? extends Comparable<?>>>> immutableEntry(from.getKey(),
-                        Maps.<String,Attribute<? extends Comparable<?>>> immutableEntry(origFieldName, getFieldValue(modifiedFieldName, from.getKey())));
+        return Maps.immutableEntry(from.getKey(), Maps.immutableEntry(origFieldName, getFieldValue(modifiedFieldName, from.getKey())));
     }
     
     public Attribute<?> getFieldValue(String fieldName, Key k) {
