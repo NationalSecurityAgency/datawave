@@ -2249,4 +2249,28 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public Set<String> getEvaluationOnlyFields() {
         return getConfig().getEvaluationOnlyFields();
     }
+    
+    public boolean isDisableWhindexFieldMappings() {
+        return getConfig().isDisableWhindexFieldMappings();
+    }
+    
+    public void setDisableWhindexFieldMappings(boolean disableWhindexFieldMappings) {
+        getConfig().setDisableWhindexFieldMappings(disableWhindexFieldMappings);
+    }
+    
+    public Set<String> getWhindexMappingFields() {
+        return getConfig().getWhindexMappingFields();
+    }
+    
+    public void setWhindexMappingFields(Set<String> whindexMappingFields) {
+        getConfig().setWhindexMappingFields(whindexMappingFields);
+    }
+    
+    public Map<String,Map<String,String>> getWhindexFieldMappings() {
+        return getConfig().getWhindexFieldMappings();
+    }
+    
+    public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
+        getConfig().setWhindexFieldMappings(whindexFieldMappings);
+    }
 }
