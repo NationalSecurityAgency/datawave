@@ -289,15 +289,6 @@ public class GlobalIndexUidAggregatorTest {
     }
     
     @Test
-    public void testDropKeyWhenUidListIsEmpty() {
-        List<Value> values = asList(uidList("uid1", "uid2"), removeUidList("uid1", "uid2"));
-        Uid.List result = valueToUidList(agg(values));
-        
-        assertTrue(result.getUIDList().isEmpty());
-        assertFalse(agg.propogateKey());
-    }
-    
-    @Test
     public void testDropKeyWhenCountReachesZero() {
         List<Value> values = asList(countOnlyList(2), removeUidList("uid1", "uid2"));
         Uid.List result = valueToUidList(agg(values));
