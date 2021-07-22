@@ -27,7 +27,7 @@ public class KeepCountOnlyUidAggregatorTest {
     }
     
     @Test
-    public void testKeepKeyWhenCountReachesZeroWhenConfigured() {
+    public void testKeepKeyWhenCountReachesZero() {
         List<Value> values = asList(countOnlyList(2), removeUidList("uid1", "uid2"));
         
         Uid.List result = valueToUidList(agg.reduce(KEY, values.iterator()));
@@ -38,7 +38,7 @@ public class KeepCountOnlyUidAggregatorTest {
     }
     
     @Test
-    public void testKeepKeyWhenCountGoesNegativeWhenConfigured() {
+    public void testKeepKeyWhenCountGoesNegative() {
         List<Value> values = asList(countOnlyList(1), removeUidList("uid1", "uid2"));
         Uid.List result = valueToUidList(agg.reduce(KEY, values.iterator()));
         
