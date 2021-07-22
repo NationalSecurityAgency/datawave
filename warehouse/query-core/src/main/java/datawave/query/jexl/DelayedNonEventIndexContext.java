@@ -1,5 +1,6 @@
 package datawave.query.jexl;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.Multimap;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ValueTuple;
@@ -81,7 +82,7 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
         
         return delegate.get(name);
     }
-    
+
     /**
      * Use the IteratorBuildingVisitor limit to the current docRange to parse all delayed sub trees of the query. From those delayed sub trees initialize all
      * iterators matching the target field and aggregate all partial Documents into a list
@@ -105,6 +106,7 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
             
             // reset the root
             iteratorBuildingVisitor.resetRoot();
+
             
             // construct the index iterator for this node
             delayedNonEventNode.jjtAccept(iteratorBuildingVisitor, null);
@@ -152,5 +154,52 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean has(String name) {
+        return delegate.has(name);
+    }
+
+    @Override
+    public void clear() {
+        this.delegate.clear();
+    }
+
+    @Override
+    public int size() {
+        return this.delegate.size();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        DelayedNonEventIndexContext that = (DelayedNonEventIndexContext) o;
+        // @formatter:off
+        return inclusive == that.inclusive
+                && Objects.equal(delegate, that.delegate)
+                && Objects.equal(delayedNonEventFieldMap, that.delayedNonEventFieldMap)
+                && Objects.equal(docRange, that.docRange)
+                && Objects.equal(columnFamilies, that.columnFamilies)
+                && Objects.equal(equality, that.equality)
+                && Objects.equal(fetched, that.fetched);
+        // @formatter:on
+    }
+
+    @Override
+    public int hashCode() {
+        // @formatter:off
+        return Objects.hashCode(
+                super.hashCode(),
+                delegate,
+                delayedNonEventFieldMap,
+                docRange,
+                columnFamilies,
+                inclusive,
+                equality,
+                fetched);
+        // @formatter:on
     }
 }
