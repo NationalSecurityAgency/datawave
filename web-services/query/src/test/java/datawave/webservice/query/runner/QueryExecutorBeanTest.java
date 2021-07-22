@@ -251,8 +251,7 @@ public class QueryExecutorBeanTest {
     
     private MultivaluedMap createNewQueryParameters(QueryImpl q, MultivaluedMap p) {
         QueryParameters qp = new QueryParametersImpl();
-        MultivaluedMap<String,String> optionalParameters = new MultivaluedMapImpl<>();
-        optionalParameters.putAll(qp.getUnknownParameters(p));
+        MultivaluedMap<String,String> optionalParameters = qp.getUnknownParameters(p);
         optionalParameters.putSingle(PrivateAuditConstants.USER_DN, userDN.toLowerCase());
         optionalParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, "PRIVATE|PUBLIC");
         optionalParameters.putSingle(PrivateAuditConstants.LOGIC_CLASS, q.getQueryLogicName());
@@ -348,8 +347,7 @@ public class QueryExecutorBeanTest {
         Connector c = instance.getConnector("root", new PasswordToken(""));
         
         QueryParameters qp = new QueryParametersImpl();
-        MultivaluedMap<String,String> optionalParameters = new MultivaluedMapImpl<>();
-        optionalParameters.putAll(qp.getUnknownParameters(p));
+        MultivaluedMap<String,String> optionalParameters = qp.getUnknownParameters(p);
         
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, "<CN=MY_CA, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US>"), UserType.USER,
                         Arrays.asList(auths), null, null, 0L);

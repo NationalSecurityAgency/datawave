@@ -1,10 +1,12 @@
 package datawave.webservice.modification;
 
-import com.google.common.collect.Maps;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
+import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorOrder;
@@ -13,11 +15,11 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
+
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
+import com.google.common.collect.Maps;
 
 /**
  * Object used as the input to the MutableMetadataHandler service deployed as part of the Modification Service. This object contains the information necessary
@@ -135,8 +137,8 @@ public class DefaultModificationRequest extends ModificationRequestBase implemen
     }
     
     @Override
-    public Map<String,List<String>> toMap() {
-        MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
+    public MultivaluedMap<String,String> toMap() {
+        MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
         p.putAll(super.toMap());
         if (this.events != null) {
             for (EventIdentifier e : events) {
