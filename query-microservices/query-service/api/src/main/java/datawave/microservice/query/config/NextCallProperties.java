@@ -10,13 +10,13 @@ import java.util.concurrent.TimeUnit;
 @Validated
 public class NextCallProperties {
     @PositiveOrZero
-    private long resultPollInterval = TimeUnit.SECONDS.toMillis(30);
+    private long resultPollInterval = TimeUnit.SECONDS.toMillis(6);
     @NotNull
     private TimeUnit resultPollTimeUnit = TimeUnit.MILLISECONDS;
     @Positive
     private int concurrency = 1;
     @PositiveOrZero
-    private long statusUpdateInterval = TimeUnit.SECONDS.toMillis(30);
+    private long statusUpdateInterval = TimeUnit.SECONDS.toMillis(6);
     @NotNull
     private TimeUnit statusUpdateTimeUnit = TimeUnit.MILLISECONDS;
     

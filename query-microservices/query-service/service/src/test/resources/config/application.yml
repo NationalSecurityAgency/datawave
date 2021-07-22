@@ -1,4 +1,7 @@
 spring:
+  application:
+    name: query
+
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
 
@@ -40,7 +43,8 @@ management:
 
 logging:
   level:
-    datawave.microservice: FATAL
+    root: WARN
+    datawave.microservice.query: WARN
 
 warehouse:
   accumulo:
@@ -106,6 +110,12 @@ datawave:
       "[datawave.data.type.DateType]": "datawave.data.type.RawDateType"
 
   query:
+    nextCall:
+      resultPollInterval: 500
+      statusUpdateInterval: 500
+    expiration:
+      callTimeout: 5
+      callTimeUnit: SECONDS
     parser:
       skipTokenizeUnfieldedFields:
         - "DOMETA"
@@ -143,7 +153,7 @@ datawave:
           metadataTableName: ${warehouse.tables.metadata.name}
           indexTableName: ${warehouse.tables.index.name}
           reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
-          maxResults: 1000000
+          maxResults: 369
           queryThreads: ${warehouse.defaults.queryThreads}
           indexLookupThreads: ${warehouse.defaults.indexLookupThreads}
           dateIndexThreads: ${warehouse.defaults.dateIndexThreads}

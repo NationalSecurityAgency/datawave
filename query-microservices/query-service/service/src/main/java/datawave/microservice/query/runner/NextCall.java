@@ -112,7 +112,10 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         while (!isFinished(queryId)) {
             Message<Result> message = resultListener.receive(nextCallProperties.getResultPollIntervalMillis());
             if (message != null) {
-                for (Object result : message.getPayload().getPayload()) {
+                Object[] payload = message.getPayload().getPayload();
+                for (int resultIdx = 0; resultIdx < payload.length; resultIdx++) {
+                    Object result = payload[resultIdx];
+                    
                     // have to check to make sure we haven't reached the page size
                     if (!isFinished(queryId)) {
                         if (result != null) {
@@ -125,10 +128,18 @@ public class NextCall implements Callable<ResultsPage<Object>> {
                             log.debug("Null result encountered, no more results");
                             break;
                         }
+                    } else {
+                        // TODO: This will no longer be possible once the result queues are updated to pass single results instead of arrays
+                        if ((resultIdx + 1) != payload.length) {
+                            log.error("Next call is dropping " + (payload.length - (resultIdx + 1)) + " results");
+                        }
                     }
                 }
             }
         }
+        
+        // stop the result listener
+        resultListener.stop();
         
         return new ResultsPage<>(results, status);
     }
@@ -136,6 +147,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     private boolean isFinished(String queryId) {
         boolean finished = false;
         long callTimeMillis = System.currentTimeMillis() - startTimeMillis;
+        final QueryStatus queryStatus = getQueryStatus();
         
         // 1) have we hit the user's results-per-page limit?
         if (results.size() >= userResultsPerPage) {
@@ -152,7 +164,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         }
         
         // 3) was this query canceled?
-        if (!finished && canceled) {
+        if (!finished && (canceled || queryStatus.getQueryState() == QueryStatus.QUERY_STATE.CANCELED)) {
             log.info("Query [{}]: query cancelled, aborting next call", queryId);
             
             status = ResultsPage.Status.PARTIAL;
@@ -188,7 +200,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         
         // 6) have we hit the max results (or the max results override)?
         if (!finished) {
-            long numResultsReturned = getQueryStatus().getNumResultsReturned();
+            long numResultsReturned = queryStatus.getNumResultsReturned();
             long numResults = numResultsReturned + results.size();
             if (this.maxResultsOverridden) {
                 if (maxResultsOverride >= 0 && numResults >= maxResultsOverride) {

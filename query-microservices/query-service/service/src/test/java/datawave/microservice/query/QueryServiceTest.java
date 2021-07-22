@@ -1,5 +1,6 @@
 package datawave.microservice.query;
 
+import com.google.common.collect.Iterables;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.microservice.audit.AuditClient;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
@@ -19,13 +20,14 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
-import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.BaseResponse;
+import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.VoidResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.DirectFieldAccessor;
@@ -68,8 +70,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import static datawave.microservice.query.QueryParameters.QUERY_MAX_CONCURRENT_TASKS;
 import static datawave.microservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE;
@@ -106,6 +112,9 @@ public class QueryServiceTest {
     private SubjectIssuerDNPair DN;
     private String userDN = "userDn";
     
+    private SubjectIssuerDNPair altDN;
+    private String altUserDN = "altUserDN";
+    
     @Autowired
     private QueryStorageCache queryStorageCache;
     
@@ -131,6 +140,7 @@ public class QueryServiceTest {
         jwtRestTemplate = restTemplateBuilder.build(JWTRestTemplate.class);
         jwtRestTemplate.setErrorHandler(new NoOpResponseErrorHandler());
         DN = SubjectIssuerDNPair.of(userDN, "issuerDn");
+        altDN = SubjectIssuerDNPair.of(altUserDN, "issuerDN");
         
         RestTemplate auditorRestTemplate = (RestTemplate) new DirectFieldAccessor(auditClient).getPropertyValue("jwtRestTemplate");
         mockServer = MockRestServiceServer.createServer(auditorRestTemplate);
@@ -208,22 +218,22 @@ public class QueryServiceTest {
         
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
                 "Missing one or more required QueryParameters",
@@ -244,22 +254,22 @@ public class QueryServiceTest {
         
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
                 "User requested authorizations that they don't have. Missing: [ALL], Requested: [ALL], User: []",
@@ -283,22 +293,22 @@ public class QueryServiceTest {
         
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
                 "Required parameter begin not found",
@@ -322,22 +332,22 @@ public class QueryServiceTest {
         
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
                 "Page size is larger than configured max. Max = 10,000.",
@@ -361,25 +371,25 @@ public class QueryServiceTest {
         
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
-                "Invalid max results override value. Max = 1,000,000.",
+                "Invalid max results override value. Max = 369.",
                 "Exception with no cause caught",
                 "400-43",
                 queryException);
@@ -400,22 +410,22 @@ public class QueryServiceTest {
         
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
                 "Invalid max concurrent tasks override value. Max = 10.",
@@ -437,22 +447,22 @@ public class QueryServiceTest {
         
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
                 "User does not have the required roles.",
@@ -476,22 +486,22 @@ public class QueryServiceTest {
         
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
                 "Required parameter columnVisibility not found",
@@ -588,22 +598,22 @@ public class QueryServiceTest {
         // setup a mock audit service
         auditNotSentSetup();
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
                 "Missing one or more required QueryParameters",
@@ -630,22 +640,22 @@ public class QueryServiceTest {
         // setup a mock audit service
         auditNotSentSetup();
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
                 "User requested authorizations that they don't have. Missing: [ALL], Requested: [ALL], User: []",
@@ -675,22 +685,22 @@ public class QueryServiceTest {
         // setup a mock audit service
         auditNotSentSetup();
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
                 "Required parameter begin not found",
@@ -720,22 +730,22 @@ public class QueryServiceTest {
         // setup a mock audit service
         auditNotSentSetup();
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
                 "Page size is larger than configured max. Max = 10,000.",
@@ -765,25 +775,25 @@ public class QueryServiceTest {
         // setup a mock audit service
         auditNotSentSetup();
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
-                "Invalid max results override value. Max = 1,000,000.",
+                "Invalid max results override value. Max = 369.",
                 "Exception with no cause caught",
                 "400-43",
                 queryException);
@@ -810,22 +820,22 @@ public class QueryServiceTest {
         // setup a mock audit service
         auditNotSentSetup();
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
                 "Invalid max concurrent tasks override value. Max = 10.",
@@ -853,22 +863,22 @@ public class QueryServiceTest {
         // setup a mock audit service
         auditNotSentSetup();
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
                 "User does not have the required roles.",
@@ -898,22 +908,22 @@ public class QueryServiceTest {
         // setup a mock audit service
         auditNotSentSetup();
         
-        ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
+        ResponseEntity<BaseResponse> resp = jwtRestTemplate.exchange(requestEntity, BaseResponse.class);
         
         // @formatter:off
-        GenericResponse<String> genericResponse = assertGenericResponse(
+        BaseResponse baseResponse = assertBaseResponse(
                 false,
                 HttpStatus.Series.CLIENT_ERROR,
                 resp);
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertNull(genericResponse.getResult());
+        Assert.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, genericResponse.getExceptions().size());
+        Assert.assertEquals(1, baseResponse.getExceptions().size());
         
-        QueryExceptionType queryException = genericResponse.getExceptions().get(0);
+        QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
         assertQueryException(
                 "Required parameter columnVisibility not found",
@@ -929,52 +939,67 @@ public class QueryServiceTest {
         assertAuditNotSent();
     }
     
-    // Next tests
-    // successful next
-    // query not found
-    // query not running
-    // query ownership failure
-    // query lock failure
-    // interrupted next call
-    // next call timeout
-    // no results
-    // executor task rejection
-    // more
-    // @Ignore
     @DirtiesContext
     @Test
     public void testNextSuccess() throws Exception {
         ProxiedUserDetails authUser = createUserDetails();
         
         // create a valid query
-        String queryId = createQuery(authUser);
-        
-        UriComponents uri = createUri(queryId + "/next");
-        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, null, null, HttpMethod.GET, uri);
-        
-        // make the next call asynchronously
-        Future<ResponseEntity<BaseQueryResponse>> future = Executors.newSingleThreadExecutor()
-                        .submit(() -> jwtRestTemplate.exchange(requestEntity, BaseQueryResponse.class));
+        String queryId = createQuery(authUser, createParams());
         
         // pump enough results into the queue to trigger a complete page
         int pageSize = queryStorageCache.getQueryStatus(queryId).getQuery().getPagesize();
-        for (int resultId = 0; resultId < pageSize; resultId++) {
-            DefaultEvent[] events = new DefaultEvent[1];
-            events[0] = new DefaultEvent();
-            long currentTime = System.currentTimeMillis();
-            // @formatter:off
-            events[0].setFields(Arrays.asList(
-                    new DefaultField("LOKI", "ALL", currentTime, "ALLIGATOR"),
-                    new DefaultField("LOKI", "ALL", currentTime, "CLASSIC")));
-            // @formatter:on
-            queryQueueManager.sendMessage(queryId, new Result(Integer.toString(resultId), events));
-        }
+        
+        // test field value pairings
+        MultiValueMap<String,String> fieldValues = new LinkedMultiValueMap<>();
+        fieldValues.add("LOKI", "ALLIGATOR");
+        fieldValues.add("LOKI", "CLASSIC");
+        
+        // @formatter:off
+        publishEventsToQueue(
+                queryId,
+                (int)(1.5*pageSize),
+                fieldValues,
+                "ALL");
+        // @formatter:on
+        
+        // make the next call asynchronously
+        Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);
         
         // the response should come back right away
-        ResponseEntity<BaseQueryResponse> response = future.get();
+        ResponseEntity<BaseResponse> response = future.get();
         
-        // TODO: Work through the missing classpath entries needed for DocumentTransformer.java
-        // TODO: Update the result payload to be BaseEvent
+        Assert.assertEquals(200, response.getStatusCodeValue());
+        
+        // verify some headers
+        Assert.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
+        Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
+        Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+        
+        DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
+        
+        // verify the query response
+        // @formatter:off
+        assertQueryResponse(
+                queryId,
+                "EventQuery",
+                1,
+                false,
+                Long.parseLong(Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-OperationTimeInMS")))),
+                1,
+                Collections.singletonList("LOKI"),
+                pageSize,
+                Objects.requireNonNull(queryResponse));
+        // @formatter:on
+        
+        // validate one of the events
+        DefaultEvent event = (DefaultEvent) queryResponse.getEvents().get(0);
+        // @formatter:off
+        assertDefaultEvent(
+                Arrays.asList("LOKI", "LOKI"),
+                Arrays.asList("ALLIGATOR", "CLASSIC"),
+                event);
+        // @formatter:on
         
         // verify that the next event was published
         Assert.assertEquals(1, queryRequestEvents.size());
@@ -985,14 +1010,445 @@ public class QueryServiceTest {
                 queryId,
                 queryRequestEvents.removeLast());
         // @formatter:on
-        
-        System.out.println("done");
-        
     }
     
-    private String createQuery(ProxiedUserDetails authUser) {
+    @DirtiesContext
+    @Test
+    public void testNextSuccess_multiplePages() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        // pump enough results into the queue to trigger two complete pages
+        int pageSize = queryStorageCache.getQueryStatus(queryId).getQuery().getPagesize();
+        
+        // test field value pairings
+        MultiValueMap<String,String> fieldValues = new LinkedMultiValueMap<>();
+        fieldValues.add("LOKI", "ALLIGATOR");
+        fieldValues.add("LOKI", "CLASSIC");
+        
+        for (int page = 1; page <= 2; page++) {
+            // TODO: We have to generate the results in between next calls because the test queue manager does not handle requeueing of unused messages :(
+            // @formatter:off
+            publishEventsToQueue(
+                    queryId,
+                    pageSize,
+                    fieldValues,
+                    "ALL");
+            // @formatter:on
+            
+            // make the next call asynchronously
+            Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);
+            
+            // the response should come back right away
+            ResponseEntity<BaseResponse> response = future.get();
+            
+            Assert.assertEquals(200, response.getStatusCodeValue());
+            
+            // verify some headers
+            Assert.assertEquals(Integer.toString(page), Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
+            Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
+            Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+            
+            DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
+            
+            // verify the query response
+            // @formatter:off
+            assertQueryResponse(
+                    queryId,
+                    "EventQuery",
+                    page,
+                    false,
+                    Long.parseLong(Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-OperationTimeInMS")))),
+                    1,
+                    Collections.singletonList("LOKI"),
+                    pageSize,
+                    Objects.requireNonNull(queryResponse));
+            // @formatter:on
+            
+            // validate one of the events
+            DefaultEvent event = (DefaultEvent) queryResponse.getEvents().get(0);
+            // @formatter:off
+            assertDefaultEvent(
+                    Arrays.asList("LOKI", "LOKI"),
+                    Arrays.asList("ALLIGATOR", "CLASSIC"),
+                    event);
+            // @formatter:on
+            
+            // verify that the next event was published
+            Assert.assertEquals(1, queryRequestEvents.size());
+            // @formatter:off
+            assertQueryRequestEvent(
+                    "executor-unassigned:**",
+                    QueryRequest.Method.NEXT,
+                    queryId,
+                    queryRequestEvents.removeLast());
+            // @formatter:on
+        }
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testNextSuccess_cancelPartialResults() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        // pump enough results into the queue to trigger a complete page
+        int pageSize = queryStorageCache.getQueryStatus(queryId).getQuery().getPagesize();
+        
+        // test field value pairings
+        MultiValueMap<String,String> fieldValues = new LinkedMultiValueMap<>();
+        fieldValues.add("LOKI", "ALLIGATOR");
+        fieldValues.add("LOKI", "CLASSIC");
+        
+        int numEvents = (int) (0.5 * pageSize);
+        
+        // @formatter:off
+        publishEventsToQueue(
+                queryId,
+                numEvents,
+                fieldValues,
+                "ALL");
+        // @formatter:on
+        
+        // make the next call asynchronously
+        Future<ResponseEntity<BaseResponse>> nextFuture = nextQuery(authUser, queryId);
+        
+        // make sure all events were consumed before canceling
+        while (queryQueueManager.getQueueSize(queryId) != 0) {
+            Thread.sleep(100);
+        }
+        
+        // cancel the query so that it returns partial results
+        Future<ResponseEntity<VoidResponse>> cancelFuture = cancelQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
+        
+        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        
+        // the response should come back right away
+        ResponseEntity<BaseResponse> nextResponse = nextFuture.get();
+        
+        Assert.assertEquals(200, nextResponse.getStatusCodeValue());
+        
+        // verify some headers
+        Assert.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(nextResponse.getHeaders().get("X-query-page-number"))));
+        Assert.assertEquals("true", Iterables.getOnlyElement(Objects.requireNonNull(nextResponse.getHeaders().get("X-Partial-Results"))));
+        Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(nextResponse.getHeaders().get("X-query-last-page"))));
+        
+        DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) nextResponse.getBody();
+        
+        // verify the query response
+        // @formatter:off
+        assertQueryResponse(
+                queryId,
+                "EventQuery",
+                1,
+                true,
+                Long.parseLong(Iterables.getOnlyElement(Objects.requireNonNull(nextResponse.getHeaders().get("X-OperationTimeInMS")))),
+                1,
+                Collections.singletonList("LOKI"),
+                numEvents,
+                Objects.requireNonNull(queryResponse));
+        // @formatter:on
+        
+        // validate one of the events
+        DefaultEvent event = (DefaultEvent) queryResponse.getEvents().get(0);
+        // @formatter:off
+        assertDefaultEvent(
+                Arrays.asList("LOKI", "LOKI"),
+                Arrays.asList("ALLIGATOR", "CLASSIC"),
+                event);
+        // @formatter:on
+        
+        // verify that the next events were published
+        Assert.assertEquals(3, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.NEXT,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "/query:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testNextSuccess_maxResults() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        // pump enough results into the queue to trigger two complete pages
+        int pageSize = queryStorageCache.getQueryStatus(queryId).getQuery().getPagesize();
+        
+        // test field value pairings
+        MultiValueMap<String,String> fieldValues = new LinkedMultiValueMap<>();
+        fieldValues.add("LOKI", "ALLIGATOR");
+        fieldValues.add("LOKI", "CLASSIC");
+        
+        for (int page = 1; page <= 3; page++) {
+            // TODO: We have to generate the results in between next calls because the test queue manager does not handle requeueing of unused messages :(
+            // @formatter:off
+            publishEventsToQueue(
+                    queryId,
+                    pageSize,
+                    fieldValues,
+                    "ALL");
+            // @formatter:on
+            
+            // make the next call asynchronously
+            Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);
+            
+            // the response should come back right away
+            ResponseEntity<BaseResponse> response = future.get();
+            
+            Assert.assertEquals(200, response.getStatusCodeValue());
+            
+            // verify some headers
+            Assert.assertEquals(Integer.toString(page), Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
+            Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
+            
+            if (page != 4) {
+                Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+            } else {
+                Assert.assertEquals("true", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+            }
+            
+            DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
+            
+            // verify the query response
+            // @formatter:off
+            assertQueryResponse(
+                    queryId,
+                    "EventQuery",
+                    page,
+                    false,
+                    Long.parseLong(Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-OperationTimeInMS")))),
+                    1,
+                    Collections.singletonList("LOKI"),
+                    pageSize,
+                    Objects.requireNonNull(queryResponse));
+            // @formatter:on
+            
+            // validate one of the events
+            DefaultEvent event = (DefaultEvent) queryResponse.getEvents().get(0);
+            // @formatter:off
+            assertDefaultEvent(
+                    Arrays.asList("LOKI", "LOKI"),
+                    Arrays.asList("ALLIGATOR", "CLASSIC"),
+                    event);
+            // @formatter:on
+            
+            // verify that the next event was published
+            Assert.assertEquals(1, queryRequestEvents.size());
+            // @formatter:off
+            assertQueryRequestEvent(
+                    "executor-unassigned:**",
+                    QueryRequest.Method.NEXT,
+                    queryId,
+                    queryRequestEvents.removeLast());
+            // @formatter:on
+        }
+        
+        // make the next call asynchronously
+        Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<BaseResponse> response = future.get();
+        
+        Assert.assertEquals(404, response.getStatusCodeValue());
+        
+        assertQueryException("No results found for query. " + queryId, "Exception with no cause caught", "404-4",
+                        Iterables.getOnlyElement(response.getBody().getExceptions()));
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testNextSuccess_noResults() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        // remove the task states to make it appear that the executor has finished
+        TaskStates taskStates = queryStorageCache.getTaskStates(queryId);
+        taskStates.getTaskStates().remove(TaskStates.TASK_STATE.READY);
+        queryStorageCache.updateTaskStates(taskStates);
+        
+        // make the next call asynchronously
+        Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<BaseResponse> response = future.get();
+        
+        Assert.assertEquals(404, response.getStatusCodeValue());
+        
+        assertQueryException("No results found for query. " + queryId, "Exception with no cause caught", "404-4",
+                        Iterables.getOnlyElement(response.getBody().getExceptions()));
+        
+        // verify that the next event was published
+        Assert.assertEquals(1, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.NEXT,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @Test
+    public void testNextFailure_queryNotFound() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        String queryId = UUID.randomUUID().toString();
+        
+        // make the next call asynchronously
+        Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<BaseResponse> response = future.get();
+        
+        Assert.assertEquals(404, response.getStatusCodeValue());
+        
+        assertQueryException("No query object matches this id. " + queryId, "Exception with no cause caught", "404-1",
+                        Iterables.getOnlyElement(response.getBody().getExceptions()));
+        
+        // verify that no events were published
+        Assert.assertEquals(0, queryRequestEvents.size());
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testNextFailure_queryNotRunning() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        // cancel the query so that it returns partial results
+        Future<ResponseEntity<VoidResponse>> cancelFuture = cancelQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
+        
+        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        
+        // make the next call asynchronously
+        Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<BaseResponse> response = future.get();
+        
+        Assert.assertEquals(400, response.getStatusCodeValue());
+        
+        assertQueryException("Cannot call next on a query that is not running", "Exception with no cause caught", "400-1",
+                        Iterables.getOnlyElement(response.getBody().getExceptions()));
+        
+        // verify that the next events were published
+        Assert.assertEquals(2, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "/query:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testNextFailure_ownershipFailure() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        ProxiedUserDetails altAuthUser = createAltUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        // make the next call as an alternate user asynchronously
+        Future<ResponseEntity<BaseResponse>> future = nextQuery(altAuthUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<BaseResponse> response = future.get();
+        
+        Assert.assertEquals(401, response.getStatusCodeValue());
+        
+        assertQueryException("Current user does not match user that defined query. altuserdn != userdn", "Exception with no cause caught", "401-1",
+                        Iterables.getOnlyElement(response.getBody().getExceptions()));
+        
+        // verify that the next events were published
+        Assert.assertEquals(0, queryRequestEvents.size());
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testNextFailure_timeout() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        // make the next call asynchronously
+        Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);
+        
+        // the response should come back after the configured timeout (5 seconds)
+        ResponseEntity<BaseResponse> response = future.get();
+        
+        Assert.assertEquals(500, response.getStatusCodeValue());
+        
+        assertQueryException("Query timed out. " + queryId + " timed out.", "Exception with no cause caught", "500-27",
+                        Iterables.getOnlyElement(response.getBody().getExceptions()));
+        
+        // verify that the next events were published
+        Assert.assertEquals(1, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.NEXT,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    private void publishEventsToQueue(String queryId, int numEvents, MultiValueMap<String,String> fieldValues, String visibility) throws Exception {
+        for (int resultId = 0; resultId < numEvents; resultId++) {
+            DefaultEvent[] events = new DefaultEvent[1];
+            events[0] = new DefaultEvent();
+            long currentTime = System.currentTimeMillis();
+            List<DefaultField> fields = new ArrayList<>();
+            for (Map.Entry<String,List<String>> entry : fieldValues.entrySet()) {
+                for (String value : entry.getValue()) {
+                    fields.add(new DefaultField(entry.getKey(), visibility, currentTime, value));
+                }
+            }
+            events[0].setFields(fields);
+            queryQueueManager.sendMessage(queryId, new Result(Integer.toString(resultId), events));
+        }
+    }
+    
+    private String createQuery(ProxiedUserDetails authUser, MultiValueMap<String,String> map) {
         UriComponents uri = createUri("EventQuery/create");
-        MultiValueMap<String,String> map = createParams();
         
         // not testing audit with this method
         auditIgnoreSetup();
@@ -1006,6 +1462,22 @@ public class QueryServiceTest {
         return (String) resp.getBody().getResult();
     }
     
+    private Future<ResponseEntity<BaseResponse>> nextQuery(ProxiedUserDetails authUser, String queryId) {
+        UriComponents uri = createUri(queryId + "/next");
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, null, null, HttpMethod.GET, uri);
+        
+        // make the next call asynchronously
+        return Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, BaseResponse.class));
+    }
+    
+    private Future<ResponseEntity<VoidResponse>> cancelQuery(ProxiedUserDetails authUser, String queryId) {
+        UriComponents uri = createUri(queryId + "/cancel");
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, null, null, HttpMethod.PUT, uri);
+        
+        // make the next call asynchronously
+        return Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, VoidResponse.class));
+    }
+    
     private ProxiedUserDetails createUserDetails() {
         return createUserDetails(null, null);
     }
@@ -1014,6 +1486,17 @@ public class QueryServiceTest {
         Collection<String> userRoles = roles != null ? roles : Collections.singleton("AuthorizedUser");
         Collection<String> userAuths = auths != null ? auths : Collections.singleton("ALL");
         DatawaveUser datawaveUser = new DatawaveUser(DN, USER, userAuths, userRoles, null, System.currentTimeMillis());
+        return new ProxiedUserDetails(Collections.singleton(datawaveUser), datawaveUser.getCreationTime());
+    }
+    
+    private ProxiedUserDetails createAltUserDetails() {
+        return createAltUserDetails(null, null);
+    }
+    
+    private ProxiedUserDetails createAltUserDetails(Collection<String> roles, Collection<String> auths) {
+        Collection<String> userRoles = roles != null ? roles : Collections.singleton("AuthorizedUser");
+        Collection<String> userAuths = auths != null ? auths : Collections.singleton("ALL");
+        DatawaveUser datawaveUser = new DatawaveUser(altDN, USER, userAuths, userRoles, null, System.currentTimeMillis());
         return new ProxiedUserDetails(Collections.singleton(datawaveUser), datawaveUser.getCreationTime());
     }
     
@@ -1030,9 +1513,26 @@ public class QueryServiceTest {
         map.set(DefaultQueryParameters.QUERY_END, TEST_QUERY_END);
         map.set(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, TEST_VISIBILITY_MARKING);
         map.set(QUERY_MAX_CONCURRENT_TASKS, Integer.toString(1));
-        map.set(QUERY_MAX_RESULTS_OVERRIDE, Long.toString(1234));
+        map.set(QUERY_MAX_RESULTS_OVERRIDE, Long.toString(369));
         map.set(QUERY_PAGESIZE, Long.toString(123));
         return map;
+    }
+    
+    private void assertDefaultEvent(List<String> fields, List<String> values, DefaultEvent event) {
+        Assert.assertEquals(fields, event.getFields().stream().map(DefaultField::getName).collect(Collectors.toList()));
+        Assert.assertEquals(values, event.getFields().stream().map(DefaultField::getValueString).collect(Collectors.toList()));
+    }
+    
+    private void assertQueryResponse(String queryId, String logicName, long pageNumber, boolean partialResults, long operationTimeInMS, int numFields,
+                    List<String> fieldNames, int numEvents, DefaultEventQueryResponse queryResponse) {
+        Assert.assertEquals(queryId, queryResponse.getQueryId());
+        Assert.assertEquals(logicName, queryResponse.getLogicName());
+        Assert.assertEquals(pageNumber, queryResponse.getPageNumber());
+        Assert.assertEquals(partialResults, queryResponse.isPartialResults());
+        Assert.assertEquals(operationTimeInMS, queryResponse.getOperationTimeMS());
+        Assert.assertEquals(numFields, queryResponse.getFields().size());
+        Assert.assertEquals(fieldNames, queryResponse.getFields());
+        Assert.assertEquals(numEvents, queryResponse.getEvents().size());
     }
     
     private void assertQueryRequestEvent(String destination, QueryRequest.Method method, String queryId, RemoteQueryRequestEvent queryRequestEvent) {
@@ -1117,6 +1617,15 @@ public class QueryServiceTest {
         Assert.assertEquals(message, queryException.getMessage());
         Assert.assertEquals(cause, queryException.getCause());
         Assert.assertEquals(code, queryException.getCode());
+    }
+    
+    private BaseResponse assertBaseResponse(boolean hasResults, HttpStatus.Series series, ResponseEntity<BaseResponse> response) {
+        Assert.assertEquals(series, response.getStatusCode().series());
+        Assert.assertNotNull(response);
+        BaseResponse baseResponse = response.getBody();
+        Assert.assertNotNull(baseResponse);
+        Assert.assertEquals(hasResults, baseResponse.getHasResults());
+        return baseResponse;
     }
     
     @SuppressWarnings("unchecked")
