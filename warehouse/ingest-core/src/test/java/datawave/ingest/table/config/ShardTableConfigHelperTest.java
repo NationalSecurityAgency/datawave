@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Set;
 
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
+import datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator;
 import datawave.ingest.table.config.ShardTableConfigHelper.ShardTableType;
 
 import org.apache.accumulo.core.client.AccumuloException;
@@ -549,4 +551,35 @@ public class ShardTableConfigHelperTest {
         }
     }
     
+    @Test
+    public void testKeepCountOnlyEnabledAndDisabled() throws Exception {
+        // We use KeepCountOnlyUidAggregator when enabled
+        testKeepCountOnlyConfig(ShardedDataTypeHandler.SHARD_GIDX_TNAME, true, KeepCountOnlyUidAggregator.class);
+        testKeepCountOnlyConfig(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, true, KeepCountOnlyUidAggregator.class);
+        
+        // We use GlobalIndexUidAggregator when disabled
+        testKeepCountOnlyConfig(ShardedDataTypeHandler.SHARD_GIDX_TNAME, false, GlobalIndexUidAggregator.class);
+        testKeepCountOnlyConfig(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, false, GlobalIndexUidAggregator.class);
+    }
+    
+    private void testKeepCountOnlyConfig(String tableProperty, boolean keepCountOnlyIndexEntries, Class<?> expectedAggregatorClass) throws Exception {
+        Configuration config = createMockConfiguration();
+        Logger log = createMockLogger();
+        TableOperations tops = mockUpTableOperations();
+        
+        ShardTableConfigHelper uut = new ShardTableConfigHelper();
+        
+        this.configuration.put(tableProperty, ShardTableConfigHelperTest.TABLE_NAME);
+        this.configuration.put(ShardTableConfigHelper.KEEP_COUNT_ONLY_INDEX_ENTRIES, Boolean.toString(keepCountOnlyIndexEntries));
+        
+        this.tableProperties.clear();
+        this.localityGroups.clear();
+        
+        uut.setup(ShardTableConfigHelperTest.TABLE_NAME, config, log);
+        uut.configure(tops);
+        
+        Assert.assertEquals(expectedAggregatorClass.getName(), tableProperties.get("table.iterator.majc.UIDAggregator.opt.*"));
+        Assert.assertEquals(expectedAggregatorClass.getName(), tableProperties.get("table.iterator.minc.UIDAggregator.opt.*"));
+        Assert.assertEquals(expectedAggregatorClass.getName(), tableProperties.get("table.iterator.scan.UIDAggregator.opt.*"));
+    }
 }
