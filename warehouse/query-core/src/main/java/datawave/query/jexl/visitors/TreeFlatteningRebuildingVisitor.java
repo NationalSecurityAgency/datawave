@@ -67,11 +67,12 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
     }
     
     /**
-     * This will flatten ands and ors.
+     * This will flatten ands and ors and remove extra parens
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T flatten(T node) {
-        return TreeFlatteningRebuilder.flatten(node);
+        node = TreeFlatteningRebuilder.flatten(node);
+        return (T) RemoveExtraParensVisitor.remove(node);
     }
     
     /**
@@ -80,7 +81,8 @@ public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T flattenAll(T node) {
-        return TreeFlatteningRebuilder.flattenAll(node);
+        node = TreeFlatteningRebuilder.flattenAll(node);
+        return (T) RemoveExtraParensVisitor.remove(node);
     }
     
     @Override
