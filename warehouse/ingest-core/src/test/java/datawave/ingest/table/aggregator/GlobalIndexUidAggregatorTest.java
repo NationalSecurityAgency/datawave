@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -28,19 +29,35 @@ public class GlobalIndexUidAggregatorTest {
     
     PropogatingCombiner agg = new GlobalIndexUidAggregator();
     
-    private Uid.List.Builder createNewUidList() {
+    private Builder createNewUidList() {
         return Uid.List.newBuilder();
+    }
+    
+    private Builder createNewUidList(String... uidsToAdd) {
+        Builder b = createNewUidList();
+        b.setIGNORE(false);
+        b.setCOUNT(uidsToAdd.length);
+        Arrays.stream(uidsToAdd).forEach(b::addUID);
+        return b;
+    }
+    
+    private Builder createNewRemoveUidList(String... uidsToRemove) {
+        Builder b = createNewUidList();
+        b.setIGNORE(false);
+        b.setCOUNT(-uidsToRemove.length);
+        Arrays.stream(uidsToRemove).forEach(b::addREMOVEDUID);
+        return b;
+    }
+    
+    private Value toValue(Builder uidListBuilder) {
+        return new Value(uidListBuilder.build().toByteArray());
     }
     
     @Test
     public void testSingleUid() {
         agg.reset();
-        Builder b = createNewUidList();
-        b.setCOUNT(1);
-        b.setIGNORE(false);
-        b.addUID(UUID.randomUUID().toString());
-        Uid.List uidList = b.build();
-        Value val = new Value(uidList.toByteArray());
+        String uuid = UUID.randomUUID().toString();
+        Value val = toValue(createNewUidList(uuid));
         
         Value result = agg.reduce(new Key("key"), Iterators.singletonIterator(val));
         assertNotNull(result);
@@ -55,15 +72,10 @@ public class GlobalIndexUidAggregatorTest {
         List<String> savedUUIDs = new ArrayList<>();
         Collection<Value> values = Lists.newArrayList();
         for (int i = 0; i < GlobalIndexUidAggregator.MAX - 1; i++) {
-            Builder b = createNewUidList();
-            b.setIGNORE(false);
             String uuid = UUID.randomUUID().toString();
-            savedUUIDs.add(uuid);
-            b.setCOUNT(1);
-            b.addUID(uuid);
-            Uid.List uidList = b.build();
-            Value val = new Value(uidList.toByteArray());
+            Value val = toValue(createNewUidList(uuid));
             values.add(val);
+            savedUUIDs.add(uuid);
         }
         Value result = agg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
@@ -80,15 +92,10 @@ public class GlobalIndexUidAggregatorTest {
         List<String> savedUUIDs = new ArrayList<>();
         Collection<Value> values = Lists.newArrayList();
         for (int i = 0; i < GlobalIndexUidAggregator.MAX; i++) {
-            Builder b = createNewUidList();
-            b.setIGNORE(false);
             String uuid = UUID.randomUUID().toString();
-            savedUUIDs.add(uuid);
-            b.setCOUNT(1);
-            b.addUID(uuid);
-            Uid.List uidList = b.build();
-            Value val = new Value(uidList.toByteArray());
+            Value val = toValue(createNewUidList(uuid));
             values.add(val);
+            savedUUIDs.add(uuid);
         }
         Value result = agg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
@@ -105,13 +112,8 @@ public class GlobalIndexUidAggregatorTest {
         agg.reset();
         Collection<Value> values = Lists.newArrayList();
         for (int i = 0; i < GlobalIndexUidAggregator.MAX + 10; i++) {
-            Builder b = createNewUidList();
-            b.setIGNORE(false);
             String uuid = UUID.randomUUID().toString();
-            b.setCOUNT(1);
-            b.addUID(uuid);
-            Uid.List uidList = b.build();
-            Value val = new Value(uidList.toByteArray());
+            Value val = toValue(createNewUidList(uuid));
             values.add(val);
         }
         Value result = agg.reduce(new Key("key"), values.iterator());
@@ -127,32 +129,16 @@ public class GlobalIndexUidAggregatorTest {
         List<String> savedUUIDs = new ArrayList<>();
         Collection<Value> values = Lists.newArrayList();
         for (int i = 0; i < GlobalIndexUidAggregator.MAX / 2; i++) {
-            Builder b = createNewUidList();
-            b.setIGNORE(false);
             String uuid = UUID.randomUUID().toString();
-            savedUUIDs.add(uuid);
-            
-            b.setCOUNT(-1);
-            b.addREMOVEDUID(uuid);
-            Uid.List uidList = b.build();
-            Value val = new Value(uidList.toByteArray());
+            Value val = toValue(createNewRemoveUidList(uuid));
             values.add(val);
+            savedUUIDs.add(uuid);
         }
-        int i = 0;
         
         for (int j = 0; j < 1; j++) {
             for (String uuid : savedUUIDs) {
-                Builder b = createNewUidList();
-                b.setIGNORE(false);
-                if ((i % 2) == 0)
-                    b.setCOUNT(1);
-                else
-                    b.setCOUNT(1);
-                b.addUID(uuid);
-                Uid.List uidList = b.build();
-                Value val = new Value(uidList.toByteArray());
+                Value val = toValue(createNewUidList(uuid));
                 values.add(val);
-                i++;
             }
         }
         
@@ -170,16 +156,11 @@ public class GlobalIndexUidAggregatorTest {
         Builder b = createNewUidList();
         b.setIGNORE(true);
         b.setCOUNT(0);
-        Uid.List uidList = b.build();
         Collection<Value> values = Lists.newArrayList();
-        Value val = new Value(uidList.toByteArray());
+        Value val = toValue(b);
         values.add(val);
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addUID(UUID.randomUUID().toString());
-        uidList = b.build();
-        val = new Value(uidList.toByteArray());
+        String uuid = UUID.randomUUID().toString();
+        val = toValue(createNewUidList(uuid));
         values.add(val);
         Value result = agg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
@@ -207,18 +188,13 @@ public class GlobalIndexUidAggregatorTest {
     }
     
     @Test
-    public void testCount() throws Exception {
+    public void testCountUnderMax() throws Exception {
         agg.reset();
-        UUID uuid = UUID.randomUUID();
-        // Collect the same UUID five times.
+        // Collect five random UIDs
         Collection<Value> values = Lists.newArrayList();
         for (int i = 0; i < 5; i++) {
-            Builder b = createNewUidList();
-            b.setCOUNT(1);
-            b.setIGNORE(false);
-            b.addUID(uuid.toString());
-            Uid.List uidList = b.build();
-            Value val = new Value(uidList.toByteArray());
+            String uuid = UUID.randomUUID().toString();
+            Value val = toValue(createNewUidList(uuid));
             values.add(val);
         }
         Value result = agg.reduce(new Key("key"), values.iterator());
@@ -226,7 +202,29 @@ public class GlobalIndexUidAggregatorTest {
         
         assertEquals(5, resultList.getCOUNT());
         assertFalse(resultList.getIGNORE());
+        assertEquals(5, resultList.getUIDCount());
+        assertEquals(5, resultList.getUIDList().size());
+        
+    }
+    
+    @Test
+    public void testCountWithDuplicates() throws Exception {
+        agg.reset();
+        String uuid = UUID.randomUUID().toString();
+        // Collect the same UUID five times.
+        Collection<Value> values = Lists.newArrayList();
+        for (int i = 0; i < 5; i++) {
+            Value val = toValue(createNewUidList(uuid));
+            values.add(val);
+        }
+        Value result = agg.reduce(new Key("key"), values.iterator());
+        Uid.List resultList = Uid.List.parseFrom(result.get());
+        
+        assertEquals(1, resultList.getCOUNT());
+        assertFalse(resultList.getIGNORE());
         assertEquals(1, resultList.getUIDCount());
+        assertEquals(1, resultList.getUIDList().size());
+        assertEquals(uuid, resultList.getUID(0));
         
     }
     
@@ -238,28 +236,14 @@ public class GlobalIndexUidAggregatorTest {
         GlobalIndexUidAggregator.setCombineAllColumns(is, true);
         localAgg.validateOptions(is.getOptions());
         
-        UUID uuid1 = UUID.randomUUID();
-        UUID uuid2 = UUID.randomUUID();
+        String uuid1 = UUID.randomUUID().toString();
+        String uuid2 = UUID.randomUUID().toString();
         
         // Remove UUID2 and then re-add it.
         ArrayList<Value> values = Lists.newArrayList();
-        Builder b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addUID(uuid1.toString());
-        values.add(new Value(b.build().toByteArray()));
-        
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(-1);
-        b.addREMOVEDUID(uuid2.toString());
-        values.add(new Value(b.build().toByteArray()));
-        
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addUID(uuid2.toString());
-        values.add(new Value(b.build().toByteArray()));
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewRemoveUidList(uuid2)));
+        values.add(toValue(createNewUidList(uuid2)));
         
         // Both uuid1 and uuid2 should be in the UID list. Uuid1 should be there because we
         // added and never touched it, and uuid2 should be there because the last thing we did
@@ -267,99 +251,155 @@ public class GlobalIndexUidAggregatorTest {
         Collections.reverse(values);
         Value result = localAgg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
-        assertEquals(1, resultList.getCOUNT());
+        assertEquals(2, resultList.getCOUNT());
         assertEquals(2, resultList.getUIDCount());
         assertEquals(2, resultList.getUIDList().size());
         assertEquals(0, resultList.getREMOVEDUIDList().size());
-        assertTrue(resultList.getUIDList().contains(uuid1.toString()));
-        assertTrue(resultList.getUIDList().contains(uuid2.toString()));
+        assertTrue(resultList.getUIDList().contains(uuid1));
+        assertTrue(resultList.getUIDList().contains(uuid2));
+    }
+    
+    @Test
+    public void testRemoveAndReAddUUIDWithTimestampsIgnored() throws Exception {
+        GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
+        
+        String uuid1 = UUID.randomUUID().toString();
+        String uuid2 = UUID.randomUUID().toString();
+        
+        // Remove UUID2 and then re-add it.
+        ArrayList<Value> values = Lists.newArrayList();
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewRemoveUidList(uuid2)));
+        values.add(toValue(createNewUidList(uuid2)));
+        
+        // uuid1 should be in the UID list and uuid2 should be in the REMOVEDUID list. Uuid1
+        // should be there because we added and never touched it. uuid2 should be in the
+        // REMOVEDUID list even though the most recent action was an add because when timestamps
+        // are ignored, a remove takes precedence over any add.
+        Collections.reverse(values);
+        Value result = localAgg.reduce(new Key("key"), values.iterator());
+        Uid.List resultList = Uid.List.parseFrom(result.get());
+        assertEquals(1, resultList.getCOUNT());
+        assertEquals(1, resultList.getUIDCount());
+        assertEquals(1, resultList.getUIDList().size());
+        assertEquals(1, resultList.getREMOVEDUIDList().size());
+        assertTrue(resultList.getUIDList().contains(uuid1));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid2));
     }
     
     @Test
     public void testNegativeCountWithPartialMajorCompaction() throws Exception {
         GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
         IteratorSetting is = new IteratorSetting(19, "test", GlobalIndexUidAggregator.class);
+        GlobalIndexUidAggregator.setTimestampsIgnoredOpt(is, false);
         GlobalIndexUidAggregator.setCombineAllColumns(is, true);
         localAgg.validateOptions(is.getOptions());
         
         localAgg.reset();
         
-        UUID uuid1 = UUID.randomUUID();
-        UUID uuid2 = UUID.randomUUID();
-        UUID uuid3 = UUID.randomUUID();
-        UUID uuid4 = UUID.randomUUID();
+        String uuid1 = UUID.randomUUID().toString();
+        String uuid2 = UUID.randomUUID().toString();
+        String uuid3 = UUID.randomUUID().toString();
+        String uuid4 = UUID.randomUUID().toString();
         
         // Collect the addition of uuid1 and the removal of uuid 2, 3, and 4 together.
         ArrayList<Value> values = Lists.newArrayList();
-        Builder b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addUID(uuid1.toString());
-        values.add(new Value(b.build().toByteArray()));
-        
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(-1);
-        b.addREMOVEDUID(uuid2.toString());
-        values.add(new Value(b.build().toByteArray()));
-        
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(-1);
-        b.addREMOVEDUID(uuid3.toString());
-        values.add(new Value(b.build().toByteArray()));
-        
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(-1);
-        b.addREMOVEDUID(uuid4.toString());
-        values.add(new Value(b.build().toByteArray()));
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewRemoveUidList(uuid2)));
+        values.add(toValue(createNewRemoveUidList(uuid3)));
+        values.add(toValue(createNewRemoveUidList(uuid4)));
         
         Collections.reverse(values);
         Value result = localAgg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
-        assertEquals(-2, resultList.getCOUNT());
+        assertEquals(1, resultList.getCOUNT());
         assertEquals(1, resultList.getUIDCount());
         assertEquals(1, resultList.getUIDList().size());
         assertEquals(3, resultList.getREMOVEDUIDCount());
         assertEquals(3, resultList.getREMOVEDUIDList().size());
-        assertTrue(resultList.getUIDList().contains(uuid1.toString()));
-        assertTrue(resultList.getREMOVEDUIDList().contains(uuid2.toString()));
-        assertTrue(resultList.getREMOVEDUIDList().contains(uuid3.toString()));
-        assertTrue(resultList.getREMOVEDUIDList().contains(uuid4.toString()));
+        assertTrue(resultList.getUIDList().contains(uuid1));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid2));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid3));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid4));
         
         localAgg.reset();
         values.clear();
         values.add(result);
         
         // Simulate a partial major compaction by taking the previous combined result (the partial major compaction
-        // output) and include the original adds for uuid1
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addUID(uuid2.toString());
-        values.add(new Value(b.build().toByteArray()));
+        // output) and include the original adds for uuid2-uuid4.
+        values.add(toValue(createNewUidList(uuid2)));
+        values.add(toValue(createNewUidList(uuid3)));
+        values.add(toValue(createNewUidList(uuid4)));
         
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addUID(uuid3.toString());
-        values.add(new Value(b.build().toByteArray()));
-        
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addUID(uuid4.toString());
-        values.add(new Value(b.build().toByteArray()));
-        
-        Collections.reverse(values);
+        // Don't reverse the collection since we want the adds for uuid2-4 to appear before
+        // the partially compacted protocol buffer. When we're considering timestamps, this
+        // order matters.
+        // Collections.reverse(values);
         result = localAgg.reduce(new Key("key"), values.iterator());
         resultList = Uid.List.parseFrom(result.get());
         assertEquals(1, resultList.getCOUNT());
         assertEquals(1, resultList.getUIDCount());
         assertEquals(1, resultList.getUIDList().size());
         assertEquals(3, resultList.getREMOVEDUIDList().size());
-        assertEquals(uuid1.toString(), resultList.getUID(0));
+        assertEquals(uuid1, resultList.getUID(0));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid2));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid3));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid4));
+    }
+    
+    @Test
+    public void testNegativeCountWithPartialMajorCompactionAndTimestampsIgnored() throws Exception {
+        GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
+        
+        localAgg.reset();
+        
+        String uuid1 = UUID.randomUUID().toString();
+        String uuid2 = UUID.randomUUID().toString();
+        String uuid3 = UUID.randomUUID().toString();
+        String uuid4 = UUID.randomUUID().toString();
+        
+        // Collect the addition of uuid1 and the removal of uuid 2, 3, and 4 together.
+        ArrayList<Value> values = Lists.newArrayList();
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewRemoveUidList(uuid2)));
+        values.add(toValue(createNewRemoveUidList(uuid3)));
+        values.add(toValue(createNewRemoveUidList(uuid4)));
+        
+        Collections.reverse(values);
+        Value result = localAgg.reduce(new Key("key"), values.iterator());
+        Uid.List resultList = Uid.List.parseFrom(result.get());
+        assertEquals(1, resultList.getCOUNT());
+        assertEquals(1, resultList.getUIDCount());
+        assertEquals(1, resultList.getUIDList().size());
+        assertEquals(3, resultList.getREMOVEDUIDCount());
+        assertEquals(3, resultList.getREMOVEDUIDList().size());
+        assertTrue(resultList.getUIDList().contains(uuid1));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid2));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid3));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid4));
+        
+        localAgg.reset();
+        values.clear();
+        values.add(result);
+        
+        // Simulate a partial major compaction by taking the previous combined result (the partial major compaction
+        // output) and include the original adds for uuid2-4
+        values.add(toValue(createNewUidList(uuid2)));
+        values.add(toValue(createNewUidList(uuid3)));
+        values.add(toValue(createNewUidList(uuid4)));
+        
+        // Don't reverse the collection so that the adds for uuid2-4 appear after
+        // the removals. Even though the adds are last, when we're ignoring timestamps
+        // removals take precedence.
+        // Collections.reverse(values);
+        result = localAgg.reduce(new Key("key"), values.iterator());
+        resultList = Uid.List.parseFrom(result.get());
+        assertEquals(1, resultList.getCOUNT());
+        assertEquals(1, resultList.getUIDCount());
+        assertEquals(1, resultList.getUIDList().size());
+        assertEquals(3, resultList.getREMOVEDUIDList().size());
+        assertEquals(uuid1, resultList.getUID(0));
     }
     
     @Test
@@ -372,22 +412,13 @@ public class GlobalIndexUidAggregatorTest {
         
         localAgg.reset();
         
-        UUID uuid1 = UUID.randomUUID();
-        UUID uuid2 = UUID.randomUUID();
+        String uuid1 = UUID.randomUUID().toString();
+        String uuid2 = UUID.randomUUID().toString();
         
         // Collect uuids 1 and 2 together in the UID list...
         ArrayList<Value> values = Lists.newArrayList();
-        Builder b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addUID(uuid1.toString());
-        values.add(new Value(b.build().toByteArray()));
-        
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addUID(uuid2.toString());
-        values.add(new Value(b.build().toByteArray()));
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewUidList(uuid2)));
         
         Collections.reverse(values);
         Value result = localAgg.reduce(new Key("key"), values.iterator());
@@ -397,8 +428,8 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(2, resultList.getUIDList().size());
         assertEquals(0, resultList.getREMOVEDUIDCount());
         assertEquals(0, resultList.getREMOVEDUIDList().size());
-        assertTrue(resultList.getUIDList().contains(uuid1.toString()));
-        assertTrue(resultList.getUIDList().contains(uuid2.toString()));
+        assertTrue(resultList.getUIDList().contains(uuid1));
+        assertTrue(resultList.getUIDList().contains(uuid2));
         
         localAgg.reset();
         values.clear();
@@ -406,11 +437,7 @@ public class GlobalIndexUidAggregatorTest {
         
         // Simulate a partial major compaction by taking the previous combined result (the partial major compaction
         // output) and add in a removal for uuid 2.
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(-1);
-        b.addREMOVEDUID(uuid2.toString());
-        values.add(new Value(b.build().toByteArray()));
+        values.add(toValue(createNewRemoveUidList(uuid2)));
         
         Collections.reverse(values);
         result = localAgg.reduce(new Key("key"), values.iterator());
@@ -419,8 +446,8 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(1, resultList.getUIDCount());
         assertEquals(1, resultList.getUIDList().size());
         assertEquals(1, resultList.getREMOVEDUIDList().size());
-        assertEquals(uuid1.toString(), resultList.getUID(0));
-        assertEquals(uuid2.toString(), resultList.getREMOVEDUID(0));
+        assertEquals(uuid1, resultList.getUID(0));
+        assertEquals(uuid2, resultList.getREMOVEDUID(0));
         
         localAgg.reset();
         values.clear();
@@ -428,11 +455,7 @@ public class GlobalIndexUidAggregatorTest {
         
         // Take the previous combined result (which should have uuid1 in the uid list and uuid2 in the remove list)
         // and add uuid2 back in. The combined result should have uuid1 in the uid list and uuid2 in the remove list.
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addUID(uuid2.toString());
-        values.add(new Value(b.build().toByteArray()));
+        values.add(toValue(createNewUidList(uuid2)));
         
         Collections.reverse(values);
         result = localAgg.reduce(new Key("key"), values.iterator());
@@ -441,73 +464,261 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(2, resultList.getCOUNT());
         assertEquals(2, resultList.getUIDCount());
         assertEquals(2, resultList.getUIDList().size());
-        assertTrue(resultList.getUIDList().contains(uuid1.toString()));
-        assertTrue(resultList.getUIDList().contains(uuid2.toString()));
+        assertTrue(resultList.getUIDList().contains(uuid1));
+        assertTrue(resultList.getUIDList().contains(uuid2));
         assertEquals(0, resultList.getREMOVEDUIDList().size());
     }
     
     @Test
-    public void testAggregateWithZeroCountAndUUIDs() throws Exception {
-        GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
-        IteratorSetting is = new IteratorSetting(19, "test", GlobalIndexUidAggregator.class);
-        GlobalIndexUidAggregator.setTimestampsIgnoredOpt(is, false);
-        GlobalIndexUidAggregator.setCombineAllColumns(is, true);
-        localAgg.validateOptions(is.getOptions());
+    public void testRemoveAndReAddUUIDWithTimestampsIgnoredAndPartialMajorCompaction() throws Exception {
+        agg.reset();
         
-        localAgg.reset();
+        String uuid1 = UUID.randomUUID().toString();
+        String uuid2 = UUID.randomUUID().toString();
         
-        UUID uuid1 = UUID.randomUUID();
-        UUID uuid2 = UUID.randomUUID();
-        
-        // Add uuid1 and remove uuid2 (which hasn't been added yet) to produce a zero count.
+        // Collect uuids 1 and 2 together in the UID list...
         ArrayList<Value> values = Lists.newArrayList();
-        Builder b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addUID(uuid1.toString());
-        values.add(new Value(b.build().toByteArray()));
-        
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(-1);
-        b.addREMOVEDUID(uuid2.toString());
-        values.add(new Value(b.build().toByteArray()));
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewUidList(uuid2)));
         
         Collections.reverse(values);
-        Value result = localAgg.reduce(new Key("key"), values.iterator());
+        Value result = agg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
-        assertEquals(0, resultList.getCOUNT());
+        assertEquals(2, resultList.getCOUNT());
+        assertEquals(2, resultList.getUIDCount());
+        assertEquals(2, resultList.getUIDList().size());
+        assertEquals(0, resultList.getREMOVEDUIDCount());
+        assertEquals(0, resultList.getREMOVEDUIDList().size());
+        assertTrue(resultList.getUIDList().contains(uuid1));
+        assertTrue(resultList.getUIDList().contains(uuid2));
+        
+        agg.reset();
+        values.clear();
+        values.add(result);
+        
+        // Simulate a partial major compaction by taking the previous combined result (the partial major compaction
+        // output) and add in a removal for uuid 2.
+        values.add(toValue(createNewRemoveUidList(uuid2)));
+        
+        Collections.reverse(values);
+        result = agg.reduce(new Key("key"), values.iterator());
+        resultList = Uid.List.parseFrom(result.get());
+        assertEquals(1, resultList.getCOUNT());
         assertEquals(1, resultList.getUIDCount());
         assertEquals(1, resultList.getUIDList().size());
         assertEquals(1, resultList.getREMOVEDUIDList().size());
-        assertTrue(resultList.getUIDList().contains(uuid1.toString()));
-        assertTrue(resultList.getREMOVEDUIDList().contains(uuid2.toString()));
+        assertEquals(uuid1, resultList.getUID(0));
+        assertEquals(uuid2, resultList.getREMOVEDUID(0));
         
-        localAgg.reset();
+        agg.reset();
+        values.clear();
+        values.add(result);
+        
+        // Take the previous combined result (which should have uuid1 in the uid list and uuid2 in the remove list)
+        // and add uuid2 back in. The combined result should have uuid1 in the uid list and uuid2 in the remove list.
+        values.add(toValue(createNewUidList(uuid2)));
+        
+        Collections.reverse(values);
+        result = agg.reduce(new Key("key"), values.iterator());
+        resultList = Uid.List.parseFrom(result.get());
+        
+        assertEquals(1, resultList.getCOUNT());
+        assertEquals(1, resultList.getUIDCount());
+        assertEquals(1, resultList.getUIDList().size());
+        assertTrue(resultList.getUIDList().contains(uuid1));
+        assertEquals(1, resultList.getREMOVEDUIDList().size());
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid2));
+    }
+    
+    @Test
+    public void testAggregateWithZeroCountAndUUIDs() throws Exception {
+        agg.reset();
+        
+        String uuid1 = UUID.randomUUID().toString();
+        String uuid2 = UUID.randomUUID().toString();
+        
+        // Add uuid1 and remove uuid2 (which hasn't been added yet) to produce a zero count.
+        ArrayList<Value> values = Lists.newArrayList();
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewRemoveUidList(uuid2)));
+        
+        Collections.reverse(values);
+        Value result = agg.reduce(new Key("key"), values.iterator());
+        Uid.List resultList = Uid.List.parseFrom(result.get());
+        assertEquals(1, resultList.getCOUNT());
+        assertEquals(1, resultList.getUIDCount());
+        assertEquals(1, resultList.getUIDList().size());
+        assertEquals(1, resultList.getREMOVEDUIDList().size());
+        assertTrue(resultList.getUIDList().contains(uuid1));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid2));
+        
+        agg.reset();
         values.clear();
         values.add(result);
         
         // Take the previous result (simulating a partial major compaction) and add uuid2 first (before the removal).
         // We should end up with only uuid1 in the uuid list, and uuid2 in the remove list (if we did a full major
         // compaction, then uuid1 would be gone from the remove list too).
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addREMOVEDUID(uuid2.toString());
-        values.add(new Value(b.build().toByteArray()));
+        values.add(toValue(createNewUidList(uuid2)));
         
         Collections.reverse(values);
-        result = localAgg.reduce(new Key("key"), values.iterator());
+        result = agg.reduce(new Key("key"), values.iterator());
         resultList = Uid.List.parseFrom(result.get());
         assertEquals(1, resultList.getUIDCount());
         assertEquals(1, resultList.getUIDList().size());
         assertEquals(1, resultList.getREMOVEDUIDList().size());
-        assertEquals(uuid1.toString(), resultList.getUID(0));
-        assertEquals(uuid2.toString(), resultList.getREMOVEDUID(0));
+        assertEquals(uuid1, resultList.getUID(0));
+        assertEquals(uuid2, resultList.getREMOVEDUID(0));
     }
     
     @Test
     public void testAggregateWithPositiveCountAndUUIDs() throws Exception {
+        agg.reset();
+        
+        String uuid1 = UUID.randomUUID().toString();
+        String uuid2 = UUID.randomUUID().toString();
+        String uuid3 = UUID.randomUUID().toString();
+        
+        // Add uuid2 and uuid3 as well as removing uuid1 (which hasn't been added yet).
+        ArrayList<Value> values = Lists.newArrayList();
+        values.add(toValue(createNewUidList(uuid2)));
+        values.add(toValue(createNewUidList(uuid3)));
+        values.add(toValue(createNewRemoveUidList(uuid1)));
+        
+        Collections.reverse(values);
+        Value result = agg.reduce(new Key("key"), values.iterator());
+        Uid.List resultList = Uid.List.parseFrom(result.get());
+        assertEquals(2, resultList.getCOUNT());
+        assertEquals(2, resultList.getUIDCount());
+        assertEquals(2, resultList.getUIDList().size());
+        assertEquals(1, resultList.getREMOVEDUIDList().size());
+        assertTrue(resultList.getUIDList().contains(uuid2));
+        assertTrue(resultList.getUIDList().contains(uuid3));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid1));
+        
+        agg.reset();
+        values.clear();
+        values.add(result);
+        
+        // Take the previous result (simulating a partial major compaction) and add uuid1 first (before the removal).
+        // We should end up with only uuid2 and uuid3 in the uuid list, and uuid1 in the remove list (if we did a full
+        // major compaction, then uuid1 would be gone from the remove list too).
+        values.add(toValue(createNewRemoveUidList(uuid1)));
+        
+        Collections.reverse(values);
+        result = agg.reduce(new Key("key"), values.iterator());
+        resultList = Uid.List.parseFrom(result.get());
+        assertEquals(2, resultList.getUIDCount());
+        assertEquals(2, resultList.getUIDList().size());
+        assertEquals(1, resultList.getREMOVEDUIDList().size());
+        assertTrue(resultList.getUIDList().contains(uuid2));
+        assertTrue(resultList.getUIDList().contains(uuid3));
+        assertTrue(resultList.getREMOVEDUIDList().contains(uuid1));
+    }
+    
+    @Test
+    public void testAddUIDTwice() throws Exception {
+        agg.reset();
+        
+        String uuid1 = UUID.randomUUID().toString();
+        ArrayList<Value> values = Lists.newArrayList();
+        
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewUidList(uuid1)));
+        
+        Value result = agg.reduce(new Key("key"), values.iterator());
+        Uid.List resultList = Uid.List.parseFrom(result.get());
+        assertEquals(1, resultList.getUIDCount());
+        assertTrue(resultList.getUIDList().contains(uuid1));
+        assertEquals(1, resultList.getUIDList().size());
+        assertEquals(1, resultList.getCOUNT());
+    }
+    
+    @Test
+    public void testAddUIDThrice() throws Exception {
+        // lowered max to show problem more easily
+        GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator(2);
+        
+        String uuid1 = UUID.randomUUID().toString();
+        ArrayList<Value> values = Lists.newArrayList();
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewUidList(uuid1)));
+        
+        Value result = localAgg.reduce(new Key("key"), values.iterator());
+        Uid.List resultList = Uid.List.parseFrom(result.get());
+        assertEquals(1, resultList.getUIDCount());
+        assertTrue(resultList.getUIDList().contains(uuid1));
+        assertEquals(1, resultList.getUIDList().size());
+        assertEquals(1, resultList.getCOUNT());
+    }
+    
+    @Test
+    public void testAddDuplicateUUIDWithSeenIgnore() throws Exception {
+        // lowered max to show problem more easily
+        GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator(2);
+        
+        String uuid1 = UUID.randomUUID().toString();
+        ArrayList<Value> values = Lists.newArrayList();
+        
+        // Add 3 uuids, which will put the protocol buffer over the max and
+        // cause the ignore flag to be set. Then add a duplicate uuid a couple
+        // more times. Once we've exceeded the limit, we don't have a list of
+        // UIDs anymore to check for duplicates so we simply count incoming
+        // UIDs.
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewUidList(UUID.randomUUID().toString())));
+        values.add(toValue(createNewUidList(UUID.randomUUID().toString())));
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewUidList(uuid1)));
+        
+        Value result = localAgg.reduce(new Key("key"), values.iterator());
+        Uid.List resultList = Uid.List.parseFrom(result.get());
+        assertEquals(0, resultList.getUIDCount());
+        assertEquals(0, resultList.getUIDList().size());
+        assertEquals(5, resultList.getCOUNT());
+    }
+    
+    @Test
+    public void testAddDuplicateUUIDWithSeenIgnoreAndCompaction() throws Exception {
+        // lowered max to show problem more easily
+        GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator(2);
+        
+        String uuid1 = UUID.randomUUID().toString();
+        ArrayList<Value> values = Lists.newArrayList();
+        
+        // Add 3 uuids, which will put the protocol buffer over the max and
+        // cause the ignore flag to be set.
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewUidList(UUID.randomUUID().toString())));
+        values.add(toValue(createNewUidList(UUID.randomUUID().toString())));
+        
+        Value result = localAgg.reduce(new Key("key"), values.iterator());
+        Uid.List resultList = Uid.List.parseFrom(result.get());
+        assertEquals(0, resultList.getUIDCount());
+        assertEquals(0, resultList.getUIDList().size());
+        assertEquals(3, resultList.getCOUNT());
+        
+        // Simulate a compaction
+        localAgg.reset();
+        values.clear();
+        values.add(result);
+        
+        // Now add uuid1 in a new protocol buffer. Even though it's a duplicate,
+        // since we're merging it in to a protocol buffer with the ignore flag
+        // set, we'll simply trust the count (since we don't have any individual
+        // UIDs to check for duplicates).
+        values.add(toValue(createNewUidList(uuid1)));
+        
+        result = localAgg.reduce(new Key("key"), values.iterator());
+        resultList = Uid.List.parseFrom(result.get());
+        assertEquals(0, resultList.getUIDCount());
+        assertEquals(0, resultList.getUIDList().size());
+        assertEquals(4, resultList.getCOUNT());
+    }
+    
+    @Test
+    public void testRemoveAndReAdd() throws Exception {
         GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
         IteratorSetting is = new IteratorSetting(19, "test", GlobalIndexUidAggregator.class);
         GlobalIndexUidAggregator.setTimestampsIgnoredOpt(is, false);
@@ -516,62 +727,46 @@ public class GlobalIndexUidAggregatorTest {
         
         localAgg.reset();
         
-        UUID uuid1 = UUID.randomUUID();
-        UUID uuid2 = UUID.randomUUID();
-        UUID uuid3 = UUID.randomUUID();
-        
-        // Add uuid2 and uuid3 as well as removing uuid1 (which hasn't been added yet).
+        String uuid1 = UUID.randomUUID().toString();
         ArrayList<Value> values = Lists.newArrayList();
-        Builder b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addUID(uuid2.toString());
-        values.add(new Value(b.build().toByteArray()));
         
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addUID(uuid3.toString());
-        values.add(new Value(b.build().toByteArray()));
+        // When we're considering timestamps, an add of a UID, followed by a removal
+        // of that UID, and then a re-add should result in the UID ending up in the
+        // UID list.
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewRemoveUidList(uuid1)));
+        values.add(toValue(createNewUidList(uuid1)));
         
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(-1);
-        b.addREMOVEDUID(uuid1.toString());
-        values.add(new Value(b.build().toByteArray()));
-        
-        Collections.reverse(values);
         Value result = localAgg.reduce(new Key("key"), values.iterator());
         Uid.List resultList = Uid.List.parseFrom(result.get());
+        assertEquals(1, resultList.getUIDCount());
+        assertEquals(1, resultList.getUIDList().size());
+        assertEquals(0, resultList.getREMOVEDUIDCount());
+        assertEquals(0, resultList.getREMOVEDUIDList().size());
         assertEquals(1, resultList.getCOUNT());
-        assertEquals(2, resultList.getUIDCount());
-        assertEquals(2, resultList.getUIDList().size());
+    }
+    
+    @Test
+    public void testRemoveAndReAddWithTimestampsIgnored() throws Exception {
+        agg.reset();
+        
+        String uuid1 = UUID.randomUUID().toString();
+        ArrayList<Value> values = Lists.newArrayList();
+        
+        // The default behavior of the aggregator is that timestamps are ignored. In that case,
+        // a remove takes priority over an add no matter what the order. Therefore, if we
+        // add a UID, then remove it, then re-add it, the expected result is that the UID will
+        // be removed.
+        values.add(toValue(createNewUidList(uuid1)));
+        values.add(toValue(createNewRemoveUidList(uuid1)));
+        values.add(toValue(createNewUidList(uuid1)));
+        
+        Value result = agg.reduce(new Key("key"), values.iterator());
+        Uid.List resultList = Uid.List.parseFrom(result.get());
+        assertEquals(0, resultList.getUIDCount());
+        assertEquals(0, resultList.getUIDList().size());
+        assertEquals(1, resultList.getREMOVEDUIDCount());
         assertEquals(1, resultList.getREMOVEDUIDList().size());
-        assertTrue(resultList.getUIDList().contains(uuid2.toString()));
-        assertTrue(resultList.getUIDList().contains(uuid3.toString()));
-        assertTrue(resultList.getREMOVEDUIDList().contains(uuid1.toString()));
-        
-        localAgg.reset();
-        values.clear();
-        values.add(result);
-        
-        // Take the previous result (simulating a partial major compaction) and add uuid1 first (before the removal).
-        // We should end up with only uuid2 and uuid3 in the uuid list, and uuid1 in the remove list (if we did a full
-        // major compaction, then uuid1 would be gone from the remove list too).
-        b = createNewUidList();
-        b.setIGNORE(false);
-        b.setCOUNT(1);
-        b.addREMOVEDUID(uuid1.toString());
-        values.add(new Value(b.build().toByteArray()));
-        
-        Collections.reverse(values);
-        result = localAgg.reduce(new Key("key"), values.iterator());
-        resultList = Uid.List.parseFrom(result.get());
-        assertEquals(2, resultList.getUIDCount());
-        assertEquals(2, resultList.getUIDList().size());
-        assertEquals(1, resultList.getREMOVEDUIDList().size());
-        assertTrue(resultList.getUIDList().contains(uuid2.toString()));
-        assertTrue(resultList.getUIDList().contains(uuid3.toString()));
-        assertTrue(resultList.getREMOVEDUIDList().contains(uuid1.toString()));
+        assertEquals(0, resultList.getCOUNT());
     }
 }
