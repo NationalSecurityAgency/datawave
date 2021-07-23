@@ -21,4 +21,28 @@ public class ASTDelayedPredicateTest {
         String delayedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
         assertEquals(expected, delayedQuery);
     }
+    
+    @Test
+    public void testDelayBoundedRange() throws ParseException {
+        String query = "((_Bounded_ = true) && (SIZE >= 3 && SIZE <= 7))";
+        String expected = "((_Delayed_ = true) && (((_Bounded_ = true) && (SIZE >= 3 && SIZE <= 7))))";
+        
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        JexlNode delayed = ASTDelayedPredicate.create(node);
+        
+        String delayedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(delayed);
+        assertEquals(expected, delayedQuery);
+    }
+    
+    @Test
+    public void testDelayOfValueExceededBoundedRange() throws ParseException {
+        String query = "((_Value_ = true) && (((_Bounded_ = true) && (SIZE >= 3 && SIZE <= 7))))";
+        String expected = "((_Delayed_ = true) && (((_Value_ = true) && (((_Bounded_ = true) && (SIZE >= 3 && SIZE <= 7))))))";
+        
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        JexlNode delayed = ASTDelayedPredicate.create(node);
+        
+        String delayedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(delayed);
+        assertEquals(expected, delayedQuery);
+    }
 }

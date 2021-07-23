@@ -60,4 +60,13 @@ public class QueryPropertyMarkerTest {
     public void verifyEachSubclassHasDistinctLabel() {
         
     }
+    
+    // Test some marker detection scenarios
+    
+    @Test
+    public void testMarkerDetection_delayedExpression() throws ParseException {
+        String query = "((_Delayed_ = true) && (FOO =~ '.*regex.*'))";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        Assert.assertTrue(ASTDelayedPredicate.instanceOf(node));
+    }
 }

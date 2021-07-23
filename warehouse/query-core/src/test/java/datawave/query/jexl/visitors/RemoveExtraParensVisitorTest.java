@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import com.google.common.collect.Lists;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -11,6 +12,8 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.junit.Test;
+
+import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -107,6 +110,26 @@ public class RemoveExtraParensVisitorTest {
         assertTrue(TreeEqualityVisitor.isEqual(expected, removed));
         
         assertLineage(removed);
+    }
+    
+    @Test
+    public void testOddRefExprOrder() throws ParseException {
+        JexlNode leftEq = JexlNodeFactory.buildEQNode("F", "v");
+        JexlNode leftNode = JexlNodes.wrap(JexlNodes.makeRef(JexlNodes.wrap(leftEq)));
+        
+        JexlNode rightEq = JexlNodeFactory.buildEQNode("F2", "v2");
+        JexlNode rightNode = JexlNodes.makeRef(JexlNodes.wrap(rightEq));
+        
+        JexlNode union = JexlNodeFactory.createOrNode(Arrays.asList(leftNode, rightNode));
+        
+        String expectedQuery = "((F == 'v') || (F2 == 'v2'))";
+        test(JexlStringBuildingVisitor.buildQueryWithoutParse(union), expectedQuery);
+    }
+    
+    @Test
+    public void testDelayedRegex() throws ParseException {
+        String query = "((_Delayed_ = true) && (FOO =~ '.*regex.*'))";
+        test(query, query);
     }
     
     private void test(String query, String expected) throws ParseException {

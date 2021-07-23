@@ -3,6 +3,7 @@ package datawave.query.jexl.visitors;
 import com.google.common.collect.Sets;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -165,6 +166,18 @@ public class AllTermsIndexedVisitorTest {
     @Test(expected = DatawaveFatalQueryException.class)
     public void testGreaterThanEqualsWithExtraTerm() throws ParseException {
         String query = "FOO >= '+aE1' || FOO == 'bar'";
+        testIsIndexed(query);
+    }
+    
+    @Test(expected = InvalidFieldIndexQueryFatalQueryException.class)
+    public void testSimpleBoundedRangeCase() throws ParseException {
+        String query = "((_Bounded_ = true) && (FOO >= '2' && FOO <= '5'))";
+        testIsIndexed(query);
+    }
+    
+    @Test(expected = InvalidFieldIndexQueryFatalQueryException.class)
+    public void testSimpleBoundedRangeCaseWithExtraParens() throws ParseException {
+        String query = "(((_Bounded_ = true) && (FOO >= '2' && FOO <= '5')))";
         testIsIndexed(query);
     }
     

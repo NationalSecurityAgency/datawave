@@ -79,23 +79,25 @@ public class RemoveExtraParensVisitor extends BaseVisitor {
      */
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        
+        // Operate on a plain JexlNode to avoid class cast exception
+        JexlNode target = node;
         boolean changed;
         do {
             changed = false;
             
-            if (isDoubleWrapped(node)) {
-                node = (ASTReferenceExpression) removeDoubleWrap(node);
+            if (isDoubleWrapped(target)) {
+                // Replace this reference expression with the child reference node
+                target = removeDoubleWrap(target);
                 changed = true;
             }
             
-            if (isDoubleReferenceExpression(node)) {
-                node = (ASTReferenceExpression) removeMiddleNode(node);
+            if (isDoubleReferenceExpression(target)) {
+                target = removeMiddleNode(target);
                 changed = true;
             }
         } while (changed);
         
-        return super.visit(node, data);
+        return super.visit(target, data);
     }
     
     @Override
@@ -169,16 +171,11 @@ public class RemoveExtraParensVisitor extends BaseVisitor {
         
         JexlNode parent = node.jjtGetParent();
         JexlNode child = node.jjtGetChild(0);
-        JexlNode target = child.jjtGetChild(0);
         
         // Execute two swaps to clear references to stale nodes
         JexlNodes.swap(parent, node, child);
-        JexlNodes.swap(parent, child, target);
         
-        // All references to the child node should be gone.
-        child = null;
-        
-        return target;
+        return child;
     }
     
     /**

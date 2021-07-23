@@ -242,8 +242,15 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     public Object visit(ASTReference node, Object data) {
         // if a delayed predicate, then change it to a regular reference
         if (ASTDelayedPredicate.instanceOf(node)) {
+            if (node.jjtGetNumChildren() > 1) {
+                log.warn("Tried to pull up a delayed marker that had more than one child.");
+            }
+            
+            // This swap should be safe, the reference node should have a single child that is a reference expression
             JexlNode source = ASTDelayedPredicate.getDelayedPredicateSource(node);
-            JexlNodes.swap(node.jjtGetParent(), node, source);
+            JexlNode wrappedSource = JexlNodes.wrap(source);
+            JexlNodes.swap(node, node.jjtGetChild(0), wrappedSource);
+            
             return source;
         } else if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             super.visit(node, data);
