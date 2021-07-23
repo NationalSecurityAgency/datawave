@@ -3,7 +3,6 @@ package datawave.ingest.table.aggregator;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import datawave.ingest.protobuf.Uid.List.Builder;
@@ -159,19 +158,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     long prevCount = uids.size();
                     
                     // Remove any UIDs in the REMOVEDUID list.
-                    List<String> removeList = v.getREMOVEDUIDList();
-                    
-                    // This is for backwards compatibility. An older version of the protocol buffer
-                    // did not contain the REMOVEDUID list and instead would use only a negative count
-                    // to indicate removals. However, that approach didn't work across compactions and
-                    // the REMOVEDUID list was added. If we encounter an incoming protocol buffer with
-                    // a negative count and nothing in the REMOVEDUID list, then assume we have an old
-                    // version and treat the UID list as removals.
-                    if (delta < 0 && v.getREMOVEDUIDList().isEmpty()) {
-                        removeList = v.getUIDList();
-                    }
-                    
-                    for (String uid : removeList) {
+                    for (String uid : v.getREMOVEDUIDList()) {
                         // Don't remove the UID if it's in the UID list since that means a newer key
                         // (larger timestamp value) added the UID and we don't want to undo that add.
                         // If timestampsIgnored is set, then we are presuming lots of collisions on
