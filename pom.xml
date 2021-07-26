@@ -25,10 +25,11 @@
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
+        <!--<version.accumulo>2.1.0-SNAPSHOT</version.accumulo>-->
         <version.accumulo>2.0.1</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
@@ -94,7 +95,7 @@
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
-        <version.powermock>2.0.4</version.powermock>
+        <version.powermock>2.0.9</version.powermock>
         <version.protobuf>3.7.1</version.protobuf>
         <version.protostuff>1.6.2</version.protostuff>
         <version.slf4j>1.7.29</version.slf4j>
@@ -1589,9 +1590,11 @@
                                 <phase>package</phase>
                                 <configuration>
                                     <encoding>UTF-8</encoding>
+                                    <doclint>none</doclint>
                                     <destDir>${project.build.directory}/apidocs</destDir>
                                     <javadocVersion>1.8.0</javadocVersion>
                                     <additionalJOption>-J-Xmx768m</additionalJOption>
+                                    <source>8</source>
                                     <tags>
                                         <tag>
                                             <name>HTTP</name>
@@ -1617,6 +1620,10 @@
                                     <show>private</show>
                                     <quiet>true</quiet>
                                     <javaApiLinks>
+                                        <!--<property>
+                                            <name>api_11.0</name>
+                                            <value>https://docs.oracle.com/en/java/javase/11/docs/api/</value>
+                                        </property>-->
                                         <property>
                                             <name>api_1.8</name>
                                             <value>http://docs.oracle.com/javase/8/docs/api</value>

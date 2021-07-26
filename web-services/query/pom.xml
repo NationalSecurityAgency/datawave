@@ -272,6 +272,7 @@
                     <additionalClasspathElements>
                         <additionalClasspathElement>${basedir}/conf</additionalClasspathElement>
                     </additionalClasspathElements>
+                    <argLine>--add-opens java.xml/jdk.xml.internal=ALL-UNNAMED</argLine>
                 </configuration>
             </plugin>
         </plugins>
