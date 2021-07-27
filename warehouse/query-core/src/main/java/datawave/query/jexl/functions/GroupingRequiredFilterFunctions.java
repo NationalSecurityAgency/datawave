@@ -1,8 +1,10 @@
 package datawave.query.jexl.functions;
 
 import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
 import org.apache.log4j.Logger;
 
+import org.apache.commons.lang3.Range;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -311,6 +313,89 @@ public class GroupingRequiredFilterFunctions {
         return Collections.unmodifiableCollection(allMatches);
     }
     
+    /**
+     * <pre>
+     * 'args' will be either a matched set of range pairs, or a matched set of range pairs followed by an index integer,
+     * Ensures that the corresponding values fit within the range , using the same paradigm as matchesinGroupLeft.
+     * </pre>
+     *
+     * @param args
+     * @return a collection of matches
+     */
+    public static Collection<?> matchesInGroupLeftRange(Object... args) {
+        if (log.isTraceEnabled()) {
+            log.trace("matchesInGroupLeftRange(" + Arrays.asList(args) + ")");
+        }
+        // positionFrom is either '0', or it is the integer value of the last argument
+        // when the argumentCount is odd
+        int positionFromLeft = 0;
+        if (args.length % 3 != 0) {
+            Object lastArgument = args[args.length - 1];
+            positionFromLeft = Integer.parseInt(lastArgument.toString());
+        }
+        Collection<ValueTuple> firstMatches;
+        Collection<ValueTuple> allMatches = new HashSet<>();
+        Object fieldValue1 = args[0];
+        Object lowerBound = args[1];
+        Object upperBound = args[2];
+        if (fieldValue1 instanceof Iterable) {
+            // cast as Iterable in order to call the right getAllMatches method within the range.
+            firstMatches = EvaluationPhaseFilterFunctions.getWithinInclusiveRange((Iterable) fieldValue1, lowerBound, upperBound);
+        } else {
+            firstMatches = EvaluationPhaseFilterFunctions.getWithinInclusiveRange(ValueTuple.toValueTuple(fieldValue1), lowerBound, upperBound);
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("firstMatches = " + firstMatches);
+        }
+        
+        for (ValueTuple currentMatch : firstMatches) {
+            String matchFieldName = ValueTuple.getFieldName(currentMatch);
+            
+            String theFirstMatch = EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(matchFieldName, positionFromLeft);
+            
+            for (int i = 3; i < args.length; i += 3) {
+                
+                if (args[i] instanceof Iterable) {
+                    
+                    for (Object fieldValue : (Iterable) args[i]) {
+                        String fieldName = ValueTuple.getFieldName(fieldValue);
+                        // @formatter:off
+                        manageMatchesInGroupLeftRemainingArgs(fieldValue,
+                                args[i + 1],
+                                args[i + 2],
+                                allMatches, theFirstMatch,
+                                EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(fieldName, positionFromLeft), // the next match
+                                currentMatch);
+                        // @formatter:on
+                    }
+                } else if (args[i] instanceof ValueTuple) {
+                    
+                    Object fieldValue = args[i];
+                    String fieldName = ValueTuple.getFieldName(fieldValue);
+                    // @formatter:off
+                    manageMatchesInGroupLeftRemainingArgs(fieldValue,
+                            args[i + 1],
+                            args[i + 2],
+                            allMatches, theFirstMatch,
+                            EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(fieldName, positionFromLeft), // the next match
+                            currentMatch);
+                    // @formatter:on
+                }
+            }
+        }
+        
+        // if there was a match found at all levels, then the matches.size will be equal to the
+        // number of range pairs
+        if (allMatches.size() < args.length / 3) { // truncated in case args.length was odd
+            allMatches.clear();
+        }
+        
+        if (log.isTraceEnabled()) {
+            log.trace("returning matches:" + allMatches);
+        }
+        return Collections.unmodifiableCollection(allMatches);
+    }
+    
     private static void manageMatchesInGroupLeftRemainingArgs(Object fieldValue, String regex, Collection<ValueTuple> allMatches, String theFirstMatch,
                     String theNextMatch, ValueTuple currentMatch) {
         
@@ -319,6 +404,18 @@ public class GroupingRequiredFilterFunctions {
                 log.trace("\tfirst match equals the second: " + theFirstMatch + " == " + theNextMatch);
             }
             allMatches.addAll(EvaluationPhaseFilterFunctions.includeRegex(fieldValue, regex));
+            allMatches.add(currentMatch);
+        }
+    }
+    
+    private static void manageMatchesInGroupLeftRemainingArgs(Object fieldValue, Object lowerBound, Object upperBound, Collection<ValueTuple> allMatches,
+                    String theFirstMatch, String theNextMatch, ValueTuple currentMatch) {
+        
+        if (theNextMatch != null && theNextMatch.equals(theFirstMatch)) {
+            if (log.isTraceEnabled()) {
+                log.trace("\tfirst match equals the second: " + theFirstMatch + " == " + theNextMatch);
+            }
+            allMatches.addAll(EvaluationPhaseFilterFunctions.getWithinInclusiveRange((ValueTuple) fieldValue, lowerBound, upperBound));
             allMatches.add(currentMatch);
         }
     }

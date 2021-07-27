@@ -3,22 +3,19 @@ package datawave.query.jexl.functions;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import datawave.data.normalizer.DateNormalizer;
 import datawave.data.type.Type;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.query.collections.FunctionalSet;
+import org.apache.commons.lang3.Range;
 import org.apache.log4j.Logger;
 
+import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -306,6 +303,69 @@ public class EvaluationPhaseFilterFunctions {
                     }
                 }
             }
+        }
+        return FunctionalSet.unmodifiableSet(matches);
+    }
+    
+    private static class NaturalComparator<T extends Comparable<T>> implements Comparator<T> {
+        public int compare(T a, T b) {
+            
+            return a.compareTo(b);
+        }
+    }
+    
+    /**
+     * We don't have access, at this layer, to the type information. We do have the typed value, so we must expect there to be type T that matches this. If they
+     * do not the comparison will result in a class cast exception, through which we we can attempt to create the corresponding hard type.
+     * 
+     * @param fieldValue
+     *            ValueTuple that contains the raw field value
+     * @param lowerBound
+     *            lower bound, expected to be the same type as the raw field value
+     * @param upperBound
+     *            upper bound, expected to be the same field value.
+     * @param <T>
+     *            Generic type of the bounds arguments.
+     * @return
+     */
+    public static <T> Collection<ValueTuple> getWithinInclusiveRange(ValueTuple fieldValue, T lowerBound, T upperBound) {
+        try {
+            if (Range.between(lowerBound, upperBound, new NaturalComparator()).contains((T) ValueTuple.getNormalizedValue(fieldValue))) {
+                return FunctionalSet.singleton(getHitTerm(fieldValue));
+            }
+        } catch (ClassCastException e) {
+            if (fieldValue.getNormalizedValue() instanceof BigDecimal) {
+                
+                if (lowerBound instanceof Integer) {
+                    BigDecimal a = new BigDecimal((Integer) lowerBound);
+                    BigDecimal b = new BigDecimal((Integer) upperBound);
+                    return getWithinInclusiveRange(fieldValue, a, b);
+                } else if (lowerBound instanceof String) {
+                    // these could result in an exception, in which case
+                    // we want the exception to propagate up to the user.
+                    BigDecimal a = new BigDecimal((String) lowerBound);
+                    BigDecimal b = new BigDecimal((String) upperBound);
+                    return getWithinInclusiveRange(fieldValue, a, b);
+                }
+            } else if (fieldValue.getNormalizedValue() instanceof Date && lowerBound instanceof String) {
+                DateNormalizer normalizer = new DateNormalizer();
+                Date a = normalizer.denormalize(String.class.cast(lowerBound));
+                Date b = normalizer.denormalize(String.class.cast(upperBound));
+                return getWithinInclusiveRange(fieldValue, a, b);
+            }
+        }
+        return FunctionalSet.emptySet();
+    }
+    
+    public static <T> FunctionalSet<ValueTuple> getWithinInclusiveRange(Iterable<?> values, T lowerBound, T upperBound) {
+        FunctionalSet<ValueTuple> matches = new FunctionalSet();
+        if (null == values) {
+            return FunctionalSet.unmodifiableSet(matches);
+        }
+        for (Object value : values) {
+            if (null == value)
+                continue;
+            matches.addAll(getWithinInclusiveRange(ValueTuple.toValueTuple(value), lowerBound, upperBound));
         }
         return FunctionalSet.unmodifiableSet(matches);
     }

@@ -1,5 +1,6 @@
 package datawave.query.composite;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import datawave.data.type.DiscreteIndexType;
 import datawave.query.jexl.JexlASTHelper;
@@ -17,6 +18,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.Set;
 
 /**
@@ -85,7 +89,17 @@ public class CompositeTerm extends Composite {
      * @return
      */
     private String getAppendedExpressions() {
-        return String.join(separator, expressionList);
+        final List<String> newExpressions;
+        if (Iterables.getLast(jexlNodeList) instanceof ASTERNode && jexlNodeList.stream().filter(x -> x instanceof ASTERNode).count() == 1) {
+            // We have an ASTERNode in the last position, but the rest are not ERNodes ( and therefore must be EQNodes )
+            // escape all of the terms
+            newExpressions = expressionList.stream().map(Pattern::quote).collect(Collectors.toList());
+            // set the last ( the regex ) so that it is not escaped.
+            newExpressions.set(expressionList.size() - 1, expressionList.get(expressionList.size() - 1));
+        } else {
+            newExpressions = expressionList;
+        }
+        return String.join(separator, newExpressions);
     }
     
     // what this essentially boils down to is that the only valid nodes are equals or equals regex nodes
