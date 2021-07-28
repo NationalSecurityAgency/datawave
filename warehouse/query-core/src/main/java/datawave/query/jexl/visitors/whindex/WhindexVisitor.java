@@ -814,6 +814,10 @@ public class WhindexVisitor extends RebuildingVisitor {
             return getLeafNode((ASTAndNode) node);
         }
         
+        if (node instanceof ASTOrNode) {
+            return getLeafNode((ASTOrNode) node);
+        }
+        
         if (node instanceof ASTEQNode || node instanceof ASTFunctionNode) {
             return node;
         }
@@ -885,6 +889,23 @@ public class WhindexVisitor extends RebuildingVisitor {
                 return getLeafNode(node.jjtGetChild(0));
             } else if (BoundedRange.instanceOf(node)) {
                 return node;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * This method is used to find leaf nodes. Reference, ReferenceExpression, and 'and' or 'or' nodes with a single child are passed through in search of the
+     * actual leaf node.
+     *
+     * @param node
+     *            The node whose children we will check
+     * @return The found leaf node, or null
+     */
+    private JexlNode getLeafNode(ASTOrNode node) {
+        if (!QueryPropertyMarkerVisitor.instanceOfAny(node)) {
+            if (node.jjtGetNumChildren() == 1) {
+                return getLeafNode(node.jjtGetChild(0));
             }
         }
         return null;

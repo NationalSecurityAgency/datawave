@@ -107,6 +107,38 @@ public class WhindexVisitorTest {
     }
     
     @Test
+    public void oneToOneNestedIntersectsTest() throws ParseException {
+        String query = "(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || FIELD == 'blah') && TOPPINGS == 'HOT_FUDGE'";
+        
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setWhindexMappingFields(mappingFields);
+        config.setWhindexFieldMappings(singleFieldMapping);
+        
+        ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
+        jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
+        
+        Assert.assertEquals(
+                        "((TOPPINGS == 'HOT_FUDGE' && FIELD == 'blah') || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
+                        JexlStringBuildingVisitor.buildQuery(jexlScript));
+    }
+    
+    @Test
+    public void oneToOneNestedReverseIntersectsTest() throws ParseException {
+        String query = "(TOPPINGS == 'HOT_FUDGE' || FIELD == 'blah') && geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')";
+        
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setWhindexMappingFields(mappingFields);
+        config.setWhindexFieldMappings(singleFieldMapping);
+        
+        ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
+        jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
+        
+        Assert.assertEquals(
+                        "(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && FIELD == 'blah') || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+                        JexlStringBuildingVisitor.buildQuery(jexlScript));
+    }
+    
+    @Test
     public void reverseOneToOneIntersectsTest() throws ParseException {
         String query = "TOPPINGS == 'HOT_FUDGE' && geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')";
         
