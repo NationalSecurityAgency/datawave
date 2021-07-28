@@ -128,7 +128,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         
         ExpandCompositeTerms visitor = new ExpandCompositeTerms(config);
         
-        // need to flatten the tree so i get all and nodes at the same level
+        // CompositeTerm expansion requires a flattened tree
         script = TreeFlatteningRebuildingVisitor.flatten(script);
         
         if (null == visitor.config.getCompositeToFieldMap()) {
