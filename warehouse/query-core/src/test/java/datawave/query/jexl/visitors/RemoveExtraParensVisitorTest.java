@@ -126,6 +126,36 @@ public class RemoveExtraParensVisitorTest {
         test(JexlStringBuildingVisitor.buildQueryWithoutParse(union), expectedQuery);
     }
     
+    // test the refExpr, ref, refExpr case
+    @Test
+    public void testDoubleWrapButSingleRef() {
+        JexlNode eqNode = JexlNodeFactory.buildEQNode("F", "v");
+        ASTReferenceExpression refExpr = JexlNodes.wrap(eqNode);
+        ASTReference ref = JexlNodes.makeRef(refExpr);
+        ASTReferenceExpression refExpr2 = JexlNodes.wrap(ref);
+        ASTJexlScript script = new ASTJexlScript(ParserTreeConstants.JJTJEXLSCRIPT);
+        JexlNodes.children(script, refExpr2);
+        
+        // Validate the initial state of a double wrapped eq node
+        String expected = "((F == 'v'))";
+        String parsed = JexlStringBuildingVisitor.buildQueryWithoutParse(script);
+        assertEquals(expected, parsed);
+        
+        // Now remove the extra paren
+        RemoveExtraParensVisitor.remove(script);
+        expected = "(F == 'v')";
+        parsed = JexlStringBuildingVisitor.buildQueryWithoutParse(script);
+        assertEquals(expected, parsed);
+        
+        // Validate the tree by hand
+        assertEquals(1, script.jjtGetNumChildren());
+        JexlNode child = script.jjtGetChild(0);
+        assertEquals(ParserTreeConstants.JJTREFERENCE, JexlNodes.id(child));
+        assertEquals(1, child.jjtGetNumChildren());
+        JexlNode grandchild = child.jjtGetChild(0);
+        assertEquals(ParserTreeConstants.JJTREFERENCEEXPRESSION, JexlNodes.id(grandchild));
+    }
+    
     @Test
     public void testDelayedRegex() throws ParseException {
         String query = "((_Delayed_ = true) && (FOO =~ '.*regex.*'))";

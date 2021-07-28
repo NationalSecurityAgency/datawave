@@ -43,6 +43,13 @@ public class PullupUnexecutableNodesVisitorTest {
         test(query, expected);
     }
     
+    @Test
+    public void testPullUpMultipleDelayed() throws ParseException {
+        String query = "((_Delayed_ = true) && ((_Delayed_ = true) && (FOO == 'bar')))";
+        String expected = "(FOO == 'bar')";
+        test(query, expected);
+    }
+    
     private void test(String query, String expected) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
         

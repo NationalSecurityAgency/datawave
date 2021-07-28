@@ -63,8 +63,8 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
         this.indexOnlyFields = helper.getIndexOnlyFields(config.getDatatypeFilter());
         this.allFields = helper.getAllFields(config.getDatatypeFilter());
         this.scannerFactory = scannerFactory;
-        stats = new IndexStatsClient(this.config.getConnector(), this.config.getIndexStatsTableName());
-        costAnalysis = new CostEstimator(config, scannerFactory, helper);
+        this.stats = new IndexStatsClient(this.config.getConnector(), this.config.getIndexStatsTableName());
+        this.costAnalysis = new CostEstimator(config, scannerFactory, helper);
         this.expandFields = expandFields;
         this.expandValues = expandValues;
     }
@@ -91,6 +91,9 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
                 QueryException qe = new QueryException(DatawaveErrorCode.DATATYPESFORINDEXFIELDS_MULTIMAP_MISSING);
                 throw new DatawaveFatalQueryException(qe);
             }
+            
+            // inject reference nodes when needed
+            script = (T) EnsureReferenceNodesVisitor.ensureReferences(script);
             
             return (T) (script.jjtAccept(visitor, null));
         } else {

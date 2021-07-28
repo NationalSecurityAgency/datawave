@@ -92,6 +92,9 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             throw new DatawaveFatalQueryException(qe);
         }
         
+        // inject reference nodes when needed
+        script = (T) EnsureReferenceNodesVisitor.ensureReferences(script);
+        
         script = TreeFlatteningRebuildingVisitor.flatten(script);
         return (T) script.jjtAccept(visitor, null);
     }

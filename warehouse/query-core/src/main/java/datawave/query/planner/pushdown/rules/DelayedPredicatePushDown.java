@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.planner.pushdown.Cost;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.planner.pushdown.PushDownVisitor;
@@ -14,6 +15,7 @@ import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
@@ -47,17 +49,15 @@ public class DelayedPredicatePushDown extends PushDownRule {
         // for this to work we should only have a single child
         Preconditions.checkArgument(node.jjtGetNumChildren() == 1);
         
-        JexlNode child = node.jjtGetChild(0);
-        
-        if (ASTDelayedPredicate.instanceOf(child)) {
-            child = child.jjtGetChild(0);
-            child = (JexlNode) child.jjtAccept(this, data);
-            child.jjtSetParent(newScript);
-            newScript.jjtAddChild(child, 0);
+        // We only got here because the top level node is delayed. Check again to be sure.
+        if (ASTDelayedPredicate.instanceOf(node)) {
+            JexlNode source = ASTDelayedPredicate.getDelayedPredicateSource(node);
+            JexlNode copy = RebuildingVisitor.copy(source);
+            JexlNodes.children(newScript, copy);
             return newScript;
-        } else
+        } else {
             return node;
-        
+        }
     }
     
     @Override
