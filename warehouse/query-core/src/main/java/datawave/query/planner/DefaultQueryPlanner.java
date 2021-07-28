@@ -1217,14 +1217,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             logQuery(queryTree, "Query after forceEvaluationOnly is applied");
         }
         stopwatch.stop();
-       
+        
         if (!disableBoundedLookup) {
             /**
-             * This will allow composite terms to be checked and expanded; however, there are cases where the expansion
-             * cannot occur. For example if you have three fields and the second and third fields are regex. We may be
-             * able to expand the second field and composite a field of A*B*C, where C is a regex with the
-             * ExpandCompositeTerms visitor, at which point ParallelIndexExpansion can then attempt the composite
-             * field expansion of A*B*C, and (hopefully) result in discrete terms.
+             * This will allow composite terms to be checked and expanded; however, there are cases where the expansion cannot occur. For example if you have
+             * three fields and the second and third fields are regex. We may be able to expand the second field and composite a field of A*B*C, where C is a
+             * regex with the ExpandCompositeTerms visitor, at which point ParallelIndexExpansion can then attempt the composite field expansion of A*B*C, and
+             * (hopefully) result in discrete terms.
              */
             queryTree = checkAndExpandCompositeTerms(config, queryTree, timers, scannerFactory, metadataHelper, expansionFields);
             
