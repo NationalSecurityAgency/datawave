@@ -243,7 +243,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
         // if a delayed predicate, then change it to a regular reference
         if (ASTDelayedPredicate.instanceOf(node)) {
             
-            // continue to pull up delayed markers in the odd case that a double delay ocurred
+            // continue to pull up delayed markers in the odd case that a double delay occurred
             JexlNode marker = node;
             while (ASTDelayedPredicate.instanceOf(marker)) {
                 if (node.jjtGetNumChildren() > 1) {
