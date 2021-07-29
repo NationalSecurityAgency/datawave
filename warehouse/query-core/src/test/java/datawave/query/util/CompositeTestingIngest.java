@@ -449,7 +449,7 @@ public class CompositeTestingIngest {
             try {
                 JavaRegexAnalyzer regex = new JavaRegexAnalyzer(fieldRegex);
                 regex.applyRegexCaseSensitivity(false);
-                return regex.getRegex();
+                return regex.getRegex().toUpperCase(Locale.ENGLISH);
             } catch (JavaRegexAnalyzer.JavaRegexParseException e) {
                 throw new IllegalArgumentException("Unable to parse regex " + fieldRegex, e);
             }

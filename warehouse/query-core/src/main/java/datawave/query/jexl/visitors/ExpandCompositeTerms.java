@@ -165,8 +165,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
                 }
             } catch (CannotExpandUnfieldedTermFatalException cee) {
                 /**
-                 * Exceptions in the executor of ParallelIndexExpansion wrap other exceptions. In the case where we have a do not perform query optimization
-                 * exception we want to pass that along. Therefore we will check the cause and return the original DoNotPerformOptimizedQueryException.
+                 * Propagate the embedded exception if the regex term expansion failed.
                  */
                 if (null != cee.getCause() && cee.getCause() instanceof DoNotPerformOptimizedQueryException) {
                     throw (DoNotPerformOptimizedQueryException) cee.getCause();

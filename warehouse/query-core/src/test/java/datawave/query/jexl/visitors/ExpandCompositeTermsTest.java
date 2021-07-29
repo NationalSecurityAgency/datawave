@@ -110,6 +110,26 @@ public class ExpandCompositeTermsTest {
     }
     
     @Test
+    public void test3a() throws Exception {
+        /**
+         * As part of boundary value testing we are ensuring that for TEAM_NAME_POINTS we aren't combining these terms during composite expansion since that
+         * would result in [term][regex][term]
+         */
+        String query = "WINNER=='blue' && TEAM=='gold' && NAME=~'gold-?.*' && POINTS==11";
+        runTestQuery(query, "WINNER == 'blue' && NAME =~ 'gold-?.*' && TEAM_POINTS == 'gold,11'");
+    }
+    
+    @Test
+    public void test3b() throws Exception {
+        /**
+         * As part of boundary value testing we are ensuring that for TEAM_POINTS we aren't combining these terms during composite expansion since that would
+         * result in [regex][term]
+         */
+        String query = "WINNER=='blue' && TEAM=~'gol.*' && NAME=='gold-8' && POINTS==11";
+        runTestQuery(query, "WINNER == 'blue' && TEAM =~ 'gol.*' && NAME == 'gold-8' && POINTS == 11");
+    }
+    
+    @Test
     public void test4a() throws Exception {
         String query = "WINNER=='blue' && TEAM=='gold' && NAME=='gold-8' && ((_Bounded_ = true) && (POINTS > 10 && POINTS <= 11))";
         String expected = "WINNER == 'blue' && ((_Bounded_ = true) && (TEAM_NAME_POINTS > 'gold,gold-8,10' && TEAM_NAME_POINTS <= 'gold,gold-8,11')) && ((_Eval_ = true) && (TEAM == 'gold' && NAME == 'gold-8' && ((_Bounded_ = true) && (POINTS > 10 && POINTS <= 11))))";
@@ -201,13 +221,37 @@ public class ExpandCompositeTermsTest {
          */
         String expected = "COLOR =~ '.*ed' && (WHEELS == '4' || WHEELS == '+aE4') && (MAKE_COLOR == 'honda' || MAKE =~ 'honda.*') && TYPE == 'truck'";
         runTestQuery(query, expected);
-        
+    }
+    
+    @Test
+    public void test8b() throws Exception {
         /**
          * Since the field is MAKE_COLOR we can't composite here as the lhs is a regex. This would effectively result in looking for MAKE=~'honda.*', thus the
          * expand composite terms visitor will not join these terms.
          */
-        query = "COLOR == 'red' && (WHEELS == '4' || WHEELS == '+aE4') && (MAKE_COLOR == 'honda' || MAKE =~ 'honda.*') && TYPE == 'truck'";
-        expected = "TYPE == 'truck' && (MAKE_COLOR == 'honda' || MAKE =~ 'honda.*') && (COLOR_WHEELS == 'red,4' || COLOR_WHEELS == 'red,+aE4')";
+        String query = "COLOR == 'red' && (WHEELS == '4' || WHEELS == '+aE4') && (MAKE_COLOR == 'honda' || MAKE =~ 'honda.*') && TYPE == 'truck'";
+        String expected = "TYPE == 'truck' && (MAKE_COLOR == 'honda' || MAKE =~ 'honda.*') && (COLOR_WHEELS == 'red,4' || COLOR_WHEELS == 'red,+aE4')";
+        runTestQuery(query, expected);
+    }
+    
+    @Test
+    public void test8c() throws Exception {
+        String query = "COLOR =~ '.*ed' && (WHEELS == '4' || WHEELS == '+aE4') && (MAKE_COLOR == 'honda' || MAKE =~ 'honda.*') && TYPE == 'truck'";
+        /**
+         * Unlike prior tests in eight, we are validating that our composite expansion cannot occur and result in quoted ASTEQNodes because we don't have one.
+         */
+        String expected = "COLOR =~ '.*ed' && (WHEELS == '4' || WHEELS == '+aE4') && (MAKE_COLOR == 'honda' || MAKE =~ 'honda.*') && TYPE == 'truck'";
+        runTestQuery(query, expected);
+    }
+    
+    @Test
+    public void test8d() throws Exception {
+        /**
+         * Since the field is MAKE_COLOR we can't composite here as the lhs is a regex. This would effectively result in looking for MAKE=~'honda.*', thus the
+         * expand composite terms visitor will not join these terms.
+         */
+        String query = "COLOR == 'red' && (WHEELS == '4' || WHEELS == '+aE4') && (MAKE_COLOR == 'honda' || MAKE =~ 'honda.*') && TYPE == 'truck'";
+        String expected = "TYPE == 'truck' && (MAKE_COLOR == 'honda' || MAKE =~ 'honda.*') && (COLOR_WHEELS == 'red,4' || COLOR_WHEELS == 'red,+aE4')";
         runTestQuery(query, expected);
     }
     
