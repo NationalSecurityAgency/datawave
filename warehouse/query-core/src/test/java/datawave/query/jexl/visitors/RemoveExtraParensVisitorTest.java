@@ -162,6 +162,27 @@ public class RemoveExtraParensVisitorTest {
         test(query, query);
     }
     
+    // failure state for ref -> refExpr -> ref -> ref -> refExpr
+    // double refs get eaten, but already descended past the refExpr-ref-refExpr detection
+    @Test
+    public void testInterestingFailureState() throws ParseException {
+        JexlNode eq = JexlNodeFactory.buildEQNode("FOO", "bar");
+        JexlNode refExpr1 = JexlNodes.wrap(eq);
+        JexlNode ref1 = JexlNodes.makeRef(refExpr1);
+        JexlNode ref2 = JexlNodes.makeRef(ref1);
+        JexlNode refExpr2 = JexlNodes.wrap(ref2);
+        JexlNode ref3 = JexlNodes.makeRef(refExpr2);
+        ASTJexlScript script = new ASTJexlScript(ParserTreeConstants.JJTJEXLSCRIPT);
+        JexlNodes.children(script, ref3);
+        
+        String initialState = "((FOO == 'bar'))";
+        assertEquals(initialState, JexlStringBuildingVisitor.buildQueryWithoutParse(script));
+        
+        String expected = "(FOO == 'bar')";
+        RemoveExtraParensVisitor.remove(script);
+        assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(script));
+    }
+    
     private void test(String query, String expected) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
         ASTJexlScript visited = (ASTJexlScript) RemoveExtraParensVisitor.remove(script);

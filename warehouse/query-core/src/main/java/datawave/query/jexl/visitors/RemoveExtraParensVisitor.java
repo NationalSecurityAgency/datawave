@@ -103,11 +103,18 @@ public class RemoveExtraParensVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         
+        boolean changed = false;
         while (isDoubleReference(node)) {
             node = (ASTReference) removeMiddleNode(node);
+            changed = true;
         }
         
-        return super.visit(node, data);
+        if (changed && node.jjtGetParent() instanceof ASTReferenceExpression) {
+            // Handle the case when a double ref is eaten, and now we have a double wrap like 'refExpr-ref-refExpr'
+            return visit((ASTReferenceExpression) node.jjtGetParent(), data);
+        } else {
+            return super.visit(node, data);
+        }
     }
     
     /**
