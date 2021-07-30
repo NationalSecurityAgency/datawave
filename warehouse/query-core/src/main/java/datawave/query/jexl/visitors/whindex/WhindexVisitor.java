@@ -204,13 +204,13 @@ public class WhindexVisitor extends RebuildingVisitor {
                 unmodifiedNodes.add(child);
         }
         
-        List<JexlNode> processedNodes = new ArrayList<>();
-        processedNodes.addAll(unmodifiedNodes);
-        processedNodes.addAll(modifiedNodes);
-        
         // if we found a whindex, rebuild the or node,
         // otherwise, return the original or node
         if (parentData.foundWhindex) {
+            List<JexlNode> processedNodes = new ArrayList<>();
+            processedNodes.addAll(unmodifiedNodes);
+            processedNodes.addAll(modifiedNodes);
+            
             return createUnwrappedOrNode(processedNodes);
         } else
             return copy(node);
