@@ -323,17 +323,17 @@ public class CachedQueryStatus extends QueryStatus {
     }
     
     @Override
-    public int getConcurrentNextCount() {
-        return get().getConcurrentNextCount();
+    public int getActiveNextCalls() {
+        return get().getActiveNextCalls();
     }
     
     @Override
-    public synchronized void setConcurrentNextCount(int concurrentNextCount) {
+    public synchronized void setActiveNextCalls(int activeNextCalls) {
         QueryStorageLock lock = cache.getQueryStatusLock(queryId);
         lock.lock();
         try {
             forceCacheUpdateInsideSetter();
-            queryStatus.setConcurrentNextCount(concurrentNextCount);
+            queryStatus.setActiveNextCalls(activeNextCalls);
             cache.updateQueryStatus(queryStatus);
         } finally {
             lock.unlock();

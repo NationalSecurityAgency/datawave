@@ -64,6 +64,10 @@ public class TestQueryQueueManager implements QueryQueueManager {
         }
     }
     
+    public boolean queueExists(String name) {
+        return queues.containsKey(name);
+    }
+    
     @Override
     public void deleteQueue(String name) {
         synchronized (listenerToQueue) {

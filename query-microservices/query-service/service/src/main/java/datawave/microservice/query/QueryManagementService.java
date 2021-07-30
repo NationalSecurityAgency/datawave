@@ -59,8 +59,6 @@ import org.springframework.util.MultiValueMap;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -80,6 +78,11 @@ import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CANCEL
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSED;
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATED;
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.DEFINED;
+import static datawave.webservice.query.QueryImpl.DN_LIST;
+import static datawave.webservice.query.QueryImpl.QUERY_ID;
+import static datawave.webservice.query.QueryImpl.USER_DN;
+
+// TODO: Make sure close is called automatically after a query finishes.  I think this is more of a query metrics thing than anything.
 
 @Service
 public class QueryManagementService implements QueryRequestHandler {
@@ -105,7 +108,6 @@ public class QueryManagementService implements QueryRequestHandler {
     private final QueryQueueManager queryQueueManager;
     private final AuditClient auditClient;
     private final ThreadPoolTaskExecutor nextCallExecutor;
-    private final String identifier;
     
     private final QueryStatusUpdateHelper queryStatusUpdateHelper;
     private final MultiValueMap<String,NextCall> nextCallMap = new LinkedMultiValueMap<>();
@@ -127,15 +129,6 @@ public class QueryManagementService implements QueryRequestHandler {
         this.queryQueueManager = queryQueueManager;
         this.auditClient = auditClient;
         this.nextCallExecutor = nextCallExecutor;
-        
-        String hostname;
-        try {
-            hostname = InetAddress.getLocalHost().getHostName();
-        } catch (UnknownHostException e) {
-            hostname = "UNKNOWN";
-        }
-        this.identifier = hostname;
-        
         this.queryStatusUpdateHelper = new QueryStatusUpdateHelper(this.queryProperties, this.queryStorageCache);
     }
     
@@ -551,7 +544,7 @@ public class QueryManagementService implements QueryRequestHandler {
     private BaseQueryResponse next(String queryId, Collection<String> userRoles) throws InterruptedException, QueryException {
         // before we spin up a separate thread, make sure we are allowed to call next
         boolean success = false;
-        QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryId, queryStatusUpdateHelper::claimConcurrentNext);
+        QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryId, queryStatusUpdateHelper::claimNextCall);
         try {
             // publish a next event to the executor pool
             publishNextEvent(queryId, queryStatus.getQueryKey().getQueryPool());
@@ -585,7 +578,7 @@ public class QueryManagementService implements QueryRequestHandler {
                     
                     // after all of our work is done, perform our final query status update for this next call
                     queryStatus = queryStatusUpdateHelper.lockedUpdate(queryId, status -> {
-                        queryStatusUpdateHelper.releaseConcurrentNext(status);
+                        queryStatusUpdateHelper.releaseNextCall(status, queryQueueManager);
                         status.setLastPageNumber(status.getLastPageNumber() + 1);
                         status.setNumResultsReturned(status.getNumResultsReturned() + resultsPage.getResults().size());
                     });
@@ -620,7 +613,7 @@ public class QueryManagementService implements QueryRequestHandler {
         } finally {
             // update query status if we failed
             if (!success) {
-                queryStatusUpdateHelper.lockedUpdate(queryId, queryStatusUpdateHelper::releaseConcurrentNext);
+                queryStatusUpdateHelper.lockedUpdate(queryId, status -> queryStatusUpdateHelper.releaseNextCall(status, queryQueueManager));
             }
         }
     }
@@ -757,10 +750,10 @@ public class QueryManagementService implements QueryRequestHandler {
             QueryStatus queryStatus = validateRequest(queryId, currentUser, adminOverride);
             
             // if the query is running, or if the query is closing and finishing up a next call
-            if (queryStatus.getQueryState() == CREATED || (queryStatus.getQueryState() == CLOSED && queryStatus.getConcurrentNextCount() > 0)) {
+            if (queryStatus.isRunning()) {
                 cancel(queryId, true);
             } else {
-                throw new BadRequestQueryException(queryId + " cannot be canceled because it is not running.", HttpStatus.SC_BAD_REQUEST + "-1");
+                throw new BadRequestQueryException("Cannot call cancel on a query that is not running", HttpStatus.SC_BAD_REQUEST + "-1");
             }
             
             VoidResponse response = new VoidResponse();
@@ -807,6 +800,11 @@ public class QueryManagementService implements QueryRequestHandler {
                 // update query state to CANCELED
                 status.setQueryState(CANCELED);
             });
+            
+            // delete the results queue
+            queryQueueManager.deleteQueue(queryId);
+            
+            // TODO: Delete the tasks as well?
             
             QueryRequest cancelRequest = QueryRequest.cancel(queryId);
             
@@ -951,7 +949,7 @@ public class QueryManagementService implements QueryRequestHandler {
             if (queryStatus.getQueryState() == CREATED) {
                 close(queryId);
             } else {
-                throw new BadRequestQueryException(queryId + " cannot be closed because it is not running.", HttpStatus.SC_BAD_REQUEST + "-1");
+                throw new BadRequestQueryException("Cannot call close on a query that is not running", HttpStatus.SC_BAD_REQUEST + "-1");
             }
             
             VoidResponse response = new VoidResponse();
@@ -985,6 +983,18 @@ public class QueryManagementService implements QueryRequestHandler {
             // update query state to CLOSED
             status.setQueryState(CLOSED);
         });
+        
+        // if the query has no active next calls, delete the results queue
+        if (queryStatus.getActiveNextCalls() == 0) {
+            queryQueueManager.deleteQueue(queryId);
+        }
+        
+        // TODO: If we are running a next call, don't delete tasks, task states, or delete query queues
+        // TODO: If we aren't running a next call, do what we would do for a cancel
+        
+        // TODO: update tasks, task states, and delete query queues
+        // TODO: Tasks should be
+        // TODO: Figure out when to delete the queue for a close. After the last page is returned?
         
         // publish a close event to the executor pool
         publishExecutorEvent(QueryRequest.close(queryId), queryStatus.getQueryKey().getQueryPool());
@@ -1033,7 +1043,7 @@ public class QueryManagementService implements QueryRequestHandler {
             QueryStatus queryStatus = validateRequest(queryId, currentUser);
             
             // cancel the query if it is running
-            if (queryStatus.getQueryState() == CREATED) {
+            if (queryStatus.isRunning()) {
                 cancel(queryStatus.getQueryKey().getQueryId(), true);
             }
             
@@ -1119,7 +1129,7 @@ public class QueryManagementService implements QueryRequestHandler {
         log.info("Remove All called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
         try {
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
-            queryStatuses.removeIf(s -> s.getQueryState() == CREATED);
+            queryStatuses.removeIf(QueryStatus::isRunning);
             
             VoidResponse response = new VoidResponse();
             for (QueryStatus queryStatus : queryStatuses) {
@@ -1251,7 +1261,7 @@ public class QueryManagementService implements QueryRequestHandler {
                     if (updated) {
                         storeQuery(queryStatus.getQuery().getQueryLogicName(), currentParams, currentUser, false, queryId);
                     }
-                } else if (queryStatus.getQueryState() == CREATED) {
+                } else if (queryStatus.isRunning()) {
                     // if the query is created/running, update safe parameters only
                     List<String> ignoredParams = new ArrayList<>(parameters.keySet());
                     List<String> safeParams = new ArrayList<>(queryProperties.getUpdatableParams());
@@ -1394,11 +1404,14 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if query storage fails
      */
     private TaskKey duplicate(QueryStatus queryStatus, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
-        // TODO: Are we losing anything by recreating the parameters this way?
         // recreate the query parameters
         MultiValueMap<String,String> currentParams = new LinkedMultiValueMap<>();
-        currentParams.addAll(queryStatus.getQuery().getOptionalQueryParameters());
-        queryStatus.getQuery().getParameters().forEach(x -> currentParams.add(x.getParameterName(), x.getParameterValue()));
+        currentParams.addAll(queryStatus.getQuery().toMap());
+        
+        // remove some of the copied params
+        currentParams.remove(QUERY_ID);
+        currentParams.remove(USER_DN);
+        currentParams.remove(DN_LIST);
         
         // updated all of the passed in parameters
         updateParameters(parameters, currentParams);
@@ -1810,7 +1823,7 @@ public class QueryManagementService implements QueryRequestHandler {
      */
     protected void validateParameters(String queryLogicName, MultiValueMap<String,String> parameters) throws BadRequestQueryException {
         // add query logic name to parameters
-        parameters.add(QUERY_LOGIC_NAME, queryLogicName);
+        parameters.set(QUERY_LOGIC_NAME, queryLogicName);
         
         log.debug(writeValueAsString(parameters));
         

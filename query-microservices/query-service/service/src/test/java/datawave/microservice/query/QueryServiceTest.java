@@ -75,6 +75,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import static datawave.microservice.query.QueryParameters.QUERY_MAX_CONCURRENT_TASKS;
@@ -202,6 +204,9 @@ public class QueryServiceTest {
         
         // verify that no audit message was sent
         assertAuditNotSent();
+        
+        // verify that the results queue wasn't created
+        Assert.assertFalse(queryQueueManager.queueExists(queryId));
         
         // verify that query tasks weren't created
         assertTasksNotCreated(queryId);
@@ -579,6 +584,9 @@ public class QueryServiceTest {
         
         // verify that an audit message was sent and the the audit id matches the query id
         assertAuditSent(queryId);
+        
+        // verify that the results queue was created
+        Assert.assertTrue(queryQueueManager.queueExists(queryId));
         
         // verify that query tasks were created
         assertTasksCreated(queryId);
@@ -1002,8 +1010,13 @@ public class QueryServiceTest {
         // @formatter:on
         
         // verify that the next event was published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assert.assertEquals(2, queryRequestEvents.size());
         // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
         assertQueryRequestEvent(
                 "executor-unassigned:**",
                 QueryRequest.Method.NEXT,
@@ -1028,6 +1041,16 @@ public class QueryServiceTest {
         fieldValues.add("LOKI", "ALLIGATOR");
         fieldValues.add("LOKI", "CLASSIC");
         
+        // verify that the create event was published
+        Assert.assertEquals(1, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:off
+
         for (int page = 1; page <= 2; page++) {
             // TODO: We have to generate the results in between next calls because the test queue manager does not handle requeueing of unused messages :(
             // @formatter:off
@@ -1166,8 +1189,13 @@ public class QueryServiceTest {
         // @formatter:on
         
         // verify that the next events were published
-        Assert.assertEquals(3, queryRequestEvents.size());
+        Assert.assertEquals(4, queryRequestEvents.size());
         // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
         assertQueryRequestEvent(
                 "executor-unassigned:**",
                 QueryRequest.Method.NEXT,
@@ -1201,6 +1229,16 @@ public class QueryServiceTest {
         MultiValueMap<String,String> fieldValues = new LinkedMultiValueMap<>();
         fieldValues.add("LOKI", "ALLIGATOR");
         fieldValues.add("LOKI", "CLASSIC");
+        
+        // verify that the create event was published
+        Assert.assertEquals(1, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
         
         for (int page = 1; page <= 3; page++) {
             // TODO: We have to generate the results in between next calls because the test queue manager does not handle requeueing of unused messages :(
@@ -1274,8 +1312,13 @@ public class QueryServiceTest {
         
         Assert.assertEquals(404, response.getStatusCodeValue());
         
-        assertQueryException("No results found for query. " + queryId, "Exception with no cause caught", "404-4",
-                        Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:off
+        assertQueryException(
+                "No results found for query. " + queryId,
+                "Exception with no cause caught",
+                "404-4",
+                Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:on
     }
     
     @DirtiesContext
@@ -1299,12 +1342,22 @@ public class QueryServiceTest {
         
         Assert.assertEquals(404, response.getStatusCodeValue());
         
-        assertQueryException("No results found for query. " + queryId, "Exception with no cause caught", "404-4",
-                        Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:off
+        assertQueryException(
+                "No results found for query. " + queryId,
+                "Exception with no cause caught",
+                "404-4",
+                Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:on
         
         // verify that the next event was published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assert.assertEquals(2, queryRequestEvents.size());
         // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
         assertQueryRequestEvent(
                 "executor-unassigned:**",
                 QueryRequest.Method.NEXT,
@@ -1327,8 +1380,13 @@ public class QueryServiceTest {
         
         Assert.assertEquals(404, response.getStatusCodeValue());
         
-        assertQueryException("No query object matches this id. " + queryId, "Exception with no cause caught", "404-1",
-                        Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:off
+        assertQueryException(
+                "No query object matches this id. " + queryId,
+                "Exception with no cause caught",
+                "404-1",
+                Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:on
         
         // verify that no events were published
         Assert.assertEquals(0, queryRequestEvents.size());
@@ -1358,12 +1416,22 @@ public class QueryServiceTest {
         
         Assert.assertEquals(400, response.getStatusCodeValue());
         
-        assertQueryException("Cannot call next on a query that is not running", "Exception with no cause caught", "400-1",
-                        Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:off
+        assertQueryException(
+                "Cannot call next on a query that is not running",
+                "Exception with no cause caught",
+                "400-1",
+                Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:on
         
         // verify that the next events were published
-        Assert.assertEquals(2, queryRequestEvents.size());
+        Assert.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
         assertQueryRequestEvent(
                 "/query:**",
                 QueryRequest.Method.CANCEL,
@@ -1394,11 +1462,23 @@ public class QueryServiceTest {
         
         Assert.assertEquals(401, response.getStatusCodeValue());
         
-        assertQueryException("Current user does not match user that defined query. altuserdn != userdn", "Exception with no cause caught", "401-1",
-                        Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:off
+        assertQueryException(
+                "Current user does not match user that defined query. altuserdn != userdn",
+                "Exception with no cause caught",
+                "401-1",
+                Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:on
         
         // verify that the next events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assert.assertEquals(1, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
     }
     
     @DirtiesContext
@@ -1417,12 +1497,22 @@ public class QueryServiceTest {
         
         Assert.assertEquals(500, response.getStatusCodeValue());
         
-        assertQueryException("Query timed out. " + queryId + " timed out.", "Exception with no cause caught", "500-27",
-                        Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:off
+        assertQueryException(
+                "Query timed out. " + queryId + " timed out.",
+                "Exception with no cause caught",
+                "500-27",
+                Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:on
         
         // verify that the next events were published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assert.assertEquals(2, queryRequestEvents.size());
         // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
         assertQueryRequestEvent(
                 "executor-unassigned:**",
                 QueryRequest.Method.NEXT,
@@ -1430,6 +1520,1412 @@ public class QueryServiceTest {
                 queryRequestEvents.removeLast());
         // @formatter:on
     }
+    
+    @DirtiesContext
+    @Test
+    public void testNextFailure_nextOnDefined() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // define a valid query
+        String queryId = defineQuery(authUser, createParams());
+        
+        // make the next call
+        Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<BaseResponse> response = future.get();
+        
+        Assert.assertEquals(400, response.getStatusCodeValue());
+        
+        // @formatter:off
+        assertQueryException(
+                "Cannot call next on a query that is not running",
+                "Exception with no cause caught",
+                "400-1",
+                Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:on
+        
+        // verify that no events were published
+        Assert.assertEquals(0, queryRequestEvents.size());
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testNextFailure_nextOnClosed() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        // close the query
+        Future<ResponseEntity<VoidResponse>> closeFuture = closeQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> closeResponse = closeFuture.get();
+        
+        Assert.assertEquals(200, closeResponse.getStatusCodeValue());
+        
+        // make the next call asynchronously
+        Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<BaseResponse> response = future.get();
+        
+        Assert.assertEquals(400, response.getStatusCodeValue());
+        
+        // @formatter:off
+        assertQueryException(
+                "Cannot call next on a query that is not running",
+                "Exception with no cause caught",
+                "400-1",
+                Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:on
+        
+        // verify that no events were published
+        Assert.assertEquals(2, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CLOSE,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testNextFailure_nextOnCanceled() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        // cancel the query
+        Future<ResponseEntity<VoidResponse>> cancelFuture = cancelQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
+        
+        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        
+        // make the next call asynchronously
+        Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<BaseResponse> response = future.get();
+        
+        Assert.assertEquals(400, response.getStatusCodeValue());
+        
+        // @formatter:off
+        assertQueryException(
+                "Cannot call next on a query that is not running",
+                "Exception with no cause caught",
+                "400-1",
+                Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:on
+        
+        // verify that the cancel event was published
+        Assert.assertEquals(3, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "/query:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testCancelSuccess() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        long currentTimeMillis = System.currentTimeMillis();
+        String queryId = createQuery(authUser, createParams());
+        
+        // cancel the query
+        Future<ResponseEntity<VoidResponse>> cancelFuture = cancelQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
+        
+        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        
+        // verify that query status was created correctly
+        QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
+        
+        // @formatter:off
+        assertQueryStatus(
+                QueryStatus.QUERY_STATE.CANCELED,
+                0,
+                0,
+                0,
+                0,
+                currentTimeMillis,
+                queryStatus);
+        // @formatter:on
+        
+        // verify that the result queue is gone
+        Assert.assertFalse(queryQueueManager.queueExists(queryId));
+        
+        // verify that the query tasks are still present
+        assertTasksCreated(queryId);
+        
+        // verify that the cancel event was published
+        Assert.assertEquals(3, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "/query:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testCancelSuccess_activeNextCall() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        long currentTimeMillis = System.currentTimeMillis();
+        String queryId = createQuery(authUser, createParams());
+        
+        // call next on the query
+        Future<ResponseEntity<BaseResponse>> nextFuture = nextQuery(authUser, queryId);
+        
+        try {
+            nextFuture.get(1, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            // do nothing
+        }
+        
+        // cancel the query
+        Future<ResponseEntity<VoidResponse>> cancelFuture = cancelQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
+        
+        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        
+        // verify that query status was created correctly
+        QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
+        
+        // @formatter:off
+        assertQueryStatus(
+                QueryStatus.QUERY_STATE.CANCELED,
+                0,
+                0,
+                1,
+                0,
+                currentTimeMillis,
+                queryStatus);
+        // @formatter:on
+        
+        // verify that the result queue is gone
+        Assert.assertFalse(queryQueueManager.queueExists(queryId));
+        
+        // wait for the next call to return
+        nextFuture.get();
+        
+        // verify that the query tasks are still present
+        assertTasksCreated(queryId);
+        
+        // verify that the close event was published
+        Assert.assertEquals(4, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.NEXT,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "/query:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @Test
+    public void testCancelFailure_queryNotFound() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        String queryId = UUID.randomUUID().toString();
+        
+        // cancel the query
+        Future<ResponseEntity<VoidResponse>> cancelFuture = cancelQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
+        
+        Assert.assertEquals(404, cancelResponse.getStatusCodeValue());
+        
+        // @formatter:off
+        assertQueryException(
+                "No query object matches this id. " + queryId,
+                "Exception with no cause caught",
+                "404-1",
+                Iterables.getOnlyElement(cancelResponse.getBody().getExceptions()));
+        // @formatter:on
+        
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testCancelFailure_ownershipFailure() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        ProxiedUserDetails altAuthUser = createAltUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        // make the cancel call as an alternate user asynchronously
+        Future<ResponseEntity<VoidResponse>> future = cancelQuery(altAuthUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> response = future.get();
+        
+        Assert.assertEquals(401, response.getStatusCodeValue());
+        
+        // @formatter:off
+        assertQueryException(
+                "Current user does not match user that defined query. altuserdn != userdn",
+                "Exception with no cause caught",
+                "401-1",
+                Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:on
+        
+        // verify that the next events were published
+        Assert.assertEquals(1, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testCancelFailure_queryNotRunning() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        // cancel the query
+        Future<ResponseEntity<VoidResponse>> cancelFuture = cancelQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
+        
+        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        
+        // try to cancel the query again
+        cancelFuture = cancelQuery(authUser, queryId);
+        
+        // the response should come back right away
+        cancelResponse = cancelFuture.get();
+        
+        Assert.assertEquals(400, cancelResponse.getStatusCodeValue());
+        
+        // @formatter:off
+        assertQueryException(
+                "Cannot call cancel on a query that is not running",
+                "Exception with no cause caught",
+                "400-1",
+                Iterables.getOnlyElement(cancelResponse.getBody().getExceptions()));
+        // @formatter:on
+        
+        // verify that the next events were published
+        Assert.assertEquals(3, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "/query:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testAdminCancelSuccess() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        ProxiedUserDetails adminUser = createAltUserDetails(Arrays.asList("AuthorizedUser", "Administrator"), null);
+        
+        // create a valid query
+        long currentTimeMillis = System.currentTimeMillis();
+        String queryId = createQuery(authUser, createParams());
+        
+        // cancel the query as the admin user
+        Future<ResponseEntity<VoidResponse>> cancelFuture = adminCancelQuery(adminUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
+        
+        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        
+        // verify that query status was created correctly
+        QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
+        
+        // @formatter:off
+        assertQueryStatus(
+                QueryStatus.QUERY_STATE.CANCELED,
+                0,
+                0,
+                0,
+                0,
+                currentTimeMillis,
+                queryStatus);
+        // @formatter:on
+        
+        // verify that the result queue is gone
+        Assert.assertFalse(queryQueueManager.queueExists(queryId));
+        
+        // verify that the query tasks are still present
+        assertTasksCreated(queryId);
+        
+        // verify that the cancel event was published
+        Assert.assertEquals(3, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "/query:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testAdminCancelFailure_notAdminUser() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        UriComponents uri = createUri(queryId + "/adminCancel");
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, null, null, HttpMethod.PUT, uri);
+        
+        // close the query
+        Future<ResponseEntity<String>> closeFuture = Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, String.class));
+        
+        // the response should come back right away
+        ResponseEntity<String> closeResponse = closeFuture.get();
+        
+        Assert.assertEquals(403, closeResponse.getStatusCodeValue());
+        
+        // verify that the create event was published
+        Assert.assertEquals(1, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testCancelAllSuccess() throws Exception {
+        ProxiedUserDetails adminUser = createUserDetails(Arrays.asList("AuthorizedUser", "Administrator"), null);
+        
+        // create a bunch of queries
+        List<String> queryIds = new ArrayList<>();
+        long currentTimeMillis = System.currentTimeMillis();
+        for (int i = 0; i < 10; i++) {
+            String queryId = createQuery(adminUser, createParams());
+            mockServer.reset();
+            
+            queryIds.add(queryId);
+            
+            // @formatter:off
+            assertQueryRequestEvent(
+                    "executor-unassigned:**",
+                    QueryRequest.Method.CREATE,
+                    queryId,
+                    queryRequestEvents.removeLast());
+            // @formatter:on
+        }
+        
+        // close all queries as the admin user
+        Future<ResponseEntity<VoidResponse>> cancelFuture = adminCancelAllQueries(adminUser);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
+        
+        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        
+        // verify that query status was created correctly
+        List<QueryStatus> queryStatusList = queryStorageCache.getQueryStatus();
+        
+        for (QueryStatus queryStatus : queryStatusList) {
+            // @formatter:off
+            assertQueryStatus(
+                    QueryStatus.QUERY_STATE.CANCELED,
+                    0,
+                    0,
+                    0,
+                    0,
+                    currentTimeMillis,
+                    queryStatus);
+            // @formatter:on
+            
+            String queryId = queryStatus.getQueryKey().getQueryId();
+            
+            // verify that the result queue is gone
+            Assert.assertFalse(queryQueueManager.queueExists(queryStatus.getQueryKey().getQueryId()));
+            
+            // verify that the query tasks are still present
+            assertTasksCreated(queryStatus.getQueryKey().getQueryId());
+            
+            // @formatter:off
+            assertQueryRequestEvent(
+                    "/query:**",
+                    QueryRequest.Method.CANCEL,
+                    queryId,
+                    queryRequestEvents.removeLast());
+            assertQueryRequestEvent(
+                    "executor-unassigned:**",
+                    QueryRequest.Method.CANCEL,
+                    queryId,
+                    queryRequestEvents.removeLast());
+            // @formatter:on
+        }
+        
+        // verify that there are no more events
+        Assert.assertEquals(0, queryRequestEvents.size());
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testCloseSuccess() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        long currentTimeMillis = System.currentTimeMillis();
+        String queryId = createQuery(authUser, createParams());
+        
+        // close the query
+        Future<ResponseEntity<VoidResponse>> closeFuture = closeQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> closeResponse = closeFuture.get();
+        
+        Assert.assertEquals(200, closeResponse.getStatusCodeValue());
+        
+        // verify that query status was created correctly
+        QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
+        
+        // @formatter:off
+        assertQueryStatus(
+                QueryStatus.QUERY_STATE.CLOSED,
+                0,
+                0,
+                0,
+                0,
+                currentTimeMillis,
+                queryStatus);
+        // @formatter:on
+        
+        // verify that the result queue is gone
+        Assert.assertFalse(queryQueueManager.queueExists(queryId));
+        
+        // verify that the query tasks are still present
+        assertTasksCreated(queryId);
+        
+        // verify that the close event was published
+        Assert.assertEquals(2, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CLOSE,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testCloseSuccess_activeNextCall() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        long currentTimeMillis = System.currentTimeMillis();
+        String queryId = createQuery(authUser, createParams());
+        
+        // call next on the query
+        Future<ResponseEntity<BaseResponse>> nextFuture = nextQuery(authUser, queryId);
+        
+        try {
+            nextFuture.get(1, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            // do nothing
+        }
+        
+        // close the query
+        Future<ResponseEntity<VoidResponse>> closeFuture = closeQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> closeResponse = closeFuture.get();
+        
+        Assert.assertEquals(200, closeResponse.getStatusCodeValue());
+        
+        // verify that query status was created correctly
+        QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
+        
+        // @formatter:off
+        assertQueryStatus(
+                QueryStatus.QUERY_STATE.CLOSED,
+                0,
+                0,
+                1,
+                0,
+                currentTimeMillis,
+                queryStatus);
+        // @formatter:on
+        
+        // verify that the result queue is still present
+        Assert.assertTrue(queryQueueManager.queueExists(queryId));
+        
+        // send enough results to return a page
+        // pump enough results into the queue to trigger a complete page
+        int pageSize = queryStorageCache.getQueryStatus(queryId).getQuery().getPagesize();
+        
+        // test field value pairings
+        MultiValueMap<String,String> fieldValues = new LinkedMultiValueMap<>();
+        fieldValues.add("LOKI", "ALLIGATOR");
+        fieldValues.add("LOKI", "CLASSIC");
+        
+        // @formatter:off
+        publishEventsToQueue(
+                queryId,
+                pageSize,
+                fieldValues,
+                "ALL");
+        // @formatter:on
+        
+        // wait for the next call to return
+        nextFuture.get();
+        
+        // verify that the result queue is now gone
+        Assert.assertFalse(queryQueueManager.queueExists(queryId));
+        
+        // verify that the query tasks are still present
+        assertTasksCreated(queryId);
+        
+        // verify that the close event was published
+        Assert.assertEquals(3, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.NEXT,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CLOSE,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @Test
+    public void testCloseFailure_queryNotFound() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        String queryId = UUID.randomUUID().toString();
+        
+        // close the query
+        Future<ResponseEntity<VoidResponse>> closeFuture = closeQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> closeResponse = closeFuture.get();
+        
+        Assert.assertEquals(404, closeResponse.getStatusCodeValue());
+        
+        // @formatter:off
+        assertQueryException(
+                "No query object matches this id. " + queryId,
+                "Exception with no cause caught",
+                "404-1",
+                Iterables.getOnlyElement(closeResponse.getBody().getExceptions()));
+        // @formatter:on
+        
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testCloseFailure_ownershipFailure() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        ProxiedUserDetails altAuthUser = createAltUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        // make the close call as an alternate user asynchronously
+        Future<ResponseEntity<VoidResponse>> future = closeQuery(altAuthUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> response = future.get();
+        
+        Assert.assertEquals(401, response.getStatusCodeValue());
+        
+        // @formatter:off
+        assertQueryException(
+                "Current user does not match user that defined query. altuserdn != userdn",
+                "Exception with no cause caught",
+                "401-1",
+                Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:on
+        
+        // verify that the next events were published
+        Assert.assertEquals(1, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testCloseFailure_queryNotRunning() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        // close the query
+        Future<ResponseEntity<VoidResponse>> closeFuture = closeQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> closeResponse = closeFuture.get();
+        
+        Assert.assertEquals(200, closeResponse.getStatusCodeValue());
+        
+        // try to close the query again
+        closeFuture = closeQuery(authUser, queryId);
+        
+        // the response should come back right away
+        closeResponse = closeFuture.get();
+        
+        Assert.assertEquals(400, closeResponse.getStatusCodeValue());
+        
+        // @formatter:off
+        assertQueryException(
+                "Cannot call close on a query that is not running",
+                "Exception with no cause caught",
+                "400-1",
+                Iterables.getOnlyElement(closeResponse.getBody().getExceptions()));
+        // @formatter:on
+        
+        // verify that the next events were published
+        Assert.assertEquals(2, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CLOSE,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testAdminCloseSuccess() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        ProxiedUserDetails adminUser = createUserDetails(Arrays.asList("AuthorizedUser", "Administrator"), null);
+        
+        // create a valid query
+        long currentTimeMillis = System.currentTimeMillis();
+        String queryId = createQuery(authUser, createParams());
+        
+        // close the query as the admin user
+        Future<ResponseEntity<VoidResponse>> closeFuture = closeQuery(adminUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> closeResponse = closeFuture.get();
+        
+        Assert.assertEquals(200, closeResponse.getStatusCodeValue());
+        
+        // verify that query status was created correctly
+        QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
+        
+        // @formatter:off
+        assertQueryStatus(
+                QueryStatus.QUERY_STATE.CLOSED,
+                0,
+                0,
+                0,
+                0,
+                currentTimeMillis,
+                queryStatus);
+        // @formatter:on
+        
+        // verify that the result queue is gone
+        Assert.assertFalse(queryQueueManager.queueExists(queryId));
+        
+        // verify that the query tasks are still present
+        assertTasksCreated(queryId);
+        
+        // verify that the close event was published
+        Assert.assertEquals(2, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CLOSE,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testAdminCloseFailure_notAdminUser() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // create a valid query
+        long currentTimeMillis = System.currentTimeMillis();
+        String queryId = createQuery(authUser, createParams());
+        
+        UriComponents uri = createUri(queryId + "/adminClose");
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, null, null, HttpMethod.PUT, uri);
+        
+        // close the query
+        Future<ResponseEntity<String>> closeFuture = Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, String.class));
+        
+        // the response should come back right away
+        ResponseEntity<String> closeResponse = closeFuture.get();
+        
+        Assert.assertEquals(403, closeResponse.getStatusCodeValue());
+        
+        // verify that the create event was published
+        Assert.assertEquals(1, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testCloseAllSuccess() throws Exception {
+        ProxiedUserDetails adminUser = createUserDetails(Arrays.asList("AuthorizedUser", "Administrator"), null);
+        
+        // create a bunch of queries
+        long currentTimeMillis = System.currentTimeMillis();
+        for (int i = 0; i < 10; i++) {
+            String queryId = createQuery(adminUser, createParams());
+            mockServer.reset();
+            
+            // @formatter:off
+            assertQueryRequestEvent(
+                    "executor-unassigned:**",
+                    QueryRequest.Method.CREATE,
+                    queryId,
+                    queryRequestEvents.removeLast());
+            // @formatter:on
+        }
+        
+        // close all queries as the admin user
+        Future<ResponseEntity<VoidResponse>> closeFuture = adminCloseAllQueries(adminUser);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> closeResponse = closeFuture.get();
+        
+        Assert.assertEquals(200, closeResponse.getStatusCodeValue());
+        
+        // verify that query status was created correctly
+        List<QueryStatus> queryStatusList = queryStorageCache.getQueryStatus();
+        
+        for (QueryStatus queryStatus : queryStatusList) {
+            // @formatter:off
+            assertQueryStatus(
+                    QueryStatus.QUERY_STATE.CLOSED,
+                    0,
+                    0,
+                    0,
+                    0,
+                    currentTimeMillis,
+                    queryStatus);
+            // @formatter:on
+            
+            String queryId = queryStatus.getQueryKey().getQueryId();
+            
+            // verify that the result queue is gone
+            Assert.assertFalse(queryQueueManager.queueExists(queryStatus.getQueryKey().getQueryId()));
+            
+            // verify that the query tasks are still present
+            assertTasksCreated(queryStatus.getQueryKey().getQueryId());
+            
+            // @formatter:off
+            assertQueryRequestEvent(
+                    "executor-unassigned:**",
+                    QueryRequest.Method.CLOSE,
+                    queryId,
+                    queryRequestEvents.removeLast());
+            // @formatter:on
+        }
+        
+        // verify that there are no more events
+        Assert.assertEquals(0, queryRequestEvents.size());
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testResetSuccess_resetOnDefined() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // define a valid query
+        long currentTimeMillis = System.currentTimeMillis();
+        String queryId = defineQuery(authUser, createParams());
+        
+        mockServer.reset();
+        auditSentSetup();
+        
+        // reset the query
+        Future<ResponseEntity<GenericResponse>> resetFuture = resetQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<GenericResponse> response = resetFuture.get();
+        
+        Assert.assertEquals(200, response.getStatusCodeValue());
+        
+        // @formatter:off
+        assertGenericResponse(
+                true,
+                HttpStatus.Series.SUCCESSFUL,
+                response);
+        // @formatter:on
+        
+        String resetQueryId = (String) response.getBody().getResult();
+        
+        // verify that a new query id was created
+        Assert.assertNotEquals(queryId, resetQueryId);
+        
+        // verify that an audit record was sent
+        assertAuditSent(resetQueryId);
+        
+        // verify that original query was canceled
+        QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
+        
+        // @formatter:off
+        assertQueryStatus(
+                QueryStatus.QUERY_STATE.DEFINED,
+                0,
+                0,
+                0,
+                0,
+                currentTimeMillis,
+                queryStatus);
+        // @formatter:on
+        
+        // verify that new query was created
+        QueryStatus resetQueryStatus = queryStorageCache.getQueryStatus(resetQueryId);
+        
+        // @formatter:off
+        assertQueryStatus(
+                QueryStatus.QUERY_STATE.CREATED,
+                0,
+                0,
+                0,
+                0,
+                currentTimeMillis,
+                resetQueryStatus);
+        // @formatter:on
+        
+        // make sure the queries are equal (ignoring the query id)
+        queryStatus.getQuery().setId(resetQueryStatus.getQuery().getId());
+        Assert.assertEquals(queryStatus.getQuery(), resetQueryStatus.getQuery());
+        
+        // verify that events were published
+        Assert.assertEquals(1, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                resetQueryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testResetSuccess_resetOnCreated() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // define a valid query
+        long currentTimeMillis = System.currentTimeMillis();
+        String queryId = createQuery(authUser, createParams());
+        
+        mockServer.reset();
+        auditSentSetup();
+        
+        // reset the query
+        Future<ResponseEntity<GenericResponse>> resetFuture = resetQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<GenericResponse> response = resetFuture.get();
+        
+        Assert.assertEquals(200, response.getStatusCodeValue());
+        
+        // @formatter:off
+        assertGenericResponse(
+                true,
+                HttpStatus.Series.SUCCESSFUL,
+                response);
+        // @formatter:on
+        
+        String resetQueryId = (String) response.getBody().getResult();
+        
+        // verify that a new query id was created
+        Assert.assertNotEquals(queryId, resetQueryId);
+        
+        // verify that an audit record was sent
+        assertAuditSent(resetQueryId);
+        
+        // verify that original query was canceled
+        QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
+        
+        // @formatter:off
+        assertQueryStatus(
+                QueryStatus.QUERY_STATE.CANCELED,
+                0,
+                0,
+                0,
+                0,
+                currentTimeMillis,
+                queryStatus);
+        // @formatter:on
+        
+        // verify that new query was created
+        QueryStatus resetQueryStatus = queryStorageCache.getQueryStatus(resetQueryId);
+        
+        // @formatter:off
+        assertQueryStatus(
+                QueryStatus.QUERY_STATE.CREATED,
+                0,
+                0,
+                0,
+                0,
+                currentTimeMillis,
+                resetQueryStatus);
+        // @formatter:on
+        
+        // make sure the queries are equal (ignoring the query id)
+        queryStatus.getQuery().setId(resetQueryStatus.getQuery().getId());
+        Assert.assertEquals(queryStatus.getQuery(), resetQueryStatus.getQuery());
+        
+        // verify that events were published
+        Assert.assertEquals(4, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "/query:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                resetQueryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testResetSuccess_resetOnClosed() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // define a valid query
+        long currentTimeMillis = System.currentTimeMillis();
+        String queryId = createQuery(authUser, createParams());
+        
+        // close the query
+        Future<ResponseEntity<VoidResponse>> closeFuture = closeQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> closeResponse = closeFuture.get();
+        
+        Assert.assertEquals(200, closeResponse.getStatusCodeValue());
+        
+        mockServer.reset();
+        auditSentSetup();
+        
+        // reset the query
+        Future<ResponseEntity<GenericResponse>> resetFuture = resetQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<GenericResponse> response = resetFuture.get();
+        
+        Assert.assertEquals(200, response.getStatusCodeValue());
+        
+        // @formatter:off
+        assertGenericResponse(
+                true,
+                HttpStatus.Series.SUCCESSFUL,
+                response);
+        // @formatter:on
+        
+        String resetQueryId = (String) response.getBody().getResult();
+        
+        // verify that a new query id was created
+        Assert.assertNotEquals(queryId, resetQueryId);
+        
+        // verify that an audit record was sent
+        assertAuditSent(resetQueryId);
+        
+        // verify that original query was closed
+        QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
+        
+        // @formatter:off
+        assertQueryStatus(
+                QueryStatus.QUERY_STATE.CLOSED,
+                0,
+                0,
+                0,
+                0,
+                currentTimeMillis,
+                queryStatus);
+        // @formatter:on
+        
+        // verify that new query was created
+        QueryStatus resetQueryStatus = queryStorageCache.getQueryStatus(resetQueryId);
+        
+        // @formatter:off
+        assertQueryStatus(
+                QueryStatus.QUERY_STATE.CREATED,
+                0,
+                0,
+                0,
+                0,
+                currentTimeMillis,
+                resetQueryStatus);
+        // @formatter:on
+        
+        // make sure the queries are equal (ignoring the query id)
+        queryStatus.getQuery().setId(resetQueryStatus.getQuery().getId());
+        Assert.assertEquals(queryStatus.getQuery(), resetQueryStatus.getQuery());
+        
+        // verify that events were published
+        Assert.assertEquals(3, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CLOSE,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                resetQueryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testResetSuccess_resetOnCanceled() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        // define a valid query
+        long currentTimeMillis = System.currentTimeMillis();
+        String queryId = createQuery(authUser, createParams());
+        
+        // cancel the query
+        Future<ResponseEntity<VoidResponse>> cancelFuture = cancelQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
+        
+        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        
+        mockServer.reset();
+        auditSentSetup();
+        
+        // reset the query
+        Future<ResponseEntity<GenericResponse>> resetFuture = resetQuery(authUser, queryId);
+        
+        // the response should come back right away
+        ResponseEntity<GenericResponse> response = resetFuture.get();
+        
+        Assert.assertEquals(200, response.getStatusCodeValue());
+        
+        // @formatter:off
+        assertGenericResponse(
+                true,
+                HttpStatus.Series.SUCCESSFUL,
+                response);
+        // @formatter:on
+        
+        String resetQueryId = (String) response.getBody().getResult();
+        
+        // verify that a new query id was created
+        Assert.assertNotEquals(queryId, resetQueryId);
+        
+        // verify that an audit record was sent
+        assertAuditSent(resetQueryId);
+        
+        // verify that original query was canceled
+        QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
+        
+        // @formatter:off
+        assertQueryStatus(
+                QueryStatus.QUERY_STATE.CANCELED,
+                0,
+                0,
+                0,
+                0,
+                currentTimeMillis,
+                queryStatus);
+        // @formatter:on
+        
+        // verify that new query was created
+        QueryStatus resetQueryStatus = queryStorageCache.getQueryStatus(resetQueryId);
+        
+        // @formatter:off
+        assertQueryStatus(
+                QueryStatus.QUERY_STATE.CREATED,
+                0,
+                0,
+                0,
+                0,
+                currentTimeMillis,
+                resetQueryStatus);
+        // @formatter:on
+        
+        // make sure the queries are equal (ignoring the query id)
+        queryStatus.getQuery().setId(resetQueryStatus.getQuery().getId());
+        Assert.assertEquals(queryStatus.getQuery(), resetQueryStatus.getQuery());
+        
+        // verify that events were published
+        Assert.assertEquals(4, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "/query:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CANCEL,
+                queryId,
+                queryRequestEvents.removeLast());
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                resetQueryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testResetFailure_queryNotFound() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        
+        String queryId = UUID.randomUUID().toString();
+        
+        auditNotSentSetup();
+        
+        // reset the query
+        UriComponents uri = createUri(queryId + "/reset");
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, null, null, HttpMethod.PUT, uri);
+        
+        // close the query
+        Future<ResponseEntity<BaseResponse>> resetFuture = Executors.newSingleThreadExecutor()
+                        .submit(() -> jwtRestTemplate.exchange(requestEntity, BaseResponse.class));
+        
+        // the response should come back right away
+        ResponseEntity<BaseResponse> response = resetFuture.get();
+        
+        Assert.assertEquals(404, response.getStatusCodeValue());
+        
+        // make sure no audits were sent
+        assertAuditNotSent();
+        
+        // @formatter:off
+        assertQueryException(
+                "No query object matches this id. " + queryId,
+                "Exception with no cause caught",
+                "404-1",
+                Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:on
+        
+        // verify that no events were published
+        Assert.assertEquals(0, queryRequestEvents.size());
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testResetFailure_ownershipFailure() throws Exception {
+        ProxiedUserDetails authUser = createUserDetails();
+        ProxiedUserDetails altAuthUser = createAltUserDetails();
+        
+        // define a valid query
+        String queryId = createQuery(authUser, createParams());
+        
+        mockServer.reset();
+        auditNotSentSetup();
+        
+        // reset the query
+        UriComponents uri = createUri(queryId + "/reset");
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(altAuthUser, null, null, HttpMethod.PUT, uri);
+        
+        // close the query
+        Future<ResponseEntity<BaseResponse>> resetFuture = Executors.newSingleThreadExecutor()
+                        .submit(() -> jwtRestTemplate.exchange(requestEntity, BaseResponse.class));
+        
+        // the response should come back right away
+        ResponseEntity<BaseResponse> response = resetFuture.get();
+        
+        Assert.assertEquals(401, response.getStatusCodeValue());
+        
+        // make sure no audits were sent
+        assertAuditNotSent();
+        
+        // @formatter:off
+        assertQueryException(
+                "Current user does not match user that defined query. altuserdn != userdn",
+                "Exception with no cause caught",
+                "401-1",
+                Iterables.getOnlyElement(response.getBody().getExceptions()));
+        // @formatter:on
+        
+        // verify that no events were published
+        Assert.assertEquals(1, queryRequestEvents.size());
+        // @formatter:off
+        assertQueryRequestEvent(
+                "executor-unassigned:**",
+                QueryRequest.Method.CREATE,
+                queryId,
+                queryRequestEvents.removeLast());
+        // @formatter:on
+    }
+    
+    // remove
+    
+    // admin remove
+    
+    // update
+    
+    // duplicate
+    
+    // list
+    
+    // admin list
+    
+    // get query
+    
+    // remove all
+    
+    // list query logic
     
     private void publishEventsToQueue(String queryId, int numEvents, MultiValueMap<String,String> fieldValues, String visibility) throws Exception {
         for (int resultId = 0; resultId < numEvents; resultId++) {
@@ -1448,16 +2944,21 @@ public class QueryServiceTest {
     }
     
     private String createQuery(ProxiedUserDetails authUser, MultiValueMap<String,String> map) {
-        UriComponents uri = createUri("EventQuery/create");
+        return newQuery(authUser, map, "create");
+    }
+    
+    private String defineQuery(ProxiedUserDetails authUser, MultiValueMap<String,String> map) {
+        return newQuery(authUser, map, "define");
+    }
+    
+    private String newQuery(ProxiedUserDetails authUser, MultiValueMap<String,String> map, String createOrDefine) {
+        UriComponents uri = createUri("EventQuery/" + createOrDefine);
         
         // not testing audit with this method
         auditIgnoreSetup();
         
         RequestEntity<MultiValueMap<String,String>> requestEntity = jwtRestTemplate.createRequestEntity(authUser, map, null, HttpMethod.POST, uri);
         ResponseEntity<GenericResponse> resp = jwtRestTemplate.exchange(requestEntity, GenericResponse.class);
-        
-        // remove the create event
-        queryRequestEvents.clear();
         
         return (String) resp.getBody().getResult();
     }
@@ -1470,12 +2971,52 @@ public class QueryServiceTest {
         return Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, BaseResponse.class));
     }
     
+    private Future<ResponseEntity<VoidResponse>> adminCloseQuery(ProxiedUserDetails authUser, String queryId) {
+        return stopQuery(authUser, queryId, "adminClose");
+    }
+    
+    private Future<ResponseEntity<VoidResponse>> closeQuery(ProxiedUserDetails authUser, String queryId) {
+        return stopQuery(authUser, queryId, "close");
+    }
+    
+    private Future<ResponseEntity<VoidResponse>> adminCancelQuery(ProxiedUserDetails authUser, String queryId) {
+        return stopQuery(authUser, queryId, "adminCancel");
+    }
+    
     private Future<ResponseEntity<VoidResponse>> cancelQuery(ProxiedUserDetails authUser, String queryId) {
-        UriComponents uri = createUri(queryId + "/cancel");
+        return stopQuery(authUser, queryId, "cancel");
+    }
+    
+    private Future<ResponseEntity<VoidResponse>> stopQuery(ProxiedUserDetails authUser, String queryId, String closeOrCancel) {
+        UriComponents uri = createUri(queryId + "/" + closeOrCancel);
         RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, null, null, HttpMethod.PUT, uri);
         
         // make the next call asynchronously
         return Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, VoidResponse.class));
+    }
+    
+    private Future<ResponseEntity<VoidResponse>> adminCloseAllQueries(ProxiedUserDetails authUser) {
+        UriComponents uri = createUri("/adminCloseAll");
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, null, null, HttpMethod.PUT, uri);
+        
+        // make the next call asynchronously
+        return Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, VoidResponse.class));
+    }
+    
+    private Future<ResponseEntity<VoidResponse>> adminCancelAllQueries(ProxiedUserDetails authUser) {
+        UriComponents uri = createUri("/adminCancelAll");
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, null, null, HttpMethod.PUT, uri);
+        
+        // make the next call asynchronously
+        return Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, VoidResponse.class));
+    }
+    
+    private Future<ResponseEntity<GenericResponse>> resetQuery(ProxiedUserDetails authUser, String queryId) {
+        UriComponents uri = createUri(queryId + "/reset");
+        RequestEntity requestEntity = jwtRestTemplate.createRequestEntity(authUser, null, null, HttpMethod.PUT, uri);
+        
+        // make the next call asynchronously
+        return Executors.newSingleThreadExecutor().submit(() -> jwtRestTemplate.exchange(requestEntity, GenericResponse.class));
     }
     
     private ProxiedUserDetails createUserDetails() {
@@ -1541,12 +3082,12 @@ public class QueryServiceTest {
         Assert.assertEquals(method, queryRequestEvent.getRequest().getMethod());
     }
     
-    private void assertQueryStatus(QueryStatus.QUERY_STATE queryState, long numResultsReturned, long numResultsGenerated, long concurrentNextCount,
+    private void assertQueryStatus(QueryStatus.QUERY_STATE queryState, long numResultsReturned, long numResultsGenerated, long activeNextCalls,
                     long lastPageNumber, long lastCallTimeMillis, QueryStatus queryStatus) {
         Assert.assertEquals(queryState, queryStatus.getQueryState());
         Assert.assertEquals(numResultsReturned, queryStatus.getNumResultsReturned());
         Assert.assertEquals(numResultsGenerated, queryStatus.getNumResultsGenerated());
-        Assert.assertEquals(concurrentNextCount, queryStatus.getConcurrentNextCount());
+        Assert.assertEquals(activeNextCalls, queryStatus.getActiveNextCalls());
         Assert.assertEquals(lastPageNumber, queryStatus.getLastPageNumber());
         Assert.assertTrue(queryStatus.getLastUsedMillis() > lastCallTimeMillis);
         Assert.assertTrue(queryStatus.getLastUpdatedMillis() > lastCallTimeMillis);

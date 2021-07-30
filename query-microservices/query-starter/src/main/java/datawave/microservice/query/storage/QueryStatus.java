@@ -17,6 +17,9 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSED;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATED;
+
 public class QueryStatus implements Serializable {
     public enum QUERY_STATE {
         DEFINED, CREATED, CLOSED, CANCELED, FAILED
@@ -32,7 +35,7 @@ public class QueryStatus implements Serializable {
     
     private long numResultsReturned = 0L;
     private long numResultsGenerated = 0L;
-    private int concurrentNextCount = 0;
+    private int activeNextCalls = 0;
     private long lastPageNumber = 0L;
     
     // datetime of last user interaction
@@ -52,17 +55,23 @@ public class QueryStatus implements Serializable {
     
     public boolean isProgressIdle(long currentTimeMillis, long idleTimeoutMillis) {
         // if we're processing a next request and haven't seen any activity in a while, the query is idle
-        return concurrentNextCount > 0 && (currentTimeMillis - lastUpdatedMillis) >= idleTimeoutMillis;
+        return activeNextCalls > 0 && (currentTimeMillis - lastUpdatedMillis) >= idleTimeoutMillis;
     }
     
     public boolean isUserIdle(long currentTimeMillis, long idleTimeoutMillis) {
         // if we aren't processing a next request and haven't seen any activity in a while, the query is idle
-        return concurrentNextCount == 0 && (currentTimeMillis - lastUsedMillis) >= idleTimeoutMillis;
+        return activeNextCalls == 0 && (currentTimeMillis - lastUsedMillis) >= idleTimeoutMillis;
     }
     
     public boolean isInactive(long currentTimeMillis, long evictionTimeoutMillis) {
         // if the query is not running and we have reached the eviction timeout, the query is inactive
         return (currentTimeMillis - Math.min(lastUsedMillis, lastUpdatedMillis)) >= evictionTimeoutMillis;
+    }
+    
+    @JsonIgnore
+    public boolean isRunning() {
+        // the query is considered to be running if it is created, or closed with an open next call
+        return queryState == CREATED || (queryState == CLOSED && activeNextCalls > 0);
     }
     
     public void setQueryKey(QueryKey key) {
@@ -174,12 +183,12 @@ public class QueryStatus implements Serializable {
         this.numResultsGenerated += increment;
     }
     
-    public int getConcurrentNextCount() {
-        return concurrentNextCount;
+    public int getActiveNextCalls() {
+        return activeNextCalls;
     }
     
-    public void setConcurrentNextCount(int concurrentNextCount) {
-        this.concurrentNextCount = concurrentNextCount;
+    public void setActiveNextCalls(int activeNextCalls) {
+        this.activeNextCalls = activeNextCalls;
     }
     
     public long getLastPageNumber() {
@@ -218,7 +227,7 @@ public class QueryStatus implements Serializable {
                 .append(plan)
                 .append(numResultsReturned)
                 .append(numResultsGenerated)
-                .append(concurrentNextCount)
+                .append(activeNextCalls)
                 .append(lastPageNumber)
                 .append(lastUsedMillis)
                 .append(lastUpdatedMillis)
@@ -242,7 +251,7 @@ public class QueryStatus implements Serializable {
                     .append(plan, other.plan)
                     .append(numResultsReturned, other.numResultsReturned)
                     .append(numResultsGenerated, other.numResultsGenerated)
-                    .append(concurrentNextCount, other.concurrentNextCount)
+                    .append(activeNextCalls, other.activeNextCalls)
                     .append(lastPageNumber, other.lastPageNumber)
                     .append(lastUsedMillis, other.lastUsedMillis)
                     .append(lastUpdatedMillis, other.lastUpdatedMillis)
@@ -266,7 +275,7 @@ public class QueryStatus implements Serializable {
                 .append("plan", plan)
                 .append("numResultsReturned", numResultsReturned)
                 .append("numResultsGenerated", numResultsGenerated)
-                .append("concurrentNextCount", concurrentNextCount)
+                .append("concurrentNextCount", activeNextCalls)
                 .append("lastPageNumber", lastPageNumber)
                 .append("lastUsed", lastUsedMillis)
                 .append("lastUpdated", lastUpdatedMillis)

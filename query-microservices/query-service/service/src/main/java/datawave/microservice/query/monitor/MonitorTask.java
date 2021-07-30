@@ -5,6 +5,7 @@ import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.monitor.cache.MonitorStatus;
 import datawave.microservice.query.monitor.cache.MonitorStatusCache;
 import datawave.microservice.query.monitor.config.MonitorProperties;
+import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.webservice.query.exception.QueryException;
@@ -14,9 +15,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSED;
-import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATED;
-
 public class MonitorTask implements Callable<Void> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
@@ -24,14 +22,16 @@ public class MonitorTask implements Callable<Void> {
     private final QueryExpirationProperties expirationProperties;
     private final MonitorStatusCache monitorStatusCache;
     private final QueryStorageCache queryStorageCache;
+    private final QueryQueueManager queryQueueManager;
     private final QueryManagementService queryManagementService;
     
     public MonitorTask(MonitorProperties monitorProperties, QueryExpirationProperties expirationProperties, MonitorStatusCache monitorStatusCache,
-                    QueryStorageCache queryStorageCache, QueryManagementService queryManagementService) {
+                    QueryStorageCache queryStorageCache, QueryQueueManager queryQueueManager, QueryManagementService queryManagementService) {
         this.monitorProperties = monitorProperties;
         this.expirationProperties = expirationProperties;
         this.monitorStatusCache = monitorStatusCache;
         this.queryStorageCache = queryStorageCache;
+        this.queryQueueManager = queryQueueManager;
         this.queryManagementService = queryManagementService;
     }
     
@@ -64,20 +64,31 @@ public class MonitorTask implements Callable<Void> {
     // 3) Are there any other conditions that we should check for?
     private void monitor(long currentTimeMillis) {
         for (QueryStatus status : queryStorageCache.getQueryStatus()) {
-            String queryId = status.getQueryKey().getQueryId().toString();
+            String queryId = status.getQueryKey().getQueryId();
             
-            // if the query is not running, and has been inactive for too long, evict it
-            if (status.getQueryState() != CREATED && status.isInactive(currentTimeMillis, monitorProperties.getInactiveQueryTimeToLiveMillis())) {
-                deleteQuery(queryId);
+            // if the query is not running
+            if (!status.isRunning()) {
+                
+                // if the query has been inactive too long (i.e. no interaction from the user or software)
+                if (status.isInactive(currentTimeMillis, monitorProperties.getInactiveQueryTimeToLiveMillis())) {
+                    deleteQuery(queryId);
+                }
+                // delete the results queue if it exists
+                else {
+                    // TODO: add in a check to see if the queue exists first
+                    queryQueueManager.deleteQueue(queryId);
+                }
             }
-            // if the query is running, or closed and in the process of finishing up it's last next call, but it isn't making progress, poke it
-            else if ((status.getQueryState() == CREATED || (status.getQueryState() == CLOSED && status.getConcurrentNextCount() > 0)
-                            && status.isProgressIdle(currentTimeMillis, expirationProperties.getProgressTimeoutMillis()))) {
-                defibrillateQuery(queryId, status.getQueryKey().getQueryPool());
-            }
-            // if the query is running, but the user hasn't interacted with it in a while, cancel it
-            else if (status.getQueryState() == CREATED && status.isUserIdle(currentTimeMillis, expirationProperties.getIdleTimeoutMillis())) {
-                cancelQuery(queryId);
+            // if the query is running
+            else {
+                // if the query isn't making progress
+                if (status.isProgressIdle(currentTimeMillis, expirationProperties.getProgressTimeoutMillis())) {
+                    defibrillateQuery(queryId, status.getQueryKey().getQueryPool());
+                }
+                // if the user hasn't interacted with the query
+                else if (status.isUserIdle(currentTimeMillis, expirationProperties.getIdleTimeoutMillis())) {
+                    cancelQuery(queryId);
+                }
             }
         }
     }
@@ -99,6 +110,8 @@ public class MonitorTask implements Callable<Void> {
     
     private void deleteQuery(String queryId) {
         try {
+            // deletes everything for a query
+            // the result queue, the query status, the tasks, the task states
             queryStorageCache.deleteQuery(queryId);
         } catch (IOException e) {
             log.error("Encountered error while trying to evict inactive query: " + queryId, e);

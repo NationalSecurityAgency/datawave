@@ -144,7 +144,7 @@ public abstract class ExecutorAction implements Runnable {
     
     protected boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize, long maxResults, QueryStatus queryStatus) {
         QueryStatus.QUERY_STATE state = queryStatus.getQueryState();
-        int concurrentNextCalls = queryStatus.getConcurrentNextCount();
+        int concurrentNextCalls = queryStatus.getActiveNextCalls();
         float bufferMultiplier = executorProperties.getAvailableResultsPageMultiplier();
         long numResultsGenerated = queryStatus.getNumResultsGenerated();
         

@@ -1,8 +1,6 @@
 package datawave.webservice.query;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryParameters;
@@ -855,6 +853,9 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
             for (Parameter parameter : parameters) {
                 p.set(parameter.getParameterName(), parameter.getParameterValue());
             }
+        }
+        if (this.optionalQueryParameters != null) {
+            p.addAll(this.optionalQueryParameters);
         }
         return p;
     }

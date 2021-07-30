@@ -1,6 +1,7 @@
 package datawave.microservice.query.status;
 
 import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.QueryStorageLock;
@@ -20,12 +21,12 @@ public class QueryStatusUpdateHelper {
         this.queryStorageCache = queryStorageCache;
     }
     
-    public void claimConcurrentNext(QueryStatus queryStatus) throws QueryException {
+    public void claimNextCall(QueryStatus queryStatus) throws QueryException {
         // we can only call next on a created query
         if (queryStatus.getQueryState() == CREATED) {
             // increment the concurrent next count
-            if (queryStatus.getConcurrentNextCount() < queryProperties.getNextCall().getConcurrency()) {
-                queryStatus.setConcurrentNextCount(queryStatus.getConcurrentNextCount() + 1);
+            if (queryStatus.getActiveNextCalls() < queryProperties.getNextCall().getConcurrency()) {
+                queryStatus.setActiveNextCalls(queryStatus.getActiveNextCalls() + 1);
                 
                 // update the last used datetime for the query
                 queryStatus.setLastUsedMillis(System.currentTimeMillis());
@@ -38,16 +39,21 @@ public class QueryStatusUpdateHelper {
         }
     }
     
-    public void releaseConcurrentNext(QueryStatus queryStatus) throws QueryException {
+    public void releaseNextCall(QueryStatus queryStatus, QueryQueueManager queryQueueManager) throws QueryException {
         // decrement the concurrent next count
-        if (queryStatus.getConcurrentNextCount() > 0) {
-            queryStatus.setConcurrentNextCount(queryStatus.getConcurrentNextCount() - 1);
+        if (queryStatus.getActiveNextCalls() > 0) {
+            queryStatus.setActiveNextCalls(queryStatus.getActiveNextCalls() - 1);
             
             // update the last used datetime for the query
             queryStatus.setLastUsedMillis(System.currentTimeMillis());
+            
+            // TODO: We should add a 'queueExists' call to determine whether this needs to be run
+            // if by the end of the call the query is no longer running, delete the results queue
+            if (!queryStatus.isRunning()) {
+                queryQueueManager.deleteQueue(queryStatus.getQueryKey().getQueryId());
+            }
         } else {
-            throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR,
-                            "Concurrent next count can't be decremented: " + queryStatus.getConcurrentNextCount());
+            throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR, "Concurrent next count can't be decremented: " + queryStatus.getActiveNextCalls());
         }
     }
     

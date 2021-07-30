@@ -2,9 +2,6 @@ package datawave.microservice.query.storage;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.rabbitmq.client.AMQP;
-import org.springframework.integration.acks.AcknowledgmentCallback;
-import org.springframework.integration.acks.AcknowledgmentCallbackFactory;
 import org.springframework.integration.acks.SimpleAcknowledgment;
 
 public class Result {

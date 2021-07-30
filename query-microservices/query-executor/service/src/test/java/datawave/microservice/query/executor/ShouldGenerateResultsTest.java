@@ -10,8 +10,8 @@ import datawave.microservice.query.storage.TaskKey;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ShouldGenerateResultsTest {
     private static final Logger log = Logger.getLogger(ShouldGenerateResultsTest.class);
@@ -25,7 +25,7 @@ public class ShouldGenerateResultsTest {
         TaskKey key = new TaskKey();
         QueryStatus queryStatus = new QueryStatus();
         queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
-        queryStatus.setConcurrentNextCount(1);
+        queryStatus.setActiveNextCalls(1);
         queryStatus.setNumResultsGenerated(1);
         
         // default positive case
@@ -33,11 +33,11 @@ public class ShouldGenerateResultsTest {
         
         // closed, no next running
         queryStatus.setQueryState(QueryStatus.QUERY_STATE.CLOSED);
-        queryStatus.setConcurrentNextCount(0);
+        queryStatus.setActiveNextCalls(0);
         assertFalse(action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
         // closed but next running
-        queryStatus.setConcurrentNextCount(1);
+        queryStatus.setActiveNextCalls(1);
         assertTrue(action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
         // canceled

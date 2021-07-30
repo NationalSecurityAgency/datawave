@@ -43,8 +43,8 @@ management:
 
 logging:
   level:
-    root: WARN
-    datawave.microservice.query: WARN
+    root: FATAL
+    datawave.microservice.query: FATAL
 
 warehouse:
   accumulo:

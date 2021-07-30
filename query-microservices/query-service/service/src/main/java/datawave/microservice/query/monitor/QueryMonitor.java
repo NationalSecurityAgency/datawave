@@ -5,6 +5,7 @@ import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.monitor.cache.MonitorStatusCache;
 import datawave.microservice.query.monitor.config.MonitorProperties;
+import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStorageCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ public class QueryMonitor {
     private final QueryExpirationProperties expirationProperties;
     private final MonitorStatusCache monitorStatusCache;
     private final QueryStorageCache queryStorageCache;
+    private final QueryQueueManager queryQueueManager;
     private final QueryManagementService queryManagementService;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     
@@ -33,11 +35,12 @@ public class QueryMonitor {
     private Future<Void> taskFuture;
     
     public QueryMonitor(MonitorProperties monitorProperties, QueryProperties queryProperties, MonitorStatusCache monitorStatusCache,
-                    QueryStorageCache queryStorageCache, QueryManagementService queryManagementService) {
+                    QueryStorageCache queryStorageCache, QueryQueueManager queryQueueManager, QueryManagementService queryManagementService) {
         this.monitorProperties = monitorProperties;
         this.expirationProperties = queryProperties.getExpiration();
         this.monitorStatusCache = monitorStatusCache;
         this.queryStorageCache = queryStorageCache;
+        this.queryQueueManager = queryQueueManager;
         this.queryManagementService = queryManagementService;
     }
     
@@ -71,6 +74,7 @@ public class QueryMonitor {
                             expirationProperties,
                             monitorStatusCache,
                             queryStorageCache,
+                            queryQueueManager,
                             queryManagementService));
             // @formatter:on
         }
