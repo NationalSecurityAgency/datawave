@@ -142,18 +142,18 @@ public class QueryController {
     @Timed(name = "dw.query.list", absolute = true)
     @RequestMapping(path = "list", method = {RequestMethod.GET}, produces = {"text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml",
             "application/x-protobuf", "application/x-protostuff"})
-    public QueryImplListResponse list(@RequestParam(required = false) String id, @RequestParam(required = false) String queryName,
+    public QueryImplListResponse list(@RequestParam(required = false) String queryId, @RequestParam(required = false) String queryName,
                     @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
-        return queryManagementService.list(id, queryName, currentUser);
+        return queryManagementService.list(queryId, queryName, currentUser);
     }
     
     @Timed(name = "dw.query.adminList", absolute = true)
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "adminList", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml",
             "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
-    public QueryImplListResponse adminList(@RequestParam(required = false) String id, @RequestParam(required = false) String user,
+    public QueryImplListResponse adminList(@RequestParam(required = false) String queryId, @RequestParam(required = false) String user,
                     @RequestParam(required = false) String queryName, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
-        return queryManagementService.adminList(id, queryName, user, currentUser);
+        return queryManagementService.adminList(queryId, queryName, user, currentUser);
     }
     
     @Timed(name = "dw.query.get", absolute = true)

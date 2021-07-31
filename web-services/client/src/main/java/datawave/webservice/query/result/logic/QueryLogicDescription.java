@@ -1,8 +1,5 @@
 package datawave.webservice.query.result.logic;
 
-import java.io.Serializable;
-import java.util.List;
-
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorOrder;
@@ -10,8 +7,9 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
+import javax.xml.bind.annotation.XmlElements;
+import java.io.Serializable;
+import java.util.List;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
@@ -41,16 +39,14 @@ public class QueryLogicDescription implements Serializable {
     @XmlElement(name = "Syntax")
     private List<String> querySyntax = null;
     
-    @JsonProperty("SupportedParameters")
-    // work-around for bug in jackson-databind
     @XmlElementWrapper(name = "SupportedParameters")
-    @XmlElement(name = "Parameter")
+    // work-around for bug in jackson-databind
+    @XmlElements(@XmlElement(name = "Parameter", type = String.class))
     private List<String> supportedParams = null;
     
-    @JsonProperty("RequiredParameters")
-    // work-around for bug in jackson-databind
     @XmlElementWrapper(name = "RequiredParameters")
-    @XmlElement(name = "Parameter")
+    // work-around for bug in jackson-databind
+    @XmlElements(@XmlElement(name = "Parameter", type = String.class))
     private List<String> requiredParams = null;
     
     @XmlElementWrapper(name = "ExampleQueries")
@@ -136,5 +132,4 @@ public class QueryLogicDescription implements Serializable {
     public void setExampleQueries(List<String> exampleQueries) {
         this.exampleQueries = exampleQueries;
     }
-    
 }

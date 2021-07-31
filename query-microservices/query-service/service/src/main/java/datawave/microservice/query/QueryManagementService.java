@@ -1133,7 +1133,9 @@ public class QueryManagementService implements QueryRequestHandler {
             
             VoidResponse response = new VoidResponse();
             for (QueryStatus queryStatus : queryStatuses) {
-                response.addMessage(queryStatus.getQueryKey().getQueryId() + " removed.");
+                if (remove(queryStatus)) {
+                    response.addMessage(queryStatus.getQueryKey().getQueryId() + " removed.");
+                }
             }
             return response;
         } catch (Exception e) {
@@ -1171,7 +1173,7 @@ public class QueryManagementService implements QueryRequestHandler {
             QueryStatus queryStatus = validateRequest(queryId, currentUser, adminOverride);
             
             // remove the query if it is not running
-            if (queryStatus.getQueryState() != CREATED) {
+            if (!queryStatus.isRunning()) {
                 if (!remove(queryStatus)) {
                     throw new QueryException("Failed to remove " + queryId);
                 }
@@ -1246,11 +1248,14 @@ public class QueryManagementService implements QueryRequestHandler {
             
             GenericResponse<String> response = new GenericResponse<>();
             if (!parameters.isEmpty()) {
-                // TODO: Are we losing anything by recreating the parameters this way?
                 // recreate the query parameters
                 MultiValueMap<String,String> currentParams = new LinkedMultiValueMap<>();
-                currentParams.addAll(queryStatus.getQuery().getOptionalQueryParameters());
-                queryStatus.getQuery().getParameters().forEach(x -> currentParams.add(x.getParameterName(), x.getParameterValue()));
+                currentParams.addAll(queryStatus.getQuery().toMap());
+                
+                // remove some of the copied params
+                currentParams.remove(QUERY_ID);
+                currentParams.remove(USER_DN);
+                currentParams.remove(DN_LIST);
                 
                 boolean updated;
                 if (queryStatus.getQueryState() == DEFINED) {
@@ -1259,33 +1264,34 @@ public class QueryManagementService implements QueryRequestHandler {
                     
                     // redefine the query
                     if (updated) {
-                        storeQuery(queryStatus.getQuery().getQueryLogicName(), currentParams, currentUser, false, queryId);
+                        storeQuery(currentParams.getFirst(QUERY_LOGIC_NAME), currentParams, currentUser, false, queryId);
                     }
                 } else if (queryStatus.isRunning()) {
                     // if the query is created/running, update safe parameters only
-                    List<String> ignoredParams = new ArrayList<>(parameters.keySet());
+                    List<String> unsafeParams = new ArrayList<>(parameters.keySet());
                     List<String> safeParams = new ArrayList<>(queryProperties.getUpdatableParams());
                     safeParams.retainAll(parameters.keySet());
-                    ignoredParams.removeAll(safeParams);
+                    unsafeParams.removeAll(safeParams);
                     
-                    // only update the safe parameters if the query is running
-                    updated = updateParameters(safeParams, parameters, currentParams);
-                    
-                    if (updated) {
-                        // validate the update
-                        String queryLogicName = queryStatus.getQuery().getQueryLogicName();
-                        validateQuery(queryLogicName, parameters, currentUser);
+                    // only update a running query if the params are all safe
+                    if (unsafeParams.isEmpty()) {
+                        updated = updateParameters(safeParams, parameters, currentParams);
                         
-                        // create a new query object
-                        String userDn = currentUser.getPrimaryUser().getDn().subjectDN();
-                        Query query = createQuery(queryLogicName, parameters, userDn, currentUser.getDNs(), queryId);
-                        
-                        // save the new query object in the cache
-                        queryStatusUpdateHelper.lockedUpdate(queryId, status -> status.setQuery(query));
-                    }
-                    
-                    if (!ignoredParams.isEmpty()) {
-                        response.addMessage("The following parameters cannot be updated for a running query: " + String.join(",", ignoredParams));
+                        if (updated) {
+                            // validate the update
+                            String queryLogicName = currentParams.getFirst(QUERY_LOGIC_NAME);
+                            validateQuery(queryLogicName, currentParams, currentUser);
+                            
+                            // create a new query object
+                            String userDn = currentUser.getPrimaryUser().getDn().subjectDN();
+                            Query query = createQuery(queryLogicName, currentParams, userDn, currentUser.getDNs(), queryId);
+                            
+                            // save the new query object in the cache
+                            queryStatusUpdateHelper.lockedUpdate(queryId, status -> status.setQuery(query));
+                        }
+                    } else {
+                        throw new BadRequestQueryException("Cannot update the following parameters for a running query: " + String.join(", ", unsafeParams),
+                                        HttpStatus.SC_BAD_REQUEST + "-1");
                     }
                 } else {
                     throw new BadRequestQueryException("Cannot update a query unless it is defined or running.", HttpStatus.SC_BAD_REQUEST + "-1");
@@ -1417,11 +1423,11 @@ public class QueryManagementService implements QueryRequestHandler {
         updateParameters(parameters, currentParams);
         
         // define a duplicate query
-        return storeQuery(queryStatus.getQuery().getQueryLogicName(), currentParams, currentUser, true);
+        return storeQuery(currentParams.getFirst(QUERY_LOGIC_NAME), currentParams, currentUser, true);
     }
     
     private boolean updateParameters(MultiValueMap<String,String> newParameters, MultiValueMap<String,String> currentParams) throws BadRequestQueryException {
-        return updateParameters(newParameters.keySet(), newParameters, currentParams);
+        return updateParameters(new ArrayList<>(newParameters.keySet()), newParameters, currentParams);
     }
     
     /**
@@ -1470,7 +1476,7 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public QueryImplListResponse list(String queryId, String queryName, ProxiedUserDetails currentUser) throws QueryException {
-        return list(queryId, queryName, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        return list(queryId, queryName, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getDn().subjectDN()));
     }
     
     /**
@@ -1516,7 +1522,11 @@ public class QueryManagementService implements QueryRequestHandler {
             if (queryId != null && !queryId.isEmpty()) {
                 // get the query for the given id
                 queries = new ArrayList<>();
-                queries.add(queryStorageCache.getQueryState(queryId).getQueryStatus().getQuery());
+                
+                QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
+                if (queryStatus != null) {
+                    queries.add(queryStatus.getQuery());
+                }
             } else {
                 // get all of the queries
                 queries = queryStorageCache.getQueryStatus().stream().map(QueryStatus::getQuery).collect(Collectors.toList());
