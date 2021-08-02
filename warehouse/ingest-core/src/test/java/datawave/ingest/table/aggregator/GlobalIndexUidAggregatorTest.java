@@ -7,7 +7,9 @@ import datawave.ingest.protobuf.Uid;
 import datawave.ingest.protobuf.Uid.List.Builder;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,8 +22,6 @@ import org.junit.Test;
 
 import static datawave.ingest.table.aggregator.UidTestUtils.countOnlyList;
 import static datawave.ingest.table.aggregator.UidTestUtils.legacyRemoveUidList;
-import static datawave.ingest.table.aggregator.UidTestUtils.quarantineUidList;
-import static datawave.ingest.table.aggregator.UidTestUtils.releaseUidList;
 import static datawave.ingest.table.aggregator.UidTestUtils.removeUidList;
 import static datawave.ingest.table.aggregator.UidTestUtils.uidList;
 import static datawave.ingest.table.aggregator.UidTestUtils.valueToUidList;
@@ -776,26 +776,6 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(0, resultList.getCOUNT());
     }
     
-    @Test
-    public void testQuarantineAndRelease() {
-        // First quarantine uid1
-        List<Value> values = asList(uidList("uid1"), quarantineUidList("uid1"));
-        
-        Value firstPassValue = agg(values);
-        Uid.List result = valueToUidList(firstPassValue);
-        
-        assertTrue(result.getQUARANTINEUIDList().contains("uid1"));
-        assertFalse(result.getUIDList().contains("uid1"));
-        
-        // Now release uid1
-        values = asList(firstPassValue, releaseUidList("uid1"));
-        Value secondPassValue = agg(values);
-        result = valueToUidList(secondPassValue);
-        
-        assertFalse(result.getQUARANTINEUIDList().contains("uid1"));
-        assertTrue(result.getUIDList().contains("uid1"));
-    }
-
     @Test
     public void testLegacyRemoval() {
         List<Value> values = asList(uidList("uid1", "uid2"), legacyRemoveUidList("uid1"));
