@@ -107,14 +107,15 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
             
             if (queryGeometries != null && !queryGeometries.isEmpty()) {
                 String value = (String) JexlASTHelper.getLiteralValue(node);
-                Geometry nodeGeometry = GeoWaveUtils.positionToGeometry(value);
-                
-                // if the node geometry doesn't intersect the query geometry, get rid of this node
-                if (fieldToGeometryMap.get(field).stream().noneMatch(nodeGeometry::intersects)) {
-                    if (prunedTerms != null) {
-                        prunedTerms.put(field, value);
+                if (value != null) {
+                    Geometry nodeGeometry = GeoWaveUtils.positionToGeometry(value);
+                    // if the node geometry doesn't intersect the query geometry, get rid of this node
+                    if (fieldToGeometryMap.get(field).stream().noneMatch(nodeGeometry::intersects)) {
+                        if (prunedTerms != null) {
+                            prunedTerms.put(field, value);
+                        }
+                        return null;
                     }
-                    return null;
                 }
             }
         }
