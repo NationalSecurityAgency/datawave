@@ -395,7 +395,6 @@ public abstract class GroupingTest {
         Map<String,Integer> expectedMap = ImmutableMap.of("1", 3, "2", 3, "3", 1);
         
         extraParameters.put("group.fields", "RECORD");
-        // extraParameters.put("group.fields.batch.size", "12");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
