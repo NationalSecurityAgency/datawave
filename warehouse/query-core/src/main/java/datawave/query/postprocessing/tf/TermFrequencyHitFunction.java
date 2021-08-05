@@ -631,6 +631,7 @@ public class TermFrequencyHitFunction {
         TreeSet<String> fields = new TreeSet<>();
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
+//            fields.add(JexlASTHelper.deconstructIdentifier(identifier));
             fields.add(identifier.image);
         }
         return fields;
