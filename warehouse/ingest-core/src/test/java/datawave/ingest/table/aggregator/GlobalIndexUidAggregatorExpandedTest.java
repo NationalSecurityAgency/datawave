@@ -36,7 +36,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withUids("uid1", "uid2")
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -55,7 +55,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals("uid4")
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -74,7 +74,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals("uid7")
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -94,7 +94,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals("uid1", "uid4")
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -114,7 +114,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals("uid4", "uid7")
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -133,7 +133,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals("uid4", "uid5", "uid6")
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -152,7 +152,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals("uid7", "uid8", "uid9") // all uids absent
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -172,7 +172,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals("uid1", "uid2", "uid3", "uid4", "uid5", "uid6")
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -192,7 +192,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals("uid4", "uid5", "uid6", "uid7", "uid8", "uid9")
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -212,7 +212,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals("uid4", "uid6", "uid7", "uid8", "uid9")
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -231,7 +231,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals("uid4", "uid5", "uid6", "uid7")
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -251,7 +251,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals("uid1", "uid2", "uid3", "uid4", "uid5", "uid6", "uid7", "uid8")
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -270,7 +270,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals("uid2")
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -289,7 +289,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals("uid3")
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -309,7 +309,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals("uid1")
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -327,7 +327,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withCountOnly(3)
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -345,7 +345,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withCountOnly(5)
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -368,7 +368,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withCountOnly(4)
                 .build());
 
-        testCombinations(asList(value1, value2, value3), expectation);
+        testCombinations(expectation, asList(value1, value2, value3));
     }
 
     @Test
@@ -386,7 +386,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withCountOnly(6)
                 .build());
 
-        testCombinations(asList(value1, value2), expectation);
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
@@ -409,7 +409,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withCountOnly(5)
                 .build());
 
-        testCombinations(asList(value1, value2, value3), expectation);
+        testCombinations(expectation, asList(value1, value2, value3));
     }
 
     @Test
@@ -432,11 +432,11 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withCountOnly(5)
                 .build());
 
-        testCombinations(asList(value1, value2, value3), expectation);
+        testCombinations(expectation, asList(value1, value2, value3));
     }
 
     // todo - flip params
-    private void testCombinations(List<Value> input, Uid.List expectation) {
+    private void testCombinations(Uid.List expectation, List<Value> input) {
         // todo - consider copying input to avoid test interference
         // There should be nothing in the removal UID list after a Full Major Compaction
         Uid.List expectNoRemovals = Uid.List.newBuilder().mergeFrom(expectation).clearREMOVEDUID().build();
