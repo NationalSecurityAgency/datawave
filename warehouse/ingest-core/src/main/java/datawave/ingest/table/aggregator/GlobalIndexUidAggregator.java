@@ -202,7 +202,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                             // list) since they won't be included when we aggregate anyway.
                             if (uids.size() < maxUids) {
                                 uids.add(uid);
-                            } else {
+                            } else if (!uids.contains(uid)) {
                                 // If aggregating this PB pushed us over the max UID limit,
                                 // then ignore any work we've done integrating this PB so far
                                 // and instead treat it as though its ignore flag had been set.
@@ -225,6 +225,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
 //                    count = this.uids.size() - this.uidsToRemove.size();
                     count += v.getCOUNT();
                     count -= v.getREMOVEDUIDCount();
+                    count = Math.max(0, count);
                 }
                 
             } catch (InvalidProtocolBufferException e) {

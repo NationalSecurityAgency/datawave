@@ -438,6 +438,336 @@ public class GlobalIndexUidAggregatorExpandedTest {
         testCombinations(expectation, asList(value1, value2, value3));
     }
 
+    @Test
+    public void doNotGoNegative() {
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid4", "uid5", "uid6", "uid7")
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2", "uid3", "uid8")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals()
+                .build());
+
+        testFullCompactionsOnly(expectation, asList(value1, value2));
+    }
+
+    @Test
+    public void testEvaluatesMaxWithEachAddition() { // 40 - behaves this way as an optimization.  Different between forward and reverse
+        agg = new GlobalIndexUidAggregator(2);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids("uid1", "uid2")
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids("uid3")
+                .build();
+
+        Value value3 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(2)
+                .build());
+
+        testCombinations(expectation, asList(value1, value2, value3));
+    }
+
+    @Test
+    public void testHitsMax() { // 41
+        agg = new GlobalIndexUidAggregator(2);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids("uid1", "uid2")
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids("uid3")
+                .build();
+
+        Value value3 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid4")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(2)
+                .build());
+
+        testCombinations(expectation, asList(value1, value2, value3));
+    }
+
+    @Test
+    public void testDeduplicates() { // 42
+        agg = new GlobalIndexUidAggregator(2);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids("uid1", "uid2")
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids("uid1")
+                .build();
+
+        Value value3 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid2")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withUids("uid1")
+                .withRemovals("uid2")
+                .build());
+
+        testCombinations(expectation, asList(value1, value2, value3));
+    }
+
+    @Test
+    public void testDeduplicatesVariant() { // 43
+        agg = new GlobalIndexUidAggregator(2);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids("uid1", "uid2")
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids("uid1")
+                .build();
+
+        Value value3 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid4")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withUids("uid1", "uid2")
+                .withRemovals("uid4")
+                .build());
+
+        testCombinations(expectation, asList(value1, value2, value3));
+    }
+
+    @Test
+    public void testBadDataHandling() { // 44 - adjusted result
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withCountOverride(1)
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids("uid1", "uid2")
+                .build();
+
+        Value value3 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid3", "uid4")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withUids("uid2")
+                .withRemovals("uid1", "uid3", "uid4")
+                .build());
+
+        testCombinations(expectation, asList(value1, value2, value3));
+    }
+
+    @Test
+    public void testDuplicatesRecountedUnderSeenIgnore() { // 45 - inconsistent between forward and reverse
+        agg = new GlobalIndexUidAggregator(10);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withCountOnly(11)
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids("uid1", "uid2")
+                .build();
+
+        Value value3 = UidTestBuilder.newBuilder()
+                .withUids("uid1", "uid2")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(15)
+                .build());
+
+        testCombinations(expectation, asList(value1, value2, value3));
+    }
+
+    @Test
+    public void testRemovalToZero() { // 46
+        agg = new GlobalIndexUidAggregator(10);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withCountOnly(1)
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(0)
+                .build());
+
+        testCombinations(expectation, asList(value1, value2));
+    }
+
+    @Test
+    public void testFloorOfZero() { // 47 - adjusted
+        agg = new GlobalIndexUidAggregator(10);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids("uid1")
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2", "uid3")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2", "uid3")
+                .build());
+
+        testCombinations(expectation, asList(value1, value2));
+    }
+
+    @Test
+    public void floorOfZeroVariant() { // 49
+        agg = new KeepCountOnlyUidAggregator(10);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withCountOnly(1)
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(0)
+                .withRemovals()
+                .build());
+
+        testCombinations(expectation, asList(value1, value2));
+    }
+
+    @Test
+    public void countOnlyReduced() { // 48
+        agg = new GlobalIndexUidAggregator(10);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withCountOnly(30)
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(28)
+                .withRemovals()
+                .build());
+
+        testCombinations(expectation, asList(value1, value2));
+    }
+
+    @Test
+    public void preserveRemovals() { // 50
+        agg = new KeepCountOnlyUidAggregator(10);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids("uid1", "uid2")
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid3", "uid4")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withUids("uid1", "uid2")
+                .withRemovals("uid3", "uid4")
+                .build());
+
+        testCombinations(expectation, asList(value1, value2));
+    }
+
+    @Test
+    public void preserveTwoRemovalLists() { // 51
+        agg = new KeepCountOnlyUidAggregator(10);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2")
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid3", "uid4")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2", "uid3", "uid4")
+                .build());
+
+        testCombinations(expectation, asList(value1, value2));
+    }
+
+    @Test
+    public void testAddToNowDefunctNegativeCount() { // will differ forward and reverse
+        agg = new GlobalIndexUidAggregator(10);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withCountOnly(-1)
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids("uid1")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(1)
+                .build());
+
+        testCombinations(expectation, asList(value1, value2));
+    }
+
+    @Test
+    public void testRemoveFromNowDefunctNegativeCount() {
+        agg = new KeepCountOnlyUidAggregator(10);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withCountOnly(-1)
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(0)
+                .build());
+
+        testCombinations(expectation, asList(value1, value2));
+    }
+
+    private void testFullCompactionsOnly(Uid.List expectation, List<Value> input) {
+        // There should be nothing in the removal UID list after a Full Major Compaction
+
+        Uid.List expectNoRemovals = Uid.List.newBuilder().mergeFrom(expectation).clearREMOVEDUID().build();
+
+        verify("Forward, Full Major", expectNoRemovals, testAsFullMajorCompaction(input));
+
+        // reverse the ordering of the input and try again
+        Collections.reverse(input);
+
+        verify("Reverse, Full Major", expectNoRemovals, testAsFullMajorCompaction(input));
+    }
+
     private void testCombinations(Uid.List expectation, List<Value> input) {
         // There should be nothing in the removal UID list after a Full Major Compaction
 

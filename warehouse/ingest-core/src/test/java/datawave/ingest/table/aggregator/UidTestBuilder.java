@@ -28,6 +28,13 @@ public final class UidTestBuilder {
         b.setCOUNT(count);
         return this;
     }
+
+    // Only used to represent deprecated data that will no longer be created like this
+    @Deprecated
+    public UidTestBuilder withCountOverride(int count) {
+        b.setCOUNT(count);
+        return this;
+    }
     
     public UidTestBuilder withUids(String... uids) {
         if (b.getIGNORE()) {
