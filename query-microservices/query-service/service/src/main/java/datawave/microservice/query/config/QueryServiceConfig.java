@@ -4,8 +4,9 @@ import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryParameters;
-import datawave.webservice.query.cache.QueryMetricFactory;
-import datawave.webservice.query.cache.QueryMetricFactoryImpl;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -33,6 +34,13 @@ public class QueryServiceConfig {
         SecurityMarking securityMarking = new ColumnVisibilitySecurityMarking();
         securityMarking.clear();
         return securityMarking;
+    }
+    
+    @Bean
+    @ConditionalOnMissingBean
+    @RequestScope
+    public BaseQueryMetric baseQueryMetric() {
+        return queryMetricFactory().createMetric();
     }
     
     @Bean

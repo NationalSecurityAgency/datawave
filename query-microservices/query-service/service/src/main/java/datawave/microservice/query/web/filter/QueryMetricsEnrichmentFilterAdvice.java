@@ -1,12 +1,11 @@
 package datawave.microservice.query.web.filter;
 
 import datawave.microservice.query.logic.QueryLogicFactory;
-import datawave.microservice.query.storage.QueryState;
+import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
-import datawave.microservice.query.web.QueryMetrics;
 import datawave.microservice.query.web.annotation.EnrichQueryMetrics;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.QueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.QueryMetricClient;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import org.apache.log4j.Logger;
@@ -32,12 +31,17 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
     
     private final QueryStorageCache queryStorageCache;
     
-    private final QueryMetrics queryMetrics;
+    private final QueryMetricClient queryMetricClient;
     
-    public QueryMetricsEnrichmentFilterAdvice(QueryLogicFactory queryLogicFactory, QueryStorageCache queryStorageCache, QueryMetrics queryMetrics) {
+    // Note: BaseQueryMetric needs to be request scoped
+    private final BaseQueryMetric baseQueryMetric;
+    
+    public QueryMetricsEnrichmentFilterAdvice(QueryLogicFactory queryLogicFactory, QueryStorageCache queryStorageCache, QueryMetricClient queryMetricClient,
+                    BaseQueryMetric baseQueryMetric) {
         this.queryLogicFactory = queryLogicFactory;
         this.queryStorageCache = queryStorageCache;
-        this.queryMetrics = queryMetrics;
+        this.queryMetricClient = queryMetricClient;
+        this.baseQueryMetric = baseQueryMetric;
     }
     
     @Override
@@ -70,8 +74,6 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
     public Object beforeBodyWrite(Object body, @NonNull MethodParameter returnType, @NonNull MediaType selectedContentType,
                     @NonNull Class<? extends HttpMessageConverter<?>> selectedConverterType, @NonNull ServerHttpRequest request,
                     @NonNull ServerHttpResponse response) {
-        System.out.println("QueryMetricsEnrichmentFilterAdvice writing metrics");
-        
         if (body instanceof GenericResponse) {
             @SuppressWarnings({"unchecked", "rawtypes"})
             GenericResponse<String> genericResponse = (GenericResponse) body;
@@ -87,66 +89,69 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
     @Override
     public void postProcess(ResponseMethodStats responseStats) {
         String queryId = QueryMetricsEnrichmentContext.getQueryId();
-        if (queryId != null) {
-            if (queryStorageCache != null) {
-                // TODO: JWO: Need to figure out where the query metrics object is supposed to come from. I assumed
-                // that it would be contained in the QueryState similar to how it is stored in the RunningQuery,
-                // but that does not appear to be the case.
-                QueryState queryState = null;
-                
-                boolean isMetricsEnabled = false;
-                // try {
-                // isMetricsEnabled = queryLogicFactory.getQueryLogic(queryState.getQueryLogic()).getCollectQueryMetrics();
-                // } catch (Exception e) {
-                // log.warn("Unable to determine if query logic '" + queryState.getQueryLogic() + "' supports metrics");
-                // }
-                
-                if (queryState != null && isMetricsEnabled) {
-                    try {
-                        // TODO: JWO: This probably shouldn't be instantiated here, and we also shouldn't hard code the basequerymetric implementation.
-                        // just using this as a placeholder until we start to bring things together.
-                        BaseQueryMetric metric = new QueryMetric();
-                        switch (QueryMetricsEnrichmentContext.getMethodType()) {
-                            case CREATE:
-                                metric.setCreateCallTime(responseStats.getCallTime());
-                                metric.setLoginTime(responseStats.getLoginTime());
-                                break;
-                            case CREATE_AND_NEXT:
-                                metric.setCreateCallTime(responseStats.getCallTime());
-                                metric.setLoginTime(responseStats.getLoginTime());
-                                List<BaseQueryMetric.PageMetric> pageTimes = metric.getPageTimes();
-                                if (pageTimes != null && !pageTimes.isEmpty()) {
-                                    BaseQueryMetric.PageMetric pm = pageTimes.get(pageTimes.size() - 1);
-                                    pm.setCallTime(responseStats.getCallTime());
-                                    pm.setLoginTime(responseStats.getLoginTime());
-                                    pm.setSerializationTime(responseStats.getSerializationTime());
-                                    pm.setBytesWritten(responseStats.getBytesWritten());
-                                }
-                                break;
-                            case NEXT:
-                                pageTimes = metric.getPageTimes();
-                                if (pageTimes != null && !pageTimes.isEmpty()) {
-                                    BaseQueryMetric.PageMetric pm = pageTimes.get(pageTimes.size() - 1);
-                                    pm.setCallTime(responseStats.getCallTime());
-                                    pm.setLoginTime(responseStats.getLoginTime());
-                                    pm.setSerializationTime(responseStats.getSerializationTime());
-                                    pm.setBytesWritten(responseStats.getBytesWritten());
-                                }
-                                break;
-                        }
-                        
-                        if (queryMetrics != null)
-                            queryMetrics.updateMetric(metric);
-                        else
-                            log.error("QueryMetricsBean JNDI lookup returned null");
-                    } catch (Exception e) {
-                        log.error("Unable to record metrics for " + QueryMetricsEnrichmentContext.getMethodType() + " method: " + e.getLocalizedMessage(), e);
-                    }
-                } else {
-                    log.error("RunningQuery instance not in the cache!, queryId: " + queryId);
-                }
+        EnrichQueryMetrics.MethodType methodType = QueryMetricsEnrichmentContext.getMethodType();
+        
+        if (queryId != null && methodType != null) {
+            // determine which query logic is being used
+            String queryLogic = null;
+            if (baseQueryMetric.getQueryLogic() != null) {
+                queryLogic = baseQueryMetric.getQueryLogic();
             } else {
-                log.error("Query cache not injected! No metrics will be recorded for serialization times.");
+                QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
+                if (queryStatus != null) {
+                    queryLogic = queryStatus.getQuery().getQueryLogicName();
+                }
+            }
+            
+            // determine whether metrics are enabled
+            boolean isMetricsEnabled = false;
+            try {
+                isMetricsEnabled = queryLogicFactory.getQueryLogic(queryLogic).getCollectQueryMetrics();
+            } catch (Exception e) {
+                log.warn("Unable to determine if query logic '" + queryLogic + "' supports metrics");
+            }
+            
+            if (isMetricsEnabled) {
+                try {
+                    switch (QueryMetricsEnrichmentContext.getMethodType()) {
+                        case CREATE:
+                            baseQueryMetric.setCreateCallTime(responseStats.getCallTime());
+                            baseQueryMetric.setLoginTime(responseStats.getLoginTime());
+                            break;
+                        case CREATE_AND_NEXT:
+                            baseQueryMetric.setCreateCallTime(responseStats.getCallTime());
+                            baseQueryMetric.setLoginTime(responseStats.getLoginTime());
+                            List<BaseQueryMetric.PageMetric> pageTimes = baseQueryMetric.getPageTimes();
+                            if (pageTimes != null && !pageTimes.isEmpty()) {
+                                BaseQueryMetric.PageMetric pm = pageTimes.get(pageTimes.size() - 1);
+                                pm.setCallTime(responseStats.getCallTime());
+                                pm.setLoginTime(responseStats.getLoginTime());
+                                pm.setSerializationTime(responseStats.getSerializationTime());
+                                pm.setBytesWritten(responseStats.getBytesWritten());
+                            }
+                            break;
+                        case NEXT:
+                            pageTimes = baseQueryMetric.getPageTimes();
+                            if (pageTimes != null && !pageTimes.isEmpty()) {
+                                BaseQueryMetric.PageMetric pm = pageTimes.get(pageTimes.size() - 1);
+                                pm.setCallTime(responseStats.getCallTime());
+                                pm.setLoginTime(responseStats.getLoginTime());
+                                pm.setSerializationTime(responseStats.getSerializationTime());
+                                pm.setBytesWritten(responseStats.getBytesWritten());
+                            }
+                            break;
+                    }
+                    
+                    // @formatter:off
+                    queryMetricClient.submit(
+                            new QueryMetricClient.Request.Builder()
+                                    .withMetric(baseQueryMetric)
+                                    .build());
+                    // @formatter:on
+                } catch (Exception e) {
+                    log.error("Unable to record metrics for query '" + QueryMetricsEnrichmentContext.getQueryId() + "' and method '"
+                                    + QueryMetricsEnrichmentContext.getMethodType() + "': " + e.getLocalizedMessage(), e);
+                }
             }
         }
     }

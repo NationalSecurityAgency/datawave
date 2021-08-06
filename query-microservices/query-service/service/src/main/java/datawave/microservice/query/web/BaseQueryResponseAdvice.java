@@ -29,6 +29,7 @@ public class BaseQueryResponseAdvice implements ResponseBodyAdvice<BaseQueryResp
     public BaseQueryResponse beforeBodyWrite(BaseQueryResponse baseQueryResponse, @NonNull MethodParameter returnType, @NonNull MediaType selectedContentType,
                     @NonNull Class selectedConverterType, @NonNull ServerHttpRequest request, ServerHttpResponse response) {
         response.getHeaders().add(Constants.PAGE_NUMBER, String.valueOf(baseQueryResponse.getPageNumber()));
+        // TODO: This isn't the most accurate way of determining whether this is the last page
         response.getHeaders().add(Constants.IS_LAST_PAGE, String.valueOf(!baseQueryResponse.getHasResults()));
         response.getHeaders().add(Constants.PARTIAL_RESULTS, String.valueOf(baseQueryResponse.isPartialResults()));
         return baseQueryResponse;

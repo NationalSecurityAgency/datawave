@@ -38,6 +38,9 @@ public class QueryStatus implements Serializable {
     private int activeNextCalls = 0;
     private long lastPageNumber = 0L;
     
+    private long nextCount;
+    private long seekCount;
+    
     // datetime of last user interaction
     private long lastUsedMillis;
     
@@ -197,6 +200,22 @@ public class QueryStatus implements Serializable {
     
     public void setLastPageNumber(long lastPageNumber) {
         this.lastPageNumber = lastPageNumber;
+    }
+    
+    public long getNextCount() {
+        return nextCount;
+    }
+    
+    public void setNextCount(long nextCount) {
+        this.nextCount = nextCount;
+    }
+    
+    public long getSeekCount() {
+        return seekCount;
+    }
+    
+    public void setSeekCount(long seekCount) {
+        this.seekCount = seekCount;
     }
     
     public long getLastUsedMillis() {

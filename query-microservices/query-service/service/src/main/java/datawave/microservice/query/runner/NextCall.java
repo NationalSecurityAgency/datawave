@@ -10,11 +10,10 @@ import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.Result;
 import datawave.microservice.query.storage.TaskStates;
-import datawave.webservice.query.cache.QueryMetricFactory;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.data.ObjectSizeOf;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.QueryMetric;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.Message;
@@ -53,6 +52,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     private final List<Object> results = new LinkedList<>();
     private long pageSizeBytes;
     private long startTimeMillis;
+    private long stopTimeMillis;
     private ResultsPage.Status status = ResultsPage.Status.COMPLETE;
     
     private long lastQueryStatusUpdateTime = 0L;
@@ -62,7 +62,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     private boolean tasksFinished = false;
     private long prevResultCount = 0L;
     
-    private final BaseQueryMetric metric;
+    private BaseQueryMetric.Lifecycle lifecycle;
     
     private NextCall(Builder builder) {
         this.nextCallProperties = builder.nextCallProperties;
@@ -98,8 +98,6 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             log.info("Maximum results set to " + this.maxResults + " instead of default " + builder.queryLogic.getMaxResults() + ", user "
                             + status.getQuery().getUserDN() + " has a DN configured with a different limit");
         }
-        
-        this.metric = builder.queryMetricFactory.createMetric();
     }
     
     @Override
@@ -141,7 +139,18 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         // stop the result listener
         resultListener.stop();
         
+        // update some values for metrics
+        stopTimeMillis = System.currentTimeMillis();
+        if (lifecycle == null && !results.isEmpty()) {
+            lifecycle = BaseQueryMetric.Lifecycle.RESULTS;
+        }
+        
         return new ResultsPage<>(results, status);
+    }
+    
+    public void updateQueryMetric(BaseQueryMetric baseQueryMetric) {
+        baseQueryMetric.addPageTime(results.size(), stopTimeMillis - startTimeMillis, startTimeMillis, stopTimeMillis);
+        baseQueryMetric.setLifecycle(lifecycle);
     }
     
     private boolean isFinished(String queryId) {
@@ -167,6 +176,8 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         if (!finished && (canceled || queryStatus.getQueryState() == QueryStatus.QUERY_STATE.CANCELED)) {
             log.info("Query [{}]: query cancelled, aborting next call", queryId);
             
+            // no query metric lifecycle update - assumption is that the cancel call handled that
+            // set to partial for now - if there are no results, it will switch to NONE later
             status = ResultsPage.Status.PARTIAL;
             
             finished = true;
@@ -206,8 +217,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
                 if (maxResultsOverride >= 0 && numResults >= maxResultsOverride) {
                     log.info("Query [{}]: max results override has been reached, aborting next call", queryId);
                     
-                    // TODO: Figure out query metrics
-                    metric.setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
+                    lifecycle = QueryMetric.Lifecycle.MAXRESULTS;
                     
                     status = ResultsPage.Status.PARTIAL;
                     
@@ -216,8 +226,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             } else if (maxResults >= 0 && numResults >= maxResults) {
                 log.info("Query [{}]: logic max results has been reached, aborting next call", queryId);
                 
-                // TODO: Figure out query metrics
-                metric.setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
+                lifecycle = QueryMetric.Lifecycle.MAXRESULTS;
                 
                 status = ResultsPage.Status.PARTIAL;
                 
@@ -225,14 +234,12 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             }
         }
         
-        // TODO: Do I need to pull query metrics to get the next/seek count?
-        // This used to come from the query logic transform iterator
+        // TODO: We need to stop relying on query metrics for these values
         // 7) have we reached the "max work" limit? (i.e. next count + seek count)
-        if (!finished && logicMaxWork > 0 && (metric.getNextCount() + metric.getSeekCount()) >= logicMaxWork) {
+        if (!finished && logicMaxWork > 0 && (queryStatus.getNextCount() + queryStatus.getSeekCount()) >= logicMaxWork) {
             log.info("Query [{}]: logic max work has been reached, aborting next call", queryId);
             
-            // TODO: Figure out query metrics
-            metric.setLifecycle(BaseQueryMetric.Lifecycle.MAXWORK);
+            lifecycle = BaseQueryMetric.Lifecycle.MAXWORK;
             
             status = ResultsPage.Status.PARTIAL;
             
@@ -254,8 +261,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             log.info("Query [{}]: max call time reached, returning existing results: {} of {} results in {}ms", queryId, results.size(), maxResultsPerPage,
                             callTimeMillis);
             
-            // TODO: Figure out query metrics
-            metric.setLifecycle(BaseQueryMetric.Lifecycle.NEXTTIMEOUT);
+            lifecycle = BaseQueryMetric.Lifecycle.NEXTTIMEOUT;
             
             status = ResultsPage.Status.PARTIAL;
             
@@ -336,16 +342,11 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         this.future = future;
     }
     
-    public BaseQueryMetric getMetric() {
-        return metric;
-    }
-    
     public static class Builder {
         private NextCallProperties nextCallProperties;
         private QueryExpirationProperties expirationProperties;
         private QueryQueueManager queryQueueManager;
         private QueryStorageCache queryStorageCache;
-        private QueryMetricFactory queryMetricFactory;
         private String queryId;
         private QueryLogic<?> queryLogic;
         
@@ -372,11 +373,6 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         
         public Builder setQueryStorageCache(QueryStorageCache queryStorageCache) {
             this.queryStorageCache = queryStorageCache;
-            return this;
-        }
-        
-        public Builder setQueryMetricFactory(QueryMetricFactory queryMetricFactory) {
-            this.queryMetricFactory = queryMetricFactory;
             return this;
         }
         

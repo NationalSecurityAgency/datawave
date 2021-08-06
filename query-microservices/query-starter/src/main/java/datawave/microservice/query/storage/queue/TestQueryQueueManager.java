@@ -12,9 +12,11 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -36,6 +38,7 @@ public class TestQueryQueueManager implements QueryQueueManager {
     
     private Map<String,Queue<Message<byte[]>>> queues = Collections.synchronizedMap(new HashMap<>());
     private Map<String,Set<String>> listenerToQueue = Collections.synchronizedMap(new HashMap<>());
+    private List<QueryQueueListener> listeners = new ArrayList<>();
     
     /**
      * Create a listener
@@ -52,6 +55,7 @@ public class TestQueryQueueManager implements QueryQueueManager {
             listenerToQueue.put(listener.getListenerId(), Collections.synchronizedSet(new HashSet<>()));
             listenerToQueue.get(listenerId).add(queueName);
         }
+        listeners.add(listener);
         return listener;
     }
     
@@ -150,17 +154,19 @@ public class TestQueryQueueManager implements QueryQueueManager {
         
         @Override
         public void stop() {
-            Thread thread = this.thread;
-            this.thread = null;
-            thread.interrupt();
-            while (thread.isAlive()) {
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException e) {
-                    break;
+            if (this.thread != null) {
+                Thread thread = this.thread;
+                this.thread = null;
+                thread.interrupt();
+                while (thread.isAlive()) {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
                 }
+                listenerToQueue.remove(listenerId);
             }
-            listenerToQueue.remove(listenerId);
         }
         
         public void run() {
@@ -203,5 +209,12 @@ public class TestQueryQueueManager implements QueryQueueManager {
             }
             return result;
         }
+    }
+    
+    public void clear() {
+        queues.clear();
+        listenerToQueue.clear();
+        listeners.forEach(QueryQueueListener::stop);
+        listeners.clear();
     }
 }

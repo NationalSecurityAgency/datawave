@@ -17,6 +17,7 @@
         <version.microservice.query>1.0-SNAPSHOT</version.microservice.query>
         <version.microservice.starter>1.6.6-SNAPSHOT</version.microservice.starter>
         <version.microservice.starter-metadata>1.0-SNAPSHOT</version.microservice.starter-metadata>
+        <version.microservice.starter-metrics>1.3-SNAPSHOT</version.microservice.starter-metrics>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -150,6 +151,11 @@
                 <version>${version.microservice.starter-metadata}</version>
             </dependency>
             <dependency>
+                <groupId>gov.nsa.datawave.microservice</groupId>
+                <artifactId>spring-boot-starter-datawave-query-metric</artifactId>
+                <version>${version.microservice.starter-metrics}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-client</artifactId>
                 <version>${version.curator}</version>
@@ -225,6 +231,10 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>spring-boot-starter-datawave-metadata</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>spring-boot-starter-datawave-query-metric</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.kafka</groupId>

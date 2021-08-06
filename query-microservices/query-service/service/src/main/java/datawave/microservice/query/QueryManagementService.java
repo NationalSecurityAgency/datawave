@@ -19,12 +19,13 @@ import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.util.QueryUtil;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.QueryMetricClient;
 import datawave.security.util.ProxiedEntityUtils;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -34,7 +35,6 @@ import datawave.webservice.query.exception.QueryCanceledQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.TimeoutQueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
-import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
@@ -96,13 +96,15 @@ public class QueryManagementService implements QueryRequestHandler {
     private final ApplicationEventPublisher eventPublisher;
     private final BusProperties busProperties;
     
-    // Note: QueryParameters need to be request scoped
+    // Note: QueryParameters needs to be request scoped
     private final QueryParameters queryParameters;
     // Note: SecurityMarking needs to be request scoped
     private final SecurityMarking securityMarking;
+    // Note: BaseQueryMetric needs to be request scoped
+    private final BaseQueryMetric baseQueryMetric;
     
     private final QueryLogicFactory queryLogicFactory;
-    private final QueryMetricFactory queryMetricFactory;
+    private final QueryMetricClient queryMetricClient;
     private final ResponseObjectFactory responseObjectFactory;
     private final QueryStorageCache queryStorageCache;
     private final QueryQueueManager queryQueueManager;
@@ -113,17 +115,19 @@ public class QueryManagementService implements QueryRequestHandler {
     private final MultiValueMap<String,NextCall> nextCallMap = new LinkedMultiValueMap<>();
     
     public QueryManagementService(QueryProperties queryProperties, ApplicationContext appCtx, ApplicationEventPublisher eventPublisher,
-                    BusProperties busProperties, QueryParameters queryParameters, SecurityMarking securityMarking, QueryLogicFactory queryLogicFactory,
-                    QueryMetricFactory queryMetricFactory, ResponseObjectFactory responseObjectFactory, QueryStorageCache queryStorageCache,
-                    QueryQueueManager queryQueueManager, AuditClient auditClient, ThreadPoolTaskExecutor nextCallExecutor) {
+                    BusProperties busProperties, QueryParameters queryParameters, SecurityMarking securityMarking, BaseQueryMetric baseQueryMetric,
+                    QueryLogicFactory queryLogicFactory, QueryMetricClient queryMetricClient, ResponseObjectFactory responseObjectFactory,
+                    QueryStorageCache queryStorageCache, QueryQueueManager queryQueueManager, AuditClient auditClient,
+                    ThreadPoolTaskExecutor nextCallExecutor) {
         this.queryProperties = queryProperties;
         this.appCtx = appCtx;
         this.eventPublisher = eventPublisher;
         this.busProperties = busProperties;
         this.queryParameters = queryParameters;
         this.securityMarking = securityMarking;
+        this.baseQueryMetric = baseQueryMetric;
         this.queryLogicFactory = queryLogicFactory;
-        this.queryMetricFactory = queryMetricFactory;
+        this.queryMetricClient = queryMetricClient;
         this.responseObjectFactory = responseObjectFactory;
         this.queryStorageCache = queryStorageCache;
         this.queryQueueManager = queryQueueManager;
@@ -396,9 +400,11 @@ public class QueryManagementService implements QueryRequestHandler {
                 // @formatter:on
             }
             
-            // TODO: JWO: Figure out how to make query tracing work with our new architecture. Datawave issue #1155
-            
-            // TODO: JWO: Figure out how to make query metrics work with our new architecture. Datawave issue #1156
+            // update the query metric
+            baseQueryMetric.setQueryId(taskKey.getQueryId());
+            baseQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.DEFINED);
+            baseQueryMetric.populate(query);
+            baseQueryMetric.setProxyServers(currentUser.getProxyServers());
             
             return taskKey;
         } catch (Exception e) {
@@ -449,14 +455,26 @@ public class QueryManagementService implements QueryRequestHandler {
      */
     public BaseQueryResponse createAndNext(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws QueryException {
+        String queryId = null;
         try {
-            String queryId = create(queryLogicName, parameters, currentUser).getResult();
+            queryId = create(queryLogicName, parameters, currentUser).getResult();
             return next(queryId, currentUser.getPrimaryUser().getRoles());
-        } catch (QueryException e) {
-            throw e;
         } catch (Exception e) {
-            log.error("Unknown error calling create and next.", e);
-            throw new QueryException(DatawaveErrorCode.QUERY_SETUP_ERROR, e, "Unknown error calling create and next.");
+            // TODO: QueryException results in VoidResponse. This differs from the original RestAPI where an exception was returned in a
+            // DefaultEventQueryResponse.
+            QueryException qe;
+            if (!(e instanceof QueryException)) {
+                log.error("Unknown error calling create and next. " + queryId, e);
+                qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error calling create and next. " + queryId);
+            } else {
+                qe = (QueryException) e;
+            }
+            
+            if (queryId != null && !(qe instanceof NoResultsQueryException)) {
+                baseQueryMetric.setError(qe);
+            }
+            
+            throw qe;
         }
     }
     
@@ -506,11 +524,22 @@ public class QueryManagementService implements QueryRequestHandler {
             } else {
                 throw new BadRequestQueryException("Cannot call next on a query that is not running", HttpStatus.SC_BAD_REQUEST + "-1");
             }
-        } catch (QueryException e) {
-            throw e;
         } catch (Exception e) {
-            log.error("Unknown error getting next page for query " + queryId, e);
-            throw new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error getting next page for query " + queryId);
+            // TODO: QueryException results in VoidResponse. This differs from the original RestAPI where an exception was returned in a
+            // DefaultEventQueryResponse.
+            QueryException qe;
+            if (!(e instanceof QueryException)) {
+                log.error("Unknown error getting next page for query " + queryId, e);
+                qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error getting next page for query " + queryId);
+            } else {
+                qe = (QueryException) e;
+            }
+            
+            if (!(qe instanceof NoResultsQueryException)) {
+                baseQueryMetric.setError(qe);
+            }
+            
+            throw qe;
         }
     }
     
@@ -553,12 +582,15 @@ public class QueryManagementService implements QueryRequestHandler {
             String queryLogicName = queryStatus.getQuery().getQueryLogicName();
             QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName(), userRoles);
             
+            // update query metrics
+            baseQueryMetric.setQueryId(queryId);
+            baseQueryMetric.setQueryLogic(queryLogicName);
+            
             // @formatter:off
             final NextCall nextCall = new NextCall.Builder()
                     .setQueryProperties(queryProperties)
                     .setQueryQueueManager(queryQueueManager)
                     .setQueryStorageCache(queryStorageCache)
-                    .setQueryMetricFactory(queryMetricFactory)
                     .setQueryId(queryId)
                     .setQueryLogic(queryLogic)
                     .build();
@@ -571,6 +603,9 @@ public class QueryManagementService implements QueryRequestHandler {
                 
                 // wait for the results to be ready
                 ResultsPage<Object> resultsPage = nextCall.getFuture().get();
+                
+                // update the query metric
+                nextCall.updateQueryMetric(baseQueryMetric);
                 
                 // format the response
                 if (!resultsPage.getResults().isEmpty()) {
@@ -592,9 +627,11 @@ public class QueryManagementService implements QueryRequestHandler {
                 } else {
                     if (nextCall.isCanceled()) {
                         throw new QueryCanceledQueryException(DatawaveErrorCode.QUERY_CANCELED, MessageFormat.format("{0} canceled;", queryId));
-                    } else if (nextCall.getMetric().getLifecycle() == BaseQueryMetric.Lifecycle.NEXTTIMEOUT) {
+                    } else if (baseQueryMetric.getLifecycle() == BaseQueryMetric.Lifecycle.NEXTTIMEOUT) {
                         throw new TimeoutQueryException(DatawaveErrorCode.QUERY_TIMEOUT, MessageFormat.format("{0} timed out.", queryId));
                     } else {
+                        // if there are no results, and we didn't timeout, close the query
+                        close(queryId);
                         throw new NoResultsQueryException(DatawaveErrorCode.NO_QUERY_RESULTS_FOUND, MessageFormat.format("{0}", queryId));
                     }
                 }
@@ -804,8 +841,6 @@ public class QueryManagementService implements QueryRequestHandler {
             // delete the results queue
             queryQueueManager.deleteQueue(queryId);
             
-            // TODO: Delete the tasks as well?
-            
             QueryRequest cancelRequest = QueryRequest.cancel(queryId);
             
             // publish a cancel event to all of the query services
@@ -813,6 +848,19 @@ public class QueryManagementService implements QueryRequestHandler {
             
             // publish a cancel event to the executor pool
             publishExecutorEvent(cancelRequest, queryStatus.getQueryKey().getQueryPool());
+            
+            // update query metrics
+            baseQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.CANCELLED);
+            try {
+                // @formatter:off
+                queryMetricClient.submit(
+                        new QueryMetricClient.Request.Builder()
+                                .withMetric(baseQueryMetric)
+                                .build());
+                // @formatter:on
+            } catch (Exception e) {
+                log.error("Error updateing query metric", e);
+            }
         }
     }
     
@@ -989,15 +1037,21 @@ public class QueryManagementService implements QueryRequestHandler {
             queryQueueManager.deleteQueue(queryId);
         }
         
-        // TODO: If we are running a next call, don't delete tasks, task states, or delete query queues
-        // TODO: If we aren't running a next call, do what we would do for a cancel
-        
-        // TODO: update tasks, task states, and delete query queues
-        // TODO: Tasks should be
-        // TODO: Figure out when to delete the queue for a close. After the last page is returned?
-        
         // publish a close event to the executor pool
         publishExecutorEvent(QueryRequest.close(queryId), queryStatus.getQueryKey().getQueryPool());
+        
+        // update query metrics
+        baseQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.CLOSED);
+        try {
+            // @formatter:off
+            queryMetricClient.submit(
+                    new QueryMetricClient.Request.Builder()
+                            .withMetric(baseQueryMetric)
+                            .build());
+            // @formatter:on
+        } catch (Exception e) {
+            log.error("Error updating query metric", e);
+        }
     }
     
     /**
