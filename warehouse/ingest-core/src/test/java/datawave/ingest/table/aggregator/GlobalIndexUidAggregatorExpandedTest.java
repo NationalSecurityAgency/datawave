@@ -188,7 +188,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build();
 
         Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
-                .withUids()
+                .withUids("uid1", "uid2", "uid3")
                 .withRemovals("uid4", "uid5", "uid6", "uid7", "uid8", "uid9")
                 .build());
 
@@ -248,7 +248,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
 
         Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
                 .withUids()
-                .withRemovals("uid1", "uid2", "uid3", "uid4", "uid5", "uid6", "uid6", "uid7", "uid8")
+                .withRemovals("uid1", "uid2", "uid3", "uid4", "uid5", "uid6", "uid7", "uid8")
                 .build());
 
         testCombinations(asList(value1, value2), expectation);
@@ -435,7 +435,9 @@ public class GlobalIndexUidAggregatorExpandedTest {
         testCombinations(asList(value1, value2, value3), expectation);
     }
 
+    // todo - flip params
     private void testCombinations(List<Value> input, Uid.List expectation) {
+        // todo - consider copying input to avoid test interference
         // There should be nothing in the removal UID list after a Full Major Compaction
         Uid.List expectNoRemovals = Uid.List.newBuilder().mergeFrom(expectation).clearREMOVEDUID().build();
 
@@ -464,16 +466,20 @@ public class GlobalIndexUidAggregatorExpandedTest {
     private void verify(String label, Uid.List expectation, Uid.List result) {
         assertEquals("getIGNORE differs - " + label, expectation.getIGNORE(), result.getIGNORE());
 
-        for (String uid: expectation.getUIDList()) {
-            assertTrue("UID list missing " + uid + " - " + label, result.getUIDList().contains(uid));
+        for (String expectedUid: expectation.getUIDList()) {
+            assertTrue("UID list missing " + expectedUid + " - " + label, result.getUIDList().contains(expectedUid));
         }
-        assertEquals("getCount differs - " + label + " " + result.getUIDList(), expectation.getCOUNT(), result.getCOUNT());
+        assertEquals("UID count differs - " + label + " " + result.getUIDList(), expectation.getCOUNT(), result.getCOUNT());
         assertEquals("UID list size differs - " + label, expectation.getUIDList().size(), result.getUIDList().size());
-
-        for (String uid: expectation.getREMOVEDUIDList()) {
-            assertTrue("Remove UID list missing " + uid + " - " + label, result.getREMOVEDUIDList().contains(uid));
+        // The count and UID List sizes should match unless seenIgnore = true
+        if (!expectation.getIGNORE()) {
+            assertEquals("Invalid test state: expected Uid.List size and getCount differ - " + label, expectation.getCOUNT(), expectation.getUIDList().size());
         }
-        assertEquals("get Removed count differs - " + label, expectation.getREMOVEDUIDCount(), result.getREMOVEDUIDCount());
+
+        for (String expectedRemovalUid: expectation.getREMOVEDUIDList()) {
+            assertTrue("Remove UID list missing " + expectedRemovalUid + " - " + label, result.getREMOVEDUIDList().contains(expectedRemovalUid));
+        }
+        assertEquals("Removed count differs - " + label, expectation.getREMOVEDUIDCount(), result.getREMOVEDUIDCount());
         assertEquals("Removed UID list size differs - " + label, expectation.getREMOVEDUIDList().size(), result.getREMOVEDUIDList().size());
     }
 }
