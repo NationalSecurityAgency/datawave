@@ -58,7 +58,7 @@ public class MonitorTask implements Callable<Void> {
         return null;
     }
     
-    // TODO: Check for the following conditions
+    // Check for the following conditions
     // 1) Is query progress idle? If so, poke the query
     // 2) Is the user idle? If so, close the query
     // 3) Are there any other conditions that we should check for?

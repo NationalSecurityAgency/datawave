@@ -82,8 +82,6 @@ import static datawave.webservice.query.QueryImpl.DN_LIST;
 import static datawave.webservice.query.QueryImpl.QUERY_ID;
 import static datawave.webservice.query.QueryImpl.USER_DN;
 
-// TODO: Make sure close is called automatically after a query finishes.  I think this is more of a query metrics thing than anything.
-
 @Service
 public class QueryManagementService implements QueryRequestHandler {
     private final Logger log = LoggerFactory.getLogger(this.getClass());

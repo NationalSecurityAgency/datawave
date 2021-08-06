@@ -234,7 +234,6 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             }
         }
         
-        // TODO: We need to stop relying on query metrics for these values
         // 7) have we reached the "max work" limit? (i.e. next count + seek count)
         if (!finished && logicMaxWork > 0 && (queryStatus.getNextCount() + queryStatus.getSeekCount()) >= logicMaxWork) {
             log.info("Query [{}]: logic max work has been reached, aborting next call", queryId);

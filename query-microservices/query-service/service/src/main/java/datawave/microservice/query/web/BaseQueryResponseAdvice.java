@@ -11,7 +11,6 @@ import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
-// TODO: JWO: Should this be in the API or in a starter?
 /**
  * A {@link ControllerAdvice} that implements {@link ResponseBodyAdvice} in order to allow access to {@link BaseQueryResponse} objects before they are written
  * out to the response body. This is primarily used to write the page number, is last page, and partial results headers for the response.

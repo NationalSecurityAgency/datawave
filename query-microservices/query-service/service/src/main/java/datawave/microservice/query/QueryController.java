@@ -163,7 +163,6 @@ public class QueryController {
         return queryManagementService.list(queryId, null, currentUser);
     }
     
-    // TODO: Update this to cancel all queries on a per-pool basis?
     @Timed(name = "dw.query.adminCancelAll", absolute = true)
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "adminCancelAll", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
@@ -172,7 +171,6 @@ public class QueryController {
         return queryManagementService.adminCancelAll(currentUser);
     }
     
-    // TODO: Update this to close all queries on a per-pool basis?
     @Timed(name = "dw.query.adminCloseAll", absolute = true)
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "adminCloseAll", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
@@ -181,7 +179,6 @@ public class QueryController {
         return queryManagementService.adminCloseAll(currentUser);
     }
     
-    // TODO: Update this to remove all queries on a per-pool basis?
     @Timed(name = "dw.query.adminRemoveAll", absolute = true)
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "adminRemoveAll", method = {RequestMethod.DELETE}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",

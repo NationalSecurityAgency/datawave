@@ -102,6 +102,7 @@ datawave:
       "[datawave.data.type.DateType]": "datawave.data.type.RawDateType"
 
   query:
+    metric.client.enabled: false
     parser:
       skipTokenizeUnfieldedFields:
         - "DOMETA"
