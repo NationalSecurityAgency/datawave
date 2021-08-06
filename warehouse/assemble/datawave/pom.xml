@@ -451,9 +451,6 @@
                                 <defineStatement>debug_package %{nil}</defineStatement>
                                 <defineStatement>__os_install_post %{nil}</defineStatement>
                             </defineStatements>
-                            <postinstallScriptlet>
-                                <script>/opt/datawave-ingest/current/bin/system/install.sh -force</script>
-                            </postinstallScriptlet>
                             <cleanScriptlet>
                                 <script>rm -rf $RPM_BUILD_ROOT</script>
                             </cleanScriptlet>
