@@ -148,12 +148,14 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
             try {
                 Uid.List v = Uid.List.parseFrom(value.get());
                 
-                long delta = v.getCOUNT();
-                
                 // For best performance, don't attempt to accumulate any individual UIDs (or removals)
                 // if this PB has its ignore flag set or we've seen any other PB with the ignored flag set.
-                if (v.getIGNORE() || seenIgnore) {
+                if (seenIgnore) {
+                    // seen ignore already true
+                    log.debug("SeenIgnore is true. Skipping collections");
+                } else if (v.getIGNORE()) {
                     seenIgnore = true;
+                    count = this.uids.size() - this.uidsToRemove.size();
                     log.debug("SeenIgnore is true. Skipping collections");
                 } else {
                     // Save a starting count in the event that we go over the max UID count while
@@ -162,7 +164,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     // we want to count UIDs in the internal set since that will take care of de-duping
                     // any duplicate UIDs which would be over counted if we just used the protocol buffer
                     // count.
-                    long prevCount = uids.size();
+                    long prevCount = uids.size() - uidsToRemove.size();
                     
                     // Remove any UIDs in the REMOVEDUID list.
                     for (String uid : v.getREMOVEDUIDList()) {
@@ -180,8 +182,8 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                         // output protocol buffer since the remove have already been applied.
                         if (timestampsIgnored) {
                             uids.remove(uid);
-                            if (propogate)
-                                uidsToRemove.add(uid);
+                            // Add the uid to remove for later, in case a subsequent PB uid list contains it
+                            uidsToRemove.add(uid);
                         } else if (propogate && !uids.contains(uid)) {
                             uidsToRemove.add(uid);
                         }
@@ -205,7 +207,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                                 // then ignore any work we've done integrating this PB so far
                                 // and instead treat it as though its ignore flag had been set.
                                 // Set the count to the number of collected UIDs before we went
-                                // over the max, and then we'll add this PBs delta below.
+                                // over the max, and then we'll add this PBs count below.
                                 seenIgnore = true;
                                 count = prevCount;
                                 uids.clear();
@@ -220,7 +222,9 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                 // need to just assume the count in the incoming protocol buffer is correct and
                 // use it.
                 if (seenIgnore) {
-                    count += delta;
+//                    count = this.uids.size() - this.uidsToRemove.size();
+                    count += v.getCOUNT();
+                    count -= v.getREMOVEDUIDCount();
                 }
                 
             } catch (InvalidProtocolBufferException e) {

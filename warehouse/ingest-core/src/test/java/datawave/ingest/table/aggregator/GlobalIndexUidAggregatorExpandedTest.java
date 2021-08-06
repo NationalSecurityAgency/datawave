@@ -409,6 +409,9 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withCountOnly(5)
                 .build());
 
+        // This currently fails in reverse mode because of the inconsistency in how remove uids are treated
+        // for seenIgnore = true, the removal uid results in a deduction of the count
+        // for seenIgnore = false, the removal only impacts the count if the removal uid is in the uid list
         testCombinations(expectation, asList(value1, value2, value3));
     }
 
@@ -435,10 +438,9 @@ public class GlobalIndexUidAggregatorExpandedTest {
         testCombinations(expectation, asList(value1, value2, value3));
     }
 
-    // todo - flip params
     private void testCombinations(Uid.List expectation, List<Value> input) {
-        // todo - consider copying input to avoid test interference
         // There should be nothing in the removal UID list after a Full Major Compaction
+
         Uid.List expectNoRemovals = Uid.List.newBuilder().mergeFrom(expectation).clearREMOVEDUID().build();
 
         verify("Forward, Partial Major", expectation, testPartialCompaction(input));
