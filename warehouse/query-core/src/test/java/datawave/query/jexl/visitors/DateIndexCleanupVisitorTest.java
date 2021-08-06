@@ -43,6 +43,13 @@ public class DateIndexCleanupVisitorTest {
     }
     
     @Test
+    public void testNegatedHint() throws ParseException {
+        String original = "(FOO == 'bar' && (!(filter:betweenDates(SOME_DATE, 'beginDate', 'endDate')) || !((SHARDS_AND_DAYS = '1111,2222'))))";
+        String expected = "(FOO == 'bar' && (!(filter:betweenDates(SOME_DATE, 'beginDate', 'endDate'))))";
+        testCleanup(original, expected);
+    }
+    
+    @Test
     public void testOnlyHint() throws ParseException {
         String original = "(" + SHARD_DAY_HINT + " = 'hello,world')";
         String expected = "";
