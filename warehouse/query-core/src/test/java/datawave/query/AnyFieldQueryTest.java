@@ -6,6 +6,7 @@ import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.ParallelIndexExpansion;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.rules.RegexPushdownTransformRule;
 import datawave.query.testframework.AbstractFunctionalQuery;
@@ -26,6 +27,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.logging.Level;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
@@ -378,6 +380,37 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
             String anyCont = this.dataManager.convertAnyField(contPhrase);
             anyQuery = anyCity + AND_OP + anyState + AND_OP + anyCont;
             runTest(query, anyQuery);
+        }
+    }
+    
+    @Test
+    public void testAndWithRegex() throws Exception {
+        log.info("------  testAndAnd  ------");
+        String state = "misSIssippi";
+        String cont = "noRth amErIca";
+        for (final TestCities city : TestCities.values()) {
+            String cityPhrase = EQ_OP + "'" + city.name() + "'";
+            String statePhrase = EQ_OP + "'" + state + "'";
+            String contPhrase = EQ_OP + "'" + cont + "'";
+            
+            final String adjustedName = city.name().substring(0, Math.min(city.name().length() - 2, 2));
+            
+            // Test the plan with all expansions
+            String query = CityField.CITY.name() + RE_OP + "'" + adjustedName + ".*' " + AND_OP + " " + CityField.STATE.name() + EQ_OP + "'" + state + "'";
+            
+            String resultingQuery = CityField.CITY.name() + "_" + CityField.STATE.name() + EQ_OP + "'" + city.name() + CompositeIngest.DEFAULT_SEPARATOR
+                            + state.toLowerCase() + "'";
+            
+            String plan = getPlan(query, true, true);
+            assertPlanEquals(resultingQuery, plan);
+            
+            resultingQuery = CityField.CITY.name() + RE_OP + "'" + adjustedName + ".*' " + AND_OP + " " + CityField.STATE.name() + EQ_OP + "'"
+                            + state.toLowerCase() + "'";
+            
+            // Test the plan sans value expansion
+            plan = getPlan(query, true, false);
+            assertPlanEquals(resultingQuery, plan);
+            
         }
     }
     

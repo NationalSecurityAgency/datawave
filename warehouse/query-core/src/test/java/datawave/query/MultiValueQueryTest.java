@@ -21,6 +21,7 @@ import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.GT_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
+import static datawave.query.testframework.RawDataManager.RE_OP;
 
 /**
  * Performs query test for multivalue fields.
@@ -66,6 +67,19 @@ public class MultiValueQueryTest extends AbstractFunctionalQuery {
                 String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + CityField.STATE.name() + EQ_OP + st;
                 runTest(query, query);
                 return;
+            }
+        }
+    }
+    
+    @Test
+    public void testCompositeRegex() throws Exception {
+        log.debug("------  testCompositeRegex  ------");
+        
+        for (final TestCities city : TestCities.values()) {
+            final String adjustedName = city.name().substring(0, Math.min(city.name().length() - 2, 2));
+            for (final String st : TestStates) {
+                String query = CityField.CITY.name() + RE_OP + "'" + adjustedName + ".*'" + AND_OP + CityField.STATE.name() + EQ_OP + st;
+                runTest(query, query);
             }
         }
     }

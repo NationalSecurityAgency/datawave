@@ -227,7 +227,6 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             // Get all of the indexed or normalized dataTypes for the field name
             Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(fieldName));
             dataTypes.addAll(config.getNormalizedFieldsDatatypes().get(fieldName));
-            
             // Catch the case of the user entering FIELD == null
             if (!dataTypes.isEmpty() && null != literal) {
                 try {
