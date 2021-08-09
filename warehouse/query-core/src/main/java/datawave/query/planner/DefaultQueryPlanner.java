@@ -91,6 +91,7 @@ import datawave.query.planner.rules.NodeTransformVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
@@ -505,7 +506,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFieldsAsString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
-        addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFieldsAsString(), true);
+        addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), true);
@@ -1039,7 +1040,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             
             // Fields in the data dictionary is always uppercase. Convert the unique fields to uppercase
             // so the comparisons are case insensitive
-            List<String> fields = config.getUniqueFields().stream().map(field -> field.toUpperCase()).collect(Collectors.toList());
+            List<String> fields = config.getUniqueFields().getFields().stream().map(String::toUpperCase).collect(Collectors.toList());
             // for the unique fields we need to also look for any model aliases (forward or reverse) and fields generated post evaluation (e.g. HIT_TERM)
             // this is because unique fields operate on the fields as returned to the user. We essentially leave all variants of the fields
             // in the unique field list to ensure we catch everything
@@ -1050,7 +1051,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             uniqueFields.add(JexlEvaluation.HIT_TERM_FIELD);
             if (!uniqueFields.containsAll(fields)) {
-                Set<String> missingFields = Sets.newHashSet(config.getUniqueFields());
+                Set<String> missingFields = Sets.newHashSet(config.getUniqueFields().getFields());
                 missingFields.removeAll(uniqueFields);
                 nonexistentFields.addAll(missingFields);
             }
@@ -1442,7 +1443,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         inverseReverseModel.putAll(queryModel.getForwardQueryMapping());
         Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getBlacklistedFields(), limitFields = config.getLimitFields(), groupFields = config
-                        .getGroupFields(), uniqueFields = config.getUniqueFields();
+                        .getGroupFields();
+        UniqueFields uniqueFields = config.getUniqueFields();
         
         if (projectFields != null && !projectFields.isEmpty()) {
             projectFields = queryModel.remapParameter(projectFields, inverseReverseModel);
@@ -1463,11 +1465,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
         
         if (uniqueFields != null && !uniqueFields.isEmpty()) {
-            Collection<String> remappedUniqueFields = queryModel.remapParameter(uniqueFields, inverseReverseModel);
+            uniqueFields.remapFields(inverseReverseModel);
             if (log.isTraceEnabled()) {
-                log.trace("Updated unique set using query model to: " + remappedUniqueFields);
+                log.trace("Updated unique set using query model to: " + uniqueFields.getFields());
             }
-            config.setUniqueFields(Sets.newHashSet(remappedUniqueFields));
+            config.setUniqueFields(uniqueFields);
         }
         
         if (config.getBlacklistedFields() != null && !config.getBlacklistedFields().isEmpty()) {
