@@ -147,7 +147,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
             // Collect the values, which are serialized Uid.List objects
             try {
                 Uid.List v = Uid.List.parseFrom(value.get());
-                
+
                 // For best performance, don't attempt to accumulate any individual UIDs (or removals)
                 // if this PB has its ignore flag set or we've seen any other PB with the ignored flag set.
                 if (seenIgnore) {
