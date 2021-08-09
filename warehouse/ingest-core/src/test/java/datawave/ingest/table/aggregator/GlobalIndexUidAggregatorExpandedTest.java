@@ -396,10 +396,12 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withCountOnly(3)
                 .build();
 
+        // while count-only, just add 2 to count = 5
         Value value2 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2")
                 .build();
 
+        // while count-only, add one for uid4 and subtract for uid2 = 5
         Value value3 = UidTestBuilder.newBuilder()
                 .withUids("uid4")
                 .withRemovals("uid2") // happens to match prior value's uid2
@@ -417,16 +419,21 @@ public class GlobalIndexUidAggregatorExpandedTest {
 
     @Test
     public void seenIgnoreAddsTwoValuesReverse() {
+        // uid2 from value2 will be removed because of the removal UID from value1
         agg = new GlobalIndexUidAggregator(2);
+
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid4")
-                .withRemovals("uid2") // happens to match prior value's uid2
+                .withRemovals("uid2")
                 .build();
 
+        // after value1 and value2 are combined, uids=uid1,uid4 (count of 2), uid2 is still in the remove list
         Value value2 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2")
                 .build();
 
+        // count-only encountered, so current removal count subtracted from uid count 2-1 = 1
+        // add three to it, so count is 4
         Value value3 = UidTestBuilder.newBuilder()
                 .withCountOnly(3)
                 .build();
@@ -690,7 +697,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testFloorOfZero() { // 47 - adjusted
+    public void testFloorOfZero() {
         agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1")
@@ -710,7 +717,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void floorOfZeroVariant() { // 49
+    public void floorOfZeroVariant() {
         agg = new KeepCountOnlyUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(1)
@@ -730,7 +737,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void countOnlyReduced() { // 48
+    public void countOnlyReduced() {
         agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(30)
@@ -750,7 +757,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void preserveRemovals() { // 50
+    public void preserveRemovals() {
         agg = new KeepCountOnlyUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2")
@@ -770,7 +777,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void preserveTwoRemovalLists() { // 51
+    public void preserveTwoRemovalLists() {
         agg = new KeepCountOnlyUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids()
@@ -791,12 +798,15 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testAddToNowDefunctNegativeCount() { // will differ forward and reverse
+    public void testAddToNowDefunctNegativeCount() {
         agg = new GlobalIndexUidAggregator(10);
+
+        // The -1 will be changed to zero as negative numbers are the legacy format.
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(-1)
                 .build();
 
+        // Combine zero with a named uid brings the count to one.
         Value value2 = UidTestBuilder.newBuilder()
                 .withUids("uid1")
                 .build();
@@ -809,12 +819,15 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testAddToNowDefunctNegativeCountReverse() { // will differ forward and reverse
+    public void testAddToNowDefunctNegativeCountReverse() {
         agg = new GlobalIndexUidAggregator(10);
+
+        // Combine zero with a named uid brings the count to one.
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1")
                 .build();
 
+        // The -1 will be changed to zero as negative numbers are the legacy format.
         Value value2 = UidTestBuilder.newBuilder()
                 .withCountOnly(-1)
                 .build();
