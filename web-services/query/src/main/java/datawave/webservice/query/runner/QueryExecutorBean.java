@@ -32,6 +32,7 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
+import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryImpl.Parameter;
@@ -488,7 +489,16 @@ public class QueryExecutorBean implements QueryExecutor {
             Arrays.sort(dns);
             qd.dnList = Arrays.asList(dns);
             qd.proxyServers = dp.getProxyServers();
+            
+            // Verify that the calling principal has access to the query logic.
+            if (!qd.logic.containsDNWithAccess(qd.dnList)) {
+                UnauthorizedQueryException qe = new UnauthorizedQueryException("None of the DNs used have access to this query logic: " + qd.dnList, 401);
+                GenericResponse<String> response = new GenericResponse<>();
+                response.addException(qe);
+                throw new UnauthorizedException(qe, response);
+            }
         }
+        
         log.trace(qd.userid + " has authorizations " + ((qd.p instanceof DatawavePrincipal) ? ((DatawavePrincipal) qd.p).getAuthorizations() : ""));
         
         // always check against the max
@@ -550,7 +560,8 @@ public class QueryExecutorBean implements QueryExecutor {
         Span defineSpan = null;
         RunningQuery rq;
         try {
-            MultivaluedMap<String,String> optionalQueryParameters = qp.getUnknownParameters(queryParameters);
+            MultivaluedMap<String,String> optionalQueryParameters = new MultivaluedMapImpl<>();
+            optionalQueryParameters.putAll(qp.getUnknownParameters(queryParameters));
             Query q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
             response.setResult(q.getId().toString());
             
@@ -651,7 +662,8 @@ public class QueryExecutorBean implements QueryExecutor {
             
             AuditType auditType = qd.logic.getAuditType(null);
             try {
-                MultivaluedMap<String,String> optionalQueryParameters = qp.getUnknownParameters(queryParameters);
+                MultivaluedMap<String,String> optionalQueryParameters = new MultivaluedMapImpl<>();
+                optionalQueryParameters.putAll(qp.getUnknownParameters(queryParameters));
                 q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
                 auditType = qd.logic.getAuditType(q);
             } finally {
@@ -833,7 +845,8 @@ public class QueryExecutorBean implements QueryExecutor {
             
             AuditType auditType = qd.logic.getAuditType(null);
             try {
-                MultivaluedMap<String,String> optionalQueryParameters = qp.getUnknownParameters(queryParameters);
+                MultivaluedMap<String,String> optionalQueryParameters = new MultivaluedMapImpl<>();
+                optionalQueryParameters.putAll(qp.getUnknownParameters(queryParameters));
                 q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
                 auditType = qd.logic.getAuditType(q);
             } finally {
@@ -955,7 +968,8 @@ public class QueryExecutorBean implements QueryExecutor {
         if (predictor != null) {
             try {
                 qp.setPersistenceMode(QueryPersistence.TRANSIENT);
-                MultivaluedMap<String,String> optionalQueryParameters = qp.getUnknownParameters(queryParameters);
+                MultivaluedMap<String,String> optionalQueryParameters = new MultivaluedMapImpl<>();
+                optionalQueryParameters.putAll(qp.getUnknownParameters(queryParameters));
                 Query q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
                 
                 BaseQueryMetric metric = metricFactory.createMetric();
@@ -1191,7 +1205,8 @@ public class QueryExecutorBean implements QueryExecutor {
                 query.closeConnection(connectionFactory);
             } else {
                 AuditType auditType = query.getLogic().getAuditType(query.getSettings());
-                MultivaluedMap<String,String> queryParameters = query.getSettings().toMap();
+                MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+                queryParameters.putAll(query.getSettings().toMap());
                 
                 queryParameters.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
                 queryParameters.putSingle(PrivateAuditConstants.LOGIC_CLASS, query.getLogic().getLogicName());
@@ -2701,7 +2716,8 @@ public class QueryExecutorBean implements QueryExecutor {
                     }
                 }
             }
-            MultivaluedMap<String,String> newSettings = q.toMap();
+            MultivaluedMap<String,String> newSettings = new MultivaluedMapImpl<>();
+            newSettings.putAll(q.toMap());
             newSettings.putSingle(QueryParameters.QUERY_PERSISTENCE, persistence.name());
             return createQuery(q.getQueryLogicName(), newSettings);
         } catch (DatawaveWebApplicationException e) {
@@ -2840,7 +2856,8 @@ public class QueryExecutorBean implements QueryExecutor {
             AuditType auditType = runningQuery.getLogic().getAuditType(runningQuery.getSettings());
             if (!auditType.equals(AuditType.NONE)) {
                 try {
-                    MultivaluedMap<String,String> queryParameters = duplicate.toMap();
+                    MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+                    queryParameters.putAll(duplicate.toMap());
                     // if the user didn't set an audit id, use the query id
                     if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
                         queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());

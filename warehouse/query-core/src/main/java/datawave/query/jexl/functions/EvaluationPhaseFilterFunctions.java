@@ -57,25 +57,27 @@ public class EvaluationPhaseFilterFunctions {
     private static int getSizeOf(Iterable<?> iterable) {
         Map<String,Integer> countMap = Maps.newHashMap();
         int count = 0;
-        // additional datatypes may have been added to this field to assist with evaluation and for use as
-        // a 'marker' for some other condition. We care only about how many were in the original so
-        // bin them all up to count what was really there in the beginning
-        for (Object o : iterable) {
-            if (o instanceof ValueTuple) {
-                ValueTuple valueTuple = (ValueTuple) o;
-                if (valueTuple.second() instanceof Type<?>) {
-                    String typeName = valueTuple.second().getClass().toString();
-                    if (countMap.containsKey(typeName)) {
-                        countMap.put(typeName, countMap.get(typeName) + 1);
+        if (iterable != null) {
+            // additional datatypes may have been added to this field to assist with evaluation and for use as
+            // a 'marker' for some other condition. We care only about how many were in the original so
+            // bin them all up to count what was really there in the beginning
+            for (Object o : iterable) {
+                if (o instanceof ValueTuple) {
+                    ValueTuple valueTuple = (ValueTuple) o;
+                    if (valueTuple.second() instanceof Type<?>) {
+                        String typeName = valueTuple.second().getClass().toString();
+                        if (countMap.containsKey(typeName)) {
+                            countMap.put(typeName, countMap.get(typeName) + 1);
+                        } else {
+                            countMap.put(typeName, 1);
+                        }
+                        count = countMap.get(typeName);
                     } else {
-                        countMap.put(typeName, 1);
+                        count++;
                     }
-                    count = countMap.get(typeName);
                 } else {
                     count++;
                 }
-            } else {
-                count++;
             }
         }
         return count;
@@ -234,35 +236,33 @@ public class EvaluationPhaseFilterFunctions {
         // Important to note that a regex of ".*" still requires
         // a value to be present. In other words, searching for FIELD:'.*'
         // requires a value for FIELD to exist in the document to match
-        if (null == values) {
-            return matches;
-        }
-        
-        final Pattern pattern = JexlPatternCache.getPattern(regex);
-        final boolean caseSensitiveExpression = regex.matches(CASE_SENSITIVE_EXPRESSION);
-        
-        Matcher m = null;
-        for (Object value : values) {
-            if (null == value)
-                continue;
+        if (values != null) {
+            final Pattern pattern = JexlPatternCache.getPattern(regex);
+            final boolean caseSensitiveExpression = regex.matches(CASE_SENSITIVE_EXPRESSION);
             
-            if (null == m) {
-                m = pattern.matcher(ValueTuple.getStringValue(value));
-            } else {
-                m.reset(ValueTuple.getStringValue(value));
-            }
-            
-            if (m.matches()) {
-                matches = FunctionalSet.singleton(getHitTerm(value));
-                return matches;
-            }
-            
-            if (!caseSensitiveExpression) {
-                m.reset(ValueTuple.getNormalizedStringValue(value));
+            Matcher m = null;
+            for (Object value : values) {
+                if (null == value)
+                    continue;
+                
+                if (null == m) {
+                    m = pattern.matcher(ValueTuple.getStringValue(value));
+                } else {
+                    m.reset(ValueTuple.getStringValue(value));
+                }
                 
                 if (m.matches()) {
                     matches = FunctionalSet.singleton(getHitTerm(value));
                     return matches;
+                }
+                
+                if (!caseSensitiveExpression) {
+                    m.reset(ValueTuple.getNormalizedStringValue(value));
+                    
+                    if (m.matches()) {
+                        matches = FunctionalSet.singleton(getHitTerm(value));
+                        return matches;
+                    }
                 }
             }
         }
@@ -277,35 +277,33 @@ public class EvaluationPhaseFilterFunctions {
         // Important to note that a regex of ".*" still requires
         // a value to be present. In other words, searching for FIELD:'.*'
         // requires a value for FIELD to exist in the document to match
-        if (null == values) {
-            return FunctionalSet.unmodifiableSet(matches);
-        }
-        
-        final Pattern pattern = JexlPatternCache.getPattern(regex);
-        final boolean caseSensitiveExpression = regex.matches(CASE_SENSITIVE_EXPRESSION);
-        
-        Matcher m = null;
-        for (Object value : values) {
-            if (null == value)
-                continue;
+        if (values != null) {
+            final Pattern pattern = JexlPatternCache.getPattern(regex);
+            final boolean caseSensitiveExpression = regex.matches(CASE_SENSITIVE_EXPRESSION);
             
-            if (null == m) {
-                m = pattern.matcher(ValueTuple.getStringValue(value));
-            } else {
-                m.reset(ValueTuple.getStringValue(value));
-            }
-            
-            if (m.matches()) {
-                matches.add(getHitTerm(value));
-            } else if (pattern.matcher(ValueTuple.getNormalizedStringValue(value)).matches()) {
-                matches.add(getHitTerm(value));
-            }
-            
-            if (!caseSensitiveExpression) {
-                m.reset(ValueTuple.getNormalizedStringValue(value));
+            Matcher m = null;
+            for (Object value : values) {
+                if (null == value)
+                    continue;
+                
+                if (null == m) {
+                    m = pattern.matcher(ValueTuple.getStringValue(value));
+                } else {
+                    m.reset(ValueTuple.getStringValue(value));
+                }
                 
                 if (m.matches()) {
                     matches.add(getHitTerm(value));
+                } else if (pattern.matcher(ValueTuple.getNormalizedStringValue(value)).matches()) {
+                    matches.add(getHitTerm(value));
+                }
+                
+                if (!caseSensitiveExpression) {
+                    m.reset(ValueTuple.getNormalizedStringValue(value));
+                    
+                    if (m.matches()) {
+                        matches.add(getHitTerm(value));
+                    }
                 }
             }
         }
@@ -328,17 +326,15 @@ public class EvaluationPhaseFilterFunctions {
     // Evaluate text. Note this is being done against the un-normalized value.
     public static FunctionalSet<ValueTuple> includeText(Iterable<?> values, String valueToMatch) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        if (null == values) {
-            return matches;
-        }
-        
-        for (Object value : values) {
-            if (null == value)
-                continue;
-            
-            if (ValueTuple.getStringValue(value).equals(valueToMatch)) {
-                matches = FunctionalSet.singleton(getHitTerm(value));
-                return matches;
+        if (values != null) {
+            for (Object value : values) {
+                if (null == value)
+                    continue;
+                
+                if (ValueTuple.getStringValue(value).equals(valueToMatch)) {
+                    matches = FunctionalSet.singleton(getHitTerm(value));
+                    return matches;
+                }
             }
         }
         return matches;
@@ -356,14 +352,16 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> afterLoadDate(Object fieldValue, String start) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), getTime(start, true), Long.MAX_VALUE)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), getTime(start, true), Long.MAX_VALUE)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + start + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + start + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -380,18 +378,20 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> afterLoadDate(Iterable<?> fieldValue, String start) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            for (Object o : fieldValue) {
-                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), getTime(start, true), Long.MAX_VALUE)) {
-                    matches = FunctionalSet.singleton(getHitTerm(o));
-                    break;
+        if (fieldValue != null) {
+            try {
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), getTime(start, true), Long.MAX_VALUE)) {
+                        matches = FunctionalSet.singleton(getHitTerm(o));
+                        break;
+                    }
+                    break; // really?
                 }
-                break; // really?
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + start + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + start + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -410,16 +410,18 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> afterLoadDate(Object fieldValue, String start, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            int granularity = getGranularity(rangePattern);
-            if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                int granularity = getGranularity(rangePattern);
+                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + start + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + start + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -438,19 +440,21 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> afterLoadDate(Iterable<?> fieldValue, String start, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            int granularity = getGranularity(rangePattern);
-            for (Object o : fieldValue) {
-                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
-                    matches = FunctionalSet.singleton(getHitTerm(o));
-                    break;
+        if (fieldValue != null) {
+            try {
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                int granularity = getGranularity(rangePattern);
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
+                        matches = FunctionalSet.singleton(getHitTerm(o));
+                        break;
+                    }
                 }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + start + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + start + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -467,14 +471,16 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> beforeLoadDate(Object fieldValue, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), 0, getTime(end) - 1)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), 0, getTime(end) - 1)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + end + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + end + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -491,17 +497,19 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> beforeLoadDate(Iterable<?> fieldValue, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            for (Object o : fieldValue) {
-                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), 0, getTime(end) - 1)) {
-                    matches = FunctionalSet.singleton(getHitTerm(o));
-                    break;
+        if (fieldValue != null) {
+            try {
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), 0, getTime(end) - 1)) {
+                        matches = FunctionalSet.singleton(getHitTerm(o));
+                        break;
+                    }
                 }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + end + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + end + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -520,15 +528,17 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> beforeLoadDate(Object fieldValue, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), 0, getTime(end, rangeFormat) - 1)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), 0, getTime(end, rangeFormat) - 1)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + end + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + end + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -547,18 +557,20 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> beforeLoadDate(Iterable<?> fieldValue, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            for (Object o : fieldValue) {
-                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), 0, getTime(end, rangeFormat) - 1)) {
-                    matches = FunctionalSet.singleton(getHitTerm(o));
-                    break;
+        if (fieldValue != null) {
+            try {
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), 0, getTime(end, rangeFormat) - 1)) {
+                        matches = FunctionalSet.singleton(getHitTerm(o));
+                        break;
+                    }
                 }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + end + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + end + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -577,14 +589,16 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> betweenLoadDates(Object fieldValue, String start, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), getTime(start), getTime(end, true) - 1)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), getTime(start), getTime(end, true) - 1)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + start + " or " + end + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + start + " or " + end + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -603,18 +617,20 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> betweenLoadDates(Iterable<?> fieldValue, String start, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            long lStart = getTime(start);
-            long lEnd = getTime(end, true) - 1;
-            for (Object o : fieldValue) {
-                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), lStart, lEnd)) {
-                    matches = FunctionalSet.singleton(getHitTerm(o));
+        if (fieldValue != null) {
+            try {
+                long lStart = getTime(start);
+                long lEnd = getTime(end, true) - 1;
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), lStart, lEnd)) {
+                        matches = FunctionalSet.singleton(getHitTerm(o));
+                    }
                 }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + start + " or " + end + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + start + " or " + end + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -635,17 +651,19 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> betweenLoadDates(Object fieldValue, String start, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            int granularity = getGranularity(rangePattern);
-            if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), getTime(start, rangeFormat),
-                            getNextTime(end, rangeFormat, granularity) - 1)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                int granularity = getGranularity(rangePattern);
+                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(fieldValue)), getTime(start, rangeFormat),
+                                getNextTime(end, rangeFormat, granularity) - 1)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + start + " or " + end + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + start + " or " + end + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -666,21 +684,23 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> betweenLoadDates(Iterable<?> fieldValue, String start, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            int granularity = getGranularity(rangePattern);
-            long lStart = getTime(start, rangeFormat);
-            long lEnd = getNextTime(end, rangeFormat, granularity) - 1;
-            for (Object o : fieldValue) {
-                if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), lStart, lEnd)) {
-                    matches = FunctionalSet.singleton(getHitTerm(o));
-                    break;
+        if (fieldValue != null) {
+            try {
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                int granularity = getGranularity(rangePattern);
+                long lStart = getTime(start, rangeFormat);
+                long lEnd = getNextTime(end, rangeFormat, granularity) - 1;
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(Long.parseLong(ValueTuple.getStringValue(o)), lStart, lEnd)) {
+                        matches = FunctionalSet.singleton(getHitTerm(o));
+                        break;
+                    }
                 }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + start + " or " + end + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + start + " or " + end + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -697,12 +717,14 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> afterDate(Object fieldValue, String start) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            if (betweenInclusive(getTime(fieldValue), getTime(start, true), Long.MAX_VALUE)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                if (betweenInclusive(getTime(fieldValue), getTime(start, true), Long.MAX_VALUE)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
         }
         return matches;
     }
@@ -719,15 +741,17 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> afterDate(Iterable<?> fieldValue, String start) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            for (Object o : fieldValue) {
-                if (betweenInclusive(getTime(o), getTime(start, true), Long.MAX_VALUE)) {
-                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
-                    break;
+        if (fieldValue != null) {
+            try {
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(getTime(o), getTime(start, true), Long.MAX_VALUE)) {
+                        matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                        break;
+                    }
                 }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
         }
         return matches;
     }
@@ -746,14 +770,16 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> afterDate(Object fieldValue, String start, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            int granularity = getGranularity(rangePattern);
-            if (betweenInclusive(getTime(fieldValue), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                int granularity = getGranularity(rangePattern);
+                if (betweenInclusive(getTime(fieldValue), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
         }
         return matches;
     }
@@ -772,20 +798,21 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> afterDate(Iterable<?> fieldValue, String start, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            int granularity = getGranularity(rangePattern);
-            for (Object o : fieldValue) {
-                if (betweenInclusive(getTime(o), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
-                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
-                    break;
+        if (fieldValue != null) {
+            try {
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                int granularity = getGranularity(rangePattern);
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(getTime(o), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
+                        matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                        break;
+                    }
                 }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
             }
-            return matches;
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-            return matches;
         }
+        return matches;
     }
     
     /**
@@ -804,19 +831,21 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> afterDate(Object fieldValue, String pattern, String start, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat format = newSimpleDateFormat(pattern);
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            int granularity = getGranularity(rangePattern);
-            long lStart = getNextTime(start, rangeFormat, granularity);
-            long lEnd = Long.MAX_VALUE;
-            if (betweenInclusive(getTime(fieldValue, format), lStart, lEnd)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                DateFormat format = newSimpleDateFormat(pattern);
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                int granularity = getGranularity(rangePattern);
+                long lStart = getNextTime(start, rangeFormat, granularity);
+                long lEnd = Long.MAX_VALUE;
+                if (betweenInclusive(getTime(fieldValue, format), lStart, lEnd)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + start + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + start + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -837,22 +866,24 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> afterDate(Iterable<?> fieldValue, String pattern, String start, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat format = newSimpleDateFormat(pattern);
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            int granularity = getGranularity(rangePattern);
-            long lStart = getNextTime(start, rangeFormat, granularity);
-            long lEnd = Long.MAX_VALUE;
-            for (Object o : fieldValue) {
-                if (betweenInclusive(getTime(o, format), lStart, lEnd)) {
-                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
-                    break;
+        if (fieldValue != null) {
+            try {
+                DateFormat format = newSimpleDateFormat(pattern);
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                int granularity = getGranularity(rangePattern);
+                long lStart = getNextTime(start, rangeFormat, granularity);
+                long lEnd = Long.MAX_VALUE;
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(getTime(o, format), lStart, lEnd)) {
+                        matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                        break;
+                    }
                 }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + start + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + start + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -869,12 +900,14 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> beforeDate(Object fieldValue, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            if (betweenInclusive(getTime(fieldValue), 0, getTime(end) - 1)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                if (betweenInclusive(getTime(fieldValue), 0, getTime(end) - 1)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
         }
         return matches;
     }
@@ -891,15 +924,17 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> beforeDate(Iterable<?> fieldValue, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            for (Object o : fieldValue) {
-                if (betweenInclusive(getTime(o), 0, getTime(end) - 1)) {
-                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
-                    break;
+        if (fieldValue != null) {
+            try {
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(getTime(o), 0, getTime(end) - 1)) {
+                        matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                        break;
+                    }
                 }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
         }
         return matches;
     }
@@ -918,13 +953,15 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> beforeDate(Object fieldValue, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            if (betweenInclusive(getTime(fieldValue), 0, getTime(end, rangeFormat) - 1)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                if (betweenInclusive(getTime(fieldValue), 0, getTime(end, rangeFormat) - 1)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
         }
         return matches;
     }
@@ -943,16 +980,18 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> beforeDate(Iterable<?> fieldValue, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            for (Object o : fieldValue) {
-                if (betweenInclusive(getTime(o), 0, getTime(end, rangeFormat) - 1)) {
-                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
-                    break;
+        if (fieldValue != null) {
+            try {
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(getTime(o), 0, getTime(end, rangeFormat) - 1)) {
+                        matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                        break;
+                    }
                 }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
         }
         return matches;
         
@@ -974,18 +1013,20 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> beforeDate(Object fieldValue, String pattern, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat format = newSimpleDateFormat(pattern);
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            long lStart = 0;
-            long lEnd = getTime(end, rangeFormat) - 1;
-            if (betweenInclusive(getTime(fieldValue, format), lStart, lEnd)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                DateFormat format = newSimpleDateFormat(pattern);
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                long lStart = 0;
+                long lEnd = getTime(end, rangeFormat) - 1;
+                if (betweenInclusive(getTime(fieldValue, format), lStart, lEnd)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + end + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + end + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -1006,21 +1047,23 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> beforeDate(Iterable<?> fieldValue, String pattern, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat format = newSimpleDateFormat(pattern);
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            long lStart = 0;
-            long lEnd = getTime(end, rangeFormat) - 1;
-            for (Object o : fieldValue) {
-                if (betweenInclusive(getTime(o, format), lStart, lEnd)) {
-                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
-                    break;
+        if (fieldValue != null) {
+            try {
+                DateFormat format = newSimpleDateFormat(pattern);
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                long lStart = 0;
+                long lEnd = getTime(end, rangeFormat) - 1;
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(getTime(o, format), lStart, lEnd)) {
+                        matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                        break;
+                    }
                 }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + end + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + end + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -1039,12 +1082,14 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> betweenDates(Object fieldValue, String start, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            if (betweenInclusive(getTime(fieldValue), getTime(start), getTime(end, true) - 1)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                if (betweenInclusive(getTime(fieldValue), getTime(start), getTime(end, true) - 1)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
         }
         return matches;
     }
@@ -1063,19 +1108,23 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> betweenDates(Iterable<?> fieldValue, String start, String end) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            long lStart = getTime(start);
-            long lEnd = getTime(end, true) - 1;
-            for (Object o : fieldValue) {
-                if (betweenInclusive(getTime(o), lStart, lEnd)) {
-                    matches = FunctionalSet.singleton(getHitTerm(o));
-                    break;
+        if (fieldValue != null) {
+            try {
+                if (fieldValue != null) {
+                    long lStart = getTime(start);
+                    long lEnd = getTime(end, true) - 1;
+                    for (Object o : fieldValue) {
+                        if (betweenInclusive(getTime(o), lStart, lEnd)) {
+                            matches = FunctionalSet.singleton(getHitTerm(o));
+                            break;
+                        }
+                    }
                 }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + start + " or " + end + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + start + " or " + end + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -1096,14 +1145,16 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> betweenDates(Object fieldValue, String start, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            int granularity = getGranularity(rangePattern);
-            if (betweenInclusive(getTime(fieldValue), getTime(start, rangeFormat), getNextTime(end, rangeFormat, granularity) - 1)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                int granularity = getGranularity(rangePattern);
+                if (betweenInclusive(getTime(fieldValue), getTime(start, rangeFormat), getNextTime(end, rangeFormat, granularity) - 1)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
         }
         return matches;
     }
@@ -1124,21 +1175,23 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> betweenDates(Iterable<?> fieldValue, String start, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            int granularity = getGranularity(rangePattern);
-            long lStart = getTime(start, rangeFormat);
-            long lEnd = getNextTime(end, rangeFormat, granularity) - 1;
-            for (Object o : fieldValue) {
-                if (betweenInclusive(getTime(o), lStart, lEnd)) {
-                    matches = FunctionalSet.singleton(getHitTerm(o));
-                    break;
+        if (fieldValue != null) {
+            try {
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                int granularity = getGranularity(rangePattern);
+                long lStart = getTime(start, rangeFormat);
+                long lEnd = getNextTime(end, rangeFormat, granularity) - 1;
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(getTime(o), lStart, lEnd)) {
+                        matches = FunctionalSet.singleton(getHitTerm(o));
+                        break;
+                    }
                 }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + start + " or " + end + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + start + " or " + end + ": " + nfe.getMessage());
         }
         return matches;
     }
@@ -1161,15 +1214,17 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> betweenDates(Object fieldValue, String pattern, String start, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat format = newSimpleDateFormat(pattern);
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            int granularity = getGranularity(rangePattern);
-            if (betweenInclusive(getTime(fieldValue, format), getTime(start, rangeFormat), getNextTime(end, rangeFormat, granularity) - 1)) {
-                matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+        if (fieldValue != null) {
+            try {
+                DateFormat format = newSimpleDateFormat(pattern);
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                int granularity = getGranularity(rangePattern);
+                if (betweenInclusive(getTime(fieldValue, format), getTime(start, rangeFormat), getNextTime(end, rangeFormat, granularity) - 1)) {
+                    matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
         }
         return matches;
     }
@@ -1192,22 +1247,24 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> betweenDates(Iterable<?> fieldValue, String pattern, String start, String end, String rangePattern) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
-        try {
-            DateFormat format = newSimpleDateFormat(pattern);
-            DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
-            int granularity = getGranularity(rangePattern);
-            long lStart = getTime(start, rangeFormat);
-            long lEnd = getNextTime(end, rangeFormat, granularity) - 1;
-            for (Object o : fieldValue) {
-                if (betweenInclusive(getTime(o, format), lStart, lEnd)) {
-                    matches = FunctionalSet.singleton(getHitTerm(o));
-                    break;
+        if (fieldValue != null) {
+            try {
+                DateFormat format = newSimpleDateFormat(pattern);
+                DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
+                int granularity = getGranularity(rangePattern);
+                long lStart = getTime(start, rangeFormat);
+                long lEnd = getNextTime(end, rangeFormat, granularity) - 1;
+                for (Object o : fieldValue) {
+                    if (betweenInclusive(getTime(o, format), lStart, lEnd)) {
+                        matches = FunctionalSet.singleton(getHitTerm(o));
+                        break;
+                    }
                 }
+            } catch (ParseException pe) {
+                log.error(pe.getMessage());
+            } catch (NumberFormatException nfe) {
+                log.error("Unable to numeric argument " + start + " or " + end + ": " + nfe.getMessage());
             }
-        } catch (ParseException pe) {
-            log.error(pe.getMessage());
-        } catch (NumberFormatException nfe) {
-            log.error("Unable to numeric argument " + start + " or " + end + ": " + nfe.getMessage());
         }
         return matches;
     }

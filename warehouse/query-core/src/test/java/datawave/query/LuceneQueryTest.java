@@ -4,43 +4,37 @@ import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.language.functions.jexl.EvaluationOnly;
 import datawave.query.language.functions.jexl.JexlQueryFunction;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
-import datawave.query.testframework.GenericCityFields;
-import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
-import org.apache.log4j.Level;
+import datawave.query.testframework.FileType;
+import datawave.query.testframework.GenericCityFields;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collection;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
-import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
-import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static org.junit.Assert.assertEquals;
 
 public class LuceneQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(LuceneQueryTest.class);
     
     @BeforeClass
     public static void filterSetup() throws Exception {
-        Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
-        dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
-        
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, new CitiesDataType(CityEntry.generic, generic));
+        connector = accumuloSetup.loadTables(log);
     }
     
     public LuceneQueryTest() {
@@ -84,8 +78,8 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
         String country = "italy";
         String query = CityField.CITY.name() + ":\"" + city + "\"" + AND_OP + "#EVALUATION_ONLY('" + CityField.COUNTRY.name() + ":\"" + country + "\"')";
         
-        String expect = CityField.CITY.name() + EQ_OP + "'" + city + "'" + AND_OP + "((ASTEvaluationOnly = true) && " + CityField.COUNTRY.name() + EQ_OP + "'"
-                        + country + "')";
+        String expect = CityField.CITY.name() + EQ_OP + "'" + city + "'" + AND_OP + "((_Eval_ = true) && " + CityField.COUNTRY.name() + EQ_OP + "'" + country
+                        + "')";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
         
@@ -149,11 +143,11 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
         String code = "europe";
         String state = "l.*";
         String phrase = RE_OP + "'" + state + "'";
-        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#JEXL(\"((ASTEvaluationOnly = true)" + JEXL_AND_OP + CityField.STATE.name()
-                        + " =~ '" + state + "')\")";
+        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#JEXL(\"((_Eval_ = true)" + JEXL_AND_OP + CityField.STATE.name() + " =~ '"
+                        + state + "')\")";
         
-        String expect = CityField.CONTINENT.name() + " == '" + code + "'" + JEXL_AND_OP + "((ASTEvaluationOnly = true)" + JEXL_AND_OP + CityField.STATE.name()
-                        + " =~ '" + state + "')";
+        String expect = CityField.CONTINENT.name() + " == '" + code + "'" + JEXL_AND_OP + "((_Eval_ = true)" + JEXL_AND_OP + CityField.STATE.name() + " =~ '"
+                        + state + "')";
         String plan = getPlan(query, true, true);
         assertPlanEquals(expect, plan);
         
@@ -167,11 +161,11 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
         String code = "europe";
         String startState = "alabama";
         String endState = "wyoming";
-        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#JEXL(\"((ASTEvaluationOnly = true)" + JEXL_AND_OP + CityField.STATE.name()
-                        + " >= '" + startState + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState + "')\")";
+        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#JEXL(\"((_Eval_ = true)" + JEXL_AND_OP + CityField.STATE.name() + " >= '"
+                        + startState + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState + "')\")";
         
-        String expect = CityField.CONTINENT.name() + " == '" + code + "'" + JEXL_AND_OP + "((ASTEvaluationOnly = true)" + JEXL_AND_OP + CityField.STATE.name()
-                        + " >= '" + startState + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState + "')";
+        String expect = CityField.CONTINENT.name() + " == '" + code + "'" + JEXL_AND_OP + "((_Eval_ = true)" + JEXL_AND_OP + CityField.STATE.name() + " >= '"
+                        + startState + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState + "')";
         String plan = getPlan(query, true, true);
         assertEquals(expect, plan);
         assertPlanEquals(expect, plan);
@@ -194,11 +188,10 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
         String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + CityField.STATE.name() + ":[" + startState1 + " TO " + endState1 + "]"
                         + CityField.STATE.name() + ":[" + startState2 + " TO " + endState2 + "]";
         
-        String expect = CityField.CONTINENT.name() + " == '" + code + "'" + JEXL_AND_OP
-                        + "((ExceededValueThresholdMarkerJexlNode = true) && ((BoundedRange = true)" + JEXL_AND_OP + "(" + CityField.STATE.name() + " >= '"
-                        + startState1 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState1 + "')))" + JEXL_AND_OP
-                        + "((ExceededValueThresholdMarkerJexlNode = true) && ((BoundedRange = true)" + JEXL_AND_OP + "(" + CityField.STATE.name() + " >= '"
-                        + startState2 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState2 + "')))";
+        String expect = CityField.CONTINENT.name() + " == '" + code + "'" + JEXL_AND_OP + "((_Value_ = true) && ((_Bounded_ = true)" + JEXL_AND_OP + "("
+                        + CityField.STATE.name() + " >= '" + startState1 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState1 + "')))"
+                        + JEXL_AND_OP + "((_Value_ = true) && ((_Bounded_ = true)" + JEXL_AND_OP + "(" + CityField.STATE.name() + " >= '" + startState2 + "'"
+                        + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState2 + "')))";
         
         System.out.println("Expected: " + expect);
         String plan = getPlan(query, true, true);
@@ -218,13 +211,13 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
         String endState1 = "connecticut";
         String startState2 = "iowa";
         String endState2 = "wyoming";
-        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#JEXL(\"((ASTEvaluationOnly = true)" + JEXL_AND_OP + CityField.STATE.name()
-                        + " >= '" + startState1 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState1 + "'" + JEXL_AND_OP + CityField.STATE.name()
-                        + " >= '" + startState2 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState2 + "'" + ")\")";
+        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#JEXL(\"((_Eval_ = true)" + JEXL_AND_OP + CityField.STATE.name() + " >= '"
+                        + startState1 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState1 + "'" + JEXL_AND_OP + CityField.STATE.name() + " >= '"
+                        + startState2 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState2 + "'" + ")\")";
         
-        String expect = CityField.CONTINENT.name() + " == '" + code + "'" + JEXL_AND_OP + "((ASTEvaluationOnly = true)" + JEXL_AND_OP + CityField.STATE.name()
-                        + " >= '" + startState1 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState1 + "'" + JEXL_AND_OP + CityField.STATE.name()
-                        + " >= '" + startState2 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState2 + "'" + ")";
+        String expect = CityField.CONTINENT.name() + " == '" + code + "'" + JEXL_AND_OP + "((_Eval_ = true)" + JEXL_AND_OP + CityField.STATE.name() + " >= '"
+                        + startState1 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState1 + "'" + JEXL_AND_OP + CityField.STATE.name() + " >= '"
+                        + startState2 + "'" + JEXL_AND_OP + CityField.STATE.name() + " <= '" + endState2 + "'" + ")";
         String plan = getPlan(query, true, true);
         assertEquals(expect, plan);
         assertPlanEquals(expect, plan);

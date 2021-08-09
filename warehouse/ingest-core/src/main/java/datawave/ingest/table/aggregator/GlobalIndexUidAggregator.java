@@ -76,6 +76,13 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
      */
     protected HashSet<String> tempSet;
     
+    /**
+     * @return True if we saw a "count only" protobuf during the last reduce operation.
+     */
+    protected boolean isSeenIgnore() {
+        return seenIgnore;
+    }
+    
     public Value aggregate() {
         
         // as a backup, we remove the intersection of the UID sets

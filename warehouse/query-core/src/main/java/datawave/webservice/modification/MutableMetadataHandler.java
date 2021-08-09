@@ -4,20 +4,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Multimap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
 import datawave.core.iterators.FieldIndexDocumentFilter;
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.Type;
@@ -63,6 +49,23 @@ import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
+import javax.annotation.Nullable;
+import javax.ws.rs.core.MultivaluedMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Class that handles requests for modification requests (INSERT, UPDATE, DELETE) for metadata in the shard schema. <br>
@@ -910,9 +913,11 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         expiration = new Date(expiration.getTime() + (1000 * 60 * 60 * 24));
         
         try {
-            GenericResponse<String> createResponse = queryService.createQuery(logicName, QueryParametersImpl.paramsToMap(logicName, query.toString(),
-                            "Query to find matching records for metadata modification", columnVisibility, new Date(0), new Date(),
-                            StringUtils.join(auths, ','), expiration, 2, -1, null, QueryPersistence.TRANSIENT, queryOptions.toString(), false));
+            MultivaluedMap<String,String> paramsMap = new MultivaluedMapImpl<>();
+            paramsMap.putAll(QueryParametersImpl.paramsToMap(logicName, query.toString(), "Query to find matching records for metadata modification",
+                            columnVisibility, new Date(0), new Date(), StringUtils.join(auths, ','), expiration, 2, -1, null, QueryPersistence.TRANSIENT,
+                            queryOptions.toString(), false));
+            GenericResponse<String> createResponse = queryService.createQuery(logicName, paramsMap);
             
             id = createResponse.getResult();
             BaseQueryResponse response = queryService.next(id);

@@ -197,8 +197,8 @@ public class ExpandMultiNormalizedTermsTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         
-        String original = "((BoundedRange = true) && (FOO > '1' && FOO < '10'))";
-        String expected = "((BoundedRange = true) && (FOO > '+aE1' && FOO < '+bE1'))";
+        String original = "((_Bounded_ = true) && (FOO > '1' && FOO < '10'))";
+        String expected = "((_Bounded_ = true) && (FOO > '+aE1' && FOO < '+bE1'))";
         expandTerms(original, expected);
     }
     
@@ -229,8 +229,8 @@ public class ExpandMultiNormalizedTermsTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         
-        String original = "((BoundedRange = true) && (FOO > 1 && FOO < 10))";
-        String expected = "((((BoundedRange = true) && (FOO > '+aE1' && FOO < '+bE1'))) || (((BoundedRange = true) && (FOO > '1' && FOO < '10'))))";
+        String original = "((_Bounded_ = true) && (FOO > 1 && FOO < 10))";
+        String expected = "((((_Bounded_ = true) && (FOO > '+aE1' && FOO < '+bE1'))) || (((_Bounded_ = true) && (FOO > '1' && FOO < '10'))))";
         expandTerms(original, expected);
     }
     
@@ -255,8 +255,8 @@ public class ExpandMultiNormalizedTermsTest {
         helper.setIndexedFields(dataTypes.keySet());
         config.setQueryFieldsDatatypes(dataTypes);
         
-        String original = "NEW == 'boo' && ((BoundedRange = true) && (NEW > '1' && NEW < '10'))";
-        String expected = "NEW == 'boo' && ((BoundedRange = true) && (NEW > '1' && NEW < '10'))";
+        String original = "NEW == 'boo' && ((_Bounded_ = true) && (NEW > '1' && NEW < '10'))";
+        String expected = "NEW == 'boo' && ((_Bounded_ = true) && (NEW > '1' && NEW < '10'))";
         expandTerms(original, expected);
     }
     
@@ -279,8 +279,8 @@ public class ExpandMultiNormalizedTermsTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         
-        String original = "((BoundedRange = true) && (NEW > '0' && NEW < '9')) && ((BoundedRange = true) && (FOO > 1 && FOO < 10))";
-        String expected = "((BoundedRange = true) && (NEW > '0' && NEW < '9')) && ((BoundedRange = true) && (FOO > 1 && FOO < 10))";
+        String original = "((_Bounded_ = true) && (NEW > '0' && NEW < '9')) && ((_Bounded_ = true) && (FOO > 1 && FOO < 10))";
+        String expected = "((_Bounded_ = true) && (NEW > '0' && NEW < '9')) && ((_Bounded_ = true) && (FOO > 1 && FOO < 10))";
         expandTerms(original, expected);
     }
     
@@ -428,18 +428,18 @@ public class ExpandMultiNormalizedTermsTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         
-        String original = "((ExceededValueThresholdMarkerJexlNode = true) && (FOO =~ 'bar.*'))";
+        String original = "((_Value_ = true) && (FOO =~ 'bar.*'))";
         expandTerms(original, original);
     }
     
     @Test
-    public void testMultipleNormalizersForBoundedRangeExceededThreshold() throws ParseException {
+    public void testMultipleNormalizersForBRExceededThreshold() throws ParseException {
         Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new NoOpType()));
         
         config.setQueryFieldsDatatypes(dataTypes);
         
-        String original = "((ExceededValueThresholdMarkerJexlNode = true) && (FOO > '1' && FOO < '10'))";
+        String original = "((_Value_ = true) && (FOO > '1' && FOO < '10'))";
         expandTerms(original, original);
     }
     
@@ -481,15 +481,13 @@ public class ExpandMultiNormalizedTermsTest {
     }
     
     private void assertScriptEquality(JexlNode actual, String expected) throws ParseException {
-        ASTJexlScript actualScript = JexlASTHelper.parseJexlQuery(JexlStringBuildingVisitor.buildQuery(actual));
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
-        boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actualScript, reason);
-        if (!equal) {
+        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedScript, actual);
+        if (!comparison.isEqual()) {
             log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
-            log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
+            log.error("Actual " + PrintingVisitor.formattedQueryString(actual));
         }
-        assertTrue(reason.reason, equal);
+        assertTrue(comparison.getReason(), comparison.isEqual());
     }
     
     private void assertLineage(JexlNode node) {

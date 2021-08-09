@@ -7,7 +7,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.TreeEqualityVisitor.Reason;
+import datawave.query.jexl.visitors.TreeEqualityVisitor.Comparison;
 import datawave.query.model.QueryModel;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -132,15 +132,15 @@ public class QueryModelVisitorTest {
     
     @Test
     public void multipleMappingsWithBounds() throws ParseException {
-        String original = "((BoundedRange = true) && (FOO > 'a' && FOO < 'z'))";
-        String expected = "((BoundedRange = true) && (BAR1 > 'a' && BAR1 < 'z')) || ((BoundedRange = true) && (BAR2 > 'a' && BAR2 < 'z'))";
+        String original = "((_Bounded_ = true) && (FOO > 'a' && FOO < 'z'))";
+        String expected = "((_Bounded_ = true) && (BAR1 > 'a' && BAR1 < 'z')) || ((_Bounded_ = true) && (BAR2 > 'a' && BAR2 < 'z'))";
         assertResult(original, expected);
     }
     
     @Test
     public void multipleMappingsWithBoundsIdentity() throws ParseException {
-        String original = "((BoundedRange = true) && (CYCLIC_FIELD > 'a' && CYCLIC_FIELD < 'z'))";
-        String expected = "(((BoundedRange = true) && (CYCLIC_FIELD > 'a' && CYCLIC_FIELD < 'z')) || ((BoundedRange = true) && (CYCLIC_FIELD_ > 'a' && CYCLIC_FIELD_ < 'z')))";
+        String original = "((_Bounded_ = true) && (CYCLIC_FIELD > 'a' && CYCLIC_FIELD < 'z'))";
+        String expected = "(((_Bounded_ = true) && (CYCLIC_FIELD > 'a' && CYCLIC_FIELD < 'z')) || ((_Bounded_ = true) && (CYCLIC_FIELD_ > 'a' && CYCLIC_FIELD_ < 'z')))";
         assertResult(original, expected);
     }
     
@@ -359,15 +359,12 @@ public class QueryModelVisitorTest {
     
     private void assertScriptEquality(ASTJexlScript actualScript, String expected) throws ParseException {
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        Reason reason = new Reason();
-        boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actualScript, reason);
-        if (!equal) {
-            log.error("Expected " + JexlStringBuildingVisitor.buildQuery(expectedScript));
-            log.error("Actual   " + JexlStringBuildingVisitor.buildQuery(actualScript));
+        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedScript, actualScript);
+        if (!comparison.isEqual()) {
             log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
-            log.error("Actual   " + PrintingVisitor.formattedQueryString(actualScript));
+            log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
         }
-        assertTrue(reason.reason, equal);
+        assertTrue(comparison.getReason(), comparison.isEqual());
     }
     
     private void assertLineage(JexlNode node) {

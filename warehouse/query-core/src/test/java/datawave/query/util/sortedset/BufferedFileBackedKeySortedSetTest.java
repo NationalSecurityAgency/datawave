@@ -1,16 +1,20 @@
 package datawave.query.util.sortedset;
 
-import java.util.TreeSet;
 import org.apache.accumulo.core.data.Key;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.SortedSet;
+import java.util.TreeSet;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -19,6 +23,7 @@ import static org.junit.Assert.fail;
 
 public class BufferedFileBackedKeySortedSetTest {
     
+    private final List<SortedSetTempFileHandler> tempFileHandlers = new ArrayList<>();
     private Key[] data = null;
     private int[] sortedOrder = null;
     private BufferedFileBackedSortedSet<Key> set = null;
@@ -46,7 +51,9 @@ public class BufferedFileBackedKeySortedSetTest {
         set = new BufferedFileBackedSortedSet<>(null, 5, 7, 2, Collections.singletonList(new BufferedFileBackedSortedSet.SortedSetFileHandlerFactory() {
             @Override
             public FileSortedSet.SortedSetFileHandler createHandler() throws IOException {
-                return new SortedSetTempFileHandler();
+                SortedSetTempFileHandler fileHandler = new SortedSetTempFileHandler();
+                tempFileHandlers.add(fileHandler);
+                return fileHandler;
             }
             
             @Override
@@ -64,10 +71,25 @@ public class BufferedFileBackedKeySortedSetTest {
     
     @After
     public void tearDown() throws Exception {
+        // Delete each sorted set file and its checksum.
+        for (SortedSetTempFileHandler fileHandler : tempFileHandlers) {
+            File file = fileHandler.getFile();
+            tryDelete(file);
+            File checksum = new File(file.getParent(), "." + file.getName() + ".crc");
+            tryDelete(checksum);
+        }
+        tempFileHandlers.clear();
+        
         data = null;
         sortedOrder = null;
         set.clear();
         set = null;
+    }
+    
+    private void tryDelete(File file) {
+        if (file.exists()) {
+            Assert.assertTrue("Failed to delete file " + file, file.delete());
+        }
     }
     
     @Test

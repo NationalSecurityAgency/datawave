@@ -143,6 +143,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         String extraIngestArgsOverride = null;
         String flagFileDirectoryOverride = null;
         String flagMakerClass = null;
+        String flagMetricsDirectory = null;
         for (int i = 0; i < args.length; i++) {
             if ("-flagConfig".equals(args[i])) {
                 flagConfig = args[++i];
@@ -159,6 +160,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             } else if ("-flagMakerClass".equals(args[i])) {
                 flagMakerClass = args[++i];
                 log.info("will override flagMakerClass with {}", flagMakerClass);
+            } else if ("-flagMetricsDirectory".equals(args[i])) {
+                flagMetricsDirectory = args[++i];
+                log.info("will override flagMetricsDirectory with {}", flagMetricsDirectory);
             }
         }
         if (flagConfig == null) {
@@ -181,6 +185,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         }
         if (null != flagMakerClass) {
             xmlObject.setFlagMakerClass(flagMakerClass);
+        }
+        if (null != flagMetricsDirectory) {
+            xmlObject.setFlagMetricsDirectory(flagMetricsDirectory);
         }
         log.debug(xmlObject.toString());
         return xmlObject;

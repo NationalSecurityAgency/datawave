@@ -10,6 +10,12 @@ public class ASTEvaluationOnly extends QueryPropertyMarker {
     
     private static final String CLASS_NAME = ASTEvaluationOnly.class.getSimpleName();
     
+    private static final String LABEL = "_Eval_";
+    
+    public static String label() {
+        return LABEL;
+    }
+    
     public ASTEvaluationOnly(int id) {
         super(id);
     }
@@ -20,6 +26,11 @@ public class ASTEvaluationOnly extends QueryPropertyMarker {
     
     public ASTEvaluationOnly(JexlNode source) {
         super(source);
+    }
+    
+    @Override
+    public String getLabel() {
+        return LABEL;
     }
     
     @Override

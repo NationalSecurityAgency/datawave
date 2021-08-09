@@ -24,7 +24,7 @@ public class TreeFlatteningRebuildingVisitorTest {
     
     @Test
     public void dontFlattenASTDelayedPredicateAndTest() throws Exception {
-        String query = "((ASTDelayedPredicate = true) && (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8'))) && GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' && GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
+        String query = "((_Delayed_ = true) && (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8'))) && GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' && GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
         assertResult(query, query);
     }
     
@@ -138,8 +138,8 @@ public class TreeFlatteningRebuildingVisitorTest {
     
     @Test
     public void flattenASTDelayedPredicateOrTest() throws Exception {
-        String query = "((ASTDelayedPredicate = true) || (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8'))) || GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' || GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
-        String expected = "(ASTDelayedPredicate = true) || (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8')) || GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' || GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
+        String query = "((_Delayed_ = true) || (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8'))) || GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' || GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
+        String expected = "(_Delayed_ = true) || (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8')) || GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' || GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
         assertResult(expected, query);
     }
     
@@ -195,18 +195,17 @@ public class TreeFlatteningRebuildingVisitorTest {
         assertScriptEquality(originalScript, original);
         assertLineage(originalScript);
         
-        assertTrue(TreeEqualityVisitor.isEqual(expectedScript, flattened, new TreeEqualityVisitor.Reason()));
+        assertTrue(TreeEqualityVisitor.isEqual(expectedScript, flattened));
     }
     
     private void assertScriptEquality(ASTJexlScript actual, String expected) throws ParseException {
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
-        boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actual, reason);
-        if (!equal) {
+        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedScript, actual);
+        if (!comparison.isEqual()) {
             log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
             log.error("Actual " + PrintingVisitor.formattedQueryString(actual));
         }
-        assertTrue(reason.reason, equal);
+        assertTrue(comparison.getReason(), comparison.isEqual());
     }
     
     private void assertLineage(JexlNode node) {
