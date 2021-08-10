@@ -30,6 +30,9 @@ import datawave.query.language.functions.jexl.Options;
 import datawave.query.language.functions.jexl.Text;
 import datawave.query.language.functions.jexl.TimeFunction;
 import datawave.query.language.functions.jexl.Unique;
+import datawave.query.language.functions.jexl.UniqueByDay;
+import datawave.query.language.functions.jexl.UniqueByHour;
+import datawave.query.language.functions.jexl.UniqueByMinute;
 import datawave.query.language.parser.jexl.JexlNode;
 
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
@@ -53,7 +56,7 @@ public class JexlTreeBuilder extends QueryTreeBuilder {
             new GeoFunction(), new Contains(), new CoveredBy(), new Covers(), new Crosses(), new Intersects(), new Overlaps(), new Within(), new Loaded(),
             new DateFunction(), new OccurrenceFunction(), new MatchesInGroupFunction(), new MatchesInGroupLeft(), new GetAllMatches(),
             new MatchesAtLeastCountOf(), new Jexl(), new TimeFunction(), new AtomValuesMatchFunction(), new Options(), new Unique(), new GroupBy(),
-            new EvaluationOnly()};
+            new EvaluationOnly(), new UniqueByDay(), new UniqueByHour(), new UniqueByMinute()};
     
     public static final List<JexlQueryFunction> DEFAULT_ALLOWED_FUNCTION_LIST;
     
