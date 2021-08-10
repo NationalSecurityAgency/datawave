@@ -83,11 +83,6 @@
                 <version>2.2.2</version>
             </dependency>
             <dependency>
-                <groupId>dom4j</groupId>
-                <artifactId>dom4j</artifactId>
-                <version>1.6.1</version>
-            </dependency>
-            <dependency>
                 <groupId>gov.nsa.datawave</groupId>
                 <artifactId>assemble-geowave</artifactId>
                 <version>${project.version}</version>
