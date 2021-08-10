@@ -190,7 +190,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                             // Even if propagate is false, the removal UID should persist until all PB lists
                             // in the current iteration have been seen, in case a subsequent PB has the UID
                             // marked for removal.
-                            uidsToRemove.add(uid);
+                                uidsToRemove.add(uid);
                         } else if (propogate && !uids.contains(uid)) {
                             uidsToRemove.add(uid);
                         }

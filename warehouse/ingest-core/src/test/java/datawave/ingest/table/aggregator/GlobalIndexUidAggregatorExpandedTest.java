@@ -186,7 +186,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
 
     @Test
     public void testRemoveFromNowDefunctNegativeCount() {
-        agg = new KeepCountOnlyUidAggregator(10);
+        agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(-1)
                 .build();
@@ -374,7 +374,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
 
     @Test
     public void floorOfZeroVariant() {
-        agg = new KeepCountOnlyUidAggregator(10);
+        agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(1)
                 .build();
