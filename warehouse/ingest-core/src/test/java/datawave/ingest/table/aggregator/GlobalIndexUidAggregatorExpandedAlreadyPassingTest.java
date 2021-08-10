@@ -461,7 +461,7 @@ public class GlobalIndexUidAggregatorExpandedAlreadyPassingTest {
 
     @Test
     public void preserveRemovals() {
-        agg = new KeepCountOnlyUidAggregator(10);
+        agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2")
                 .build();
@@ -481,7 +481,7 @@ public class GlobalIndexUidAggregatorExpandedAlreadyPassingTest {
 
     @Test
     public void preserveTwoRemovalLists() {
-        agg = new KeepCountOnlyUidAggregator(10);
+        agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids()
                 .withRemovals("uid1", "uid2")
