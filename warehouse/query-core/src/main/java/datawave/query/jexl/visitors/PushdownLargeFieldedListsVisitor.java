@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
@@ -203,7 +204,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             }
         }
         
-        return children(newNode, children.toArray(new JexlNode[children.size()]));
+        return children.size() == 1 ? Iterables.getOnlyElement(children) : children(newNode, children.toArray(new JexlNode[0]));
     }
     
     /**

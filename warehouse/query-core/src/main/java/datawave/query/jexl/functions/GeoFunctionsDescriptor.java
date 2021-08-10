@@ -28,12 +28,13 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.CoordinateXY;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.util.GeometricShapeFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -388,10 +389,14 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
         }
         
         private Polygon createRectangle(double minLon, double maxLon, double minLat, double maxLat) {
-            GeometricShapeFactory shapeFactory = new GeometricShapeFactory();
-            shapeFactory.setEnvelope(new Envelope(minLon, maxLon, minLat, maxLat));
-            shapeFactory.setNumPoints(4);
-            return shapeFactory.createRectangle();
+            GeometryFactory geomFactory = new GeometryFactory();
+            List<Coordinate> coordinates = new ArrayList<>();
+            coordinates.add(new CoordinateXY(minLon, minLat));
+            coordinates.add(new CoordinateXY(maxLon, minLat));
+            coordinates.add(new CoordinateXY(maxLon, maxLat));
+            coordinates.add(new CoordinateXY(minLon, maxLat));
+            coordinates.add(new CoordinateXY(minLon, minLat));
+            return geomFactory.createPolygon(coordinates.toArray(new Coordinate[0]));
         }
         
         private MultiPolygon createMultiPolygon(Polygon poly1, Polygon poly2) {

@@ -40,6 +40,7 @@ import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.transformer.GroupingTransform;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
@@ -749,14 +750,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         
         // Get the UNIQUE_FIELDS parameter if given
-        String uniqueFields = settings.findParameter(QueryParameters.UNIQUE_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(uniqueFields)) {
-            List<String> uniqueFieldsList = Arrays.asList(StringUtils.split(uniqueFields, Constants.PARAM_VALUE_SEP));
-            
+        String uniqueFieldsParam = settings.findParameter(QueryParameters.UNIQUE_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(uniqueFieldsParam)) {
+            UniqueFields uniqueFields = UniqueFields.from(uniqueFieldsParam);
             // Only set the unique fields if we were actually given some
-            if (!uniqueFieldsList.isEmpty()) {
-                this.setUniqueFields(new HashSet<>(uniqueFieldsList));
-                config.setUniqueFields(new HashSet<>(uniqueFieldsList));
+            if (!uniqueFields.isEmpty()) {
+                this.setUniqueFields(uniqueFields);
+                config.setUniqueFields(uniqueFields);
             }
         }
         
@@ -1203,11 +1203,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return getConfig().getGroupFieldsBatchSize();
     }
     
-    public Set<String> getUniqueFields() {
+    public UniqueFields getUniqueFields() {
         return getConfig().getUniqueFields();
     }
     
-    public void setUniqueFields(Set<String> uniqueFields) {
+    public void setUniqueFields(UniqueFields uniqueFields) {
         getConfig().setUniqueFields(uniqueFields);
     }
     
@@ -2184,6 +2184,30 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setPointMaxExpansion(int pointMaxExpansion) {
         getConfig().setPointMaxExpansion(pointMaxExpansion);
+    }
+    
+    public int getGeoWaveRangeSplitThreshold() {
+        return getConfig().getGeoWaveRangeSplitThreshold();
+    }
+    
+    public void setGeoWaveRangeSplitThreshold(int geoWaveRangeSplitThreshold) {
+        getConfig().setGeoWaveRangeSplitThreshold(geoWaveRangeSplitThreshold);
+    }
+    
+    public double getGeoWaveMaxRangeOverlap() {
+        return getConfig().getGeoWaveMaxRangeOverlap();
+    }
+    
+    public void setGeoWaveMaxRangeOverlap(double geoWaveMaxRangeOverlap) {
+        getConfig().setGeoWaveMaxRangeOverlap(geoWaveMaxRangeOverlap);
+    }
+    
+    public boolean isOptimizeGeoWaveRanges() {
+        return getConfig().isOptimizeGeoWaveRanges();
+    }
+    
+    public void setOptimizeGeoWaveRanges(boolean optimizeGeoWaveRanges) {
+        getConfig().setOptimizeGeoWaveRanges(optimizeGeoWaveRanges);
     }
     
     public int getGeoWaveMaxEnvelopes() {
