@@ -148,17 +148,13 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
             try {
                 Uid.List v = Uid.List.parseFrom(value.get());
 
+                long delta = v.getCOUNT();
+
                 // For best performance, don't attempt to accumulate any individual UIDs (or removals)
                 // if this PB has its ignore flag set or we've seen any other PB with the ignored flag set.
-                if (seenIgnore) {
-                    log.debug("SeenIgnore is true. Skipping collections");
-                } else if (v.getIGNORE()) {
-                    // After a PB has its ignore flag set, from that point forward UIDs will increment
-                    // the count and removal UIDs will decrement it.  Apply this logic on the existing
-                    // list of UIDs and removal UIDs for consistency.
+                if (v.getIGNORE() || seenIgnore) {
                     seenIgnore = true;
-                    count = this.uids.size() - this.uidsToRemove.size();
-                    log.debug("Switch to seenIgnore is true. Skipping collections");
+                    log.debug("SeenIgnore is true. Skipping collections");
                 } else {
                     // Save a starting count in the event that we go over the max UID count while
                     // aggregating this protocol buffer. Once we cross the max UID threshold, then we'll
@@ -166,10 +162,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     // we want to count UIDs in the internal set since that will take care of de-duping
                     // any duplicate UIDs which would be over counted if we just used the protocol buffer
                     // count.
-                    // After the max UID count is reached, added UIDs will increment the count and removal
-                    // UIDs will decrement it.  For consistency, the starting point is thus equal to the
-                    // UID count minus the removal count.
-                    long prevCount = uids.size() - uidsToRemove.size();
+                    long prevCount = uids.size();
                     
                     // Remove any UIDs in the REMOVEDUID list.
                     for (String uid : v.getREMOVEDUIDList()) {
@@ -209,14 +202,12 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                             // list) since they won't be included when we aggregate anyway.
                             if (uids.size() < maxUids) {
                                 uids.add(uid);
-                            } else if (!uids.contains(uid)) {
-                                // This UID will not push the PB over the max UID limit if that
-                                // UID is already in the uids.
+                            } else {
                                 // If aggregating this PB pushed us over the max UID limit,
                                 // then ignore any work we've done integrating this PB so far
                                 // and instead treat it as though its ignore flag had been set.
                                 // Set the count to the number of collected UIDs before we went
-                                // over the max, and then we'll add this PBs count below.
+                                // over the max, and then we'll add this PBs delta below.
                                 seenIgnore = true;
                                 count = prevCount;
                                 uids.clear();
@@ -229,13 +220,9 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                 
                 // If we've seen an ignore, then we won't be outputting a UID list and therefore
                 // need to just assume the count in the incoming protocol buffer is correct and
-                // use it, taking into account the removal count as well.
+                // use it.
                 if (seenIgnore) {
-                    count += v.getCOUNT();
-                    count -= v.getREMOVEDUIDCount();
-                    // Negative counts are possible if removals are added multiple times
-                    // A zero count is sufficient in count estimations.
-                    count = Math.max(0, count);
+                    count += delta;
                 }
                 
             } catch (InvalidProtocolBufferException e) {
