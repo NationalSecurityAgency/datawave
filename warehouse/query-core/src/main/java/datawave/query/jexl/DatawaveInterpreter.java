@@ -2,12 +2,18 @@ package datawave.query.jexl;
 
 import com.google.common.collect.Maps;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
+import datawave.marking.MarkingFunctions;
+import datawave.marking.MarkingFunctionsFactory;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl2.Interpreter;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.JexlEngine;
@@ -96,6 +102,16 @@ public class DatawaveInterpreter extends Interpreter {
         
         result = super.visit(node, data);
         
+        // special handling for phrase functions and HIT_TERMs
+        if (nodeString.startsWith("content:phrase")) {
+            addHitsForFunction(result, node);
+        }
+        
+        // If the evaluation was returned a field, set result to true. This allows content:adjacent and
+        // content:within functions to still operate as expected
+        if (nodeString.startsWith("content") && !(result instanceof Boolean)) {
+            result = Boolean.TRUE;
+        }
         addHits(result);
         
         // if the function stands alone, then it needs to return ag boolean
@@ -337,6 +353,44 @@ public class DatawaveInterpreter extends Interpreter {
                 }
             } else if (fieldValue instanceof ValueTuple) {
                 hitListArithmetic.add((ValueTuple) fieldValue);
+            }
+        }
+    }
+    
+    private void addHitsForFunction(Object o, ASTFunctionNode node) {
+        if (this.arithmetic instanceof HitListArithmetic && o != null) {
+            HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;
+            if (o instanceof String) {
+                
+                // aggregate individual hits for the content function
+                Collection<ColumnVisibility> cvs = new HashSet<>();
+                Set<String> values = new ContentFunctionsDescriptor().getArgumentDescriptor(node).getHitTermValues();
+                Attributes source = new Attributes(true);
+                FunctionalSet<?> set = (FunctionalSet<?>) this.context.get((String) o);
+                for (ValueTuple tuple : set) {
+                    if (values.contains(tuple.getNormalizedValue())) {
+                        Attribute<?> attr = tuple.getSource();
+                        source.add(attr);
+                        cvs.add(attr.getColumnVisibility());
+                    }
+                }
+                
+                ColumnVisibility cv;
+                try {
+                    cv = MarkingFunctionsFactory.createMarkingFunctions().combine(cvs);
+                } catch (MarkingFunctions.Exception e) {
+                    log.error("Failed to combine column visibilities while generating HIT_TERM for phrase function");
+                    e.printStackTrace();
+                    // set to the first column visibility if the marking functions failed
+                    cv = cvs.iterator().next();
+                }
+                source.setColumnVisibility(cv);
+                
+                // create an Attributes<?> backed ValueTuple
+                String phrase = new ContentFunctionsDescriptor().getArgumentDescriptor(node).getHitTermValue();
+                
+                ValueTuple vt = new ValueTuple((String) o, phrase, phrase, source);
+                hitListArithmetic.add(vt);
             }
         }
     }

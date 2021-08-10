@@ -1557,23 +1557,23 @@ public class ContentFunctionsTest {
         // full terms list
         Assert.assertNotNull(termList.get("his"));
         String[] terms = new String[] {"go", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertTrue(ContentFunctions.phrase("BODY", termList, terms));
+        Assert.assertEquals("BODY", ContentFunctions.phrase("BODY", termList, terms));
         
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertTrue(!ContentFunctions.phrase("BODY", termList, terms));
+        Assert.assertEquals(Boolean.FALSE, ContentFunctions.phrase("BODY", termList, terms));
         
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come"};
-        Assert.assertTrue(!ContentFunctions.phrase("BODY", termList, terms));
+        Assert.assertEquals(Boolean.FALSE, ContentFunctions.phrase("BODY", termList, terms));
         
         // subset(1, end)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertTrue(ContentFunctions.phrase("BODY", termList, terms));
+        Assert.assertEquals("BODY", ContentFunctions.phrase("BODY", termList, terms));
         
         // subset(1,end-5)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and"};
-        Assert.assertTrue(ContentFunctions.phrase("BODY", termList, terms));
+        Assert.assertEquals("BODY", ContentFunctions.phrase("BODY", termList, terms));
         
         // ///////////////////////////
         // Within functions
@@ -1581,27 +1581,77 @@ public class ContentFunctionsTest {
         
         // full terms list
         terms = new String[] {"go", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertTrue(ContentFunctions.within("BODY", 14, termList, terms));
+        Assert.assertEquals("BODY", ContentFunctions.within("BODY", 14, termList, terms));
         
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertTrue(!ContentFunctions.within("BODY", 15, termList, terms));
+        Assert.assertEquals(Boolean.FALSE, ContentFunctions.within("BODY", 15, termList, terms));
         
         // placement does not matter
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come"};
-        Assert.assertTrue(ContentFunctions.within("BODY", 11, termList, terms));
+        Assert.assertEquals("BODY", ContentFunctions.within("BODY", 11, termList, terms));
         
         // subset(1, end)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertTrue(ContentFunctions.within("BODY", 12, termList, terms));
+        Assert.assertEquals("BODY", ContentFunctions.within("BODY", 12, termList, terms));
         
         // subset(1,end-5)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and"};
-        Assert.assertTrue(ContentFunctions.within("BODY", 10, termList, terms));
+        Assert.assertEquals("BODY", ContentFunctions.within("BODY", 10, termList, terms));
     }
     
     private Zone genTestZone() {
         return new Zone("BODY", true, "shard\u0000dt\u0000uid");
     }
     
+    private Zone genTestZone(String zone) {
+        return new Zone(zone, true, "shard\u0000dt\u0000uid");
+    }
+    
+    @Test
+    public void testIgnoreIrrelevantZones() {
+        Zone zone1 = genTestZone("ZONE1");
+        Zone zone2 = genTestZone("ZONE2");
+        
+        String[] terms = new String[] {"some", "phrase"};
+        
+        TreeMultimap<Zone,TermWeightPosition> multimap;
+        Map<String,TermFrequencyList> termList = Maps.newHashMap();
+        
+        // Build term 1 offsets...
+        
+        multimap = TreeMultimap.create();
+        multimap.put(zone1, getPosition(1));
+        multimap.put(zone1, getPosition(100));
+        termList.put(terms[0], new TermFrequencyList(multimap));
+        
+        multimap = TreeMultimap.create();
+        multimap.put(zone2, getPosition(19));
+        termList.put(terms[0], new TermFrequencyList(multimap));
+        
+        // Build term 2 offsets...
+        
+        multimap = TreeMultimap.create();
+        multimap.put(zone1, getPosition(10));
+        multimap.put(zone1, getPosition(1000));
+        termList.put(terms[1], new TermFrequencyList(multimap));
+        
+        multimap = TreeMultimap.create();
+        multimap.put(zone2, getPosition(20));
+        multimap.put(zone2, getPosition(27));
+        termList.put(terms[1], new TermFrequencyList(multimap));
+        
+        // The only match, [19, 20], is in ZONE2.
+        // Thus, evaluating ZONE1 should return false here (see #1171)...
+        Assert.assertEquals(Boolean.FALSE, ContentFunctions.phrase(zone1.getZone(), termList, terms));
+        
+        // Ensure that we do get the hit if we evaluate the other zone
+        Assert.assertEquals(zone2.getZone(), ContentFunctions.phrase(zone2.getZone(), termList, terms));
+        
+        // Ensure that we get the hit if we evaluate both zones
+        Assert.assertEquals(zone2.getZone(), ContentFunctions.phrase(Arrays.asList(zone1.getZone(), zone2.getZone()), termList, terms));
+        
+        // Ensure that we get the hit if we evaluate null zone
+        Assert.assertEquals(zone2.getZone(), ContentFunctions.phrase((Object) null, termList, terms));
+    }
 }

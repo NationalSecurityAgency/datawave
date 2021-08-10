@@ -145,9 +145,9 @@ public abstract class ContentFunctionEvaluator {
     /**
      * Evaluate whether there is an unordered set of terms that are within the defined distance.
      * 
-     * @return true if found, false otherwise
+     * @return the field that hit if found, boolean false otherwise
      */
-    public boolean evaluate() {
+    public Object evaluate() {
         if (computable()) {
             // now for each event, lets process the terms
             for (String eventId : eventIds) {
@@ -215,7 +215,7 @@ public abstract class ContentFunctionEvaluator {
                             log.trace(logPrefix + " satisfied the content function");
                         }
                         
-                        return true;
+                        return field;
                     } else if (log.isTraceEnabled()) {
                         log.trace(logPrefix + " did not satisfy the content function");
                     }
@@ -223,7 +223,7 @@ public abstract class ContentFunctionEvaluator {
             }
         }
         
-        return false;
+        return Boolean.FALSE;
     }
     
     @Override
