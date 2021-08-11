@@ -227,15 +227,22 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     }
                 }
                 
-                // If we've seen an ignore, then we won't be outputting a UID list and therefore
-                // need to just assume the count in the incoming protocol buffer is correct and
-                // use it, taking into account the removal count as well.
+                // If the ignore flag is set, the UIDs will not be tracked and an
+                // estimated count will be used instead.
                 if (seenIgnore) {
-                    count += v.getCOUNT();
-                    count -= v.getREMOVEDUIDCount();
-                    // Negative counts are possible if removals are added multiple times
-                    // A zero count is sufficient in count estimations.
-                    count = Math.max(0, count);
+                    if (v.getIGNORE()) {
+                        // If the incoming protocol buffer is marked with the ignore flag,
+                        // assume the count in the incoming protocol buffer is already an
+                        // estimated count add it to the current count.  It may be a negative
+                        // count if it represents a net removal.
+                        count += v.getCOUNT();
+                    } else {
+                        // If the incoming protocol buffer is not marked with the ignore flag,
+                        // use the sizes of its additions and removals to provide the best
+                        // possible estimate.
+                        count += v.getUIDCount();
+                        count -= v.getREMOVEDUIDCount();
+                    }
                 }
                 
             } catch (InvalidProtocolBufferException e) {
@@ -245,6 +252,15 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     log.error("Value passed to aggregator was not of type Uid.List", e);
                 }
             }
+        }
+        // Negative counts are impossible unless the ignore flag is set.  Otherwise,
+        // the count is equal to the size of the uid list.
+        // As a final answer, a negative count is nonsensical because the count represents
+        // the number of records that are estimated to exist.  A partial compaction doesn't have
+        // all of the counts available, so to be as accurate as possible it's worth propagating
+        // negative counts.
+        if (seenIgnore && !propogate) {
+            count = Math.max(0, count);
         }
         return aggregate();
     }

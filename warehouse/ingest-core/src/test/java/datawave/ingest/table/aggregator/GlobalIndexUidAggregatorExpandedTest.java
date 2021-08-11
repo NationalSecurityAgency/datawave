@@ -138,54 +138,31 @@ public class GlobalIndexUidAggregatorExpandedTest {
         testForwardOnly(expectation, asList(value1, value2, value3));
     }
 
-
     /**
      * Don't persist negative counts
      */
     @Test
-    public void testAddToNowDefunctNegativeCount() {
+    public void testAddUidToNegativeCount() {
         agg = new GlobalIndexUidAggregator(10);
 
-        // The -1 will be changed to zero as negative numbers are the legacy format.
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(-1)
                 .build();
 
-        // Combine zero with a named uid brings the count to one.
+        // Combine -1 (count-only) with a named uid will increment the count
         Value value2 = UidTestBuilder.newBuilder()
                 .withUids("uid1")
-                .build();
-
-        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
-                .withCountOnly(1)
-                .build());
-
-        testForwardOnly(expectation, asList(value1, value2));
-    }
-
-    @Test
-    public void testAddToNowDefunctNegativeCountReverse() {
-        agg = new GlobalIndexUidAggregator(10);
-
-        // Combine zero with a named uid brings the count to one.
-        Value value1 = UidTestBuilder.newBuilder()
-                .withUids("uid1")
-                .build();
-
-        // The -1 will be changed to zero as negative numbers are the legacy format.
-        Value value2 = UidTestBuilder.newBuilder()
-                .withCountOnly(-1)
                 .build();
 
         Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
                 .withCountOnly(0)
                 .build());
 
-        testForwardOnly(expectation, asList(value1, value2));
+        testCombinations(expectation, asList(value1, value2));
     }
 
     @Test
-    public void testRemoveFromNowDefunctNegativeCount() {
+    public void testRemoveFromNowDefunctNegativeCountFinal() {
         agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(-1)
@@ -200,7 +177,64 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withCountOnly(0)
                 .build());
 
-        testCombinations(expectation, asList(value1, value2));
+        testFullCompactionOnly(expectation, asList(value1, value2));
+    }
+
+    @Test
+    public void testRemoveFromNowDefunctNegativeCountPartial() {
+        agg = new GlobalIndexUidAggregator(10);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withCountOnly(-1)
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(-2)
+                .build());
+
+        testPartialCompactionOnly(expectation, asList(value1, value2));
+    }
+
+    @Test
+    public void testDropKeyWhenCountReachesZero() {
+        agg = new GlobalIndexUidAggregator(10);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withCountOnly(1)
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(0)
+                .build());
+
+        testFullCompactionOnly(expectation, asList(value1, value2));
+    }
+
+    @Test
+    public void testDropKeyWhenCountReachesZeroPartial() {
+        agg = new GlobalIndexUidAggregator(10);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withCountOnly(1)
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(-1)
+                .build());
+
+        testPartialCompactionOnly(expectation, asList(value1, value2));
     }
 
     /**
@@ -373,7 +407,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
 
 
     @Test
-    public void floorOfZeroVariant() {
+    public void floorOfZeroVariantFinal() {
         agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(1)
@@ -389,7 +423,27 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withRemovals()
                 .build());
 
-        testCombinations(expectation, asList(value1, value2));
+        testFullCompactionOnly(expectation, asList(value1, value2));
+    }
+
+    @Test
+    public void floorOfZeroVariantPartial() {
+        agg = new GlobalIndexUidAggregator(10);
+        Value value1 = UidTestBuilder.newBuilder()
+                .withCountOnly(1)
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(-1)
+                .withRemovals()
+                .build());
+
+        testPartialCompactionOnly(expectation, asList(value1, value2));
     }
 
     @Test
@@ -433,6 +487,32 @@ public class GlobalIndexUidAggregatorExpandedTest {
         Collections.reverse(input);
 
         verify("Reverse, Partial Major", expectation, testPartialCompaction(input));
+        verify("Reverse, Full Major", expectNoRemovals, testAsFullMajorCompaction(input));
+    }
+
+    private void testPartialCompactionOnly(Uid.List expectation, List<Value> input) {
+        // There should be nothing in the removal UID list after a Full Major Compaction
+
+        Uid.List expectNoRemovals = Uid.List.newBuilder().mergeFrom(expectation).clearREMOVEDUID().build();
+
+        verify("Forward, Partial Major", expectation, testPartialCompaction(input));
+
+        // reverse the ordering of the input and try again
+        Collections.reverse(input);
+
+        verify("Reverse, Partial Major", expectation, testPartialCompaction(input));
+    }
+
+    private void testFullCompactionOnly(Uid.List expectation, List<Value> input) {
+        // There should be nothing in the removal UID list after a Full Major Compaction
+
+        Uid.List expectNoRemovals = Uid.List.newBuilder().mergeFrom(expectation).clearREMOVEDUID().build();
+
+        verify("Forward, Full Major", expectNoRemovals, testAsFullMajorCompaction(input));
+
+        // reverse the ordering of the input and try again
+        Collections.reverse(input);
+
         verify("Reverse, Full Major", expectNoRemovals, testAsFullMajorCompaction(input));
     }
 

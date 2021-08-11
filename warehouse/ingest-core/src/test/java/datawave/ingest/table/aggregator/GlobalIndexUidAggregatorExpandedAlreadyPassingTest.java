@@ -24,8 +24,6 @@ public class GlobalIndexUidAggregatorExpandedAlreadyPassingTest {
         agg.reset();
     }
 
-    // forward and reverse
-    // partial and full
 
     @Test
     public void twoSingleUids() {
