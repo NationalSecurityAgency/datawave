@@ -63,6 +63,7 @@ public class TermFrequencyHitFunction {
     // If a content function does not have a field in it's argument list, fall back to this map.
     private final Multimap<String,String> tfFVs;
     
+    // If a content function is negated, those field values will need to be fetched
     private boolean hasNegatedFunctions;
     
     // Document built from any negated content function terms that hit
@@ -447,13 +448,13 @@ public class TermFrequencyHitFunction {
     }
     
     // Will recursively ascend the tree looking for an ASTDelayedPredicate
-    private boolean isDelayed(Function function) {
+    private boolean isFunctionDelayed(Function function) {
         JexlNode arg = function.args().get(0);
-        return isDelayed(arg, new HashSet<>());
+        return isFunctionDelayed(arg, new HashSet<>());
     }
     
     // recursively ascend a query tree looking for ASTDelayedPredicate nodes
-    private boolean isDelayed(JexlNode node, Set<JexlNode> seen) {
+    private boolean isFunctionDelayed(JexlNode node, Set<JexlNode> seen) {
         
         seen.add(node);
         
@@ -469,11 +470,11 @@ public class TermFrequencyHitFunction {
             }
             
             // If no child was delayed, continue ascending
-            return isDelayed(node.jjtGetParent(), seen);
+            return isFunctionDelayed(node.jjtGetParent(), seen);
         } else if (ASTDelayedPredicate.instanceOf(node)) {
             return true;
         } else {
-            return isDelayed(node.jjtGetParent(), seen);
+            return isFunctionDelayed(node.jjtGetParent(), seen);
         }
     }
     
@@ -581,17 +582,17 @@ public class TermFrequencyHitFunction {
             fields = parseField(args.get(0));
         }
         
-        // nodes under a delayed marker are not part of the field index lookup and do not have values in the document. Values from a content function delayed
-        // for any reason must be fetched by this function.
-        boolean isNegated = isDelayed(function);
-        if (isNegated) {
+        // Negated terms are not looked up in the field index, and thus do not have values in the document.
+        // This function needs to fetch the missing values for any content function wrapped in a delayed marker.
+        boolean isDelayed = isFunctionDelayed(function);
+        if (isDelayed) {
             this.hasNegatedFunctions = true;
         }
         
         // Build up the list of sub queries
         LinkedList<SubQuery> subQueries = new LinkedList<>();
         for (String field : fields) {
-            subQueries.add(new SubQuery(subQueryId++, isNegated, field, values));
+            subQueries.add(new SubQuery(subQueryId++, isDelayed, field, values));
         }
         
         return subQueries;
