@@ -14,6 +14,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
@@ -39,6 +41,7 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
     
     @XmlElement(name = "Markings")
     @XmlJavaTypeAdapter(StringMapAdapter.class)
+    @JsonProperty(value = "Markings")
     private HashMap<String,String> markings;
     @XmlAttribute(name = "columnVisibility")
     private String columnVisibility;
@@ -47,6 +50,7 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
     @XmlAttribute(name = "name")
     private String name;
     @XmlElement(name = "Value")
+    @JsonProperty(value = "Value")
     private TypedValue value;
     
     public DefaultField() {}
@@ -82,10 +86,57 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
         return markings;
     }
     
+    public void setColumnVisibility(String columnVisibility) {
+        this.columnVisibility = columnVisibility;
+    }
+    
+    public String getColumnVisibility() {
+        return columnVisibility;
+    }
+    
+    public void setTimestamp(Long timestamp) {
+        this.timestamp = timestamp;
+    }
+    
     public Long getTimestamp() {
         return timestamp;
     }
     
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    @JsonProperty(value = "Value")
+    public void setValue(TypedValue value) {
+        this.value = value;
+    }
+    
+    @JsonProperty(value = "Value")
+    public TypedValue getTypedValue() {
+        return this.value;
+    }
+    
+    @JsonIgnore
+    public void setValue(Object value) {
+        if (value instanceof TypedValue) {
+            this.value = (TypedValue) value;
+        } else {
+            this.value = new TypedValue(value);
+        }
+    }
+    
+    @JsonIgnore
+    @XmlTransient
+    public Object getValueOfTypedValue() {
+        return (null == value) ? null : value.getValue();
+    }
+    
+    @JsonIgnore
+    @XmlTransient
     public String getValueString() {
         if (value.getValue() instanceof Type<?>) {
             return ((Type<?>) value.getValue()).getDelegate().toString();
@@ -94,22 +145,6 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
         } else {
             return value.getValue().toString();
         }
-    }
-    
-    public TypedValue getTypedValue() {
-        return this.value;
-    }
-    
-    public Object getValueOfTypedValue() {
-        return (null == value) ? null : value.getValue();
-    }
-    
-    public void setTimestamp(Long timestamp) {
-        this.timestamp = timestamp;
-    }
-    
-    public void setValue(Object value) {
-        this.value = new TypedValue(value);
     }
     
     @Override
@@ -148,14 +183,6 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
         }
         
         return false;
-    }
-    
-    public String getName() {
-        return name;
-    }
-    
-    public void setName(String name) {
-        this.name = name;
     }
     
     @Override
@@ -265,12 +292,4 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
             fieldMap.put("value", 5);
         }
     };
-    
-    public String getColumnVisibility() {
-        return columnVisibility;
-    }
-    
-    public void setColumnVisibility(String columnVisibility) {
-        this.columnVisibility = columnVisibility;
-    }
 }

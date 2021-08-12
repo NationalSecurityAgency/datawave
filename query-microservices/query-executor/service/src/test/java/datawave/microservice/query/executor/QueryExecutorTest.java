@@ -29,6 +29,7 @@ import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -64,6 +66,7 @@ import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -130,18 +133,17 @@ public abstract class QueryExecutorTest {
     @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications"})
     public static class LocalQueryExecutorTest extends QueryExecutorTest {}
     
-    // @Disabled("Temporarily disabled until local is running")
-    // @EmbeddedKafka
-    // @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-embedded-kafka"})
-    // public static class EmbeddedKafkaQueryExecutorTest extends QueryExecutorTest {}
-    //
-    // @Disabled("Cannot run this test without an externally deployed RabbitMQ instance.")
-    // @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-rabbit"})
-    // public static class RabbitQueryExecutorTest extends QueryExecutorTest {}
-    //
-    // @Disabled("Cannot run this test without an externally deployed Kafka instance.")
-    // @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-kafka"})
-    // public static class KafkaQueryExecutorTest extends QueryExecutorTest {}
+    @EmbeddedKafka
+    @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-embedded-kafka"})
+    public static class EmbeddedKafkaQueryExecutorTest extends QueryExecutorTest {}
+    
+    @Disabled("Cannot run this test without an externally deployed RabbitMQ instance.")
+    @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-rabbit"})
+    public static class RabbitQueryExecutorTest extends QueryExecutorTest {}
+    
+    @Disabled("Cannot run this test without an externally deployed Kafka instance.")
+    @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-kafka"})
+    public static class KafkaQueryExecutorTest extends QueryExecutorTest {}
     
     @SpringBootApplication(scanBasePackages = "datawave.microservice")
     public static class TestApplication {
@@ -162,8 +164,6 @@ public abstract class QueryExecutorTest {
             accumuloSetup.setData(FileType.CSV, dataType);
         } catch (Exception e) {
             log.error("Failed to setup data", e);
-            e.printStackTrace(System.err);
-            e.printStackTrace(System.out);
             throw e;
         }
     }
@@ -171,7 +171,6 @@ public abstract class QueryExecutorTest {
     @AfterAll
     public static void cleanupData() {
         accumuloSetup.after();
-        System.out.println("cleanupData finish");
     }
     
     @AfterEach
@@ -186,7 +185,6 @@ public abstract class QueryExecutorTest {
                 log.error("Failed to delete query", e);
             }
         }
-        System.out.println("cleanup finish");
     }
     
     @DirtiesContext
@@ -256,7 +254,7 @@ public abstract class QueryExecutorTest {
         
         // count the results
         int count = 0;
-        while (listener.receive(0) != null) {
+        while (listener.receive(10000) != null) {
             count++;
         }
         assertTrue(count >= 1);
@@ -291,6 +289,8 @@ public abstract class QueryExecutorTest {
         TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 3);
         createdQueries.add(key.getQueryId());
         assertNotNull(key);
+        
+        QueryQueueListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId().toString());
         
         TaskStates states = storageService.getTaskStates(key.getQueryId());
         assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
@@ -331,14 +331,18 @@ public abstract class QueryExecutorTest {
         assertEquals(QueryStatus.QUERY_STATE.CREATED, queryStatus.getQueryState());
         assertEquals(expectPlan, queryStatus.getPlan());
         
-        QueryQueueListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId().toString());
-        
         RemoteQueryRequestEvent notification = queryRequestsEvents.poll();
         assertNull(notification);
         
+        states = storageService.getTaskStates(key.getQueryId());
+        assertTrue(states.hasTasksForState(TaskStates.TASK_STATE.COMPLETED));
+        assertFalse(states.hasUnfinishedTasks());
+        queryStatus = storageService.getQueryStatus(key.getQueryId());
+        assertEquals(QueryStatus.QUERY_STATE.CREATED, queryStatus.getQueryState());
+        
         // count the results
         int count = 0;
-        while (listener.receive(0) != null) {
+        while (listener.receive(10000) != null) {
             count++;
         }
         assertTrue(count >= 1);

@@ -130,6 +130,18 @@ datawave:
           definedView: "LuceneUUIDEventQuery"
         - fieldName: "PAGE_TITLE"
           definedView: "LuceneUUIDEventQuery"
+    executor:
+      pollQueueSize: true
+      availableResultsPageMultiplier: 2.5
+      maxQueryStatusAge: 1000
+      maxQueueSize: 400
+      coreThreads: 10
+      maxThreads: 40
+      keepAliveMs: 600000
+      queryStatusExpirationMs: 60000
+      lockWaitTimeMillis: 5000
+      lockLeaseTimeMillis: 30000
+
     logic:
       factory:
         enabled: true
@@ -294,6 +306,11 @@ query:
     backend:
       kafka
 
+datawave:
+  query:
+    executor:
+      pollQueueSize: false
+
 ---
 
 spring.config.activate.on-profile: use-embedded-kafka
@@ -308,6 +325,11 @@ query:
   storage:
     backend:
       kafka
+
+datawave:
+  query:
+    executor:
+      pollQueueSize: false
 
 ---
 

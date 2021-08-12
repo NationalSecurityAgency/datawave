@@ -37,12 +37,10 @@ import org.springframework.stereotype.Component;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 
 import static datawave.microservice.query.storage.queue.KafkaQueryQueueManager.KAFKA;
 import static org.apache.kafka.common.ConsumerGroupState.STABLE;
@@ -304,15 +302,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
     
     @Override
     public int getQueueSize(final String topic) {
-        TopicDescription topicDescription = describeTopic(topic);
-        Set<TopicPartition> partitions = topicDescription.partitions().stream().map(d -> new TopicPartition(topic, d.partition())).collect(Collectors.toSet());
-        Consumer consumer = kafkaConsumerFactory.createConsumer();
-        Map<TopicPartition,Long> offsets = consumer.endOffsets(partitions);
-        Long total = offsets.entrySet().stream().mapToLong(e -> e.getValue() - consumer.position(e.getKey())).sum();
-        if (total > Integer.MAX_VALUE) {
-            throw new ArithmeticException("Queue size is over max int: total");
-        }
-        return total.intValue();
+        throw new UnsupportedOperationException("Cannot check the position for partitions assigned to other consumers in Kafka");
     }
     
     private ConsumerGroupDescription describeGroup(String group) {
