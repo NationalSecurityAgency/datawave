@@ -110,27 +110,19 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         while (!isFinished(queryId)) {
             Message<Result> message = resultListener.receive(nextCallProperties.getResultPollIntervalMillis());
             if (message != null) {
-                Object[] payload = message.getPayload().getPayload();
-                for (int resultIdx = 0; resultIdx < payload.length; resultIdx++) {
-                    Object result = payload[resultIdx];
-                    
-                    // have to check to make sure we haven't reached the page size
-                    if (!isFinished(queryId)) {
-                        if (result != null) {
-                            results.add(result);
-                            
-                            if (logicBytesPerPage > 0) {
-                                pageSizeBytes += ObjectSizeOf.Sizer.getObjectSize(result);
-                            }
-                        } else {
-                            log.debug("Null result encountered, no more results");
-                            break;
+                Object result = message.getPayload().getPayload();
+                
+                // have to check to make sure we haven't reached the page size
+                if (!isFinished(queryId)) {
+                    if (result != null) {
+                        results.add(result);
+                        
+                        if (logicBytesPerPage > 0) {
+                            pageSizeBytes += ObjectSizeOf.Sizer.getObjectSize(result);
                         }
                     } else {
-                        // TODO: This will no longer be possible once the result queues are updated to pass single results instead of arrays
-                        if ((resultIdx + 1) != payload.length) {
-                            log.error("Next call is dropping " + (payload.length - (resultIdx + 1)) + " results");
-                        }
+                        log.debug("Null result encountered, no more results");
+                        break;
                     }
                 }
             }

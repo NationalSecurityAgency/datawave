@@ -438,14 +438,14 @@ public abstract class QueryStorageCacheTest {
         listeners.add(listener);
         
         // send a result
-        Result result = new Result("result1", new Object[] {"Some result"});
+        Result result = new Result("result1", "Some result");
         queueManager.sendMessage(key.getQueryId(), result);
         
         // receive the message
         Message<Result> msg = listener.receive();
         
         assertNotNull(msg, "Got no result message");
-        assertEquals(result.getPayload()[0], msg.getPayload().getPayload()[0]);
+        assertEquals(result.getPayload(), msg.getPayload().getPayload());
     }
     
     private void assertQueryCreate(String queryId, String queryPool, QueryState state) {

@@ -213,7 +213,7 @@ public abstract class ExecutorAction implements Runnable {
             boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
             while (running && iter.hasNext()) {
                 Object result = iter.next();
-                queues.sendMessage(taskKey.getQueryId(), new Result(UUID.randomUUID().toString(), new Object[] {result}));
+                queues.sendMessage(taskKey.getQueryId(), new Result(UUID.randomUUID().toString(), result));
                 queryStatus.incrementNumResultsGenerated(1);
                 
                 // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)

@@ -140,8 +140,7 @@ public abstract class AbstractQueryServiceTest {
     
     protected void publishEventsToQueue(String queryId, int numEvents, MultiValueMap<String,String> fieldValues, String visibility) throws Exception {
         for (int resultId = 0; resultId < numEvents; resultId++) {
-            DefaultEvent[] events = new DefaultEvent[1];
-            events[0] = new DefaultEvent();
+            DefaultEvent event = new DefaultEvent();
             long currentTime = System.currentTimeMillis();
             List<DefaultField> fields = new ArrayList<>();
             for (Map.Entry<String,List<String>> entry : fieldValues.entrySet()) {
@@ -149,8 +148,8 @@ public abstract class AbstractQueryServiceTest {
                     fields.add(new DefaultField(entry.getKey(), visibility, currentTime, value));
                 }
             }
-            events[0].setFields(fields);
-            queryQueueManager.sendMessage(queryId, new Result(Integer.toString(resultId), events));
+            event.setFields(fields);
+            queryQueueManager.sendMessage(queryId, new Result(Integer.toString(resultId), event));
         }
     }
     
