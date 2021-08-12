@@ -24,6 +24,7 @@ import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTNumberLiteral;
 import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -611,7 +612,7 @@ public class TermFrequencyHitFunction {
     
     // A node is special if it is not the fields being searched. That is, the first node is a number or a variable 'termOffsetMap'
     private boolean isFirstNodeSpecial(JexlNode node) {
-        if (node instanceof ASTNumberLiteral) {
+        if (node instanceof ASTNumberLiteral || node instanceof ASTUnaryMinusNode) {
             return true;
         } else if (node instanceof ASTReference) {
             List<ASTIdentifier> ids = JexlASTHelper.getIdentifiers(node);
@@ -631,8 +632,7 @@ public class TermFrequencyHitFunction {
         TreeSet<String> fields = new TreeSet<>();
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
-//            fields.add(JexlASTHelper.deconstructIdentifier(identifier));
-            fields.add(identifier.image);
+            fields.add(JexlASTHelper.deconstructIdentifier(identifier));
         }
         return fields;
     }
