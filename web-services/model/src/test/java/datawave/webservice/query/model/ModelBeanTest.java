@@ -70,7 +70,7 @@ public class ModelBeanTest {
     
     private datawave.webservice.model.Model MODEL_ONE = null;
     private datawave.webservice.model.Model MODEL_TWO = null;
-    
+
     @Before
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
@@ -91,11 +91,24 @@ public class ModelBeanTest {
         
         URL m1Url = ModelBeanTest.class.getResource("/ModelBeanTest_m1.xml");
         URL m2Url = ModelBeanTest.class.getResource("/ModelBeanTest_m2.xml");
+
+         /*
+         * In jdk 9+, java.lang.Package.getPackageInfo() may fail to load a package-info.class,
+         * which is needed to resolve our JAXB package-level annotations. Here, this results in:
+         *
+         * "javax.xml.bind.UnmarshalException: unexpected element (uri:"http://webservice.datawave/v1", local:"Model").
+         *    Expected elements are <{}Model>"
+         *
+         * As a workaround, we can force it to load here in the same manner as in jdk 8's Package.getPackageInfo(),
+         * though there's likely a "better" (i.e., module-focused) way of handling this in jdk 9+
+         *
+         * E.g., see https://stackoverflow.com/questions/52157040/
+         */
+        Class.forName("datawave.webservice.model.package-info", false, this.getClass().getClassLoader());
+
         JAXBContext ctx = JAXBContext.newInstance(datawave.webservice.model.Model.class);
         Unmarshaller u = ctx.createUnmarshaller();
 
-        // TODO: Fix javax.xml.bind.UnmarshalException: unexpected element (uri:"http://webservice.datawave/v1", local:"Model"). Expected elements are <{}Model>
-        // Unclear why this is no longer working....
         MODEL_ONE = (datawave.webservice.model.Model) u.unmarshal(m1Url);
         MODEL_TWO = (datawave.webservice.model.Model) u.unmarshal(m2Url);
         
@@ -117,7 +130,7 @@ public class ModelBeanTest {
         } catch (Exception e) {}
     }
     
-    //@Test(expected = DatawaveWebApplicationException.class)
+    @Test(expected = DatawaveWebApplicationException.class)
     public void testModelImportNoTable() throws Exception {
         HashMap<String,String> trackingMap = new HashMap<>();
         EasyMock.expect(connectionFactory.getTrackingMap((StackTraceElement[]) EasyMock.anyObject())).andReturn(trackingMap);
@@ -170,7 +183,7 @@ public class ModelBeanTest {
         PowerMock.verifyAll();
     }
     
-    //@Test
+    @Test
     public void testListModels() throws Exception {
         importModels();
         PowerMock.resetAll();
@@ -190,7 +203,7 @@ public class ModelBeanTest {
         Assert.assertTrue(list.getNames().contains(MODEL_TWO.getName()));
     }
     
-    //@Test
+    @Test
     public void testModelGet() throws Exception {
         importModels();
         PowerMock.resetAll();
@@ -208,7 +221,7 @@ public class ModelBeanTest {
         Assert.assertEquals(MODEL_ONE, model);
     }
     
-    //@Test
+    @Test
     public void testModelDelete() throws Exception {
         importModels();
         PowerMock.resetAll();
@@ -269,7 +282,7 @@ public class ModelBeanTest {
         
     }
     
-    //@Test(expected = DatawaveWebApplicationException.class)
+    @Test(expected = DatawaveWebApplicationException.class)
     public void testModelGetInvalidModelName() throws Exception {
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
@@ -282,7 +295,7 @@ public class ModelBeanTest {
         PowerMock.verifyAll();
     }
     
-    //@Test
+    @Test
     public void testCloneModel() throws Exception {
         importModels();
         PowerMock.resetAll();
@@ -322,7 +335,7 @@ public class ModelBeanTest {
         
     }
     
-    //@Test
+    @Test
     public void testCheckModelName() throws Exception {
         String modelTableName = Whitebox.invokeMethod(bean, "checkModelTableName", (String) null);
         Assert.assertEquals(ModelBean.DEFAULT_MODEL_TABLE_NAME, modelTableName);
