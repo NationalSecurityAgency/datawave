@@ -16,7 +16,7 @@ export PATH=${NIFI_HOME}/bin:$PATH
 
 DW_NIFI_CMD_START="( cd ${NIFI_HOME}/bin && ./nifi.sh start )"
 DW_NIFI_CMD_STOP="( cd ${NIFI_HOME}/bin && ./nifi.sh stop )"
-DW_NIFI_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'org.apache.nifi'"
+DW_NIFI_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'org.apache.nifi'"
 
 function nifiIsRunning() {
     DW_NIFI_PID_LIST="$(eval "${DW_NIFI_CMD_FIND_ALL_PIDS}")"

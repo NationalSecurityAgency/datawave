@@ -20,6 +20,9 @@ DW_ZOOKEEPER_DIST="$( downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_
 DW_ZOOKEEPER_BASEDIR="zookeeper-install"
 DW_ZOOKEEPER_SYMLINK="zookeeper"
 
+# You may override DW_ZOOKEEPER_BIND_HOST in your env ahead of time
+DW_ZOOKEEPER_BIND_HOST="${DW_ZOOKEEPER_BIND_HOST:-localhost}"
+
 # zoo.cfg...
 DW_ZOOKEEPER_CONF="
 tickTime=2000
@@ -39,6 +42,9 @@ DW_ACCUMULO_SYMLINK="accumulo"
 DW_ACCUMULO_INSTANCE_NAME="my-instance-01"
 DW_ACCUMULO_PASSWORD="${DW_ACCUMULO_PASSWORD:-secret}"
 
+# You may override DW_ACCUMULO_BIND_HOST in your env ahead of time
+DW_ACCUMULO_BIND_HOST="${DW_ACCUMULO_BIND_HOST:-localhost}"
+
 alias ashell="accumulo shell -u root -p ${DW_ACCUMULO_PASSWORD}"
 
 # Note that example configuration is provided for setting up VFS classpath for DataWave jars,
@@ -52,7 +58,7 @@ DW_ACCUMULO_VFS_DATAWAVE_DIR="/datawave/accumulo-vfs-classpath"
 # accumulo-site.xml (Format: <property-name><space><property-value>{<newline>})
 
 DW_ACCUMULO_SITE_CONF="instance.volumes ${DW_HADOOP_DFS_URI}/accumulo
-instance.zookeeper.host localhost:2181
+instance.zookeeper.host ${DW_ZOOKEEPER_BIND_HOST}:2181
 instance.secret ${DW_ACCUMULO_PASSWORD}
 tserver.memory.maps.max 385M
 tserver.memory.maps.native.enabled false
@@ -67,7 +73,7 @@ if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
 general.vfs.context.classpath.datawave ${DW_HADOOP_DFS_URI}${DW_ACCUMULO_VFS_DATAWAVE_DIR}/.*.jar"
 fi
 
-DW_ACCUMULO_CLIENT_CONF="instance.zookeeper.host=localhost:2181"
+DW_ACCUMULO_CLIENT_CONF="instance.zookeeper.host=${DW_ZOOKEEPER_BIND_HOST}:2181"
 
 DW_ACCUMULO_JVM_HEAPDUMP_DIR="${DW_CLOUD_DATA}/heapdumps"
 
@@ -81,11 +87,11 @@ export PATH=${ACCUMULO_HOME}/bin:${ZOOKEEPER_HOME}/bin:$PATH
 
 DW_ZOOKEEPER_CMD_START="( cd ${ZOOKEEPER_HOME}/bin && ./zkServer.sh start )"
 DW_ZOOKEEPER_CMD_STOP="( cd ${ZOOKEEPER_HOME}/bin && ./zkServer.sh stop )"
-DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'zookeeper.server.quorum.QuorumPeerMain'"
+DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'zookeeper.server.quorum.QuorumPeerMain'"
 
 DW_ACCUMULO_CMD_START="( cd ${ACCUMULO_HOME}/bin && ./start-all.sh )"
 DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./stop-all.sh )"
-DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'o.start.Main master|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
+DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'o.start.Main master|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
 
 function accumuloIsRunning() {
     DW_ACCUMULO_PID_LIST="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS}")"
@@ -108,7 +114,7 @@ function accumuloStart() {
     fi
     eval "${DW_ACCUMULO_CMD_START}"
     echo
-    info "For detailed status visit 'http://localhost:9995' in your browser"
+    info "For detailed status visit 'http://${DW_ACCUMULO_BIND_HOST}:9995' in your browser"
 }
 
 function accumuloStop() {
