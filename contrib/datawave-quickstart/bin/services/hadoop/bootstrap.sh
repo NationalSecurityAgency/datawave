@@ -8,13 +8,10 @@ DW_HADOOP_DIST="$( downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_
 DW_HADOOP_BASEDIR="hadoop-install"
 DW_HADOOP_SYMLINK="hadoop"
 
-# You may override DW_HADOOP_BIND_HOST in your env ahead of time
-DW_HADOOP_BIND_HOST="${DW_HADOOP_BIND_HOST:-localhost}"
-
-DW_HADOOP_DFS_URI="hdfs://${DW_HADOOP_BIND_HOST}:9000"
+DW_HADOOP_DFS_URI="hdfs://localhost:9000"
 DW_HADOOP_MR_INTER_DIR="/jobhist/inter"
 DW_HADOOP_MR_DONE_DIR="/jobhist/done"
-DW_HADOOP_RESOURCE_MANAGER_ADDRESS="${DW_HADOOP_BIND_HOST}:8050"
+DW_HADOOP_RESOURCE_MANAGER_ADDRESS="localhost:8050"
 
 HADOOP_HOME="${DW_CLOUD_HOME}/${DW_HADOOP_SYMLINK}"
 
@@ -25,7 +22,7 @@ io.compression.codecs org.apache.hadoop.io.compress.GzipCodec"
 
 # hdfs-site.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_HDFS_SITE_CONF="dfs.namenode.name.dir file://${DW_CLOUD_DATA}/hadoop/nn
-dfs.namenode.secondary.http-address ${DW_HADOOP_BIND_HOST}
+dfs.namenode.secondary.http-address localhost
 dfs.namenode.checkpoint.dir file://${DW_CLOUD_DATA}/hadoop/nnchk
 dfs.datanode.data.dir file://${DW_CLOUD_DATA}/hadoop/dn
 dfs.datanode.handler.count 10
@@ -34,8 +31,8 @@ dfs.replication 1"
 
 DW_HADOOP_MR_HEAPDUMP_DIR="${DW_CLOUD_DATA}/heapdumps"
 # mapred-site.xml (Format: <property-name><space><property-value>{<newline>})
-DW_HADOOP_MAPRED_SITE_CONF="mapreduce.jobhistory.address http://${DW_HADOOP_BIND_HOST}:8020
-mapreduce.jobhistory.webapp.address http://${DW_HADOOP_BIND_HOST}:8021
+DW_HADOOP_MAPRED_SITE_CONF="mapreduce.jobhistory.address http://localhost:8020
+mapreduce.jobhistory.webapp.address http://localhost:8021
 mapreduce.jobhistory.intermediate-done-dir ${DW_HADOOP_MR_INTER_DIR}
 mapreduce.jobhistory.done-dir ${DW_HADOOP_MR_DONE_DIR}
 mapreduce.map.memory.mb 2048
@@ -48,12 +45,12 @@ mapreduce.map.env HADOOP_MAPRED_HOME=${HADOOP_HOME}
 mapreduce.reduce.env HADOOP_MAPRED_HOME=${HADOOP_HOME}"
 
 # yarn-site.xml (Format: <property-name><space><property-value>{<newline>})
-DW_HADOOP_YARN_SITE_CONF="yarn.resourcemanager.scheduler.address ${DW_HADOOP_BIND_HOST}:8030
+DW_HADOOP_YARN_SITE_CONF="yarn.resourcemanager.scheduler.address localhost:8030
 yarn.resourcemanager.scheduler.class org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler
-yarn.resourcemanager.resource-tracker.address ${DW_HADOOP_BIND_HOST}:8025
+yarn.resourcemanager.resource-tracker.address localhost:8025
 yarn.resourcemanager.address ${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}
-yarn.resourcemanager.admin.address ${DW_HADOOP_BIND_HOST}:8033
-yarn.resourcemanager.webapp.address ${DW_HADOOP_BIND_HOST}:8088
+yarn.resourcemanager.admin.address localhost:8033
+yarn.resourcemanager.webapp.address localhost:8088
 yarn.nodemanager.local-dirs ${DW_CLOUD_DATA}/hadoop/yarn/local
 yarn.nodemanager.log-dirs ${DW_CLOUD_DATA}/hadoop/yarn/log
 yarn.nodemanager.aux-services mapreduce_shuffle
@@ -61,7 +58,7 @@ yarn.nodemanager.pmem-check-enabled false
 yarn.nodemanager.vmem-check-enabled false
 yarn.nodemanager.resource.memory-mb 4096
 yarn.app.mapreduce.am.resource.mb 1024
-yarn.log.server.url http://${DW_HADOOP_BIND_HOST}:8070/jobhistory/logs"
+yarn.log.server.url http://localhost:8070/jobhistory/logs"
 
 # capacity-scheduler.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_CAPACITY_SCHEDULER_CONF="yarn.scheduler.capacity.maximum-applications 10000
@@ -108,7 +105,7 @@ function hadoopIsRunning() {
 function hadoopStart() {
     hadoopIsRunning && echo "Hadoop is already running" || eval "${DW_HADOOP_CMD_START}"
     echo
-    info "For detailed status visit 'http://${DW_HADOOP_BIND_HOST}:50070/dfshealth.html#tab-overview' in your browser"
+    info "For detailed status visit 'http://localhost:50070/dfshealth.html#tab-overview' in your browser"
     # Wait for Hadoop to come out of safemode
     ${HADOOP_HOME}/bin/hdfs dfsadmin -safemode wait
 }
