@@ -170,11 +170,11 @@ public class IteratorBuildingVisitorTest {
     @Ignore
     public void NeTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 != 'v1'");
-        Key hit = new Key("row", "dataType\u0000123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000F1", "v0\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "fi\u0000F1", "v1\u0000dataType\u0000123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "F1", "v0" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "F1", "v1" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
         
         vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
                         Collections.singleton("F2"));
@@ -185,11 +185,11 @@ public class IteratorBuildingVisitorTest {
     @Ignore
     public void excludedOrTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 == 'v1' || !(F2 == 'v2')");
-        Key hit = new Key("row", "dataType\u0000123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000F1", "v1\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "fi\u0000F2", "v2\u0000dataType\u0000123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "F1", "v1" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "F2", "v2" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
         
         vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
                         Collections.singleton("F2"));
@@ -199,11 +199,11 @@ public class IteratorBuildingVisitorTest {
     @Ignore
     public void nestedExcludeOnlyTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F1 == 'v1' && (!(F2 == 'v2') || !(F3 == 'v3'))");
-        Key hit = new Key("row", "dataType\u0000123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000F1", "v1\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "fi\u0000F2", "v3\u0000dataType\u0000123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "F1", "v1" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "F2", "v3" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
         
         vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, Collections.EMPTY_SET, Collections.EMPTY_SET,
                         Collections.singleton("F2"));
@@ -212,11 +212,11 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000f\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "f" + NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -238,11 +238,11 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeIndexOnlyTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000f\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "f" + NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -264,11 +264,11 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNodeRange_LowerBoundaryTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000e\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "e" + NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -290,11 +290,11 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNodeRange_LowerBoundaryIndexOnlyTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000e\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "e" + NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -316,11 +316,11 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeUpperBoundaryTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000m\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "m" + NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -342,11 +342,11 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarkerJexlNode_RangeUpperBoundaryIndexOnlyTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000m\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "m" + NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -370,8 +370,8 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000mn\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "mn" + NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -387,8 +387,8 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000mn\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "mn" + NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -404,8 +404,8 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -421,8 +421,8 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -436,11 +436,11 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarker_RegexTrailingWildcardNoAggregationTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && (FOO =~ 'd.*'))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -454,11 +454,11 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarker_RegexTrailingWildcardNoAggregationIndexOnlyTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && (FOO =~ 'd.*'))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -472,13 +472,13 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarker_RegexTrailingWildcardAggregatedFieldsTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && (FOO =~ 'd.*'))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000cd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000e\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "cd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "e" + NULL + "FOO"), new Value()));
         
         Map<String,List<String>> expectedDocValues = new HashMap<>();
         List<String> expectedValues = new ArrayList<>();
@@ -492,13 +492,13 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarker_RegexTrailingWildcardAggregatedFieldsIndexOnlyTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && (FOO =~ 'd.*'))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000cd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000e\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "cd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "e" + NULL + "FOO"), new Value()));
         
         Map<String,List<String>> expectedDocValues = new HashMap<>();
         List<String> expectedValues = new ArrayList<>();
@@ -512,14 +512,14 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarker_RegexTrailingWildcardAggregatedMultipleFieldsTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && (FOO =~ 'd.*'))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000cd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000dd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000e\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "cd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "dd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "e" + NULL + "FOO"), new Value()));
         
         Map<String,List<String>> expectedDocValues = new HashMap<>();
         List<String> expectedValues = new ArrayList<>();
@@ -534,14 +534,14 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarker_RegexTrailingWildcardAggregatedMultipleFieldsIndexOnlyTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && (FOO =~ 'd.*'))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000cd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000dd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000e\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "cd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "dd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "e" + NULL + "FOO"), new Value()));
         
         Map<String,List<String>> expectedDocValues = new HashMap<>();
         List<String> expectedValues = new ArrayList<>();
@@ -556,15 +556,15 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarker_RegexMiddleWildcardTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && (FOO =~ 'd.*foo'))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000cd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000ddfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000dzzzzfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000e\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "cd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "ddfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "dzzzzfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "e" + NULL + "FOO"), new Value()));
         
         Map<String,List<String>> expectedDocValues = new HashMap<>();
         List<String> expectedValues = new ArrayList<>();
@@ -579,15 +579,15 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarker_RegexMiddleWildcardIndexOnlyTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && (FOO =~ 'd.*foo'))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000cd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000ddfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000dzzzzfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000e\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "cd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "ddfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "dzzzzfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "e" + NULL + "FOO"), new Value()));
         
         Map<String,List<String>> expectedDocValues = new HashMap<>();
         List<String> expectedValues = new ArrayList<>();
@@ -602,15 +602,15 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarker_RegexLeadingWildcardTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && (FOO =~ '.*foo'))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000cd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000ddfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000dzzzzfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000e\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "cd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "ddfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "dzzzzfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "e" + NULL + "FOO"), new Value()));
         
         Map<String,List<String>> expectedDocValues = new HashMap<>();
         List<String> expectedValues = new ArrayList<>();
@@ -625,15 +625,15 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarker_RegexLeadingWildcardIndexOnlyTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && (FOO =~ '.*foo'))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000cd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000ddfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000dzzzzfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000e\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "cd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "ddfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "dzzzzfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "e" + NULL + "FOO"), new Value()));
         
         Map<String,List<String>> expectedDocValues = new HashMap<>();
         expectedDocValues.put("FOO", Lists.newArrayList("ddfoo", "dzzzzfoo"));
@@ -645,15 +645,15 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarker_NegatedRegexLeadingWildcardTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((_Value_ = true) && (FOO =~ '.*a'))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000cd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000ddfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000dzzzzfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000e\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "cd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "ddfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "dzzzzfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "e" + NULL + "FOO"), new Value()));
         
         // leading wildcard match foo values must have doc including those values
         vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, false);
@@ -662,15 +662,15 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarker_NegatedRegexLeadingWildcardIndexOnlyTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((_Value_ = true) && (FOO =~ '.*a'))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000cd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000ddfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000dzzzzfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000e\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "cd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "ddfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "dzzzzfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "e" + NULL + "FOO"), new Value()));
         
         // leading wildcard match foo values must have doc including those values
         vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, hit, source, false, null, true);
@@ -681,12 +681,12 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((_Value_ = true) && (FOO =~ '.*foo'))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000cd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000ddfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000dzzzzfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000e\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "cd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "ddfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "dzzzzfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "e" + NULL + "FOO"), new Value()));
         
         // doc contains the regex so should not be evaluated
         vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, false);
@@ -697,12 +697,12 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((_Value_ = true) && (FOO =~ '.*foo'))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000cd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000ddfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000dzzzzfoo\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000e\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "cd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "ddfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "dzzzzfoo" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "e" + NULL + "FOO"), new Value()));
         
         // doc contains the regex so should not be evaluated
         vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(script, null, source, false, null, true);
@@ -711,14 +711,14 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarker_RegexLeadingWildcardNegationAltHitTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((_Value_ = true) && (FOO =~ '.*foo'))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000cd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000dd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000dzzzz\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "cd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "dd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "dzzzz" + NULL + "FOO"), new Value()));
         
         // empty document because it didn't find the pattern match (.*foo)
         // ultimately the non .*foo entries don't need to be built because the query only cares if they exist
@@ -729,14 +729,14 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void visitAnd_ExceededValueThresholdMarker_RegexLeadingWildcardNegationAltHitIndexOnlyTest() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((_Value_ = true) && (FOO =~ '.*foo'))");
-        Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000BAZ", "woot\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000cd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000de\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000dd\u0000FOO"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000dzzzz\u0000FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "BAZ", "woot" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "cd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "de" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "dd" + NULL + "FOO"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "tf", "dataType" + NULL + "123.345.456" + NULL + "dzzzz" + NULL + "FOO"), new Value()));
         
         // empty document because it didn't find the pattern match (.*foo)
         // ultimately the non .*foo entries don't need to be built because the query only cares if they exist
@@ -747,24 +747,21 @@ public class IteratorBuildingVisitorTest {
     @Test
     public void test_contentPhrase() throws Exception {
         String query = "FOO == 'few' && (content:phrase('TEXT', termOffsetMap, 'bar', 'baz') && TEXT == 'bar' && TEXT == 'baz')";
-        // String query = "FOO == 'few' && TEXT == 'bar' && TEXT == 'baz'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         
-        Key hit = new Key("row", "dataType\u0000123.345.456");
+        Key hit = new Key("row", "dataType" + NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new SimpleEntry(new Key("row", "fi\u0000FOO", "few\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "fi\u0000TEXT", "bar\u0000dataType\u0000123.345.456"), new Value()));
-        source.add(new SimpleEntry(new Key("row", "fi\u0000TEXT", "baz\u0000dataType\u0000123.345.456"), new Value()));
-        // source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000bar\u0000TEXT"), new Value()));
-        // source.add(new SimpleEntry(new Key("row", "tf", "dataType\u0000123.345.456\u0000baz\u0000TEXT"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "FOO", "few" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "TEXT", "bar" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
+        source.add(new SimpleEntry(new Key("row", "fi" + NULL + "TEXT", "baz" + NULL + "dataType" + NULL + "123.345.456"), new Value()));
         
         Map<String,List<String>> expectedDocValues = new HashMap<>();
         expectedDocValues.put("FOO", Lists.newArrayList("few"));
         expectedDocValues.put("TEXT", Lists.newArrayList("bar", "baz"));
         
-        Key startRangeKey = new Key("row", "dataType\u0000123.345.456");
-        Key endRangeKey = new Key("row", "dataType\u0000123.345.456" + NULL + Constants.MAX_UNICODE_STRING);
+        Key startRangeKey = new Key("row", "dataType" + NULL + "123.345.456");
+        Key endRangeKey = new Key("row", "dataType" + NULL + "123.345.456" + NULL + Constants.MAX_UNICODE_STRING);
         Range docRange = new Range(startRangeKey, true, endRangeKey, true);
         
         Set<String> tfFields = Collections.singleton("TEXT");
@@ -791,8 +788,8 @@ public class IteratorBuildingVisitorTest {
     private void vistAnd_ExceededValueThesholdMarkerJexlNode_termFrequencyTest(ASTJexlScript query, Key docKeyHit, List<Map.Entry<Key,Value>> source,
                     boolean buildDoc, Map<String,List<String>> docKeys, Set<String> termFrequencyFields, Set<String> aggregationFields,
                     Set<String> indexOnlyFields) throws Exception {
-        Key startRangeKey = new Key("row", "dataType\u0000123.345.456");
-        Key endRangeKey = new Key("row", "dataType\u0000123.345.456" + NULL + Constants.MAX_UNICODE_STRING);
+        Key startRangeKey = new Key("row", "dataType" + NULL + "123.345.456");
+        Key endRangeKey = new Key("row", "dataType" + NULL + "123.345.456" + NULL + Constants.MAX_UNICODE_STRING);
         Range docRange = new Range(startRangeKey, true, endRangeKey, true);
         
         eval(query, docRange, docKeyHit, source, buildDoc, docKeys, termFrequencyFields, aggregationFields, indexOnlyFields);
