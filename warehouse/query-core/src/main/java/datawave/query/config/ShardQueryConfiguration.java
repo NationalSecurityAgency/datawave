@@ -2118,7 +2118,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                 return "";
         }
     }
-
+    
     public boolean isDisableWhindexFieldMappings() {
         return disableWhindexFieldMappings;
     }
