@@ -40,7 +40,8 @@ import java.util.TreeMap;
  * <p>
  * Helper class to fetch data from the date index.
  * </p>
- * <table border="1" summary="">
+ * <table border="1">
+ * <caption></caption>
  * <tr>
  * <th>Schema Type</th>
  * <th>Use</th>

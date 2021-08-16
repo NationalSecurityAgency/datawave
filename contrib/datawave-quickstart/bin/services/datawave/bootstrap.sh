@@ -30,8 +30,7 @@ source "${DW_DATAWAVE_SERVICE_DIR}/bootstrap-user.sh"
 DW_DATAWAVE_BUILD_PROFILE=${DW_DATAWAVE_BUILD_PROFILE:-dev}
 
 # Maven command
-## TODO Fix javadoc issues for Java 11. Skipping javadoc here for now...
-DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Dmaven.javadoc.skip=true -Ddeploy -Dtar -Ddist -Dservices -DskipTests clean install --builder smart -T1.0C}"
+DW_DATAWAVE_BUILD_COMMAND="${DW_DATAWAVE_BUILD_COMMAND:-mvn -P${DW_DATAWAVE_BUILD_PROFILE} -Ddeploy -Dtar -Ddist -DskipTests clean install --builder smart -T1.0C}"
 
 # Home of any temp data and *.properties file overrides for this instance of DataWave
 

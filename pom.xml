@@ -29,7 +29,6 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <surefire.forkCount>1C</surefire.forkCount>
-        <!--<version.accumulo>2.1.0-SNAPSHOT</version.accumulo>-->
         <version.accumulo>2.0.1</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
@@ -1590,11 +1589,8 @@
                                 <phase>package</phase>
                                 <configuration>
                                     <encoding>UTF-8</encoding>
-                                    <doclint>none</doclint>
                                     <destDir>${project.build.directory}/apidocs</destDir>
-                                    <javadocVersion>1.8.0</javadocVersion>
                                     <additionalJOption>-J-Xmx768m</additionalJOption>
-                                    <source>8</source>
                                     <tags>
                                         <tag>
                                             <name>HTTP</name>
@@ -1620,13 +1616,9 @@
                                     <show>private</show>
                                     <quiet>true</quiet>
                                     <javaApiLinks>
-                                        <!--<property>
+                                        <property>
                                             <name>api_11.0</name>
                                             <value>https://docs.oracle.com/en/java/javase/11/docs/api/</value>
-                                        </property>-->
-                                        <property>
-                                            <name>api_1.8</name>
-                                            <value>http://docs.oracle.com/javase/8/docs/api</value>
                                         </property>
                                     </javaApiLinks>
                                 </configuration>
