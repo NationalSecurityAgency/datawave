@@ -18,7 +18,6 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -1146,7 +1145,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             
             // if this node is one of the anded nodes, or a composite
             // comprised of one of the anded nodes, halt recursion
-            List<JexlNode> usedAndedNodes = usesAndedNodes(node);
+            List<JexlNode> usedAndedNodes = usedAndedNodes(node);
             if (!usedAndedNodes.isEmpty()) {
                 parentData.usedAndedNodes.addAll(usedAndedNodes);
                 return node;
@@ -1237,7 +1236,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             
             // if this node is one of the anded nodes, or a composite
             // comprised of one of the anded nodes, halt recursion
-            List<JexlNode> usedAndedNodes = usesAndedNodes(node);
+            List<JexlNode> usedAndedNodes = usedAndedNodes(node);
             if (!usedAndedNodes.isEmpty()) {
                 parentData.usedAndedNodes.addAll(usedAndedNodes);
                 return node;
@@ -1347,7 +1346,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
          *            The node to check for anded components
          * @return A list of anded jexl nodes used to create the composite node
          */
-        private List<JexlNode> usesAndedNodes(JexlNode node) {
+        private List<JexlNode> usedAndedNodes(JexlNode node) {
             List<JexlNode> usedAndedNodes = new ArrayList<>();
             for (JexlNode andedNode : andedNodes)
                 if (compositeNodes.containsKey(node) && compositeNodes.get(node).contains(andedNode))
@@ -1360,7 +1359,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
                 initialNode = node;
             
             DistAndData parentData = (DistAndData) data;
-            parentData.usedAndedNodes.addAll(usesAndedNodes(node));
+            parentData.usedAndedNodes.addAll(usedAndedNodes(node));
         }
     }
 }
