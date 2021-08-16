@@ -75,6 +75,12 @@ public class WhindexVisitor extends RebuildingVisitor {
     
     private final HashMap<JexlNode,WhindexTerm> jexlNodeToWhindexMap = new HashMap<>();
     
+    /**
+     * This object is used to keep track of the available anded leaf nodes being passed down to each subtree, and also to keep track of the anded leaf nodes
+     * which are used as we traverse the subtree. This information will be used at the parent of the subtree where the anded leaf node originated to determine
+     * which leaves need to be distributed into the tree and to what extend. We are also tracking/returning whether or not a whindex was found/created as we
+     * traverse the subtree.
+     */
     private static class ExpandData {
         public boolean foundWhindex = false;
         public Multimap<String,JexlNode> andedNodes = LinkedHashMultimap.create();
@@ -135,6 +141,17 @@ public class WhindexVisitor extends RebuildingVisitor {
         return (T) script.jjtAccept(visitor, new ExpandData());
     }
     
+    /**
+     * This method is used to ensure that we don't allow mapping to fields which did not exist prior to the begin date of the query. If the new field didn't
+     * exist before the begin date of the query, then we should not allow a mapping to be made. New fields which were created after the begin date, but before
+     * the end date of the query will be mapped when this visitor is called in the visitor function. {@link datawave.query.tables.async.event.VisitorFunction}
+     * 
+     * @param valueSpecificFieldMappings
+     *            the configured value-specific field mappings
+     * @param beginDate
+     *            the begin date of the query
+     * @return the reduced set of value-specific field mappings
+     */
     private Map<String,Map<String,String>> pruneFieldMappings(Map<String,Map<String,String>> valueSpecificFieldMappings, Date beginDate) {
         Map<String,Map<String,String>> prunedFieldMappings = new HashMap<>();
         if (beginDate != null) {
@@ -286,16 +303,9 @@ public class WhindexVisitor extends RebuildingVisitor {
                 // process the non-leaf nodes first
                 List<JexlNode> processedNonLeafNodes = processNonLeafNodes(parentData, nonLeafNodes, leafNodes, usedLeafNodes);
                 
-                // remove the used nodes from the leaf and anded nodes
-                parentData.andedNodes.values().removeAll(parentData.usedAndedNodes.values());
-                
                 // next, process the remaining leaf nodes
                 List<WhindexTerm> whindexTerms = new ArrayList<>();
                 List<JexlNode> processedLeafNodes = processUnusedLeafNodes(parentData, leafNodes, usedLeafNodes, whindexTerms);
-                
-                // again, remove the used nodes from the leaf and anded nodes
-                leafNodes.values().removeAll(usedLeafNodes.values());
-                parentData.andedNodes.values().removeAll(parentData.usedAndedNodes.values());
                 
                 // rebuild the node if whindexes are found
                 if (parentData.foundWhindex) {
