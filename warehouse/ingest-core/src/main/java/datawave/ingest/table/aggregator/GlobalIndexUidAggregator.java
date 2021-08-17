@@ -219,7 +219,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                                 // then ignore any work we've done integrating this PB so far
                                 // and instead treat it as though its ignore flag had been set.
                                 // Set the count to the number of collected UIDs before we went
-                                // over the max, and then we'll add this PBs count below.
+                                // over the max, and then we'll add this PB's count below.
                                 seenIgnore = true;
                                 count = prevCount;
                                 uids.clear();
@@ -230,7 +230,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     }
                 }
                 
-                // If the ignore flag is set, the UIDs will not be tracked and an
+                // If the ignore flag is set, the UIDs will not be tracked by name and an
                 // estimated count will be used instead.
                 if (seenIgnore) {
                     if (v.getIGNORE()) {
