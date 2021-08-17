@@ -1006,7 +1006,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         Uid.List expectNoRemovals = Uid.List.newBuilder().mergeFrom(expectation).clearREMOVEDUID().build();
 
         if (!isFullCompactionOnlyTest) {
-            verify("Forward, Partial Major", expectation, testPartialCompaction(input));
+            verify("Forward, Partial Major", expectation, testAsPartialCompaction(input));
         }
 
         if (!isPartialCompactionOnlyTest) {
@@ -1018,7 +1018,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
             Collections.reverse(input);
 
             if (!isFullCompactionOnlyTest) {
-                verify("Reverse, Partial Major", expectation, testPartialCompaction(input));
+                verify("Reverse, Partial Major", expectation, testAsPartialCompaction(input));
             }
 
             if (!isPartialCompactionOnlyTest) {
@@ -1027,7 +1027,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         }
     }
 
-    private Uid.List testPartialCompaction(List<Value> values) {
+    private Uid.List testAsPartialCompaction(List<Value> values) {
         agg.reset();
         agg.propogate = true;
         return UidTestBuilder.valueToUidList(agg.reduce(KEY, values.iterator()));
