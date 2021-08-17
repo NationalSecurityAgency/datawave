@@ -161,15 +161,17 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     log.debug("Switch to seenIgnore is true. Skipping collections");
                 } else {
                     // Save a starting count in the event that we go over the max UID count while
-                    // aggregating this protocol buffer. Once we cross the max UID threshold, then we'll
-                    // only use the count reported by the protocol buffer. However, until that point
-                    // we want to count UIDs in the internal set since that will take care of de-duping
-                    // any duplicate UIDs which would be over counted if we just used the protocol buffer
-                    // count.
-                    // After the max UID count is reached, estimated counts are treated as follows.  Added
-                    // UIDs will increment the count and removal UIDs will decrement it.
-                    // For consistency, the starting point follows this approach and equal to the
-                    // UID count minus the removal count.
+                    // aggregating the current protocol buffer, v. 
+                    // 
+                    // Once we cross the max UID threshold, then we'll switch to an estimation approach
+                    // for the count where UID additions increment the count and UID removals decrement 
+                    // the count.  In this scenario, the starting count will be needed to avoid double
+                    // counting items that were added prior to exceeding the max.  Also, the starting count
+                    // should follow the same estimation approach because it's only used if the maximum
+                    // is exceeded.
+                    // 
+                    // However, if the maximum is not exceeded, we want to track UIDs by name in the internal 
+                    // set because that will take care of de-duping any duplicate UIDs.
                     long prevCount = uids.size() - uidsToRemove.size();
                     
                     // Remove any UIDs in the REMOVEDUID list.
