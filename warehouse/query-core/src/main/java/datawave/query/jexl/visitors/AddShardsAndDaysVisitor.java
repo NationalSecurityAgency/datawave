@@ -25,15 +25,13 @@ public class AddShardsAndDaysVisitor extends RebuildingVisitor {
     private static final Joiner JOINER = Joiner.on(',');
     
     @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T update(JexlNode node, String shardsAndDays) {
+    public static <T extends JexlNode> T update(T node, String shardsAndDays) {
         if (node == null) {
             return null;
         }
         
-        T copy = (T) copy(node);
-        
         if (shardsAndDays == null) {
-            return copy;
+            return node;
         }
         
         // @formatter:off
@@ -44,11 +42,11 @@ public class AddShardsAndDaysVisitor extends RebuildingVisitor {
                         .collect(Collectors.toList());
         // @formatter:on
         if (validShardsAndDays.isEmpty()) {
-            return copy;
+            return node;
         }
         
         AddShardsAndDaysVisitor visitor = new AddShardsAndDaysVisitor(validShardsAndDays);
-        T modifiedCopy = (T) copy.jjtAccept(visitor, null);
+        T modifiedCopy = (T) node.jjtAccept(visitor, null);
         // If the shards and days hints were not added to an existing SHARDS_AND_DAYS node, then we need to create one and add it to the query body.
         if (!visitor.updatedShardsAndDays) {
             addNewShardAndDaysNode(modifiedCopy, shardsAndDays);
