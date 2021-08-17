@@ -110,6 +110,16 @@ public class AddShardsAndDaysVisitorTest {
         visitAndValidate("20190314_1,20190314_2", original, expected);
     }
     
+    /**
+     * Verify that a new SHARDS_AND_DAYS hint will be correctly added to an empty SHARDS_AND_DAYS assignment node.
+     */
+    @Test
+    public void testAddingNewValueToEmptyShardsAndDaysAssignment() throws ParseException {
+        String original = "(FOO == 'bar') && (SHARDS_AND_DAYS = '')";
+        String expected = "(FOO == 'bar') && (SHARDS_AND_DAYS = '20190314_1')";
+        visitAndValidate("20190314_1", original, expected);
+    }
+    
     private void visitAndValidate(String shardsAndDays, String original, String expected) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
         // Add the specified shards and days hint.

@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  */
 public class AddShardsAndDaysVisitor extends RebuildingVisitor {
     
-    private static final Joiner JOINER = Joiner.on(',');
+    private static final Joiner JOINER = Joiner.on(',').skipNulls();
     
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T update(T node, String shardsAndDays) {
@@ -110,6 +110,8 @@ public class AddShardsAndDaysVisitor extends RebuildingVisitor {
         // If they were all duplicates, return the original string. Otherwise append them.
         if (this.shardsAndDays.isEmpty()) {
             return shardsAndDays;
+        } else if (shardsAndDays.isEmpty()) {
+            return JOINER.join(this.shardsAndDays);
         } else {
             return shardsAndDays + "," + JOINER.join(this.shardsAndDays);
         }
