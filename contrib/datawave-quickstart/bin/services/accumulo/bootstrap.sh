@@ -20,6 +20,16 @@ DW_ZOOKEEPER_DIST="$( downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_
 DW_ZOOKEEPER_BASEDIR="zookeeper-install"
 DW_ZOOKEEPER_SYMLINK="zookeeper"
 
+# You may override DW_BIND_HOST in your env ahead of time, if needed
+DW_BIND_HOST="${DW_BIND_HOST:-localhost}"
+
+# If we are configured to bind to all interfaces, instead bind to the hostname
+# Binding to all interfaces is not available until Accumulo 2.0
+DW_ACCUMULO_BIND_HOST="${DW_BIND_HOST}"
+if [ "$DW_BIND_HOST" == "0.0.0.0" ] ; then
+  DW_ACCUMULO_BIND_HOST="$(hostname)"
+fi
+
 # zoo.cfg...
 DW_ZOOKEEPER_CONF="
 tickTime=2000
@@ -108,7 +118,7 @@ function accumuloStart() {
     fi
     eval "${DW_ACCUMULO_CMD_START}"
     echo
-    info "For detailed status visit 'http://localhost:9995' in your browser"
+    info "For detailed status visit 'http://${DW_ACCUMULO_BIND_HOST}:9995' in your browser"
 }
 
 function accumuloStop() {
