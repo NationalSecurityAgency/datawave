@@ -29,7 +29,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
 
     @Test
     public void twoSingleUids() {
-        // Do UIDs lists get combined across values?
+        // Do UID lists get combined across values?
         Value value1 = UidTestBuilder.uidList("uid1");
         Value value2 = UidTestBuilder.uidList("uid2");
 
@@ -43,7 +43,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     @Test
     public void removalAcrossValue() {
         // Does a UID removal work across Values?
-        // Are uid removals maintained in partial compactions?
+        // Are UID removals maintained in partial compactions?
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2", "uid3")
                 .withRemovals("uid4") // uid4 in other value's list
@@ -189,7 +189,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // Do multiple removals-that-hit and multiple removals-that-don't-hit work like single removals?
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2", "uid3")
-                .withRemovals("uid4", "uid5", "uid6") // all uids in other list
+                .withRemovals("uid4", "uid5", "uid6") // all UIDs in other list
                 .build();
 
         Value value2 = UidTestBuilder.newBuilder()
@@ -210,7 +210,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // Mixture of hit and non-hit removals within one Value.
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2", "uid3")
-                .withRemovals("uid4", "uid6", "uid7") // two uids in other list, one absent
+                .withRemovals("uid4", "uid6", "uid7") // two UIDs in other list, one absent
                 .build();
 
         Value value2 = UidTestBuilder.newBuilder()
@@ -296,7 +296,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
 
         Value value2 = UidTestBuilder.newBuilder()
                 .withUids()
-                .withRemovals("uid3") // removal of one uid in other list
+                .withRemovals("uid3") // removal of one UID, not matching other list
                 .build();
 
         Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
@@ -317,7 +317,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
 
         Value value2 = UidTestBuilder.newBuilder()
                 .withUids("uid3")
-                .withRemovals("uid1") // removal of one uid in other list
+                .withRemovals("uid1") // removal of one UID in other list
                 .build();
 
         Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
@@ -366,7 +366,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void doNotGoNegative() {
+    public void doNotGoNegativeForNamedUids() {
         // Are removals persisted in partial compaction mode?
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids()
@@ -467,7 +467,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
 
     @Test
     public void testFloorOfZero() {
-        // Does count match size of uid list even when there are more removal UIDs than UIDs?
+        // Does count match size of UID list even when there are more removal UIDs than UIDs?
         agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1")
@@ -488,7 +488,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
 
     @Test
     public void preserveRemovals() {
-        // Does count match size of uid list even when there are propagated removals?
+        // Does count match size of UID list even when there are propagated removals?
         agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2")
