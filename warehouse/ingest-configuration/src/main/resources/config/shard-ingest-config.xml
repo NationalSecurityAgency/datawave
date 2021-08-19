@@ -89,4 +89,8 @@
     <name>partitioner.category.member.${table.name.shard}</name>
     <value>shardedTables</value>
 </property>
+<property>
+    <name>index.tables.keep.count.only.entries</name>
+    <value>${indexTables.keepCountOnlyEntries}</value>
+</property>
 </configuration>
