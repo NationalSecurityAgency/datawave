@@ -127,13 +127,6 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>hazelcast-client</artifactId>
                 <version>${version.microservice.hazelcast-client}</version>
-                <exclusions>
-                    <!-- Excluded to ensure that the transitive starter dependency doesn't override our direct dependency  -->
-                    <exclusion>
-                        <artifactId>spring-boot-starter-datawave</artifactId>
-                        <groupId>gov.nsa.datawave.microservice</groupId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
