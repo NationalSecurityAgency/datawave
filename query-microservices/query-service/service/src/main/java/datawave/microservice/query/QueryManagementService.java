@@ -21,6 +21,7 @@ import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.util.QueryUtil;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricClient;
+import datawave.microservice.querymetric.QueryMetricType;
 import datawave.security.util.ProxiedEntityUtils;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
@@ -848,12 +849,15 @@ public class QueryManagementService implements QueryRequestHandler {
             publishExecutorEvent(cancelRequest, queryStatus.getQueryKey().getQueryPool());
             
             // update query metrics
+            baseQueryMetric.setQueryId(queryId);
             baseQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.CANCELLED);
+            baseQueryMetric.setLastUpdated(new Date());
             try {
                 // @formatter:off
                 queryMetricClient.submit(
                         new QueryMetricClient.Request.Builder()
-                                .withMetric(baseQueryMetric)
+                                .withMetric(baseQueryMetric.duplicate())
+                                .withMetricType(QueryMetricType.DISTRIBUTED)
                                 .build());
                 // @formatter:on
             } catch (Exception e) {
@@ -1039,12 +1043,15 @@ public class QueryManagementService implements QueryRequestHandler {
         publishExecutorEvent(QueryRequest.close(queryId), queryStatus.getQueryKey().getQueryPool());
         
         // update query metrics
+        baseQueryMetric.setQueryId(queryId);
         baseQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.CLOSED);
+        baseQueryMetric.setLastUpdated(new Date());
         try {
             // @formatter:off
             queryMetricClient.submit(
                     new QueryMetricClient.Request.Builder()
-                            .withMetric(baseQueryMetric)
+                            .withMetric(baseQueryMetric.duplicate())
+                            .withMetricType(QueryMetricType.DISTRIBUTED)
                             .build());
             // @formatter:on
         } catch (Exception e) {

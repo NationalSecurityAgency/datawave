@@ -105,15 +105,13 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         startTimeMillis = System.currentTimeMillis();
         
         QueryQueueListener resultListener = queryQueueManager.createListener(UUID.randomUUID().toString(), queryId);
-        
-        // keep waiting for results until we're finished
-        while (!isFinished(queryId)) {
-            Message<Result> message = resultListener.receive(nextCallProperties.getResultPollIntervalMillis());
-            if (message != null) {
-                Object result = message.getPayload().getPayload();
-                
-                // have to check to make sure we haven't reached the page size
-                if (!isFinished(queryId)) {
+        try {
+            // keep waiting for results until we're finished
+            // Note: isFinished should be checked once per result
+            while (!isFinished(queryId)) {
+                Message<Result> message = resultListener.receive(nextCallProperties.getResultPollIntervalMillis());
+                if (message != null) {
+                    Object result = message.getPayload().getPayload();
                     if (result != null) {
                         results.add(result);
                         
@@ -126,10 +124,10 @@ public class NextCall implements Callable<ResultsPage<Object>> {
                     }
                 }
             }
+        } finally {
+            // stop the result listener
+            resultListener.stop();
         }
-        
-        // stop the result listener
-        resultListener.stop();
         
         // update some values for metrics
         stopTimeMillis = System.currentTimeMillis();

@@ -141,7 +141,7 @@ datawave:
       factory:
         enabled: true
         # Uncomment the following line to override the query logic beans to load
-        # xmlBeansPath: "classpath:MyTestQueryLogicFactory.xml"
+#        xmlBeansPath: "classpath:QueryLogicFactory.xml"
 
         # The max page size that a user can request.  0 turns off this feature
         maxPageSize: 10000
@@ -157,7 +157,7 @@ datawave:
           metadataTableName: ${warehouse.tables.metadata.name}
           indexTableName: ${warehouse.tables.index.name}
           reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
-          maxResults: -1
+          maxResults: 369
           queryThreads: ${warehouse.defaults.queryThreads}
           indexLookupThreads: ${warehouse.defaults.indexLookupThreads}
           dateIndexThreads: ${warehouse.defaults.dateIndexThreads}
@@ -185,7 +185,7 @@ datawave:
             - 'foo.bar'
           filterOptions:
             'bar': "foo"
-          auditType: "NONE"
+          auditType: "ACTIVE"
           logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
           eventPerDayThreshold: ${warehouse.defaults.eventPerDayThreshold}
           shardsPerDayThreshold: ${warehouse.defaults.shardsPerDayThreshold}
@@ -234,6 +234,9 @@ datawave:
           statsdHost: ${warehouse.statsd.host}
           statsdPort: ${warehouse.statsd.port}
           evaluationOnlyFields: ""
+          maxConcurrentTasks: 10
+          requiredRoles:
+            - "AuthorizedUser"
 
 audit-client:
   discovery:
