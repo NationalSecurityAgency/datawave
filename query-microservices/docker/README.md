@@ -4,7 +4,7 @@
 
 ### Discovery (Consul)
 
-Consul v1.3.0 is a prepacked docker image used for discovery between the various services.
+Consul v1.9.8 is a prepacked docker image used for discovery between the various services.
 
 ### Messaging (RabbitMQ)
 
@@ -12,7 +12,7 @@ RabbitMQ v3.7.7 is a prepacked docker image used for messaging between the vario
 
 ### Configuration
 
-[Datawave Config Service v1.4](https://github.com/NationalSecurityAgency/datawave-config-service/releases/tag/1.4) is Datawave's customized Spring Cloud config service.
+[Datawave Config Service v1.5-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-config-service/tree/feature/spring-boot-2.4) is Datawave's customized Spring Cloud config service.
 
 Sample configuration files can be found in the config folder.
 
@@ -20,29 +20,27 @@ You will need to build the docker image for this service on your local machine f
 
 ### Cache
 
-[Datawave Hazelcast Service v1.4](https://github.com/NationalSecurityAgency/datawave-hazelcast-service/releases/tag/service-1.6) is Datawave's customized Hazelcast In-Memory Data Grid.
+[Datawave Hazelcast Service v1.7-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-hazelcast-service/tree/feature/spring-boot-2.4) is Datawave's customized Hazelcast In-Memory Data Grid.
 
-You will need to build the docker image for this service on your local machine following the instructions in the config service README.
+You will need to build the docker image for this service on your local machine following the instructions in the hazelcast cache service README.
 
 ### Authorization
 
-[Datawave Authorization Service v1.9](https://github.com/NationalSecurityAgency/datawave-authorization-service/releases/tag/service-1.9) provides basic authorization for the Datawave microservices.
+[Datawave Authorization Service v1.11-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-authorization-service/tree/feature/spring-boot-2.4) provides basic authorization for the Datawave microservices.
 
-You will need to build the docker image for this service on your local machine following the instructions in the config service README.
-
-### Query State
-
-Datawave Query State Service v1.0-SNAPSHOT is a user-facing interface to the current query state stored in Hazelcast.
-
-This microservice is in development, and can be found in this repo. 
-
-You will need to build the docker image for this service on your local machine following the instructions in the config service README.
+You will need to build the docker image for this service on your local machine following the instructions in the authorization service README.
 
 ### Audit
 
-[Datawave Audit Service v1.9](https://github.com/NationalSecurityAgency/datawave-audit-service/releases/tag/service-1.9) provides query audit capabilities for Datawave.
+[Datawave Audit Service v1.10-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-audit-service/tree/feature/spring-boot-2.4) provides query audit capabilities for Datawave.
 
-You will need to build the docker image for this service on your local machine following the instructions in the config service README.
+You will need to build the docker image for this service on your local machine following the instructions in the audit service README.
+
+### Metrics
+
+[Datawave Query Metric Service v1.3-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-query-metric-service/tree/feature/spring-boot-2.4) provides metrics caching, storage, and retrieval capabilities for Datawave.
+
+You will need to build the docker image for this service on your local machine following the instructions in the query metrics service README.
 
 ### Query
 
@@ -52,11 +50,85 @@ This microservice is in development, and can be found in this repo.
 
 You will need to build the docker image for this service on your local machine following the instructions in the config service README.
 
+### Executor
+
+Datawave Executor Service v1.0-SNAPSHOT is the back-end worker for Datawave queries.
+
+This microservice is in development, and can be found in this repo.
+
+You will need to build the docker image for this service on your local machine following the instructions in the config service README.
+
+## Optional Components
+
+### Zookeeper
+
+Enabled via the 'kafka', or 'full' profile.
+
+Consul v1.9.8 is a prepacked docker image used for discovery between the various services.
+
+### Kafka
+
+Enabled via the 'kafka', or 'full' profile.
+
+RabbitMQ v3.7.7 is a prepacked docker image used for messaging between the various services.
+
+### Kafdrop
+
+Enabled via the 'kafka', or 'full' profile.
+
+Consul v1.9.8 is a prepacked docker image used for discovery between the various services.
+
+### Dictionary
+
+Enabled via the 'dictionary', or 'full' profile.
+
+[Datawave Dictionary Service v1.2-SNAPSHOT](https://github.com/NationalSecurityAgency/datawave-dictionary-service/tree/feature/spring-boot-2.4) provides access to the data dictionary and edge dictionary for Datawave.
+
+You will need to build the docker image for this service on your local machine following the instructions in the dictionary service README.
+
 ## Usage
+
+### Prereqs
+
+Prior to starting these services, you need to use the datawave-quickstart to deploy Hadoop, Zookeeper, and Accumulo on your host machine.  This will also ensure that you have some data available for query.
+
+See the [DataWave Quickstart Readme](../../contrib/datawave-quickstart/README.md) for more details.
+
+After the quickstart is running, be sure to stop the DataWave webservice prior to proceeding.
+
+### Bootstrap
+
+The audit, dictionary, and query metric services all need to connect to Zookeeper and Accumulo on the host system.  In order to do that, there are some host-specific environment variables which need to be configured.  
+
+Bootstrap your deployment by running:
+
+```./bootstrap.sh```
+
+This will produce a `.env` file containing the following:
+
+```
+HOSTNAME=<Your hostname>
+HOST_FQDN=<Your host FQDN>
+HOST_IP=<Your host IP Address>
+```
 
 ### Start services
 
+Start the default services:
+
 ```docker-compose up -d```
+
+Start the default services, and the dictionary service:
+
+```docker-compose --profile dictionary up -d```
+
+Start the default services, the kafka services, and the dictionary service:
+
+```docker-compose --profile dictionary --profile kafka up -d```
+
+Start all services:
+
+```docker-compose --profile full up -d```
 
 ### View logs
 
@@ -71,3 +143,7 @@ For a specific service:
 ### Stop services
 
 ```docker-compose down```
+
+### Restart services
+
+```docker-compose restart <servicename>```

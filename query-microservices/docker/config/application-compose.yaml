@@ -10,10 +10,10 @@ system.name: DOCKER-COMPOSE
 
 server:
   ssl:
-    trust-store: 'classpath:testCA.p12'
+    trust-store: '/etc/pki/testCA.p12'
     trust-store-type: PKCS12
     trust-store-password: 'ChangeIt'
-    key-store: 'classpath:testServer.p12'
+    key-store: '/etc/pki/testServer.p12'
     key-store-type: PKCS12
     key-store-password: 'ChangeIt'
 
@@ -25,7 +25,7 @@ spring:
     datawave:
       enforce-allowed-callers: false
       allowed-callers:
-        - "cn=test keystore, ou=my department, o=my company, st=some-state, c=us<cn=test keystore, ou=my department, o=my company, st=some-state, c=us>"
+        - "cn=test a. user, ou=example developers, o=example corp, c=us<cn=example corp ca, o=example corp, c=us>"
 
 # To report metrics to the console, uncomment the following:
 #metrics:

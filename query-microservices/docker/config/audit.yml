@@ -31,6 +31,7 @@ spring:
             concurrency: 5
 
 audit:
+  confirmAckEnabled: true
   fsConfigResources:
     - '/etc/hadoop/conf/core-site.xml'
     - '/etc/hadoop/conf/hdfs-site.xml'
@@ -38,7 +39,12 @@ audit:
     log:
       enabled: true
     accumulo:
-      enabled: false
+      enabled: true
+      accumuloConfig:
+        zookeepers: "${accumulo.zookeepers}"
+        instanceName: '${accumulo.instanceName}'
+        username: '${accumulo.username}'
+        password: '${accumulo.password}'
     file:
       enabled: false
       pathUri: 'file:///audit'

@@ -47,9 +47,10 @@ info:
 # This is the accumulo configuration we use in services.  These don't map directly to a properties class, but 
 # they are here to be used as a reference for other properties.
 accumulo:
-  instanceName: accumulo
-  username: username
-  password: password
+  zookeepers: '${ZOOKEEPER_HOST}:2181'
+  instanceName: 'my-instance-01'
+  username: 'root'
+  password: 'secret'
 
 spring:
   security:
@@ -63,6 +64,7 @@ spring:
       manager-roles: Administrator,JBossAdministrator
   rabbitmq:
     host: ${MESSAGING_SERVER_HOSTNAME:localhost}
+    publisher-confirm-type: simple
     publisher-confirms: true
     publisher-returns: true
   cloud:

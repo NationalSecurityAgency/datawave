@@ -1,0 +1,5 @@
+
+query:
+  storage:
+    syncStorage: true
+    sendNotifications: true

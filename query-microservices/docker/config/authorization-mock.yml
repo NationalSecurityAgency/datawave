@@ -10,7 +10,7 @@ mock:
       Administrator: DW_ADMIN
     # Define per-user roles and auths. If the incoming DN (in lower-case subjectDN<issuerDN> form) matches an entry here, the
     # corresponding roles and authorizations are provided instead of the global ones.
-    per-user-roles-to-auths:
+    mockUsers:
     #
     #  "[subjectDN<issuerDN>]":
     #    ROLE1: auth1
@@ -21,37 +21,39 @@ mock:
     # (password: ChangeIt) and will also work with the datawave quickstart and its example datasets
 
       "[cn=test a. user, ou=example developers, o=example corp, c=us<cn=example corp ca, o=example corp, c=us>]":
-        AuthorizedUser: DW_USER
-        JBossAdministrator: JBOSS_ADMIN
-        Administrator: DW_ADMIN
-        FooRole: FOO
-        BarRole: BAR
-        DefRole: DEF
-        PublicRole: PUBLIC
-        PrivateRole: PRIVATE
-        RoleA: A
-        RoleB: B
-        RoleC: C
-        RoleD: D
-        RoleE: E
-        RoleF: F
-        RoleG: G
-        RoleH: H
-        RoleI: I
+        roles-to-auths: 
+          AuthorizedUser: DW_USER
+          JBossAdministrator: JBOSS_ADMIN
+          Administrator: DW_ADMIN
+          FooRole: FOO
+          BarRole: BAR
+          DefRole: DEF
+          PublicRole: PUBLIC
+          PrivateRole: PRIVATE
+          RoleA: A
+          RoleB: B
+          RoleC: C
+          RoleD: D
+          RoleE: E
+          RoleF: F
+          RoleG: G
+          RoleH: H
+          RoleI: I
 
       "[cn=testserver.example.com, ou=servers, o=example corp, c=us<cn=example corp ca, o=example corp, c=us>]":
-        AuthorizedServer: DW_SERV
-        FooRole: FOO
-        BarRole: BAR
-        DefRole: DEF
-        PublicRole: PUBLIC
-        PrivateRole: PRIVATE
-        RoleA: A
-        RoleB: B
-        RoleC: C
-        RoleD: D
-        RoleE: E
-        RoleF: F
-        RoleG: G
-        RoleH: H
-        RoleI: I
+        roles-to-auths:
+          AuthorizedServer: DW_SERV
+          FooRole: FOO
+          BarRole: BAR
+          DefRole: DEF
+          PublicRole: PUBLIC
+          PrivateRole: PRIVATE
+          RoleA: A
+          RoleB: B
+          RoleC: C
+          RoleD: D
+          RoleE: E
+          RoleF: F
+          RoleG: G
+          RoleH: H
+          RoleI: I

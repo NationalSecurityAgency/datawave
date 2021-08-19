@@ -1,14 +1,23 @@
-# Authorization requires a client certificate
+# Query requires a client certificate
 server:
   ssl:
     client-auth: NEED
 
-query:
-  storage:
-    sendNotifications: true
-    syncStorage: true
-    backend: RABBITMQ
-
 logging:
   level:
+    root: DEBUG
     datawave.microservice.query: DEBUG
+
+datawave:
+  query:
+    nextCall:
+      resultPollInterval: 500
+      statusUpdateInterval: 500
+    expiration:
+      callTimeout: 5
+      callTimeUnit: SECONDS
+
+audit-client:
+  discovery:
+    enabled: false
+  uri: '${AUDIT_SERVER_URL:http://localhost:11111/audit}'
