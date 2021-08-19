@@ -1,9 +1,14 @@
 package datawave.microservice.query.web.filter;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.context.annotation.RequestScope;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -27,6 +32,9 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
     
     private static final String START_NS_ATTRIBUTE = "STATS_START_NS";
     private static final String STOP_NS_ATTRIBUTE = "STATS_STOP_NS";
+    
+    @Autowired
+    private BaseMethodStatsContext baseMethodStatsContext;
     
     protected static class RequestMethodStats {
         private String uri;
@@ -110,13 +118,13 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
     }
     
     public void preProcess(HttpServletRequest request, HttpServletResponse response) {
-        if (BaseMethodStatsContext.getRequestStats() == null) {
-            BaseMethodStatsContext.setRequestStats(createRequestMethodStats(request, response));
+        if (baseMethodStatsContext.getRequestStats() == null) {
+            baseMethodStatsContext.setRequestStats(createRequestMethodStats(request, response));
             
             long start = System.nanoTime();
             request.setAttribute(START_NS_ATTRIBUTE, start);
         }
-        preProcess(BaseMethodStatsContext.getRequestStats());
+        preProcess(baseMethodStatsContext.getRequestStats());
     }
     
     public void preProcess(RequestMethodStats requestStats) {
@@ -124,18 +132,16 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
     }
     
     public void postProcess(HttpServletRequest request, HttpServletResponse response) {
-        if (BaseMethodStatsContext.getResponseStats() == null) {
+        if (baseMethodStatsContext.getResponseStats() == null) {
             long stop = System.nanoTime();
             request.setAttribute(STOP_NS_ATTRIBUTE, stop);
             
-            BaseMethodStatsContext.setResponseStats(createResponseMethodStats(request, response));
+            baseMethodStatsContext.setResponseStats(createResponseMethodStats(request, response));
         }
-        postProcess(BaseMethodStatsContext.getResponseStats());
+        postProcess(baseMethodStatsContext.getResponseStats());
     }
     
-    public void postProcess(ResponseMethodStats responseStats) {
-        // do nothing
-    }
+    abstract public void postProcess(ResponseMethodStats responseStats);
     
     protected RequestMethodStats createRequestMethodStats(HttpServletRequest request, HttpServletResponse response) {
         RequestMethodStats requestStats = new RequestMethodStats();
@@ -190,8 +196,8 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
         }
         
         responseStats.serializationTime = TimeUnit.NANOSECONDS.toMillis(stop - start);
-        responseStats.loginTime = BaseMethodStatsContext.getRequestStats().getLoginTime();
-        responseStats.callTime = TimeUnit.NANOSECONDS.toMillis(stop - BaseMethodStatsContext.getRequestStats().getCallStartTime());
+        responseStats.loginTime = baseMethodStatsContext.getRequestStats().getLoginTime();
+        responseStats.callTime = TimeUnit.NANOSECONDS.toMillis(stop - baseMethodStatsContext.getRequestStats().getCallStartTime());
         
         if (response instanceof CountingHttpServletResponseWrapper) {
             responseStats.bytesWritten = ((CountingHttpServletResponseWrapper) response).getByteCount();
@@ -202,11 +208,6 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
         }
         
         return responseStats;
-    }
-    
-    @Override
-    public void destroy() {
-        BaseMethodStatsContext.remove();
     }
     
     private static class CountingHttpServletResponseWrapper extends HttpServletResponseWrapper {
@@ -274,30 +275,34 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
         }
     }
     
-    public static class BaseMethodStatsContext {
+    private static class BaseMethodStatsContext {
+        private RequestMethodStats requestStats;
+        private ResponseMethodStats responseStats;
         
-        private static final ThreadLocal<RequestMethodStats> requestStats = new ThreadLocal<>();
-        private static final ThreadLocal<ResponseMethodStats> responseStats = new ThreadLocal<>();
-        
-        public static RequestMethodStats getRequestStats() {
-            return requestStats.get();
+        public RequestMethodStats getRequestStats() {
+            return requestStats;
         }
         
-        public static void setRequestStats(RequestMethodStats requestStats) {
-            BaseMethodStatsContext.requestStats.set(requestStats);
+        public void setRequestStats(RequestMethodStats requestStats) {
+            this.requestStats = requestStats;
         }
         
-        public static ResponseMethodStats getResponseStats() {
-            return responseStats.get();
+        public ResponseMethodStats getResponseStats() {
+            return responseStats;
         }
         
-        public static void setResponseStats(ResponseMethodStats responseStats) {
-            BaseMethodStatsContext.responseStats.set(responseStats);
+        public void setResponseStats(ResponseMethodStats responseStats) {
+            this.responseStats = responseStats;
         }
-        
-        private static void remove() {
-            requestStats.remove();
-            responseStats.remove();
+    }
+    
+    @Configuration
+    public static class BaseMethodStatsFilterConfig {
+        @Bean
+        @ConditionalOnMissingBean
+        @RequestScope
+        public BaseMethodStatsContext baseMethodStatsContext() {
+            return new BaseMethodStatsContext();
         }
     }
 }

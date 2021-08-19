@@ -6,9 +6,13 @@ import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.web.annotation.EnrichQueryMetrics;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricClient;
+import datawave.microservice.querymetric.QueryMetricType;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import org.apache.log4j.Logger;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -16,9 +20,11 @@ import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.context.annotation.RequestScope;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -36,12 +42,16 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
     // Note: BaseQueryMetric needs to be request scoped
     private final BaseQueryMetric baseQueryMetric;
     
+    // Note: QueryMetricsEnrichmentContext needs to be request scoped
+    private final QueryMetricsEnrichmentContext queryMetricsEnrichmentContext;
+    
     public QueryMetricsEnrichmentFilterAdvice(QueryLogicFactory queryLogicFactory, QueryStorageCache queryStorageCache, QueryMetricClient queryMetricClient,
-                    BaseQueryMetric baseQueryMetric) {
+                    BaseQueryMetric baseQueryMetric, QueryMetricsEnrichmentContext queryMetricsEnrichmentContext) {
         this.queryLogicFactory = queryLogicFactory;
         this.queryStorageCache = queryStorageCache;
         this.queryMetricClient = queryMetricClient;
         this.baseQueryMetric = baseQueryMetric;
+        this.queryMetricsEnrichmentContext = queryMetricsEnrichmentContext;
     }
     
     @Override
@@ -54,10 +64,10 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
                 Class<?> returnClass = Objects.requireNonNull(returnType.getMethod()).getReturnType();
                 if (GenericResponse.class.isAssignableFrom(returnClass)) {
                     supports = true;
-                    QueryMetricsEnrichmentContext.setMethodType(annotation.methodType());
+                    queryMetricsEnrichmentContext.setMethodType(annotation.methodType());
                 } else if (BaseQueryResponse.class.isAssignableFrom(returnClass)) {
                     supports = true;
-                    QueryMetricsEnrichmentContext.setMethodType(annotation.methodType());
+                    queryMetricsEnrichmentContext.setMethodType(annotation.methodType());
                 } else {
                     log.error("Unexpected response class for metrics annotated query method " + returnType.getMethod().getName() + ". Response class was "
                                     + returnClass.toString());
@@ -77,10 +87,10 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
         if (body instanceof GenericResponse) {
             @SuppressWarnings({"unchecked", "rawtypes"})
             GenericResponse<String> genericResponse = (GenericResponse) body;
-            QueryMetricsEnrichmentContext.setQueryId(genericResponse.getResult());
+            queryMetricsEnrichmentContext.setQueryId(genericResponse.getResult());
         } else if (body instanceof BaseQueryResponse) {
             BaseQueryResponse baseResponse = (BaseQueryResponse) body;
-            QueryMetricsEnrichmentContext.setQueryId(baseResponse.getQueryId());
+            queryMetricsEnrichmentContext.setQueryId(baseResponse.getQueryId());
         }
         
         return body;
@@ -88,8 +98,8 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
     
     @Override
     public void postProcess(ResponseMethodStats responseStats) {
-        String queryId = QueryMetricsEnrichmentContext.getQueryId();
-        EnrichQueryMetrics.MethodType methodType = QueryMetricsEnrichmentContext.getMethodType();
+        String queryId = queryMetricsEnrichmentContext.getQueryId();
+        EnrichQueryMetrics.MethodType methodType = queryMetricsEnrichmentContext.getMethodType();
         
         if (queryId != null && methodType != null) {
             // determine which query logic is being used
@@ -113,7 +123,7 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
             
             if (isMetricsEnabled) {
                 try {
-                    switch (QueryMetricsEnrichmentContext.getMethodType()) {
+                    switch (queryMetricsEnrichmentContext.getMethodType()) {
                         case CREATE:
                             baseQueryMetric.setCreateCallTime(responseStats.getCallTime());
                             baseQueryMetric.setLoginTime(responseStats.getLoginTime());
@@ -142,49 +152,50 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
                             break;
                     }
                     
+                    baseQueryMetric.setLastUpdated(new Date());
                     // @formatter:off
                     queryMetricClient.submit(
                             new QueryMetricClient.Request.Builder()
-                                    .withMetric(baseQueryMetric)
+                                    .withMetric(baseQueryMetric.duplicate())
+                                    .withMetricType(QueryMetricType.DISTRIBUTED)
                                     .build());
                     // @formatter:on
                 } catch (Exception e) {
-                    log.error("Unable to record metrics for query '" + QueryMetricsEnrichmentContext.getQueryId() + "' and method '"
-                                    + QueryMetricsEnrichmentContext.getMethodType() + "': " + e.getLocalizedMessage(), e);
+                    log.error("Unable to record metrics for query '" + queryMetricsEnrichmentContext.getQueryId() + "' and method '"
+                                    + queryMetricsEnrichmentContext.getMethodType() + "': " + e.getLocalizedMessage(), e);
                 }
             }
         }
     }
     
-    @Override
-    public void destroy() {
-        super.destroy();
-        QueryMetricsEnrichmentContext.remove();
+    private static class QueryMetricsEnrichmentContext {
+        private String queryId;
+        private EnrichQueryMetrics.MethodType methodType;
+        
+        public String getQueryId() {
+            return queryId;
+        }
+        
+        public void setQueryId(String queryId) {
+            this.queryId = queryId;
+        }
+        
+        public EnrichQueryMetrics.MethodType getMethodType() {
+            return methodType;
+        }
+        
+        public void setMethodType(EnrichQueryMetrics.MethodType methodType) {
+            this.methodType = methodType;
+        }
     }
     
-    public static class QueryMetricsEnrichmentContext {
-        
-        private static final ThreadLocal<String> queryId = new ThreadLocal<>();
-        private static final ThreadLocal<EnrichQueryMetrics.MethodType> methodType = new ThreadLocal<>();
-        
-        public static String getQueryId() {
-            return queryId.get();
-        }
-        
-        public static void setQueryId(String queryId) {
-            QueryMetricsEnrichmentContext.queryId.set(queryId);
-        }
-        
-        public static EnrichQueryMetrics.MethodType getMethodType() {
-            return methodType.get();
-        }
-        
-        public static void setMethodType(EnrichQueryMetrics.MethodType methodType) {
-            QueryMetricsEnrichmentContext.methodType.set(methodType);
-        }
-        
-        private static void remove() {
-            queryId.remove();
+    @Configuration
+    public static class QueryMetricsEnrichmentFilterAdviceConfig {
+        @Bean
+        @ConditionalOnMissingBean
+        @RequestScope
+        public QueryMetricsEnrichmentContext queryMetricsEnrichmentContext() {
+            return new QueryMetricsEnrichmentContext();
         }
     }
 }
