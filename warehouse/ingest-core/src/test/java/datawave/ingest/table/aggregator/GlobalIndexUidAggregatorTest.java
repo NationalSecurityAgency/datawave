@@ -212,7 +212,7 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(5, resultList.getUIDList().size());
         
     }
-
+    
     @Test
     public void testCountWithDuplicates() throws Exception {
         agg.reset();
@@ -233,7 +233,7 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(uuid, resultList.getUID(0));
         
     }
-
+    
     @Test
     public void testRemoveAndReAddUUID() throws Exception {
         GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
@@ -292,7 +292,7 @@ public class GlobalIndexUidAggregatorTest {
         assertTrue(resultList.getUIDList().contains(uuid1));
         assertTrue(resultList.getREMOVEDUIDList().contains(uuid2));
     }
-
+    
     @Test
     public void testNegativeCountWithPartialMajorCompaction() throws Exception {
         GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
@@ -353,7 +353,7 @@ public class GlobalIndexUidAggregatorTest {
         assertTrue(resultList.getREMOVEDUIDList().contains(uuid3));
         assertTrue(resultList.getREMOVEDUIDList().contains(uuid4));
     }
-
+    
     @Test
     public void testNegativeCountWithPartialMajorCompactionAndTimestampsIgnored() throws Exception {
         GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
@@ -474,7 +474,7 @@ public class GlobalIndexUidAggregatorTest {
         assertTrue(resultList.getUIDList().contains(uuid2));
         assertEquals(0, resultList.getREMOVEDUIDList().size());
     }
-
+    
     @Test
     public void testRemoveAndReAddUUIDWithTimestampsIgnoredAndPartialMajorCompaction() throws Exception {
         agg.reset();
@@ -535,7 +535,7 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(1, resultList.getREMOVEDUIDList().size());
         assertTrue(resultList.getREMOVEDUIDList().contains(uuid2));
     }
-
+    
     @Test
     public void testAggregateWithZeroCountAndUUIDs() throws Exception {
         agg.reset();
@@ -576,7 +576,7 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(uuid1, resultList.getUID(0));
         assertEquals(uuid2, resultList.getREMOVEDUID(0));
     }
-
+    
     @Test
     public void testAggregateWithPositiveCountAndUUIDs() throws Exception {
         agg.reset();
@@ -621,7 +621,7 @@ public class GlobalIndexUidAggregatorTest {
         assertTrue(resultList.getUIDList().contains(uuid3));
         assertTrue(resultList.getREMOVEDUIDList().contains(uuid1));
     }
-
+    
     @Test
     public void testAddUIDTwice() throws Exception {
         agg.reset();
@@ -639,7 +639,7 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(1, resultList.getUIDList().size());
         assertEquals(1, resultList.getCOUNT());
     }
-
+    
     @Test
     public void testAddUIDThrice() throws Exception {
         // lowered max to show problem more easily
@@ -722,7 +722,7 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(0, resultList.getUIDList().size());
         assertEquals(4, resultList.getCOUNT());
     }
-
+    
     @Test
     public void testRemoveAndReAdd() throws Exception {
         GlobalIndexUidAggregator localAgg = new GlobalIndexUidAggregator();
@@ -751,7 +751,7 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(0, resultList.getREMOVEDUIDList().size());
         assertEquals(1, resultList.getCOUNT());
     }
-
+    
     @Test
     public void testRemoveAndReAddWithTimestampsIgnored() throws Exception {
         agg.reset();
@@ -775,20 +775,20 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(1, resultList.getREMOVEDUIDList().size());
         assertEquals(0, resultList.getCOUNT());
     }
-
+    
     // Legacy remove UID list is not supported.
     @Test
     public void testLegacyRemoval() {
         List<Value> values = asList(uidList("uid1", "uid2"), legacyRemoveUidList("uid1"));
         Uid.List result = valueToUidList(agg(values));
-
+        
         assertEquals(2, result.getCOUNT());
         assertEquals(2, result.getUIDList().size());
         assertTrue(result.getUIDList().contains("uid1"));
         assertTrue(result.getUIDList().contains("uid2"));
         assertEquals(0, result.getREMOVEDUIDCount());
     }
-
+    
     // Legacy remove UID list is not supported.
     @Test
     public void testCombineLegacyAndNewRemovals() {
@@ -802,7 +802,7 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(1, result.getCOUNT());
         assertTrue(result.getUIDList().contains("uid3"));
     }
-
+    
     @Test
     public void testCombineCountAndUidListAndRemoval() {
         List<Value> values = asList(countOnlyList(100), uidList("uid1", "uid2"), removeUidList("uid3", "uid4", "uid5"));
@@ -813,7 +813,7 @@ public class GlobalIndexUidAggregatorTest {
         assertTrue(result.getREMOVEDUIDList().isEmpty());
         assertTrue(result.getUIDList().isEmpty());
     }
-
+    
     @Test
     public void testDropKeyWhenCountReachesZero() {
         List<Value> values = asList(countOnlyList(2), removeUidList("uid1", "uid2"));
@@ -824,17 +824,18 @@ public class GlobalIndexUidAggregatorTest {
         assertTrue(result.getIGNORE());
         assertFalse(agg.propogateKey());
     }
+    
     @Test
     public void testKeepKeyWhenCountReachesZeroWhilePropagating() {
         List<Value> values = asList(countOnlyList(2), removeUidList("uid1", "uid2"));
         agg.setPropogate(true);
         Uid.List result = valueToUidList(agg(values));
-
+        
         assertEquals(0, result.getCOUNT());
         assertTrue(result.getIGNORE());
         assertTrue(agg.propogateKey());
     }
-
+    
     @Test
     public void testDropKeyWhenCountReachesZeroWithCount() {
         List<Value> values = asList(countOnlyList(100), countOnlyList(-100));
@@ -845,18 +846,18 @@ public class GlobalIndexUidAggregatorTest {
         assertFalse(agg.propogateKey());
         assertTrue(result.getIGNORE());
     }
-
+    
     @Test
     public void testKeepKeyWhenCountReachesZeroWithCountWhilePropagating() {
         List<Value> values = asList(countOnlyList(100), countOnlyList(-100));
         agg.setPropogate(true);
         Uid.List result = valueToUidList(agg(values));
-
+        
         assertEquals(0, result.getCOUNT());
         assertTrue(agg.propogateKey());
         assertTrue(result.getIGNORE());
     }
-
+    
     @Test
     public void testPrepareToDropKeyWhenCountGoesNegative() {
         List<Value> values = asList(countOnlyList(1), removeUidList("uid1", "uid2"));
@@ -867,13 +868,13 @@ public class GlobalIndexUidAggregatorTest {
         assertTrue(result.getIGNORE());
         assertFalse(agg.propogateKey());
     }
-
+    
     @Test
     public void testKeepKeyWhenCountGoesNegativeWhilePropagating() {
         List<Value> values = asList(countOnlyList(1), removeUidList("uid1", "uid2"));
         agg.setPropogate(true);
         Uid.List result = valueToUidList(agg(values));
-
+        
         assertEquals(-1, result.getCOUNT());
         assertTrue(result.getIGNORE());
         assertTrue(agg.propogateKey());

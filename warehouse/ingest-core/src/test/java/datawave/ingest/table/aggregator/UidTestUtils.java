@@ -38,7 +38,7 @@ public final class UidTestUtils {
         
         return builderToValue(b);
     }
-
+    
     public static Value removeUidList(String... uids) {
         Uid.List.Builder b = Uid.List.newBuilder();
         b.setIGNORE(false);

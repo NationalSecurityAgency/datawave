@@ -147,30 +147,30 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
             // Collect the values, which are serialized Uid.List objects
             try {
                 Uid.List v = Uid.List.parseFrom(value.get());
-
+                
                 // For best performance, don't attempt to accumulate any individual UIDs (or removals)
                 // if this PB has its ignore flag set or we've seen any other PB with the ignored flag set.
                 if (seenIgnore) {
                     log.debug("SeenIgnore is true. Skipping collections");
                 } else if (v.getIGNORE()) {
                     // After a PB has its ignore flag set, from that point forward UIDs will increment
-                    // the count and removal UIDs will decrement it.  Apply this logic on the existing
+                    // the count and removal UIDs will decrement it. Apply this logic on the existing
                     // information available (the list of UIDs and removal UIDs) for consistency.
                     seenIgnore = true;
                     count = this.uids.size() - this.uidsToRemove.size();
                     log.debug("Switch to seenIgnore is true. Skipping collections");
                 } else {
                     // Save a starting count in the event that we go over the max UID count while
-                    // aggregating the current protocol buffer, v. 
-                    // 
+                    // aggregating the current protocol buffer, v.
+                    //
                     // Once we cross the max UID threshold, then we'll switch to an estimation approach
-                    // for the count where UID additions increment the count and UID removals decrement 
-                    // the count.  In this scenario, the starting count will be needed to avoid double
-                    // counting items that were added prior to exceeding the max.  Also, the starting count
+                    // for the count where UID additions increment the count and UID removals decrement
+                    // the count. In this scenario, the starting count will be needed to avoid double
+                    // counting items that were added prior to exceeding the max. Also, the starting count
                     // should follow the same estimation approach because it's only used if the maximum
                     // is exceeded.
-                    // 
-                    // However, if the maximum is not exceeded, we want to track UIDs by name in the internal 
+                    //
+                    // However, if the maximum is not exceeded, we want to track UIDs by name in the internal
                     // set because that will take care of de-duping any duplicate UIDs.
                     long prevCount = uids.size() - uidsToRemove.size();
                     
@@ -236,7 +236,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     if (v.getIGNORE()) {
                         // If the incoming protocol buffer is marked with the ignore flag,
                         // assume the count in the incoming protocol buffer is already an
-                        // estimated count and simply add it to the current count.  It may
+                        // estimated count and simply add it to the current count. It may
                         // be a negative count if it represents a net removal.
                         count += v.getCOUNT();
                     } else {

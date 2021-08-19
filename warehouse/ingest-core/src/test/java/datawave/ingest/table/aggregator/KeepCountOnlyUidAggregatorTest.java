@@ -36,7 +36,7 @@ public class KeepCountOnlyUidAggregatorTest {
         assertTrue(result.getIGNORE());
         assertTrue(agg.propogateKey());
     }
-
+    
     @Test
     public void testKeepKeyWhenCountGoesNegative() {
         List<Value> values = asList(countOnlyList(1), removeUidList("uid1", "uid2"));
