@@ -92,6 +92,14 @@ You will need to build the docker image for this service on your local machine f
 
 Prior to starting these services, you need to use the datawave-quickstart to deploy Hadoop, Zookeeper, and Accumulo on your host machine.  This will also ensure that you have some data available for query.
 
+Before running the quickstart setup, you need to edit your ~/.bashrc to include the following export:
+
+```
+export DW_BIND_HOST=0.0.0.0
+```
+
+This will ensure that Hadoop binds to all interfaces, and that Accumulo binds to the hostname/IP address.  This is required to connect to the host Accumulo instance from a docker container.
+
 See the [DataWave Quickstart Readme](../../contrib/datawave-quickstart/README.md) for more details.
 
 After the quickstart is running, be sure to stop the DataWave webservice prior to proceeding.
