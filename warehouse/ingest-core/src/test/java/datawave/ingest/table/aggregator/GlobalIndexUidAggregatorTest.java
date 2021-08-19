@@ -843,6 +843,7 @@ public class GlobalIndexUidAggregatorTest {
         
         assertEquals(0, result.getCOUNT());
         assertFalse(agg.propogateKey());
+        assertTrue(result.getIGNORE());
     }
 
     @Test
@@ -853,10 +854,11 @@ public class GlobalIndexUidAggregatorTest {
 
         assertEquals(0, result.getCOUNT());
         assertTrue(agg.propogateKey());
+        assertTrue(result.getIGNORE());
     }
 
     @Test
-    public void testDropKeyWhenCountGoesNegative() {
+    public void testPrepareToDropKeyWhenCountGoesNegative() {
         List<Value> values = asList(countOnlyList(1), removeUidList("uid1", "uid2"));
         agg.setPropogate(false);
         Uid.List result = valueToUidList(agg(values));

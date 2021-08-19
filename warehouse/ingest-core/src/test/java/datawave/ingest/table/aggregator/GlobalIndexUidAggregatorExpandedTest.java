@@ -128,7 +128,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // Do removals of all UIDs in another list work?
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2", "uid3")
-                .withRemovals("uid4", "uid5", "uid6") // all uids in other list
+                .withRemovals("uid4", "uid5", "uid6") // all UIDs in other list
                 .build();
 
         Value value2 = UidTestBuilder.newBuilder()
@@ -148,7 +148,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // Are multiple removals persisted in partial compactions, even without matching?
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2", "uid3")
-                .withRemovals("uid7", "uid8", "uid9") // all uids absent
+                .withRemovals("uid7", "uid8", "uid9") // all UIDs absent
                 .build();
 
         Value value2 = UidTestBuilder.newBuilder()
@@ -157,7 +157,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
 
         Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2", "uid3", "uid4", "uid5", "uid6")
-                .withRemovals("uid7", "uid8", "uid9") // all uids absent
+                .withRemovals("uid7", "uid8", "uid9") // all UIDs absent
                 .build());
 
         testCombinations(expectation, asList(value1, value2));
@@ -168,12 +168,12 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // Do multiple removals wipe UIDs across Values and persist on partial compactions?
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2", "uid3")
-                .withRemovals("uid4", "uid5", "uid6") // all uids in other list
+                .withRemovals("uid4", "uid5", "uid6") // all UIDs in other list
                 .build();
 
         Value value2 = UidTestBuilder.newBuilder()
                 .withUids("uid4", "uid5", "uid6")
-                .withRemovals("uid1", "uid2", "uid3") // all uids in other list
+                .withRemovals("uid1", "uid2", "uid3") // all UIDs in other list
                 .build();
 
         Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
@@ -231,7 +231,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // Another variation of a mixture of hit and non-hit removals within one Value.
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2", "uid3")
-                .withRemovals("uid4", "uid5", "uid6", "uid7") // all uids in other list, one absent
+                .withRemovals("uid4", "uid5", "uid6", "uid7") // all UIDs in other list, one absent
                 .build();
 
         Value value2 = UidTestBuilder.newBuilder()
@@ -247,16 +247,16 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void extraIdsInFullRemovals() {
+    public void matchingAndExtraRemovalIds() {
         // Do extra non-hit-removals persist when mixed with hit-removals?
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2", "uid3")
-                .withRemovals("uid4", "uid5", "uid6", "uid7") // all uids in other list, one absent
+                .withRemovals("uid4", "uid5", "uid6", "uid7") // all UIDs in other list, one absent
                 .build();
 
         Value value2 = UidTestBuilder.newBuilder()
                 .withUids("uid4", "uid5", "uid6")
-                .withRemovals("uid1", "uid2", "uid3", "uid8") // all uids in other list, one absent
+                .withRemovals("uid1", "uid2", "uid3", "uid8") // all UIDs in other list, one absent
                 .build();
 
         Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
@@ -268,7 +268,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void loneRemovalValue() {
+    public void loneRemovalId() {
         // Does a single removal work when seen in the second Value?
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2")
@@ -348,7 +348,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void overMaxTwice() {
+    public void exceedsMaxTwice() {
         // Do counts add properly in count-only mode?
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(3)
@@ -387,7 +387,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testBadDataHandling() {
+    public void unexpectedDataHandling() {
         // Does a legacy Value (no UIDs, not count-only, yet a count=1) get effectively ignored?
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids()
@@ -412,7 +412,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testDuplicatesRecountedUnderSeenIgnore() {
+    public void duplicatesRecountedUnderSeenIgnore() {
         // Does a count-only Value, when seen first, prevent de-duplication of named
         // UID lists (done for performance optimization)?
         agg = new GlobalIndexUidAggregator(10);
@@ -439,7 +439,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testDuplicatesRecountedUnderSeenIgnoreReverse() {
+    public void duplicatesRecountedUnderSeenIgnoreReverse() {
         // Does a count-only Value, when seen last, NOT prevent de-duplication of named
         // UID lists (done for performance optimization)?
         agg = new GlobalIndexUidAggregator(10);
@@ -466,7 +466,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testFloorOfZero() {
+    public void floorOfZeroWhenSeenIgnoreFalse() {
         // Does count match size of UID list even when there are more removal UIDs than UIDs?
         agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
@@ -530,7 +530,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testDeduplicates() {
+    public void shouldDeduplicate() {
         // Do we avoid temporarily exceeding the (lowered) maximum when re-adding
         // an already included UID?
         agg = new GlobalIndexUidAggregator(2);
@@ -556,7 +556,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testDeduplicatesVariant() {
+    public void shouldDeduplicateVariant() {
         // Same as testDeduplicates but with a non-matching removal UID:
         // Do we avoid temporarily exceeding the (lowered) maximum when re-adding
         // an already included UID?
@@ -583,7 +583,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testEvaluatesMaxWithEachAddition() {
+    public void evaluatesMaxWithEachAddition() {
         // Does removal after exceeding max simply deduct from the count?
         agg = new GlobalIndexUidAggregator(2);
         Value value1 = UidTestBuilder.newBuilder()
@@ -609,7 +609,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testEvaluatesMaxWithEachAdditionReverse() {
+    public void evaluatesMaxWithEachAdditionReverse() {
         // Does removal before exceeding max avoid count-only mode?
         agg = new GlobalIndexUidAggregator(2);
         Value value1 = UidTestBuilder.newBuilder()
@@ -699,7 +699,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testAddUidToNegativeCount() {
+    public void addUidToNegativeCount() {
         // Will negative count-only, combined with named uid, result in zero?
         agg = new GlobalIndexUidAggregator(10);
 
@@ -720,8 +720,9 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testRemoveFromNowDefunctNegativeCountFinal() {
-        // With negative count, combined with a removal, result in a zero count for full compactions?
+    public void negativeCountSetToZeroAfterFullCompaction() {
+        // Will a negative count, combined with a removal, result in a zero count for 
+        // full compactions?
         agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(-1)
@@ -741,8 +742,8 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testRemoveFromNowDefunctNegativeCountPartial() {
-        // With negative count, combined with a removal, result in a negative two count in
+    public void negativeCountRemainsAfterPartialCompaction() {
+        // Will a negative count, combined with a removal, result in a negative two count in
         // propagation scenarios?
         agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
@@ -763,8 +764,8 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testDropKeyWhenCountReachesZero() {
-        // With a negative count (due to two removals) be changed to a zero
+    public void anotherNegativeSetToZeroAfterFullCompaction() {
+        // Will a negative count (due to two removals) be changed to a zero
         // count for full compactions?
         agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
@@ -785,8 +786,8 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testDropKeyWhenCountReachesZeroPartial() {
-        // With a negative count (due to two removals) propagate
+    public void anotherNegativeRemainsAfterPartialCompaction() {
+        // Will a negative count (due to two removals) propagate
         // as a negative count for partial compactions?
         agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
@@ -832,7 +833,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testHitsMax() {
+    public void countOnlyWhenExceedMax() {
         // Will count-only status continue after decrementing to no longer
         // exceed maximum?
         agg = new GlobalIndexUidAggregator(2);
@@ -857,11 +858,12 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void exceedMaxIgnoresCountsUid() {
+    public void combineCountAndNamedListDeterministic() {
         // Will a flip to seenIgnore take into account the available
         // information?
-        // Note this tests both orderings of values.
-        // i.e. count = this.uids.size() - this.uidsToRemove.size();
+        // Note this tests both orderings of values (forward and reverse).
+        // 1. either start with a count-only and add two uids
+        // 2. or start with two named uids and add a count-only
         agg = new GlobalIndexUidAggregator(2);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(3)
@@ -879,10 +881,10 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void overMaxAddTwoDropOne() {
+    public void exceedMaxAddTwoDropOne() {
         // Will flipping to seen ignore take into account the available information?
         // Note this tests both orderings of values.
-        // i.e. count = this.uids.size() - this.uidsToRemove.size();
+        // i.e., count = this.uids.size() - this.uidsToRemove.size();
         agg = new GlobalIndexUidAggregator(2);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(3)
@@ -905,10 +907,10 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void testRemovalToZero() {
+    public void removalToZeroCount() {
         // Will flipping to seen ignore take into account the available information?
         // Note this tests both orderings of values.
-        // i.e. count = this.uids.size() - this.uidsToRemove.size();
+        // i.e., count = this.uids.size() - this.uidsToRemove.size();
         agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(1)
@@ -927,60 +929,10 @@ public class GlobalIndexUidAggregatorExpandedTest {
     }
 
     @Test
-    public void floorOfZeroVariantFinal() {
-        // Will flipping to seen ignore take into account the available information?
-        // Will a floor of zero be honored for full compactions?
-        // Note this tests both orderings of values.
-        // i.e. count = this.uids.size() - this.uidsToRemove.size();
-        agg = new GlobalIndexUidAggregator(10);
-        Value value1 = UidTestBuilder.newBuilder()
-                .withCountOnly(1)
-                .build();
-
-        Value value2 = UidTestBuilder.newBuilder()
-                .withUids()
-                .withRemovals("uid1", "uid2")
-                .build();
-
-        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
-                .withCountOnly(0)
-                .withRemovals()
-                .build());
-
-        isFullCompactionOnlyTest = true;
-        testCombinations(expectation, asList(value1, value2));
-    }
-
-    @Test
-    public void floorOfZeroVariantPartial() {
-        // Will flipping to seen ignore take into account the available information?
-        // Will a negative count propagate for partial compactions?
-        // Note this tests both orderings of values.
-        // i.e. count = this.uids.size() - this.uidsToRemove.size();
-        agg = new GlobalIndexUidAggregator(10);
-        Value value1 = UidTestBuilder.newBuilder()
-                .withCountOnly(1)
-                .build();
-
-        Value value2 = UidTestBuilder.newBuilder()
-                .withUids()
-                .withRemovals("uid1", "uid2")
-                .build();
-
-        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
-                .withCountOnly(-1)
-                .withRemovals()
-                .build());
-
-        isPartialCompactionOnlyTest = true;
-        testCombinations(expectation, asList(value1, value2));
-    }
-
-    @Test
     public void countOnlyReduced() {
         // Will flipping to seen ignore take into account the available information?
         // Note this tests both orderings of values.
-        // i.e. count = this.uids.size() - this.uidsToRemove.size();
+        // i.e., count = this.uids.size() - this.uidsToRemove.size();
         agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(30)
@@ -993,7 +945,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
 
         Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
                 .withCountOnly(28)
-                .withRemovals()
                 .build());
 
         testCombinations(expectation, asList(value1, value2));
