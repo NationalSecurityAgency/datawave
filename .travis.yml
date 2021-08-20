@@ -1,5 +1,12 @@
-dist: precise
+---
+dist: trusty
+
+# language: minimal, in this case it can be both, (either/or).
+
 language: java
+
+# (theoretically you can use Abiarm API for speed).
+
 jdk:
   - oraclejdk8
 
@@ -7,14 +14,14 @@ cache:
   directories:
   - $HOME/.m2
 
+ # Remove the -q flag in mvn -q -Pdev, dist install -DskipTests, via I want verbose info and not silencing the fetch data. 
+
 install:
-  - pushd contrib/read-properties
-  - mvn -q install
-  - popd
-  - pushd contrib/assert-properties
-  - mvn -q install
-  - popd
+  - travis_wait mvn -Pdev,dist install -DskipTests
+
+# Add `free` and `uname -a` for more info on the provisional setup, may add `uname -r` for just more information on the provisional setup. 
 
 script:
-  - travis_wait mvn -q -Pdev,dist,microservices install -DskipTests
+  - uname -a
+  - free
   - mvn -Dsurefire.forkCount=4 -Pdev verify
