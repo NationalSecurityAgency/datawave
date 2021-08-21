@@ -71,4 +71,3 @@ script:
   - free
   - chmod u+x ./.install-jdk-travis.sh
   - mvn -Dsurefire.forkCount=4 -Pdev verify
-©
