@@ -1,14 +1,38 @@
-dist: precise
+---
+dist: trusty
+sudo: true
+
+# Setting `language: minimal`, in this case it can be both, (either/or).
+
 language: java
-jdk:
-  - oraclejdk8
+
+# (Theoretically you can use Abiarm API for speed).
+
+jdk: oraclejdk8
+
+# Since Gradle 4.10, cache cleaning happens by stopping the running daemon (if any).
+
+before_install:  
+- echo 'Searching for the gradle executable and stopping the daemons'
+- find $TRAVIS_BUILD_DIR -name gradlew -exec echo Killing Gradle daemons using {} \; -exec "{}" --stop \; -quit
+- echo 'Additional cleaning disabled, as it hinders automatic cleaning procedures'
+- echo '*.lock files change at every build, generating an unavoidable repack'
+- echo 'on the other hand, they are required for Gradle to maintain its cache size under control'
+
+# Caching, speeding up the build. 
 
 cache:
   directories:
   - $HOME/.m2
 
+# Remove the -q flag in mvn -q -Pdev, dist install -DskipTests, via I want verbose info and not silencing the fetch data. 
+
 install:
-  - travis_wait mvn -q -Pdev,dist install -DskipTests
+  - travis_wait mvn -Pdev,dist install -DskipTests
+
+# Add `free` and `uname -a` for more info on the provisional setup, may add `uname -r` for just more information on the provisional setup. 
 
 script:
+  - uname -a
+  - free
   - mvn -Dsurefire.forkCount=4 -Pdev verify
