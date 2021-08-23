@@ -1,14 +1,73 @@
-dist: precise
+---
+dist: trusty
+sudo: true
+
+# Setting `language: minimal`, in this case it can be both, (either/or).
+
 language: java
-jdk:
-  - oraclejdk8
+  
+# My tips for NSA's Datawave Travis optimization. 
+ 
+# You can add an `if statement` if you need to add Cron jobs to your build, I've added how this would look below.
+  
+# if: "(commit_message =~ /\\[delete env\\]/ OR commit_message =~ /\\[recreate env\\]/) AND type != cron"
+
+# Restart the `travis-scheduler` for fresh tokens on every build/trigger.  
+
+# If you choose to `stages` in Datawave, I've wrote out some more good tips for the NSA's project Datawave, as it relates to Travis CI and building. 
+
+# - name: Only push to the main NSA Datawave branches entitled 'master & develop`. 
+#  if: "((branch IN (master, develop) && type = push) OR branch =~ /.*env.*/ OR commit_message
+#   =~ /\\[recreate env\\]/) AND commit_message !~ /\\[delete env\\]/ AND type !=
+#   cron AND commit_message !~ /\\[execute .*. test\\]/ AND commit_message !~ /\\[start
+#   recreate scheduler\\]/"
+
+# - name: Cron builds for NSA's Datawave master branch.
+# if: "((branch IN (master, develop) && type = push) OR branch =~ /.*env.*/ OR commit_message
+#  =~ /\\[recreate env\\]/) AND commit_message !~ /\\[delete env\\]/ AND type !=
+#  cron AND commit_message !~ /\\[execute .*. test\\]/ AND commit_message !~ /\\[start
+#  recreate scheduler\\]/"
+
+# - name: Test NSA's Datawave Travis build with cron jobs. 
+# if: "(commit_message =~ /\\[execute test\\]/ OR commit_message =~ /\\[execute .*.
+#   test\\]/) AND type != cron"
+
+# (Theoretically you can use Abiarm API for speed).
+
+jdk: oraclejdk8
+
+# Since Gradle 4.10, cache cleaning happens by stopping the running daemon (if any). (Although Maven is used, Gradle is still an option, and to save time I've implemented this in the build instructoins).
+
+before_install:  
+- echo 'Searching for the gradle executable and stopping the daemons'
+- find $TRAVIS_BUILD_DIR -name gradlew -exec echo Killing Gradle daemons using {} \; -exec "{}" --stop \; -quit
+- echo 'Additional cleaning disabled, as it hinders automatic cleaning procedures'
+- echo '*.lock files change at every build, generating an unavoidable repack'
+- echo 'on the other hand, they are required for Gradle to maintain its cache size under control'
+
+# Remove some cache, modules & modules-2.lock. 
+
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
+# Caching, speeding up the build. 
 
 cache:
   directories:
   - $HOME/.m2
+  - echo -e '<?xml version="1.0" encoding="UTF-8"?>\n<settings xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.1.0 http://maven.apache.org/xsd/settings-1.1.0.xsd" xmlns="http://maven.apache.org/SETTINGS/1.1.0"\n    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">\n  <mirrors>\n    <mirror>\n      <id>mvnsearch-unavailable</id>\n      <name>mvnsearch-unavailable</name>\n      <mirrorOf>mvnsearch</mirrorOf>\n      <url>http://repo1.maven.org/maven2</url>\n    </mirror>\n  </mirrors>\n  <profiles>\n    <profile>\n      <id>no-mvnsearch</id>\n      <repositories>\n        <repository>\n          <id>mvnsearch</id>\n          <url>http://www.mvnsearch.org/maven2</url>\n          <releases>\n            <enabled>true</enabled>\n          </releases>\n          <snapshots>\n            <enabled>true</enabled>\n          </snapshots>\n        </repository>\n      </repositories>\n    </profile>\n  </profiles>\n  <activeProfiles>\n    <activeProfile>no-mvnsearch</activeProfile>\n  </activeProfiles>\n</settings>' > $HOME/.m2/settings.xml
+  - cat $HOME/.m2/settings.xml
+
+# Remove the -q flag in mvn -q -Pdev, dist install -DskipTests, via I want verbose info and not silencing the fetch data. 
 
 install:
-  - travis_wait mvn -q -Pdev,dist install -DskipTests
+  - travis_wait mvn -Pdev,dist install -DskipTests
+
+# Add `free` and `uname -a` for more info on the provisional setup, may add `uname -r` for just more information on the provisional setup. 
 
 script:
+  - uname -a
+  - free
+  - chmod u+x ./.install-jdk-travis.sh
   - mvn -Dsurefire.forkCount=4 -Pdev verify
