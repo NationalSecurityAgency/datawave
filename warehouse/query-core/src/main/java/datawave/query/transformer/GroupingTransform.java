@@ -3,6 +3,7 @@ package datawave.query.transformer;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -362,10 +364,31 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             if (this.groupFieldsSet.contains(shorterName)) {
                 expandedGroupFieldsList.add(shortName);
                 log.trace("{} contains {}", this.groupFieldsSet, shorterName);
-                GroupingTypeAttribute<?> created = makeGroupingTypeAttribute(shortName, field.getData());
-                created.setColumnVisibility(field.getColumnVisibility());
-                fieldMap.put(fieldName, created);
-                fieldToFieldWithContextMap.put(shortName, fieldName);
+                
+                if (field.getData() instanceof Collection<?>) {
+                    // This handles multi-valued entries that do not have grouping context
+                    // Create GroupingTypeAttribute and put in ordered map ordered on the attribute type
+                    SortedSetMultimap<Type<?>,GroupingTypeAttribute<?>> attrSortedMap = TreeMultimap.create();
+                    for (Object typeAttribute : ((Collection<?>) field.getData())) {
+                        Type<?> type = ((TypeAttribute<?>) typeAttribute).getType();
+                        GroupingTypeAttribute<?> created = makeGroupingTypeAttribute(shortName, type);
+                        created.setColumnVisibility(field.getColumnVisibility());
+                        attrSortedMap.put(type, created);
+                    }
+                    
+                    // Add GroupingTypeAttribute to fieldMap with a grouping context that is based on ordered attribute type
+                    int i = 0;
+                    for (Entry<Type<?>,GroupingTypeAttribute<?>> sortedEntry : attrSortedMap.entries()) {
+                        String fieldNameWithContext = fieldName + "." + i++;
+                        fieldMap.put(fieldNameWithContext, sortedEntry.getValue());
+                        fieldToFieldWithContextMap.put(shortName, fieldNameWithContext);
+                    }
+                } else {
+                    GroupingTypeAttribute<?> created = makeGroupingTypeAttribute(shortName, field.getData());
+                    created.setColumnVisibility(field.getColumnVisibility());
+                    fieldMap.put(fieldName, created);
+                    fieldToFieldWithContextMap.put(shortName, fieldName);
+                }
             } else {
                 log.trace("{} does not contain {}", this.groupFieldsSet, shorterName);
             }
