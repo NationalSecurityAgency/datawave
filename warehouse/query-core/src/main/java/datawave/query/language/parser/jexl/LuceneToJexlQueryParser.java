@@ -72,7 +72,7 @@ public class LuceneToJexlQueryParser implements QueryParser {
             Locale.setDefault(Locale.US);
             AccumuloSyntaxParser syntaxParser = new AccumuloSyntaxParser();
             syntaxParser.enable_tracing();
-
+            
             QueryNodeProcessor processor = getQueryNodeProcessor();
             QueryBuilder builder = new JexlTreeBuilder(allowedFunctions);
             
@@ -84,12 +84,12 @@ public class LuceneToJexlQueryParser implements QueryParser {
         }
         return parsedQuery;
     }
-
+    
     private QueryNodeProcessor getQueryNodeProcessor() {
         QueryConfigHandler queryConfigHandler = new QueryConfigHandler();
-
+        
         queryConfigHandler.set(ConfigurationKeys.ANALYZER, analyzer);
-
+        
         queryConfigHandler.set(ConfigurationKeys.ENABLE_POSITION_INCREMENTS, positionIncrementsEnabled);
         queryConfigHandler.set(TOKENIZED_FIELDS, tokenizedFields);
         queryConfigHandler.set(TOKENIZE_UNFIELDED_QUERIES, tokenizeUnfieldedQueries);
@@ -97,13 +97,13 @@ public class LuceneToJexlQueryParser implements QueryParser {
         queryConfigHandler.set(ALLOWED_FIELDS, allowedFields);
         queryConfigHandler.set(ALLOW_ANY_FIELD_QUERIES, allowAnyFieldQueries);
         queryConfigHandler.set(USE_SLOP_FOR_TOKENIZED_TERMS, useSlopForTokenizedTerms);
-
+        
         queryConfigHandler.set(ConfigurationKeys.ALLOW_LEADING_WILDCARD, allowLeadingWildCard);
-
+        
         QueryNodeProcessor processor = queryNodeProcessorFactory.create(queryConfigHandler);
         return processor;
     }
-
+    
     public boolean isTokenizeUnfieldedQueries() {
         return tokenizeUnfieldedQueries;
     }
@@ -175,15 +175,15 @@ public class LuceneToJexlQueryParser implements QueryParser {
     public void setAnalyzer(Analyzer analyzer) {
         this.analyzer = analyzer;
     }
-
+    
     public QueryNodeProcessorFactory getQueryNodeProcessorFactory() {
         return queryNodeProcessorFactory;
     }
-
+    
     public void setQueryNodeProcessorFactory(QueryNodeProcessorFactory queryNodeProcessorFactory) {
         this.queryNodeProcessorFactory = queryNodeProcessorFactory;
     }
-
+    
     public List<JexlQueryFunction> getAllowedFunctions() {
         return allowedFunctions;
     }

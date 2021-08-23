@@ -585,18 +585,20 @@ public class TestLuceneToJexlQueryParser {
         Assert.assertEquals("FOO == 'bar' && BAZ =~ 'Foo/Foo\\ Foo.*'", parser.parse("FOO:bar BAZ:/Foo\\/Foo\\ Foo.*/").getOriginalQuery());
         Assert.assertEquals("FOO == 'bar' && BAZ =~ 'Foo/Foo Foo.*?'", parser.parse("FOO:bar BAZ:/Foo\\/Foo Foo.*?/").getOriginalQuery());
     }
-
+    
     private static class TestQueryNodeProcessorFactory extends QueryNodeProcessorFactory {
         @Override
         public QueryNodeProcessor create(QueryConfigHandler configHandler) {
             return new QueryNodeProcessorPipeline(configHandler);
         }
     }
-
+    
     @Test
     public void testCustomQueryNodeProcessor() throws ParseException {
         String query = "TOKFIELD:\"quick wi-fi fox\"";
-        Assert.assertEquals("(content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi-fi', 'fox') || content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi', 'fi', 'fox'))", parseQuery(query));
+        Assert.assertEquals(
+                        "(content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi-fi', 'fox') || content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi', 'fi', 'fox'))",
+                        parseQuery(query));
         parser.setQueryNodeProcessorFactory(new TestQueryNodeProcessorFactory());
         Assert.assertEquals("content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi-fi', 'fox')", parseQuery(query));
     }
