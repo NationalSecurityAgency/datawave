@@ -30,11 +30,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
+    private static final String COMPARE = "compare";
     
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
      *
-     * 
+     *
      *
      */
     public static class EvaluationPhaseFilterJexlArgumentDescriptor implements JexlArgumentDescriptor {
@@ -231,6 +232,9 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
             } else if (TIMEFUNCTION.equals(functionMetadata.name())) {
                 fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
                 fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(1)));
+            } else if (COMPARE.equals(functionMetadata.name())) {
+                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
+                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(3)));
             } else {
                 fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
             }
@@ -247,6 +251,8 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
                 return JexlArgumentDescriptor.Fields.product(arguments.get(1));
             } else if (TIMEFUNCTION.equals(functionMetadata.name())) {
                 return JexlArgumentDescriptor.Fields.product(arguments.get(0), arguments.get(1));
+            } else if (COMPARE.equals(functionMetadata.name())) {
+                return JexlArgumentDescriptor.Fields.product(arguments.get(0), arguments.get(3));
             } else {
                 return JexlArgumentDescriptor.Fields.product(arguments.get(0));
             }
@@ -279,10 +285,20 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
             if (!EvaluationPhaseFilterFunctions.class.equals(clazz)) {
                 throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
             }
+            FunctionJexlNodeVisitor fvis = new FunctionJexlNodeVisitor();
+            fvis.visit(node, null);
+            
+            verify(fvis);
+            
             return new EvaluationPhaseFilterJexlArgumentDescriptor(node);
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException(e);
         }
     }
     
+    private void verify(FunctionJexlNodeVisitor fvis) {
+        if (COMPARE.equalsIgnoreCase(fvis.name())) {
+            CompareFunctionValidator.validate(fvis.name(), fvis.args());
+        }
+    }
 }
