@@ -149,6 +149,9 @@ public abstract class ContentFunctionEvaluator {
      */
     public Object evaluate() {
         if (computable()) {
+            
+            Set<String> hitFields = new HashSet<>();
+            
             // now for each event, lets process the terms
             for (String eventId : eventIds) {
                 ListMultimap<String,List<TermWeightPosition>> offsetsByField = LinkedListMultimap.create();
@@ -214,12 +217,17 @@ public abstract class ContentFunctionEvaluator {
                         if (log.isTraceEnabled()) {
                             log.trace(logPrefix + " satisfied the content function");
                         }
-                        
-                        return field;
+                        hitFields.add(field);
                     } else if (log.isTraceEnabled()) {
                         log.trace(logPrefix + " did not satisfy the content function");
                     }
                 }
+                // returning on the first event that satisfies the function will potentially miss
+                // other valid hit fields
+            }
+            
+            if (!hitFields.isEmpty()) {
+                return hitFields;
             }
         }
         
