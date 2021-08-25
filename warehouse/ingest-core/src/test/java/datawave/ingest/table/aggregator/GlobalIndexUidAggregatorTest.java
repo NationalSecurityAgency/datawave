@@ -5,19 +5,19 @@ import com.google.common.collect.Lists;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.protobuf.Uid.List.Builder;
 
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Test;
 
 import static datawave.ingest.table.aggregator.UidTestUtils.countOnlyList;
 import static datawave.ingest.table.aggregator.UidTestUtils.legacyRemoveUidList;
@@ -775,24 +775,31 @@ public class GlobalIndexUidAggregatorTest {
         assertEquals(0, resultList.getCOUNT());
     }
     
+    // Legacy remove UID list is not supported.
     @Test
     public void testLegacyRemoval() {
         List<Value> values = asList(uidList("uid1", "uid2"), legacyRemoveUidList("uid1"));
         Uid.List result = valueToUidList(agg(values));
         
-        assertEquals(1, result.getUIDList().size());
+        assertEquals(2, result.getCOUNT());
+        assertEquals(2, result.getUIDList().size());
+        assertTrue(result.getUIDList().contains("uid1"));
         assertTrue(result.getUIDList().contains("uid2"));
+        assertEquals(0, result.getREMOVEDUIDCount());
     }
     
+    // Legacy remove UID list is not supported.
     @Test
     public void testCombineLegacyAndNewRemovals() {
         List<Value> values = asList(removeUidList("uid1", "uid2"), legacyRemoveUidList("uid3"));
         Uid.List result = valueToUidList(agg(values));
         
-        assertEquals(3, result.getREMOVEDUIDCount());
+        assertEquals(2, result.getREMOVEDUIDCount());
         assertTrue(result.getREMOVEDUIDList().contains("uid1"));
         assertTrue(result.getREMOVEDUIDList().contains("uid2"));
-        assertTrue(result.getREMOVEDUIDList().contains("uid3"));
+        assertEquals(1, result.getUIDList().size());
+        assertEquals(1, result.getCOUNT());
+        assertTrue(result.getUIDList().contains("uid3"));
     }
     
     @Test
@@ -809,35 +816,73 @@ public class GlobalIndexUidAggregatorTest {
     @Test
     public void testDropKeyWhenCountReachesZero() {
         List<Value> values = asList(countOnlyList(2), removeUidList("uid1", "uid2"));
+        agg.setPropogate(false);
         Uid.List result = valueToUidList(agg(values));
         
         assertEquals(0, result.getCOUNT());
         assertTrue(result.getIGNORE());
         assertFalse(agg.propogateKey());
+    }
+    
+    @Test
+    public void testKeepKeyWhenCountReachesZeroWhilePropagating() {
+        List<Value> values = asList(countOnlyList(2), removeUidList("uid1", "uid2"));
+        agg.setPropogate(true);
+        Uid.List result = valueToUidList(agg(values));
+        
+        assertEquals(0, result.getCOUNT());
+        assertTrue(result.getIGNORE());
+        assertTrue(agg.propogateKey());
     }
     
     @Test
     public void testDropKeyWhenCountReachesZeroWithCount() {
         List<Value> values = asList(countOnlyList(100), countOnlyList(-100));
+        agg.setPropogate(false);
         Uid.List result = valueToUidList(agg(values));
         
         assertEquals(0, result.getCOUNT());
         assertFalse(agg.propogateKey());
+        assertTrue(result.getIGNORE());
     }
     
     @Test
-    public void testDropKeyWhenCountGoesNegative() {
-        List<Value> values = asList(countOnlyList(1), removeUidList("uid1", "uid2"));
+    public void testKeepKeyWhenCountReachesZeroWithCountWhilePropagating() {
+        List<Value> values = asList(countOnlyList(100), countOnlyList(-100));
+        agg.setPropogate(true);
         Uid.List result = valueToUidList(agg(values));
         
-        assertEquals(-1, result.getCOUNT());
+        assertEquals(0, result.getCOUNT());
+        assertTrue(agg.propogateKey());
+        assertTrue(result.getIGNORE());
+    }
+    
+    @Test
+    public void testPrepareToDropKeyWhenCountGoesNegative() {
+        List<Value> values = asList(countOnlyList(1), removeUidList("uid1", "uid2"));
+        agg.setPropogate(false);
+        Uid.List result = valueToUidList(agg(values));
+        
+        assertEquals(0, result.getCOUNT());
         assertTrue(result.getIGNORE());
         assertFalse(agg.propogateKey());
     }
     
     @Test
+    public void testKeepKeyWhenCountGoesNegativeWhilePropagating() {
+        List<Value> values = asList(countOnlyList(1), removeUidList("uid1", "uid2"));
+        agg.setPropogate(true);
+        Uid.List result = valueToUidList(agg(values));
+        
+        assertEquals(-1, result.getCOUNT());
+        assertTrue(result.getIGNORE());
+        assertTrue(agg.propogateKey());
+    }
+    
+    @Test
     public void testWeKeepUidListDuringDoubleRemovals() {
         List<Value> values = asList(uidList("uid1"), removeUidList("uid2"), removeUidList("uid2"));
+        agg.setPropogate(false);
         Uid.List result = valueToUidList(agg(values));
         
         assertEquals(1, result.getUIDList().size());
