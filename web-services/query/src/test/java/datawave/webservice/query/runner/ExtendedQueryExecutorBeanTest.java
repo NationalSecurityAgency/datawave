@@ -4,8 +4,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
-import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
@@ -20,8 +20,8 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.audit.PrivateAuditConstants;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
-import datawave.microservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
@@ -768,7 +768,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
         this.connectionRequestBean.requestBegin(queryId.toString());
-        expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
+        expect(this.connectionFactory.getConnection(userDN.toLowerCase(), new HashSet<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
         expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
         expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
@@ -949,7 +949,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
-        expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
+        expect(this.connectionFactory.getConnection(userDN.toLowerCase(), new HashSet<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
         expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
         expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).andReturn(true);
@@ -1122,7 +1122,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
         this.connectionRequestBean.requestBegin(queryId.toString());
-        expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
+        expect(this.connectionFactory.getConnection(userDN.toLowerCase(), new HashSet<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
         expect(this.traceInfos.get(userSid)).andReturn(Arrays.asList(PatternWrapper.wrap(query)));
         expect(this.qlCache.add(queryId.toString(), userSid, this.queryLogic1, this.connector)).andThrow(
@@ -1321,7 +1321,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).andReturn(false);
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(null);
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
-        expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
+        expect(this.connectionFactory.getConnection(userDN.toLowerCase(), new HashSet<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.runningQuery.closeConnection(this.connectionFactory);
         this.cache.remove(queryId.toString());
         this.closedCache.add(queryId.toString());
@@ -1875,7 +1875,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
-        expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
+        expect(this.connectionFactory.getConnection(userDN.toLowerCase(), new HashSet<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         expect(this.qlCache.add(newQuery1.getId().toString(), userSid, this.queryLogic1, this.connector)).andReturn(true);
         expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(false);
         expect(this.queryLogic1.initialize(eq(this.connector), isA(Query.class), isA(Set.class))).andReturn(this.genericConfiguration);
@@ -2811,6 +2811,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getOwner()).andReturn(sid).anyTimes();
         expect(this.query.getId()).andReturn(queryId).anyTimes();
         expect(this.query.getQuery()).andReturn(queryName).anyTimes();
+        expect(this.query.getQueryName()).andReturn(queryName).anyTimes();
         this.cache.put(eq(queryId.toString()), isA(RunningQuery.class));
         expect(this.cache.lock(queryName)).andReturn(true);
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.PASSIVE);
@@ -2847,7 +2848,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
         connectionRequestBean.requestBegin(queryName);
-        expect(this.connectionFactory.getConnection(eq("connPool1"), eq(Priority.NORMAL), isA(Map.class))).andReturn(this.connector);
+        expect(this.connectionFactory.getConnection(eq(userDN), eq(dnList), eq("connPool1"), eq(Priority.NORMAL), isA(Map.class))).andReturn(this.connector);
         connectionRequestBean.requestEnd(queryName);
         expect(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
@@ -3387,7 +3388,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
         this.connectionRequestBean.requestBegin(queryId.toString());
-        expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
+        expect(this.connectionFactory.getConnection(userDN, new HashSet<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
         expect(this.principal.getPrimaryUser()).andReturn(dwUser);
         expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations));
@@ -3523,7 +3524,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
         this.connectionRequestBean.requestBegin(queryId.toString());
-        expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
+        expect(this.connectionFactory.getConnection(userDN, new HashSet<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
         // expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
         // expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));

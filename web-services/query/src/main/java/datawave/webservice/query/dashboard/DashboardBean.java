@@ -2,11 +2,14 @@ package datawave.webservice.query.dashboard;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.interceptor.ResponseInterceptor;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.security.util.ScannerHelper;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.extjs.ExtJsResponse;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
@@ -32,6 +35,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.security.Principal;
+import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
@@ -150,7 +154,15 @@ public class DashboardBean {
     }
     
     private Connector createConnector() throws Exception {
+        Principal p = ctx.getCallerPrincipal();
+        String userDn = null;
+        Collection<String> proxyServers = null;
+        if (p instanceof DatawavePrincipal) {
+            DatawavePrincipal dp = (DatawavePrincipal) p;
+            userDn = dp.getUserDN().subjectDN();
+            proxyServers = dp.getProxyServers();
+        }
         Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-        return connectionFactory.getConnection(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+        return connectionFactory.getConnection(userDn, proxyServers, AccumuloConnectionFactory.Priority.LOW, trackingMap);
     }
 }

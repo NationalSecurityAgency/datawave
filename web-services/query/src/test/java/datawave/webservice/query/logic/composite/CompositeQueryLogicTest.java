@@ -1,7 +1,7 @@
 package datawave.webservice.query.logic.composite;
 
 import datawave.marking.MarkingFunctions;
-import datawave.microservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.microservice.query.logic.BaseQueryLogicTransformer;

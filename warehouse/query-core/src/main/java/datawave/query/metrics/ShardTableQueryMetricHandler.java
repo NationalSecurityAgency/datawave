@@ -17,16 +17,16 @@ import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.microservice.query.logic.QueryLogic;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.map.SimpleQueryGeometryHandler;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.security.util.AuthorizationsUtil;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
-import datawave.microservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
@@ -168,7 +168,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         Connector connector = null;
         
         try {
-            connector = connectionFactory.getConnection(Priority.ADMIN, new HashMap<>());
+            connector = connectionFactory.getConnection(null, null, Priority.ADMIN, new HashMap<>());
             connectorAuthorizations = connector.securityOperations().getUserAuthorizations(connector.whoami()).toString();
             connectorAuthorizationCollection = Lists.newArrayList(StringUtils.split(connectorAuthorizations, ","));
             reload();
@@ -203,7 +203,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         Connector connector = null;
         
         try {
-            connector = this.connectionFactory.getConnection(Priority.ADMIN, new HashMap<>());
+            connector = this.connectionFactory.getConnection(null, null, Priority.ADMIN, new HashMap<>());
             AbstractColumnBasedHandler<Key> handler = new ContentQueryMetricsHandler<>();
             createAndConfigureTablesIfNecessary(handler.getTableNames(conf), connector.tableOperations(), conf);
         } catch (Exception e) {
@@ -458,7 +458,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         
         try {
             Map<String,String> trackingMap = this.connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connector = this.connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            connector = this.connectionFactory.getConnection(null, null, Priority.ADMIN, trackingMap);
             QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(query.getQueryLogicName(), datawavePrincipal.getPrimaryUser().getRoles());
             if (queryLogic instanceof QueryMetricQueryLogic) {
                 ((QueryMetricQueryLogic) queryLogic).setRolesSets(datawavePrincipal.getPrimaryUser().getRoles());

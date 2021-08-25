@@ -2,7 +2,7 @@ package datawave.webservice.common.health;
 
 import com.sun.management.OperatingSystemMXBean;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.webservice.common.connection.AccumuloConnectionFactoryBean;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.result.GenericResponse;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
@@ -63,7 +63,7 @@ public class HealthBean {
     private static String status = "ready";
     
     @Inject
-    private AccumuloConnectionFactoryBean accumuloConnectionFactoryBean;
+    private AccumuloConnectionFactory accumuloConnectionFactoryBean;
     
     @Inject
     @ConfigProperty(name = "dw.health.connection.percent.limit", defaultValue = "200")

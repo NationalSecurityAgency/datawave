@@ -5,13 +5,13 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.google.common.collect.HashMultimap;
 import datawave.configuration.RefreshableScope;
 import datawave.configuration.spring.SpringBean;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
@@ -201,7 +201,7 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
     
     protected List<String> readAccumuloAuthorizations() {
         try {
-            Connector connector = accumuloConnectionFactory.getConnection(null, AccumuloConnectionFactory.Priority.ADMIN, new HashMap<>());
+            Connector connector = accumuloConnectionFactory.getConnection(null, null, null, AccumuloConnectionFactory.Priority.ADMIN, new HashMap<>());
             Authorizations auths = connector.securityOperations().getUserAuthorizations(connector.whoami());
             return Arrays.asList(auths.toString().split("\\s*,\\s*"));
         } catch (Exception e) {

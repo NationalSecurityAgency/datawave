@@ -1,7 +1,7 @@
 package datawave.query.tables.shard;
 
 import datawave.core.iterators.filter.CsvKeyFilter;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.logic.AbstractQueryLogicTransformer;
 import datawave.microservice.query.logic.BaseQueryLogic;

@@ -1,6 +1,6 @@
 package datawave.webservice.mr.configuration;
 
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 
 public interface NeedAccumuloConnectionFactory {
     

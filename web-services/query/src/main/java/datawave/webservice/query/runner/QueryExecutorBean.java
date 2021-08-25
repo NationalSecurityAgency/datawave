@@ -20,7 +20,6 @@ import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.marking.SecurityMarking;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.microservice.query.config.QueryExpirationProperties;
@@ -35,6 +34,7 @@ import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.audit.PrivateAuditConstants;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
@@ -707,7 +707,7 @@ public class QueryExecutorBean implements QueryExecutor {
             addQueryToTrackingMap(trackingMap, q);
             accumuloConnectionRequestBean.requestBegin(q.getId().toString());
             try {
-                connection = connectionFactory.getConnection(qd.logic.getConnPoolName(), priority, trackingMap);
+                connection = connectionFactory.getConnection(qd.userDn, qd.proxyServers, qd.logic.getConnPoolName(), priority, trackingMap);
             } finally {
                 accumuloConnectionRequestBean.requestEnd(q.getId().toString());
             }
@@ -890,7 +890,7 @@ public class QueryExecutorBean implements QueryExecutor {
             addQueryToTrackingMap(trackingMap, q);
             accumuloConnectionRequestBean.requestBegin(q.getId().toString());
             try {
-                connection = connectionFactory.getConnection(qd.logic.getConnPoolName(), priority, trackingMap);
+                connection = connectionFactory.getConnection(qd.userDn, qd.proxyServers, qd.logic.getConnPoolName(), priority, trackingMap);
             } finally {
                 accumuloConnectionRequestBean.requestEnd(q.getId().toString());
             }
@@ -1254,7 +1254,8 @@ public class QueryExecutorBean implements QueryExecutor {
             addQueryToTrackingMap(trackingMap, query.getSettings());
             accumuloConnectionRequestBean.requestBegin(id);
             try {
-                connection = connectionFactory.getConnection(query.getLogic().getConnPoolName(), priority, trackingMap);
+                connection = connectionFactory.getConnection(query.getSettings().getUserDN(), query.getSettings().getDnList(), query.getLogic()
+                                .getConnPoolName(), priority, trackingMap);
             } finally {
                 accumuloConnectionRequestBean.requestEnd(id);
             }

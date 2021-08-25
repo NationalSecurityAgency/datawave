@@ -1,6 +1,6 @@
 package datawave.webservice.query.runner;
 
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.logic.WritesQueryMetrics;

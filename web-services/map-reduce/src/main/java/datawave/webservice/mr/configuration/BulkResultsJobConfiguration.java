@@ -1,6 +1,5 @@
 package datawave.webservice.mr.configuration;
 
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.configuration.QueryData;
 import datawave.microservice.query.logic.QueryLogic;
@@ -13,6 +12,7 @@ import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.mr.bulkresults.map.BulkResultsFileOutputMapper;
 import datawave.webservice.mr.bulkresults.map.BulkResultsTableOutputMapper;
 import datawave.webservice.mr.bulkresults.map.SerializationFormat;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -327,14 +327,22 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
                 throw new QueryException("This query does not belong to you. expected: " + q.getOwner() + ", value: " + sid,
                                 Response.Status.UNAUTHORIZED.getStatusCode());
             
+            Collection<String> userRoles = Collections.EMPTY_LIST;
+            String userDN = null;
+            Collection<String> proxyServers = null;
+            if (principal instanceof DatawavePrincipal) {
+                DatawavePrincipal dp = (DatawavePrincipal) principal;
+                userRoles = dp.getPrimaryUser().getRoles();
+                userDN = dp.getUserDN().subjectDN();
+                proxyServers = dp.getProxyServers();
+            }
+            
             // will throw IllegalArgumentException if not defined
-            Collection<String> userRoles = (principal instanceof DatawavePrincipal) ? ((DatawavePrincipal) principal).getPrimaryUser().getRoles() : Collections
-                            .emptyList();
             logic = queryFactory.getQueryLogic(q.getQueryLogicName(), userRoles);
             
             // Get an accumulo connection
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connector = connectionFactory.getConnection(logic.getConnectionPriority(), trackingMap);
+            connector = connectionFactory.getConnection(userDN, proxyServers, logic.getConnectionPriority(), trackingMap);
             
             // Merge user auths with the auths that they use in the Query
             Set<Authorizations> runtimeQueryAuthorizations = AuthorizationsUtil.getDowngradedAuthorizations(q.getQueryAuthorizations(), principal);

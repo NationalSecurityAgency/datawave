@@ -1,7 +1,7 @@
 package datawave.webservice.query.cache;
 
 import com.google.common.cache.Cache;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.runner.RunningQuery;

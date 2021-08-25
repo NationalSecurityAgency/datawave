@@ -11,8 +11,8 @@ import datawave.microservice.query.QueryPersistence;
 import datawave.query.iterator.QueriesTableAgeOffIterator;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
-import datawave.microservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.MapUtils;
@@ -140,7 +140,7 @@ public class Persister {
         Connector c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getConnection(null, null, Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (BatchWriter writer = c.createBatchWriter(TABLE_NAME, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L)
                             .setMaxWriteThreads(1))) {
@@ -197,7 +197,7 @@ public class Persister {
         BatchDeleter deleter = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getConnection(null, null, Priority.ADMIN, trackingMap);
             if (!c.tableOperations().exists(TABLE_NAME)) {
                 return;
             }
@@ -253,7 +253,7 @@ public class Persister {
         
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            conn = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            conn = connectionFactory.getConnection(null, null, Priority.ADMIN, trackingMap);
             tableCheck(conn);
             
             IteratorSetting regex = new IteratorSetting(21, RegExFilter.class);
@@ -300,7 +300,7 @@ public class Persister {
         Connector c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getConnection(null, null, Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 Range range = new Range(shortName, shortName);
@@ -346,7 +346,7 @@ public class Persister {
         Connector c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getConnection(null, null, Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 Range range = new Range(sid, sid);
@@ -397,7 +397,7 @@ public class Persister {
         Connector c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            c = connectionFactory.getConnection(null, null, Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 Range range = new Range(user, user);
@@ -431,7 +431,7 @@ public class Persister {
         
         try {
             final Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            conn = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            conn = connectionFactory.getConnection(null, null, Priority.ADMIN, trackingMap);
             tableCheck(conn);
             
             final IteratorSetting regex = new IteratorSetting(21, RegExFilter.class);

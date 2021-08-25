@@ -1,7 +1,8 @@
 package datawave.webservice.common.result;
 
-import java.util.LinkedList;
-import java.util.List;
+import datawave.webservice.HtmlProvider;
+import datawave.webservice.common.cache.TableCacheDescription;
+import datawave.webservice.result.BaseResponse;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -10,9 +11,8 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import datawave.webservice.HtmlProvider;
-import datawave.webservice.result.BaseResponse;
+import java.util.LinkedList;
+import java.util.List;
 
 @XmlRootElement(name = "AccumuloTableCacheStatus")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -24,7 +24,7 @@ public class AccumuloTableCacheStatus extends BaseResponse implements HtmlProvid
     
     @XmlElementWrapper(name = "TableCaches")
     @XmlElement(name = "TableCache")
-    private List<TableCache> caches = new LinkedList<>();
+    private List<TableCacheDescription> caches = new LinkedList<>();
     
     @Override
     public String getTitle() {
@@ -57,7 +57,7 @@ public class AccumuloTableCacheStatus extends BaseResponse implements HtmlProvid
         builder.append("<br/>");
         builder.append("<table>");
         builder.append("<tr><th>Table Name</th><th>Connection Pool</th><th>Authorizations</th><th>Reload Interval (ms)</th><th>Max Rows</th><th>Last Refresh</th><th>Refreshing Now</th></tr>");
-        for (TableCache cache : caches) {
+        for (TableCacheDescription cache : caches) {
             builder.append("<tr>");
             builder.append("<td>").append(cache.getTableName()).append("</td>");
             builder.append("<td>").append(cache.getConnectionPoolName()).append("</td>");
@@ -72,7 +72,7 @@ public class AccumuloTableCacheStatus extends BaseResponse implements HtmlProvid
         return builder.toString();
     }
     
-    public List<TableCache> getCaches() {
+    public List<TableCacheDescription> getCaches() {
         return caches;
     }
 }

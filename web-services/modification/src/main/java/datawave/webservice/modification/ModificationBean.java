@@ -4,9 +4,9 @@ import datawave.annotation.Required;
 import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.audit.AuditParameterBuilder;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.UnauthorizedException;
@@ -144,9 +144,13 @@ public class ModificationBean {
         String user;
         Set<Authorizations> cbAuths = new HashSet<>();
         Collection<String> userRoles = Collections.emptySet();
+        String userDn = null;
+        Collection<String> proxyServers = null;
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
             user = dp.getShortName();
+            userDn = dp.getUserDN().subjectDN();
+            proxyServers = dp.getProxyServers();
             userRoles = dp.getPrimaryUser().getRoles();
             for (Collection<String> c : dp.getAuthorizations())
                 cbAuths.add(new Authorizations(c.toArray(new String[c.size()])));
@@ -194,7 +198,7 @@ public class ModificationBean {
             
             // Process the modification
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            con = connectionFactory.getConnection(modificationConfiguration.getPoolName(), priority, trackingMap);
+            con = connectionFactory.getConnection(userDn, proxyServers, modificationConfiguration.getPoolName(), priority, trackingMap);
             service.setQueryService(queryService);
             log.info("Processing modification request from user=" + user + ": \n" + request);
             service.process(con, request, cache.getCachedMutableFieldList(), cbAuths, user);

@@ -4,7 +4,7 @@ import com.google.common.collect.Sets;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.logic.AbstractQueryLogicTransformer;
 import datawave.microservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.query.QueryTestTableHelper;

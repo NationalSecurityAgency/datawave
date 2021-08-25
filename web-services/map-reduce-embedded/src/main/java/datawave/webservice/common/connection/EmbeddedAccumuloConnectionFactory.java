@@ -1,12 +1,15 @@
 package datawave.webservice.common.connection;
 
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.result.ConnectionPool;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.log4j.Logger;
 
 import javax.annotation.PostConstruct;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class EmbeddedAccumuloConnectionFactory implements AccumuloConnectionFactory {
@@ -50,23 +53,34 @@ public class EmbeddedAccumuloConnectionFactory implements AccumuloConnectionFact
     }
     
     @Override
-    public String getConnectionUserName(String poolName) {
-        return this.userName;
-    }
-    
-    @Override
-    public Connector getConnection(Priority priority, Map<String,String> trackingMap) throws Exception {
+    public Connector getConnection(String userDN, Collection<String> proxiedDNs, Priority priority, Map<String,String> trackingMap) throws Exception {
         return pool.borrowObject(trackingMap);
     }
     
     @Override
-    public Connector getConnection(String poolName, Priority priority, Map<String,String> trackingMap) throws Exception {
+    public Connector getConnection(String userDN, Collection<String> proxiedDNs, String poolName, Priority priority, Map<String,String> trackingMap)
+                    throws Exception {
         return pool.borrowObject(trackingMap);
     }
     
     @Override
     public void returnConnection(Connector connection) throws Exception {
         pool.returnObject(connection);
+    }
+    
+    @Override
+    public String report() {
+        return pool.toString();
+    }
+    
+    @Override
+    public List<ConnectionPool> getConnectionPools() {
+        return Collections.EMPTY_LIST;
+    }
+    
+    @Override
+    public int getConnectionUsagePercent() {
+        return 0;
     }
     
     @Override
@@ -78,5 +92,10 @@ public class EmbeddedAccumuloConnectionFactory implements AccumuloConnectionFact
         }
         
         return trackingMap;
+    }
+    
+    @Override
+    public void close() throws Exception {
+        pool.close();
     }
 }

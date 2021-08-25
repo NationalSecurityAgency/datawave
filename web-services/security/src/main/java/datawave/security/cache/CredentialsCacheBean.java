@@ -1,13 +1,25 @@
 package datawave.security.cache;
 
-import static datawave.webservice.query.exception.DatawaveErrorCode.UNKNOWN_SERVER_ERROR;
-
-import java.security.Principal;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import datawave.configuration.ConfigurationEvent;
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.RefreshLifecycle;
+import datawave.security.authorization.CachedDatawaveUserService;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUserInfo;
+import datawave.security.system.AuthorizationCache;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.result.GenericResponse;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
+import org.apache.deltaspike.core.api.jmx.MBean;
+import org.jboss.security.CacheableManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.security.DeclareRoles;
@@ -26,27 +38,14 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import java.security.Principal;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import datawave.configuration.ConfigurationEvent;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.configuration.RefreshLifecycle;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
-import datawave.security.authorization.CachedDatawaveUserService;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.DatawaveUserInfo;
-import datawave.security.system.AuthorizationCache;
-import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.result.GenericResponse;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.deltaspike.core.api.jmx.MBean;
-import org.jboss.security.CacheableManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static datawave.webservice.query.exception.DatawaveErrorCode.UNKNOWN_SERVER_ERROR;
 
 /**
  * A service for managing cached {@link DatawaveUser} objects. It should be noted that there are potentially two caches in use. The first is a general Wildfly
@@ -309,7 +308,7 @@ public class CredentialsCacheBean {
     
     private void retrieveAccumuloAuthorizations() throws Exception {
         Map<String,String> trackingMap = accumuloConnectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-        Connector c = accumuloConnectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+        Connector c = accumuloConnectionFactory.getConnection(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
         try {
             Authorizations auths = c.securityOperations().getUserAuthorizations(c.whoami());
             HashSet<String> authSet = new HashSet<>();

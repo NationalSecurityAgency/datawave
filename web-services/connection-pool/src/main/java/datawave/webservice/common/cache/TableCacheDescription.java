@@ -1,4 +1,4 @@
-package datawave.webservice.common.result;
+package datawave.webservice.common.cache;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -10,7 +10,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
-public class TableCache implements Serializable {
+public class TableCacheDescription implements Serializable {
     
     private static final long serialVersionUID = 1L;
     

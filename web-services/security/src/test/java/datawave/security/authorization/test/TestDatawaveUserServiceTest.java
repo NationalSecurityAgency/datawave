@@ -1,7 +1,6 @@
 package datawave.security.authorization.test;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.CachedDatawaveUserService;
 import datawave.security.authorization.DatawaveUser;
@@ -9,6 +8,8 @@ import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.result.ConnectionPool;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -29,6 +30,7 @@ import javax.inject.Inject;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -244,17 +246,13 @@ public class TestDatawaveUserServiceTest {
         }
         
         @Override
-        public String getConnectionUserName(String poolName) {
-            return "test";
-        }
-        
-        @Override
-        public Connector getConnection(Priority priority, Map<String,String> trackingMap) throws Exception {
+        public Connector getConnection(String userDN, Collection<String> proxiedDNs, Priority priority, Map<String,String> trackingMap) throws Exception {
             return inMemoryInstance.getConnector("root", "");
         }
         
         @Override
-        public Connector getConnection(String poolName, Priority priority, Map<String,String> trackingMap) throws Exception {
+        public Connector getConnection(String userDN, Collection<String> proxiedDNs, String poolName, Priority priority, Map<String,String> trackingMap)
+                        throws Exception {
             return inMemoryInstance.getConnector("root", "");
         }
         
@@ -264,8 +262,28 @@ public class TestDatawaveUserServiceTest {
         }
         
         @Override
+        public String report() {
+            return null;
+        }
+        
+        @Override
+        public List<ConnectionPool> getConnectionPools() {
+            return null;
+        }
+        
+        @Override
+        public int getConnectionUsagePercent() {
+            return 0;
+        }
+        
+        @Override
         public Map<String,String> getTrackingMap(StackTraceElement[] stackTrace) {
             return new HashMap<>();
+        }
+        
+        @Override
+        public void close() throws Exception {
+            
         }
     }
 }

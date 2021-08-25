@@ -4,12 +4,13 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import datawave.configuration.spring.BeanProvider;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.system.AuthorizationCache;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.result.ConnectionPool;
 import org.apache.accumulo.core.client.Connector;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -28,8 +29,10 @@ import javax.inject.Inject;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -166,17 +169,13 @@ public class CredentialsCacheBeanTest {
     
     private static class MockAccumuloConnectionFactory implements AccumuloConnectionFactory {
         @Override
-        public String getConnectionUserName(String poolName) {
+        public Connector getConnection(String userDN, Collection<String> proxiedDNs, Priority priority, Map<String,String> trackingMap) throws Exception {
             return null;
         }
         
         @Override
-        public Connector getConnection(Priority priority, Map<String,String> trackingMap) throws Exception {
-            return null;
-        }
-        
-        @Override
-        public Connector getConnection(String poolName, Priority priority, Map<String,String> trackingMap) throws Exception {
+        public Connector getConnection(String userDN, Collection<String> proxiedDNs, String poolName, Priority priority, Map<String,String> trackingMap)
+                        throws Exception {
             return null;
         }
         
@@ -186,8 +185,28 @@ public class CredentialsCacheBeanTest {
         }
         
         @Override
+        public String report() {
+            return null;
+        }
+        
+        @Override
+        public List<ConnectionPool> getConnectionPools() {
+            return null;
+        }
+        
+        @Override
+        public int getConnectionUsagePercent() {
+            return 0;
+        }
+        
+        @Override
         public Map<String,String> getTrackingMap(StackTraceElement[] stackTrace) {
             return null;
+        }
+        
+        @Override
+        public void close() throws Exception {
+            
         }
     }
 }

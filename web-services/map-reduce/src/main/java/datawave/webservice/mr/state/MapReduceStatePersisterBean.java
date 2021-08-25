@@ -1,7 +1,7 @@
 package datawave.webservice.mr.state;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -188,7 +188,7 @@ public class MapReduceStatePersisterBean {
         Connector c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+            c = connectionFactory.getConnection(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             tableCheck(c);
             // Not using a MultiTableBatchWriter here because its not implemented yet
             // in Mock Accumulo.
@@ -239,7 +239,7 @@ public class MapReduceStatePersisterBean {
         Connector c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+            c = connectionFactory.getConnection(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, INDEX_TABLE_NAME, Collections.singleton(new Authorizations()))) {
                 Range range = new Range(mapReduceJobId, mapReduceJobId);
@@ -276,7 +276,7 @@ public class MapReduceStatePersisterBean {
             BatchWriter writer = null;
             try {
                 Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-                c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+                c = connectionFactory.getConnection(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
                 tableCheck(c);
                 writer = c.createBatchWriter(TABLE_NAME, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1));
                 writer.addMutation(m);
@@ -321,7 +321,7 @@ public class MapReduceStatePersisterBean {
         Connector c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+            c = connectionFactory.getConnection(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 scanner.fetchColumnFamily(new Text(sid));
@@ -391,7 +391,7 @@ public class MapReduceStatePersisterBean {
         Connector c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+            c = connectionFactory.getConnection(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             tableCheck(c);
             try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
                 Range range = new Range(id);
@@ -525,7 +525,7 @@ public class MapReduceStatePersisterBean {
         Connector c = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+            c = connectionFactory.getConnection(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
             tableCheck(c);
             // Not using a MultiTableBatchWriter here because its not implemented yet
             // in Mock Accumulo.
@@ -608,7 +608,7 @@ public class MapReduceStatePersisterBean {
             Connector c = null;
             try {
                 Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-                c = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+                c = connectionFactory.getConnection(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
                 tableCheck(c);
                 // using BatchWriter instead of MultiTableBatchWriter because Mock CB does not support
                 // MultiTableBatchWriter

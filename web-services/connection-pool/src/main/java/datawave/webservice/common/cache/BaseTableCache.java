@@ -1,18 +1,9 @@
 package datawave.webservice.common.cache;
 
-import java.io.Serializable;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
-
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
+import com.google.common.collect.Lists;
+import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.webservice.common.connection.WrappedConnector;
-
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -21,7 +12,6 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -32,7 +22,15 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Lists;
+import java.io.Serializable;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class BaseTableCache implements Serializable, TableCache {
     
@@ -168,7 +166,7 @@ public class BaseTableCache implements Serializable, TableCache {
         String tempTableName = tableName + "Temp";
         try {
             Map<String,String> map = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            accumuloConn = connectionFactory.getConnection(connectionPoolName, AccumuloConnectionFactory.Priority.ADMIN, map);
+            accumuloConn = connectionFactory.getConnection(null, null, connectionPoolName, AccumuloConnectionFactory.Priority.ADMIN, map);
             if (accumuloConn instanceof WrappedConnector) {
                 accumuloConn = ((WrappedConnector) accumuloConn).getReal();
             }

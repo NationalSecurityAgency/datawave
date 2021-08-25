@@ -6,9 +6,8 @@ import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
-import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
@@ -27,6 +26,7 @@ import datawave.webservice.common.audit.AuditService;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.audit.DefaultAuditParameterBuilder;
 import datawave.webservice.common.audit.PrivateAuditConstants;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.Query;
@@ -674,7 +674,7 @@ public class QueryExecutorBeanTest {
         
         connectionRequestBean.requestBegin(q.getId().toString());
         EasyMock.expectLastCall();
-        EasyMock.expect(connectionFactory.getConnection(eq("connPool1"), anyObject(), anyObject())).andReturn(c).anyTimes();
+        EasyMock.expect(connectionFactory.getConnection(eq(userDN.toLowerCase()), eq(null), eq("connPool1"), anyObject(), anyObject())).andReturn(c).anyTimes();
         connectionRequestBean.requestEnd(q.getId().toString());
         EasyMock.expectLastCall();
         connectionFactory.returnConnection(c);

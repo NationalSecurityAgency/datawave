@@ -2,7 +2,7 @@ package datawave.microservice.query.logic;
 
 import datawave.audit.SelectorExtractor;
 import datawave.marking.MarkingFunctions;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;

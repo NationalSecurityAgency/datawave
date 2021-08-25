@@ -2,8 +2,8 @@ package datawave.query.metrics;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.common.util.ArgumentChecker;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
-import datawave.microservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -96,7 +96,7 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
                 } else {
                     this.connFactory = connectionFactory;
                     Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-                    this.conn = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+                    this.conn = connectionFactory.getConnection(null, null, Priority.ADMIN, trackingMap);
                 }
                 mtbw = conn.createMultiTableBatchWriter(getMaxMutationBufferSize(conf), getMaxLatency(conf), getMaxWriteThreads(conf));
             } catch (Exception e) {

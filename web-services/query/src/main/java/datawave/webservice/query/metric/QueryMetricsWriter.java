@@ -1,15 +1,18 @@
 package datawave.webservice.query.metric;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.RefreshEvent;
+import datawave.configuration.spring.SpringBean;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.util.timely.UdpClient;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.metric.BaseQueryMetric.Lifecycle;
+import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
+import org.apache.commons.collections4.map.LRUMap;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.CompareToBuilder;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -30,20 +33,16 @@ import javax.jms.JMSContext;
 import javax.jms.Message;
 import javax.jms.ObjectMessage;
 import javax.jms.Queue;
-
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.configuration.RefreshEvent;
-import datawave.configuration.spring.SpringBean;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.util.timely.UdpClient;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import org.apache.commons.collections4.map.LRUMap;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-import datawave.webservice.query.metric.BaseQueryMetric.Lifecycle;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})

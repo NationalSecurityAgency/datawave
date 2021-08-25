@@ -1,52 +1,49 @@
 package datawave.webservice.common.connection;
 
-import static org.easymock.MockType.STRICT;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import com.google.common.collect.Lists;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.cache.AccumuloTableCache;
-import datawave.webservice.common.connection.config.ConnectionPoolConfiguration;
-import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
-import org.apache.accumulo.core.client.Connector;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.webservice.common.cache.AccumuloTableCache;
+import datawave.webservice.common.result.ConnectionPoolProperties;
+import datawave.webservice.common.result.ConnectionPoolsProperties;
+import org.apache.accumulo.core.client.Connector;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
+import org.easymock.MockType;
 import org.easymock.TestSubject;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
 @RunWith(EasyMockRunner.class)
 public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     
-    @TestSubject
-    private AccumuloConnectionFactoryBean bean = createMockBuilder(AccumuloConnectionFactoryBean.class).addMockedMethods("getCurrentUserDN",
-                    "getCurrentProxyServers").createStrictMock();
-    
-    @Mock(type = STRICT)
+    @Mock(type = MockType.STRICT)
     private AccumuloTableCache cache;
     
     private InMemoryInstance instance = new InMemoryInstance();
     
-    @Mock(type = STRICT)
+    @TestSubject
+    private AccumuloConnectionFactoryImpl factory = createMockBuilder(AccumuloConnectionFactoryImpl.class).createStrictMock();
+    
+    @Mock(type = MockType.STRICT)
     private WrappedConnector warehouseConnection;
     
-    @Mock(type = STRICT)
+    @Mock(type = MockType.STRICT)
     private WrappedConnector metricsConnection;
     
     @Before
@@ -61,19 +58,17 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         warehouseFactory.setConnector(warehouseConnection);
         metricsFactory.setConnector(metricsConnection);
         
-        Map<String,ConnectionPoolConfiguration> configs = new HashMap<>();
+        Map<String,ConnectionPoolProperties> configs = new HashMap<>();
         configs.put("WAREHOUSE", null);
         configs.put("METRICS", null);
-        ConnectionPoolsConfiguration conf = new ConnectionPoolsConfiguration();
+        ConnectionPoolsProperties conf = new ConnectionPoolsProperties();
         Whitebox.setInternalState(conf, "defaultPool", "WAREHOUSE");
-        Whitebox.setInternalState(conf, "poolNames", Lists.newArrayList("WAREHOUSE", "METRICS"));
         Whitebox.setInternalState(conf, "pools", configs);
         
-        String defaultPoolName = conf.getDefaultPool();
         HashMap<String,Map<AccumuloConnectionFactory.Priority,AccumuloConnectionPool>> pools = new HashMap<>();
         MyAccumuloConnectionPool warehousePool = new MyAccumuloConnectionPool(warehouseFactory);
         MyAccumuloConnectionPool metricsPool = new MyAccumuloConnectionPool(metricsFactory);
-        for (Entry<String,ConnectionPoolConfiguration> entry : conf.getPools().entrySet()) {
+        for (Map.Entry<String,ConnectionPoolProperties> entry : conf.getPools().entrySet()) {
             AccumuloConnectionPool acp = null;
             switch (entry.getKey()) {
                 case "METRICS":
@@ -92,9 +87,9 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
             p.put(AccumuloConnectionFactory.Priority.LOW, acp);
             pools.put(entry.getKey(), Collections.unmodifiableMap(p));
         }
-        Whitebox.setInternalState(bean, ConnectionPoolsConfiguration.class, conf);
-        Whitebox.setInternalState(bean, "defaultPoolName", defaultPoolName);
-        Whitebox.setInternalState(bean, "pools", pools);
+        Whitebox.setInternalState(factory, "defaultPoolName", conf.getDefaultPool());
+        Whitebox.setInternalState(factory, "pools", pools);
+        Whitebox.setInternalState(factory, "cache", cache);
     }
     
     @After
@@ -106,10 +101,8 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     public void testGetConnection() throws Exception {
         resetAll();
         EasyMock.expect(cache.getInstance()).andReturn(instance);
-        EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
-        EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection(AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
+        Connector con = factory.getConnection(null, null, AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
@@ -120,10 +113,8 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     public void testGetWarehouseConnection() throws Exception {
         resetAll();
         EasyMock.expect(cache.getInstance()).andReturn(new InMemoryInstance());
-        EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
-        EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("WAREHOUSE", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
+        Connector con = factory.getConnection(null, null, "WAREHOUSE", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
@@ -134,24 +125,20 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         System.setProperty("dw.accumulo.classLoader.context", "alternateContext");
         resetAll();
         EasyMock.expect(cache.getInstance()).andReturn(new InMemoryInstance());
-        EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
-        EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("WAREHOUSE", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
+        Connector con = factory.getConnection(null, null, "WAREHOUSE", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
-        assertEquals("alternateContext", Whitebox.getInternalState(con, "scannerClassLoaderContext"));
+        Assert.assertEquals("alternateContext", Whitebox.getInternalState(con, "scannerClassLoaderContext"));
     }
     
     @Test
     public void testGetMetricsConnection() throws Exception {
         resetAll();
         EasyMock.expect(cache.getInstance()).andReturn(new InMemoryInstance());
-        EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
-        EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("METRICS", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
+        Connector con = factory.getConnection(null, null, "METRICS", AccumuloConnectionFactory.Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
         assertEquals(metricsConnection, ((WrappedConnector) con).getReal());

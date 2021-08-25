@@ -3,8 +3,8 @@ package datawave.webservice.modification.cache;
 import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.security.util.ScannerHelper;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.configuration.ModificationConfiguration;
 import datawave.webservice.result.VoidResponse;
 import datawave.webservice.results.modification.MutableFieldListResponse;
@@ -43,7 +43,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static datawave.microservice.common.connection.AccumuloConnectionFactory.Priority;
+import static datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 
 @Path("/Modification")
 @RunAs("InternalUser")
@@ -109,7 +109,7 @@ public class ModificationCacheBean {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             log.trace("getting mutable list from table " + this.modificationConfiguration.getTableName());
             log.trace("modificationConfiguration.getPoolName() = " + modificationConfiguration.getPoolName());
-            con = connectionFactory.getConnection(modificationConfiguration.getPoolName(), Priority.ADMIN, trackingMap);
+            con = connectionFactory.getConnection(null, null, modificationConfiguration.getPoolName(), Priority.ADMIN, trackingMap);
             log.trace("got connection");
             s = ScannerHelper.createBatchScanner(con, this.modificationConfiguration.getTableName(),
                             Collections.singleton(con.securityOperations().getUserAuthorizations(con.whoami())), 8);

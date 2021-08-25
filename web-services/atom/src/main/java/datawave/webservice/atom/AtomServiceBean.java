@@ -1,11 +1,11 @@
 package datawave.webservice.atom;
 
 import datawave.annotation.Required;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
-import datawave.microservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.accumulo.iterator.MatchingKeySkippingIterator;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -118,8 +118,12 @@ public class AtomServiceBean {
     public Categories getCategories() {
         Principal p = ctx.getCallerPrincipal();
         Set<Authorizations> auths = new HashSet<>();
+        String userDN = null;
+        Collection<String> proxyServers = null;
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
+            userDN = dp.getUserDN().subjectDN();
+            proxyServers = dp.getProxyServers();
             for (Collection<String> cbAuths : dp.getAuthorizations())
                 auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
         }
@@ -129,7 +133,7 @@ public class AtomServiceBean {
             result = abdera.newCategories();
             
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connection = connectionFactory.getConnection(poolName, Priority.NORMAL, trackingMap);
+            connection = connectionFactory.getConnection(userDN, proxyServers, poolName, Priority.NORMAL, trackingMap);
             try (Scanner scanner = ScannerHelper.createScanner(connection, tableName + "Categories", auths)) {
                 Map<String,String> props = new HashMap<>();
                 props.put(MatchingKeySkippingIterator.ROW_DELIMITER_OPTION, "\0");
@@ -194,8 +198,12 @@ public class AtomServiceBean {
         
         Principal p = ctx.getCallerPrincipal();
         Set<Authorizations> auths = new HashSet<>();
+        String userDN = null;
+        Collection<String> proxyServers = null;
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
+            userDN = dp.getUserDN().subjectDN();
+            proxyServers = dp.getProxyServers();
             for (Collection<String> cbAuths : dp.getAuthorizations())
                 auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
         }
@@ -205,7 +213,7 @@ public class AtomServiceBean {
         Date maxDate = new Date(0);
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connection = connectionFactory.getConnection(poolName, Priority.NORMAL, trackingMap);
+            connection = connectionFactory.getConnection(userDN, proxyServers, poolName, Priority.NORMAL, trackingMap);
             
             result = abdera.newFeed();
             result.addAuthor(clustername);
@@ -284,8 +292,12 @@ public class AtomServiceBean {
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
         Set<Authorizations> auths = new HashSet<>();
+        String userDN = null;
+        Collection<String> proxyServers = null;
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
+            userDN = dp.getUserDN().subjectDN();
+            proxyServers = dp.getProxyServers();
             for (Collection<String> cbAuths : dp.getAuthorizations())
                 auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
         }
@@ -294,7 +306,7 @@ public class AtomServiceBean {
         Connector connection = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connection = connectionFactory.getConnection(poolName, Priority.NORMAL, trackingMap);
+            connection = connectionFactory.getConnection(userDN, proxyServers, poolName, Priority.NORMAL, trackingMap);
             
             try (Scanner scanner = ScannerHelper.createScanner(connection, tableName, auths)) {
                 scanner.setRange(new Range(category, true, category + "\1", false));

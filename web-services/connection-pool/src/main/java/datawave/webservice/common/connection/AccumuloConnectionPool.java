@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.commons.pool2.impl.GenericObjectPool;

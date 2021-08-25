@@ -1,15 +1,13 @@
 package datawave.query.util;
 
-import java.util.ArrayList;
-
 import datawave.webservice.common.cache.SharedCacheCoordinator;
-
-import org.apache.accumulo.core.client.Connector;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
 import org.apache.curator.framework.recipes.shared.SharedCountReader;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
 
 /**
  * Uses the SharedCacheCoordinator to register listeners so that when an event is fired (for example, when a new model is loaded) the spring injected cache of

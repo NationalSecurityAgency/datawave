@@ -2,7 +2,7 @@ package datawave.query.tables.content;
 
 import com.google.common.collect.Lists;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.microservice.query.logic.QueryLogicTransformer;

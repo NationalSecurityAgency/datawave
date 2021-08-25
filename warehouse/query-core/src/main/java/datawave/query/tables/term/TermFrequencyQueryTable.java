@@ -2,8 +2,6 @@ package datawave.query.tables.term;
 
 import com.google.common.collect.ImmutableSet;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
-import datawave.microservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.microservice.query.logic.QueryLogicTransformer;
@@ -12,6 +10,7 @@ import datawave.query.config.TermFrequencyQueryConfiguration;
 import datawave.query.transformer.TermFrequencyQueryTransformer;
 import datawave.query.util.QueryScannerHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.QueryException;
@@ -55,7 +54,7 @@ public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
     
     @Override
     public Priority getConnectionPriority() {
-        return AccumuloConnectionFactory.Priority.NORMAL;
+        return Priority.NORMAL;
     }
     
     @Override

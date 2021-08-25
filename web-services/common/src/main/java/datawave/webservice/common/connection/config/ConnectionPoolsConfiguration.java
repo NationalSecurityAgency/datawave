@@ -1,40 +1,27 @@
 package datawave.webservice.common.connection.config;
 
-import org.apache.deltaspike.core.api.config.ConfigProperty;
+import datawave.webservice.common.result.ConnectionPoolsProperties;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public class ConnectionPoolsConfiguration {
-    
-    @Inject
-    @ConfigProperty(name = "dw.connectionPool.default", defaultValue = "WAREHOUSE")
-    private String defaultPool = null;
-    
-    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-    @Inject
-    @ConfigProperty(name = "dw.connectionPool.pools", defaultValue = "WAREHOUSE,METRICS")
+public class ConnectionPoolsConfiguration extends ConnectionPoolsProperties {
     private List<String> poolNames;
     
-    private Map<String,ConnectionPoolConfiguration> pools = new HashMap<>();
-    
-    @PostConstruct
-    private void initializePools() {
+    public ConnectionPoolsConfiguration build() {
         for (String poolName : poolNames) {
             pools.put(poolName, new ConnectionPoolConfiguration(poolName.toLowerCase()));
         }
+        return this;
     }
     
-    public String getDefaultPool() {
-        return defaultPool;
+    public ConnectionPoolsConfiguration withPoolNames(List<String> poolNames) {
+        this.poolNames = poolNames;
+        return this;
     }
     
-    public Map<String,ConnectionPoolConfiguration> getPools() {
-        return Collections.unmodifiableMap(pools);
+    public ConnectionPoolsConfiguration withDefaultPool(String defaultPool) {
+        this.defaultPool = defaultPool;
+        return this;
     }
     
 }

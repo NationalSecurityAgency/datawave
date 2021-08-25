@@ -1,9 +1,9 @@
 package datawave.webservice.common.curator;
 
 import com.google.common.base.Preconditions;
+import datawave.webservice.common.cache.SharedCacheCoordinator.ArgumentChecker;
 import datawave.webservice.common.cache.SharedBoolean;
 import datawave.webservice.common.cache.SharedBooleanListener;
-import datawave.common.util.ArgumentChecker;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -15,10 +15,10 @@ import org.apache.curator.framework.recipes.shared.SharedCount;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.ZKPaths;
+import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.data.Stat;
-import org.jboss.logging.Logger;
 
 import javax.annotation.PreDestroy;
 import java.io.IOException;

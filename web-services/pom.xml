@@ -12,6 +12,7 @@
     <name>${project.artifactId}</name>
     <modules>
         <module>accumulo</module>
+        <module>connection-pool</module>
         <module>common-util</module>
         <module>security</module>
         <module>common</module>
@@ -46,6 +47,7 @@
         <version.commons-digester>3.2</version.commons-digester>
         <version.commons-net>3.6</version.commons-net>
         <version.commons-pool2>2.6.1</version.commons-pool2>
+        <version.dnsjava>2.1.8</version.dnsjava>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
         <version.jms>1.1</version.jms>
@@ -113,6 +115,11 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>dnsjava</groupId>
+                <artifactId>dnsjava</artifactId>
+                <version>${version.dnsjava}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
@@ -513,7 +520,14 @@
             <dependency>
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-module-junit4-rule-agent</artifactId>
-                <version>1.6.1</version>
+                <version>2.0.2</version>
+                <scope>test</scope>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
+                <artifactId>powermock-reflect</artifactId>
+                <version>2.0.2</version>
                 <scope>test</scope>
                 <optional>true</optional>
             </dependency>

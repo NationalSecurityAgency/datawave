@@ -1,108 +1,44 @@
 package datawave.webservice.common.cache;
 
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.shared.SharedCountListener;
+import org.apache.curator.framework.recipes.shared.SharedCountReader;
+import org.apache.curator.framework.state.ConnectionState;
+import org.apache.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-import javax.annotation.security.DeclareRoles;
-import javax.annotation.security.RolesAllowed;
-import javax.annotation.security.RunAs;
-import javax.ejb.EJBException;
-import javax.ejb.LocalBean;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Schedule;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.enterprise.concurrent.ManagedExecutorService;
-import javax.inject.Inject;
-import javax.interceptor.Interceptors;
-import javax.jms.Destination;
-import javax.jms.JMSContext;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-
-import datawave.annotation.Required;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.common.result.AccumuloTableCacheStatus;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.result.VoidResponse;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.shared.SharedCountListener;
-import org.apache.curator.framework.recipes.shared.SharedCountReader;
-import org.apache.curator.framework.state.ConnectionState;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
 
 /**
  * Object that caches data from Accumulo tables.
  */
-@Path("/Common/AccumuloTableCache")
-@RunAs("InternalUser")
-@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "AuthorizedServer", "InternalUser", "Administrator", "JBossAdministrator"})
-@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "AuthorizedServer", "InternalUser", "Administrator", "JBossAdministrator"})
-@LocalBean
-@Startup
-// tells the container to initialize on startup
-@Singleton
-// this is a singleton bean in the container
-@Lock(LockType.READ)
-@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
-public class AccumuloTableCache {
+public class AccumuloTableCacheImpl implements AccumuloTableCache {
     
     private final Logger log = Logger.getLogger(this.getClass());
     
-    @Inject
-    private JMSContext jmsContext;
-    
-    @Resource(mappedName = "java:/topic/AccumuloTableCache")
-    private Destination cacheTopic;
-    
-    @Resource
-    private ManagedExecutorService executorService;
-    
-    @Inject
-    private AccumuloTableCacheConfiguration accumuloTableCacheConfiguration;
-    
-    @Inject
-    @ConfigProperty(name = "dw.cacheCoordinator.evictionReaperIntervalSeconds", defaultValue = "30")
-    private int evictionReaperIntervalInSeconds;
-    @Inject
-    @ConfigProperty(name = "dw.cacheCoordinator.numLocks", defaultValue = "300")
-    private int numLocks;
-    @Inject
-    @ConfigProperty(name = "dw.cacheCoordinator.maxRetries", defaultValue = "10")
-    private int maxRetries;
-    
-    public static final String MOCK_USERNAME = "";
-    public static final PasswordToken MOCK_PASSWORD = new PasswordToken(new byte[0]);
+    private final ExecutorService executorService;
+    private final AccumuloTableCacheConfiguration accumuloTableCacheConfiguration;
     
     private InMemoryInstance instance;
     private Map<String,TableCache> details;
     private List<SharedCacheCoordinator> cacheCoordinators;
     private boolean connectionFactoryProvided = false;
     
-    public AccumuloTableCache() {
-        log.debug("Called AccumuloTableCacheBean and accumuloTableCacheConfiguration = " + accumuloTableCacheConfiguration);
+    public AccumuloTableCacheImpl(ExecutorService executorService, AccumuloTableCacheConfiguration accumuloTableCacheConfiguration) {
+        log.debug("Called AccumuloTableCacheImpl with accumuloTableCacheConfiguration = " + accumuloTableCacheConfiguration);
+        this.executorService = executorService;
+        this.accumuloTableCacheConfiguration = accumuloTableCacheConfiguration;
+        setup();
     }
     
-    @PostConstruct
     private void setup() {
         log.debug("accumuloTableCacheConfiguration was setup as: " + accumuloTableCacheConfiguration);
         
@@ -117,13 +53,14 @@ public class AccumuloTableCache {
             TableCache detail = entry.getValue();
             detail.setInstance(instance);
             
-            final SharedCacheCoordinator cacheCoordinator = new SharedCacheCoordinator(tableName, zookeepers, evictionReaperIntervalInSeconds, numLocks,
-                            maxRetries);
+            final SharedCacheCoordinator cacheCoordinator = new SharedCacheCoordinator(tableName, zookeepers,
+                            accumuloTableCacheConfiguration.getEvictionReaperIntervalInSeconds(), accumuloTableCacheConfiguration.getNumLocks(),
+                            accumuloTableCacheConfiguration.getMaxRetries());
             cacheCoordinators.add(cacheCoordinator);
             try {
                 cacheCoordinator.start();
             } catch (Exception e) {
-                throw new EJBException("Error starting AccumuloTableCache", e);
+                throw new RuntimeException("Error starting AccumuloTableCache", e);
             }
             
             try {
@@ -177,11 +114,12 @@ public class AccumuloTableCache {
         connectionFactoryProvided = true;
     }
     
+    @Override
     public InMemoryInstance getInstance() {
         return this.instance;
     }
     
-    @Schedule(hour = "*", minute = "*", second = "1", persistent = false)
+    @Override
     public void submitReloadTasks() {
         if (!connectionFactoryProvided) {
             log.trace("NOT submitting reload tasks since our connection factory hasn't been provided yet.");
@@ -216,8 +154,8 @@ public class AccumuloTableCache {
         }
     }
     
-    @PreDestroy
-    public void stop() {
+    @Override
+    public void close() {
         for (Entry<String,TableCache> entry : details.entrySet()) {
             Future<Boolean> ref = entry.getValue().getReference();
             if (null != ref)
@@ -229,47 +167,24 @@ public class AccumuloTableCache {
     }
     
     /**
-     * <strong>JBossAdministrator or Administrator credentials required.</strong>
+     * Reload a table cache
      *
      * @param tableName
      *            the name of the table for which the cached version is to be reloaded
-     * @return datawave.webservice.result.VoidResponse
-     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
-     * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
-     *                a query parameter
-     * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
-     * @HTTP 200 success
-     * @HTTP 404 queries not found using {@code id}
-     * @HTTP 500 internal server error
      */
-    @GET
-    @Path("/reload/{tableName}")
-    @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
-            "application/x-protostuff"})
-    @GZIP
-    @Interceptors(RequiredInterceptor.class)
-    public VoidResponse reloadCache(@Required("tableName") @PathParam("tableName") String tableName) {
-        VoidResponse response = new VoidResponse();
+    @Override
+    public void reloadTableCache(String tableName) {
         if (null == details.get(tableName)) {
-            return response;
+            return;
         }
         // send an eviction notice to the cluster
         try {
             details.get(tableName).getWatcher().incrementCounter(tableName);
         } catch (Exception e) {
-            response.addException(new QueryException(e).getBottomQueryException());
-            throw new DatawaveWebApplicationException(e, response);
-        }
-        try {
-            this.sendCacheReloadMessage(tableName);
-        } catch (Exception e) {
-            log.error("Unable to send message about cache reload");
+            throw new RuntimeException(e);
         }
         handleReload(tableName);
         handleReloadTypeMetadata(tableName);
-        return response;
     }
     
     private void handleReloadTypeMetadata(String tableName) {
@@ -290,26 +205,13 @@ public class AccumuloTableCache {
     }
     
     /**
-     * <strong>JBossAdministrator or Administrator credentials required.</strong>
-     *
-     * @return datawave.webservice.common.result.AccumuloTableCacheStatus
-     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
-     * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
-     *                a query parameter
-     * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
-     * @HTTP 200 success
+     * Get the table caches
      */
-    @GET
-    @Path("/")
-    @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
-            "application/x-protostuff", "text/html"})
-    @GZIP
-    public AccumuloTableCacheStatus getStatus() {
-        AccumuloTableCacheStatus response = new AccumuloTableCacheStatus();
+    @Override
+    public List<TableCacheDescription> getTableCaches() {
+        List<TableCacheDescription> tableCaches = new ArrayList<>();
         for (Entry<String,TableCache> entry : details.entrySet()) {
-            datawave.webservice.common.result.TableCache t = new datawave.webservice.common.result.TableCache();
+            TableCacheDescription t = new TableCacheDescription();
             t.setTableName(entry.getValue().getTableName());
             t.setConnectionPoolName(entry.getValue().getConnectionPoolName());
             t.setAuthorizations(entry.getValue().getAuths());
@@ -317,14 +219,8 @@ public class AccumuloTableCache {
             t.setMaxRows(entry.getValue().getMaxRows());
             t.setLastRefresh(entry.getValue().getLastRefresh());
             t.setCurrentlyRefreshing((entry.getValue().getReference() != null));
-            response.getCaches().add(t);
+            tableCaches.add(t);
         }
-        return response;
-    }
-    
-    private void sendCacheReloadMessage(String tableName) {
-        log.warn("table:" + tableName + " sending cache reload message about table " + tableName);
-        
-        jmsContext.createProducer().send(cacheTopic, tableName);
+        return tableCaches;
     }
 }

@@ -1,7 +1,6 @@
 package datawave.webservice.common.cache;
 
 import com.google.common.base.Preconditions;
-import datawave.common.util.ArgumentChecker;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -18,16 +17,12 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.BoundedExponentialBackoffRetry;
 import org.apache.curator.utils.ZKPaths;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.data.Stat;
-import org.jboss.logging.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.inject.Inject;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
@@ -83,18 +78,13 @@ public class SharedCacheCoordinator implements Serializable {
     
     /**
      * Constructs a new {@link SharedCacheCoordinator}
-     * 
+     *
      * @param namespace
      *            the Zookeeper namespace to use for grouping all entries created by this coordinator
      * @param zookeeperConnectionString
      *            the Zookeeper connection to use
      */
-    @Inject
-    public SharedCacheCoordinator(@ConfigProperty(name = "dw.cache.coordinator.namespace") String namespace,
-                    @ConfigProperty(name = "dw.warehouse.zookeepers") String zookeeperConnectionString, @ConfigProperty(
-                                    name = "dw.cacheCoordinator.evictionReaperIntervalSeconds", defaultValue = "30") int evictionReaperIntervalInSeconds,
-                    @ConfigProperty(name = "dw.cacheCoordinator.numLocks", defaultValue = "300") int numLocks, @ConfigProperty(
-                                    name = "dw.cacheCoordinator.maxRetries", defaultValue = "10") int maxRetries) {
+    public SharedCacheCoordinator(String namespace, String zookeeperConnectionString, int evictionReaperIntervalInSeconds, int numLocks, int maxRetries) {
         ArgumentChecker.notNull(namespace, zookeeperConnectionString);
         
         locks = new HashMap<>();
@@ -121,7 +111,6 @@ public class SharedCacheCoordinator implements Serializable {
         evictionReaper = new Timer("cache-eviction-reaper-" + namespace, true);
     }
     
-    @PostConstruct
     public void start() {
         curatorClient.start();
         
@@ -275,7 +264,6 @@ public class SharedCacheCoordinator implements Serializable {
         }
     }
     
-    @PreDestroy
     public void stop() {
         evictionReaper.cancel();
         
@@ -326,7 +314,7 @@ public class SharedCacheCoordinator implements Serializable {
     /**
      * Registers a distributed shared counter named {@code counterName}. This counter can be watched on many servers, and can be used to coordinate local
      * in-memory global operations.
-     * 
+     *
      * @param counterName
      *            the name of the counter
      * @param listener
@@ -367,7 +355,7 @@ public class SharedCacheCoordinator implements Serializable {
     /**
      * Given the shared counter {@code counterName}, checks whether or not the locally cached value matches the expected shared value of {@code expectedValue}.
      * If the value does not match, the local cached value is updated.
-     * 
+     *
      * @param counterName
      *            the name of the counter whose locally cached value is to be tested
      * @param expectedValue
@@ -704,6 +692,20 @@ public class SharedCacheCoordinator implements Serializable {
             }
         } catch (Exception e) {
             log.warn("Error cleaning up eviction notices: " + e.getMessage(), e);
+        }
+    }
+    
+    public static class ArgumentChecker {
+        private static final String NULL_ARG_MSG = "argument was null";
+        
+        public static final void notNull(final Object arg1) {
+            if (arg1 == null)
+                throw new IllegalArgumentException(NULL_ARG_MSG + ":Is null- arg1? true");
+        }
+        
+        public static final void notNull(final Object arg1, final Object arg2) {
+            if (arg1 == null || arg2 == null)
+                throw new IllegalArgumentException(NULL_ARG_MSG + ":Is null- arg1? " + (arg1 == null) + " arg2? " + (arg2 == null));
         }
     }
 }

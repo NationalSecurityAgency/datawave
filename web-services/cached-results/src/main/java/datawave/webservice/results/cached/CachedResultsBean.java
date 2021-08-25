@@ -10,7 +10,6 @@ import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.SecurityMarking;
-import datawave.microservice.common.connection.AccumuloConnectionFactory;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.cachedresults.CacheableLogic;
 import datawave.microservice.query.config.QueryExpirationProperties;
@@ -22,6 +21,7 @@ import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.audit.PrivateAuditConstants;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.common.exception.NotFoundException;
@@ -340,9 +340,11 @@ public class CachedResultsBean {
         Principal p = ctx.getCallerPrincipal();
         String owner = getOwnerFromPrincipal(p);
         String userDn = getDNFromPrincipal(p);
+        Collection<String> proxyServers = null;
         Collection<Collection<String>> cbAuths = new HashSet<>();
         if (p instanceof DatawavePrincipal) {
             DatawavePrincipal dp = (DatawavePrincipal) p;
+            proxyServers = dp.getProxyServers();
             cbAuths.addAll(dp.getAuthorizations());
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_PRINCIPAL_ERROR, MessageFormat.format("Class: {0}", p.getClass().getName()));
@@ -433,7 +435,7 @@ public class CachedResultsBean {
             addQueryToTrackingMap(trackingMap, q);
             accumuloConnectionRequestBean.requestBegin(queryId);
             try {
-                connector = connectionFactory.getConnection(priority, trackingMap);
+                connector = connectionFactory.getConnection(userDn, proxyServers, priority, trackingMap);
             } finally {
                 accumuloConnectionRequestBean.requestEnd(queryId);
             }
