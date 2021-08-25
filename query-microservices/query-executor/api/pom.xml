@@ -11,20 +11,9 @@
     <version>1.0-SNAPSHOT</version>
     <properties>
         <version.microservice.starter-query>1.0-SNAPSHOT</version.microservice.starter-query>
-        <version.validation-api>2.0.2</version.validation-api>
     </properties>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>spring-boot-starter-datawave-query</artifactId>
-                <version>${version.microservice.starter-query}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.validation</groupId>
-                <artifactId>jakarta.validation-api</artifactId>
-                <version>${version.validation-api}</version>
-            </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave-query</artifactId>
@@ -36,16 +25,27 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>spring-boot-starter-datawave-query</artifactId>
-        </dependency>
-        <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
     <repositories>

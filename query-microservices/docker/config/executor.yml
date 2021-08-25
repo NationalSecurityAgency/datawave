@@ -1,0 +1,11 @@
+logging:
+  level:
+    root: DEBUG
+    datawave.microservice.query: DEBUG
+
+warehouse:
+  accumulo:
+    zookeepers: '${accumulo.zookeepers}'
+    instanceName: '${accumulo.instanceName}'
+    username: '${accumulo.username}'
+    password: '${accumulo.password}'

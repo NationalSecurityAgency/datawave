@@ -10,8 +10,6 @@
     <artifactId>spring-boot-starter-datawave-query</artifactId>
     <version>1.0-SNAPSHOT</version>
     <properties>
-        <version.curator>4.2.0</version.curator>
-        <version.curator.test>2.13.0</version.curator.test>
         <version.datawave>3.2.1-SNAPSHOT</version.datawave>
         <version.microservice.hazelcast-client>1.7-SNAPSHOT</version.microservice.hazelcast-client>
         <version.microservice.query>1.0-SNAPSHOT</version.microservice.query>
@@ -23,67 +21,16 @@
         <dependencies>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
-                <artifactId>datawave-ingest-configuration</artifactId>
-                <version>${version.datawave}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave</groupId>
-                <artifactId>datawave-ingest-csv</artifactId>
-                <version>${version.datawave}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>org.jboss.resteasy</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>org.jboss.spec.javax.annotation</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>org.jboss.spec.javax.ejb</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>org.jboss.spec.javax.interceptor</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>org.jboss.spec.javax.servlet</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>org.jboss.logging</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jsp-api</artifactId>
-                        <groupId>javax.servlet.jsp</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>log4j</artifactId>
-                        <groupId>log4j</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave</groupId>
-                <artifactId>datawave-ingest-json</artifactId>
-                <version>${version.datawave}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>org.jboss.resteasy</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave</groupId>
                 <artifactId>datawave-query-core</artifactId>
                 <version>${version.datawave}</version>
                 <exclusions>
                     <exclusion>
                         <artifactId>*</artifactId>
                         <groupId>org.apache.zookeeper</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>org.eclipse.jetty</groupId>
                     </exclusion>
                     <exclusion>
                         <artifactId>*</artifactId>
@@ -149,58 +96,11 @@
                 <version>${version.microservice.starter-metrics}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-client</artifactId>
-                <version>${version.curator}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>zookeeper</artifactId>
-                        <groupId>org.apache.zookeeper</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-framework</artifactId>
-                <version>${version.curator}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>zookeeper</artifactId>
-                        <groupId>org.apache.zookeeper</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-recipes</artifactId>
-                <version>${version.curator}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>zookeeper</artifactId>
-                        <groupId>org.apache.zookeeper</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave</artifactId>
                 <version>${version.microservice.starter}</version>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave</groupId>
-                <artifactId>datawave-query-core</artifactId>
-                <version>${version.datawave}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-test</artifactId>
-                <version>${version.curator.test}</version>
-                <scope>test</scope>
-                <optional>true</optional>
             </dependency>
         </dependencies>
     </dependencyManagement>

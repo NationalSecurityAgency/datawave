@@ -113,10 +113,11 @@ services:
       - demo
     healthcheck:
       test: curl -f http://localhost:8080/cache/mgmt/health
-      interval: 30s
-      timeout: 10s
-      retries: 8
-      start_period: 80s
+      # If scaling up beyond 1 instance, configure healthchecks
+      # interval: 30s
+      # timeout: 10s
+      # retries: 8
+      # start_period: 80s
     depends_on:
       configuration:
         condition: service_started
@@ -243,6 +244,39 @@ services:
       test: curl -f http://localhost:8080/query/mgmt/health
     depends_on:
       audit:
+        condition: service_healthy
+      authorization:
+        condition: service_healthy
+      metrics:
+        condition: service_healthy
+
+  executor:
+    image: datawave/query-executor-service:1.0-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,storage,metricssource,query
+      - --spring.cloud.consul.host=discovery
+    environment:
+      - "ZOOKEEPER_HOST=${HOSTNAME}"
+    # This mapping is required to enable the metrics service to communicate
+    # with host-deployed services like hadoop, zookeeper, and accumulo.
+    # These values are set locally in .env via bootstrap.sh
+    extra_hosts:
+      - "${HOSTNAME}:${HOST_IP}"
+      - "${HOST_FQDN}:${HOST_IP}"
+    ports:
+      - "8080"
+      - "8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/executor/mgmt/health
+    depends_on:
+      authorization:
+        condition: service_healthy
+      metrics:
         condition: service_healthy
 
 networks:

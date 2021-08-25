@@ -1,5 +1,6 @@
 package datawave.microservice.query.executor.config;
 
+import datawave.microservice.config.accumulo.AccumuloProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -13,5 +14,12 @@ public class QueryExecutorConfig {
     @ConfigurationProperties("datawave.query.executor")
     public ExecutorProperties executorProperties() {
         return new ExecutorProperties();
+    }
+    
+    @Bean
+    @ConditionalOnMissingBean(name = "warehouse")
+    @ConfigurationProperties("warehouse.accumulo")
+    public AccumuloProperties warehouse() {
+        return new AccumuloProperties();
     }
 }
