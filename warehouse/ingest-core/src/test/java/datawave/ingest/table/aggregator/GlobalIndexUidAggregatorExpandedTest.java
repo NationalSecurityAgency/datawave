@@ -18,9 +18,24 @@ public class GlobalIndexUidAggregatorExpandedTest {
     private static final Key KEY = new Key("key");
     
     private GlobalIndexUidAggregator agg = new GlobalIndexUidAggregator();
+    
+    // For this set of tests, Forward and Reverse refer to the aggregation order of the
+    // values. This is not to be confused with the ordering of Accumulo Keys.
+    // In this context, Forward means that the values will be aggregated in the same
+    // order that is provided to the test. Reverse means that they will be aggregated in
+    // the reverse order that is provided to the test.
+    private boolean isForwardOnlyTest = false;
+    
+    // For minor compactions and partial major compactions, Accumulo may not have all of
+    // the available Values for a given Key. Additional data may exist in other rfiles.
+    // As a result, the Aggregator must preserve (AKA propagate) certain information, such
+    // as removal markers, in case that information would impact data in those other rfiles.
+    // For scans and full major compactions, on the other hand, Accumulo is guaranteed to
+    // have all available Values for a given Key. With this complete view of the data, it
+    // is possible for the Aggregator to make final decisions and to thus eliminate the
+    // data that would otherwise be preserved, such as removal markers.
     private boolean isFullCompactionOnlyTest = false;
     private boolean isPartialCompactionOnlyTest = false;
-    private boolean isForwardOnlyTest = false;
     
     @Before
     public void setup() {
@@ -39,7 +54,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -62,7 +77,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -85,7 +100,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -109,7 +124,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -133,7 +148,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -155,7 +170,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -178,7 +193,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -202,11 +217,11 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
-    public void removeAllAcrossValuePlusAbsent() {
+    public void removeSecondValueUidsPlusAbsent() {
         // Do multiple removals-that-hit and multiple removals-that-don't-hit work like single removals?
         
         // @formatter:off
@@ -226,7 +241,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -250,7 +265,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -273,7 +288,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -297,7 +312,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -320,7 +335,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -343,7 +358,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -367,7 +382,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -389,7 +404,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -410,7 +425,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -434,7 +449,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -462,15 +477,13 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2, value3));
+        testCombinations(expectation, value1, value2, value3);
     }
     
     @Test
     public void duplicatesRecountedUnderSeenIgnore() {
         // Does a count-only Value, when seen first, prevent de-duplication of named
         // UID lists (done for performance optimization)?
-        agg = new GlobalIndexUidAggregator(10);
-        
         // @formatter:off
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(11)
@@ -492,14 +505,13 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // not testing the reversal because its behavior is captured
         // in testDuplicatesRecountedUnderSeenIgnoreReverse
         isForwardOnlyTest = true;
-        testCombinations(expectation, asList(value1, value2, value3));
+        testCombinations(expectation, value1, value2, value3);
     }
     
     @Test
     public void duplicatesRecountedUnderSeenIgnoreReverse() {
         // Does a count-only Value, when seen last, NOT prevent de-duplication of named
         // UID lists (done for performance optimization)?
-        agg = new GlobalIndexUidAggregator(10);
         
         // @formatter:off
         Value value1 = UidTestBuilder.newBuilder()
@@ -522,14 +534,12 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // not testing the reversal because its behavior is captured
         // in testDuplicatesRecountedUnderSeenIgnore
         isForwardOnlyTest = true;
-        testCombinations(expectation, asList(value1, value2, value3));
+        testCombinations(expectation, value1, value2, value3);
     }
     
     @Test
     public void floorOfZeroWhenSeenIgnoreFalse() {
         // Does count match size of UID list even when there are more removal UIDs than UIDs?
-        agg = new GlobalIndexUidAggregator(10);
-        
         // @formatter:off
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1")
@@ -545,7 +555,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -553,7 +563,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // Does count match size of UID list even when there are propagated removals?
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2")
                 .build();
@@ -569,7 +578,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -577,7 +586,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // Are removals propagated and the count left at zero?
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids()
                 .withRemovals("uid1", "uid2")
@@ -594,7 +602,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -603,7 +611,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // an already included UID?
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(2);
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2")
                 .build();
@@ -623,7 +630,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2, value3));
+        testCombinations(expectation, value1, value2, value3);
     }
     
     @Test
@@ -633,7 +640,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // an already included UID?
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(2);
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2")
                 .build();
@@ -653,7 +659,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2, value3));
+        testCombinations(expectation, value1, value2, value3);
     }
     
     @Test
@@ -682,7 +688,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         
         // Reverse ordering is tested in testEvaluatesMaxWithEachAdditionReverse
         isForwardOnlyTest = true;
-        testCombinations(expectation, asList(value1, value2, value3));
+        testCombinations(expectation, value1, value2, value3);
     }
     
     @Test
@@ -690,7 +696,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // Does removal before exceeding max avoid count-only mode?
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(2);
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids()
                 .withRemovals("uid1")
@@ -712,7 +717,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         
         // Reverse ordering is tested in testEvaluatesMaxWithEachAddition
         isForwardOnlyTest = true;
-        testCombinations(expectation, asList(value1, value2, value3));
+        testCombinations(expectation, value1, value2, value3);
     }
     
     @Test
@@ -720,7 +725,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // Do additions and removals after a count-only Value simply adjust the count?
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(2);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(3)
                 .build();
@@ -744,7 +748,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // The behavior for the reverse ordering is captured
         // in seenIgnoreAddsTwoValuesReverse
         isForwardOnlyTest = true;
-        testCombinations(expectation, asList(value1, value2, value3));
+        testCombinations(expectation, value1, value2, value3);
     }
     
     @Test
@@ -752,8 +756,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // uid2 from value2 will be removed because of the removal UID from value1
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(2);
-
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids("uid4")
                 .withRemovals("uid2")
@@ -781,7 +783,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // The behavior for the reverse ordering is captured
         // in seenIgnoreAddsTwoValues
         isForwardOnlyTest = true;
-        testCombinations(expectation, asList(value1, value2, value3));
+        testCombinations(expectation, value1, value2, value3);
     }
     
     @Test
@@ -789,8 +791,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // Will negative count-only, combined with named uid, result in zero?
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(10);
-
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(-1)
                 .build();
@@ -805,7 +805,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -814,7 +814,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // full compactions?
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(-1)
                 .build();
@@ -830,7 +829,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // @formatter:on
         
         isFullCompactionOnlyTest = true;
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -839,7 +838,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // propagation scenarios?
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(-1)
                 .build();
@@ -855,7 +853,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // @formatter:on
         
         isPartialCompactionOnlyTest = true;
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -864,7 +862,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // count for full compactions?
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(1)
                 .build();
@@ -880,7 +877,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // @formatter:on
         
         isFullCompactionOnlyTest = true;
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -889,7 +886,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // as a negative count for partial compactions?
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(1)
                 .build();
@@ -905,7 +901,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // @formatter:on
         
         isPartialCompactionOnlyTest = true;
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -914,7 +910,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // flipping to seenIgnore?
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(2);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(3)
                 .build();
@@ -933,7 +928,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2, value3));
+        testCombinations(expectation, value1, value2, value3);
     }
     
     @Test
@@ -960,7 +955,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2, value3));
+        testCombinations(expectation, value1, value2, value3);
     }
     
     @Test
@@ -972,7 +967,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // 2. or start with two named uids and add a count-only
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(2);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(3)
                 .build();
@@ -986,7 +980,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -996,7 +990,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // i.e., count = this.uids.size() - this.uidsToRemove.size();
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(2);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(3)
                 .build();
@@ -1014,7 +1007,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2, value3));
+        testCombinations(expectation, value1, value2, value3);
     }
     
     @Test
@@ -1024,7 +1017,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // i.e., count = this.uids.size() - this.uidsToRemove.size();
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(1)
                 .build();
@@ -1039,7 +1031,7 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
     @Test
@@ -1049,7 +1041,6 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // i.e., count = this.uids.size() - this.uidsToRemove.size();
         
         // @formatter:off
-        agg = new GlobalIndexUidAggregator(10);
         Value value1 = UidTestBuilder.newBuilder()
                 .withCountOnly(30)
                 .build();
@@ -1064,10 +1055,12 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .build());
         // @formatter:on
         
-        testCombinations(expectation, asList(value1, value2));
+        testCombinations(expectation, value1, value2);
     }
     
-    private void testCombinations(Uid.List expectation, List<Value> input) {
+    // For Forward, Partial, and Full see the comments by the boolean field declarations
+    private void testCombinations(Uid.List expectation, Value... inputValues) {
+        List<Value> input = asList(inputValues);
         // There should be nothing in the removal UID list after a Full Major Compaction
         
         // @formatter:off
@@ -1085,8 +1078,10 @@ public class GlobalIndexUidAggregatorExpandedTest {
             verify("Forward, Full Major", expectNoRemovals, testAsFullMajorCompaction(input));
         }
         
+        // See the comment by isForwardOnlyTest declaration
         if (!isForwardOnlyTest) {
-            // reverse the ordering of the input and try again
+            // Reverse the ordering of the input and try again
+            // See the comment by isForwardOnlyTest declaration
             Collections.reverse(input);
             
             if (!isFullCompactionOnlyTest) {
