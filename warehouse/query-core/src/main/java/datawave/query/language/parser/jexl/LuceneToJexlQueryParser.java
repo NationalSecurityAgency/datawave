@@ -12,10 +12,9 @@ import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
 import datawave.query.language.parser.lucene.QueryConfigHandler;
-import datawave.query.language.processor.lucene.CustomQueryNodeProcessorPipeline;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
-
+import datawave.query.language.processor.lucene.QueryNodeProcessorFactory;
 import org.apache.lucene.analysis.Analyzer;
 import datawave.ingest.data.tokenize.StandardAnalyzer;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
@@ -38,6 +37,7 @@ public class LuceneToJexlQueryParser implements QueryParser {
     private Boolean allowAnyFieldQueries = true;
     private List<JexlQueryFunction> allowedFunctions = JexlTreeBuilder.DEFAULT_ALLOWED_FUNCTION_LIST;
     private Analyzer analyzer = new StandardAnalyzer();
+    private QueryNodeProcessorFactory queryNodeProcessorFactory = new QueryNodeProcessorFactory();
     
     public LuceneToJexlQueryParser() {
         Collections.addAll(tokenizedFields, DEFAULT_TOKENIZED_FIELDS);
@@ -73,21 +73,7 @@ public class LuceneToJexlQueryParser implements QueryParser {
             AccumuloSyntaxParser syntaxParser = new AccumuloSyntaxParser();
             syntaxParser.enable_tracing();
             
-            QueryConfigHandler queryConfigHandler = new QueryConfigHandler();
-            
-            queryConfigHandler.set(ConfigurationKeys.ANALYZER, analyzer);
-            
-            queryConfigHandler.set(ConfigurationKeys.ENABLE_POSITION_INCREMENTS, positionIncrementsEnabled);
-            queryConfigHandler.set(TOKENIZED_FIELDS, tokenizedFields);
-            queryConfigHandler.set(TOKENIZE_UNFIELDED_QUERIES, tokenizeUnfieldedQueries);
-            queryConfigHandler.set(SKIP_TOKENIZE_UNFIELDED_FIELDS, skipTokenizeUnfieldedFields);
-            queryConfigHandler.set(ALLOWED_FIELDS, allowedFields);
-            queryConfigHandler.set(ALLOW_ANY_FIELD_QUERIES, allowAnyFieldQueries);
-            queryConfigHandler.set(USE_SLOP_FOR_TOKENIZED_TERMS, useSlopForTokenizedTerms);
-            
-            queryConfigHandler.set(ConfigurationKeys.ALLOW_LEADING_WILDCARD, allowLeadingWildCard);
-            
-            QueryNodeProcessor processor = new CustomQueryNodeProcessorPipeline(queryConfigHandler);
+            QueryNodeProcessor processor = getQueryNodeProcessor();
             QueryBuilder builder = new JexlTreeBuilder(allowedFunctions);
             
             org.apache.lucene.queryparser.flexible.core.nodes.QueryNode queryTree = syntaxParser.parse(query, "");
@@ -97,6 +83,25 @@ public class LuceneToJexlQueryParser implements QueryParser {
             throw new ParseException(e);
         }
         return parsedQuery;
+    }
+    
+    private QueryNodeProcessor getQueryNodeProcessor() {
+        QueryConfigHandler queryConfigHandler = new QueryConfigHandler();
+        
+        queryConfigHandler.set(ConfigurationKeys.ANALYZER, analyzer);
+        
+        queryConfigHandler.set(ConfigurationKeys.ENABLE_POSITION_INCREMENTS, positionIncrementsEnabled);
+        queryConfigHandler.set(TOKENIZED_FIELDS, tokenizedFields);
+        queryConfigHandler.set(TOKENIZE_UNFIELDED_QUERIES, tokenizeUnfieldedQueries);
+        queryConfigHandler.set(SKIP_TOKENIZE_UNFIELDED_FIELDS, skipTokenizeUnfieldedFields);
+        queryConfigHandler.set(ALLOWED_FIELDS, allowedFields);
+        queryConfigHandler.set(ALLOW_ANY_FIELD_QUERIES, allowAnyFieldQueries);
+        queryConfigHandler.set(USE_SLOP_FOR_TOKENIZED_TERMS, useSlopForTokenizedTerms);
+        
+        queryConfigHandler.set(ConfigurationKeys.ALLOW_LEADING_WILDCARD, allowLeadingWildCard);
+        
+        QueryNodeProcessor processor = queryNodeProcessorFactory.create(queryConfigHandler);
+        return processor;
     }
     
     public boolean isTokenizeUnfieldedQueries() {
@@ -169,6 +174,14 @@ public class LuceneToJexlQueryParser implements QueryParser {
     
     public void setAnalyzer(Analyzer analyzer) {
         this.analyzer = analyzer;
+    }
+    
+    public QueryNodeProcessorFactory getQueryNodeProcessorFactory() {
+        return queryNodeProcessorFactory;
+    }
+    
+    public void setQueryNodeProcessorFactory(QueryNodeProcessorFactory queryNodeProcessorFactory) {
+        this.queryNodeProcessorFactory = queryNodeProcessorFactory;
     }
     
     public List<JexlQueryFunction> getAllowedFunctions() {
