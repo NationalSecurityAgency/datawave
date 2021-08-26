@@ -409,7 +409,7 @@ public class DatawaveInterpreter extends Interpreter {
             cv = MarkingFunctionsFactory.createMarkingFunctions().combine(cvs);
         } catch (MarkingFunctions.Exception e) {
             log.error("Failed to combine column visibilities while generating HIT_TERM for phrase function for field [" + field + "]");
-            e.printStackTrace();
+            log.error("msg: ", e);
             // set to the first column visibility if the marking functions failed
             cv = cvs.iterator().next();
         }
