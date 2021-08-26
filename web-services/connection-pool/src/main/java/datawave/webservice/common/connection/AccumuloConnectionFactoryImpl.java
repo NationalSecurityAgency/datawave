@@ -223,9 +223,9 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
         
         if (!priority.equals(Priority.ADMIN)) {
             if (userDN != null)
-                trackingMap.put("user.dn", userDN);
+                trackingMap.put(USER_DN, userDN);
             if (proxyServers != null)
-                trackingMap.put("proxyServers", proxyServers.toString());
+                trackingMap.put(PROXY_SERVERS, proxyServers.toString());
         }
         AccumuloConnectionPool pool = pools.get(poolName).get(priority);
         Connector c = pool.borrowObject(trackingMap);
@@ -384,7 +384,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
         HashMap<String,String> trackingMap = new HashMap<>();
         if (stackTrace != null) {
             StackTraceElement ste = stackTrace[1];
-            trackingMap.put("request.location", ste.getClassName() + "." + ste.getMethodName() + ":" + ste.getLineNumber());
+            trackingMap.put(REQUEST_LOCATION, ste.getClassName() + "." + ste.getMethodName() + ":" + ste.getLineNumber());
         }
         
         return trackingMap;

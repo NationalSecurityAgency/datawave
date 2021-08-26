@@ -14,6 +14,8 @@ import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.TaskKey;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.runner.AccumuloConnectionRequestMap;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.springframework.cloud.bus.BusProperties;
@@ -23,20 +25,19 @@ public class Create extends ExecutorAction {
     private static final Logger log = Logger.getLogger(Create.class);
     
     public Create(QueryExecutor source, ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties,
-                    Connector connector, QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory,
-                    ApplicationEventPublisher publisher, QueryTask task) {
-        super(source, executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory, publisher, task);
+                    AccumuloConnectionRequestMap connectionMap, AccumuloConnectionFactory connectionFactory, QueryStorageCache cache, QueryQueueManager queues,
+                    QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher, QueryTask task) {
+        super(source, executorProperties, queryProperties, busProperties, connectionMap, connectionFactory, cache, queues, queryLogicFactory, publisher, task);
     }
     
     @Override
-    public boolean executeTask() throws Exception {
+    public boolean executeTask(CachedQueryStatus queryStatus, Connector connector) throws Exception {
         assert (QueryRequest.Method.CREATE.equals(task.getAction()));
         
         boolean taskComplete = false;
         TaskKey taskKey = task.getTaskKey();
         String queryId = taskKey.getQueryId();
         
-        CachedQueryStatus queryStatus = new CachedQueryStatus(cache, queryId, executorProperties.getQueryStatusExpirationMs());
         QueryLogic<?> queryLogic = getQueryLogic(queryStatus.getQuery());
         GenericQueryConfiguration config = queryLogic.initialize(connector, queryStatus.getQuery(), queryStatus.getCalculatedAuthorizations());
         

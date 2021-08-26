@@ -100,6 +100,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -484,13 +485,18 @@ public class ExtendedQueryExecutorBeanTest {
     public void testCancel_HappyPath() throws Exception {
         // Set local test input
         String userName = "userName";
+        String userSid = "userSid";
         UUID queryId = UUID.randomUUID();
         
         // Set expectations of the create logic
         expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
         expect(this.principal.getName()).andReturn(userName);
-        expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userName)).andReturn(this.tuple);
+        expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userName));
+        expect(this.principal.getDNs()).andReturn(new String[] {userName});
+        expect(this.principal.getShortName()).andReturn(userSid);
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(this.tuple);
         this.closedCache.remove(queryId.toString());
         expect(this.tuple.getFirst()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
@@ -528,7 +534,10 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(2);
         expect(this.principal.getName()).andReturn(userName);
-        expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userName)).andReturn(null);
+        expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userName));
+        expect(this.principal.getDNs()).andReturn(new String[] {userName});
+        expect(this.principal.getShortName()).andReturn(userSid);
+        expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(null);
         expect(this.closedCache.exists(queryId.toString())).andReturn(false);
         expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(userSid);
@@ -571,9 +580,11 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString())).andReturn(false);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(2);
         expect(this.principal.getName()).andReturn(userName);
-        expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userName)).andReturn(null);
+        expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(null);
         expect(this.principal.getName()).andReturn(userName);
-        expect(this.principal.getShortName()).andReturn(userSid);
+        expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userName));
+        expect(this.principal.getDNs()).andReturn(new String[] {userName});
+        expect(this.principal.getShortName()).andReturn(userSid).anyTimes();
         expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
@@ -623,11 +634,13 @@ public class ExtendedQueryExecutorBeanTest {
         String queryAuthorizations = "AUTH_1";
         
         // Set expectations
-        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).andReturn(false);
-        expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
-        expect(this.principal.getName()).andReturn(userName);
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), userName.toLowerCase())).andReturn(false);
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(2);
+        expect(this.principal.getName()).andReturn(userName).times(2);
         expect(this.principal.getShortName()).andReturn(userSid).times(2);
-        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.principal.getDNs()).andReturn(new String[] {userName});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0));
+        expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userName));
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(null);
         expect(this.closedCache.exists(queryId.toString())).andReturn(false);
@@ -658,13 +671,17 @@ public class ExtendedQueryExecutorBeanTest {
     public void testClose_UncheckedException() throws Exception {
         // Set local test input
         String userSid = "userSid";
+        String userName = "userName";
         UUID queryId = UUID.randomUUID();
         
         // Set expectations
-        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).andReturn(false);
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), userName.toLowerCase())).andReturn(false);
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
+        expect(this.principal.getName()).andReturn(userName);
         expect(this.principal.getShortName()).andReturn(userSid);
-        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
+        expect(this.principal.getDNs()).andReturn(new String[] {userName});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0));
+        expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userName));
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(this.tuple);
         expect(this.tuple.getFirst()).andReturn((QueryLogic) this.queryLogic1);
         this.queryLogic1.close();
@@ -709,7 +726,7 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         String userName = "userName";
         String userSid = "userSid";
-        String userDN = "userdn";
+        String userDN = "userDN";
         SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
@@ -767,7 +784,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
-        this.connectionRequestBean.requestBegin(queryId.toString());
+        this.connectionRequestBean.requestBegin(queryId.toString(), userDN.toLowerCase(), null);
         expect(this.connectionFactory.getConnection(userDN.toLowerCase(), new HashSet<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
         expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
@@ -990,7 +1007,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
         expect(cache.lock(queryId.toString())).andReturn(true);
         expect(this.runningQuery.getSettings()).andReturn(this.query);
-        this.connectionRequestBean.requestBegin(queryId.toString());
+        this.connectionRequestBean.requestBegin(queryId.toString(), userDN.toLowerCase(), null);
         expect(this.runningQuery.getConnection()).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
         
@@ -1121,7 +1138,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
-        this.connectionRequestBean.requestBegin(queryId.toString());
+        this.connectionRequestBean.requestBegin(queryId.toString(), userDN.toLowerCase(), null);
         expect(this.connectionFactory.getConnection(userDN.toLowerCase(), new HashSet<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
         expect(this.traceInfos.get(userSid)).andReturn(Arrays.asList(PatternWrapper.wrap(query)));
@@ -1184,7 +1201,7 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         String userName = "userName";
         String userSid = "userSid";
-        String userDN = "userdn";
+        String userDN = "userDN";
         SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
@@ -1281,7 +1298,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
         expect(cache.lock(queryId.toString())).andReturn(true);
         expect(this.runningQuery.getSettings()).andReturn(this.query).anyTimes();
-        this.connectionRequestBean.requestBegin(queryId.toString());
+        this.connectionRequestBean.requestBegin(queryId.toString(), userDN.toLowerCase(), null);
         expect(this.runningQuery.getConnection()).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
         this.runningQuery.setActiveCall(true);
@@ -1315,10 +1332,12 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Set expectations
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
-        expect(this.principal.getName()).andReturn(userName);
-        expect(this.principal.getShortName()).andReturn(userSid).times(2);
-        expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations)));
-        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), this.principal)).andReturn(false);
+        expect(this.principal.getName()).andReturn(userName).anyTimes();
+        expect(this.principal.getShortName()).andReturn(userSid).anyTimes();
+        expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userDN));
+        expect(this.principal.getDNs()).andReturn(new String[] {userDN});
+        expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(queryAuthorizations))).anyTimes();
+        expect(this.connectionRequestBean.cancelConnectionRequest(queryId.toString(), userDN.toLowerCase())).andReturn(false);
         expect(this.qlCache.pollIfOwnedBy(queryId.toString(), userSid)).andReturn(null);
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
         expect(this.connectionFactory.getConnection(userDN.toLowerCase(), new HashSet<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.connector);
@@ -1669,7 +1688,7 @@ public class ExtendedQueryExecutorBeanTest {
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
         String userName = "userName";
         String userSid = "userSid";
-        String userDN = "userdn";
+        String userDN = "userDN";
         SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         boolean trace = false;
         List<String> dnList = Collections.singletonList(userDN);
@@ -2517,9 +2536,11 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Set expectations
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
-        expect(this.principal.getName()).andReturn(userName);
-        expect(this.principal.getShortName()).andReturn(userSid);
-        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0));
+        expect(this.principal.getName()).andReturn(userName).anyTimes();
+        expect(this.principal.getShortName()).andReturn(userSid).anyTimes();
+        expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userName));
+        expect(this.principal.getDNs()).andReturn(new String[] {userName});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
         this.transaction.begin();
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
@@ -2568,9 +2589,11 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Set expectations
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
-        expect(this.principal.getName()).andReturn(userName);
-        expect(this.principal.getShortName()).andReturn(userSid);
-        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0));
+        expect(this.principal.getName()).andReturn(userName).anyTimes();
+        expect(this.principal.getShortName()).andReturn(userSid).anyTimes();
+        expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userName));
+        expect(this.principal.getDNs()).andReturn(new String[] {userName});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
         this.transaction.begin();
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
@@ -2614,9 +2637,11 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Set expectations
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
-        expect(this.principal.getName()).andReturn(userName);
-        expect(this.principal.getShortName()).andReturn(otherSid);
-        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0));
+        expect(this.principal.getName()).andReturn(userName).anyTimes();
+        expect(this.principal.getShortName()).andReturn(otherSid).anyTimes();
+        expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userName));
+        expect(this.principal.getDNs()).andReturn(new String[] {userName});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
         this.transaction.begin();
         expect(this.cache.get(queryId.toString())).andReturn(this.runningQuery);
@@ -2669,9 +2694,11 @@ public class ExtendedQueryExecutorBeanTest {
         
         // Set expectations
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
-        expect(this.principal.getName()).andReturn(userName);
-        expect(this.principal.getShortName()).andReturn(userSid);
-        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0));
+        expect(this.principal.getName()).andReturn(userName).anyTimes();
+        expect(this.principal.getShortName()).andReturn(userSid).anyTimes();
+        expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userName));
+        expect(this.principal.getDNs()).andReturn(new String[] {userName});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>(0)).anyTimes();
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
         this.transaction.begin();
         expect(this.cache.get(queryId.toString())).andReturn(null);
@@ -2790,9 +2817,12 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
         this.transaction.begin();
         expect(this.transaction.getStatus()).andReturn(Status.STATUS_ACTIVE).anyTimes();
-        expect(this.context.getCallerPrincipal()).andReturn(this.principal);
-        expect(this.principal.getName()).andReturn(userName);
-        expect(this.principal.getShortName()).andReturn(sid);
+        expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
+        expect(this.principal.getName()).andReturn(userName).anyTimes();
+        expect(this.principal.getShortName()).andReturn(sid).anyTimes();
+        expect(this.principal.getUserDN()).andReturn(SubjectIssuerDNPair.of(userDN));
+        expect(this.principal.getDNs()).andReturn(new String[] {userDN});
+        expect(this.principal.getProxyServers()).andReturn(new HashSet<>());
         expect(this.principal.getAuthorizations()).andReturn((Collection) Arrays.asList(Arrays.asList(authorization)));
         expect(this.principal.getPrimaryUser()).andReturn(dwUser);
         expect(this.dwUser.getAuths()).andReturn(Collections.singleton(authorization));
@@ -2844,11 +2874,12 @@ public class ExtendedQueryExecutorBeanTest {
         // currently has over 1,600 lines of code.
         //
         //
-        expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(new HashMap<>());
+        expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
-        connectionRequestBean.requestBegin(queryName);
-        expect(this.connectionFactory.getConnection(eq(userDN), eq(dnList), eq("connPool1"), eq(Priority.NORMAL), isA(Map.class))).andReturn(this.connector);
+        connectionRequestBean.requestBegin(queryName, userDN.toLowerCase(), null);
+        expect(this.connectionFactory.getConnection(eq(userDN.toLowerCase()), eq(new HashSet<>()), eq("connPool1"), eq(Priority.NORMAL), eq(null))).andReturn(
+                        this.connector);
         connectionRequestBean.requestEnd(queryName);
         expect(this.queryLogic1.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic1.setupQuery(this.genericConfiguration);
@@ -3333,7 +3364,7 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         String userName = "userName";
         String userSid = "userSid";
-        String userDN = "userdn";
+        String userDN = "userDN";
         SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
@@ -3387,8 +3418,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
-        this.connectionRequestBean.requestBegin(queryId.toString());
-        expect(this.connectionFactory.getConnection(userDN, new HashSet<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.connector);
+        this.connectionRequestBean.requestBegin(queryId.toString(), userDN.toLowerCase(), null);
+        expect(this.connectionFactory.getConnection(userDN.toLowerCase(), new HashSet<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
         expect(this.principal.getPrimaryUser()).andReturn(dwUser);
         expect(this.dwUser.getAuths()).andReturn(Collections.singleton(queryAuthorizations));
@@ -3464,7 +3495,7 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         String userName = "userName";
         String userSid = "userSid";
-        String userDN = "userdn";
+        String userDN = "userDN";
         SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
@@ -3523,8 +3554,8 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
-        this.connectionRequestBean.requestBegin(queryId.toString());
-        expect(this.connectionFactory.getConnection(userDN, new HashSet<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.connector);
+        this.connectionRequestBean.requestBegin(queryId.toString(), userDN.toLowerCase(), null);
+        expect(this.connectionFactory.getConnection(userDN.toLowerCase(), new HashSet<>(0), "connPool1", Priority.NORMAL, null)).andReturn(this.connector);
         this.connectionRequestBean.requestEnd(queryId.toString());
         // expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
         // expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap("NONMATCHING_REGEX")));
@@ -4085,7 +4116,7 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         String userName = "userName";
         String userSid = "userSid";
-        String userDN = "userdn";
+        String userDN = "userDN";
         SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
@@ -4158,7 +4189,7 @@ public class ExtendedQueryExecutorBeanTest {
         // Verify results
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
         assertEquals("Thrown exception expected to have been due to access denied", "401", ((QueryException) result1).getErrorCode());
-        assertEquals("Thrown exception expected to detail reason for access denial", "None of the DNs used have access to this query logic: [userdn]",
+        assertEquals("Thrown exception expected to detail reason for access denial", "None of the DNs used have access to this query logic: [userDN]",
                         result1.getMessage());
     }
     
@@ -4180,7 +4211,7 @@ public class ExtendedQueryExecutorBeanTest {
         boolean trace = false;
         String userName = "userName";
         String userSid = "userSid";
-        String userDN = "userdn";
+        String userDN = "userDN";
         SubjectIssuerDNPair userDNpair = SubjectIssuerDNPair.of(userDN);
         
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
@@ -4253,7 +4284,7 @@ public class ExtendedQueryExecutorBeanTest {
         // Verify results
         assertTrue("QueryException expected to have been thrown", result1 instanceof QueryException);
         assertEquals("Thrown exception expected to have been due to access denied", "401", ((QueryException) result1).getErrorCode());
-        assertEquals("Thrown exception expected to detail reason for access denial", "None of the DNs used have access to this query logic: [userdn]",
+        assertEquals("Thrown exception expected to detail reason for access denial", "None of the DNs used have access to this query logic: [userDN]",
                         result1.getMessage());
     }
     

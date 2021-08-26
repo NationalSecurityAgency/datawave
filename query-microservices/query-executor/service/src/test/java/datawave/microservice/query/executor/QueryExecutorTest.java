@@ -20,9 +20,13 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.security.util.DnUtils;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactoryImpl;
+import datawave.webservice.common.result.ConnectionPool;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.runner.AccumuloConnectionRequestMap;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -57,8 +61,10 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.TimeZone;
 
@@ -108,7 +114,7 @@ public abstract class QueryExecutorTest {
     private LinkedList<RemoteQueryRequestEvent> queryRequestsEvents;
     
     @Autowired
-    protected Connector connector;
+    protected AccumuloConnectionFactory connectionFactory;
     
     public String TEST_POOL = "TestPool";
     
@@ -221,7 +227,7 @@ public abstract class QueryExecutorTest {
         assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
         
         // create our query executor
-        QueryExecutor queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, connector, storageService, queueManager,
+        QueryExecutor queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, connectionFactory, storageService, queueManager,
                         queryLogicFactory, publisher);
         
         // pass a create request to the executor
@@ -296,7 +302,7 @@ public abstract class QueryExecutorTest {
         assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
         
         // pass the notification to the query executor
-        QueryExecutor queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, connector, storageService, queueManager,
+        QueryExecutor queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, connectionFactory, storageService, queueManager,
                         new QueryLogicFactory() {
                             
                             @Override
@@ -400,6 +406,55 @@ public abstract class QueryExecutorTest {
         @Primary
         public Connector connector() throws Exception {
             return accumuloSetup.loadTables(log);
+        }
+        
+        @Bean
+        @Primary
+        public AccumuloConnectionFactory connectionFactory(Connector connector) {
+            return new AccumuloConnectionFactory() {
+                
+                @Override
+                public void close() throws Exception {
+                    
+                }
+                
+                @Override
+                public Connector getConnection(String userDN, Collection<String> proxyServers, Priority priority, Map<String,String> trackingMap)
+                                throws Exception {
+                    return connector;
+                }
+                
+                @Override
+                public Connector getConnection(String userDN, Collection<String> proxyServers, String poolName, Priority priority,
+                                Map<String,String> trackingMap) throws Exception {
+                    return connector;
+                }
+                
+                @Override
+                public void returnConnection(Connector connection) throws Exception {
+                    
+                }
+                
+                @Override
+                public String report() {
+                    return null;
+                }
+                
+                @Override
+                public List<ConnectionPool> getConnectionPools() {
+                    return null;
+                }
+                
+                @Override
+                public int getConnectionUsagePercent() {
+                    return 0;
+                }
+                
+                @Override
+                public Map<String,String> getTrackingMap(StackTraceElement[] stackTrace) {
+                    return new HashMap<>();
+                }
+            };
         }
     }
     

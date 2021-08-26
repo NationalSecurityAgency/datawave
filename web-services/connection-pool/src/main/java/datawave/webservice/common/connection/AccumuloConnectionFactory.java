@@ -9,6 +9,16 @@ import java.util.Map;
 
 public interface AccumuloConnectionFactory extends AutoCloseable {
     
+    String USER_DN = "user.dn";
+    String PROXY_SERVERS = "proxyServers";
+    String REQUEST_LOCATION = "request.location";
+    String START_TIME = "connection.state.start";
+    String STATE = "state";
+    String THREAD_NAME = "thread.name";
+    String QUERY_USER = "query.user";
+    String QUERY_ID = "query.id";
+    String QUERY = "query.query";
+    
     enum Priority {
         
         LOW, NORMAL, HIGH, ADMIN

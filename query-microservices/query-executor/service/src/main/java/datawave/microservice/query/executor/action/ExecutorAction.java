@@ -17,8 +17,10 @@ import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.Result;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskStates;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.runner.AccumuloConnectionRequestMap;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
@@ -28,6 +30,8 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
 
 public abstract class ExecutorAction implements Runnable {
@@ -35,7 +39,8 @@ public abstract class ExecutorAction implements Runnable {
     private static final Logger log = Logger.getLogger(ExecutorAction.class);
     
     protected final QueryExecutor source;
-    protected final Connector connector;
+    protected final AccumuloConnectionRequestMap connectionMap;
+    protected final AccumuloConnectionFactory connectionFactory;
     protected final QueryStorageCache cache;
     protected final QueryQueueManager queues;
     protected final QueryLogicFactory queryLogicFactory;
@@ -47,15 +52,16 @@ public abstract class ExecutorAction implements Runnable {
     protected boolean interrupted = false;
     
     public ExecutorAction(QueryExecutor source, ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties,
-                    Connector connector, QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory,
-                    ApplicationEventPublisher publisher, QueryTask task) {
+                    AccumuloConnectionRequestMap connectionMap, AccumuloConnectionFactory connectionFactory, QueryStorageCache cache, QueryQueueManager queues,
+                    QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher, QueryTask task) {
         this.source = source;
         this.executorProperties = executorProperties;
         this.queryProperties = queryProperties;
         this.busProperties = busProperties;
         this.cache = cache;
         this.queues = queues;
-        this.connector = connector;
+        this.connectionMap = connectionMap;
+        this.connectionFactory = connectionFactory;
         this.queryLogicFactory = queryLogicFactory;
         this.publisher = publisher;
         this.task = task;
@@ -72,7 +78,7 @@ public abstract class ExecutorAction implements Runnable {
      * @throws Exception
      *             is the task failed
      */
-    public abstract boolean executeTask() throws Exception;
+    public abstract boolean executeTask(CachedQueryStatus status, Connector connector) throws Exception;
     
     /**
      * Interrupt this execution
@@ -88,16 +94,30 @@ public abstract class ExecutorAction implements Runnable {
         boolean taskFailed = false;
         
         TaskKey taskKey = task.getTaskKey();
+        String queryId = taskKey.getQueryId();
         boolean gotLock = cache.updateTaskState(taskKey, TaskStates.TASK_STATE.RUNNING);
         if (gotLock) {
             log.debug("Got lock for task " + taskKey);
+            
+            Connector connector = null;
+            
             try {
-                taskComplete = executeTask();
+                CachedQueryStatus queryStatus = new CachedQueryStatus(cache, queryId, executorProperties.getQueryStatusExpirationMs());
+                connector = getConnector(queryStatus, AccumuloConnectionFactory.Priority.LOW);
+                taskComplete = executeTask(queryStatus, connector);
             } catch (Exception e) {
                 log.error("Failed to process task " + taskKey, e);
                 taskFailed = true;
                 cache.updateFailedQueryStatus(taskKey.getQueryId(), e);
             } finally {
+                if (connector != null) {
+                    try {
+                        connectionFactory.returnConnection(connector);
+                    } catch (Exception e) {
+                        log.error("Failed to return connection for " + taskKey);
+                    }
+                }
+                
                 if (taskComplete) {
                     cache.updateTaskState(taskKey, TaskStates.TASK_STATE.COMPLETED);
                     try {
@@ -135,6 +155,26 @@ public abstract class ExecutorAction implements Runnable {
         }
         if (createdTask) {
             publishExecutorEvent(QueryRequest.next(queryKey.getQueryId()), queryKey.getQueryPool());
+        }
+    }
+    
+    protected Connector getConnector(QueryStatus status, AccumuloConnectionFactory.Priority priority) throws Exception {
+        Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
+        Query q = status.getQuery();
+        if (q.getOwner() != null) {
+            trackingMap.put(AccumuloConnectionFactory.QUERY_USER, q.getOwner());
+        }
+        if (q.getId() != null) {
+            trackingMap.put(AccumuloConnectionFactory.QUERY_ID, q.getId().toString());
+        }
+        if (q.getQuery() != null) {
+            trackingMap.put(AccumuloConnectionFactory.QUERY, q.getQuery());
+        }
+        connectionMap.requestBegin(q.getId().toString(), q.getUserDN(), trackingMap);
+        try {
+            return connectionFactory.getConnection(q.getUserDN(), q.getDnList(), status.getQueryKey().getQueryPool(), priority, trackingMap);
+        } finally {
+            connectionMap.requestEnd(q.getId().toString());
         }
     }
     

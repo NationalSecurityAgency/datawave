@@ -659,20 +659,19 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(persister.create(principal.getUserDN().subjectDN(), dnList, Whitebox.getInternalState(bean, SecurityMarking.class), queryLogicName,
                         Whitebox.getInternalState(bean, QueryParameters.class), optionalParameters)).andReturn(q);
         EasyMock.expect(persister.findById(EasyMock.anyString())).andReturn(null).anyTimes();
-        EasyMock.expect(connectionFactory.getTrackingMap(anyObject())).andReturn(Maps.newHashMap()).anyTimes();
+        EasyMock.expect(connectionFactory.getTrackingMap(anyObject())).andReturn(null).anyTimes();
         
         BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
         q.populateMetric(metric);
         EasyMock.expectLastCall();
         metric.setQueryType(RunningQuery.class.getSimpleName());
         metric.setLifecycle(Lifecycle.DEFINED);
-        System.out.println(metric);
         
         Set<Prediction> predictions = new HashSet<>();
         predictions.add(new Prediction("source", 1));
         EasyMock.expect(predictor.predict(metric)).andReturn(predictions);
         
-        connectionRequestBean.requestBegin(q.getId().toString());
+        connectionRequestBean.requestBegin(q.getId().toString(), userDN.toLowerCase(), null);
         EasyMock.expectLastCall();
         EasyMock.expect(connectionFactory.getConnection(eq(userDN.toLowerCase()), eq(null), eq("connPool1"), anyObject(), anyObject())).andReturn(c).anyTimes();
         connectionRequestBean.requestEnd(q.getId().toString());
@@ -690,7 +689,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getResultLimit(eq(q.getDnList()))).andReturn(-1L).anyTimes();
         EasyMock.expect(logic.getMaxResults()).andReturn(-1L).anyTimes();
         
-        EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString(), principal)).andReturn(false).anyTimes();
+        EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString(), userDN.toLowerCase())).andReturn(false).anyTimes();
         connectionFactory.returnConnection(EasyMock.isA(Connector.class));
         
         final AtomicBoolean initializeLooping = new AtomicBoolean(false);

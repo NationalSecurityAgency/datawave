@@ -34,9 +34,9 @@ public class AccumuloConnectionPool extends GenericObjectPool<Connector> {
         Long threadId = Thread.currentThread().getId();
         Connector o = null;
         try {
-            trackingMap.put("connection.state.start", Long.valueOf(System.currentTimeMillis()).toString());
-            trackingMap.put("state", AccumuloConnectionFactory.State.WAITING.toString());
-            trackingMap.put("thread.name", Thread.currentThread().getName());
+            trackingMap.put(AccumuloConnectionFactory.START_TIME, Long.valueOf(System.currentTimeMillis()).toString());
+            trackingMap.put(AccumuloConnectionFactory.STATE, AccumuloConnectionFactory.State.WAITING.toString());
+            trackingMap.put(AccumuloConnectionFactory.THREAD_NAME, Thread.currentThread().getName());
             threadToTrackingMapMap.put(threadId, trackingMap);
             o = super.borrowObject();
             log.debug(System.currentTimeMillis() + " thread: " + threadId + " borrowed connector: " + o);
@@ -47,8 +47,8 @@ public class AccumuloConnectionPool extends GenericObjectPool<Connector> {
             // connection being moved from the threadToTrackingMapMap to the connectorToTrackingMapMap
             
             if (o != null) {
-                trackingMap.put("connection.state.start", Long.valueOf(System.currentTimeMillis()).toString());
-                trackingMap.put("state", AccumuloConnectionFactory.State.CONNECTED.toString());
+                trackingMap.put(AccumuloConnectionFactory.START_TIME, Long.valueOf(System.currentTimeMillis()).toString());
+                trackingMap.put(AccumuloConnectionFactory.STATE, AccumuloConnectionFactory.State.CONNECTED.toString());
                 connectorToTrackingMapMap.put(o, trackingMap);
             }
             

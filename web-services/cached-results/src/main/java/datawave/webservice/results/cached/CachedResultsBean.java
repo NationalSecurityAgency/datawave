@@ -433,7 +433,7 @@ public class CachedResultsBean {
             priority = logic.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             addQueryToTrackingMap(trackingMap, q);
-            accumuloConnectionRequestBean.requestBegin(queryId);
+            accumuloConnectionRequestBean.requestBegin(queryId, userDn, trackingMap);
             try {
                 connector = connectionFactory.getConnection(userDn, proxyServers, priority, trackingMap);
             } finally {

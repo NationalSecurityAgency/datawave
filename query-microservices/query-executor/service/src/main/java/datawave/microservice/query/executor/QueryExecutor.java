@@ -14,6 +14,8 @@ import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskStates;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.runner.AccumuloConnectionRequestMap;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.springframework.cloud.bus.BusProperties;
@@ -42,7 +44,6 @@ public class QueryExecutor implements QueryRequestHandler {
     
     protected final BlockingQueue<Runnable> workQueue;
     protected final Set<Runnable> working;
-    protected final Connector connector;
     protected final QueryStorageCache cache;
     protected final QueryQueueManager queues;
     protected final QueryLogicFactory queryLogicFactory;
@@ -51,16 +52,19 @@ public class QueryExecutor implements QueryRequestHandler {
     protected final BusProperties busProperties;
     protected final ThreadPoolExecutor threadPool;
     protected final ApplicationEventPublisher publisher;
+    protected final AccumuloConnectionFactory connectionFactory;
+    protected final AccumuloConnectionRequestMap connectionRequestMap = new AccumuloConnectionRequestMap();
     
-    public QueryExecutor(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, Connector connector,
-                    QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher) {
+    public QueryExecutor(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties,
+                    AccumuloConnectionFactory connectionFactory, QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory,
+                    ApplicationEventPublisher publisher) {
         this.executorProperties = executorProperties;
         this.queryProperties = queryProperties;
         this.busProperties = busProperties;
         this.cache = cache;
         this.queues = queues;
-        this.connector = connector;
         this.queryLogicFactory = queryLogicFactory;
+        this.connectionFactory = connectionFactory;
         this.publisher = publisher;
         this.workQueue = new LinkedBlockingDeque<>(executorProperties.getMaxQueueSize());
         this.working = Collections.synchronizedSet(new HashSet<>());
@@ -136,16 +140,16 @@ public class QueryExecutor implements QueryRequestHandler {
                     ExecutorAction runnable = null;
                     switch (action) {
                         case CREATE:
-                            runnable = new Create(this, executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory,
-                                            publisher, task);
+                            runnable = new Create(this, executorProperties, queryProperties, busProperties, connectionRequestMap, connectionFactory, cache,
+                                            queues, queryLogicFactory, publisher, task);
                             break;
                         case NEXT:
-                            runnable = new Next(this, executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory,
-                                            publisher, task);
+                            runnable = new Next(this, executorProperties, queryProperties, busProperties, connectionRequestMap, connectionFactory, cache,
+                                            queues, queryLogicFactory, publisher, task);
                             break;
                         case PLAN:
-                            runnable = new Plan(this, executorProperties, queryProperties, busProperties, connector, cache, queues, queryLogicFactory,
-                                            publisher, task);
+                            runnable = new Plan(this, executorProperties, queryProperties, busProperties, connectionRequestMap, connectionFactory, cache,
+                                            queues, queryLogicFactory, publisher, task);
                             break;
                         default:
                             throw new UnsupportedOperationException(task.getTaskKey().toString());

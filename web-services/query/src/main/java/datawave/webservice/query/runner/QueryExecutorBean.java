@@ -17,6 +17,7 @@ import datawave.annotation.GenerateQuerySessionId;
 import datawave.annotation.Required;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
+import datawave.ingest.protobuf.RawRecordContainer;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.marking.SecurityMarking;
@@ -93,6 +94,7 @@ import org.apache.accumulo.core.trace.Tracer;
 import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.jexl2.parser.TokenMgrError;
+import org.apache.commons.vfs2.util.UserAuthenticatorUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
@@ -395,6 +397,32 @@ public class QueryExecutorBean implements QueryExecutor {
     }
     
     /**
+     * Setup the caller data in the QueryData object
+     * 
+     * @param p
+     * @param qd
+     * @return qd
+     */
+    private QueryData setUserData(Principal p, QueryData qd) {
+        // Find out who/what called this method
+        qd.proxyServers = null;
+        qd.p = p;
+        qd.userDn = qd.p.getName();
+        qd.userid = qd.userDn;
+        qd.dnList = Collections.singletonList(qd.userid);
+        if (qd.p instanceof DatawavePrincipal) {
+            DatawavePrincipal dp = (DatawavePrincipal) qd.p;
+            qd.userid = dp.getShortName();
+            qd.userDn = dp.getUserDN().subjectDN();
+            String[] dns = dp.getDNs();
+            Arrays.sort(dns);
+            qd.dnList = Arrays.asList(dns);
+            qd.proxyServers = dp.getProxyServers();
+        }
+        return qd;
+    }
+    
+    /**
      * This method will provide some initial query validation for the define and create query calls.
      */
     private QueryData validateQuery(String queryLogicName, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
@@ -480,28 +508,16 @@ public class QueryExecutorBean implements QueryExecutor {
             response.addException(qe);
             throw new BadRequestException(qe, response);
         }
+        
         // Find out who/what called this method
-        qd.proxyServers = null;
-        qd.p = ctx.getCallerPrincipal();
-        qd.userDn = qd.p.getName();
-        qd.userid = qd.userDn;
-        qd.dnList = Collections.singletonList(qd.userid);
-        if (qd.p instanceof DatawavePrincipal) {
-            DatawavePrincipal dp = (DatawavePrincipal) qd.p;
-            qd.userid = dp.getShortName();
-            qd.userDn = dp.getUserDN().subjectDN();
-            String[] dns = dp.getDNs();
-            Arrays.sort(dns);
-            qd.dnList = Arrays.asList(dns);
-            qd.proxyServers = dp.getProxyServers();
-            
-            // Verify that the calling principal has access to the query logic.
-            if (!qd.logic.containsDNWithAccess(qd.dnList)) {
-                UnauthorizedQueryException qe = new UnauthorizedQueryException("None of the DNs used have access to this query logic: " + qd.dnList, 401);
-                GenericResponse<String> response = new GenericResponse<>();
-                response.addException(qe);
-                throw new UnauthorizedException(qe, response);
-            }
+        setUserData(ctx.getCallerPrincipal(), qd);
+        
+        // Verify that the calling principal has access to the query logic iff being called externally (i.e. Principal instanceof DatawavePrincipal)
+        if (qd.p instanceof DatawavePrincipal && !qd.logic.containsDNWithAccess(qd.dnList)) {
+            UnauthorizedQueryException qe = new UnauthorizedQueryException("None of the DNs used have access to this query logic: " + qd.dnList, 401);
+            GenericResponse<String> response = new GenericResponse<>();
+            response.addException(qe);
+            throw new UnauthorizedException(qe, response);
         }
         
         log.trace(qd.userid + " has authorizations " + ((qd.p instanceof DatawavePrincipal) ? ((DatawavePrincipal) qd.p).getAuthorizations() : ""));
@@ -705,7 +721,7 @@ public class QueryExecutorBean implements QueryExecutor {
             priority = qd.logic.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             addQueryToTrackingMap(trackingMap, q);
-            accumuloConnectionRequestBean.requestBegin(q.getId().toString());
+            accumuloConnectionRequestBean.requestBegin(q.getId().toString(), qd.userDn, trackingMap);
             try {
                 connection = connectionFactory.getConnection(qd.userDn, qd.proxyServers, qd.logic.getConnPoolName(), priority, trackingMap);
             } finally {
@@ -888,7 +904,7 @@ public class QueryExecutorBean implements QueryExecutor {
             priority = qd.logic.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             addQueryToTrackingMap(trackingMap, q);
-            accumuloConnectionRequestBean.requestBegin(q.getId().toString());
+            accumuloConnectionRequestBean.requestBegin(q.getId().toString(), qd.userDn, trackingMap);
             try {
                 connection = connectionFactory.getConnection(qd.userDn, qd.proxyServers, qd.logic.getConnPoolName(), priority, trackingMap);
             } finally {
@@ -1252,10 +1268,10 @@ public class QueryExecutorBean implements QueryExecutor {
             priority = query.getConnectionPriority();
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             addQueryToTrackingMap(trackingMap, query.getSettings());
-            accumuloConnectionRequestBean.requestBegin(id);
+            QueryData qd = setUserData(ctx.getCallerPrincipal(), new QueryData());
+            accumuloConnectionRequestBean.requestBegin(id, qd.userDn, trackingMap);
             try {
-                connection = connectionFactory.getConnection(query.getSettings().getUserDN(), query.getSettings().getDnList(), query.getLogic()
-                                .getConnPoolName(), priority, trackingMap);
+                connection = connectionFactory.getConnection(qd.userDn, qd.proxyServers, query.getLogic().getConnPoolName(), priority, trackingMap);
             } finally {
                 accumuloConnectionRequestBean.requestEnd(id);
             }
@@ -2139,8 +2155,9 @@ public class QueryExecutorBean implements QueryExecutor {
     private VoidResponse close(String id, Principal principal) {
         VoidResponse response = new VoidResponse();
         try {
-            boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id, principal);
-            Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, ((DatawavePrincipal) principal).getShortName());
+            QueryData qd = setUserData(ctx.getCallerPrincipal(), new QueryData());
+            boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id, qd.userDn);
+            Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, qd.userid);
             if (tuple == null) {
                 try {
                     RunningQuery query = getQueryById(id, principal);
@@ -2181,6 +2198,8 @@ public class QueryExecutorBean implements QueryExecutor {
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
             throw new DatawaveWebApplicationException(qe, response, statusCode);
+        } catch (Throwable t) {
+            throw t;
         }
     }
     
@@ -2305,7 +2324,8 @@ public class QueryExecutorBean implements QueryExecutor {
         VoidResponse response = new VoidResponse();
         try {
             boolean connectionRequestCanceled = accumuloConnectionRequestBean.cancelConnectionRequest(id);
-            Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, ctx.getCallerPrincipal().getName());
+            QueryData qd = setUserData(ctx.getCallerPrincipal(), new QueryData());
+            Pair<QueryLogic<?>,Connector> tuple = qlCache.pollIfOwnedBy(id, qd.userid);
             
             if (tuple == null) {
                 try {
@@ -3176,13 +3196,13 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         if (q.getOwner() != null) {
-            trackingMap.put("query.user", q.getOwner());
+            trackingMap.put(AccumuloConnectionFactory.QUERY_USER, q.getOwner());
         }
         if (q.getId() != null) {
-            trackingMap.put("query.id", q.getId().toString());
+            trackingMap.put(AccumuloConnectionFactory.QUERY_ID, q.getId().toString());
         }
         if (q.getId() != null) {
-            trackingMap.put("query.query", q.getQuery());
+            trackingMap.put(AccumuloConnectionFactory.QUERY, q.getQuery());
         }
     }
     
