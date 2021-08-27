@@ -44,12 +44,12 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
     protected Object semaphore = new Object();
     
     private void readCacheFilesIfNecessary() {
-        if (splitsByTable.get() != null && splitToLocationMap.get() != null) {
+        if (splitsByTable.get() != null || splitToLocationMap.get() != null) {
             return;
         }
         
         synchronized (semaphore) {
-            if (splitsByTable.get() != null && splitToLocationMap.get() != null) {
+            if (splitsByTable.get() != null || splitToLocationMap.get() != null) {
                 return;
             }
             
@@ -69,6 +69,9 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
                 NonShardedSplitsFile.Reader reader = new NonShardedSplitsFile.Reader(context.getConfiguration(), localCacheFiles, getSplitsFileType());
                 if (getSplitsFileType().equals(SplitsFileType.SPLITSANDLOCATIONS)) {
                     splitToLocationMap.set(reader.getSplitsAndLocationsByTable());
+                    if (splitToLocationMap.get().isEmpty()) {
+                        log.error("Trying to use a location-based partitioner without locations in splits cache. Please make sure your splits cache is up-to-date.");
+                    }
                 }
                 splitsByTable.set(reader.getSplitsByTable());
                 if (splitsByTable.get().isEmpty() && splitToLocationMap.get().isEmpty()) {
