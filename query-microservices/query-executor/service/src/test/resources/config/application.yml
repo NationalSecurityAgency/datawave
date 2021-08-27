@@ -105,6 +105,40 @@ query:
     sendNotifications: true
 
 datawave:
+  table:
+    cache:
+      zookeepers: 'localhost:2181'
+      tableNames:
+        - DatawaveMetadata
+      poolName: 'default'
+      reloadInterval: 360000
+      evictionReaperIntervalInSeconds: 360
+      numLocks: 3
+      maxRetries: 3
+
+  connection:
+    factory:
+      defaultPool: 'default'
+      pools:
+        "default":
+          zookeepers: 'localhost:2181'
+          instance: 'my-instance-01'
+          username: 'root'
+          password: 'password'
+          lowPriorityPoolSize: 10
+          normalPriorityPoolSize: 10
+          highPriorityPoolSize: 10
+          adminPriorityPoolSize: 10
+        "uuid":
+          zookeepers: 'localhost:2181'
+          instance: 'my-instance-01'
+          username: 'root'
+          password: 'password'
+          lowPriorityPoolSize: 10
+          normalPriorityPoolSize: 10
+          highPriorityPoolSize: 10
+          adminPriorityPoolSize: 10
+
   metadata:
     all-metadata-auths:
       - PRIVATE,PUBLIC

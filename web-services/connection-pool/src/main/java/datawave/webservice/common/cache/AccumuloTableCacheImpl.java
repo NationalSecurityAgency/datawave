@@ -2,6 +2,7 @@ package datawave.webservice.common.cache;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import org.apache.accumulo.core.util.NamingThreadFactory;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
 import org.apache.curator.framework.recipes.shared.SharedCountReader;
@@ -11,11 +12,15 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Object that caches data from Accumulo tables.
@@ -38,7 +43,17 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
         this.accumuloTableCacheConfiguration = accumuloTableCacheConfiguration;
         setup();
     }
-    
+
+    public AccumuloTableCacheImpl(AccumuloTableCacheConfiguration accumuloTableCacheConfiguration) {
+        this(getThreadPoolExecutor(accumuloTableCacheConfiguration), accumuloTableCacheConfiguration);
+    }
+
+    private static ExecutorService getThreadPoolExecutor(AccumuloTableCacheConfiguration accumuloTableCacheConfiguration) {
+        return new ThreadPoolExecutor(accumuloTableCacheConfiguration.getTableNames().size()/2,
+                accumuloTableCacheConfiguration.getTableNames().size(), 5, TimeUnit.MINUTES,
+                new LinkedBlockingDeque<>(), new NamingThreadFactory("TableCacheReloader"));
+    }
+
     private void setup() {
         log.debug("accumuloTableCacheConfiguration was setup as: " + accumuloTableCacheConfiguration);
         
