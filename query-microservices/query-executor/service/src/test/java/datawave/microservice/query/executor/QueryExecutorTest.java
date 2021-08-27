@@ -79,7 +79,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ContextConfiguration(classes = QueryExecutorTest.QueryExecutorTestConfiguration.class)
+@ActiveProfiles("QueryExecutorTest")
+@ContextConfiguration
 public abstract class QueryExecutorTest {
     private static final Logger log = Logger.getLogger(QueryExecutorTest.class);
     
@@ -150,13 +151,6 @@ public abstract class QueryExecutorTest {
     @Disabled("Cannot run this test without an externally deployed Kafka instance.")
     @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-kafka"})
     public static class KafkaQueryExecutorTest extends QueryExecutorTest {}
-    
-    @SpringBootApplication(scanBasePackages = "datawave.microservice")
-    public static class TestApplication {
-        public static void main(String[] args) {
-            SpringApplication.run(QueryExecutorTest.TestApplication.class, args);
-        }
-    }
     
     @BeforeAll
     public static void setupData() throws Exception {
@@ -410,7 +404,7 @@ public abstract class QueryExecutorTest {
         
         @Bean
         @Primary
-        public AccumuloConnectionFactory connectionFactory(Connector connector) {
+        public AccumuloConnectionFactory connectionFactory2(Connector connector) {
             return new AccumuloConnectionFactory() {
                 
                 @Override

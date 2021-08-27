@@ -6,6 +6,34 @@ import java.util.List;
 import java.util.Map;
 
 public class AccumuloTableCacheConfiguration {
+    public void setZookeepers(String zookeepers) {
+        this.zookeepers = zookeepers;
+    }
+    
+    public void setTableNames(List<String> tableNames) {
+        this.tableNames = tableNames;
+    }
+    
+    public void setPoolName(String poolName) {
+        this.poolName = poolName;
+    }
+    
+    public void setReloadInterval(long reloadInterval) {
+        this.reloadInterval = reloadInterval;
+    }
+    
+    public void setEvictionReaperIntervalInSeconds(int evictionReaperIntervalInSeconds) {
+        this.evictionReaperIntervalInSeconds = evictionReaperIntervalInSeconds;
+    }
+    
+    public void setNumLocks(int numLocks) {
+        this.numLocks = numLocks;
+    }
+    
+    public void setMaxRetries(int maxRetries) {
+        this.maxRetries = maxRetries;
+    }
+    
     private String zookeepers = null;
     private List<String> tableNames;
     private String poolName;

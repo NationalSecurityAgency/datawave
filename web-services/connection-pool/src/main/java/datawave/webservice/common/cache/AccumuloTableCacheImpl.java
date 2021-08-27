@@ -43,18 +43,17 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
         this.accumuloTableCacheConfiguration = accumuloTableCacheConfiguration;
         setup();
     }
-
+    
     public AccumuloTableCacheImpl(AccumuloTableCacheConfiguration accumuloTableCacheConfiguration) {
         this(getThreadPoolExecutor(accumuloTableCacheConfiguration), accumuloTableCacheConfiguration);
     }
-
+    
     private static ExecutorService getThreadPoolExecutor(AccumuloTableCacheConfiguration accumuloTableCacheConfiguration) {
-        return new ThreadPoolExecutor(accumuloTableCacheConfiguration.getTableNames().size()/2,
-                accumuloTableCacheConfiguration.getTableNames().size(), 5, TimeUnit.MINUTES,
-                new LinkedBlockingDeque<>(), new NamingThreadFactory("TableCacheReloader"));
+        return new ThreadPoolExecutor(Math.max(accumuloTableCacheConfiguration.getTableNames().size() / 2, 1), Math.max(accumuloTableCacheConfiguration
+                        .getTableNames().size(), 1), 5, TimeUnit.MINUTES, new LinkedBlockingDeque<>(), new NamingThreadFactory("TableCacheReloader"));
     }
-
-    private void setup() {
+    
+    public void setup() {
         log.debug("accumuloTableCacheConfiguration was setup as: " + accumuloTableCacheConfiguration);
         
         instance = new InMemoryInstance();
