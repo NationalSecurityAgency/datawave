@@ -8,6 +8,8 @@ import java.util.concurrent.TimeUnit;
 @Validated
 public class ExecutorProperties {
     
+    // What pool this executor is handling
+    private String pool = "default";
     // Should we use the query status to track the number of generated results or poll the underlying queue size
     private boolean pollQueueSize = true;
     // A multiplier on the page size use to determine how but the pool of generated results should be.
@@ -30,6 +32,14 @@ public class ExecutorProperties {
     // The amount of time that the lock will be held before being automatically released
     @PositiveOrZero
     private long lockLeaseTimeMillis = TimeUnit.SECONDS.toMillis(30);
+    
+    public String getPool() {
+        return pool;
+    }
+    
+    public void setPool(String pool) {
+        this.pool = pool;
+    }
     
     public boolean isPollQueueSize() {
         return pollQueueSize;

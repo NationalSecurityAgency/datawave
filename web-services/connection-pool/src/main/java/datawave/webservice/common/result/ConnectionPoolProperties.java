@@ -1,38 +1,6 @@
 package datawave.webservice.common.result;
 
 public class ConnectionPoolProperties {
-    public void setUsername(String username) {
-        this.username = username;
-    }
-    
-    public void setPassword(String password) {
-        this.password = password;
-    }
-    
-    public void setInstance(String instance) {
-        this.instance = instance;
-    }
-    
-    public void setZookeepers(String zookeepers) {
-        this.zookeepers = zookeepers;
-    }
-    
-    public void setLowPriorityPoolSize(int lowPriorityPoolSize) {
-        this.lowPriorityPoolSize = lowPriorityPoolSize;
-    }
-    
-    public void setNormalPriorityPoolSize(int normalPriorityPoolSize) {
-        this.normalPriorityPoolSize = normalPriorityPoolSize;
-    }
-    
-    public void setHighPriorityPoolSize(int highPriorityPoolSize) {
-        this.highPriorityPoolSize = highPriorityPoolSize;
-    }
-    
-    public void setAdminPriorityPoolSize(int adminPriorityPoolSize) {
-        this.adminPriorityPoolSize = adminPriorityPoolSize;
-    }
-    
     protected String username;
     protected String password;
     protected String instance;
@@ -72,6 +40,38 @@ public class ConnectionPoolProperties {
     
     public int getAdminPriorityPoolSize() {
         return adminPriorityPoolSize;
+    }
+    
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    
+    public void setPassword(String password) {
+        this.password = password;
+    }
+    
+    public void setInstance(String instance) {
+        this.instance = instance;
+    }
+    
+    public void setZookeepers(String zookeepers) {
+        this.zookeepers = zookeepers;
+    }
+    
+    public void setLowPriorityPoolSize(int lowPriorityPoolSize) {
+        this.lowPriorityPoolSize = lowPriorityPoolSize;
+    }
+    
+    public void setNormalPriorityPoolSize(int normalPriorityPoolSize) {
+        this.normalPriorityPoolSize = normalPriorityPoolSize;
+    }
+    
+    public void setHighPriorityPoolSize(int highPriorityPoolSize) {
+        this.highPriorityPoolSize = highPriorityPoolSize;
+    }
+    
+    public void setAdminPriorityPoolSize(int adminPriorityPoolSize) {
+        this.adminPriorityPoolSize = adminPriorityPoolSize;
     }
     
 }

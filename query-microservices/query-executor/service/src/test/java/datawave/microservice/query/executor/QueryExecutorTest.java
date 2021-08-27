@@ -370,13 +370,13 @@ public abstract class QueryExecutorTest {
     @ComponentScan(basePackages = "datawave.microservice")
     public static class QueryExecutorTestConfiguration {
         @Bean
-        public LinkedList<RemoteQueryRequestEvent> queryRequestEvents() {
+        public LinkedList<RemoteQueryRequestEvent> testQueryRequestEvents() {
             return new LinkedList<>();
         }
         
         @Bean
         @Primary
-        public ApplicationEventPublisher publisher() {
+        public ApplicationEventPublisher testPublisher() {
             return new ApplicationEventPublisher() {
                 @Override
                 public void publishEvent(ApplicationEvent event) {
@@ -390,7 +390,7 @@ public abstract class QueryExecutorTest {
                 
                 private void saveEvent(Object event) {
                     if (event instanceof RemoteQueryRequestEvent) {
-                        queryRequestEvents().push(((RemoteQueryRequestEvent) event));
+                        testQueryRequestEvents().push(((RemoteQueryRequestEvent) event));
                     }
                 }
             };
@@ -398,13 +398,13 @@ public abstract class QueryExecutorTest {
         
         @Bean
         @Primary
-        public Connector connector() throws Exception {
+        public Connector testConnector() throws Exception {
             return accumuloSetup.loadTables(log);
         }
         
         @Bean
         @Primary
-        public AccumuloConnectionFactory connectionFactory2(Connector connector) {
+        public AccumuloConnectionFactory testConnectionFactory(Connector connector) {
             return new AccumuloConnectionFactory() {
                 
                 @Override

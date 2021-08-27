@@ -7,14 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 public class ConnectionPoolsProperties {
-    public void setDefaultPool(String defaultPool) {
-        this.defaultPool = defaultPool;
-    }
-    
-    public void setPools(Map<String,ConnectionPoolProperties> pools) {
-        this.pools = pools;
-    }
-    
     protected String defaultPool;
     protected Map<String,ConnectionPoolProperties> pools = new HashMap<>();
     
@@ -28,5 +20,13 @@ public class ConnectionPoolsProperties {
     
     public List<String> getPoolNames() {
         return Collections.unmodifiableList(new ArrayList<>(pools.keySet()));
+    }
+    
+    public void setDefaultPool(String defaultPool) {
+        this.defaultPool = defaultPool;
+    }
+    
+    public void setPools(Map<String,ConnectionPoolProperties> pools) {
+        this.pools = pools;
     }
 }

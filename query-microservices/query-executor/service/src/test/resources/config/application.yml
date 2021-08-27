@@ -108,8 +108,7 @@ datawave:
   table:
     cache:
       zookeepers: 'localhost:2181'
-      tableNames:
-      poolName: 'default'
+      poolName: "default"
       reloadInterval: 360000
       evictionReaperIntervalInSeconds: 360
       numLocks: 3
@@ -117,7 +116,7 @@ datawave:
 
   connection:
     factory:
-      defaultPool: 'none'
+      defaultPool: "none"
 
   metadata:
     all-metadata-auths:
@@ -145,6 +144,7 @@ datawave:
         - fieldName: "PAGE_TITLE"
           definedView: "LuceneUUIDEventQuery"
     executor:
+      pool: "TestPool"
       pollQueueSize: true
       availableResultsPageMultiplier: 2.5
       maxQueryStatusAge: 1000

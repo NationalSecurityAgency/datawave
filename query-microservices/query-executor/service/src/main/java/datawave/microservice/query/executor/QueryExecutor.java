@@ -124,6 +124,15 @@ public class QueryExecutor implements QueryRequestHandler {
             default: {
                 // get the query states from the cache
                 TaskStates taskStates = cache.getTaskStates(queryId);
+                
+                // validate that we got a request for the correct pool
+                if (!taskStates.getQueryKey().getQueryPool().equals(executorProperties.getPool())) {
+                    String msg = "Received a request for a query that belongs to a different pool: " + taskStates.getQueryKey().getQueryPool() + " vs "
+                                    + executorProperties.getPool();
+                    log.error(msg);
+                    throw new RuntimeException(msg);
+                }
+                
                 Map<TaskStates.TASK_STATE,Set<TaskKey>> taskStateMap = taskStates.getTaskStates();
                 TaskKey taskKey = null;
                 if (taskStateMap.containsKey(TaskStates.TASK_STATE.READY)) {
