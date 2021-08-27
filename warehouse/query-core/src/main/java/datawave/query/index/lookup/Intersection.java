@@ -60,7 +60,7 @@ import org.apache.log4j.Logger;
  *
  * <code>
  *     Simple Diagram of IndexStream stack
- *
+ * 
  *     Intersection ( you are here )
  *     - (1 or more layers of Unions, nested Unions and/or Intersections as described by the JexlNode tree)
  *     - Scanner Stream (1 per query term)
@@ -343,12 +343,12 @@ public class Intersection extends BaseIndexStream {
     
     /*
      * This method is deprecated because it is faster to seek() the underlying RangeStreamScanner than to next() through the IndexStream.
-     *
+     * 
      * Consider the arbitrary case of intersecting two streams of integers. One stream contains every integer between 1 and 100, inclusive. The second stream
      * has two values, 1 and 100. There is no point in advancing the stream with a hundred integers by calling next() 99 times when a single seek() call would
      * suffice.
-     *
-     *
+     * 
+     * 
      * Calls `next()` on all iterators that aren't mapped to the highest key in the multimap until that iterator's next value (as returned by `peek()`) is
      * greater than or equal to the previous max key.
      * 
