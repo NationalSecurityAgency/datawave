@@ -1,27 +1,17 @@
 package datawave.microservice.query.executor.config;
 
-<<<<<<< HEAD
 import datawave.microservice.config.accumulo.AccumuloProperties;
-=======
 import datawave.microservice.query.config.QueryProperties;
-import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.webservice.common.cache.AccumuloTableCache;
 import datawave.webservice.common.cache.AccumuloTableCacheConfiguration;
 import datawave.webservice.common.cache.AccumuloTableCacheImpl;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactoryImpl;
-import datawave.webservice.common.result.ConnectionPoolProperties;
 import datawave.webservice.common.result.ConnectionPoolsProperties;
->>>>>>> cf8857bc1 (Added configuration for the beans required for the query executor)
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.bus.BusProperties;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
 public class QueryExecutorConfig {
