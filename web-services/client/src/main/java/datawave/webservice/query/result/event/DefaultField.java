@@ -41,7 +41,6 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
     
     @XmlElement(name = "Markings")
     @XmlJavaTypeAdapter(StringMapAdapter.class)
-    @JsonProperty(value = "Markings")
     private HashMap<String,String> markings;
     @XmlAttribute(name = "columnVisibility")
     private String columnVisibility;
@@ -50,7 +49,6 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
     @XmlAttribute(name = "name")
     private String name;
     @XmlElement(name = "Value")
-    @JsonProperty(value = "Value")
     private TypedValue value;
     
     public DefaultField() {}
@@ -110,12 +108,10 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
         return name;
     }
     
-    @JsonProperty(value = "Value")
-    public void setValue(TypedValue value) {
+    public void setTypedValue(TypedValue value) {
         this.value = value;
     }
     
-    @JsonProperty(value = "Value")
     public TypedValue getTypedValue() {
         return this.value;
     }
