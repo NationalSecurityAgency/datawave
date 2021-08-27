@@ -10,6 +10,8 @@ import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
 import datawave.microservice.query.storage.QueryQueueManager;
+import datawave.microservice.query.storage.QueryState;
+import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.TaskKey;
@@ -94,7 +96,8 @@ public class QueryExecutor implements QueryRequestHandler {
         }
     }
     
-    private void interruptWork(String queryId) {
+    private void interruptWork(String queryId, String userDn) {
+        // interrupt any working requests
         synchronized (working) {
             for (Runnable action : working) {
                 if (((ExecutorAction) action).getTaskKey().getQueryId().equals(queryId)) {
@@ -102,8 +105,10 @@ public class QueryExecutor implements QueryRequestHandler {
                 }
             }
         }
+        // interrupt any pending connection requests
+        connectionRequestMap.cancelConnectionRequest(queryId, userDn);
     }
-    
+
     @Override
     public void handleRemoteRequest(QueryRequest queryRequest) {
         handleRemoteRequest(queryRequest, false);
@@ -112,6 +117,16 @@ public class QueryExecutor implements QueryRequestHandler {
     public void handleRemoteRequest(QueryRequest queryRequest, boolean wait) {
         final String queryId = queryRequest.getQueryId();
         final QueryRequest.Method action = queryRequest.getMethod();
+        final QueryStatus queryStatus = cache.getQueryStatus(queryId);
+
+        // validate that we got a request for the correct pool
+        if (!queryStatus.getQueryKey().getQueryPool().equals(executorProperties.getPool())) {
+            String msg = "Received a request for a query that belongs to a different pool: " + queryStatus.getQueryKey().getQueryPool() + " vs "
+                    + executorProperties.getPool();
+            log.error(msg);
+            throw new RuntimeException(msg);
+        }
+
         // A close request waits for the current page to finish
         switch (action) {
             case CLOSE:
@@ -119,19 +134,11 @@ public class QueryExecutor implements QueryRequestHandler {
                 break;
             case CANCEL:
                 removeFromWorkQueue(queryId);
-                interruptWork(queryId);
+                interruptWork(queryId, queryStatus.getQuery().getUserDN());
                 break;
             default: {
                 // get the query states from the cache
                 TaskStates taskStates = cache.getTaskStates(queryId);
-                
-                // validate that we got a request for the correct pool
-                if (!taskStates.getQueryKey().getQueryPool().equals(executorProperties.getPool())) {
-                    String msg = "Received a request for a query that belongs to a different pool: " + taskStates.getQueryKey().getQueryPool() + " vs "
-                                    + executorProperties.getPool();
-                    log.error(msg);
-                    throw new RuntimeException(msg);
-                }
                 
                 Map<TaskStates.TASK_STATE,Set<TaskKey>> taskStateMap = taskStates.getTaskStates();
                 TaskKey taskKey = null;
