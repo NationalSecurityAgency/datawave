@@ -8,6 +8,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.functions.ContentFunctions;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
@@ -392,31 +393,31 @@ public class DatawaveInterpreter extends Interpreter {
         // aggregate individual hits for the content function
         Collection<ColumnVisibility> cvs = new HashSet<>();
         Attributes source = new Attributes(true);
+        ContentFunctionsDescriptor.ContentJexlArgumentDescriptor jexlArgDescriptor = new ContentFunctionsDescriptor().getArgumentDescriptor(node);
         
-        try {
-            Set<String> values = new ContentFunctionsDescriptor().getArgumentDescriptor(node).getHitTermValues();
-            FunctionalSet<?> set = (FunctionalSet<?>) this.context.get(field);
-            if (set != null) {
-                for (ValueTuple tuple : set) {
-                    if (values.contains(tuple.getNormalizedValue())) {
-                        Attribute<?> attr = tuple.getSource();
-                        source.add(attr);
-                        cvs.add(attr.getColumnVisibility());
-                    }
+        Set<String> values = jexlArgDescriptor.getHitTermValues();
+        FunctionalSet<?> set = (FunctionalSet<?>) this.context.get(field);
+        if (set != null) {
+            for (ValueTuple tuple : set) {
+                if (values.contains(tuple.getNormalizedValue())) {
+                    Attribute<?> attr = tuple.getSource();
+                    source.add(attr);
+                    cvs.add(attr.getColumnVisibility());
                 }
             }
-            
+        }
+        
+        try {
             cv = MarkingFunctionsFactory.createMarkingFunctions().combine(cvs);
         } catch (MarkingFunctions.Exception e) {
             log.error("Failed to combine column visibilities while generating HIT_TERM for phrase function for field [" + field + "]");
             log.error("msg: ", e);
-            // set to the first column visibility if the marking functions failed
-            cv = cvs.iterator().next();
+            return;
         }
         source.setColumnVisibility(cv);
         
         // create an Attributes<?> backed ValueTuple
-        String phrase = new ContentFunctionsDescriptor().getArgumentDescriptor(node).getHitTermValue();
+        String phrase = jexlArgDescriptor.getHitTermValue();
         
         ValueTuple vt = new ValueTuple(field, phrase, phrase, source);
         hitListArithmetic.add(vt);
