@@ -2,10 +2,28 @@ package datawave.query.language.parser.jexl;
 
 import com.google.common.collect.Sets;
 import datawave.query.language.parser.ParseException;
+import datawave.query.language.processor.lucene.CustomAnalyzerQueryNodeProcessor;
+import datawave.query.language.processor.lucene.CustomFieldLimiterNodeProcessor;
+import datawave.query.language.processor.lucene.CustomWildcardQueryNodeProcessor;
+import datawave.query.language.processor.lucene.QueryNodeProcessorFactory;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
 import datawave.query.Constants;
 
+import org.apache.lucene.queryparser.flexible.core.config.QueryConfigHandler;
+import org.apache.lucene.queryparser.flexible.core.processors.NoChildOptimizationQueryNodeProcessor;
+import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
+import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessorPipeline;
+import org.apache.lucene.queryparser.flexible.core.processors.RemoveDeletedQueryNodesProcessor;
+import org.apache.lucene.queryparser.flexible.standard.processors.AllowLeadingWildcardProcessor;
+import org.apache.lucene.queryparser.flexible.standard.processors.BooleanSingleChildOptimizationQueryNodeProcessor;
+import org.apache.lucene.queryparser.flexible.standard.processors.DefaultPhraseSlopQueryNodeProcessor;
+import org.apache.lucene.queryparser.flexible.standard.processors.FuzzyQueryNodeProcessor;
+import org.apache.lucene.queryparser.flexible.standard.processors.MatchAllDocsQueryNodeProcessor;
+import org.apache.lucene.queryparser.flexible.standard.processors.MultiFieldQueryNodeProcessor;
+import org.apache.lucene.queryparser.flexible.standard.processors.MultiTermRewriteMethodProcessor;
+import org.apache.lucene.queryparser.flexible.standard.processors.RemoveEmptyNonLeafQueryNodeProcessor;
+import org.apache.lucene.queryparser.flexible.standard.processors.TermRangeQueryNodeProcessor;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -582,4 +600,21 @@ public class TestLuceneToJexlQueryParser {
         assertTrue(exception.getMessage().contains(
                         "unique_by_minute does not support the advanced unique syntax, only a simple comma-delimited list of fields is allowed"));
     }
+    private static class TestQueryNodeProcessorFactory extends QueryNodeProcessorFactory {
+        @Override
+        public QueryNodeProcessor create(QueryConfigHandler configHandler) {
+            return new QueryNodeProcessorPipeline(configHandler);
+        }
+    }
+    
+    @Test
+    public void testCustomQueryNodeProcessor() throws ParseException {
+        String query = "TOKFIELD:\"quick wi-fi fox\"";
+        Assert.assertEquals(
+                        "(content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi-fi', 'fox') || content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi', 'fi', 'fox'))",
+                        parseQuery(query));
+        parser.setQueryNodeProcessorFactory(new TestQueryNodeProcessorFactory());
+        Assert.assertEquals("content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi-fi', 'fox')", parseQuery(query));
+    }
+    
 }

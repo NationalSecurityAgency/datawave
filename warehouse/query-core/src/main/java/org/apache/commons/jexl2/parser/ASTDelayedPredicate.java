@@ -44,10 +44,18 @@ public class ASTDelayedPredicate extends QueryPropertyMarker {
     }
     
     /**
+     * Wrap the provided node in an ASTDelayedPredicate
+     * 
      * @param node
-     * @return
+     *            the node to delay
+     * @return an ASTDelayedPredicate
      */
-    public static ASTDelayedPredicate create(JexlNode node) {
+    public static JexlNode create(JexlNode node) {
+        
+        // Do not delay if this subtree is already delayed
+        if (instanceOf(node, ASTDelayedPredicate.class) || ASTDelayedPredicate.isSubTreeAlreadyDelayed(node)) {
+            return node;
+        }
         
         JexlNode parent = node.jjtGetParent();
         
@@ -58,6 +66,31 @@ public class ASTDelayedPredicate extends QueryPropertyMarker {
         }
         
         return expr;
+    }
+    
+    /**
+     * Recursively ascend the tree looking for an instance of an ASTDelayedPredicate intersected with a parent
+     * 
+     * @param node
+     *            the node to check
+     * @return true if this node is delayed, or if a parent node is delayed
+     */
+    public static boolean isSubTreeAlreadyDelayed(JexlNode node) {
+        if (node instanceof ASTAndNode && node.jjtGetNumChildren() == 2) {
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                JexlNode child = node.jjtGetChild(i);
+                // Do not check the current node
+                if (child != node && instanceOf(child, ASTDelayedPredicate.class)) {
+                    return true;
+                }
+            }
+        }
+        
+        if (node.jjtGetParent() == null) {
+            return false;
+        } else {
+            return isSubTreeAlreadyDelayed(node.jjtGetParent());
+        }
     }
     
     /**
