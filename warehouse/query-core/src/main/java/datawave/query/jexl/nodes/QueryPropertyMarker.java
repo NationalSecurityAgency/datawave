@@ -58,7 +58,7 @@ public abstract class QueryPropertyMarker extends ASTReference {
     
     /**
      * Returns a new instance of a query property marker with the specified source. This node's will be built around the provided source with the resulting
-     * expression <code>(({markerClassName} = true) && ({source}))</code> with the following structure:
+     * expression <code>(({markerClassName} = true) &amp;&amp; ({source}))</code> with the following structure:
      *
      * <pre>
      * Reference
