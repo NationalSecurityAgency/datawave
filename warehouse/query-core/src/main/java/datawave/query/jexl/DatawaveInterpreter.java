@@ -2,12 +2,19 @@ package datawave.query.jexl;
 
 import com.google.common.collect.Maps;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
+import datawave.marking.MarkingFunctions;
+import datawave.marking.MarkingFunctionsFactory;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.functions.ContentFunctions;
+import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl2.Interpreter;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.JexlEngine;
@@ -95,6 +102,17 @@ public class DatawaveInterpreter extends Interpreter {
         }
         
         result = super.visit(node, data);
+        
+        // special handling for phrase functions and HIT_TERMs
+        if (nodeString.startsWith("content:phrase")) {
+            addHitsForFunction(result, node);
+        }
+        
+        // If a content:phrase returned a collection translate that to a true or a false
+        if (nodeString.startsWith("content:phrase") && result instanceof Collection) {
+            Collection<String> hitFields = (Collection<String>) result;
+            result = hitFields.isEmpty() ? Boolean.FALSE : Boolean.TRUE;
+        }
         
         addHits(result);
         
@@ -339,6 +357,71 @@ public class DatawaveInterpreter extends Interpreter {
                 hitListArithmetic.add((ValueTuple) fieldValue);
             }
         }
+    }
+    
+    /**
+     * Wrapper method for adding fielded phrases to the HIT_TERM
+     * 
+     * @param o
+     *            a collection of fields that hit for this function
+     * @param node
+     *            an ASTFunctionNode
+     */
+    private void addHitsForFunction(Object o, ASTFunctionNode node) {
+        if (this.arithmetic instanceof HitListArithmetic && o != null) {
+            HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;
+            if (o instanceof Set<?>) {
+                Set<String> hitFields = (Set<String>) o;
+                for (String hitField : hitFields) {
+                    addHitsForFunction(hitField, node, hitListArithmetic);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Add a fielded phrase to the HIT_TERM
+     *
+     * @param field
+     *            the phrase function hit on this field
+     * @param node
+     *            an ASTFunctionNode
+     * @param hitListArithmetic
+     *            a JexlArithmetic that supports hit lists
+     */
+    private void addHitsForFunction(String field, ASTFunctionNode node, HitListArithmetic hitListArithmetic) {
+        ColumnVisibility cv;
+        // aggregate individual hits for the content function
+        Collection<ColumnVisibility> cvs = new HashSet<>();
+        Attributes source = new Attributes(true);
+        ContentFunctionsDescriptor.ContentJexlArgumentDescriptor jexlArgDescriptor = new ContentFunctionsDescriptor().getArgumentDescriptor(node);
+        
+        Set<String> values = jexlArgDescriptor.getHitTermValues();
+        FunctionalSet<?> set = (FunctionalSet<?>) this.context.get(field);
+        if (set != null) {
+            for (ValueTuple tuple : set) {
+                if (values.contains(tuple.getNormalizedValue())) {
+                    Attribute<?> attr = tuple.getSource();
+                    source.add(attr);
+                    cvs.add(attr.getColumnVisibility());
+                }
+            }
+        }
+        
+        try {
+            cv = MarkingFunctionsFactory.createMarkingFunctions().combine(cvs);
+        } catch (MarkingFunctions.Exception e) {
+            log.error("Failed to combine column visibilities while generating HIT_TERM for phrase function for field [" + field + "]");
+            log.error("msg: ", e);
+            return;
+        }
+        source.setColumnVisibility(cv);
+        
+        // create an Attributes<?> backed ValueTuple
+        String phrase = jexlArgDescriptor.getHitTermValue();
+        
+        ValueTuple vt = new ValueTuple(field, phrase, phrase, source);
+        hitListArithmetic.add(vt);
     }
     
     public Object visit(ASTAndNode node, Object data) {
