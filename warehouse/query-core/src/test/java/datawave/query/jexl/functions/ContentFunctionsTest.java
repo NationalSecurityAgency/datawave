@@ -1562,11 +1562,11 @@ public class ContentFunctionsTest {
         
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertEquals(Boolean.FALSE, ContentFunctions.phrase("BODY", termList, terms));
+        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termList, terms));
         
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come"};
-        Assert.assertEquals(Boolean.FALSE, ContentFunctions.phrase("BODY", termList, terms));
+        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termList, terms));
         
         // subset(1, end)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
@@ -1586,7 +1586,7 @@ public class ContentFunctionsTest {
         
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertEquals(Boolean.FALSE, ContentFunctions.within("BODY", 15, termList, terms));
+        Assert.assertEquals(Collections.emptySet(), ContentFunctions.within("BODY", 15, termList, terms));
         
         // placement does not matter
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come"};
@@ -1644,7 +1644,7 @@ public class ContentFunctionsTest {
         
         // The only match, [19, 20], is in ZONE2.
         // Thus, evaluating ZONE1 should return false here (see #1171)...
-        Assert.assertEquals(Boolean.FALSE, ContentFunctions.phrase(zone1.getZone(), termList, terms));
+        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase(zone1.getZone(), termList, terms));
         
         // Ensure that we do get the hit if we evaluate the other zone
         Assert.assertEquals(Collections.singleton(zone2.getZone()), ContentFunctions.phrase(zone2.getZone(), termList, terms));

@@ -2,6 +2,7 @@ package datawave.query.jexl.functions;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -145,9 +146,9 @@ public abstract class ContentFunctionEvaluator {
     /**
      * Evaluate whether there is an unordered set of terms that are within the defined distance.
      * 
-     * @return the field that hit if found, boolean false otherwise
+     * @return a collection of fields that satisfied the function, or en empty collection if no field hit
      */
-    public Object evaluate() {
+    public Collection<String> evaluate() {
         if (computable()) {
             
             Set<String> hitFields = new HashSet<>();
@@ -234,7 +235,7 @@ public abstract class ContentFunctionEvaluator {
             }
         }
         
-        return Boolean.FALSE;
+        return Collections.emptySet();
     }
     
     @Override

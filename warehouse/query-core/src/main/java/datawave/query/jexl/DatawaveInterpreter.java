@@ -108,11 +108,12 @@ public class DatawaveInterpreter extends Interpreter {
             addHitsForFunction(result, node);
         }
         
-        // If the evaluation was returned a set of fields, set result to true. This allows content:adjacent and
-        // content:within functions to still operate as expected
-        if (nodeString.startsWith("content") && !(result instanceof Boolean)) {
-            result = Boolean.TRUE;
+        // If a content:phrase returned a collection translate that to a true or a false
+        if (nodeString.startsWith("content:phrase") && result instanceof Collection) {
+            Collection<String> hitFields = (Collection<String>) result;
+            result = hitFields.isEmpty() ? Boolean.FALSE : Boolean.TRUE;
         }
+        
         addHits(result);
         
         // if the function stands alone, then it needs to return ag boolean
