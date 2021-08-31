@@ -7,7 +7,6 @@ import datawave.interceptor.ResponseInterceptor;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.common.cache.AccumuloTableCache;
-import datawave.webservice.common.cache.AccumuloTableCacheBean;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NotFoundException;
@@ -101,7 +100,7 @@ public class ModelBean {
     private AccumuloConnectionFactory connectionFactory;
     
     @EJB
-    private AccumuloTableCacheBean cache;
+    private AccumuloTableCache cache;
     
     @Resource
     private EJBContext ctx;
