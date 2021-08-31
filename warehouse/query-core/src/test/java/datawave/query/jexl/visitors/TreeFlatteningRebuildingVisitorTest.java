@@ -144,13 +144,6 @@ public class TreeFlatteningRebuildingVisitorTest {
     }
     
     @Test
-    public void testFlattenBoundedRange() throws ParseException {
-        String query = "((_Bounded_ = true) && (NUM_FIELD >= '0' && NUM_FIELD < '50'))";
-        String expected = "((_Bounded_ = true) && NUM_FIELD >= '0' && NUM_FIELD < '50')";
-        assertResult(expected, query);
-    }
-    
-    @Test
     public void depthNoStackTraceOrTest() throws Exception {
         final int numTerms = 10000;
         final StringBuilder sb = new StringBuilder(13 * numTerms); // 13 == "abc_" + 5 + " OR "

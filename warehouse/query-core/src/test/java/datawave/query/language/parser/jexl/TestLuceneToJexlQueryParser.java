@@ -600,6 +600,7 @@ public class TestLuceneToJexlQueryParser {
         assertTrue(exception.getMessage().contains(
                         "unique_by_minute does not support the advanced unique syntax, only a simple comma-delimited list of fields is allowed"));
     }
+    
     private static class TestQueryNodeProcessorFactory extends QueryNodeProcessorFactory {
         @Override
         public QueryNodeProcessor create(QueryConfigHandler configHandler) {
