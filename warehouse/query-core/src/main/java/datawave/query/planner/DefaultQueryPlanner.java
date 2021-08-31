@@ -1248,9 +1248,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
                                 config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
                 queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
-                
-                // regex expansion picks up an extra set of parens, so quickly fix that here
-                queryTree = (ASTJexlScript) TreeFlatteningRebuildingVisitor.flatten(queryTree);
                 if (log.isDebugEnabled()) {
                     logQuery(queryTree, "Query after expanding regex:");
                 }
