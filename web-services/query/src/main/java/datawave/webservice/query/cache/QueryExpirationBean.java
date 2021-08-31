@@ -68,7 +68,7 @@ public class QueryExpirationBean {
         }
         
         if (conf == null) {
-            throw new IllegalArgumentException("QueryExpirationConfiguration is null");
+            throw new IllegalArgumentException("QueryExpirationProperties is null");
         }
     }
     
