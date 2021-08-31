@@ -237,6 +237,7 @@ public class BaseVisitor implements ParserVisitor {
     
     @Override
     public Object visit(ASTNotNode node, Object data) {
+        
         node.childrenAccept(this, data);
         return data;
     }
