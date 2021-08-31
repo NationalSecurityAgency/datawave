@@ -21,6 +21,7 @@ import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.annotation.security.RunAs;
+import javax.ejb.EJB;
 import javax.ejb.EJBContext;
 import javax.ejb.Local;
 import javax.ejb.LocalBean;
@@ -66,7 +67,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     @Resource
     private EJBContext context;
     
-    @Inject
+    @EJB
     private AccumuloTableCache cache;
     
     @Inject
