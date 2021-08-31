@@ -108,7 +108,7 @@ public class QueryExecutor implements QueryRequestHandler {
         // interrupt any pending connection requests
         connectionRequestMap.cancelConnectionRequest(queryId, userDn);
     }
-
+    
     @Override
     public void handleRemoteRequest(QueryRequest queryRequest) {
         handleRemoteRequest(queryRequest, false);
@@ -118,15 +118,15 @@ public class QueryExecutor implements QueryRequestHandler {
         final String queryId = queryRequest.getQueryId();
         final QueryRequest.Method action = queryRequest.getMethod();
         final QueryStatus queryStatus = cache.getQueryStatus(queryId);
-
+        
         // validate that we got a request for the correct pool
         if (!queryStatus.getQueryKey().getQueryPool().equals(executorProperties.getPool())) {
             String msg = "Received a request for a query that belongs to a different pool: " + queryStatus.getQueryKey().getQueryPool() + " vs "
-                    + executorProperties.getPool();
+                            + executorProperties.getPool();
             log.error(msg);
             throw new RuntimeException(msg);
         }
-
+        
         // A close request waits for the current page to finish
         switch (action) {
             case CLOSE:
