@@ -190,7 +190,7 @@ public class JexlNodeFactory {
                         childNode.jjtSetParent(wrappedChildNode);
                         
                         parentNode.jjtAddChild(wrappedChildNode, parentNodeChildCount);
-                        childNode.jjtSetParent(childNode);
+                        wrappedChildNode.jjtSetParent(parentNode);
                         
                         parentNodeChildCount++;
                     }
@@ -225,7 +225,7 @@ public class JexlNodeFactory {
                     childNode.jjtSetParent(wrappedChildNode);
                     
                     parentNode.jjtAddChild(wrappedChildNode, parentNodeChildCount);
-                    childNode.jjtSetParent(childNode);
+                    wrappedChildNode.jjtSetParent(parentNode);
                     
                     parentNodeChildCount++;
                 }
@@ -241,9 +241,7 @@ public class JexlNodeFactory {
                 JexlNodes.promote(parentNode, child);
                 return child;
             default:
-                JexlNode wrappedParentNode = wrap(parentNode);
-                parentNode.jjtSetParent(wrappedParentNode);
-                return wrappedParentNode;
+                return wrap(parentNode);
         }
     }
     

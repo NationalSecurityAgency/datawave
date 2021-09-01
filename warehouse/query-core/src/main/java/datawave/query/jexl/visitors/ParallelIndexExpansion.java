@@ -182,17 +182,20 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                             // Only add that node if it actually has children
                             if (0 < newChild.jjtGetNumChildren()) {
                                 node.jjtAddChild(newChild, newIndex);
+                                newChild.jjtSetParent(node);
                                 newIndex++;
                             }
                         } else {
                             // Otherwise, we want to add the child regardless
                             node.jjtAddChild(newChild, newIndex);
+                            newChild.jjtSetParent(node);
                             newIndex++;
                         }
                     }
                 } else {
                     // Otherwise, we want to add the child regardless
                     node.jjtAddChild(newChild, newIndex);
+                    newChild.jjtSetParent(node);
                     newIndex++;
                 }
                 
@@ -795,7 +798,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             if (parentNode != null) {
                 // rewrite the parent node at id
                 parentNode.jjtAddChild(newNode, id);
-                
+                newNode.jjtSetParent(parentNode);
             }
             
             return newNode;

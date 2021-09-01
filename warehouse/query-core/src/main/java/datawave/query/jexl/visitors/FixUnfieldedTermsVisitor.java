@@ -206,21 +206,23 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
                         // Only add that node if it actually has children
                         if (0 < newChild.jjtGetNumChildren()) {
                             newNode.jjtAddChild(newChild, newIndex);
+                            newChild.jjtSetParent(newNode);
                             newIndex++;
                         }
                     } else {
                         // Otherwise, we want to add the child regardless
                         newNode.jjtAddChild(newChild, newIndex);
+                        newChild.jjtSetParent(newNode);
                         newIndex++;
                     }
                 }
             } else {
                 
                 newNode.jjtAddChild(node.jjtGetChild(i), newIndex);
+                node.jjtSetParent(newNode);
                 newIndex++;
             }
         }
-        
     }
     
     @Override
