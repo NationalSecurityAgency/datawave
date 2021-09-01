@@ -32,8 +32,8 @@ public class QueryController {
     @Timed(name = "dw.query.listQueryLogic", absolute = true)
     @RequestMapping(path = "listQueryLogic", method = {RequestMethod.GET},
                     produces = {"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})
-    public QueryLogicResponse listQueryLogic() {
-        return queryManagementService.listQueryLogic();
+    public QueryLogicResponse listQueryLogic(@AuthenticationPrincipal ProxiedUserDetails currentUser) {
+        return queryManagementService.listQueryLogic(currentUser);
     }
     
     @Timed(name = "dw.query.defineQuery", absolute = true)

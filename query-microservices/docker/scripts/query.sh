@@ -65,8 +65,9 @@ cd $FOLDER
 
 SYSTEM_FROM=$(hostname)
 
+echo "$(date): Creating query"
 echo "$(date): Creating query" > querySummary.txt
-curl -D headers_0.txt -k -E ${TMP_PEM} \
+curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
     --data-urlencode "begin=20200101 000000.000" \
     --data-urlencode "end=20210101 000000.000" \
@@ -85,8 +86,9 @@ i=1
 QUERY_ID=$(get_query_id < createResponse.txt)
 
 while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
+    echo "$(date): Requesting page $i for $QUERY_ID"
     echo "$(date): Requesting page $i for $QUERY_ID" >> querySummary.txt
-    curl -D headers_$i.txt -q -k -E ${TMP_PEM} \
+    curl -s -D headers_$i.txt -q -k -E ${TMP_PEM} \
         -H "Accept: application/xml" \
         ${DATAWAVE_ENDPOINT}/$QUERY_ID/next -o nextResponse_$i.txt
 
@@ -99,18 +101,20 @@ while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
     fi
 done
 
+echo "$(date): Closing $QUERY_ID"
 # close the query
-curl -q -k -X POST -E ${TMP_PEM} \
+curl -s -q -k -X POST -E ${TMP_PEM} \
     -H "Accept: application/xml" \
     ${DATAWAVE_ENDPOINT}/$QUERY_ID/close -o closeResponse.txt
-
-# grab the metrics
-curl -k -E ${TMP_PEM} \
-    -H "Accept: application/xml" \
-    ${METRICS_ENDPOINT}/id/$QUERY_ID > queryMetrics.html
 
 cd ../
 
 if [ ! -z "$QUERY_ID" ]; then
     mv $FOLDER query_$QUERY_ID
 fi
+
+echo "$(date): Getting metrics for $QUERY_ID"
+# grab the metrics
+curl -s -k -E ${TMP_PEM} \
+    -H "Accept: application/xml" \
+    ${METRICS_ENDPOINT}/id/$QUERY_ID > query_$QUERY_ID/queryMetrics.html

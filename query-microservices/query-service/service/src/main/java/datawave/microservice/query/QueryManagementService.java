@@ -142,7 +142,9 @@ public class QueryManagementService implements QueryRequestHandler {
      *
      * @return the query logic descriptions
      */
-    public QueryLogicResponse listQueryLogic() {
+    public QueryLogicResponse listQueryLogic(ProxiedUserDetails currentUser) {
+        log.info("Request: listQueryLogic from {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        
         QueryLogicResponse response = new QueryLogicResponse();
         List<QueryLogic<?>> queryLogicList = queryLogicFactory.getQueryLogicList();
         List<QueryLogicDescription> logicConfigurationList = new ArrayList<>();
@@ -181,7 +183,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 try {
                     logicDesc.setResponseClass(queryLogic.getResponseClass(q));
                 } catch (QueryException e) {
-                    log.error("Unable to get response class for query logic: " + queryLogic.getLogicName(), e);
+                    log.error("Unable to get response class for query logic: {}", queryLogic.getLogicName(), e);
                     response.addException(e);
                     logicDesc.setResponseClass("unknown");
                 }
@@ -196,7 +198,7 @@ public class QueryManagementService implements QueryRequestHandler {
                             querySyntax.add(o.toString());
                     }
                 } catch (Exception e) {
-                    log.warn("Unable to get query syntax for query logic: " + queryLogic.getClass().getCanonicalName());
+                    log.warn("Unable to get query syntax for query logic: {}", queryLogic.getClass().getCanonicalName());
                 }
                 if (querySyntax.isEmpty()) {
                     querySyntax.add("CUSTOM");
@@ -246,6 +248,13 @@ public class QueryManagementService implements QueryRequestHandler {
      */
     public GenericResponse<String> define(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws QueryException {
+        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        if (log.isDebugEnabled()) {
+            log.info("Request: {}/define from {} with params: {}", queryLogicName, user, parameters);
+        } else {
+            log.info("Request: {}/define from {}", queryLogicName, user);
+        }
+        
         try {
             TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, false);
             GenericResponse<String> response = new GenericResponse<>();
@@ -295,6 +304,13 @@ public class QueryManagementService implements QueryRequestHandler {
      */
     public GenericResponse<String> create(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws QueryException {
+        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        if (log.isDebugEnabled()) {
+            log.info("Request: {}/create from {} with params: {}", queryLogicName, user, parameters);
+        } else {
+            log.info("Request: {}/create from {}", queryLogicName, user);
+        }
+        
         try {
             TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, true);
             GenericResponse<String> response = new GenericResponse<>();
@@ -353,7 +369,7 @@ public class QueryManagementService implements QueryRequestHandler {
         QueryLogic<?> queryLogic = validateQuery(queryLogicName, parameters, currentUser);
         
         String userId = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
-        log.trace(userId + " has authorizations " + currentUser.getPrimaryUser().getAuths());
+        log.trace("{} has authorizations {}", userId, currentUser.getPrimaryUser().getAuths());
         
         // set some audit parameters which are used internally
         String userDn = currentUser.getPrimaryUser().getDn().subjectDN();
@@ -454,6 +470,13 @@ public class QueryManagementService implements QueryRequestHandler {
      */
     public BaseQueryResponse createAndNext(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws QueryException {
+        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        if (log.isDebugEnabled()) {
+            log.info("Request: {}/createAndNext from {} with params: {}", queryLogicName, user, parameters);
+        } else {
+            log.info("Request: {}/createAndNext from {}", queryLogicName, user);
+        }
+        
         String queryId = null;
         try {
             queryId = create(queryLogicName, parameters, currentUser).getResult();
@@ -463,7 +486,7 @@ public class QueryManagementService implements QueryRequestHandler {
             // DefaultEventQueryResponse.
             QueryException qe;
             if (!(e instanceof QueryException)) {
-                log.error("Unknown error calling create and next. " + queryId, e);
+                log.error("Unknown error calling create and next. {}", queryId, e);
                 qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error calling create and next. " + queryId);
             } else {
                 qe = (QueryException) e;
@@ -513,6 +536,8 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public BaseQueryResponse next(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        log.info("Request: next from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId);
+        
         try {
             // make sure the query is valid, and the user can act on it
             QueryStatus queryStatus = validateRequest(queryId, currentUser);
@@ -528,7 +553,7 @@ public class QueryManagementService implements QueryRequestHandler {
             // DefaultEventQueryResponse.
             QueryException qe;
             if (!(e instanceof QueryException)) {
-                log.error("Unknown error getting next page for query " + queryId, e);
+                log.error("Unknown error getting next page for query {}", queryId, e);
                 qe = new QueryException(DatawaveErrorCode.QUERY_NEXT_ERROR, e, "Unknown error getting next page for query " + queryId);
             } else {
                 qe = (QueryException) e;
@@ -680,6 +705,8 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public VoidResponse cancel(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        log.info("Request: cancel from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId);
+        
         return cancel(queryId, currentUser, false);
     }
     
@@ -707,7 +734,8 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public VoidResponse adminCancel(String queryId, ProxiedUserDetails currentUser) throws QueryException {
-        log.info("Cancel '" + queryId + "'called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: adminCancel from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId);
+        
         return cancel(queryId, currentUser, true);
     }
     
@@ -732,7 +760,8 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public VoidResponse adminCancelAll(ProxiedUserDetails currentUser) throws QueryException {
-        log.info("Cancel All called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: adminCancelAll from {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        
         try {
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
             queryStatuses.removeIf(s -> s.getQueryState() != CREATED);
@@ -799,7 +828,7 @@ public class QueryManagementService implements QueryRequestHandler {
             throw e;
         } catch (Exception e) {
             QueryException queryException = new QueryException(DatawaveErrorCode.CANCELLATION_ERROR, e, "Unknown error canceling query " + queryId);
-            log.error("Unknown error canceling query " + queryId, queryException);
+            log.error("Unknown error canceling query {}", queryId, queryException);
             throw queryException;
         }
     }
@@ -861,7 +890,7 @@ public class QueryManagementService implements QueryRequestHandler {
                                 .build());
                 // @formatter:on
             } catch (Exception e) {
-                log.error("Error updateing query metric", e);
+                log.error("Error updating query metric", e);
             }
         }
     }
@@ -892,6 +921,8 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public VoidResponse close(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        log.info("Request: close from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId);
+        
         return close(queryId, currentUser, false);
     }
     
@@ -919,7 +950,8 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public VoidResponse adminClose(String queryId, ProxiedUserDetails currentUser) throws QueryException {
-        log.info("Close '" + queryId + "'called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: adminClose from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId);
+        
         return close(queryId, currentUser, true);
     }
     
@@ -944,7 +976,8 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public VoidResponse adminCloseAll(ProxiedUserDetails currentUser) throws QueryException {
-        log.info("Close All called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: adminCloseAll from {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        
         try {
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
             queryStatuses.removeIf(s -> s.getQueryState() != CREATED);
@@ -1009,7 +1042,7 @@ public class QueryManagementService implements QueryRequestHandler {
             throw e;
         } catch (Exception e) {
             QueryException queryException = new QueryException(DatawaveErrorCode.QUERY_CLOSE_ERROR, e, "Unknown error closing query " + queryId);
-            log.error("Unknown error closing query " + queryId, queryException);
+            log.error("Unknown error closing query {}", queryId, queryException);
             throw queryException;
         }
     }
@@ -1097,6 +1130,8 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public GenericResponse<String> reset(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        log.info("Request: reset from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId);
+        
         try {
             // make sure the query is valid, and the user can act on it
             QueryStatus queryStatus = validateRequest(queryId, currentUser);
@@ -1117,7 +1152,7 @@ public class QueryManagementService implements QueryRequestHandler {
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Unknown error resetting query " + queryId, e);
+            log.error("Unknown error resetting query {}", queryId, e);
             throw new QueryException(DatawaveErrorCode.QUERY_RESET_ERROR, e, "Unknown error resetting query " + queryId);
         }
     }
@@ -1143,6 +1178,8 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public VoidResponse remove(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        log.info("Request: remove from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId);
+        
         return remove(queryId, currentUser, false);
     }
     
@@ -1165,7 +1202,8 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public VoidResponse adminRemove(String queryId, ProxiedUserDetails currentUser) throws QueryException {
-        log.info("Remove '" + queryId + "'called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: adminRemove from {} for {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId);
+        
         return remove(queryId, currentUser, true);
     }
     
@@ -1185,7 +1223,8 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public VoidResponse adminRemoveAll(ProxiedUserDetails currentUser) throws QueryException {
-        log.info("Remove All called by admin: " + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: adminRemoveAll from {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        
         try {
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
             queryStatuses.removeIf(QueryStatus::isRunning);
@@ -1246,7 +1285,7 @@ public class QueryManagementService implements QueryRequestHandler {
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Unknown error removing query " + queryId, e);
+            log.error("Unknown error removing query {}", queryId, e);
             throw new QueryException(DatawaveErrorCode.QUERY_REMOVAL_ERROR, e, "Unknown error removing query " + queryId);
         }
     }
@@ -1301,6 +1340,13 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public GenericResponse<String> update(String queryId, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
+        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        if (log.isDebugEnabled()) {
+            log.info("Request: {}/update from {} with params: {}", queryId, user, parameters);
+        } else {
+            log.info("Request: {}/update from {}", queryId, user);
+        }
+        
         try {
             // make sure the query is valid, and the user can act on it
             QueryStatus queryStatus = validateRequest(queryId, currentUser);
@@ -1370,7 +1416,7 @@ public class QueryManagementService implements QueryRequestHandler {
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Unknown error updating query " + queryId, e);
+            log.error("Unknown error updating query {}", queryId, e);
             throw new QueryException(DatawaveErrorCode.QUERY_UPDATE_ERROR, e, "Unknown error updating query " + queryId);
         }
     }
@@ -1413,6 +1459,13 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public GenericResponse<String> duplicate(String queryId, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
+        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        if (log.isDebugEnabled()) {
+            log.info("Request: {}/duplicate from {} with params: {}", queryId, user, parameters);
+        } else {
+            log.info("Request: {}/duplicate from {}", queryId, user);
+        }
+        
         try {
             // make sure the query is valid, and the user can act on it
             QueryStatus queryStatus = validateRequest(queryId, currentUser);
@@ -1428,7 +1481,7 @@ public class QueryManagementService implements QueryRequestHandler {
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Unknown error duplicating query " + queryId, e);
+            log.error("Unknown error duplicating query {}", queryId, e);
             throw new QueryException(DatawaveErrorCode.QUERY_DUPLICATION_ERROR, e, "Unknown error duplicating query " + queryId);
         }
     }
@@ -1535,6 +1588,9 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public QueryImplListResponse list(String queryId, String queryName, ProxiedUserDetails currentUser) throws QueryException {
+        log.info("Request: list from {} for queryId: {}, queryName: {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId,
+                        queryName);
+        
         return list(queryId, queryName, ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getDn().subjectDN()));
     }
     
@@ -1557,8 +1613,9 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if there is an unknown error
      */
     public QueryImplListResponse adminList(String queryId, String queryName, String userId, ProxiedUserDetails currentUser) throws QueryException {
-        log.info("List '" + String.join(",", Arrays.asList(queryId, queryName, userId)) + "'called by admin: "
-                        + ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()));
+        log.info("Request: adminList from {} for queryId: {}, queryName: {}, userId: {}",
+                        ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId, queryName, userId);
+        
         return list(queryId, queryName, userId);
     }
     
@@ -1598,7 +1655,7 @@ public class QueryManagementService implements QueryRequestHandler {
             response.setQuery(queries);
             return response;
         } catch (Exception e) {
-            log.error("Unknown error listing queries for " + userId, e);
+            log.error("Unknown error listing queries for {}", userId, e);
             throw new QueryException(DatawaveErrorCode.QUERY_LISTING_ERROR, e, "Unknown error listing queries for " + userId);
         }
     }
@@ -1662,7 +1719,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 log.debug("No handling specified for remote query request method: {}", queryRequest.getMethod());
             }
         } catch (Exception e) {
-            log.error("Unknown error handling remote request:" + queryRequest);
+            log.error("Unknown error handling remote request: {}", queryRequest);
         }
     }
     
@@ -1917,7 +1974,7 @@ public class QueryManagementService implements QueryRequestHandler {
         // The pageSize and expirationDate checks will always be false when called from the RemoteQueryExecutor.
         // Leaving for now until we can test to ensure that is always the case.
         if (queryParameters.getPagesize() <= 0) {
-            log.error("Invalid page size: " + queryParameters.getPagesize());
+            log.error("Invalid page size: {}", queryParameters.getPagesize());
             throw new BadRequestQueryException(DatawaveErrorCode.INVALID_PAGE_SIZE);
         }
         
@@ -1925,14 +1982,14 @@ public class QueryManagementService implements QueryRequestHandler {
         long pageMaxTimeoutMillis = queryProperties.getExpiration().getPageMaxTimeoutMillis();
         long pageTimeoutMillis = TimeUnit.MINUTES.toMillis(queryParameters.getPageTimeout());
         if (queryParameters.getPageTimeout() != -1 && (pageTimeoutMillis < pageMinTimeoutMillis || pageTimeoutMillis > pageMaxTimeoutMillis)) {
-            log.error("Invalid page timeout: " + queryParameters.getPageTimeout());
+            log.error("Invalid page timeout: {}", queryParameters.getPageTimeout());
             throw new BadRequestQueryException(DatawaveErrorCode.INVALID_PAGE_TIMEOUT);
         }
         
         // Ensure begin date does not occur after the end date (if dates are not null)
         if ((queryParameters.getBeginDate() != null && queryParameters.getEndDate() != null)
                         && queryParameters.getBeginDate().after(queryParameters.getEndDate())) {
-            log.error("Invalid begin and/or end date: " + queryParameters.getBeginDate() + " - " + queryParameters.getEndDate());
+            log.error("Invalid begin and/or end date: {}", queryParameters.getBeginDate() + " - " + queryParameters.getEndDate());
             throw new BadRequestQueryException(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE);
         }
     }
@@ -1957,7 +2014,7 @@ public class QueryManagementService implements QueryRequestHandler {
         try {
             return queryLogicFactory.getQueryLogic(queryLogicName, currentUser.getPrimaryUser().getRoles());
         } catch (Exception e) {
-            log.error("Failed to get query logic for " + queryLogicName, e);
+            log.error("Failed to get query logic for {}", queryLogicName, e);
             throw new BadRequestQueryException(DatawaveErrorCode.QUERY_LOGIC_ERROR, e);
         }
     }
@@ -1993,7 +2050,7 @@ public class QueryManagementService implements QueryRequestHandler {
         
         // always check against the max
         if (queryLogic.getMaxPageSize() > 0 && queryParameters.getPagesize() > queryLogic.getMaxPageSize()) {
-            log.error("Invalid page size: " + queryParameters.getPagesize() + " vs " + queryLogic.getMaxPageSize());
+            log.error("Invalid page size: {} vs {}", queryParameters.getPagesize(), queryLogic.getMaxPageSize());
             throw new BadRequestQueryException(DatawaveErrorCode.PAGE_SIZE_TOO_LARGE, MessageFormat.format("Max = {0}.", queryLogic.getMaxPageSize()));
         }
         
@@ -2003,7 +2060,7 @@ public class QueryManagementService implements QueryRequestHandler {
             // privileged users however can set whatever they want
             if (queryParameters.isMaxResultsOverridden() && queryLogic.getMaxResults() >= 0) {
                 if (queryParameters.getMaxResultsOverride() < 0 || (queryLogic.getMaxResults() < queryParameters.getMaxResultsOverride())) {
-                    log.error("Invalid max results override: " + queryParameters.getMaxResultsOverride() + " vs " + queryLogic.getMaxResults());
+                    log.error("Invalid max results override: {} vs {}", queryParameters.getMaxResultsOverride(), queryLogic.getMaxResults());
                     throw new BadRequestQueryException(DatawaveErrorCode.INVALID_MAX_RESULTS_OVERRIDE,
                                     MessageFormat.format("Max = {0}.", queryLogic.getMaxResults()));
                 }
@@ -2013,8 +2070,7 @@ public class QueryManagementService implements QueryRequestHandler {
             // privileged users however can set whatever they want
             if (queryParameters.isMaxConcurrentTasksOverridden() && queryLogic.getMaxConcurrentTasks() >= 0) {
                 if (queryParameters.getMaxConcurrentTasks() < 0 || (queryLogic.getMaxConcurrentTasks() < queryParameters.getMaxConcurrentTasks())) {
-                    log.error("Invalid max concurrent tasks override: " + queryParameters.getMaxConcurrentTasks() + " vs "
-                                    + queryLogic.getMaxConcurrentTasks());
+                    log.error("Invalid max concurrent tasks override: {} vs {}", queryParameters.getMaxConcurrentTasks(), queryLogic.getMaxConcurrentTasks());
                     throw new BadRequestQueryException(DatawaveErrorCode.INVALID_MAX_CONCURRENT_TASKS_OVERRIDE,
                                     MessageFormat.format("Max = {0}.", queryLogic.getMaxConcurrentTasks()));
                 }

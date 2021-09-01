@@ -5,7 +5,8 @@ server:
 
 logging:
   level:
-    root: DEBUG
+    root: INFO
+    org.springframework.cloud.bootstrap.config: DEBUG
     datawave.microservice.query: DEBUG
 
 datawave:
