@@ -9,6 +9,7 @@ import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
+import datawave.microservice.query.remote.event.listener.QueryRemoteRequestEventListener;
 import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryState;
 import datawave.microservice.query.storage.QueryStatus;
@@ -21,7 +22,10 @@ import datawave.webservice.query.runner.AccumuloConnectionRequestMap;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.springframework.cloud.bus.BusProperties;
+import org.springframework.cloud.bus.ServiceMatcher;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -41,7 +45,7 @@ import java.util.concurrent.TimeUnit;
  * TODO: Query Metrics
  **/
 @Service
-public class QueryExecutor implements QueryRequestHandler {
+public class QueryExecutor extends QueryRemoteRequestEventListener implements QueryRequestHandler {
     private static final Logger log = Logger.getLogger(QueryExecutor.class);
     
     protected final BlockingQueue<Runnable> workQueue;
@@ -53,19 +57,24 @@ public class QueryExecutor implements QueryRequestHandler {
     protected final QueryProperties queryProperties;
     protected final BusProperties busProperties;
     protected final ThreadPoolExecutor threadPool;
+    protected final ApplicationContext appCtx;
+    protected final ServiceMatcher serviceMatcher;
     protected final ApplicationEventPublisher publisher;
     protected final AccumuloConnectionFactory connectionFactory;
     protected final AccumuloConnectionRequestMap connectionRequestMap = new AccumuloConnectionRequestMap();
     
-    public QueryExecutor(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties,
-                    AccumuloConnectionFactory connectionFactory, QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory,
-                    ApplicationEventPublisher publisher) {
+    public QueryExecutor(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, ApplicationContext appCtx,
+                    ServiceMatcher serviceMatcher, AccumuloConnectionFactory connectionFactory, QueryStorageCache cache, QueryQueueManager queues,
+                    QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher) {
+        super(serviceMatcher);
         this.executorProperties = executorProperties;
         this.queryProperties = queryProperties;
         this.busProperties = busProperties;
         this.cache = cache;
         this.queues = queues;
         this.queryLogicFactory = queryLogicFactory;
+        this.appCtx = appCtx;
+        this.serviceMatcher = serviceMatcher;
         this.connectionFactory = connectionFactory;
         this.publisher = publisher;
         this.workQueue = new LinkedBlockingDeque<>(executorProperties.getMaxQueueSize());
@@ -82,6 +91,8 @@ public class QueryExecutor implements QueryRequestHandler {
                 working.remove(r);
             }
         };
+        addListener(this);
+        log.info("Created QueryExecutor with an application name of " + appCtx.getApplicationName() + " and an id of " + appCtx.getId());
     }
     
     private void removeFromWorkQueue(String queryId) {
@@ -117,7 +128,16 @@ public class QueryExecutor implements QueryRequestHandler {
     public void handleRemoteRequest(QueryRequest queryRequest, boolean wait) {
         final String queryId = queryRequest.getQueryId();
         final QueryRequest.Method action = queryRequest.getMethod();
+        log.info("Received request " + queryRequest);
+        
         final QueryStatus queryStatus = cache.getQueryStatus(queryId);
+        
+        // validate we actual have such a query
+        if (queryStatus == null) {
+            String msg = "Failed to find stored query status for " + queryId;
+            log.error(msg);
+            throw new RuntimeException(msg);
+        }
         
         // validate that we got a request for the correct pool
         if (!queryStatus.getQueryKey().getQueryPool().equals(executorProperties.getPool())) {
@@ -140,12 +160,14 @@ public class QueryExecutor implements QueryRequestHandler {
                 // get the query states from the cache
                 TaskStates taskStates = cache.getTaskStates(queryId);
                 
+                log.debug("Searching for a task ready to run for " + queryId);
                 Map<TaskStates.TASK_STATE,Set<TaskKey>> taskStateMap = taskStates.getTaskStates();
                 TaskKey taskKey = null;
                 if (taskStateMap.containsKey(TaskStates.TASK_STATE.READY)) {
                     for (TaskKey key : taskStateMap.get(TaskStates.TASK_STATE.READY)) {
                         if (key.getAction() == queryRequest.getMethod()) {
                             taskKey = key;
+                            log.info("Found task " + taskKey);
                             break;
                         }
                     }

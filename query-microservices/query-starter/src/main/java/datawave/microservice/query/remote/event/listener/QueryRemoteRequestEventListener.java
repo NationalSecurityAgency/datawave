@@ -11,6 +11,7 @@ import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -19,12 +20,19 @@ import java.util.List;
 public class QueryRemoteRequestEventListener implements ApplicationListener<RemoteQueryRequestEvent> {
     private final Logger log = LoggerFactory.getLogger(getClass());
     
-    private final List<QueryRequestHandler> queryRequestHandlers;
+    private final List<QueryRequestHandler> queryRequestHandlers = new ArrayList<>();
     private final ServiceMatcher serviceMatcher;
     
-    public QueryRemoteRequestEventListener(List<QueryRequestHandler> queryRequestHandlers, ServiceMatcher serviceMatcher) {
-        this.queryRequestHandlers = queryRequestHandlers;
+    public QueryRemoteRequestEventListener(ServiceMatcher serviceMatcher) {
         this.serviceMatcher = serviceMatcher;
+    }
+    
+    public void addListener(QueryRequestHandler handler) {
+        queryRequestHandlers.add(handler);
+    }
+    
+    public void removeListener(QueryRequestHandler handler) {
+        queryRequestHandlers.remove(handler);
     }
     
     @Override

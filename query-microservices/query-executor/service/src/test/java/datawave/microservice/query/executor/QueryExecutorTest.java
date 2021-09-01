@@ -41,7 +41,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.bus.BusProperties;
+import org.springframework.cloud.bus.ServiceMatcher;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
@@ -98,6 +100,12 @@ public abstract class QueryExecutorTest {
     
     @Autowired
     private BusProperties busProperties;
+    
+    @Autowired
+    private ApplicationContext appCtx;
+    
+    @Autowired
+    private ServiceMatcher serviceMatcher;
     
     @Autowired
     private ApplicationEventPublisher publisher;
@@ -221,8 +229,8 @@ public abstract class QueryExecutorTest {
         assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
         
         // create our query executor
-        QueryExecutor queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, connectionFactory, storageService, queueManager,
-                        queryLogicFactory, publisher);
+        QueryExecutor queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, appCtx, serviceMatcher, connectionFactory,
+                        storageService, queueManager, queryLogicFactory, publisher);
         
         // pass a create request to the executor
         QueryRequest request = QueryRequest.request(QueryRequest.Method.CREATE, key.getQueryId());
@@ -296,8 +304,8 @@ public abstract class QueryExecutorTest {
         assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
         
         // pass the notification to the query executor
-        QueryExecutor queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, connectionFactory, storageService, queueManager,
-                        new QueryLogicFactory() {
+        QueryExecutor queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, appCtx, serviceMatcher, connectionFactory,
+                        storageService, queueManager, new QueryLogicFactory() {
                             
                             @Override
                             public QueryLogic<?> getQueryLogic(String name, Collection<String> userRoles)

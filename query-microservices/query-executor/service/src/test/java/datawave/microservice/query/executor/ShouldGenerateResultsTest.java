@@ -2,6 +2,8 @@ package datawave.microservice.query.executor;
 
 import datawave.microservice.query.executor.action.ExecutorAction;
 import datawave.microservice.query.executor.config.ExecutorProperties;
+import datawave.microservice.query.logic.QueryKey;
+import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.CachedQueryStatus;
 import datawave.microservice.query.storage.QueryQueueListener;
 import datawave.microservice.query.storage.QueryQueueManager;
@@ -24,7 +26,7 @@ public class ShouldGenerateResultsTest {
         props.setAvailableResultsPageMultiplier(2.0f);
         TestQueryQueueManagerForSize queues = new TestQueryQueueManagerForSize();
         TestExecutorShouldGenerateResults action = new TestExecutorShouldGenerateResults(props, queues);
-        TaskKey key = new TaskKey();
+        TaskKey key = new TaskKey("taskid", QueryRequest.Method.NEXT, new QueryKey("default", "queryid", "querylogic"));
         QueryStatus queryStatus = new QueryStatus();
         queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
         queryStatus.setActiveNextCalls(1);

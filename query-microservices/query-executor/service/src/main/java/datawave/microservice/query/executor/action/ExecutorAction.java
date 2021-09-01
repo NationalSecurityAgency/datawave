@@ -103,7 +103,9 @@ public abstract class ExecutorAction implements Runnable {
             
             try {
                 CachedQueryStatus queryStatus = new CachedQueryStatus(cache, queryId, executorProperties.getQueryStatusExpirationMs());
+                log.debug("Getting connector for " + taskKey);
                 connector = getConnector(queryStatus, AccumuloConnectionFactory.Priority.LOW);
+                log.debug("Executing task for " + taskKey);
                 taskComplete = executeTask(queryStatus, connector);
             } catch (Exception e) {
                 log.error("Failed to process task " + taskKey, e);
@@ -191,6 +193,7 @@ public abstract class ExecutorAction implements Runnable {
         // if the state is closed AND we don't have any ongoing next calls, then stop
         if (state == QueryStatus.QUERY_STATE.CLOSED) {
             if (concurrentNextCalls == 0) {
+                log.debug("Not getting results for closed query " + taskKey);
                 return false;
             } else {
                 // we know these are the last next calls, so cap the buffer multiplier to 1
@@ -200,11 +203,13 @@ public abstract class ExecutorAction implements Runnable {
         
         // if the state is canceled or failed, then stop
         if (state == QueryStatus.QUERY_STATE.CANCELED || state == QueryStatus.QUERY_STATE.FAILED) {
+            log.debug("Not getting results for canceled or failed query " + taskKey);
             return false;
         }
         
         // if we have reached the max results for this query, then stop
         if (maxResults > 0 && queryStatus.getNumResultsGenerated() >= maxResults) {
+            log.debug("max resuilts reached for " + taskKey);
             return false;
         }
         
@@ -230,6 +235,7 @@ public abstract class ExecutorAction implements Runnable {
         }
         
         // we should return results if we have less than what we want to have buffered
+        log.debug("Getting results if " + queueSize + " < " + bufferSize);
         return (queueSize < bufferSize);
     }
     
@@ -253,6 +259,7 @@ public abstract class ExecutorAction implements Runnable {
             boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
             while (running && iter.hasNext()) {
                 Object result = iter.next();
+                log.trace("Generated results foir " + taskKey);
                 queues.sendMessage(taskKey.getQueryId(), new Result(UUID.randomUUID().toString(), result));
                 queryStatus.incrementNumResultsGenerated(1);
                 

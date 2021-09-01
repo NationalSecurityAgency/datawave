@@ -1,7 +1,13 @@
 logging:
   level:
     root: DEBUG
+    datawave.query: DEBUG
     datawave.microservice.query: DEBUG
+
+spring:
+  cloud:
+    bus:
+      id: executor-pool1
 
 warehouse:
   accumulo:

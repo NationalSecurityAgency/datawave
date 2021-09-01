@@ -250,7 +250,36 @@ services:
       metrics:
         condition: service_healthy
 
-  executor:
+  executor-pool1:
+    image: datawave/query-executor-service:1.0-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,storage,metricssource,query
+      - --spring.cloud.consul.host=discovery
+    environment:
+      - "ZOOKEEPER_HOST=${HOSTNAME}"
+    # This mapping is required to enable the metrics service to communicate
+    # with host-deployed services like hadoop, zookeeper, and accumulo.
+    # These values are set locally in .env via bootstrap.sh
+    extra_hosts:
+      - "${HOSTNAME}:${HOST_IP}"
+      - "${HOST_FQDN}:${HOST_IP}"
+    ports:
+      - "8080"
+      - "8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/executor/mgmt/health
+    depends_on:
+      authorization:
+        condition: service_healthy
+      metrics:
+        condition: service_healthy
+
+  executor-pool2:
     image: datawave/query-executor-service:1.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
