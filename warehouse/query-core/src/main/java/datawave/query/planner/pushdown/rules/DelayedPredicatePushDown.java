@@ -13,11 +13,14 @@ import datawave.query.util.Tuple2;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 
 /**
  * Purpose: Rule that pulls up top level delayed predicates based upon cost
@@ -52,6 +55,11 @@ public class DelayedPredicatePushDown extends PushDownRule {
         if (ASTDelayedPredicate.instanceOf(child)) {
             child = child.jjtGetChild(0);
             child = (JexlNode) child.jjtAccept(this, data);
+            
+            if (child instanceof ASTReferenceExpression) {
+                child = JexlNodes.makeRef(child);
+            }
+            
             child.jjtSetParent(newScript);
             newScript.jjtAddChild(child, 0);
             return newScript;
