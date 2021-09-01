@@ -77,6 +77,7 @@ curl -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
     --data-urlencode "queryName=Developer Test Query" \
     --data-urlencode "pageSize=100" \
+    --data-urlencode "pool=pool1" \
     ${DATAWAVE_ENDPOINT}/EventQuery/create -o createResponse.txt
 
 i=1

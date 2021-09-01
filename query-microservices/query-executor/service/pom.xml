@@ -13,11 +13,24 @@
     <properties>
         <start-class>datawave.microservice.query.executor.QueryExecutorService</start-class>
         <version.datawave>3.2.1-SNAPSHOT</version.datawave>
+        <version.in-memory-accumulo>1.9.2.3</version.in-memory-accumulo>
         <version.microservice.query-executor-api>1.0-SNAPSHOT</version.microservice.query-executor-api>
         <version.microservice.starter-query>1.0-SNAPSHOT</version.microservice.starter-query>
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>gov.nsa.datawave.contrib</groupId>
+                <artifactId>datawave-in-memory-accumulo</artifactId>
+                <version>${version.in-memory-accumulo}</version>
+                <exclusions>
+                    <!-- Exclude all dependencies of in-memory-accumulo. We'll pull in the exact version we need. -->
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>*</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query-executor-api</artifactId>
@@ -156,6 +169,10 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <dependency>
+            <groupId>gov.nsa.datawave.contrib</groupId>
+            <artifactId>datawave-in-memory-accumulo</artifactId>
+        </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>query-executor-api</artifactId>
