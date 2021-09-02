@@ -254,7 +254,7 @@ services:
     image: datawave/query-executor-service:1.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose,storage,metricssource,query
+      - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query
       - --spring.cloud.consul.host=discovery
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
@@ -284,7 +284,7 @@ services:
     image: datawave/query-executor-service:1.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose,storage,metricssource,query
+      - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query
       - --spring.cloud.consul.host=discovery
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
