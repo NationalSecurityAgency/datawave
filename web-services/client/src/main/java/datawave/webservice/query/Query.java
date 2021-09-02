@@ -1,24 +1,26 @@
 package datawave.webservice.query;
 
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlSeeAlso;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import javax.ws.rs.core.MultivaluedMap;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
+
+import datawave.webservice.query.QueryImpl.Parameter;
+import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(QueryImpl.class)
 public abstract class Query {
     
     public abstract void initialize(String userDN, List<String> dnList, String queryLogicName, QueryParameters qp,
-                    Map<String,List<String>> optionalQueryParameters);
+                    MultivaluedMap<String,String> optionalQueryParameters);
     
     public abstract String getQueryLogicName();
     
@@ -100,15 +102,15 @@ public abstract class Query {
     
     public abstract String getColumnVisibility();
     
-    public abstract Map<String,List<String>> toMap();
+    public abstract MultivaluedMap<String,String> toMap();
     
     public abstract Map<String,String> getCardinalityFields();
     
     public abstract void populateMetric(BaseQueryMetric metric);
     
-    public abstract void setOptionalQueryParameters(Map<String,List<String>> optionalQueryParameters);
+    public abstract void setOptionalQueryParameters(MultivaluedMap<String,String> optionalQueryParameters);
     
-    public abstract Map<String,List<String>> getOptionalQueryParameters();
+    public abstract MultivaluedMap<String,String> getOptionalQueryParameters();
     
     public abstract void removeParameter(String key);
 }
