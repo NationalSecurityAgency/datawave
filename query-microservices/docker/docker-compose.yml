@@ -266,8 +266,8 @@ services:
       - "${HOSTNAME}:${HOST_IP}"
       - "${HOST_FQDN}:${HOST_IP}"
     ports:
-      - "8080"
-      - "8443"
+      - "8380:8080"
+      - "8743:8443"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
     networks:
@@ -296,8 +296,8 @@ services:
       - "${HOSTNAME}:${HOST_IP}"
       - "${HOST_FQDN}:${HOST_IP}"
     ports:
-      - "8080"
-      - "8443"
+      - "8480:8080"
+      - "8843:8443"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
     networks:
