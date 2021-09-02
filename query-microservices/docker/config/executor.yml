@@ -4,11 +4,6 @@ logging:
     datawave.query: DEBUG
     datawave.microservice.query: DEBUG
 
-spring:
-  cloud:
-    bus:
-      id: executor-pool1
-
 warehouse:
   accumulo:
     zookeepers: '${accumulo.zookeepers}'
@@ -33,7 +28,7 @@ datawave:
     factory:
       defaultPool: "default"
       pools:
-        "pool1":
+        "${POOL_NAME}":
           zookeepers: '${accumulo.zookeepers}'
           instance: '${accumulo.instanceName}'
           username: '${accumulo.username}'
@@ -55,7 +50,7 @@ datawave:
 
   query:
     executor:
-      pool: "pool1"
+      pool: "${POOL_NAME}"
       pollQueueSize: true
       availableResultsPageMultiplier: 2.5
       maxQueryStatusAge: 1000

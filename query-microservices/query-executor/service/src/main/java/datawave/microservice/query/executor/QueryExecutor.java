@@ -93,6 +93,7 @@ public class QueryExecutor extends QueryRemoteRequestEventListener implements Qu
         };
         addListener(this);
         log.info("Created QueryExecutor with an application name of " + appCtx.getApplicationName() + " and an id of " + appCtx.getId());
+        log.info("Listening to bus id " + busProperties.getId() + " with a destination of " + busProperties.getDestination());
     }
     
     private void removeFromWorkQueue(String queryId) {

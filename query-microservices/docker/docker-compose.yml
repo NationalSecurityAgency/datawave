@@ -258,6 +258,7 @@ services:
       - --spring.cloud.consul.host=discovery
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
+      - "POOL_NAME=pool1"
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -287,6 +288,7 @@ services:
       - --spring.cloud.consul.host=discovery
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
+      - "POOL_NAME=pool2"
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
