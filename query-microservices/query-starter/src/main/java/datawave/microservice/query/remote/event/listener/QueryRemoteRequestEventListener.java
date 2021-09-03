@@ -4,35 +4,27 @@ import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.cloud.bus.ConditionalOnBusEnabled;
 import org.springframework.cloud.bus.ServiceMatcher;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Component
 @ConditionalOnBusEnabled
-@ConditionalOnBean(type = "QueryRequestHandler")
+// TODO: Figure out how to do this correctly
+// @ConditionalOnBean(type = "QueryRequestHandler")
 public class QueryRemoteRequestEventListener implements ApplicationListener<RemoteQueryRequestEvent> {
     private final Logger log = LoggerFactory.getLogger(getClass());
     
-    private final List<QueryRequestHandler> queryRequestHandlers = new ArrayList<>();
+    private final List<QueryRequestHandler> queryRequestHandlers;
     private final ServiceMatcher serviceMatcher;
     
-    public QueryRemoteRequestEventListener(ServiceMatcher serviceMatcher) {
+    public QueryRemoteRequestEventListener(List<QueryRequestHandler> queryRequestHandlers, ServiceMatcher serviceMatcher) {
+        this.queryRequestHandlers = queryRequestHandlers;
         this.serviceMatcher = serviceMatcher;
-    }
-    
-    public void addListener(QueryRequestHandler handler) {
-        queryRequestHandlers.add(handler);
-    }
-    
-    public void removeListener(QueryRequestHandler handler) {
-        queryRequestHandlers.remove(handler);
     }
     
     @Override

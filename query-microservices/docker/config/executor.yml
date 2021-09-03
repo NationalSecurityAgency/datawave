@@ -1,3 +1,4 @@
+# This is where you set properties which are common to all executors
 logging:
   level:
     root: DEBUG
@@ -12,7 +13,6 @@ warehouse:
     password: '${accumulo.password}'
 
 datawave:
-
   table:
     cache:
       zookeepers: '${accumulo.zookeepers}'
@@ -23,12 +23,11 @@ datawave:
       evictionReaperIntervalInSeconds: 360
       numLocks: 3
       maxRetries: 3
-
   connection:
     factory:
       defaultPool: "default"
       pools:
-        "${POOL_NAME}":
+        "${executor.poolName}":
           zookeepers: '${accumulo.zookeepers}'
           instance: '${accumulo.instanceName}'
           username: '${accumulo.username}'
@@ -46,11 +45,9 @@ datawave:
           normalPriorityPoolSize: 10
           highPriorityPoolSize: 10
           adminPriorityPoolSize: 10
-
-
   query:
     executor:
-      pool: "${POOL_NAME}"
+      pool: "${executor.poolName}"
       pollQueueSize: true
       availableResultsPageMultiplier: 2.5
       maxQueryStatusAge: 1000

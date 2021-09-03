@@ -253,12 +253,13 @@ services:
   executor-pool1:
     image: datawave/query-executor-service:1.0-SNAPSHOT
     command:
+      - --spring.application.name=executor-pool1
+      - --spring.cloud.config.name=executor
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query
+      - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query,pool1
       - --spring.cloud.consul.host=discovery
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
-      - "POOL_NAME=pool1"
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -273,7 +274,7 @@ services:
     networks:
       - demo
     healthcheck:
-      test: curl -f http://localhost:8080/executor/mgmt/health
+      test: curl -f http://localhost:8080/executor-pool1/mgmt/health
     depends_on:
       authorization:
         condition: service_healthy
@@ -283,12 +284,13 @@ services:
   executor-pool2:
     image: datawave/query-executor-service:1.0-SNAPSHOT
     command:
+      - --spring.application.name=executor-pool2
+      - --spring.cloud.config.name=executor
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query
+      - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query,pool2
       - --spring.cloud.consul.host=discovery
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
-      - "POOL_NAME=pool2"
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -303,7 +305,7 @@ services:
     networks:
       - demo
     healthcheck:
-      test: curl -f http://localhost:8080/executor/mgmt/health
+      test: curl -f http://localhost:8080/executor-pool2/mgmt/health
     depends_on:
       authorization:
         condition: service_healthy
