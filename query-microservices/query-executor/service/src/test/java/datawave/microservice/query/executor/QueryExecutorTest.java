@@ -68,6 +68,7 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -131,6 +132,9 @@ public abstract class QueryExecutorTest {
     
     @Autowired
     protected AccumuloConnectionFactory connectionFactory;
+    
+    @Autowired
+    protected List<QueryMetricClient.Request> requests;
     
     @Autowired
     protected QueryMetricClient metricClient;
@@ -279,6 +283,7 @@ public abstract class QueryExecutorTest {
             count++;
         }
         assertTrue(count >= 1);
+        assertFalse(requests.isEmpty());
     }
     
     @DirtiesContext
@@ -367,6 +372,7 @@ public abstract class QueryExecutorTest {
             count++;
         }
         assertTrue(count >= 1);
+        assertFalse(requests.isEmpty());
     }
     
     public static class TestAccumuloSetup extends AccumuloSetup {
@@ -391,12 +397,18 @@ public abstract class QueryExecutorTest {
     @ComponentScan(basePackages = "datawave.microservice")
     public static class QueryExecutorTestConfiguration {
         @Bean
-        public QueryMetricClient metricClient() {
+        public List<QueryMetricClient.Request> requests() {
+            return new ArrayList<>();
+        }
+        
+        @Bean
+        public QueryMetricClient metricClient(final List<QueryMetricClient.Request> requests) {
             return new QueryMetricClient(new RestTemplateBuilder(), null, null, null, null, null) {
                 
                 @Override
                 public void submit(Request request) throws Exception {
                     log.debug("Submitted request " + request);
+                    requests.add(request);
                 }
                 
                 @Override

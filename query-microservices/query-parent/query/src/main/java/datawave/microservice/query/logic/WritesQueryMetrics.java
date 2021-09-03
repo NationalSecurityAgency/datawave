@@ -6,6 +6,8 @@ public interface WritesQueryMetrics {
     
     void writeQueryMetrics(BaseQueryMetric metric);
     
+    public boolean hasMetrics();
+    
     public long getSourceCount();
     
     public long getNextCount();

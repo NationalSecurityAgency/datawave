@@ -252,6 +252,11 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     }
     
     @Override
+    public boolean hasMetrics() {
+        return sourceCount + nextCount + seekCount + yieldCount + docRanges + fiRanges > 0;
+    }
+    
+    @Override
     public long getSourceCount() {
         return sourceCount;
     }
@@ -285,7 +290,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     public void writeQueryMetrics(BaseQueryMetric metric) {
         
         // if any timing details have been returned, add metrics
-        if (sourceCount > 0) {
+        if (hasMetrics()) {
             metric.setSourceCount(sourceCount);
             metric.setNextCount(nextCount);
             metric.setSeekCount(seekCount);

@@ -283,7 +283,7 @@ public abstract class ExecutorAction implements Runnable {
                 // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
                 if (iter.getTransformer() instanceof WritesQueryMetrics) {
                     WritesQueryMetrics metrics = ((WritesQueryMetrics) iter.getTransformer());
-                    if (metrics.getSourceCount() > 0) {
+                    if (metrics.hasMetrics()) {
                         BaseQueryMetric baseQueryMetric = metricFactory.createMetric();
                         baseQueryMetric.setQueryId(taskKey.getQueryId());
                         baseQueryMetric.setSourceCount(metrics.getSourceCount());
