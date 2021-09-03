@@ -1,33 +1,27 @@
 package datawave.microservice.query.executor.action;
 
-import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.executor.QueryExecutor;
-import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.logic.CheckpointableQueryLogic;
 import datawave.microservice.query.logic.QueryLogic;
-import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.CachedQueryStatus;
-import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
-import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.TaskKey;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.runner.AccumuloConnectionRequestMap;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.QueryMetricClient;
+import datawave.microservice.querymetric.QueryMetricType;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
-import org.springframework.cloud.bus.BusProperties;
-import org.springframework.context.ApplicationEventPublisher;
+
+import java.util.Date;
 
 public class Create extends ExecutorAction {
     private static final Logger log = Logger.getLogger(Create.class);
     
-    public Create(QueryExecutor source, ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties,
-                    AccumuloConnectionRequestMap connectionMap, AccumuloConnectionFactory connectionFactory, QueryStorageCache cache, QueryQueueManager queues,
-                    QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher, QueryTask task) {
-        super(source, executorProperties, queryProperties, busProperties, connectionMap, connectionFactory, cache, queues, queryLogicFactory, publisher, task);
+    public Create(QueryExecutor source, QueryTask task) {
+        super(source, task);
     }
     
     @Override
@@ -43,6 +37,23 @@ public class Create extends ExecutorAction {
         
         // update the query status plan
         queryStatus.setPlan(config.getQueryString());
+        
+        // update the query metrics with the plan
+        BaseQueryMetric baseQueryMetric = metricFactory.createMetric();
+        baseQueryMetric.setQueryId(taskKey.getQueryId());
+        baseQueryMetric.setPlan(config.getQueryString());
+        baseQueryMetric.setLastUpdated(new Date(queryStatus.getLastUpdatedMillis()));
+        try {
+            // @formatter:off
+            metricClient.submit(
+                    new QueryMetricClient.Request.Builder()
+                            .withMetric(baseQueryMetric)
+                            .withMetricType(QueryMetricType.DISTRIBUTED)
+                            .build());
+            // @formatter:on
+        } catch (Exception e) {
+            log.error("Error updating query metric", e);
+        }
         
         queryLogic.setupQuery(config);
         

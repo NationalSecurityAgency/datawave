@@ -1,6 +1,8 @@
 package datawave.microservice.query.executor.config;
 
 import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.webservice.common.cache.AccumuloTableCache;
 import datawave.webservice.common.cache.AccumuloTableCacheConfiguration;
 import datawave.webservice.common.cache.AccumuloTableCacheImpl;
@@ -53,5 +55,11 @@ public class QueryExecutorConfig {
     @ConditionalOnMissingBean(name = "accumuloConnectionFactory")
     public AccumuloConnectionFactory connectionFactory(AccumuloTableCache cache, ConnectionPoolsProperties config) {
         return AccumuloConnectionFactoryImpl.getInstance(cache, config);
+    }
+    
+    @Bean
+    @ConditionalOnMissingBean(type = "QueryMetricFactory")
+    public QueryMetricFactory queryMetricFactory() {
+        return new QueryMetricFactoryImpl();
     }
 }

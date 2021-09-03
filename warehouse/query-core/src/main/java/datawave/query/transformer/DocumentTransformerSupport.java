@@ -67,6 +67,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     
     private static final Logger log = Logger.getLogger(DocumentTransformerSupport.class);
     private static final Map<String,String> EMPTY_MARKINGS = new HashMap<>();
+    
     private long sourceCount = 0;
     private long nextCount = 0;
     private long seekCount = 0;
@@ -250,6 +251,37 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
         }
     }
     
+    @Override
+    public long getSourceCount() {
+        return sourceCount;
+    }
+    
+    @Override
+    public long getNextCount() {
+        return nextCount;
+    }
+    
+    @Override
+    public long getSeekCount() {
+        return seekCount;
+    }
+    
+    @Override
+    public long getYieldCount() {
+        return yieldCount;
+    }
+    
+    @Override
+    public long getDocRanges() {
+        return docRanges;
+    }
+    
+    @Override
+    public long getFiRanges() {
+        return fiRanges;
+    }
+    
+    @Override
     public void writeQueryMetrics(BaseQueryMetric metric) {
         
         // if any timing details have been returned, add metrics
@@ -261,6 +293,16 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
             metric.setDocRanges(docRanges);
             metric.setFiRanges(fiRanges);
         }
+    }
+    
+    @Override
+    public void resetMetrics() {
+        sourceCount = 0;
+        nextCount = 0;
+        seekCount = 0;
+        yieldCount = 0;
+        docRanges = 0;
+        fiRanges = 0;
     }
     
     protected List<String> getFieldValues(Document document, String field, boolean shortCircuit) {

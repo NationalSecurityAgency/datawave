@@ -79,6 +79,7 @@ public class CachedQueryStatus extends QueryStatus {
             super.setNumResultsReturned(0);
         }
         queryStatusTimeStamp = System.currentTimeMillis();
+        queryStatus.setLastUpdatedMillis(queryStatusTimeStamp);
     }
     
     /**

@@ -8,6 +8,7 @@ import datawave.microservice.query.logic.QueryCheckpoint;
 import datawave.microservice.query.logic.QueryKey;
 import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.logic.QueryLogicFactory;
+import datawave.microservice.query.logic.WritesQueryMetrics;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.CachedQueryStatus;
 import datawave.microservice.query.storage.QueryQueueManager;
@@ -17,6 +18,10 @@ import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.Result;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskStates;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.QueryMetricClient;
+import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.microservice.querymetric.QueryMetricType;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
@@ -31,6 +36,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
@@ -48,12 +54,21 @@ public abstract class ExecutorAction implements Runnable {
     protected final QueryProperties queryProperties;
     protected final ExecutorProperties executorProperties;
     protected final ApplicationEventPublisher publisher;
+    protected final QueryMetricFactory metricFactory;
+    protected final QueryMetricClient metricClient;
     protected final QueryTask task;
     protected boolean interrupted = false;
     
+    public ExecutorAction(QueryExecutor source, QueryTask task) {
+        this(source, source.getExecutorProperties(), source.getQueryProperties(), source.getBusProperties(), source.getConnectionRequestMap(),
+                        source.getConnectionFactory(), source.getCache(), source.getQueues(), source.getQueryLogicFactory(), source.getPublisher(),
+                        source.getMetricFactory(), source.getMetricClient(), task);
+    }
+    
     public ExecutorAction(QueryExecutor source, ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties,
                     AccumuloConnectionRequestMap connectionMap, AccumuloConnectionFactory connectionFactory, QueryStorageCache cache, QueryQueueManager queues,
-                    QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher, QueryTask task) {
+                    QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher, QueryMetricFactory metricFactory, QueryMetricClient metricClient,
+                    QueryTask task) {
         this.source = source;
         this.executorProperties = executorProperties;
         this.queryProperties = queryProperties;
@@ -64,6 +79,8 @@ public abstract class ExecutorAction implements Runnable {
         this.connectionFactory = connectionFactory;
         this.queryLogicFactory = queryLogicFactory;
         this.publisher = publisher;
+        this.metricFactory = metricFactory;
+        this.metricClient = metricClient;
         this.task = task;
     }
     
@@ -264,10 +281,32 @@ public abstract class ExecutorAction implements Runnable {
                 queryStatus.incrementNumResultsGenerated(1);
                 
                 // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
-                // TODO
-                // if (iter.getTransformer() instanceof WritesQueryMetrics) {
-                // ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
-                // }
+                if (iter.getTransformer() instanceof WritesQueryMetrics) {
+                    WritesQueryMetrics metrics = ((WritesQueryMetrics) iter.getTransformer());
+                    if (metrics.getSourceCount() > 0) {
+                        BaseQueryMetric baseQueryMetric = metricFactory.createMetric();
+                        baseQueryMetric.setQueryId(taskKey.getQueryId());
+                        baseQueryMetric.setSourceCount(metrics.getSourceCount());
+                        baseQueryMetric.setNextCount(metrics.getNextCount());
+                        baseQueryMetric.setSeekCount(metrics.getSeekCount());
+                        baseQueryMetric.setYieldCount(metrics.getYieldCount());
+                        baseQueryMetric.setDocRanges(metrics.getDocRanges());
+                        baseQueryMetric.setFiRanges(metrics.getFiRanges());
+                        baseQueryMetric.setLastUpdated(new Date(queryStatus.getLastUpdatedMillis()));
+                        try {
+                            // @formatter:off
+                            metricClient.submit(
+                                    new QueryMetricClient.Request.Builder()
+                                            .withMetric(baseQueryMetric)
+                                            .withMetricType(QueryMetricType.DISTRIBUTED)
+                                            .build());
+                            // @formatter:on
+                            metrics.resetMetrics();
+                        } catch (Exception e) {
+                            log.error("Error updating query metric", e);
+                        }
+                    }
+                }
                 
                 running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
             }

@@ -17,6 +17,8 @@ import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskStates;
+import datawave.microservice.querymetric.QueryMetricClient;
+import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.runner.AccumuloConnectionRequestMap;
 import org.apache.accumulo.core.client.Connector;
@@ -42,7 +44,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * This class holds the business logic for handling a task notification
  *
- * TODO: Query Metrics
  **/
 @Service
 public class QueryExecutor extends QueryRemoteRequestEventListener implements QueryRequestHandler {
@@ -62,10 +63,13 @@ public class QueryExecutor extends QueryRemoteRequestEventListener implements Qu
     protected final ApplicationEventPublisher publisher;
     protected final AccumuloConnectionFactory connectionFactory;
     protected final AccumuloConnectionRequestMap connectionRequestMap = new AccumuloConnectionRequestMap();
+    protected final QueryMetricFactory metricFactory;
+    protected final QueryMetricClient metricClient;
     
     public QueryExecutor(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, ApplicationContext appCtx,
                     ServiceMatcher serviceMatcher, AccumuloConnectionFactory connectionFactory, QueryStorageCache cache, QueryQueueManager queues,
-                    QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher) {
+                    QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher, QueryMetricFactory metricFactory,
+                    QueryMetricClient metricClient) {
         super(serviceMatcher);
         this.executorProperties = executorProperties;
         this.queryProperties = queryProperties;
@@ -79,6 +83,8 @@ public class QueryExecutor extends QueryRemoteRequestEventListener implements Qu
         this.publisher = publisher;
         this.workQueue = new LinkedBlockingDeque<>(executorProperties.getMaxQueueSize());
         this.working = Collections.synchronizedSet(new HashSet<>());
+        this.metricFactory = metricFactory;
+        this.metricClient = metricClient;
         threadPool = new ThreadPoolExecutor(executorProperties.getCoreThreads(), executorProperties.getMaxThreads(), executorProperties.getKeepAliveMs(),
                         TimeUnit.MILLISECONDS, workQueue) {
             @Override
@@ -179,16 +185,13 @@ public class QueryExecutor extends QueryRemoteRequestEventListener implements Qu
                     ExecutorAction runnable = null;
                     switch (action) {
                         case CREATE:
-                            runnable = new Create(this, executorProperties, queryProperties, busProperties, connectionRequestMap, connectionFactory, cache,
-                                            queues, queryLogicFactory, publisher, task);
+                            runnable = new Create(this, task);
                             break;
                         case NEXT:
-                            runnable = new Next(this, executorProperties, queryProperties, busProperties, connectionRequestMap, connectionFactory, cache,
-                                            queues, queryLogicFactory, publisher, task);
+                            runnable = new Next(this, task);
                             break;
                         case PLAN:
-                            runnable = new Plan(this, executorProperties, queryProperties, busProperties, connectionRequestMap, connectionFactory, cache,
-                                            queues, queryLogicFactory, publisher, task);
+                            runnable = new Plan(this, task);
                             break;
                         default:
                             throw new UnsupportedOperationException(task.getTaskKey().toString());
@@ -203,4 +206,57 @@ public class QueryExecutor extends QueryRemoteRequestEventListener implements Qu
             }
         }
     }
+    
+    public QueryStorageCache getCache() {
+        return cache;
+    }
+    
+    public QueryQueueManager getQueues() {
+        return queues;
+    }
+    
+    public QueryLogicFactory getQueryLogicFactory() {
+        return queryLogicFactory;
+    }
+    
+    public ExecutorProperties getExecutorProperties() {
+        return executorProperties;
+    }
+    
+    public QueryProperties getQueryProperties() {
+        return queryProperties;
+    }
+    
+    public BusProperties getBusProperties() {
+        return busProperties;
+    }
+    
+    public ApplicationContext getAppCtx() {
+        return appCtx;
+    }
+    
+    public ServiceMatcher getServiceMatcher() {
+        return serviceMatcher;
+    }
+    
+    public ApplicationEventPublisher getPublisher() {
+        return publisher;
+    }
+    
+    public AccumuloConnectionFactory getConnectionFactory() {
+        return connectionFactory;
+    }
+    
+    public AccumuloConnectionRequestMap getConnectionRequestMap() {
+        return connectionRequestMap;
+    }
+    
+    public QueryMetricFactory getMetricFactory() {
+        return metricFactory;
+    }
+    
+    public QueryMetricClient getMetricClient() {
+        return metricClient;
+    }
+    
 }

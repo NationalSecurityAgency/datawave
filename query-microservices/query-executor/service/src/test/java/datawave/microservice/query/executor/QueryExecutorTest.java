@@ -1,5 +1,7 @@
 package datawave.microservice.query.executor;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.logic.CheckpointableQueryLogic;
@@ -13,6 +15,9 @@ import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskStates;
+import datawave.microservice.querymetric.QueryMetricClient;
+import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -40,6 +45,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.cloud.bus.ServiceMatcher;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
@@ -51,6 +57,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpEntity;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -124,6 +131,12 @@ public abstract class QueryExecutorTest {
     
     @Autowired
     protected AccumuloConnectionFactory connectionFactory;
+    
+    @Autowired
+    protected QueryMetricClient metricClient;
+    
+    @Autowired
+    protected QueryMetricFactory metricFactory;
     
     public String TEST_POOL = "TestPool";
     
@@ -230,7 +243,7 @@ public abstract class QueryExecutorTest {
         
         // create our query executor
         QueryExecutor queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, appCtx, serviceMatcher, connectionFactory,
-                        storageService, queueManager, queryLogicFactory, publisher);
+                        storageService, queueManager, queryLogicFactory, publisher, metricFactory, metricClient);
         
         // pass a create request to the executor
         QueryRequest request = QueryRequest.request(QueryRequest.Method.CREATE, key.getQueryId());
@@ -330,7 +343,7 @@ public abstract class QueryExecutorTest {
                             public List<QueryLogic<?>> getQueryLogicList() {
                                 return queryLogicFactory.getQueryLogicList();
                             }
-                        }, publisher);
+                        }, publisher, metricFactory, metricClient);
         // pass a create request to the executor
         QueryRequest request = QueryRequest.request(QueryRequest.Method.CREATE, key.getQueryId());
         queryExecutor.handleRemoteRequest(request, true);
@@ -377,6 +390,27 @@ public abstract class QueryExecutorTest {
     @Profile("QueryExecutorTest")
     @ComponentScan(basePackages = "datawave.microservice")
     public static class QueryExecutorTestConfiguration {
+        @Bean
+        public QueryMetricClient metricClient() {
+            return new QueryMetricClient(new RestTemplateBuilder(), null, null, null, null, null) {
+                
+                @Override
+                public void submit(Request request) throws Exception {
+                    log.debug("Submitted request " + request);
+                }
+                
+                @Override
+                protected HttpEntity createRequestEntity(ProxiedUserDetails user, ProxiedUserDetails trustedUser, Object body) throws JsonProcessingException {
+                    return null;
+                }
+            };
+        }
+        
+        @Bean
+        public QueryMetricFactory metricFactory() {
+            return new QueryMetricFactoryImpl();
+        }
+        
         @Bean
         public LinkedList<RemoteQueryRequestEvent> testQueryRequestEvents() {
             return new LinkedList<>();
