@@ -284,6 +284,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      */
     protected boolean showReducedQueryPrune = true;
     
+    // handles boilerplate operations that surround a visitor's execution (e.g., timers, logging, validating)
+    protected TimedVisitorManager visitorManager;
+    
     public DefaultQueryPlanner() {
         this(Long.MAX_VALUE);
     }
@@ -295,6 +298,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     public DefaultQueryPlanner(long maxRangesPerQueryPiece, boolean limitScanners) {
         this.maxRangesPerQueryPiece = maxRangesPerQueryPiece;
         setLimitScanners(limitScanners);
+        this.visitorManager = new TimedVisitorManager(log.isDebugEnabled(), false);
     }
     
     protected DefaultQueryPlanner(DefaultQueryPlanner other) {
@@ -317,6 +321,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         setSourceLimit(other.sourceLimit);
         setDocsToCombineForEvaluation(other.getDocsToCombineForEvaluation());
         setPushdownThreshold(other.getPushdownThreshold());
+        this.visitorManager = other.visitorManager;
     }
     
     public void setMetadataHelper(final MetadataHelper metadataHelper) {
@@ -666,25 +671,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         // groom the query so that any nodes with the literal on the left and the identifier on
         // the right will be re-ordered to simplify subsequent processing
-        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - fix not null intent");
-        queryTree = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(queryTree);
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query after inverting swapped nodes:");
-        }
-        stopwatch.stop();
+        queryTree = timedInvertSwappedNodes(timers, queryTree);
         
-        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - fix not null intent");
-        
-        try {
-            queryTree = IsNotNullIntentVisitor.fixNotNullIntent(queryTree);
-        } catch (Exception e1) {
-            throw new DatawaveQueryException("Something bad happened", e1);
-        }
-        if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query afterfixing not null intent:");
-        }
-        
-        stopwatch.stop();
+        queryTree = timedFixNotNullIntent(timers, queryTree);
         
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - include date filters");
         
@@ -1429,6 +1418,32 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         return queryTree;
     }
+    
+    /*
+     * Start methods that operate on the query tree
+     */
+    
+    /**
+     * Handle case when input field value pairs are swapped
+     */
+    protected ASTJexlScript timedInvertSwappedNodes(QueryStopwatch timers, ASTJexlScript script) throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, "Invert Swapped Nodes", () -> (JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(script)));
+    }
+    
+    /**
+     * Handle special case where a regex node can be replaced with a 'not equals null' node
+     */
+    protected ASTJexlScript timedFixNotNullIntent(QueryStopwatch timers, ASTJexlScript script) throws DatawaveQueryException {
+        try {
+            return visitorManager.timedVisit(timers, "Fix Not Null Intent", () -> (IsNotNullIntentVisitor.fixNotNullIntent(script)));
+        } catch (Exception e) {
+            throw new DatawaveQueryException("Something bad happened", e);
+        }
+    }
+    
+    /*
+     * End methods that operate on the query tree
+     */
     
     /**
      * Load the metadata information.
@@ -2278,6 +2293,74 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         | NoSuchMethodException | SecurityException e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    /**
+     * Handles boilerplate code execution for operations like timing a visit call, logging the query tree, and eventualy validating the resulting query tree.
+     */
+    public class TimedVisitorManager {
+        
+        private boolean isDebugEnabled; // log query tree after visit?
+        private boolean validateAst; // validate the query tree after visit?
+        
+        // default, do not log, do not validate
+        public TimedVisitorManager() {
+            this(false, false);
+        }
+        
+        /**
+         * Sets flags to log the query or validate the query
+         * 
+         * @param isDebugEnabled
+         *            set this flag to log the query
+         * @param validateAst
+         *            set this flag to validate the query
+         */
+        public TimedVisitorManager(boolean isDebugEnabled, boolean validateAst) {
+            this.isDebugEnabled = isDebugEnabled;
+            this.validateAst = validateAst;
+        }
+        
+        /**
+         * Wrap visitor execution with a timer and debug msg
+         *
+         * @param timers
+         *            a {@link QueryStopwatch}
+         * @param stageName
+         *            the name for this operation, for example "Fix Not Null Intent" or "Expand Regex Nodes"
+         * @param visitorManager
+         *            an interface that allows us to pass a lambda operation {@link VisitorManager}
+         * @return the query tree, a {@link ASTJexlScript}
+         * @throws DatawaveQueryException
+         *             if something goes wrong
+         */
+        public ASTJexlScript timedVisit(QueryStopwatch timers, String stageName, VisitorManager visitorManager) throws DatawaveQueryException {
+            
+            ASTJexlScript script;
+            TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stageName);
+            
+            try {
+                script = visitorManager.apply();
+                
+                if (isDebugEnabled) {
+                    logQuery(script, "Query after visit: " + stageName);
+                }
+                
+                if (validateAst) {
+                    // do nothing for now
+                }
+            } finally {
+                stopwatch.stop();
+            }
+            return script;
+        }
+    }
+    
+    /**
+     * An interface that lets us pass a lambda operation to the {@link TimedVisitorManager}
+     */
+    public interface VisitorManager {
+        ASTJexlScript apply() throws DatawaveQueryException;
     }
     
     public boolean isLimitScanners() {
