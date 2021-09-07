@@ -4,24 +4,24 @@ import datawave.microservice.query.remote.QueryRequest;
 
 public class RemoteQueryRequestEvent extends RemoteApplicationEvent {
     
-    private final QueryRequest queryRequest;
+    private final QueryRequest request;
     
     @SuppressWarnings("unused")
     public RemoteQueryRequestEvent() {
         // this constructor is only for serialization/deserialization
-        queryRequest = null;
+        request = null;
     }
     
-    public RemoteQueryRequestEvent(Object source, String originService, QueryRequest queryRequest) {
-        this(source, originService, null, queryRequest);
+    public RemoteQueryRequestEvent(Object source, String originService, QueryRequest request) {
+        this(source, originService, null, request);
     }
     
-    public RemoteQueryRequestEvent(Object source, String originService, String destinationService, QueryRequest queryRequest) {
+    public RemoteQueryRequestEvent(Object source, String originService, String destinationService, QueryRequest request) {
         super(source, originService, DEFAULT_DESTINATION_FACTORY.getDestination(destinationService));
-        this.queryRequest = queryRequest;
+        this.request = request;
     }
     
     public QueryRequest getRequest() {
-        return queryRequest;
+        return request;
     }
 }

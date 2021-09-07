@@ -15,6 +15,10 @@ public class QueryRequest {
     private final Method method;
     private final String queryId;
     
+    private QueryRequest() {
+        this(null, null);
+    }
+    
     private QueryRequest(Method method) {
         this(method, null);
     }

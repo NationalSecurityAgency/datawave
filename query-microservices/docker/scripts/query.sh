@@ -3,6 +3,8 @@
 DATAWAVE_ENDPOINT=https://localhost:8443/query/v1
 METRICS_ENDPOINT=https://localhost:8543/querymetric/v1
 
+POOL="${POOL:-pool1}"
+
 MAX_PAGES=100
 
 # use the test user pkcs12 cert
@@ -78,7 +80,7 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
     --data-urlencode "queryName=Developer Test Query" \
     --data-urlencode "pageSize=100" \
-    --data-urlencode "pool=pool1" \
+    --data-urlencode "pool=$POOL" \
     ${DATAWAVE_ENDPOINT}/EventQuery/create -o createResponse.txt
 
 i=1

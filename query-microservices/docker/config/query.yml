@@ -15,7 +15,7 @@ datawave:
       resultPollInterval: 500
       statusUpdateInterval: 500
     expiration:
-      callTimeout: 5
+      callTimeout: 30
       callTimeUnit: SECONDS
 
 audit-client:

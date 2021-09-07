@@ -88,7 +88,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
                 queryId,
                 queryRequestEvents.removeLast());
         assertQueryRequestEvent(
-                "/query:**",
+                "query:**",
                 QueryRequest.Method.CANCEL,
                 queryId,
                 queryRequestEvents.removeLast());
@@ -168,7 +168,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
                 queryId,
                 queryRequestEvents.removeLast());
         assertQueryRequestEvent(
-                "/query:**",
+                "query:**",
                 QueryRequest.Method.CANCEL,
                 queryId,
                 queryRequestEvents.removeLast());
@@ -279,7 +279,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
                 queryId,
                 queryRequestEvents.removeLast());
         assertQueryRequestEvent(
-                "/query:**",
+                "query:**",
                 QueryRequest.Method.CANCEL,
                 queryId,
                 queryRequestEvents.removeLast());
@@ -337,7 +337,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
                 queryId,
                 queryRequestEvents.removeLast());
         assertQueryRequestEvent(
-                "/query:**",
+                "query:**",
                 QueryRequest.Method.CANCEL,
                 queryId,
                 queryRequestEvents.removeLast());
@@ -433,7 +433,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
             
             // @formatter:off
             assertQueryRequestEvent(
-                    "/query:**",
+                    "query:**",
                     QueryRequest.Method.CANCEL,
                     queryId,
                     queryRequestEvents.removeLast());

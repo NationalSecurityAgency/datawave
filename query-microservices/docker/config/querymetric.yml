@@ -7,9 +7,12 @@ spring:
   cloud:
     stream:
       bindings:
-        queryMetricSink:
+        queryMetricSink-in-0:
           destination: queryMetricChannel
           group: queryMetricService
+    # NOTE: When defining your functions, be sure to include busConsumer, or else spring cloud bus will not work
+    function:
+      definition: queryMetricSink;busConsumer
 
 warehouse-cluster:
   accumulo:

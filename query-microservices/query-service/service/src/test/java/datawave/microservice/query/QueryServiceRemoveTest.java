@@ -145,7 +145,7 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
                 queryId,
                 queryRequestEvents.removeLast());
         assertQueryRequestEvent(
-                "/query:**",
+                "query:**",
                 QueryRequest.Method.CANCEL,
                 queryId,
                 queryRequestEvents.removeLast());

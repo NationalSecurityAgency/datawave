@@ -3,32 +3,35 @@ spring:
     stream:
       rabbit:
         bindings:
-          logAuditSink:
+          logAuditSink-in-0:
             consumer:
               autoBindDlq: true
-          accumuloAuditSink:
+          accumuloAuditSink-in-0:
             consumer:
               autoBindDlq: true
-          dumpAuditSink:
+          dumpAuditSink-in-0:
             consumer:
               autoBindDlq: true
               bindQueue: false
       bindings:
-        auditSource:
+        auditSource-out-0:
           destination: 'audit'
           producer:
             errorChannelEnabled: true
-        logAuditSink:
+        logAuditSink-in-0:
           destination: 'audit'
           group: 'log'
-        accumuloAuditSink:
+        accumuloAuditSink-in-0:
           destination: 'audit'
           group: 'accumulo'
-        dumpAuditSink:
+        dumpAuditSink-in-0:
           destination: 'audit'
           group: 'dump'
           consumer:
             concurrency: 5
+    # NOTE: When defining your functions, be sure to include busConsumer, or else spring cloud bus will not work
+    function:
+      definition: auditSource;logAuditSink;accumuloAuditSink;dumpAuditSink;busConsumer
 
 audit:
   confirmAckEnabled: true

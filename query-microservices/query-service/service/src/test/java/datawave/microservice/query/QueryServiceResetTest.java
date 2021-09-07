@@ -192,7 +192,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
                 queryId,
                 queryRequestEvents.removeLast());
         assertQueryRequestEvent(
-                "/query:**",
+                "query:**",
                 QueryRequest.Method.CANCEL,
                 queryId,
                 queryRequestEvents.removeLast());
@@ -387,7 +387,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
                 queryId,
                 queryRequestEvents.removeLast());
         assertQueryRequestEvent(
-                "/query:**",
+                "query:**",
                 QueryRequest.Method.CANCEL,
                 queryId,
                 queryRequestEvents.removeLast());

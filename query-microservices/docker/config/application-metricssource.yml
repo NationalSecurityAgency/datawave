@@ -2,9 +2,12 @@ spring:
   cloud:
     stream:
       bindings:
-        queryMetricSource:
+        queryMetricSource-out-0:
           destination: queryMetricChannel
           producer:
             requiredGroups: queryMetricService
+    # NOTE: When defining your functions, be sure to include busConsumer, or else spring cloud bus will not work
+    function:
+      definition: queryMetricSource;busConsumer
 
 datawave.query.metric.client.sink.enabled: false

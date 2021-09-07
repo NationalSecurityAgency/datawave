@@ -50,7 +50,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -91,7 +90,6 @@ public class QueryManagementService implements QueryRequestHandler {
     
     private final QueryProperties queryProperties;
     
-    private final ApplicationContext appCtx;
     private final ApplicationEventPublisher eventPublisher;
     private final BusProperties busProperties;
     
@@ -113,13 +111,13 @@ public class QueryManagementService implements QueryRequestHandler {
     private final QueryStatusUpdateHelper queryStatusUpdateHelper;
     private final MultiValueMap<String,NextCall> nextCallMap = new LinkedMultiValueMap<>();
     
-    public QueryManagementService(QueryProperties queryProperties, ApplicationContext appCtx, ApplicationEventPublisher eventPublisher,
-                    BusProperties busProperties, QueryParameters queryParameters, SecurityMarking securityMarking, BaseQueryMetric baseQueryMetric,
-                    QueryLogicFactory queryLogicFactory, QueryMetricClient queryMetricClient, ResponseObjectFactory responseObjectFactory,
-                    QueryStorageCache queryStorageCache, QueryQueueManager queryQueueManager, AuditClient auditClient,
-                    ThreadPoolTaskExecutor nextCallExecutor) {
+    private final String selfDestination;
+    
+    public QueryManagementService(QueryProperties queryProperties, ApplicationEventPublisher eventPublisher, BusProperties busProperties,
+                    QueryParameters queryParameters, SecurityMarking securityMarking, BaseQueryMetric baseQueryMetric, QueryLogicFactory queryLogicFactory,
+                    QueryMetricClient queryMetricClient, ResponseObjectFactory responseObjectFactory, QueryStorageCache queryStorageCache,
+                    QueryQueueManager queryQueueManager, AuditClient auditClient, ThreadPoolTaskExecutor nextCallExecutor) {
         this.queryProperties = queryProperties;
-        this.appCtx = appCtx;
         this.eventPublisher = eventPublisher;
         this.busProperties = busProperties;
         this.queryParameters = queryParameters;
@@ -133,6 +131,7 @@ public class QueryManagementService implements QueryRequestHandler {
         this.auditClient = auditClient;
         this.nextCallExecutor = nextCallExecutor;
         this.queryStatusUpdateHelper = new QueryStatusUpdateHelper(this.queryProperties, this.queryStorageCache);
+        this.selfDestination = getSelfDestination();
     }
     
     /**
@@ -1834,9 +1833,17 @@ public class QueryManagementService implements QueryRequestHandler {
                 new RemoteQueryRequestEvent(
                         this,
                         busProperties.getId(),
-                        appCtx.getApplicationName(),
+                        selfDestination,
                         queryRequest));
         // @formatter:on
+    }
+    
+    private String getSelfDestination() {
+        String id = busProperties.getId();
+        if (id.contains(":")) {
+            return id.substring(0, id.indexOf(":"));
+        }
+        return id;
     }
     
     /**
