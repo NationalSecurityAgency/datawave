@@ -65,6 +65,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
     private AccumuloConnectionFactoryImpl(AccumuloTableCache cache, ConnectionPoolsProperties config) {
         this.cache = cache;
         this.connectionPoolsConfiguration = config;
+        log.info("Initializing AccumuloConnectionFactoryImpl with " + config.getDefaultPool() + " and " + config.getPoolNames());
         init();
     }
     
@@ -227,6 +228,9 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
             if (proxyServers != null)
                 trackingMap.put(PROXY_SERVERS, proxyServers.toString());
         }
+        log.info("Getting pool from " + poolName + " for priority " + priority);
+        log.info("Pools = " + pools);
+        log.info("Pools.get(poolName) = " + pools.get(poolName));
         AccumuloConnectionPool pool = pools.get(poolName).get(priority);
         Connector c = pool.borrowObject(trackingMap);
         Connector mock = cache.getInstance().getConnector(pool.getFactory().getUsername(), new PasswordToken(pool.getFactory().getPassword()));
