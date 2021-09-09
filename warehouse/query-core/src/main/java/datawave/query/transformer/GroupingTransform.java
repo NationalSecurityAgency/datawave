@@ -437,7 +437,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         int longest = this.longestValueList(fieldToFieldWithContextMap);
         for (int i = 0; i < longest; i++) {
             Collection<GroupingTypeAttribute<?>> fieldCollection = new HashSet<>();
-            String currentGroupingContext = "";
+            String currentGroupingContext = Integer.toHexString(i).toUpperCase();
+            ;
             for (String fieldListItem : expandedGroupFieldsList) {
                 log.trace("fieldListItem: {}", fieldListItem);
                 Collection<String> gtNames = fieldToFieldWithContextMap.get(fieldListItem);
@@ -445,10 +446,10 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                     log.trace("gtNames: {}", gtNames);
                     log.trace("fieldToFieldWithContextMap: {} did not contain: {}", fieldToFieldWithContextMap, fieldListItem);
                 } else {
-                    String gtName = gtNames.iterator().next();
-                    int idx = gtName.indexOf('.');
-                    if (idx != -1) {
-                        currentGroupingContext = gtName.substring(idx + 1);
+                    String nameWithGrouping = fieldListItem + "." + currentGroupingContext;
+                    final String gtName = gtNames.stream().filter(name -> nameWithGrouping.equals(gtNames.iterator().next())).findAny().orElse(null);
+                    if (gtName == null || gtName.isEmpty()) {
+                        continue;
                     }
                     if (!fieldListItem.equals(gtName)) {
                         fieldToFieldWithContextMap.remove(fieldListItem, gtName);

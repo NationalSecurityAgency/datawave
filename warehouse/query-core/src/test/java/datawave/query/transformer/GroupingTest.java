@@ -232,6 +232,7 @@ public abstract class GroupingTest {
                     case "AGE":
                     case "AG":
                     case "RECORD":
+                    case "DEPENDENTS":
                         secondKey = fieldBase.getValueString();
                         break;
                 }
@@ -246,7 +247,7 @@ public abstract class GroupingTest {
             } else {
                 key = secondKey;
             }
-            Assert.assertEquals(expected.get(key), value);
+            Assert.assertEquals("key = " + key, expected.get(key), value);
         }
         return response;
     }
@@ -404,7 +405,7 @@ public abstract class GroupingTest {
     }
     
     @Test
-    public void testGroupingMixedEntriesWithAndWithNoContext() throws Exception {
+    public void testGroupingMixedWithAndWithNoContext() throws Exception {
         // Testing multivalued entries with no grouping context in combination with a grouping context entries
         Map<String,String> extraParameters = new HashMap<>();
         
@@ -423,6 +424,38 @@ public abstract class GroupingTest {
         // @formatter:on
         
         extraParameters.put("group.fields", "GENDER,RECORD");
+        // extraParameters.put("group.fields.batch.size", "12");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+    
+    @Test
+    public void testGroupingWithFieldWithSparseGroupingEntries() throws Exception {
+        // Testing multivalued atoms where not all atoms have every field populated.
+        // The results in entries where the where the grouping context is sparse;
+        // that is, not all of the grouping contexts have data for a filed.
+        // Look at VisibilityWiseGuysIngest and the DEPENDANT fields in the data
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        // @formatter:off
+        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+                .put("FEMALE-2", 1)
+                .put("MALE-2", 4)
+                .put("MALE-3", 2)
+                .put("MALE-4", 3)
+                .build();
+        // @formatter:on
+        
+        extraParameters.put("group.fields", "GENDER,DEPENDENTS");
         // extraParameters.put("group.fields.batch.size", "12");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {

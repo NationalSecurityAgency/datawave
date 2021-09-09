@@ -82,6 +82,12 @@ public class VisibilityWiseGuysIngest {
             mutation.put(datatype + "\u0000" + corleoneUID, "BIRTHDAY.3" + "\u0000" + "4", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "BIRTHDAY.4" + "\u0000" + "5", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "BIRTHDAY.5" + "\u0000" + "22", columnVisibilityItalian, timeStamp, emptyValue);
+            // mutation.put(datatype + "\u0000" + corleoneUID, "DEPENDENTS.0" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "DEPENDENTS.1" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "DEPENDENTS.2" + "\u0000" + "3", columnVisibilityItalian, timeStamp, emptyValue);
+            // mutation.put(datatype + "\u0000" + corleoneUID, "DEPENDENTS.3" + "\u0000" + "18", columnVisibilityItalian, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "DEPENDENTS.4" + "\u0000" + "4", columnVisibilityItalian, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + corleoneUID, "DEPENDENTS.5" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "UUID.0" + "\u0000" + "CORLEONE", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "RECORD" + "\u0000" + "1", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "RECORD" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
@@ -94,6 +100,8 @@ public class VisibilityWiseGuysIngest {
             // mutation.put(datatype + "\u0000" + sopranoUID, "AGE.0" + "\u0000" + "16", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "AGE.0" + "\u0000" + "16", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "AGE.1" + "\u0000" + "18", columnVisibilityEnglish, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "DEPENDENTS.0" + "\u0000" + "4", columnVisibilityItalian, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "DEPENDENTS.1" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "UUID.0" + "\u0000" + "SOPRANO", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "RECORD" + "\u0000" + "1", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "RECORD" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
@@ -110,6 +118,10 @@ public class VisibilityWiseGuysIngest {
             mutation.put(datatype + "\u0000" + caponeUID, "AGE.1" + "\u0000" + "34", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "AGE.2" + "\u0000" + "20", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "AGE.3" + "\u0000" + "40", columnVisibilityEnglish, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "DEPENDENTS.0" + "\u0000" + "4", columnVisibilityItalian, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "DEPENDENTS.1" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "DEPENDENTS.2" + "\u0000" + "3", columnVisibilityItalian, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID, "DEPENDENTS.3" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "UUID.0" + "\u0000" + "CAPONE", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "RECORD" + "\u0000" + "1", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "RECORD" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
