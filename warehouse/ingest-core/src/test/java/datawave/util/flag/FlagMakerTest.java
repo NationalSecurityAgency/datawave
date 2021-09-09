@@ -497,7 +497,8 @@ public class FlagMakerTest extends AbstractFlagConfig {
         cfg.setFileListMarker(FLAG_MARKER);
         
         assertTrue("Should be 10 InputFiles", inFiles != null && inFiles.size() == 10);
-        File flag = instance.write(inFiles, fc, FLAG_DIR + "/testflagwriter");
+        FlagMetrics metrics = new FlagMetrics(instance.getHadoopFS(), fc.isCollectMetrics());
+        File flag = instance.write(inFiles, fc, FLAG_DIR + "/testflagwriter", metrics);
         flag.deleteOnExit();
         String b;
         try (BufferedReader br = new BufferedReader(new FileReader(flag))) {

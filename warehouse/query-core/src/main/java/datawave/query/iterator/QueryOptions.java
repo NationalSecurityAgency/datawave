@@ -237,6 +237,8 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String SORTED_UIDS = "sorted.uids";
     
+    public static final String RANGES = "ranges";
+    
     protected Map<String,String> options;
     
     protected String scanId;
@@ -1076,6 +1078,8 @@ public class QueryOptions implements OptionDescriber {
         
         options.put(SORTED_UIDS,
                         "Whether the UIDs need to be sorted.  Normally this is true, however in limited circumstances it could be false which allows ivarators to avoid pre-fetching all UIDs and sorting before returning the first one.");
+        
+        options.put(RANGES, "The ranges associated with this scan.  Intended to be used for investigative purposes.");
         
         options.put(DEBUG_MULTITHREADED_SOURCES, "If provided, the SourceThreadTrackingIterator will be used");
         

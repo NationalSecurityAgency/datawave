@@ -85,7 +85,8 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         CONTINENT(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         CODE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         ACCESS(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        NUM((Normalizer.NUMBER_NORMALIZER));
+        NUM((Normalizer.NUMBER_NORMALIZER)),
+        GEO(Normalizer.GEO_NORMALIZER);
         
         private static final List<String> Headers;
         

@@ -82,8 +82,8 @@ public class DatawaveFieldIndexRegexIteratorJexl extends DatawaveFieldIndexCachi
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("DatawaveFieldIndexRegexIteratorJexl{fName=").append(getFieldName()).append(", fValue=").append(getFieldValue()).append(", regex=")
-                        .append(regex).append(", negated=").append(isNegated()).append("}");
+        builder.append("DatawaveFieldIndexRegexIteratorJexl (").append(queryId).append(") fName=").append(getFieldName()).append(", fValue=")
+                        .append(getFieldValue()).append(", regex=").append(regex).append(", negated=").append(isNegated()).append("}");
         return builder.toString();
     }
     

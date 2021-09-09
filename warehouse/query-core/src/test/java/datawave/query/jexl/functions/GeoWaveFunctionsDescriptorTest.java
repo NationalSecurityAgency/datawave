@@ -98,7 +98,7 @@ public class GeoWaveFunctionsDescriptorTest {
         }
     }
     
-    private String convertFunctionToIndexQuery(String queryStr, ShardQueryConfiguration config) throws ParseException {
+    public static String convertFunctionToIndexQuery(String queryStr, ShardQueryConfiguration config) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryStr);
         ASTFunctionNode func = find(script);
         JexlArgumentDescriptor desc = new GeoWaveFunctionsDescriptor().getArgumentDescriptor(func);

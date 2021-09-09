@@ -12,13 +12,14 @@ public class CardinalityIteratorBuilder extends IndexIteratorBuilder {
             IndexIteratorBridge itr = new IndexIteratorBridge(IndexIterator.builder(new Text(field), new Text(value), source).withTimeFilter(timeFilter)
                             .withTypeMetadata(typeMetadata)
                             .shouldBuildDocument(this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field))
-                            .withDatatypeFilter(datatypeFilter).withAggregation(this.keyTform).build());
+                            .withDatatypeFilter(datatypeFilter).withAggregation(this.keyTform).build(), getNode(), getField());
             field = null;
             value = null;
             source = null;
             timeFilter = null;
             datatypeFilter = null;
             keyTform = null;
+            node = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);

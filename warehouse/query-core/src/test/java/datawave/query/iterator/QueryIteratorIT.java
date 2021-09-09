@@ -546,6 +546,17 @@ public class QueryIteratorIT extends EasyMockSupport {
         event_test(seekRange, query, false, null, addEvent(11, "123.345.457"), Arrays.asList(getBaseExpectedEvent("123.345.457")));
     }
     
+    @Test(expected = IOException.class)
+    public void event_bogusIvaratorCacheDir_test() throws IOException {
+        Range seekRange = getShardRange();
+        String query = "((ExceededValueThresholdMarkerJexlNode = true) && (EVENT_FIELD4 =~ '.*d'))";
+        
+        // setup a bogus ivarator cache dir for the config
+        options.put(IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(new IvaratorCacheDirConfig("hdfs://bogusPath")));
+        
+        index_test(seekRange, query, false, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+    }
+    
     @Test
     public void index_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull

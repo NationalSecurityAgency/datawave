@@ -138,7 +138,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
                     }
                 } else {
                     // Otherwise, we want to add the child regardless
-                    node.jjtAddChild(newChild, newIndex);
+                    node.jjtAddChild(node.jjtGetChild(i), newIndex);
                     newIndex++;
                 }
                 
@@ -324,7 +324,8 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
      * @throws InstantiationException
      */
     @Override
-    protected IndexLookupCallable buildIndexLookup(JexlNode node) throws TableNotFoundException, IOException, InstantiationException, IllegalAccessException {
+    protected IndexLookupCallable buildIndexLookup(JexlNode node, boolean keepOriginalNode) throws TableNotFoundException, IOException, InstantiationException,
+                    IllegalAccessException {
         // Using the datatype filter when expanding this term isn't really
         // necessary
         IndexLookup lookup = ShardIndexQueryTableStaticMethods
@@ -334,7 +335,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
             lookup.setLimitToTerms(true);
             ((FieldNameLookup) lookup).setTypeFilterSet(config.getDatatypeFilter());
         }
-        return new IndexLookupCallable(lookup, node, false, true);
+        return new IndexLookupCallable(lookup, node, false, true, keepOriginalNode);
     }
     
     /**
@@ -348,4 +349,13 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
         return (!negated || expandUnfieldedNegations) && hasUnfieldedIdentifier(node);
     }
     
+    /**
+     * Expand field names, and keep the original node IFF negated
+     * 
+     * @param node
+     * @return The expanded node
+     */
+    protected Object expandFieldNames(JexlNode node) {
+        return expandFieldNames(node, negated);
+    }
 }

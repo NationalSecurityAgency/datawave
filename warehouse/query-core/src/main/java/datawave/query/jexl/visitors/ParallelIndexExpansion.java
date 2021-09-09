@@ -16,9 +16,8 @@ import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.model.QueryModel;
 import datawave.query.parser.JavaRegexAnalyzer;
@@ -224,7 +223,8 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
      * @throws IllegalAccessException
      * @throws InstantiationException
      */
-    protected IndexLookupCallable buildIndexLookup(JexlNode node) throws TableNotFoundException, IOException, InstantiationException, IllegalAccessException {
+    protected IndexLookupCallable buildIndexLookup(JexlNode node, boolean keepOriginalNode) throws TableNotFoundException, IOException, InstantiationException,
+                    IllegalAccessException {
         
         String fieldName = JexlASTHelper.getIdentifier(node);
         
@@ -241,7 +241,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             
         }
         
-        return new IndexLookupCallable(task, node, true, false);
+        return new IndexLookupCallable(task, node, true, false, keepOriginalNode);
     }
     
     /**
@@ -306,16 +306,50 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     public Object visit(ASTERNode node, Object data) {
         Set<JexlNode> markedParents = (data != null && data instanceof Set) ? (Set) data : null;
         
-        // we've already been delayed.
+        String fieldName = JexlASTHelper.getIdentifier(node);
+        
+        // if its evaluation only tag an exceeded value marker for a deferred ivarator
         if (markedParents != null) {
+            boolean evalOnly = false;
+            boolean exceededValueMarker = false;
+            boolean exceededTermMarker = false;
             for (JexlNode markedParent : markedParents) {
-                if (QueryPropertyMarker.instanceOf(markedParent, null))
-                    return node;
+                if (QueryPropertyMarker.instanceOf(markedParent, ASTEvaluationOnly.class)) {
+                    evalOnly = true;
+                }
+                if (QueryPropertyMarker.instanceOf(markedParent, ExceededValueThresholdMarkerJexlNode.class)) {
+                    exceededValueMarker = true;
+                }
+                if (QueryPropertyMarker.instanceOf(markedParent, ExceededTermThresholdMarkerJexlNode.class)) {
+                    exceededTermMarker = true;
+                }
+            }
+            
+            boolean indexOnly;
+            try {
+                indexOnly = helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName);
+            } catch (TableNotFoundException e) {
+                throw new DatawaveFatalQueryException(e);
+            }
+            
+            if (evalOnly && !exceededValueMarker && !exceededTermMarker && indexOnly) {
+                return ExceededValueThresholdMarkerJexlNode.create(node);
+            } else if (exceededValueMarker || exceededTermMarker) {
+                // already did this expansion
+                return node;
+            } else if (!indexOnly && evalOnly) {
+                // no need to expand its going to come out of the event
+                return node;
             }
         }
         
         // determine whether we have the tools to expand this in the first place
         try {
+            // check special case NO_FIELD
+            if (fieldName.equals(Constants.NO_FIELD)) {
+                return node;
+            }
+            
             if (!isExpandable(node)) {
                 if (mustExpand(node)) {
                     throw new DatawaveFatalQueryException("We must expand but yet cannot expand a regex: " + PrintingVisitor.formattedQueryString(node));
@@ -355,7 +389,6 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 log.debug("Skipping cost estimation since we have a timeout ");
         }
         
-        String fieldName = JexlASTHelper.getIdentifier(node);
         try {
             if (!helper.isIndexed(fieldName, config.getDatatypeFilter())) {
                 log.debug("Not expanding regular expression node as the field is not indexed");
@@ -376,7 +409,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             throw new DatawaveFatalQueryException(e);
         }
         
-        return expandFieldNames(node);
+        return expandFieldNames(node, false);
     }
     
     @Override
@@ -401,15 +434,11 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (!QueryPropertyMarker.instanceOf(node, null)) {
-            ASTReference ref = (ASTReference) super.visit(node, data);
-            if (JexlNodes.children(ref).length == 0) {
-                return null;
-            } else {
-                return ref;
-            }
+        ASTReference ref = (ASTReference) super.visit(node, data);
+        if (JexlNodes.children(ref).length == 0) {
+            return null;
         } else {
-            return node;
+            return ref;
         }
     }
     
@@ -587,12 +616,12 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
      * @param node
      * @return
      */
-    protected Object expandFieldNames(JexlNode node) {
+    protected Object expandFieldNames(JexlNode node, boolean keepOriginalNode) {
         
         if (shouldExpand(node)) {
             
             try {
-                IndexLookupCallable runnableLookup = buildIndexLookup(node);
+                IndexLookupCallable runnableLookup = buildIndexLookup(node, keepOriginalNode);
                 
                 JexlNode newNode = new IndexLookupCallback(ParserTreeConstants.JJTREFERENCE, runnableLookup);
                 todo.add(((IndexLookupCallback) newNode).get());
@@ -685,17 +714,19 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
         protected IndexLookup lookup;
         protected JexlNode node;
         protected boolean ignoreComposites;
+        protected boolean keepOriginalNode;
         
         protected JexlNode parentNode = null;
         private int id;
         private JexlNode newNode;
         protected boolean enforceTimeout;
         
-        public IndexLookupCallable(IndexLookup lookup, JexlNode currNode, boolean enforceTimeout, boolean ignoreComposites) {
+        public IndexLookupCallable(IndexLookup lookup, JexlNode currNode, boolean enforceTimeout, boolean ignoreComposites, boolean keepOriginalNode) {
             this.lookup = lookup;
             this.node = currNode;
             this.enforceTimeout = enforceTimeout;
             this.ignoreComposites = ignoreComposites;
+            this.keepOriginalNode = keepOriginalNode;
             parentNode = currNode.jjtGetParent();
         }
         
@@ -741,7 +772,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 // simply replace the _ANYFIELD_ with _NOFIELD_ denoting that there was no expansion. This will naturally evaluate correctly when applying
                 // the query against the document
                 for (ASTIdentifier id : JexlASTHelper.getIdentifiers(node)) {
-                    if (Constants.ANY_FIELD.equals(id.image)) {
+                    if (!keepOriginalNode && Constants.ANY_FIELD.equals(id.image)) {
                         id.image = Constants.NO_FIELD;
                     }
                 }
@@ -751,11 +782,11 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 if (isNegativeNode(node)) {
                     // for a negative node, we want negative equalities in an AND
                     newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.AND_NODE, new ASTNENode(ParserTreeConstants.JJTNENODE), node,
-                                    fieldsToValues, expandFields, expandValues);
+                                    fieldsToValues, expandFields, expandValues, keepOriginalNode);
                 } else {
                     // for a positive node, we want equalities in a OR
                     newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.OR_NODE, new ASTEQNode(ParserTreeConstants.JJTEQNODE), node,
-                                    fieldsToValues, expandFields, expandValues);
+                                    fieldsToValues, expandFields, expandValues, keepOriginalNode);
                 }
             }
             

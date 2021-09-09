@@ -24,6 +24,8 @@ import org.apache.log4j.Logger;
 
 import java.util.Arrays;
 
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
+
 /**
  * Visits an JexlNode tree, and expand the functions to be AND'ed with their index query equivalents. Note that the functions are left in the final query to
  * provide potentially additional filtering after applying the index query.
@@ -88,6 +90,8 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
+        boolean evaluationOnly = (data instanceof Boolean) && (Boolean) data;
+        
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         
         if (desc instanceof RebuildingJexlArgumentDescriptor) {
@@ -99,28 +103,26 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
                 return rebuiltNode.jjtAccept(this, data);
         }
         
-        JexlNode indexQuery = desc.getIndexQuery(config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
-        if (indexQuery != null && !(indexQuery instanceof ASTTrueNode)) {
-            // now link em up
-            return JexlNodeFactory.createAndNode(Arrays.asList(node, indexQuery));
-        } else {
-            return node;
+        if (!evaluationOnly) {
+            JexlNode indexQuery = desc.getIndexQuery(config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
+            if (indexQuery != null && !(indexQuery instanceof ASTTrueNode)) {
+                // now link em up
+                return JexlNodeFactory.createAndNode(Arrays.asList(node, indexQuery));
+            }
         }
+        
+        return node;
     }
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        if (!ASTEvaluationOnly.instanceOf(node))
-            return super.visit(node, data);
-        else
-            return node;
+        // if we know from a parent that this is evaluation only, pass that forward. if we don't know, check.
+        return super.visit(node, (data instanceof Boolean && (Boolean) data) || ASTEvaluationOnly.instanceOf(node));
     }
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (!ASTEvaluationOnly.instanceOf(node))
-            return super.visit(node, data);
-        else
-            return node;
+        // if we know from a parent that this is evaluation only, pass that forward. if we don't know, check.
+        return super.visit(node, (data instanceof Boolean && (Boolean) data) || ASTEvaluationOnly.instanceOf(node));
     }
 }

@@ -9,6 +9,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
+import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.ingest.data.config.ingest.CompositeIngest;
@@ -25,6 +26,7 @@ import datawave.query.function.DocumentMetadata;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.function.IndexOnlyContextCreator;
+import datawave.query.function.IndexOnlyContextCreatorBuilder;
 import datawave.query.function.JexlContextCreator;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.KeyToDocumentData;
@@ -37,6 +39,7 @@ import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
 import datawave.query.function.serializer.WritableDocumentSerializer;
 import datawave.query.iterator.aggregation.DocumentData;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.pipeline.PipelineFactory;
 import datawave.query.iterator.pipeline.PipelineIterator;
 import datawave.query.iterator.profile.EvaluationTrackingFunction;
@@ -55,6 +58,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.functions.KeyAdjudicator;
+import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
@@ -85,12 +89,15 @@ import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
 import org.apache.accumulo.core.trace.Span;
 import org.apache.accumulo.core.trace.Trace;
 import org.apache.accumulo.tserver.tablet.TabletClosedException;
+import org.apache.commons.collections4.iterators.EmptyIterator;
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.pool.BasePoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.commons.pool2.PooledObject;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
@@ -262,6 +269,34 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (env != null) {
             ActiveQueryLog.setConfig(env.getConfig());
         }
+        
+        DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileSystem(this.getFileSystemCache());
+        DatawaveFieldIndexListIteratorJexl.FSTManager.setHdfsFileCompressionCodec(this.getHdfsFileCompressionCodec());
+        
+        pruneIvaratorCacheDirs();
+    }
+    
+    // this method will prune any ivarator cache directories that are not available on this node
+    private void pruneIvaratorCacheDirs() throws IOException {
+        ivaratorCacheDirConfigs.removeIf(this::pruneIvaratorCacheDir);
+    }
+    
+    private boolean pruneIvaratorCacheDir(IvaratorCacheDirConfig config) {
+        boolean fsExists = false;
+        
+        // first, make sure the cache configuration is valid
+        if (config.isValid()) {
+            Path basePath = new Path(config.getBasePathURI());
+            
+            try {
+                FileSystem fs = this.getFileSystemCache().getFileSystem(basePath.toUri());
+                fsExists = fs.mkdirs(basePath) || fs.exists(basePath);
+            } catch (Exception e) {
+                log.debug("Ivarator Cache Dir does not exist: " + basePath);
+            }
+        }
+        
+        return !fsExists;
     }
     
     @Override
@@ -332,6 +367,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // determine whether this is a teardown/rebuild range
             long resultCount = 0;
             if (!range.isStartKeyInclusive()) {
+                // see if we can fail fast. If we were rebuilt with the FinalDocument key, then we are already completely done
+                if (collectTimingDetails && FinalDocumentTrackingIterator.isFinalDocumentKey(range.getStartKey())) {
+                    this.seekKeySource = new EmptyTreeIterable();
+                    this.serializedDocuments = EmptyIterator.emptyIterator();
+                    prepareKeyValue(span);
+                    return;
+                }
+                
                 // see if we have a count in the cf
                 Key startKey = range.getStartKey();
                 String[] parts = StringUtils.split(startKey.getColumnFamily().toString(), '\0');
@@ -386,7 +429,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // evaluation within a thread pool
             PipelineIterator pipelineIter = PipelineFactory.createIterator(this.seekKeySource, getMaxEvaluationPipelines(), getMaxPipelineCachedResults(),
                             getSerialPipelineRequest(), querySpanCollector, trackingSpan, this, sourceForDeepCopies.deepCopy(myEnvironment), myEnvironment,
-                            yield, yieldThresholdMs);
+                            yield, yieldThresholdMs, columnFamilies, inclusive);
             
             pipelineIter.setCollectTimingDetails(collectTimingDetails);
             // TODO pipelineIter.setStatsdHostAndPort(statsdHostAndPort);
@@ -747,7 +790,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      * @return iterator of keys and values
      */
     public Iterator<Entry<Key,Document>> createDocumentPipeline(SortedKeyValueIterator<Key,Value> deepSourceCopy,
-                    final NestedQueryIterator<Key> documentSpecificSource, QuerySpanCollector querySpanCollector) {
+                    final NestedQueryIterator<Key> documentSpecificSource, Collection<ByteSequence> columnFamilies, boolean inclusive,
+                    QuerySpanCollector querySpanCollector) {
         
         QuerySpan trackingSpan = null;
         if (gatherTimingDetails()) {
@@ -819,9 +863,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         
         if (gatherTimingDetails()) {
             documents = new EvaluationTrackingIterator(QuerySpan.Stage.DocumentEvaluation, trackingSpan, getEvaluation(documentSpecificSource, deepSourceCopy,
-                            documents, compositeMetadata, typeMetadataWithNonIndexed));
+                            documents, compositeMetadata, typeMetadataWithNonIndexed, columnFamilies, inclusive));
         } else {
-            documents = getEvaluation(documentSpecificSource, deepSourceCopy, documents, compositeMetadata, typeMetadataWithNonIndexed);
+            documents = getEvaluation(documentSpecificSource, deepSourceCopy, documents, compositeMetadata, typeMetadataWithNonIndexed, columnFamilies,
+                            inclusive);
         }
         
         // a hook to allow mapping the document such as with the TLD or Parent
@@ -910,12 +955,13 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected Iterator<Entry<Key,Document>> getEvaluation(SortedKeyValueIterator<Key,Value> sourceDeepCopy, Iterator<Entry<Key,Document>> documents,
-                    CompositeMetadata compositeMetadata, TypeMetadata typeMetadataForEval) {
-        return getEvaluation(null, sourceDeepCopy, documents, compositeMetadata, typeMetadataForEval);
+                    CompositeMetadata compositeMetadata, TypeMetadata typeMetadataForEval, Collection<ByteSequence> columnFamilies, boolean inclusive) {
+        return getEvaluation(null, sourceDeepCopy, documents, compositeMetadata, typeMetadataForEval, columnFamilies, inclusive);
     }
     
     protected Iterator<Entry<Key,Document>> getEvaluation(NestedQueryIterator<Key> documentSource, SortedKeyValueIterator<Key,Value> sourceDeepCopy,
-                    Iterator<Entry<Key,Document>> documents, CompositeMetadata compositeMetadata, TypeMetadata typeMetadataForEval) {
+                    Iterator<Entry<Key,Document>> documents, CompositeMetadata compositeMetadata, TypeMetadata typeMetadataForEval,
+                    Collection<ByteSequence> columnFamilies, boolean inclusive) {
         // Filter the Documents by testing them against the JEXL query
         if (!this.disableEvaluation) {
             
@@ -943,18 +989,31 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 itrWithContext = Iterators.transform(tupleItr, new EmptyContext<>());
             }
             
-            final IndexOnlyContextCreator contextCreator = new IndexOnlyContextCreator(sourceDeepCopy, getDocumentRange(documentSource), typeMetadataForEval,
-                            compositeMetadata, this, variables, QueryIterator.this);
-            
-            if (exceededOrEvaluationCache != null && !exceededOrEvaluationCache.isEmpty())
-                contextCreator.addAdditionalEntries(exceededOrEvaluationCache);
-            
-            final Iterator<Tuple3<Key,Document,DatawaveJexlContext>> itrWithDatawaveJexlContext = Iterators.transform(itrWithContext, contextCreator);
-            Iterator<Tuple3<Key,Document,DatawaveJexlContext>> matchedDocuments = statelessFilter(itrWithDatawaveJexlContext, jexlEvaluationFunction);
-            if (log.isTraceEnabled()) {
-                log.trace("arithmetic:" + arithmetic + " range:" + getDocumentRange(documentSource) + ", thread:" + Thread.currentThread());
+            try {
+                IteratorBuildingVisitor iteratorBuildingVisitor = createIteratorBuildingVisitor(getDocumentRange(documentSource), false, this.sortedUIDs);
+                Multimap<String,JexlNode> delayedNonEventFieldMap = DelayedNonEventSubTreeVisitor.getDelayedNonEventFieldMap(iteratorBuildingVisitor, script,
+                                getNonEventFields());
+                
+                IndexOnlyContextCreatorBuilder contextCreatorBuilder = new IndexOnlyContextCreatorBuilder().setSource(sourceDeepCopy)
+                                .setRange(getDocumentRange(documentSource)).setTypeMetadata(typeMetadataForEval).setCompositeMetadata(compositeMetadata)
+                                .setOptions(this).setVariables(variables).setIteratorBuildingVisitor(iteratorBuildingVisitor)
+                                .setDelayedNonEventFieldMap(delayedNonEventFieldMap).setEquality(equality).setColumnFamilies(columnFamilies)
+                                .setInclusive(inclusive).setComparatorFactory(this);
+                final IndexOnlyContextCreator contextCreator = contextCreatorBuilder.build();
+                
+                if (exceededOrEvaluationCache != null) {
+                    contextCreator.addAdditionalEntries(exceededOrEvaluationCache);
+                }
+                
+                final Iterator<Tuple3<Key,Document,DatawaveJexlContext>> itrWithDatawaveJexlContext = Iterators.transform(itrWithContext, contextCreator);
+                Iterator<Tuple3<Key,Document,DatawaveJexlContext>> matchedDocuments = statelessFilter(itrWithDatawaveJexlContext, jexlEvaluationFunction);
+                if (log.isTraceEnabled()) {
+                    log.trace("arithmetic:" + arithmetic + " range:" + getDocumentRange(documentSource) + ", thread:" + Thread.currentThread());
+                }
+                return Iterators.transform(matchedDocuments, new TupleToEntry<>());
+            } catch (InstantiationException | MalformedURLException | IllegalAccessException | ConfigException e) {
+                throw new IllegalStateException("Could not perform delayed index only evaluation", e);
             }
-            return Iterators.transform(matchedDocuments, new TupleToEntry<>());
         } else if (log.isTraceEnabled()) {
             log.trace("Evaluation is disabled, not instantiating Jexl evaluation logic");
         }

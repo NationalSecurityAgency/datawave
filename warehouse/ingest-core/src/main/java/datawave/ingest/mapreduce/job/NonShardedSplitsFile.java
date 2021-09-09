@@ -80,9 +80,9 @@ public class NonShardedSplitsFile {
         
         public void createFile(boolean isTrimmed) {
             try {
-                MetadataTableSplits splits = new MetadataTableSplits(conf);
-                boolean isCacheValid = MetadataTableSplitsCacheStatus.isCacheValid(conf);
-                boolean shouldRefreshSplits = MetadataTableSplits.shouldRefreshSplits(conf);
+                TableSplitsCache splits = new TableSplitsCache(conf);
+                boolean isCacheValid = TableSplitsCacheStatus.isCacheValid(conf);
+                boolean shouldRefreshSplits = TableSplitsCache.shouldRefreshSplits(conf);
                 if (shouldRefreshSplits && !isCacheValid) {
                     log.info("Recreating splits");
                     splits.update();
@@ -96,13 +96,13 @@ public class NonShardedSplitsFile {
             }
         }
         
-        private void writeSplitsToFile(MetadataTableSplits splits) throws IOException {
+        private void writeSplitsToFile(TableSplitsCache splits) throws IOException {
             PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(new Path(workDirPath, createFileName(isTrimmed)))));
             outputSplitsForNonShardTables(splits, out);
             out.close();
         }
         
-        private void outputSplitsForNonShardTables(MetadataTableSplits splits, PrintStream out) throws IOException {
+        private void outputSplitsForNonShardTables(TableSplitsCache splits, PrintStream out) throws IOException {
             for (String table : tableNames) {
                 if (null != shardedTableNames && shardedTableNames.contains(table)) {
                     continue;
@@ -111,7 +111,7 @@ public class NonShardedSplitsFile {
             }
         }
         
-        private void outputSplitsForTable(MetadataTableSplits splits, PrintStream out, String table) throws IOException {
+        private void outputSplitsForTable(TableSplitsCache splits, PrintStream out, String table) throws IOException {
             Collection<Text> tableSplits;
             if (isTrimmed) {
                 tableSplits = splits.getSplits(table, reduceTasks - 1);

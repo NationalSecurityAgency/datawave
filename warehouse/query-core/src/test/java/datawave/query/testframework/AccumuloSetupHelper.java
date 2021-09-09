@@ -148,7 +148,9 @@ public class AccumuloSetupHelper {
         
         File tmpDir = new File(System.getProperty("java.io.tmpdir"));
         Path tmpPath = new Path(tmpDir.toURI());
-        Path seqFile = new Path(tmpPath, UUID.randomUUID().toString());
+        // To prevent periodic test cases failing, added "---" prefix for UUDID for test cases to support queries with _ANYFIELD_ starting with particular
+        // letters.
+        Path seqFile = new Path(tmpPath, "---" + UUID.randomUUID().toString());
         
         TaskAttemptID id = new TaskAttemptID("testJob", 0, TaskType.MAP, 0, 0);
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, id);

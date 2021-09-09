@@ -241,7 +241,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
     protected void assignNodeByField(JexlNode origNode, JexlNode subNode, Multimap<String,JexlNode> eqNodes, Multimap<String,JexlNode> rangeNodes,
                     List<JexlNode> otherNodes) {
         if (subNode instanceof ASTEQNode) {
-            eqNodes.put(JexlASTHelper.getIdentifier(subNode), origNode);
+            eqNodes.put(JexlASTHelper.getIdentifier(subNode, false), origNode);
         } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(subNode)) {
             assignNodeByField(origNode, ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(subNode), eqNodes, rangeNodes, otherNodes);
         } else if ((subNode.jjtGetNumChildren() == 1)
@@ -251,8 +251,8 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             JexlNode leftChild = subNode.jjtGetChild(0);
             JexlNode rightChild = subNode.jjtGetChild(1);
             if ((leftChild instanceof ASTGTNode || leftChild instanceof ASTGENode) && (rightChild instanceof ASTLTNode || rightChild instanceof ASTLENode)) {
-                String leftField = JexlASTHelper.getIdentifier(leftChild);
-                String rightField = JexlASTHelper.getIdentifier(rightChild);
+                String leftField = JexlASTHelper.getIdentifier(leftChild, false);
+                String rightField = JexlASTHelper.getIdentifier(rightChild, false);
                 if (leftField != null && rightField != null && leftField.equals(rightField)) {
                     rangeNodes.put(leftField, origNode);
                 } else {

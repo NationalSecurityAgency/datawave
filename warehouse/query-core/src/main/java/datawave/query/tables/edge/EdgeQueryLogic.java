@@ -16,6 +16,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EdgeTableRangeBuildingVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.edge.contexts.VisitationContext;
@@ -234,6 +235,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         } catch (TokenMgrError | Exception e) {
             throw new IllegalArgumentException("Invalid jexl supplied. " + e.getMessage());
         }
+        
+        script = TreeFlatteningRebuildingVisitor.flatten(script);
         
         EdgeTableRangeBuildingVisitor visitor = new EdgeTableRangeBuildingVisitor(config.includeStats(), dataTypes, config.getMaxQueryTerms(), regexDataTypes);
         

@@ -7,6 +7,7 @@ import datawave.query.iterator.SeekableIterator;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -20,7 +21,7 @@ import java.util.HashSet;
  * 
  * 
  */
-public class IndexIteratorBridge implements NestedIterator<Key>, SeekableIterator {
+public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key> {
     private final static Logger log = Logger.getLogger(IndexIteratorBridge.class);
     
     /*
@@ -33,14 +34,20 @@ public class IndexIteratorBridge implements NestedIterator<Key>, SeekableIterato
      */
     private Key next;
     
+    private String field;
+    
+    private JexlNode node;
+    
     /**
      * track the last Key returned for move purposes
      */
     private Key prevKey;
     private Document prevDocument, nextDocument;
     
-    public IndexIteratorBridge(DocumentIterator delegate) {
+    public IndexIteratorBridge(DocumentIterator delegate, JexlNode node, String field) {
         this.delegate = delegate;
+        this.node = node;
+        this.field = field;
     }
     
     public Key next() {
@@ -165,5 +172,23 @@ public class IndexIteratorBridge implements NestedIterator<Key>, SeekableIterato
     public Document document() {
         // If we can assert that this Document won't be reused, we can use _document()
         return prevDocument;
+    }
+    
+    public JexlNode getSourceNode() {
+        return node;
+    }
+    
+    public String getField() {
+        return field;
+    }
+    
+    @Override
+    public boolean isContextRequired() {
+        return false;
+    }
+    
+    @Override
+    public void setContext(Key context) {
+        // no-op
     }
 }

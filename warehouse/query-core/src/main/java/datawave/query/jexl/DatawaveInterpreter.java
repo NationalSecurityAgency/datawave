@@ -1,6 +1,7 @@
 package datawave.query.jexl;
 
 import com.google.common.collect.Maps;
+import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.functions.QueryFunctions;
@@ -26,9 +27,13 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -88,6 +93,7 @@ public class DatawaveInterpreter extends Interpreter {
         if (null != result) {
             return result;
         }
+        
         result = super.visit(node, data);
         
         if (this.arithmetic instanceof HitListArithmetic) {
@@ -181,23 +187,44 @@ public class DatawaveInterpreter extends Interpreter {
         Deque<JexlNode> stack = new ArrayDeque<>();
         stack.push(node);
         
+        boolean allIdentifiers = true;
+        
         // iterative depth-first traversal of tree to avoid stack
         // overflow when traversing large or'd lists
+        JexlNode current;
+        JexlNode child;
         while (!stack.isEmpty()) {
-            JexlNode currNode = stack.pop();
+            current = stack.pop();
             
-            if (currNode instanceof ASTOrNode) {
-                for (int i = currNode.jjtGetNumChildren() - 1; i >= 0; i--) {
-                    stack.push(JexlASTHelper.dereference(currNode.jjtGetChild(i)));
+            if (current instanceof ASTOrNode) {
+                for (int i = current.jjtGetNumChildren() - 1; i >= 0; i--) {
+                    child = JexlASTHelper.dereference(current.jjtGetChild(i));
+                    stack.push(child);
                 }
             } else {
-                children.push(currNode);
+                children.push(current);
+                if (allIdentifiers && !(current instanceof ASTIdentifier)) {
+                    allIdentifiers = false;
+                }
             }
         }
         
+        // If all ASTIdentifiers, then traverse the whole queue. Otherwise we can attempt to short circuit.
         Object result = null;
-        while (!arithmetic.toBoolean(result) && !children.isEmpty())
-            result = interpretOr(children.pop().jjtAccept(this, data), result);
+        if (allIdentifiers) {
+            // Likely within a function and must visit every child in the stack.
+            // Failure to do so will short circuit value aggregation leading to incorrect function evaluation.
+            while (!children.isEmpty()) {
+                // Child nodes were put onto the stack left to right. PollLast to evaluate left to right.
+                result = interpretOr(children.pollLast().jjtAccept(this, data), result);
+            }
+        } else {
+            // We are likely within a normal union and can short circuit
+            while (!arithmetic.toBoolean(result) && !children.isEmpty()) {
+                // Child nodes were put onto the stack left to right. PollLast to evaluate left to right.
+                result = interpretOr(children.pollLast().jjtAccept(this, data), result);
+            }
+        }
         
         return result;
     }
@@ -313,6 +340,11 @@ public class DatawaveInterpreter extends Interpreter {
     }
     
     public Object visit(ASTAndNode node, Object data) {
+        // we could have arrived here after the node was dereferenced
+        if (ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
+            return visitExceededOrThresholdMarker(node);
+        }
+        
         // check for the special case of a range (conjunction of a G/GE and a L/LE node) and reinterpret as a function
         Object evaluation = evaluateRange(node);
         if (evaluation != null) {
@@ -431,13 +463,31 @@ public class DatawaveInterpreter extends Interpreter {
         }
     }
     
-    private Object visitExceededOrThresholdMarker(ASTReference node) {
+    private Object visitExceededOrThresholdMarker(JexlNode node) {
         String id = ExceededOrThresholdMarkerJexlNode.getId(node);
         String field = ExceededOrThresholdMarkerJexlNode.getField(node);
         
         Set<String> evalValues = null;
         FST evalFst = null;
         SortedSet<Range> evalRanges = null;
+        
+        // if the context isn't cached, load it now
+        if (!getContext().has(id)) {
+            try {
+                ExceededOrThresholdMarkerJexlNode.ExceededOrParams params = ExceededOrThresholdMarkerJexlNode.getParameters(node);
+                if (params != null) {
+                    if (params.getRanges() != null && !params.getRanges().isEmpty()) {
+                        getContext().set(id, params.getSortedAccumuloRanges());
+                    } else if (params.getValues() != null && !params.getValues().isEmpty()) {
+                        getContext().set(id, params.getValues());
+                    } else if (params.getFstURI() != null) {
+                        getContext().set(id, DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(new URI(params.getFstURI()))));
+                    }
+                }
+            } catch (IOException | URISyntaxException e) {
+                log.warn("Unable to load ExceededOrThreshold Paramters during evaluation", e);
+            }
+        }
         
         // determine what we're dealing with
         Object contextObj = getContext().get(id);

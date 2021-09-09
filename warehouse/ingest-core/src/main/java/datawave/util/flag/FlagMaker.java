@@ -3,7 +3,6 @@ package datawave.util.flag;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
-import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
 import datawave.metrics.util.flag.FlagFile;
 import datawave.util.flag.config.ConfigUtil;
 import datawave.util.flag.config.FlagDataTypeConfig;
@@ -45,6 +44,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -83,7 +83,6 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     private FlagSocket flagSocket;
     private final DecimalFormat df = new DecimalFormat("#0.00");
     private DateUtils util = new DateUtils();
-    private StandaloneTaskAttemptContext<?,?,?,?> ctx;
     
     protected JobConf config;
     
@@ -238,8 +237,8 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     protected void processFlags() throws IOException {
         FileSystem fs = getHadoopFS();
         log.trace("Querying for files on {}", fs.getUri().toString());
+        
         for (FlagDataTypeConfig fc : fmc.getFlagConfigs()) {
-            long startTime = System.currentTimeMillis();
             String dataName = fc.getDataName();
             fd.setup(fc);
             log.trace("Checking for files for {}", dataName);
@@ -254,6 +253,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 }
                 writeFlagFile(fc, inFiles);
             }
+            
         }
     }
     
@@ -428,10 +428,10 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             Path first = flagging.iterator().next().getCurrentDir();
             String baseName = fmc.getFlagFileDirectory() + File.separator + df.format(now / 1000) + "_" + fc.getIngestPool() + "_" + fc.getDataName() + "_"
                             + first.getName() + "+" + flagging.size();
-            flagFile = write(flagging, fc, baseName);
+            flagFile = write(flagging, fc, baseName, metrics);
             for (InputFile entry : flagging) {
-                long time = entry.getTimestamp();
-                metrics.updateCounter(InputFile.class.getSimpleName(), entry.getFileName(), time);
+                if (fc.isCollectMetrics())
+                    metrics.updateCounter(InputFile.class.getSimpleName(), entry.getFileName(), entry.getTimestamp());
                 latestTime.set(Math.max(entry.getTimestamp(), latestTime.get()));
             }
             
@@ -456,7 +456,8 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             }
             
             for (InputFile entry : flagged) {
-                metrics.updateCounter(FlagFile.class.getSimpleName(), entry.getCurrentDir().getName(), System.currentTimeMillis());
+                if (fc.isCollectMetrics())
+                    metrics.updateCounter(FlagFile.class.getSimpleName(), entry.getCurrentDir().getName(), System.currentTimeMillis());
             }
             
             File f2 = new File(baseName + ".flag");
@@ -468,7 +469,14 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             // after we write a file, set the timeout to the forceInterval
             fc.setLast(now + fc.getTimeoutMilliSecs());
             
-            metrics.writeMetrics(this.fmc.getFlagMetricsDirectory(), new Path(baseName).getName());
+            if (fc.isCollectMetrics()) {
+                try {
+                    metrics.writeMetrics(this.fmc.getFlagMetricsDirectory(), new Path(baseName).getName());
+                } catch (Exception ex) {
+                    log.warn("Non-fatal Exception encountered when writing metrics.", ex);
+                }
+            }
+            
         } catch (IOException ex) {
             log.error("Unable to complete flag file ", ex);
             moveFilesBack(inFiles, futures, fs);
@@ -490,11 +498,13 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      *            data type for ingest
      * @param baseName
      *            base name for flag file
+     * @param metrics
+     *            FlagMetrics object for this source type
      * @return handle for flag file
      * @throws IOException
      *             error creating flag file
      */
-    protected File write(Collection<InputFile> flagging, FlagDataTypeConfig fc, String baseName) throws IOException {
+    protected File write(Collection<InputFile> flagging, FlagDataTypeConfig fc, String baseName, FlagMetrics metrics) throws IOException {
         // create the flag.generating file
         log.debug("Creating flag file" + baseName + ".flag" + " for data type " + fc.getDataName() + " containing " + flagging.size() + " files");
         File f = new File(baseName + ".flag.generating");
@@ -507,8 +517,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             if (fc.getFileListMarker() == null) {
                 String sep = " ";
                 for (InputFile inFile : flagging) {
-                    if (fc.isCollectMetrics())
-                        ctx.getCounter(InputFile.class.getSimpleName(), inFile.getFileName()).setValue(inFile.getTimestamp());
+                    if (fc.isCollectMetrics()) {
+                        metrics.updateCounter(InputFile.class.getSimpleName(), inFile.getFileName(), inFile.getTimestamp());
+                    }
                     sb.append(sep).append(inFile.getFlagged().toUri());
                     sep = ",";
                 }
@@ -528,7 +539,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 sb.append(fc.getFileListMarker()).append('\n');
                 for (InputFile inFile : flagging) {
                     if (fc.isCollectMetrics())
-                        ctx.getCounter(InputFile.class.getSimpleName(), inFile.getFileName()).setValue(inFile.getTimestamp());
+                        metrics.updateCounter(InputFile.class.getSimpleName(), inFile.getFileName(), inFile.getTimestamp());
                     sb.append(inFile.getFlagged().toUri()).append('\n');
                 }
             }

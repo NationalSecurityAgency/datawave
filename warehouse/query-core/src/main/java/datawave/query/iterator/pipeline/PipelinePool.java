@@ -1,10 +1,12 @@
 package datawave.query.iterator.pipeline;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -51,7 +53,7 @@ public class PipelinePool {
      * @param nestedQuery
      * @return a new pipeline initialized and ready to execute
      */
-    public Pipeline checkOut(Key key, Document doc, NestedQuery<Key> nestedQuery) {
+    public Pipeline checkOut(Key key, Document doc, NestedQuery<Key> nestedQuery, Collection<ByteSequence> columnFamilies, boolean inclusive) {
         if (log.isTraceEnabled()) {
             log.trace("checkOut(" + key + ") " + nestedQuery);
         }
@@ -62,7 +64,8 @@ public class PipelinePool {
                 NestedQueryIterator<Key> nq = pipeline.getDocumentSpecificSource();
                 if (null != nestedQuery) {
                     nq.setCurrentQuery(nestedQuery);
-                    pipeline.setSourceIterator(sourceIterator.createDocumentPipeline(sourceForDeepCopy.deepCopy(env), nq, querySpanCollector));
+                    pipeline.setSourceIterator(sourceIterator.createDocumentPipeline(sourceForDeepCopy.deepCopy(env), nq, columnFamilies, inclusive,
+                                    querySpanCollector));
                 }
             }
         } else if (checkedIn.size() + checkedOut.size() < maxPipelines) {
@@ -71,7 +74,7 @@ public class PipelinePool {
             if (null != nestedQuery) {
                 nq.setCurrentQuery(nestedQuery);
             }
-            pipeline.setSourceIterator(sourceIterator.createDocumentPipeline(sourceForDeepCopy.deepCopy(env), nq, querySpanCollector));
+            pipeline.setSourceIterator(sourceIterator.createDocumentPipeline(sourceForDeepCopy.deepCopy(env), nq, columnFamilies, inclusive, querySpanCollector));
         }
         if (pipeline != null) {
             checkedOut.add(pipeline);

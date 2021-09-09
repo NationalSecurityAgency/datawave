@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 
 /**
  * A sorted set that can be persisted into a file and still be read in its persisted state. The set can always be re-loaded and then all operations will work as
@@ -496,6 +497,15 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     }
     
     @Override
+    public boolean removeIf(Predicate<? super E> filter) {
+        if (persisted) {
+            throw new IllegalStateException("Unable to remove from a persisted FileSortedSet.  Please call load() first.");
+        } else {
+            return set.removeIf(filter);
+        }
+    }
+    
+    @Override
     public void clear() {
         if (persisted) {
             handler.deleteFile();
@@ -723,7 +733,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
         
         @Override
         public void remove() {
-            throw new UnsupportedOperationException("Cannot remove elements from a persisted file.  Please call load() first.");
+            throw new UnsupportedOperationException("Iterator.remove() not supported.");
         }
         
         @Override

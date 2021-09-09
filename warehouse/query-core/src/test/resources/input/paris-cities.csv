@@ -1,23 +1,23 @@
-20150707,paris-fra-lle-7,Paris,lle-de-France,France,Europe,FRA,Euro,20
-20150707,paris-fra-alps-7,Paris,Rhone-Alps,France,Europe,FRA,Euro,20
-20150707,paris-usa-tx-7,Paris,Texas,United States,North America,USA,NA,100
-20150707,paris-usa-or-7,Paris,Oregon,United States,North America,USA,NA,100
-20150707,paris-usa-mi-7,Paris,Michigan,United States,North America,USA,NA,100
-20150707,paris-usa-multi-7,Paris,California;Kansas;Idaho;Maine;Maryland,United States,North America,USA,NA,100
-20150707,paris-usa-oh-7,Paris,Ohio,United States,North America,USA,NA,100
-20150707,paris-usa-ia-7,Paris,Iowa,United States,North America,USA,NA,100
-20150707,paris-bol-7,Paris,El Beni,Boliva,South America,BOL,SA,500
-20150707,paris-ita-7,Paris,Lazio,Italy,Europe,ITA,Euro,30
-20150707,paris-esp-7,Paris,Madrid,Spain,Europe,ESP,Euro,40
-20150808,paris-usa-oh-8,Paris,Ohio,United States,North America,USA,NA,100
-20150808,paris-usa-ak-8,Paris,Alaska,United States,North America,USA,NA,100
-20150808,paris-can-yt-8,Paris,Yukon Territory,Canada,North America,CAN,NA,200
-20150808,paris-esp-8,Paris,Madrid,Spain,Europe,ESP,Euro,40
-20150909,paris-col-9,Paris,Antioquia,Colombia,South America,COL,SA,500
-20150909,paris-esp-9,Paris,Castilla y Leon,Spain,Europe,ESP,Euro,40
-20150404,paris-usa-or-4,Paris,Oregon,United States,North America,USA,NA,100
-20150404,paris-usa-mi-4,Paris,Michigan,United States,North America,USA,NA,100
-20150404,paris-usa-oh-4,Paris,Ohio,United States,North America,USA,NA,100
-20150404,paris-usa-ia-4,Paris,Iowa,United States,North America,USA,NA,100
-20150505,paris-can-ot-5,Paris,Ontario,Canada,North America,CAN,NA,200
-20150505,paris-fra-alps-5,Paris,Rhone-Alps,France,Europe,FRA,Euro,20
+20150707,paris-fra-lle-7,Paris,lle-de-France,France,Europe,FRA,Euro,20,0_0
+20150707,paris-fra-alps-7,Paris,Rhone-Alps,France,Europe,FRA,Euro,20,0_0
+20150707,paris-usa-tx-7,Paris,Texas,United States,North America,USA,NA,100,0_0
+20150707,paris-usa-or-7,Paris,Oregon,United States,North America,USA,NA,100,0_0
+20150707,paris-usa-mi-7,Paris,Michigan,United States,North America,USA,NA,100,0_0
+20150707,paris-usa-multi-7,Paris,California;Kansas;Idaho;Maine;Maryland,United States,North America,USA,NA,100,0_0
+20150707,paris-usa-oh-7,Paris,Ohio,United States,North America,USA,NA,100,0_0
+20150707,paris-usa-ia-7,Paris,Iowa,United States,North America,USA,NA,100,0_0
+20150707,paris-bol-7,Paris,El Beni,Boliva,South America,BOL,SA,500,0_0
+20150707,paris-ita-7,Paris,Lazio,Italy,Europe,ITA,Euro,30,0_0
+20150707,paris-esp-7,Paris,Madrid,Spain,Europe,ESP,Euro,40,0_0
+20150808,paris-usa-oh-8,Paris,Ohio,United States,North America,USA,NA,100,0_0
+20150808,paris-usa-ak-8,Paris,Alaska,United States,North America,USA,NA,100,0_0
+20150808,paris-can-yt-8,Paris,Yukon Territory,Canada,North America,CAN,NA,200,0_0
+20150808,paris-esp-8,Paris,Madrid,Spain,Europe,ESP,Euro,40,0_0
+20150909,paris-col-9,Paris,Antioquia,Colombia,South America,COL,SA,500,0_0
+20150909,paris-esp-9,Paris,Castilla y Leon,Spain,Europe,ESP,Euro,40,0_0
+20150404,paris-usa-or-4,Paris,Oregon,United States,North America,USA,NA,100,0_0
+20150404,paris-usa-mi-4,Paris,Michigan,United States,North America,USA,NA,100,0_0
+20150404,paris-usa-oh-4,Paris,Ohio,United States,North America,USA,NA,100,0_0
+20150404,paris-usa-ia-4,Paris,Iowa,United States,North America,USA,NA,100,0_0
+20150505,paris-can-ot-5,Paris,Ontario,Canada,North America,CAN,NA,200,0_0
+20150505,paris-fra-alps-5,Paris,Rhone-Alps,France,Europe,FRA,Euro,20,0_0

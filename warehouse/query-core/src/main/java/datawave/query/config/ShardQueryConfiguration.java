@@ -135,6 +135,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private int pointMaxExpansion = 32;
     /**
+     * Used during geowave range optimization to determine the minimum number of sub-ranges we should split a range into.
+     */
+    private int geoWaveRangeSplitThreshold = 16;
+    /**
+     * Used during geowave range optimization to determine whether or not a large range should be split into smaller ranges - expressed as a float between 0 and
+     * 1.0
+     */
+    private double geoWaveMaxRangeOverlap = 0.25;
+    /**
+     * Determines whether or not we should attempt to optimize the GeoWave ranges which are produced.
+     */
+    private boolean optimizeGeoWaveRanges = true;
+    /**
      * Used to determine the maximum number of envelopes which can be used when generating ranges for a geowave query.
      */
     private int geoWaveMaxEnvelopes = 4;
@@ -367,6 +380,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setRangeBufferPollMillis(other.getRangeBufferPollMillis());
         this.setGeometryMaxExpansion(other.getGeometryMaxExpansion());
         this.setPointMaxExpansion(other.getPointMaxExpansion());
+        this.setGeoWaveRangeSplitThreshold(other.getGeoWaveRangeSplitThreshold());
+        this.setGeoWaveMaxRangeOverlap(other.getGeoWaveMaxRangeOverlap());
+        this.setOptimizeGeoWaveRanges(other.isOptimizeGeoWaveRanges());
         this.setGeoWaveMaxEnvelopes(other.getGeoWaveMaxEnvelopes());
         this.setShardTableName(other.getShardTableName());
         this.setIndexTableName(other.getIndexTableName());
@@ -843,6 +859,30 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setPointMaxExpansion(int pointMaxExpansion) {
         this.pointMaxExpansion = pointMaxExpansion;
+    }
+    
+    public int getGeoWaveRangeSplitThreshold() {
+        return geoWaveRangeSplitThreshold;
+    }
+    
+    public void setGeoWaveRangeSplitThreshold(int geoWaveRangeSplitThreshold) {
+        this.geoWaveRangeSplitThreshold = geoWaveRangeSplitThreshold;
+    }
+    
+    public double getGeoWaveMaxRangeOverlap() {
+        return geoWaveMaxRangeOverlap;
+    }
+    
+    public void setGeoWaveMaxRangeOverlap(double geoWaveMaxRangeOverlap) {
+        this.geoWaveMaxRangeOverlap = geoWaveMaxRangeOverlap;
+    }
+    
+    public boolean isOptimizeGeoWaveRanges() {
+        return optimizeGeoWaveRanges;
+    }
+    
+    public void setOptimizeGeoWaveRanges(boolean optimizeGeoWaveRanges) {
+        this.optimizeGeoWaveRanges = optimizeGeoWaveRanges;
     }
     
     public int getGeoWaveMaxEnvelopes() {

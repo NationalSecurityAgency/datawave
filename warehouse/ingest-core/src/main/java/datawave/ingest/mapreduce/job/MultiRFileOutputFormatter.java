@@ -359,7 +359,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     
     // Get the table list
     protected Set<String> getTableList() {
-        Set<String> tableList = new HashSet<>(IngestJob.getTables(conf));
+        Set<String> tableList = new HashSet<>(TableConfigurationUtil.getTables(conf));
         
         String configNames = conf.get(CONFIGURED_TABLE_NAMES, "");
         if (log.isInfoEnabled())

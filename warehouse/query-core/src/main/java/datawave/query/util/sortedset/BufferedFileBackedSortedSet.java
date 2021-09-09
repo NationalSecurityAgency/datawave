@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
@@ -474,6 +475,33 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
             this.sizeModified = true;
         }
         return modified;
+    }
+    
+    @Override
+    public boolean removeIf(Predicate<? super E> filter) {
+        boolean removed = false;
+        for (SortedSet<E> subSet : set.getSets()) {
+            FileSortedSet<E> fileSet = (FileSortedSet<E>) subSet;
+            if (fileSet.isPersisted()) {
+                try {
+                    fileSet.load();
+                    if (fileSet.removeIf(filter)) {
+                        removed = true;
+                    }
+                    fileSet.persist();
+                } catch (Exception e) {
+                    throw new IllegalStateException("Unable to remove item from underlying files", e);
+                }
+            } else {
+                if (fileSet.removeIf(filter)) {
+                    removed = true;
+                }
+            }
+        }
+        if (removed) {
+            this.sizeModified = true;
+        }
+        return removed;
     }
     
     @Override

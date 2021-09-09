@@ -7,6 +7,7 @@ import java.util.List;
 import datawave.query.jexl.JexlNodeFactory;
 
 import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
+import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;

@@ -33,12 +33,12 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 
-public class MetadataTableSplitsTest {
+public class TableSplitsCacheTest {
     
     public static final String PASSWORD = "passw0rd";
     public static final String HOST_NAME = "localhost";
     public static final String USER_NAME = "staff";
-    protected static final Logger logger = Logger.getLogger(MetadataTableSplitsTest.class);
+    protected static final Logger logger = Logger.getLogger(TableSplitsCacheTest.class);
     protected static Level testDriverLevel;
     protected static Level uutLevel;
     protected static Level zooCacheLevel;
@@ -60,10 +60,10 @@ public class MetadataTableSplitsTest {
             
             String path = f.toString();
             if (new File(path).exists()) {
-                return new FileStatus(MetadataTableSplitsTest.FILE_STATUS_LENGTH, MetadataTableSplitsTest.FILE_STATUS_IS_DIRECTORY,
-                                MetadataTableSplitsTest.FILE_STATUS_REPLICATION, MetadataTableSplitsTest.FILE_STATUS_BLOCK_SIZE,
-                                MetadataTableSplitsTest.FILE_STATUS_MODIFICATION_TIME, MetadataTableSplitsTest.FILE_STATUS_ACCESS_TIME, null,
-                                MetadataTableSplitsTest.FILE_STATUS_USER, MetadataTableSplitsTest.FILE_STATUS_GROUP, f);
+                return new FileStatus(TableSplitsCacheTest.FILE_STATUS_LENGTH, TableSplitsCacheTest.FILE_STATUS_IS_DIRECTORY,
+                                TableSplitsCacheTest.FILE_STATUS_REPLICATION, TableSplitsCacheTest.FILE_STATUS_BLOCK_SIZE,
+                                TableSplitsCacheTest.FILE_STATUS_MODIFICATION_TIME, TableSplitsCacheTest.FILE_STATUS_ACCESS_TIME, null,
+                                TableSplitsCacheTest.FILE_STATUS_USER, TableSplitsCacheTest.FILE_STATUS_GROUP, f);
             } else {
                 return null;
             }
@@ -73,7 +73,7 @@ public class MetadataTableSplitsTest {
         @Override
         public void setConf(Configuration conf) {
             
-            MetadataTableSplitsTest.logger.debug("MetadataTableSplitsTest.WrappedDistributedFileSystem.setConfig called....");
+            TableSplitsCacheTest.logger.debug("TableSplitsCacheTest.WrappedDistributedFileSystem.setConfig called....");
             
             super.setConf(conf);
         }
@@ -93,19 +93,19 @@ public class MetadataTableSplitsTest {
         @Override
         public void initialize(URI uri, Configuration conf) throws IOException {
             
-            MetadataTableSplitsTest.logger.debug("MetadataTableSplitsTest.WrappedDistributedFileSystem.initialize called....");
+            TableSplitsCacheTest.logger.debug("TableSplitsCacheTest.WrappedDistributedFileSystem.initialize called....");
             super.initialize(uri, conf);
         }
         
         @Override
         public void close() throws IOException {
             
-            MetadataTableSplitsTest.logger.debug("MetadataTableSplitsTest.WrappedDistributedFileSystem.close called....");
+            TableSplitsCacheTest.logger.debug("TableSplitsCacheTest.WrappedDistributedFileSystem.close called....");
             
             try {
                 super.close();
             } catch (Throwable t) {
-                MetadataTableSplitsTest.logger.debug(String.format(
+                TableSplitsCacheTest.logger.debug(String.format(
                                 "DistributedFileSystem handled base class excpetion: %s with messge %s (caused by the missing DfsClient instance...)", t
                                                 .getClass().getName(), t.getMessage()));
             }
@@ -114,12 +114,12 @@ public class MetadataTableSplitsTest {
     
     protected void createMockFileSystem() throws Exception {
         
-        FileSystem fs = new MetadataTableSplitsTest.WrappedLocalFileSystem();
+        FileSystem fs = new TableSplitsCacheTest.WrappedLocalFileSystem();
         
         mockConfiguration.put(FileSystem.FS_DEFAULT_NAME_KEY, "file:///localhost");
         
         // Lifted from DfsMonitorTest
-        mockConfiguration.put("fs.file.impl", MetadataTableSplitsTest.WrappedLocalFileSystem.class.getName());
+        mockConfiguration.put("fs.file.impl", TableSplitsCacheTest.WrappedLocalFileSystem.class.getName());
         mockConfiguration.put("fs.automatic.close", "false");
         mockConfiguration.put(MRJobConfig.CACHE_FILES, ".");
         
@@ -135,11 +135,11 @@ public class MetadataTableSplitsTest {
     public void setup() throws Exception {
         
         mockConfiguration.clear();
-        mockConfiguration.put(MetadataTableSplits.REFRESH_SPLITS, "false");
+        mockConfiguration.put(TableSplitsCache.REFRESH_SPLITS, "false");
         testDriverLevel = logger.getLevel();
         logger.setLevel(Level.ALL);
         
-        Logger uutLog = Logger.getLogger(MetadataTableSplits.class);
+        Logger uutLog = Logger.getLogger(TableSplitsCache.class);
         uutLevel = uutLog.getLevel();
         uutLog.setLevel(Level.ALL);
         
@@ -153,27 +153,27 @@ public class MetadataTableSplitsTest {
         
         createMockFileSystem();
         
-        MetadataTableSplitsTest.FILE_STATUS_MODIFICATION_TIME = MetadataTableSplitsTest.FILE_STATUS_ACCESS_TIME = 0l;
+        TableSplitsCacheTest.FILE_STATUS_MODIFICATION_TIME = TableSplitsCacheTest.FILE_STATUS_ACCESS_TIME = 0l;
         
-        MetadataTableSplitsTest.FILE_STATUS_USER = MetadataTableSplitsTest.USER_NAME;
-        MetadataTableSplitsTest.FILE_STATUS_GROUP = MetadataTableSplitsTest.USER_NAME;
+        TableSplitsCacheTest.FILE_STATUS_USER = TableSplitsCacheTest.USER_NAME;
+        TableSplitsCacheTest.FILE_STATUS_GROUP = TableSplitsCacheTest.USER_NAME;
     }
     
     public void setSplitsCacheDir() {
-        URL url = MetadataTableSplitsTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
-        Assert.assertNotNull("MetadataTableSplitsTest#setup failed to load test cache directory.", url);
-        mockConfiguration.put(MetadataTableSplits.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf(Path.SEPARATOR)));
+        URL url = TableSplitsCacheTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
+        Assert.assertNotNull("TableSplitsCacheTest#setup failed to load test cache directory.", url);
+        mockConfiguration.put(TableSplitsCache.SPLITS_CACHE_DIR, url.getPath().substring(0, url.getPath().lastIndexOf(Path.SEPARATOR)));
     }
     
     public void setSplitsCacheDir(String splitsCacheDir) {
-        mockConfiguration.put(MetadataTableSplits.SPLITS_CACHE_DIR, splitsCacheDir);
+        mockConfiguration.put(TableSplitsCache.SPLITS_CACHE_DIR, splitsCacheDir);
     }
     
     @After
     public void teardown() {
         
         logger.setLevel(testDriverLevel);
-        Logger.getLogger(MetadataTableSplits.class).setLevel(uutLevel);
+        Logger.getLogger(TableSplitsCache.class).setLevel(uutLevel);
         Logger.getLogger(ZooCache.class).setLevel(zooCacheLevel);
         Logger.getLogger(ZooKeeper.class).setLevel(zooKeeperLevel);
         
@@ -195,8 +195,8 @@ public class MetadataTableSplitsTest {
         mockConfiguration.put(AccumuloHelper.ZOOKEEPERS, HOST_NAME);
         mockConfiguration.put(FileSystem.FS_DEFAULT_NAME_KEY, "file:///");
         
-        MetadataTableSplitsTest.FILE_STATUS_MODIFICATION_TIME = Long.MAX_VALUE;
-        MetadataTableSplitsTest.FILE_STATUS_ACCESS_TIME = 0l;
+        TableSplitsCacheTest.FILE_STATUS_MODIFICATION_TIME = Long.MAX_VALUE;
+        TableSplitsCacheTest.FILE_STATUS_ACCESS_TIME = 0l;
         
     }
     
@@ -439,7 +439,7 @@ public class MetadataTableSplitsTest {
         
         try {
             
-            new MetadataTableSplits(null);
+            new TableSplitsCache(null);
             
             Assert.fail();
             
@@ -456,9 +456,9 @@ public class MetadataTableSplitsTest {
         
         try {
             
-            MetadataTableSplits uut = new MetadataTableSplits(createMockJobConf());
+            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
             
-            Assert.assertNotNull("MetadataTableSplits constructor failed to construct an instance.", uut);
+            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
             
         } finally {
             logger.info("testCtorWithValidArgument completed.");
@@ -471,9 +471,9 @@ public class MetadataTableSplitsTest {
         setupConfiguration();
         
         try {
-            MetadataTableSplits uut = new MetadataTableSplits(createMockJobConf());
-            Assert.assertNotNull("MetadataTableSplits constructor failed to construct an instance.", uut);
-            Assert.assertNull("MetadataTableSplits#getSplits() created a map of tables and their splits when no file should exist", uut.getSplits());
+            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
+            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
+            Assert.assertNull("TableSplitsCache#getSplits() created a map of tables and their splits when no file should exist", uut.getSplits());
         } finally {
             
             logger.info("testGetSplitsNoFile completed.");
@@ -486,10 +486,10 @@ public class MetadataTableSplitsTest {
         setupConfiguration();
         setSplitsCacheDir(String.format("/random/dir%s/must/not/exist", (int) (Math.random() * 100) + 1));
         try {
-            MetadataTableSplits uut = new MetadataTableSplits(createMockJobConf());
+            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
             uut.update();
-            Assert.assertNotNull("MetadataTableSplits constructor failed to construct an instance.", uut);
-            Assert.assertNull("MetadataTableSplits should have no splits", uut.getSplits());
+            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
+            Assert.assertNull("TableSplitsCache should have no splits", uut.getSplits());
         } finally {
             
             logger.info("testUpdateNoFile completed.");
@@ -503,7 +503,7 @@ public class MetadataTableSplitsTest {
         setSplitsCacheDir();
         setupConfiguration();
         try {
-            MetadataTableSplits uut = new MetadataTableSplits(createMockJobConf());
+            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
             FileStatus fileStatus = uut.getFileStatus();
             Assert.assertNotNull("FileStatus", fileStatus);
         } finally {
@@ -521,25 +521,25 @@ public class MetadataTableSplitsTest {
         
         try {
             
-            MetadataTableSplits uut = new MetadataTableSplits(createMockJobConf());
+            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
             
-            Assert.assertNotNull("MetadataTableSplits constructor failed to construct an instance.", uut);
+            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
             
             Map<String,List<Text>> resultsSet = uut.getSplits();
             
-            Assert.assertNotNull("MetadataTableSplits#getSplits() failed created a map of tables and their splits", resultsSet);
-            Assert.assertFalse("MetadataTableSplits#getSplits() incorrectly populated map of tables and their splits", resultsSet.isEmpty());
-            Assert.assertEquals("MetadataTableSplits#getSplits() incorrectly populated map of tables and their splits", 3, resultsSet.size());
+            Assert.assertNotNull("TableSplitsCache#getSplits() failed created a map of tables and their splits", resultsSet);
+            Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated map of tables and their splits", resultsSet.isEmpty());
+            Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated map of tables and their splits", 3, resultsSet.size());
             
             List<Text> listings = resultsSet.get("shard");
-            Assert.assertNotNull("MetadataTableSplits#getSplits() failed to a list of splits", listings);
-            Assert.assertFalse("MetadataTableSplits#getSplits() incorrectly populated the list of splits", listings.isEmpty());
-            Assert.assertEquals("MetadataTableSplits#getSplits() incorrectly populated the list of splits", 5, listings.size());
+            Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", listings);
+            Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", listings.isEmpty());
+            Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated the list of splits", 5, listings.size());
             
             listings = resultsSet.get("shard1");
-            Assert.assertNotNull("MetadataTableSplits#getSplits() failed to a list of splits", listings);
-            Assert.assertFalse("MetadataTableSplits#getSplits() incorrectly populated the list of splits", listings.isEmpty());
-            Assert.assertEquals("MetadataTableSplits#getSplits() incorrectly populated the list of splits", 1, listings.size());
+            Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", listings);
+            Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", listings.isEmpty());
+            Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated the list of splits", 1, listings.size());
             
         } finally {
             
@@ -555,15 +555,15 @@ public class MetadataTableSplitsTest {
         
         try {
             
-            MetadataTableSplits uut = new MetadataTableSplits(createMockJobConf());
+            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
             
-            Assert.assertNotNull("MetadataTableSplits constructor failed to construct an instance.", uut);
+            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
             
             List<Text> resultsSet = uut.getSplits("shard");
             
-            Assert.assertNotNull("MetadataTableSplits#getSplits() failed to a list of splits", resultsSet);
-            Assert.assertFalse("MetadataTableSplits#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());
-            Assert.assertEquals("MetadataTableSplits#getSplits() incorrectly populated the list of splits", 5, resultsSet.size());
+            Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", resultsSet);
+            Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());
+            Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated the list of splits", 5, resultsSet.size());
         } finally {
             
             logger.info("testGetSplitsWithArgumentThatMatches completed.");
@@ -578,14 +578,14 @@ public class MetadataTableSplitsTest {
         
         try {
             
-            MetadataTableSplits uut = new MetadataTableSplits(createMockJobConf());
+            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
             
-            Assert.assertNotNull("MetadataTableSplits constructor failed to construct an instance.", uut);
+            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
             
             List<Text> resultsSet = uut.getSplits("bad-table");
             
-            Assert.assertNotNull("MetadataTableSplits#getSplits() failed to a list of splits", resultsSet);
-            Assert.assertTrue("MetadataTableSplits#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());
+            Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", resultsSet);
+            Assert.assertTrue("TableSplitsCache#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());
             
         } finally {
             
@@ -601,15 +601,15 @@ public class MetadataTableSplitsTest {
         
         try {
             
-            MetadataTableSplits uut = new MetadataTableSplits(createMockJobConf());
+            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
             
-            Assert.assertNotNull("MetadataTableSplits constructor failed to construct an instance.", uut);
+            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
             
             List<Text> resultsSet = uut.getSplits("shard", Integer.MAX_VALUE);
             
-            Assert.assertNotNull("MetadataTableSplits#getSplits() failed to a list of splits", resultsSet);
-            Assert.assertFalse("MetadataTableSplits#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());
-            Assert.assertEquals("MetadataTableSplits#getSplits() incorrectly populated the list of splits", 5, resultsSet.size());
+            Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", resultsSet);
+            Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());
+            Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated the list of splits", 5, resultsSet.size());
             
         } finally {
             
@@ -625,15 +625,15 @@ public class MetadataTableSplitsTest {
         
         try {
             
-            MetadataTableSplits uut = new MetadataTableSplits(createMockJobConf());
+            TableSplitsCache uut = new TableSplitsCache(createMockJobConf());
             
-            Assert.assertNotNull("MetadataTableSplits constructor failed to construct an instance.", uut);
+            Assert.assertNotNull("TableSplitsCache constructor failed to construct an instance.", uut);
             
             List<Text> resultsSet = uut.getSplits("shard", 2);
             
-            Assert.assertNotNull("MetadataTableSplits#getSplits() failed to a list of splits", resultsSet);
-            Assert.assertFalse("MetadataTableSplits#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());
-            Assert.assertEquals("MetadataTableSplits#getSplits() incorrectly populated the list of splits", 2, resultsSet.size());
+            Assert.assertNotNull("TableSplitsCache#getSplits() failed to a list of splits", resultsSet);
+            Assert.assertFalse("TableSplitsCache#getSplits() incorrectly populated the list of splits", resultsSet.isEmpty());
+            Assert.assertEquals("TableSplitsCache#getSplits() incorrectly populated the list of splits", 2, resultsSet.size());
             
         } finally {
             
@@ -651,7 +651,7 @@ public class MetadataTableSplitsTest {
         for (int i = 0; i < numsplits; i++) {
             splits.add(new Text(Integer.toString(i)));
         }
-        List<Text> newSplits = MetadataTableSplits.trimSplits(splits, reducers - 1);
+        List<Text> newSplits = TableSplitsCache.trimSplits(splits, reducers - 1);
         Assert.assertEquals("split count", (reducers - 1), newSplits.size());
         Assert.assertEquals("first split", 401, Integer.parseInt(newSplits.get(0).toString()));
         Assert.assertEquals("num splits - last split", 402, numsplits - Integer.parseInt(newSplits.get(newSplits.size() - 1).toString()));
