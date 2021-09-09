@@ -1,3 +1,17 @@
 # This is where you set properties which are specific to pool1
 executor:
   poolName: 'pool1'
+
+datawave:
+  connection:
+    factory:
+      pools:
+        'pool1':
+          zookeepers: '${accumulo.zookeepers}'
+          instance: '${accumulo.instanceName}'
+          username: '${accumulo.username}'
+          password: '${accumulo.password}'
+          lowPriorityPoolSize: 10
+          normalPriorityPoolSize: 10
+          highPriorityPoolSize: 10
+          adminPriorityPoolSize: 10

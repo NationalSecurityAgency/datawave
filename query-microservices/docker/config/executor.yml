@@ -27,15 +27,6 @@ datawave:
     factory:
       defaultPool: "default"
       pools:
-        "${executor.poolName}":
-          zookeepers: '${accumulo.zookeepers}'
-          instance: '${accumulo.instanceName}'
-          username: '${accumulo.username}'
-          password: '${accumulo.password}'
-          lowPriorityPoolSize: 10
-          normalPriorityPoolSize: 10
-          highPriorityPoolSize: 10
-          adminPriorityPoolSize: 10
         "default":
           zookeepers: '${accumulo.zookeepers}'
           instance: '${accumulo.instanceName}'
