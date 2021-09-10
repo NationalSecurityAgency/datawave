@@ -115,7 +115,7 @@
         <property name="ivaratorCacheDirConfigs" ref="baseEventQueryIvaratorCacheDirConfigs" />
 
         <!-- the hdfs location where FST's will be stored (see maxOrExpansionFstThreshold above) -->
-        <property name="ivaratorFstHdfsBaseURIs" value ="${datawave.query.logic.logics.BaseEventQuery.zookeeperConfig}" />
+        <property name="ivaratorFstHdfsBaseURIs" value ="${datawave.query.logic.logics.BaseEventQuery.ivaratorFstHdfsBaseURIs}" />
         <!-- the size after which a buffer is flushed to a file. -->
         <property name="ivaratorCacheBufferSize" value="${datawave.query.logic.logics.BaseEventQuery.ivaratorCacheBufferSize}" />
         <!-- the max number of open files in an ivarator -->
