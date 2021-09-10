@@ -1763,15 +1763,19 @@ public class QueryManagementService implements QueryRequestHandler {
                 }
                 
                 // @formatter:off
-                auditClient.submit(new AuditClient.Request.Builder()
+                AuditClient.Request auditRequest = new AuditClient.Request.Builder()
                         .withParams(parameters)
                         .withQueryExpression(query.getQuery())
                         .withProxiedUserDetails(currentUser)
                         .withMarking(securityMarking)
                         .withAuditType(auditType)
                         .withQueryLogic(queryLogic.getLogicName())
-                        .build());
+                        .build();
                 // @formatter:on
+                
+                log.info("[{}] Sending audit request with parameters {}", query.getId(), auditRequest);
+                
+                auditClient.submit(auditRequest);
             } catch (IllegalArgumentException e) {
                 log.error("Error validating audit parameters", e);
                 throw new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
