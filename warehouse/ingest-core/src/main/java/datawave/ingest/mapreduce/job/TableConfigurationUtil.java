@@ -102,7 +102,6 @@ public class TableConfigurationUtil {
                     try {
                         handler = handlerClass.newInstance();
                     } catch (InstantiationException e) {
-                        e.printStackTrace();
                         throw new IllegalArgumentException("Unable to instantiate " + handlerClassName, e);
                     } catch (IllegalAccessException e) {
                         throw new IllegalArgumentException("Unable to access default constructor for " + handlerClassName, e);
