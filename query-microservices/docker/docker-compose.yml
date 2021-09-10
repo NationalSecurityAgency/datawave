@@ -331,7 +331,7 @@ services:
     networks:
       - demo
     healthcheck:
-      test: curl -f http://localhost:8080/querystorage/mgmt/health
+      test: curl -f http://localhost:8080/query-storage/mgmt/health
     depends_on:
       authorization:
         condition: service_healthy
