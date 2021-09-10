@@ -4,6 +4,7 @@ logging:
     root: DEBUG
     datawave.query: DEBUG
     datawave.microservice.query: DEBUG
+    datawave.microservice.query.executor: DEBUG
 
 warehouse:
   accumulo:

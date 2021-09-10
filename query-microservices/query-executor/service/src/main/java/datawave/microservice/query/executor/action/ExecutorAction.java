@@ -275,7 +275,7 @@ public abstract class ExecutorAction implements Runnable {
             boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
             while (running && iter.hasNext()) {
                 Object result = iter.next();
-                log.trace("Generated results foir " + taskKey);
+                log.trace("Generated results for " + taskKey);
                 queues.sendMessage(taskKey.getQueryId(), new Result(UUID.randomUUID().toString(), result));
                 queryStatus.incrementNumResultsGenerated(1);
                 

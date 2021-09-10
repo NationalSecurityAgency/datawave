@@ -1,0 +1,6 @@
+logging:
+  level:
+    root: DEBUG
+    datawave.query: DEBUG
+    datawave.microservice.common: DEBUG
+    datawave.microservice.common.storage: DEBUG

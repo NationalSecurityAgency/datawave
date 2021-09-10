@@ -3,10 +3,7 @@ package datawave.microservice.common.storage;
 import datawave.microservice.query.storage.QueryCache;
 import datawave.microservice.query.storage.QueryState;
 import datawave.microservice.query.storage.TaskDescription;
-import datawave.microservice.query.storage.config.QueryStorageProperties;
 import io.swagger.annotations.ApiOperation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,14 +19,9 @@ import java.util.List;
 @RestController
 @RequestMapping(path = "/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class QueryStorageStateServiceController implements QueryStorageStateService {
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
-    
-    private final QueryStorageProperties storageProperties;
-    
     private final QueryCache cache;
     
-    public QueryStorageStateServiceController(QueryStorageProperties storageProperties, QueryCache cache) {
-        this.storageProperties = storageProperties;
+    public QueryStorageStateServiceController(QueryCache cache) {
         this.cache = cache;
     }
     

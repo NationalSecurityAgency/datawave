@@ -312,5 +312,29 @@ services:
       metrics:
         condition: service_healthy
 
+  querystorage:
+    image: datawave/query-storage-service:1.0-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth,storage,query
+      - --spring.cloud.consul.host=discovery
+    environment:
+      - "ZOOKEEPER_HOST=${HOSTNAME}"
+    extra_hosts:
+      - "${HOSTNAME}:${HOST_IP}"
+      - "${HOST_FQDN}:${HOST_IP}"
+    ports:
+      - "8580:8080"
+      - "8943:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/querystorage/mgmt/health
+    depends_on:
+      authorization:
+        condition: service_healthy
+
 networks:
   demo:
