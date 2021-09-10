@@ -1374,9 +1374,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch.stop();
     }
     
-    protected ASTJexlScript timedFixUnindexedNumerics(QueryStopwatch timers, ASTJexlScript queryTree, ShardQueryConfiguration config)
+    protected ASTJexlScript timedFixUnindexedNumerics(QueryStopwatch timers, ASTJexlScript script, ShardQueryConfiguration config)
                     throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Fix Unindex Numerics", () -> (FixUnindexedNumericTerms.fixNumerics(config, queryTree)));
+        return visitorManager.timedVisit(timers, "Fix Unindex Numerics", () -> (FixUnindexedNumericTerms.fixNumerics(config, script)));
     }
     
     protected ASTJexlScript timedExpandMultiNormalizedTerms(QueryStopwatch timers, ASTJexlScript script, ShardQueryConfiguration config,
@@ -1398,29 +1398,29 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return visitorManager.timedVisit(timers, "Executable Expansion", () -> (ExecutableExpansionVisitor.expand(script, config, metadataHelper)));
     }
     
-    protected ASTJexlScript timedPushdownLowSelectiveTerms(QueryStopwatch timers, ASTJexlScript queryTree, ShardQueryConfiguration config,
+    protected ASTJexlScript timedPushdownLowSelectiveTerms(QueryStopwatch timers, ASTJexlScript script, ShardQueryConfiguration config,
                     Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> nonEventFields) {
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Pushdown Low-Selective Terms");
         
-        queryTree = PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(queryTree, config, metadataHelper);
+        script = PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(script, config, metadataHelper);
         if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query after pushing down low-selective terms:");
+            logQuery(script, "Query after pushing down low-selective terms:");
         }
         
         List<String> debugOutput = null;
         if (log.isDebugEnabled()) {
             debugOutput = new ArrayList<>(32);
         }
-        if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
-            queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, false, config, indexedFields, indexOnlyFields,
-                            nonEventFields, metadataHelper);
+        if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
+            script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, false, config, indexedFields, indexOnlyFields, nonEventFields,
+                            metadataHelper);
             if (log.isDebugEnabled()) {
                 logDebug(debugOutput, "Executable state after pushing low-selective terms:");
-                logQuery(queryTree, "Query after partially executable pushdown :");
+                logQuery(script, "Query after partially executable pushdown :");
             }
         }
         stopwatch.stop();
-        return queryTree;
+        return script;
     }
     
     protected ASTJexlScript timedForceFieldToFieldComparison(QueryStopwatch timers, ASTJexlScript script) throws DatawaveQueryException {
