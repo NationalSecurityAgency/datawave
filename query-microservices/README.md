@@ -54,4 +54,24 @@ Query flow:
       b) pulls results into a page
       c) updates metrics?
 
+## Existing External Interfaces
 
+|Covered?|Existing Class|Base Path URI|Keep or Drop|New Class|Service|Notes|
+|:-------|:-------------|:------------|:-----------|:--------|:------|:----|
+|Yes|AuditBean|/Common/Auditor|Keep|AuditController|Audit Service|Add remote auth profile and add a route in HAProxy.|
+|Yes|QueryExecutorBean|/Query|Keep|QueryController|Query Service|Most endpoints will be preserved - some won't.|
+|No|CachedResultsBean|/CachedResults|Keep|?|?|Should this live in the query service, or somewhere else?|
+|Yes|TableAdminBean|/Accumulo|Keep|AdminController|Accumulo Service|Looks like this bean forwards to the accumulo service, so we just need to make sure to add the remote auth profile and add a route in HAProxy.|
+|No|AtomServiceBean|/Atom|?|||Can we drop this?|
+|Yes|ConfigurationBean|/Common/Configuration|Keep|*|*|All of the spring-boot microservices have refresh endpoints now, so we should be covered.|
+|No|AccumuloTableCacheBean|/Common/AccumuloTableCache|Keep|QueryExecutorController|Executor Service|The executor service may need the ability to reload it's accumulo table cache.|
+|Yes|AccumuloConnectionFactoryBean|/Common/AccumuloConnectionFactory|Keep|QueryExecutorController|Executor Service|Add remote auth profile and add a route in HAProxy.|
+|No|HealthBean|/Common/Health|Keep|*|*|This provides the shutdown endpoint which is used to drain and shutdown the webservices.  This mechanism will likely differ with our new implementation, but it's a concept we should be aware of.|
+|No|ModelBean|/Model|Keep|?|?|Where should model access/manipulation live?  In the query service?|
+|No|ModificationCacheBean|/Modification|?|?|?|Is this used anywhere?  Do we need this?  It allows us to list mutable fields and reload the mutable field cache.|
+|No|QueryCacheBean|/Query/Cache|?|?|?|All queries are cached now.  What endpoints do we want to support for accessing our query cache and where should that live?|
+|Yes|DashboardBean|/Query/Metrics/dashboard|Drop?| | |As far as I know, this is not used.  Seems droppable to me.|
+|Yes|HudBean|/Query/queryhud|Drop?| | |As far as I know, this is not used.  Seems droppable to me.|
+|Yes|QueryMetricsBean|/Query/Metrics|Keep|QueryMetricOperations|Query Metric Service|Just need to add a route in HAProxy for this.|
+|No|BasicQueryBean|/BasicQuery|Drop?| | |Query wizard stuff.  Do we need this?  Does anyone use this?|
+|No|IdTranslatorBean|/Query|?|?|?|Not sure what to do with this.|
