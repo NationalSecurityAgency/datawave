@@ -122,7 +122,6 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
     private void configureReductionInterface(Configuration conf) {
         // Build a map of table => sorted sets of aggregator options (in increasing priority order for
         // each set of aggregator options).
-        // TODO tableconfigutil parseIteratorConfigs?
         configureAggregators(conf);
         
         configureCombiners(conf);
@@ -145,17 +144,15 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     Map<String,String> options = Maps.newHashMap();
                     
                     options.putAll(priorityOptions.get(priority));
-                    log.info(table + " " + priority + " " + options.entrySet());
                     
-                    String clazz = options.get("iterClazz");
+                    String clazz = options.get(TableConfigurationUtil.ITERATOR_CLASS_MARKER);
                     
                     if (null == clazz) {
-                        // throw new RuntimeException("Unable to instantiate combiner class. Config item 'iterClazz' not present " + priority + " "
-                        // + options.entrySet());
-                        continue;
+                        throw new RuntimeException("Unable to instantiate combiner class. Config item 'iterclass' not present " + priority + " "
+                                        + options.entrySet());
                     }
                     
-                    options.remove("iterClazz");
+                    options.remove(TableConfigurationUtil.ITERATOR_CLASS_MARKER);
                     
                     CustomColumnToClassMapping mapping;
                     try {
@@ -208,6 +205,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
             if (priorityOptions != null) {
                 SortedSet<CustomColumnToClassMapping> list = Sets.newTreeSet();
                 for (Entry<Integer,Map<String,String>> entry : priorityOptions.entrySet()) {
+                    
                     Map<String,String> options = entry.getValue();
                     CustomColumnToClassMapping mapping = new CustomColumnToClassMapping(entry.getKey(), options);
                     list.add(mapping);
