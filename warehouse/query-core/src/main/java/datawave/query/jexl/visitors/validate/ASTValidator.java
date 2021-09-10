@@ -54,8 +54,6 @@ public class ASTValidator {
      *            an arbitrary JexlNode
      * @param sourceVisitor
      *            the visitor calling this method, may be null if called outside normal scope
-     * @param logDiffs
-     *            boolean to control logging any detected diffs
      * @param failHard
      *            boolean to throw an exception if the tree fails validation
      * @return true if the AST is valid, otherwise throws an exception
