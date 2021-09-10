@@ -1,0 +1,5 @@
+
+executor-pool1:
+  entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005","-jar","app.jar"]
+  ports:
+    - "5005:5005"

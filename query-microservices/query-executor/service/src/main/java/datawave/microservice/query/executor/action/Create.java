@@ -33,9 +33,11 @@ public class Create extends ExecutorAction {
         String queryId = taskKey.getQueryId();
         
         QueryLogic<?> queryLogic = getQueryLogic(queryStatus.getQuery());
+        log.debug("Initializing query logic for " + queryId);
         GenericQueryConfiguration config = queryLogic.initialize(connector, queryStatus.getQuery(), queryStatus.getCalculatedAuthorizations());
         
         // update the query status plan
+        log.debug("Setting plan for " + queryId);
         queryStatus.setPlan(config.getQueryString());
         
         // update the query metrics with the plan
@@ -55,15 +57,18 @@ public class Create extends ExecutorAction {
             log.error("Error updating query metric", e);
         }
         
+        log.debug("Setup query logic for " + queryId);
         queryLogic.setupQuery(config);
         
         if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
+            log.debug("Checkpointing " + queryId);
             CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
             queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
             checkpoint(task.getTaskKey().getQueryKey(), cpQueryLogic);
             taskComplete = true;
         } else {
             queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
+            log.debug("Exhausting results for " + queryId);
             taskComplete = pullResults(task.getTaskKey(), queryLogic, queryStatus, true);
             if (!taskComplete) {
                 Exception e = new IllegalStateException("Expected to have exhausted results.  Something went wrong here");

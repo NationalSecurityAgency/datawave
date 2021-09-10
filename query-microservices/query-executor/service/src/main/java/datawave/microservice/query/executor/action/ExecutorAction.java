@@ -197,6 +197,7 @@ public abstract class ExecutorAction implements Runnable {
     }
     
     protected QueryLogic<?> getQueryLogic(Query query) throws QueryException, CloneNotSupportedException {
+        log.debug("Getting query logic for " + query.getQueryLogicName());
         return queryLogicFactory.getQueryLogic(query.getQueryLogicName());
     }
     

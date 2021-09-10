@@ -41,8 +41,7 @@ warehouse:
     maxEvaluationPipelines: 16
     maxPipelineCachedResults: 16
     hdfsSiteConfigURLs: 'file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml'
-    ivaratorFstHdfsBaseURIs:
-      - basePathURI: 'hdfs:///IvaratorCache'
+    ivaratorFstHdfsBaseURIs: 'hdfs:///data'
     ivaratorCacheBufferSize: 10000
     ivaratorMaxOpenFiles: 100
     ivaratorCacheScanPersistThreshold: 100000
@@ -140,8 +139,8 @@ datawave:
           hdfsSiteConfigURLs: ${warehouse.defaults.hdfsSiteConfigURLs}
           zookeeperConfig: ${warehouse.accumulo.zookeepers}
           ivaratorCacheDirConfigs:
-            - basePathURI: "hdfs:///IvaratorCache"
-          ivaratorFstHdfsBaseURIs: ${warehouse.accumulo.ivaratorFstHdfsBaseURIs}
+            - basePathURI: "hdfs:///data"
+          ivaratorFstHdfsBaseURIs: ${warehouse.defaults.ivaratorFstHdfsBaseURIs}
           ivaratorCacheBufferSize: ${warehouse.defaults.ivaratorCacheBufferSize}
           ivaratorMaxOpenFiles: ${warehouse.defaults.ivaratorMaxOpenFiles}
           ivaratorCacheScanPersistThreshold: ${warehouse.defaults.ivaratorCacheScanPersistThreshold}

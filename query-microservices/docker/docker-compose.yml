@@ -280,6 +280,7 @@ services:
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs/pool1:/logs
+      - ../../contrib/datawave-quickstart/hadoop/etc/hadoop:/etc/hadoop/conf
     networks:
       - demo
     healthcheck:
@@ -312,6 +313,7 @@ services:
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs/pool2:/logs
+      - ../../contrib/datawave-quickstart/hadoop/etc/hadoop:/etc/hadoop/conf
     networks:
       - demo
     healthcheck:
