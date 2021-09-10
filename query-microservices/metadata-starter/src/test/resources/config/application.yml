@@ -187,7 +187,7 @@ query:
         zookeeperConfig: ${warehouse.accumulo.zookeepers}
         ivaratorCacheDirConfigs:
           - basePathURI: "hdfs:///IvaratorCache"
-        ivaratorFstHdfsBaseURIs: ${warehouse.accumulo.ivaratorFstHdfsBaseURIs}
+        ivaratorFstHdfsBaseURIs: ${warehouse.defaults.ivaratorFstHdfsBaseURIs}
         ivaratorCacheBufferSize: ${warehouse.defaults.ivaratorCacheBufferSize}
         ivaratorMaxOpenFiles: ${warehouse.defaults.ivaratorMaxOpenFiles}
         ivaratorCacheScanPersistThreshold: ${warehouse.defaults.ivaratorCacheScanPersistThreshold}

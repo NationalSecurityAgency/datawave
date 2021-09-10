@@ -223,7 +223,7 @@ datawave:
           zookeeperConfig:
           ivaratorCacheDirConfigs:
             - basePathURI:
-          ivaratorFstHdfsBaseURIs: ${warehouse.accumulo.ivaratorFstHdfsBaseURIs}
+          ivaratorFstHdfsBaseURIs: ${warehouse.defaults.ivaratorFstHdfsBaseURIs}
           ivaratorCacheBufferSize: ${warehouse.defaults.ivaratorCacheBufferSize}
           ivaratorMaxOpenFiles: ${warehouse.defaults.ivaratorMaxOpenFiles}
           ivaratorCacheScanPersistThreshold: ${warehouse.defaults.ivaratorCacheScanPersistThreshold}
