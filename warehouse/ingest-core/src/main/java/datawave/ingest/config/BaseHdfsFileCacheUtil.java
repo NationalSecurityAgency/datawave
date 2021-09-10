@@ -34,6 +34,7 @@ public abstract class BaseHdfsFileCacheUtil {
     public abstract void setCacheFilePath(Configuration conf);
     
     public void read() throws IOException {
+        log.info("Reading cache at " + this.cacheFilePath);
         try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(this.cacheFilePath.toUri(), conf).open(this.cacheFilePath)))) {
             readCache(in, delimiter);
         } catch (IOException ex) {

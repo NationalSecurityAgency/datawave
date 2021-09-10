@@ -12,7 +12,6 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -95,6 +94,9 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
     public Map<String,String> getTableProperties(String tableName) throws IOException {
         if (this.configMap.isEmpty()) {
             read();
+        }
+        if (null == this.configMap.get(tableName) || this.configMap.get(tableName).isEmpty()) {
+            log.error("No accumulo config cache for " + tableName + ".  Please generate the accumulo config cache after ensuring the table exists.");
         }
         return this.configMap.get(tableName);
         
