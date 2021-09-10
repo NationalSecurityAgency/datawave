@@ -286,6 +286,8 @@ services:
     healthcheck:
       test: curl -f http://localhost:8080/executor-pool1/mgmt/health
     depends_on:
+      messaging:
+        condition: service_started
       authorization:
         condition: service_healthy
       metrics:
@@ -319,6 +321,8 @@ services:
     healthcheck:
       test: curl -f http://localhost:8080/executor-pool2/mgmt/health
     depends_on:
+      messaging:
+        condition: service_started
       authorization:
         condition: service_healthy
       metrics:

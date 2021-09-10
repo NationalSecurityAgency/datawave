@@ -21,6 +21,7 @@ warehouse:
     model:
       name: 'datawave.metadata'
   defaults:
+    checkpointable: false
     queryThreads: 100
     indexLookupThreads: 100
     dateIndexThreads: 20
@@ -86,6 +87,7 @@ datawave:
         pageByteTrigger: 0
       logics:
         BaseEventQuery:
+          checkpointable: ${warehouse.defaults.checkpointable}
           accumuloPassword: ${warehouse.accumulo.password}
           tableName: ${warehouse.tables.shard.name}
           dateIndexTableName: ${warehouse.tables.dateIndex.name}
