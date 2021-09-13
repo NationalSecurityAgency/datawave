@@ -110,6 +110,7 @@ datawave:
       "[datawave.data.type.DateType]": "datawave.data.type.RawDateType"
 
   query:
+    awaitExecutorCreateResponse: false
     nextCall:
       resultPollInterval: 500
       statusUpdateInterval: 500

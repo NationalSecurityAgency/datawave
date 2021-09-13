@@ -118,11 +118,11 @@ public class QueryExecutor implements QueryRequestHandler {
     }
     
     @Override
-    public void handleRemoteRequest(QueryRequest queryRequest) {
-        handleRemoteRequest(queryRequest, false);
+    public void handleRemoteRequest(QueryRequest queryRequest, String originService, String destinationService) {
+        handleRemoteRequest(queryRequest, originService, destinationService, false);
     }
     
-    public void handleRemoteRequest(QueryRequest queryRequest, boolean wait) {
+    public void handleRemoteRequest(QueryRequest queryRequest, String originService, String destinationService, boolean wait) {
         final String queryId = queryRequest.getQueryId();
         final QueryRequest.Method action = queryRequest.getMethod();
         log.info("Received request " + queryRequest);
@@ -175,7 +175,7 @@ public class QueryExecutor implements QueryRequestHandler {
                     ExecutorAction runnable = null;
                     switch (action) {
                         case CREATE:
-                            runnable = new Create(this, task);
+                            runnable = new Create(this, task, originService);
                             break;
                         case NEXT:
                             runnable = new Next(this, task);

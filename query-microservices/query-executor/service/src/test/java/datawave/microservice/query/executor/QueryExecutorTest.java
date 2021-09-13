@@ -243,7 +243,9 @@ public abstract class QueryExecutorTest {
         
         // pass a create request to the executor
         QueryRequest request = QueryRequest.request(QueryRequest.Method.CREATE, key.getQueryId());
-        queryExecutor.handleRemoteRequest(request, true);
+        queryExecutor.handleRemoteRequest(request, "origin", "destination", true);
+        RemoteQueryRequestEvent notification = queryRequestsEvents.getLast();
+        assertNotNull(notification);
         // now we need to wait for its completion
         
         QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
@@ -252,7 +254,7 @@ public abstract class QueryExecutorTest {
         
         QueryQueueListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId().toString());
         
-        RemoteQueryRequestEvent notification = queryRequestsEvents.poll();
+        notification = queryRequestsEvents.poll();
         assertNotNull(notification);
         assertEquals(key.getQueryId(), notification.getRequest().getQueryId());
         assertEquals(QueryRequest.Method.NEXT, notification.getRequest().getMethod());
@@ -261,8 +263,7 @@ public abstract class QueryExecutorTest {
         // while the query
         states = storageService.getTaskStates(key.getQueryId());
         while (states.hasReadyTasks()) {
-            queryExecutor.handleRemoteRequest(request, true);
-            
+            queryExecutor.handleRemoteRequest(request, "origin", "destination", true);
             queryStatus = storageService.getQueryStatus(key.getQueryId());
             assertEquals(QueryStatus.QUERY_STATE.CREATED, queryStatus.getQueryState());
             
@@ -343,13 +344,15 @@ public abstract class QueryExecutorTest {
                         }, publisher, metricFactory, metricClient);
         // pass a create request to the executor
         QueryRequest request = QueryRequest.request(QueryRequest.Method.CREATE, key.getQueryId());
-        queryExecutor.handleRemoteRequest(request, true);
+        queryExecutor.handleRemoteRequest(request, "origin", "destination", true);
+        RemoteQueryRequestEvent notification = queryRequestsEvents.poll();
+        assertNotNull(notification);
         
         QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
         assertEquals(QueryStatus.QUERY_STATE.CREATED, queryStatus.getQueryState());
         assertEquals(expectPlan, queryStatus.getPlan());
         
-        RemoteQueryRequestEvent notification = queryRequestsEvents.poll();
+        notification = queryRequestsEvents.poll();
         assertNull(notification);
         
         states = storageService.getTaskStates(key.getQueryId());
@@ -436,7 +439,7 @@ public abstract class QueryExecutorTest {
                 
                 private void saveEvent(Object event) {
                     if (event instanceof RemoteQueryRequestEvent) {
-                        testQueryRequestEvents().push(((RemoteQueryRequestEvent) event));
+                        testQueryRequestEvents().addLast(((RemoteQueryRequestEvent) event));
                     }
                 }
             };

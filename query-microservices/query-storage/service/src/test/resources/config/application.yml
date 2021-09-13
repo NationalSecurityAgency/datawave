@@ -150,6 +150,7 @@ datawave:
         pageByteTrigger: 0
       logics:
         BaseEventQuery:
+          checkpointable: true
           accumuloPassword: ${warehouse.accumulo.password}
           tableName: ${warehouse.tables.shard.name}
           dateIndexTableName: ${warehouse.tables.dateIndex.name}

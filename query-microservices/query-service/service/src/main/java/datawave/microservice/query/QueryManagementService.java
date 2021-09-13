@@ -69,6 +69,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -112,6 +114,8 @@ public class QueryManagementService implements QueryRequestHandler {
     private final MultiValueMap<String,NextCall> nextCallMap = new LinkedMultiValueMap<>();
     
     private final String selfDestination;
+    
+    private final Map<String,CountDownLatch> createLatchMap = new ConcurrentHashMap<>();
     
     public QueryManagementService(QueryProperties queryProperties, ApplicationEventPublisher eventPublisher, BusProperties busProperties,
                     QueryParameters queryParameters, SecurityMarking securityMarking, BaseQueryMetric baseQueryMetric, QueryLogicFactory queryLogicFactory,
@@ -402,8 +406,32 @@ public class QueryManagementService implements QueryRequestHandler {
                         getMaxConcurrentTasks(queryLogic));
                 // @formatter:on
                 
+                if (queryProperties.isAwaitExecutorCreateResponse()) {
+                    // before publishing the message, create a latch based on the query ID
+                    createLatchMap.put(taskKey.getQueryId(), new CountDownLatch(1));
+                }
+                
                 // publish a create event to the executor pool
                 publishExecutorEvent(QueryRequest.create(taskKey.getQueryId()), getPoolName());
+                
+                if (queryProperties.isAwaitExecutorCreateResponse()) {
+                    log.info("Waiting on query create response from the executor.");
+                    // wait for the executor to finish creating the query
+                    try {
+                        // TODO: Should we incorporate the call start time into this check?
+                        if (!createLatchMap.get(taskKey.getQueryId()).await(queryProperties.getExpiration().getCallTimeout(),
+                                        queryProperties.getExpiration().getCallTimeUnit())) {
+                            throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Timed out waiting for query create to finish.");
+                        } else {
+                            log.info("Received query create response from the executor.");
+                        }
+                    } catch (InterruptedException e) {
+                        log.warn("Interrupted while waiting for query create latch for queryId {}", queryId);
+                        throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Interrupted while waiting for query create to finish.");
+                    } finally {
+                        createLatchMap.remove(taskKey.getQueryId());
+                    }
+                }
             } else {
                 // @formatter:off
                 taskKey = queryStorageCache.defineQuery(
@@ -1707,18 +1735,30 @@ public class QueryManagementService implements QueryRequestHandler {
      *
      * @param queryRequest
      *            the remote query request, not null
+     * @param originService
+     *            the address of the service which sent the request
+     * @param destinationService
+     *            the address of the service which this event was sent to
      */
     @Override
-    public void handleRemoteRequest(QueryRequest queryRequest) {
+    public void handleRemoteRequest(QueryRequest queryRequest, String originService, String destinationService) {
         try {
             if (queryRequest.getMethod() == QueryRequest.Method.CANCEL) {
-                log.trace("Received remote cancel request.");
+                log.trace("Received remote cancel request from {} for {}.", originService, destinationService);
                 cancel(queryRequest.getQueryId(), false);
+            } else if (queryRequest.getMethod() == QueryRequest.Method.CREATE) {
+                log.trace("Received remote create request from {} for {}.", originService, destinationService);
+                if (createLatchMap.containsKey(queryRequest.getQueryId())) {
+                    createLatchMap.get(queryRequest.getQueryId()).countDown();
+                } else {
+                    log.warn("Unable to decrement create latch for query {}", queryRequest.getQueryId());
+                }
             } else {
-                log.debug("No handling specified for remote query request method: {}", queryRequest.getMethod());
+                log.debug("No handling specified for remote query request method: {} from {} for {}", queryRequest.getMethod(), originService,
+                                destinationService);
             }
         } catch (Exception e) {
-            log.error("Unknown error handling remote request: {}", queryRequest);
+            log.error("Unknown error handling remote request: {} from {} for {}", queryRequest, originService, destinationService);
         }
     }
     

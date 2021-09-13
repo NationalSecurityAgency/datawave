@@ -14,14 +14,18 @@ import datawave.microservice.querymetric.QueryMetricClient;
 import datawave.microservice.querymetric.QueryMetricType;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
+import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
 
 import java.util.Date;
 
 public class Create extends ExecutorAction {
     private static final Logger log = Logger.getLogger(Create.class);
     
-    public Create(QueryExecutor source, QueryTask task) {
+    private final String originService;
+    
+    public Create(QueryExecutor source, QueryTask task, String originService) {
         super(source, task);
+        this.originService = originService;
     }
     
     @Override
@@ -76,6 +80,16 @@ public class Create extends ExecutorAction {
                 throw e;
             }
         }
+        
+        log.debug("Publishing a create request to the originating service: " + originService);
+        // @formatter:off
+        publisher.publishEvent(
+                new RemoteQueryRequestEvent(
+                        this,
+                        busProperties.getId(),
+                        originService,
+                        QueryRequest.create(queryId)));
+        // @formatter:on
         
         return taskComplete;
     }

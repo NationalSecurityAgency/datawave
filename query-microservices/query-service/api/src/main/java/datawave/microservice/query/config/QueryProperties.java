@@ -33,6 +33,8 @@ public class QueryProperties {
     private String executorServiceName = "executor";
     // These are the only parameters that can be updated for a running query
     private List<String> updatableParams = Arrays.asList(QUERY_EXPIRATION, QUERY_PAGESIZE, QUERY_PAGETIMEOUT, QUERY_MAX_RESULTS_OVERRIDE);
+    // Whether or not to wait for an executor create response before returning to the caller
+    private boolean awaitExecutorCreateResponse = true;
     
     private QueryExpirationProperties expiration = new QueryExpirationProperties();
     private NextCallProperties nextCall = new NextCallProperties();
@@ -102,6 +104,14 @@ public class QueryProperties {
     
     public void setUpdatableParams(List<String> updatableParams) {
         this.updatableParams = updatableParams;
+    }
+    
+    public boolean isAwaitExecutorCreateResponse() {
+        return awaitExecutorCreateResponse;
+    }
+    
+    public void setAwaitExecutorCreateResponse(boolean awaitExecutorCreateResponse) {
+        this.awaitExecutorCreateResponse = awaitExecutorCreateResponse;
     }
     
     public QueryExpirationProperties getExpiration() {

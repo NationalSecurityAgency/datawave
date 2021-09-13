@@ -1,6 +1,5 @@
 package datawave.microservice.query.remote.event.listener;
 
-import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,12 +38,13 @@ public class QueryRemoteRequestEventListener implements ApplicationListener<Remo
         // process the event using each query request handler.
         // By default, for parallelStreams java uses threads equal to the number of cores.
         // if we need more than that, we can specify our own ForkJoinPool.
-        queryRequestHandlers.parallelStream().forEach(h -> handleRequest(h, event.getRequest()));
+        queryRequestHandlers.parallelStream().forEach(h -> handleRequest(h, event));
     }
     
-    private void handleRequest(QueryRequestHandler queryRequestHandler, QueryRequest queryRequest) {
+    private void handleRequest(QueryRequestHandler queryRequestHandler, RemoteQueryRequestEvent queryRequestEvent) {
         try {
-            queryRequestHandler.handleRemoteRequest(queryRequest);
+            queryRequestHandler.handleRemoteRequest(queryRequestEvent.getRequest(), queryRequestEvent.getOriginService(),
+                            queryRequestEvent.getDestinationService());
         } catch (Exception e) {
             log.error("Failed to handle query request with handler: " + queryRequestHandler.getClass().getName(), e);
         }
