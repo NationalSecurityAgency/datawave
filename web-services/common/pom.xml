@@ -63,6 +63,7 @@
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-connection-pool</artifactId>
             <version>${project.version}</version>
+            <classifier>jboss</classifier>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>

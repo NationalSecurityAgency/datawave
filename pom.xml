@@ -349,11 +349,13 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query</artifactId>
                 <version>${version.microservice.query}</version>
+                <classifier>jboss</classifier>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>query-api</artifactId>
                 <version>${version.microservice.query-api}</version>
+                <classifier>jboss</classifier>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>

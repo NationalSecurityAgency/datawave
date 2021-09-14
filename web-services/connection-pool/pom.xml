@@ -85,6 +85,29 @@
                 <directory>src/main/resources</directory>
             </resource>
         </resources>
-        <plugins />
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>META-INF/beans.xml</exclude>
+                        <exclude>META-INF/jboss-ejb3.xml</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jboss</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>jboss</classifier>
+                            <excludes combine.self="override" />
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>
