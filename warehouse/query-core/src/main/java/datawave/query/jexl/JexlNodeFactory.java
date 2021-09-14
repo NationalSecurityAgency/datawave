@@ -10,7 +10,6 @@ import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ValueSet;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
@@ -55,6 +54,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -78,7 +78,10 @@ public class JexlNodeFactory {
      * 
      * @param containerType
      *            should we create OR nodes or AND nodes
-     * @param node
+     * @param isNegated
+     *            is this node negated per {@see ParallelIndexExpansion#isNegativeNode(JexlNode)}
+     * @param original
+     *            the original JexlNode
      * @param fieldsToValues
      *            A mapping of fields to values. If the values for a field is empty, then the original regex should be used.
      * @param expandFields
@@ -89,16 +92,16 @@ public class JexlNodeFactory {
      *            Keep the original node along with any expansions
      * @return A new sub query
      */
-    public static JexlNode createNodeTreeFromFieldsToValues(ContainerType containerType, JexlNode node, JexlNode orgNode, IndexLookupMap fieldsToValues,
+    public static JexlNode createNodeTreeFromFieldsToValues(ContainerType containerType, boolean isNegated, JexlNode original, IndexLookupMap fieldsToValues,
                     boolean expandFields, boolean expandValues, boolean keepOriginalNode) {
         // do nothing if not expanding fields or values
         if (!expandFields && !expandValues) {
-            return orgNode;
+            return original;
         }
         
-        // no expansions needed if the fieldname threshold is exceeded
+        // no expansions needed if the field name threshold is exceeded
         if (fieldsToValues.isKeyThresholdExceeded()) {
-            return new ExceededTermThresholdMarkerJexlNode(orgNode);
+            return new ExceededTermThresholdMarkerJexlNode(original);
         }
         
         // collapse the value sets if not expanding fields
@@ -108,140 +111,149 @@ public class JexlNodeFactory {
                 allValues.addAll(values);
             }
             fieldsToValues.clear();
-            for (String identifier : JexlASTHelper.getIdentifierNames(orgNode)) {
+            for (String identifier : JexlASTHelper.getIdentifierNames(original)) {
                 fieldsToValues.put(identifier, allValues);
             }
         }
         
+        List<JexlNode> children = new LinkedList<>();
+        
         Set<String> fields = fieldsToValues.keySet();
         
-        JexlNode parentNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE) : new ASTAndNode(
-                        ParserTreeConstants.JJTANDNODE));
-        int parentNodeChildCount = 0;
-        
         if (keepOriginalNode) {
-            JexlNodes.ensureCapacity(parentNode, fields.size() + 1);
-            JexlNode child = RebuildingVisitor.copy(orgNode);
-            parentNode.jjtAddChild(child, parentNodeChildCount);
-            child.jjtSetParent(parentNode);
-            parentNodeChildCount++;
+            JexlNode child = RebuildingVisitor.copy(original);
+            children.add(child);
             // remove this entry from the fieldsToValues to avoid duplication
-            for (String identifier : JexlASTHelper.getIdentifierNames(orgNode)) {
-                for (Object value : JexlASTHelper.getLiteralValues(orgNode)) {
+            for (String identifier : JexlASTHelper.getIdentifierNames(original)) {
+                for (Object value : JexlASTHelper.getLiteralValues(original)) {
                     fieldsToValues.remove(identifier, value);
                 }
             }
-        } else {
-            JexlNodes.ensureCapacity(parentNode, fields.size());
         }
         
         for (String field : fields) {
-            ValueSet valuesForField = fieldsToValues.get(field);
-            
-            // if not expanding values, then reuse the original node with simply a new field name (anyfield only)
-            if (!expandValues) {
-                JexlNode child = RebuildingVisitor.copy(orgNode);
-                for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(child)) {
-                    if (identifier.image.equals(Constants.ANY_FIELD)) {
-                        identifier.image = field;
-                    }
-                }
-                parentNode.jjtAddChild(child, parentNodeChildCount);
-                child.jjtSetParent(parentNode);
-                
-                parentNodeChildCount++;
-            }
-            
-            // a threshold exceeded set of values requires using the original
-            // node with a new fieldname, wrapped with a marker node
-            else if (valuesForField.isThresholdExceeded()) {
-                // create a set of nodes wrapping each pattern
-                List<String> patterns = new ArrayList<>(fieldsToValues.getPatterns() == null ? new ArrayList<>() : fieldsToValues.getPatterns());
-                if (patterns.isEmpty()) {
-                    JexlNode child = new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(orgNode, field));
-                    
-                    parentNode.jjtAddChild(child, parentNodeChildCount);
-                    child.jjtSetParent(parentNode);
-                    
-                    parentNodeChildCount++;
-                } else if (patterns.size() == 1) {
-                    JexlNode child = new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(orgNode, field, patterns.get(0)));
-                    
-                    parentNode.jjtAddChild(child, parentNodeChildCount);
-                    child.jjtSetParent(parentNode);
-                    
-                    parentNodeChildCount++;
-                } else {
-                    int childNodeChildCount = 0;
-                    JexlNode childNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE) : new ASTAndNode(
-                                    ParserTreeConstants.JJTANDNODE));
-                    JexlNodes.ensureCapacity(childNode, patterns.size());
-                    for (String pattern : patterns) {
-                        JexlNode child = new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(orgNode, field, pattern));
-                        
-                        childNode.jjtAddChild(child, childNodeChildCount);
-                        child.jjtSetParent(childNode);
-                        
-                        childNodeChildCount++;
-                    }
-                    
-                    if (0 < childNodeChildCount) {
-                        JexlNode wrappedChildNode = wrap(childNode);
-                        childNode.jjtSetParent(wrappedChildNode);
-                        
-                        parentNode.jjtAddChild(wrappedChildNode, parentNodeChildCount);
-                        wrappedChildNode.jjtSetParent(parentNode);
-                        
-                        parentNodeChildCount++;
-                    }
-                }
-            }
-            
-            // Don't create an OR if we have only one value, directly attach it
-            else if (1 == valuesForField.size()) {
-                JexlNode child = buildUntypedNode(node, field, valuesForField.iterator().next());
-                
-                parentNode.jjtAddChild(child, parentNodeChildCount);
-                child.jjtSetParent(parentNode);
-                
-                parentNodeChildCount++;
-            } else {
-                int childNodeChildCount = 0;
-                JexlNode childNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE) : new ASTAndNode(
-                                ParserTreeConstants.JJTANDNODE));
-                JexlNodes.ensureCapacity(childNode, valuesForField.size());
-                
-                for (String value : valuesForField) {
-                    JexlNode child = buildUntypedNode(node, field, value);
-                    
-                    childNode.jjtAddChild(child, childNodeChildCount);
-                    child.jjtSetParent(childNode);
-                    
-                    childNodeChildCount++;
-                }
-                
-                if (0 < childNodeChildCount) {
-                    JexlNode wrappedChildNode = wrap(childNode);
-                    childNode.jjtSetParent(wrappedChildNode);
-                    
-                    parentNode.jjtAddChild(wrappedChildNode, parentNodeChildCount);
-                    wrappedChildNode.jjtSetParent(parentNode);
-                    
-                    parentNodeChildCount++;
-                }
+            JexlNode child = createNodeFromValuesForField(field, fieldsToValues, original, containerType, expandValues, isNegated);
+            if (child != null) {
+                children.add(child);
             }
         }
         
-        switch (parentNodeChildCount) {
+        switch (children.size()) {
             case 0:
                 // in this case we had no matches for the range, so this expression gets replaced with a FALSE node.
                 return new ASTFalseNode(ParserTreeConstants.JJTFALSENODE);
             case 1:
-                JexlNode child = parentNode.jjtGetChild(0);
-                JexlNodes.promote(parentNode, child);
-                return child;
+                // Only one child node was generated, just return that
+                return children.get(0);
             default:
-                return wrap(parentNode);
+                // create the proper parent node and add children
+                JexlNode junction;
+                if (containerType.equals(ContainerType.OR_NODE)) {
+                    junction = new ASTOrNode(ParserTreeConstants.JJTORNODE);
+                } else {
+                    junction = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
+                }
+                return JexlNodes.children(junction, children.toArray(new JexlNode[0]));
+        }
+    }
+    
+    /**
+     * Helper method for {@link JexlNodeFactory#createNodeTreeFromFieldsToValues(ContainerType, boolean, JexlNode, IndexLookupMap, boolean, boolean, boolean)}
+     *
+     * @param field
+     *            create a node for this field
+     * @param fieldsToValues
+     * @param original
+     *            the original JexlNode
+     * @param type
+     *            create an ASTOrNode or an ASTAndNode
+     * @param expandValues
+     *            should we expand values
+     * @param isNegated
+     * @return a JexlNode
+     */
+    public static JexlNode createNodeFromValuesForField(String field, IndexLookupMap fieldsToValues, JexlNode original, ContainerType type,
+                    boolean expandValues, boolean isNegated) {
+        
+        ValueSet valuesForField = fieldsToValues.get(field);
+        
+        if (!expandValues) {
+            
+            // If not expanding values set the original node's field name to '_ANYFIELD_'
+            JexlNode child = RebuildingVisitor.copy(original);
+            for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(child)) {
+                if (identifier.image.equals(Constants.ANY_FIELD)) {
+                    identifier.image = field;
+                }
+            }
+            return child;
+            
+        } else if (valuesForField.isThresholdExceeded()) {
+            // a threshold exceeded set of values requires using the original
+            // node with a new fieldname, wrapped with a marker node
+            
+            // create a set of nodes wrapping each pattern
+            List<String> patterns = new ArrayList<>(fieldsToValues.getPatterns() == null ? new ArrayList<>() : fieldsToValues.getPatterns());
+            if (patterns.isEmpty()) {
+                return new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(original, field));
+            } else if (patterns.size() == 1) {
+                return new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(original, field, patterns.get(0)));
+            } else {
+                
+                JexlNode junction;
+                List<JexlNode> children = new LinkedList<>();
+                
+                if (type.equals(ContainerType.OR_NODE)) {
+                    junction = new ASTOrNode(ParserTreeConstants.JJTORNODE);
+                } else {
+                    junction = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
+                }
+                
+                for (String pattern : patterns) {
+                    JexlNode child = new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(original, field, pattern));
+                    children.add(child);
+                }
+                
+                switch (children.size()) {
+                    case 0:
+                        return null;
+                    case 1:
+                        return children.get(0);
+                    default:
+                        return JexlNodes.children(junction, children.toArray(new JexlNode[0]));
+                }
+            }
+            
+        } else if (1 == valuesForField.size()) {
+            
+            // Don't create an OR if we have only one value, directly attach it
+            String value = valuesForField.iterator().next();
+            return isNegated ? JexlNodeFactory.buildNENode(field, value) : JexlNodeFactory.buildEQNode(field, value);
+            
+        } else {
+            
+            JexlNode junction;
+            List<JexlNode> children = new LinkedList<>();
+            
+            if (type.equals(ContainerType.OR_NODE)) {
+                junction = new ASTOrNode(ParserTreeConstants.JJTORNODE);
+            } else {
+                junction = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
+            }
+            
+            for (String value : valuesForField) {
+                JexlNode child = isNegated ? JexlNodeFactory.buildNENode(field, value) : JexlNodeFactory.buildEQNode(field, value);
+                children.add(child);
+            }
+            
+            switch (children.size()) {
+                case 0:
+                    return null;
+                case 1:
+                    return children.get(0);
+                default:
+                    return JexlNodes.children(junction, children.toArray(new JexlNode[0]));
+            }
         }
     }
     
@@ -740,6 +752,10 @@ public class JexlNodeFactory {
     
     public static JexlNode buildEQNode(String fieldName, String fieldValue) {
         return buildNode((ASTEQNode) null, fieldName, fieldValue);
+    }
+    
+    public static JexlNode buildNENode(String fieldName, String fieldValue) {
+        return buildNode((ASTNENode) null, fieldName, fieldValue);
     }
     
     public static JexlNode buildERNode(String fieldName, String fieldValue) {

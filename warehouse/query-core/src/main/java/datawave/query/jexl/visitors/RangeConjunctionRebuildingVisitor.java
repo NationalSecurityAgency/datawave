@@ -138,8 +138,8 @@ public class RangeConjunctionRebuildingVisitor extends RebuildingVisitor {
             return RebuildingVisitor.copy(currentNode);
         }
         
-        JexlNode orNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, new ASTEQNode(ParserTreeConstants.JJTEQNODE),
-                        currentNode, fieldsToTerms, expandFields, expandValues, false);
+        JexlNode orNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, currentNode, fieldsToTerms,
+                        expandFields, expandValues, false);
         
         return orNode;
     }

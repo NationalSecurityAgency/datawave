@@ -786,12 +786,12 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                 onlyRetainFieldNamesInTheModelForwardMapping(fieldsToValues);
                 if (isNegativeNode(node)) {
                     // for a negative node, we want negative equalities in an AND
-                    newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.AND_NODE, new ASTNENode(ParserTreeConstants.JJTNENODE), node,
-                                    fieldsToValues, expandFields, expandValues, keepOriginalNode);
+                    newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.AND_NODE, true, node, fieldsToValues, expandFields, expandValues,
+                                    keepOriginalNode);
                 } else {
                     // for a positive node, we want equalities in a OR
-                    newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.OR_NODE, new ASTEQNode(ParserTreeConstants.JJTEQNODE), node,
-                                    fieldsToValues, expandFields, expandValues, keepOriginalNode);
+                    newNode = JexlNodeFactory.createNodeTreeFromFieldsToValues(ContainerType.OR_NODE, false, node, fieldsToValues, expandFields, expandValues,
+                                    keepOriginalNode);
                 }
             }
             
