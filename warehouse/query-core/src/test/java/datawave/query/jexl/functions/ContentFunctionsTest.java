@@ -1619,7 +1619,7 @@ public class ContentFunctionsTest {
         Assert.assertNotNull(termList.get("blue"));
         Assert.assertNotNull(termList.get("fish"));
         String[] terms = new String[] {"blue", "fish"};
-        Assert.assertFalse(ContentFunctions.phrase("BODY", termList, terms));
+        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termList, terms));
     }
     
     private Zone genTestZone() {
