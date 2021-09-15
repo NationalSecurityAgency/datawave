@@ -9,85 +9,85 @@ import org.junit.Test;
 public class HasTopLevelNegationVisitorTest {
     
     @Test
-    public void test() throws Exception {
+    public void testNoNegations() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'bar'");
         Assert.assertFalse(HasTopLevelNegationVisitor.hasTopLevelNegation(script));
     }
     
     @Test
-    public void test1() throws Exception {
+    public void testNegation() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO != 'bar'");
         Assert.assertTrue(HasTopLevelNegationVisitor.hasTopLevelNegation(script));
     }
     
     @Test
-    public void test2() throws Exception {
+    public void testWrappedNonNegation() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("(FOO == 'bar')");
         Assert.assertFalse(HasTopLevelNegationVisitor.hasTopLevelNegation(script));
     }
     
     @Test
-    public void test3() throws Exception {
+    public void testWrappedNegation() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("(FOO != 'bar')");
         Assert.assertTrue(HasTopLevelNegationVisitor.hasTopLevelNegation(script));
     }
     
     @Test
-    public void test4() throws Exception {
+    public void testConjunctionWithoutNegations() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'bar' && FOO == 'bar'");
         Assert.assertFalse(HasTopLevelNegationVisitor.hasTopLevelNegation(script));
     }
     
     @Test
-    public void test5() throws Exception {
+    public void testConjunctionWithNegation() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'bar' && FOO != 'bar'");
         Assert.assertTrue(HasTopLevelNegationVisitor.hasTopLevelNegation(script));
     }
     
     @Test
-    public void test6() throws Exception {
+    public void testDisjunctionWithoutNegations() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'bar' || FOO == 'bar'");
         Assert.assertFalse(HasTopLevelNegationVisitor.hasTopLevelNegation(script));
     }
     
     @Test
-    public void test7() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("(FOO == 'bar' || FOO != 'bar')");
+    public void testDisjunctionWithNegation() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO == 'bar' || FOO != 'bar'");
         Assert.assertTrue(HasTopLevelNegationVisitor.hasTopLevelNegation(script));
     }
     
     @Test
-    public void test8() throws Exception {
+    public void testWrappedConjunctionWithoutNegations() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("(FOO == 'bar' && FOO == 'bar')");
         Assert.assertFalse(HasTopLevelNegationVisitor.hasTopLevelNegation(script));
     }
     
     @Test
-    public void test9() throws Exception {
+    public void testWrappedConjunctionWithNegation() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("(FOO == 'bar' && FOO != 'bar')");
         Assert.assertTrue(HasTopLevelNegationVisitor.hasTopLevelNegation(script));
     }
     
     @Test
-    public void test10() throws Exception {
+    public void testWrappedDisjunctionWithoutNegations() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("(FOO == 'bar' || FOO == 'bar')");
         Assert.assertFalse(HasTopLevelNegationVisitor.hasTopLevelNegation(script));
     }
     
     @Test
-    public void test11() throws Exception {
+    public void testWrappedDisjunctionWithNegation() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("(FOO == 'bar' || FOO != 'bar')");
         Assert.assertTrue(HasTopLevelNegationVisitor.hasTopLevelNegation(script));
     }
     
     @Test
-    public void test12() throws Exception {
+    public void testNegationInNestedDisjunction() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("(FOO == 'bar' && (FOO == 'bar' || FOO != 'bar'))");
         Assert.assertFalse(HasTopLevelNegationVisitor.hasTopLevelNegation(script));
     }
     
     @Test
-    public void test13() throws Exception {
+    public void testNegationInNestedConjunction() throws Exception {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("(FOO == 'bar' && (FOO == 'bar' && FOO != 'bar'))");
         Assert.assertTrue(HasTopLevelNegationVisitor.hasTopLevelNegation(script));
     }
