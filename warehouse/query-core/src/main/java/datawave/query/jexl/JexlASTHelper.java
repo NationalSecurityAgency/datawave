@@ -68,10 +68,12 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import javax.sound.sampled.Line;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
@@ -1491,13 +1493,17 @@ public class JexlASTHelper {
      */
     // checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage
     public static boolean validateLineage(JexlNode rootNode, boolean failHard) {
-        boolean result = true;
-        
-        // add all the nodes to the stack and iterate...
+        return validateLineageVerbosely(rootNode, failHard).isValid();
+    }
+    
+    public static LineageValidation validateLineageVerbosely(JexlNode rootNode, boolean failHard) {
+        // Prepare a working stack to iterate through.
         Deque<JexlNode> workingStack = new LinkedList<>();
         workingStack.push(rootNode);
         
-        // go through all of the nodes from parent to children, and ensure that parent and child relationships are correct
+        LineageValidation validation = new LineageValidation();
+        
+        // Go through all the nodes from parent to children, and ensure that parent and child relationships are correct.
         while (!workingStack.isEmpty()) {
             JexlNode node = workingStack.pop();
             
@@ -1505,33 +1511,58 @@ public class JexlASTHelper {
                 for (JexlNode child : children(node)) {
                     if (child != null) {
                         if (child.jjtGetParent() == null) {
-                            if (failHard)
-                                throw new RuntimeException("Failed to validate lineage: Tree included a child with a null parent.");
-                            else
-                                log.error("Failed to validate lineage: Tree included a child with a null parent.");
-                            
-                            result = false;
+                            String message = "Tree included child " + child + " with a null parent";
+                            handleInvalidation(message, failHard, validation);
                         } else if (child.jjtGetParent() != node) {
-                            if (failHard)
-                                throw new RuntimeException("Failed to validate lineage:  Included a child with a conflicting parent.");
-                            else
-                                log.error("Failed to validate lineage:  Included a child with a conflicting parent.");
-                            
-                            result = false;
+                            String message = "Included a child " + child + " with conflicting parent. Expected " + node + " but was " + child.jjtGetParent();
+                            handleInvalidation(message, failHard, validation);
                         }
                         workingStack.push(child);
                     } else {
-                        if (failHard)
-                            throw new RuntimeException("Failed to validate lineage: Included a null child.");
-                        else
-                            log.error("Failed to validate lineage: Included a null child.");
-                        
-                        result = false;
+                        String message = "Included a null child under parent " + node;
+                        handleInvalidation(message, failHard, validation);
                     }
                 }
             }
         }
-        return result;
+        
+        return validation;
+    }
+    
+    private static void handleInvalidation(String message, boolean failHard, LineageValidation validation) {
+        if (failHard) {
+            throw new RuntimeException("Failed to validate lineage: " + message);
+        } else {
+            log.error("Failed to validate lineage: " + message);
+            validation.addInvalidation(message);
+        }
+    }
+    
+    public static class LineageValidation {
+        private final List<String> invalidations = new ArrayList<>();
+        
+        public boolean isValid() {
+            return invalidations.isEmpty();
+        }
+        
+        public void addInvalidation(String message) {
+            invalidations.add(message);
+        }
+        
+        public String getFormattedInvalidations() {
+            if (isValid()) {
+                return null;
+            } else if (invalidations.size() == 1) {
+                return invalidations.get(0);
+            } else {
+                StringBuilder sb = new StringBuilder();
+                sb.append(invalidations.get(0));
+                for (int i = 1; i < invalidations.size(); i++) {
+                    sb.append("\n").append(invalidations.get(i));
+                }
+                return sb.toString();
+            }
+        }
     }
     
     /**

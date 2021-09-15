@@ -1,37 +1,41 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import java.util.function.Predicate;
 
 public class FieldToFieldComparisonVisitorTest {
+    
+    private static final Predicate<JexlNode> notASTEvaluationOnlyInstance = (node) -> !ASTEvaluationOnly.instanceOf(node);
+    
     @Test
     public void testEq() throws ParseException {
         ASTJexlScript query = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("FOO == BAR"));
-        assertTrue(ASTEvaluationOnly.instanceOf(query));
+        JexlNodeAssert.assertThat(query).isEqualTo("((_Eval_ = true) && (FOO == BAR))").matches(ASTEvaluationOnly::instanceOf);
     }
     
     @Test
     public void testEqDoNothing() throws ParseException {
         ASTJexlScript query = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("FOO == 'bar'"));
-        assertFalse(ASTEvaluationOnly.instanceOf(query));
+        JexlNodeAssert.assertThat(query).isEqualTo("FOO == 'bar'").matches(notASTEvaluationOnlyInstance);
     }
     
     @Test
     public void testEqDoNothingFieldsToLiteral() throws ParseException {
         ASTJexlScript query = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("(FOO || BAR).min().hashCode() == 0"));
-        assertFalse(ASTEvaluationOnly.instanceOf(query));
+        JexlNodeAssert.assertThat(query).isEqualTo("(FOO || BAR).min().hashCode() == 0").matches(notASTEvaluationOnlyInstance);
     }
     
     @Test
     public void testEqDoNothing2() throws ParseException {
         ASTJexlScript query = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("(UUID =~ 'C.*?' || UUID =~ 'S.*?')"));
-        assertFalse(ASTEvaluationOnly.instanceOf(query));
+        JexlNodeAssert.assertThat(query).isEqualTo("(UUID =~ 'C.*?' || UUID =~ 'S.*?')").matches(notASTEvaluationOnlyInstance);
     }
     
     @Test(expected = ParseException.class)
