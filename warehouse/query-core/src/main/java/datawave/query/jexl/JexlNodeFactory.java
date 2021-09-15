@@ -10,7 +10,6 @@ import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ValueSet;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
@@ -58,13 +57,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import static datawave.query.jexl.JexlNodeBuilder.ASTAssignment;
+import static datawave.query.jexl.JexlNodeBuilder.ASTIdentifier;
+import static datawave.query.jexl.JexlNodeBuilder.ASTReference;
+import static datawave.query.jexl.JexlNodeBuilder.ASTStringLiteral;
+
 /**
  * Factory methods that can create JexlNodes
- * 
- * 
- * 
  */
 public class JexlNodeFactory {
+    
     public static final Set<Class<?>> REAL_NUMBERS = Collections.unmodifiableSet(Sets.<Class<?>> newHashSet(BigDecimal.class, Double.class, Float.class));
     public static final Set<Class<?>> NATURAL_NUMBERS = Collections.unmodifiableSet(Sets.<Class<?>> newHashSet(Long.class, BigInteger.class, Integer.class,
                     Short.class, Byte.class));
@@ -75,7 +77,7 @@ public class JexlNodeFactory {
     
     /**
      * Expand a node given a mapping of fields to values. If the list is empty, then the original regex should be used.
-     * 
+     *
      * @param containerType
      *            should we create OR nodes or AND nodes
      * @param node
@@ -323,7 +325,7 @@ public class JexlNodeFactory {
     
     /**
      * Returns an Or of the given fieldname and values, wrapping the JexlOrNode correctly in a Reference and ReferenceExpression (parens)
-     * 
+     *
      * @param node
      * @param fieldName
      * @param fieldValues
@@ -403,7 +405,7 @@ public class JexlNodeFactory {
     
     /**
      * Wrap collection of JexlNodes into an ASTAndNode
-     * 
+     *
      * @param children
      * @return
      */
@@ -413,7 +415,7 @@ public class JexlNodeFactory {
     
     /**
      * Wrap collection of JexlNodes into an ASTAndNode
-     * 
+     *
      * @param children
      * @return
      */
@@ -423,7 +425,7 @@ public class JexlNodeFactory {
     
     /**
      * Wrap a collection of JexlNodes into an ASTOrNode
-     * 
+     *
      * @param children
      * @return
      */
@@ -433,7 +435,7 @@ public class JexlNodeFactory {
     
     /**
      * Wrap a collection of JexlNodes into an ASTOrNode
-     * 
+     *
      * @param children
      * @return
      */
@@ -443,7 +445,7 @@ public class JexlNodeFactory {
     
     /**
      * Add the children JexlNodes to the parent JexlNode, correctly setting parent pointers, parenthesis, and reference nodes.
-     * 
+     *
      * @param parent
      * @param children
      * @return
@@ -465,7 +467,7 @@ public class JexlNodeFactory {
     
     /**
      * Add the children JexlNodes to the parent JexlNode, correctly setting parent pointers, parenthesis, and reference nodes.
-     * 
+     *
      * @param parent
      * @param children
      * @return
@@ -486,7 +488,7 @@ public class JexlNodeFactory {
     
     /**
      * Wrap an ASTAndNode or ASTOrNode in parenthesis if it has more than one child. Will return itself if wrapping is unnecessary.
-     * 
+     *
      * @param toWrap
      * @return
      */
@@ -509,7 +511,7 @@ public class JexlNodeFactory {
     
     /**
      * Create an ASTJexlScript with the provided child
-     * 
+     *
      * @param child
      * @return
      */
@@ -768,7 +770,7 @@ public class JexlNodeFactory {
     
     /**
      * A shallow copy of the given JexlNode, creates a new node of the same type with the same parent and image. Children are not copied
-     * 
+     *
      * @param original
      * @return
      */
@@ -851,7 +853,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTEQNode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -867,7 +869,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTEQNode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -922,7 +924,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTEQNode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -938,7 +940,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNENode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -954,7 +956,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNENode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -970,7 +972,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNENode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -986,7 +988,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTERNode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1002,7 +1004,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTERNode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1018,7 +1020,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTERNode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1034,7 +1036,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNRNode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1050,7 +1052,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNRNode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1066,7 +1068,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTNRNode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1082,7 +1084,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLTNode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1098,7 +1100,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLTNode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1114,7 +1116,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLTNode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1130,7 +1132,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLENode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1146,7 +1148,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLENOde from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1162,7 +1164,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTLENOde from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1178,7 +1180,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGTNode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1194,7 +1196,8 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGTNode from the given field name and value
-     * 
+     *
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1210,7 +1213,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGTNode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1226,7 +1229,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGENode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1242,7 +1245,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGENode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1258,7 +1261,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGENode from the given field name and value
-     * 
+     *
      * @param original
      * @param fieldName
      * @param fieldValue
@@ -1350,7 +1353,7 @@ public class JexlNodeFactory {
     
     /**
      * Create a new ASTGENode from the given field name and value
-     * 
+     *
      * @param namespace
      * @param function
      * @param field
@@ -1384,7 +1387,7 @@ public class JexlNodeFactory {
     
     /**
      * Assign the field name and value to the given newNode
-     * 
+     *
      * @param newNode
      * @param fieldName
      * @param fieldValue
@@ -1399,7 +1402,7 @@ public class JexlNodeFactory {
     
     /**
      * Build a JexlNode with a Number literal
-     * 
+     *
      * @param fieldName
      * @param fieldValue
      * @return
@@ -1443,7 +1446,7 @@ public class JexlNodeFactory {
     
     /**
      * Given the provide newNode, add the fieldName (as an identifier) and the literal
-     * 
+     *
      * @param newNode
      * @param identifier
      * @param literal
@@ -1487,28 +1490,6 @@ public class JexlNodeFactory {
         return newNode;
     }
     
-    /**
-     * Like {@link #buildUntypedNewNode(JexlNode, ASTIdentifier, String)} except it does not wrap {@code literal} in an {@link ASTReference}
-     * 
-     * @param newNode
-     * @param identifier
-     * @param literal
-     * @return
-     */
-    protected static JexlNode buildUntypedNewLiteralNode(JexlNode newNode, ASTIdentifier identifier, JexlNode literal) {
-        ASTReference identifierReference = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        identifierReference.jjtAddChild(identifier, 0);
-        identifier.jjtSetParent(identifierReference);
-        
-        newNode.jjtAddChild(identifierReference, 0);
-        newNode.jjtAddChild(literal, 1);
-        
-        identifierReference.jjtSetParent(newNode);
-        literal.jjtSetParent(newNode);
-        
-        return newNode;
-    }
-    
     protected static JexlNode buildUntypedDblIdentifierNode(JexlNode newNode, JexlNode identifier1, JexlNode identifier2) {
         ASTReference identifierReference1 = new ASTReference(ParserTreeConstants.JJTREFERENCE);
         identifierReference1.jjtAddChild(identifier1, 0);
@@ -1538,80 +1519,42 @@ public class JexlNodeFactory {
     }
     
     public static JexlNode buildBooleanNode(JexlNode original, ASTIdentifier identifier, Boolean literal) {
-        JexlNode copy;
-        if (original instanceof ASTEQNode) {
-            copy = new ASTEQNode(ParserTreeConstants.JJTEQNODE);
-        } else if (original instanceof ASTNENode) {
-            copy = new ASTNENode(ParserTreeConstants.JJTNENODE);
-        } else if (original instanceof ASTERNode) {
-            copy = new ASTERNode(ParserTreeConstants.JJTERNODE);
-        } else if (original instanceof ASTNRNode) {
-            copy = new ASTNRNode(ParserTreeConstants.JJTNRNODE);
-        } else if (original instanceof ASTGTNode) {
-            copy = new ASTGTNode(ParserTreeConstants.JJTGTNODE);
-        } else if (original instanceof ASTGENode) {
-            copy = new ASTGENode(ParserTreeConstants.JJTGENODE);
-        } else if (original instanceof ASTLTNode) {
-            copy = new ASTLTNode(ParserTreeConstants.JJTLTNODE);
-        } else if (original instanceof ASTLENode) {
-            copy = new ASTLENode(ParserTreeConstants.JJTLENODE);
+        if (isComparisonType(original)) {
+            JexlNode copy = JexlNodeBuilder.forType(original).withChild(ASTReference().withChild(identifier)).withChild(getBooleanEquivalent(literal)).build();
+            copy.jjtSetParent(original.jjtGetParent());
+            return copy;
         } else {
             throw new UnsupportedOperationException("Cannot handle " + original);
         }
-        
-        copy.jjtSetParent(original.jjtGetParent());
-        
-        JexlNode literalNode;
-        if (literal) {
-            literalNode = new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
-        } else {
-            literalNode = new ASTFalseNode(ParserTreeConstants.JJTFALSENODE);
-        }
-        
-        return buildUntypedNewLiteralNode(copy, identifier, literalNode);
     }
     
     public static JexlNode buildNullNode(JexlNode original, ASTIdentifier identifier) {
-        JexlNode copy;
-        if (original instanceof ASTEQNode) {
-            copy = new ASTEQNode(ParserTreeConstants.JJTEQNODE);
-        } else if (original instanceof ASTNENode) {
-            copy = new ASTNENode(ParserTreeConstants.JJTNENODE);
-        } else if (original instanceof ASTERNode) {
-            copy = new ASTERNode(ParserTreeConstants.JJTERNODE);
-        } else if (original instanceof ASTNRNode) {
-            copy = new ASTNRNode(ParserTreeConstants.JJTNRNODE);
-        } else if (original instanceof ASTGTNode) {
-            copy = new ASTGTNode(ParserTreeConstants.JJTGTNODE);
-        } else if (original instanceof ASTGENode) {
-            copy = new ASTGENode(ParserTreeConstants.JJTGENODE);
-        } else if (original instanceof ASTLTNode) {
-            copy = new ASTLTNode(ParserTreeConstants.JJTLTNODE);
-        } else if (original instanceof ASTLENode) {
-            copy = new ASTLENode(ParserTreeConstants.JJTLENODE);
+        if (isComparisonType(original)) {
+            JexlNode copy = JexlNodeBuilder.forType(original).withChild(ASTReference().withChild(identifier)).withChild(JexlNodeBuilder.ASTNullLiteral())
+                            .build();
+            copy.jjtSetParent(original.jjtGetParent());
+            return copy;
         } else {
             throw new UnsupportedOperationException("Cannot handle " + original);
         }
-        
-        copy.jjtSetParent(original.jjtGetParent());
-        
-        ASTNullLiteral literalNode = new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL);
-        
-        return buildUntypedNewLiteralNode(copy, identifier, literalNode);
     }
     
-    public static ASTIdentifier buildIdentifier(String fieldName) {
-        ASTIdentifier identifier = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
-        // When the fieldName starts with an invalid character, add the prefix
-        // onto it
-        identifier.image = JexlASTHelper.rebuildIdentifier(fieldName);
-        
-        return identifier;
+    /**
+     * Create and return a new {@link ASTIdentifier} with the specified name as its image. If the name starts with an invalid character, it will be rebuilt to
+     * have the prefix {@value JexlASTHelper#IDENTIFIER_PREFIX}.
+     * 
+     * @param name
+     *            the name
+     * @return the identifier node
+     */
+    public static ASTIdentifier buildIdentifier(String name) {
+        // Ensure the identifier is rebuilt if it starts with an invalid character.
+        return JexlNodeBuilder.ASTIdentifier().withImage(JexlASTHelper.rebuildIdentifier(name)).build();
     }
     
     /**
      * Creates a reference expression fro a child node
-     * 
+     *
      * @param child
      * @return
      */
@@ -1641,93 +1584,85 @@ public class JexlNodeFactory {
     }
     
     /**
-     * Creates a reference expression fro a child node
-     * 
-     * @param childContainer
-     * @param wrappingContainer
-     * @return
-     */
-    public static JexlNode createExpression(JexlNode childContainer, JexlNode wrappingContainer) {
-        
-        ASTReference ref = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        
-        ASTReferenceExpression exp = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
-        
-        for (int i = 0; i < childContainer.jjtGetNumChildren(); i++) {
-            JexlNode child = childContainer.jjtGetChild(i);
-            child.jjtSetParent(ref);
-            exp.jjtAddChild(child, i);
-            i++;
-        }
-        
-        exp.jjtSetParent(ref);
-        ref.jjtAddChild(exp, 0);
-        
-        JexlNode newWrapper = shallowCopy(wrappingContainer);
-        
-        ref.jjtSetParent(newWrapper);
-        
-        newWrapper.jjtAddChild(ref, 0);
-        
-        return newWrapper;
-    }
-    
-    /**
-     * Create an assignment node
-     * 
+     * Create an assignment node that will be equivalent to the query {@code (name = true)} or {@code (name = false)} depending on the value.
+     *
      * @param name
+     *            the name
      * @param value
+     *            the value
      * @return the assignment node
      */
     public static ASTAssignment createAssignment(String name, boolean value) {
-        ASTAssignment assignNode = new ASTAssignment(ParserTreeConstants.JJTASSIGNMENT);
-        
-        ASTReference refNode2 = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        refNode2.jjtSetParent(assignNode);
-        assignNode.jjtAddChild(refNode2, 0);
-        
-        ASTIdentifier idNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
-        idNode.image = name;
-        idNode.jjtSetParent(refNode2);
-        refNode2.jjtAddChild(idNode, 0);
-        
-        if (value) {
-            ASTTrueNode trueNode = new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
-            trueNode.jjtSetParent(assignNode);
-            assignNode.jjtAddChild(trueNode, 1);
-        } else {
-            ASTFalseNode falseNode = new ASTFalseNode(ParserTreeConstants.JJTFALSENODE);
-            falseNode.jjtSetParent(assignNode);
-            assignNode.jjtAddChild(falseNode, 1);
-        }
-        
-        return assignNode;
+        return createAssignment(name, getBooleanEquivalent(value));
     }
     
     /**
-     * Create an assignment node
-     * 
+     * Create an assignment node that will be equivalent to the query {@code (name = 'value')}.
+     *
      * @param name
+     *            the name
      * @param value
+     *            the value
      * @return the assignment node
      */
     public static ASTAssignment createAssignment(String name, String value) {
-        ASTAssignment assignNode = new ASTAssignment(ParserTreeConstants.JJTASSIGNMENT);
-        
-        ASTReference refNode2 = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        refNode2.jjtSetParent(assignNode);
-        assignNode.jjtAddChild(refNode2, 0);
-        
-        ASTIdentifier idNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
-        idNode.image = name;
-        idNode.jjtSetParent(refNode2);
-        refNode2.jjtAddChild(idNode, 0);
-        
-        ASTStringLiteral literalNode = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
-        literalNode.jjtSetParent(assignNode);
-        literalNode.image = value;
-        assignNode.jjtAddChild(literalNode, 1);
-        
-        return assignNode;
+        return createAssignment(name, ASTStringLiteral().withImage(value).build());
+    }
+    
+    private static ASTAssignment createAssignment(String name, JexlNode valueNode) {
+        // @formatter:off
+        return ASTAssignment()
+                        .withChild(ASTReference()
+                                        .withChild(ASTIdentifier().withImage(name)))
+                        .withChild(valueNode)
+                        .build();
+        // @formatter:on
+    }
+    
+    /**
+     * Return a new {@link ASTTrueNode} if the provided value is true, or a new {@link ASTFalseNode} if the provided value is false.
+     * 
+     * @param value
+     *            the value
+     * @return the boolean equivalent node
+     */
+    public static JexlNode getBooleanEquivalent(boolean value) {
+        return value ? JexlNodeInstance.ASTTrueNode.create() : JexlNodeInstance.ASTFalseNode.create();
+    }
+    
+    /**
+     * Return whether the provided node is one of the following comparison types: {@link ASTEQNode}, {@link ASTNENode}, {@link ASTERNode}, {@link ASTNRNode},
+     * {@link ASTGTNode}, {@link ASTGENode}, {@link ASTLTNode}, {@link ASTLENode}.
+     * 
+     * @param node
+     *            the node
+     * @return true if the node is a comparison type or false otherwise
+     */
+    private static boolean isComparisonType(JexlNode node) {
+        return isInstanceOfAny(node, ASTEQNode.class, ASTNENode.class, ASTERNode.class, ASTNRNode.class, ASTGTNode.class, ASTGENode.class, ASTLTNode.class,
+                        ASTLENode.class);
+    }
+    
+    /**
+     * Return whether the provided node is an instance of one of the provided types.
+     * 
+     * @param node
+     *            the node
+     * @param types
+     *            the types
+     * @return true if the node is one of the types or false otherwise
+     */
+    @SafeVarargs
+    private static boolean isInstanceOfAny(JexlNode node, Class<? extends JexlNode>... types) {
+        for (Class<? extends JexlNode> type : types) {
+            if (type.isInstance(node)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private JexlNodeFactory() {
+        throw new UnsupportedOperationException();
     }
 }

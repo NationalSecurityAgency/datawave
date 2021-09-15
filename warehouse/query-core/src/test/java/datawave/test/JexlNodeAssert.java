@@ -150,7 +150,7 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
      * 
      * @return the new {@link JexlNodeAssert} for the parent
      */
-    public JexlNodeAssert parent() {
+    public JexlNodeAssert assertParent() {
         isNotNull();
         return assertThat(actual.jjtGetParent());
     }
@@ -189,9 +189,99 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
      *            the child
      * @return the new {@link JexlNodeAssert} for the child
      */
-    public JexlNodeAssert child(int child) {
+    public JexlNodeAssert assertChild(int child) {
         isNotNull();
         return assertThat(actual.jjtGetChild(child));
+    }
+    
+    /**
+     * Returns a new {@link JexlNodeAssert} that will perform assertions on the child at index 0.
+     *
+     * @return the new {@link JexlNodeAssert} for the child
+     */
+    public JexlNodeAssert assertFirstChild() {
+        return assertChild(0);
+    }
+    
+    /**
+     * Returns a new {@link JexlNodeAssert} that will perform assertions on the child at index 1.
+     *
+     * @return the new {@link JexlNodeAssert} for the child
+     */
+    public JexlNodeAssert assertSecondChild() {
+        return assertChild(1);
+    }
+    
+    /**
+     * Returns a new {@link JexlNodeAssert} that will perform assertions on the child at index 2.
+     *
+     * @return the new {@link JexlNodeAssert} for the child
+     */
+    public JexlNodeAssert assertThirdChild() {
+        return assertChild(2);
+    }
+    
+    /**
+     * Returns a new {@link JexlNodeAssert} that will perform assertions on the child at index 3.
+     *
+     * @return the new {@link JexlNodeAssert} for the child
+     */
+    public JexlNodeAssert assertFourthChild() {
+        return assertChild(3);
+    }
+    
+    /**
+     * Returns a new {@link JexlNodeAssert} that will perform assertions on the child at index 4.
+     *
+     * @return the new {@link JexlNodeAssert} for the child
+     */
+    public JexlNodeAssert assertFifthChild() {
+        return assertChild(4);
+    }
+    
+    /**
+     * Returns a new {@link JexlNodeAssert} that will perform assertions on the child at index 5.
+     *
+     * @return the new {@link JexlNodeAssert} for the child
+     */
+    public JexlNodeAssert assertSixthChild() {
+        return assertChild(5);
+    }
+    
+    /**
+     * Returns a new {@link JexlNodeAssert} that will perform assertions on the child at index 6.
+     *
+     * @return the new {@link JexlNodeAssert} for the child
+     */
+    public JexlNodeAssert assertSeventhChild() {
+        return assertChild(6);
+    }
+    
+    /**
+     * Returns a new {@link JexlNodeAssert} that will perform assertions on the child at index 7.
+     *
+     * @return the new {@link JexlNodeAssert} for the child
+     */
+    public JexlNodeAssert assertEighthChild() {
+        return assertChild(7);
+    }
+    
+    /**
+     * Returns a new {@link JexlNodeAssert} that will perform assertions on the child at index 8.
+     *
+     * @return the new {@link JexlNodeAssert} for the child
+     */
+    public JexlNodeAssert assertNinthChild() {
+        return assertChild(8);
+    }
+    
+    /**
+     * Returns a new {@link JexlNodeAssert} that will perform assertions on the child at index 9.
+     *
+     * @return the new {@link JexlNodeAssert} for the child
+     */
+    public JexlNodeAssert assertTenthChild() {
+        return assertChild(9);
     }
     
     /**
