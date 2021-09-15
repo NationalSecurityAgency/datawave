@@ -198,7 +198,7 @@ public class JexlNodeFactory {
             // create a set of nodes wrapping each pattern
             List<String> patterns = new ArrayList<>(fieldsToValues.getPatterns() == null ? new ArrayList<>() : fieldsToValues.getPatterns());
             if (patterns.isEmpty()) {
-                 return new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(copy(original), field));
+                return new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(copy(original), field));
             } else if (patterns.size() == 1) {
                 return new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(copy(original), field, patterns.get(0)));
             } else {
