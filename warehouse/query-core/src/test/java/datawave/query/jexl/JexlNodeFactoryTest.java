@@ -1,13 +1,23 @@
 package datawave.query.jexl;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import datawave.query.jexl.functions.arguments.JexlArgument;
 import datawave.query.jexl.lookups.IndexLookupMap;
+import datawave.query.jexl.lookups.ValueSet;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class JexlNodeFactoryTest {
@@ -23,6 +33,147 @@ public class JexlNodeFactoryTest {
                         true, false);
         
         assertEquals("(FOO == '6' || FOO == '7' || FOO == '8' || FOO == '9')", JexlStringBuildingVisitor.buildQuery(node));
+        assertTrue(JexlASTHelper.validateLineage(node, false));
+    }
+    
+    @Test
+    public void testOrFromFieldNames() throws ParseException {
+        JexlNode original = JexlASTHelper.parseJexlQuery("_ANYFIELD_ =~ 'bar'");
+        
+        // let's get the literal...
+        List<ASTERNode> erNodes = JexlASTHelper.getERNodes(original);
+        assertEquals("Expected 1 ER node, but got " + erNodes.size(), 1, erNodes.size());
+        ASTERNode erNode = erNodes.get(0);
+        Object literal = JexlASTHelper.getLiteralValue(erNode);
+        
+        List<String> fieldNames = Lists.newArrayList("FOO1", "FOO2", "FOO3");
+        JexlNode node = JexlNodeFactory.createNodeTreeFromFieldNames(JexlNodeFactory.ContainerType.OR_NODE, new ASTEQNode(ParserTreeConstants.JJTEQNODE),
+                        literal, fieldNames);
+        
+        assertEquals("(FOO1 == 'bar' || FOO2 == 'bar' || FOO3 == 'bar')", JexlStringBuildingVisitor.buildQueryWithoutParse(node));
+        assertTrue(JexlASTHelper.validateLineage(node, false));
+    }
+    
+    @Test
+    public void testOrFromFieldValues() throws ParseException {
+        JexlNode original = JexlASTHelper.parseJexlQuery("FOO =~ 'bar.*'");
+        // and get the erNode...
+        List<ASTERNode> erNodes = JexlASTHelper.getERNodes(original);
+        assertEquals("Expected 1 ERNode but got " + erNodes.size(), 1, erNodes.size());
+        ASTERNode erNode = erNodes.get(0);
+        
+        List<String> fieldValues = Lists.newArrayList("bar1", "bar2", "bar3");
+        
+        // Convert FOO to a conjunction of FOO[1,3]
+        JexlNode node = JexlNodeFactory.createNodeTreeFromFieldValues(JexlNodeFactory.ContainerType.OR_NODE, new ASTEQNode(ParserTreeConstants.JJTORNODE),
+                        erNode, "FOO", fieldValues);
+        
+        assertEquals("(FOO == 'bar1' || FOO == 'bar2' || FOO == 'bar3')", JexlStringBuildingVisitor.buildQueryWithoutParse(node));
+        assertTrue(JexlASTHelper.validateLineage(node, false));
+    }
+    
+    @Test
+    public void testOrFromFieldsToValues() throws ParseException {
+        JexlNode original = JexlASTHelper.parseJexlQuery("FOO =~ 'bar.*'");
+        // and get the erNode...
+        List<ASTERNode> erNodes = JexlASTHelper.getERNodes(original);
+        assertEquals("Expected 1 ERNode but got " + erNodes.size(), 1, erNodes.size());
+        ASTERNode erNode = erNodes.get(0);
+        
+        IndexLookupMap lookupMap = new IndexLookupMap(500, 5000); // defaults from ShardQueryConfig
+        lookupMap.put("FOO", "bar1");
+        lookupMap.put("FOO", "bar2");
+        lookupMap.put("FOO", "bar3");
+        
+        // Convert FOO to a conjunction of FOO[1,3]
+        JexlNode node = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, erNode, lookupMap, true, true, false);
+        
+        assertEquals("(FOO == 'bar1' || FOO == 'bar2' || FOO == 'bar3')", JexlStringBuildingVisitor.buildQueryWithoutParse(node));
+        assertTrue(JexlASTHelper.validateLineage(node, false));
+    }
+    
+    @Test
+    public void testOrFromFieldsToValues_maxUnfieldedExpansion() throws ParseException {
+        JexlNode original = JexlASTHelper.parseJexlQuery("_ANYFIELD_ =~ 'bar.*'");
+        // and get the erNode...
+        List<ASTERNode> erNodes = JexlASTHelper.getERNodes(original);
+        assertEquals("Expected 1 ERNode but got " + erNodes.size(), 1, erNodes.size());
+        ASTERNode erNode = erNodes.get(0);
+        
+        IndexLookupMap lookupMap = new IndexLookupMap(1, 5000); // defaults from ShardQueryConfig
+        lookupMap.put("FOO1", "bar1");
+        lookupMap.put("FOO2", "bar2");
+        assertTrue(lookupMap.isKeyThresholdExceeded());
+        
+        // Convert FOO to a conjunction of FOO[1,3]
+        JexlNode node = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, erNode, lookupMap, true, true, false);
+        
+        assertEquals("((_Term_ = true) && (_ANYFIELD_ =~ 'bar.*'))", JexlStringBuildingVisitor.buildQueryWithoutParse(node));
+        assertTrue(JexlASTHelper.validateLineage(node, false));
+    }
+    
+    @Test
+    public void testOrFromFieldsToValues_maxRegexExpansion() throws ParseException {
+        JexlNode original = JexlASTHelper.parseJexlQuery("_ANYFIELD_ =~ 'bar.*'");
+        // and get the erNode...
+        List<ASTERNode> erNodes = JexlASTHelper.getERNodes(original);
+        assertEquals("Expected 1 ERNode but got " + erNodes.size(), 1, erNodes.size());
+        ASTERNode erNode = erNodes.get(0);
+        
+        IndexLookupMap lookupMap = new IndexLookupMap(500, 1); // defaults from ShardQueryConfig
+        lookupMap.put("FOO1", "bar1");
+        lookupMap.put("FOO1", "bar2");
+        lookupMap.put("FOO2", "bar1");
+        lookupMap.put("FOO2", "bar2");
+        lookupMap.put("FOO3", "bar1");
+        assertFalse(lookupMap.isKeyThresholdExceeded());
+        assertTrue(lookupMap.get("FOO1").isThresholdExceeded());
+        assertTrue(lookupMap.get("FOO2").isThresholdExceeded());
+        assertFalse(lookupMap.get("FOO3").isThresholdExceeded());
+        
+        JexlNode node = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, erNode, lookupMap, true, true, false);
+        
+        String expected = "(((_Value_ = true) && (FOO1 =~ 'bar.*')) || FOO3 == 'bar1' || ((_Value_ = true) && (FOO2 =~ 'bar.*')))";
+        assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(node));
+        assertTrue(JexlASTHelper.validateLineage(node, false));
+    }
+    
+    @Test
+    public void testRangeExpansionToMaxExpansion() throws ParseException {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO >= 'bar1' && FOO <= 'bar4'");
+        JexlNode range = script.jjtGetChild(0);
+        
+        IndexLookupMap lookupMap = new IndexLookupMap(500, 1); // defaults from ShardQueryConfig
+        lookupMap.put("FOO", "bar1");
+        lookupMap.put("FOO", "bar2");
+        lookupMap.put("FOO", "bar3");
+        lookupMap.put("FOO", "bar4");
+        assertFalse(lookupMap.isKeyThresholdExceeded());
+        assertTrue(lookupMap.get("FOO").isThresholdExceeded());
+        
+        JexlNode node = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, range, lookupMap, true, true, false);
+        
+        String expected = "((_Value_ = true) && (FOO >= 'bar1' && FOO <= 'bar4'))";
+        assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(node));
+        assertTrue(JexlASTHelper.validateLineage(node, false));
+    }
+    
+    @Test
+    public void testEnsureRangeExpansionDoesNotDuplicateNodes() throws ParseException {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("(FOO >= 'bar1' && FOO <= 'bar4') && BAR == 'foo'");
+        
+        IndexLookupMap lookupMap = new IndexLookupMap(500, 100); // defaults from ShardQueryConfig
+        lookupMap.put("FOO", "bar1");
+        lookupMap.put("FOO", "bar2");
+        lookupMap.put("FOO", "bar3");
+        lookupMap.put("FOO", "bar4");
+        assertFalse(lookupMap.isKeyThresholdExceeded());
+        assertFalse(lookupMap.get("FOO").isThresholdExceeded());
+        
+        JexlNode node = JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, script, lookupMap, true, true, false);
+        
+        String expected = "(FOO == 'bar1' || FOO == 'bar2' || FOO == 'bar3' || FOO == 'bar4')";
+        assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(node));
         assertTrue(JexlASTHelper.validateLineage(node, false));
     }
 }

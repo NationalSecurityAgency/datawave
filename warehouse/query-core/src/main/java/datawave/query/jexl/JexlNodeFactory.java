@@ -4,7 +4,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.query.Constants;
-import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ValueSet;
@@ -58,6 +57,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import static datawave.query.jexl.visitors.RebuildingVisitor.copy;
+
 /**
  * Factory methods that can create JexlNodes
  * 
@@ -101,7 +102,7 @@ public class JexlNodeFactory {
         
         // no expansions needed if the field name threshold is exceeded
         if (fieldsToValues.isKeyThresholdExceeded()) {
-            return new ExceededTermThresholdMarkerJexlNode(original);
+            return new ExceededTermThresholdMarkerJexlNode(copy(original));
         }
         
         // collapse the value sets if not expanding fields
@@ -121,7 +122,7 @@ public class JexlNodeFactory {
         Set<String> fields = fieldsToValues.keySet();
         
         if (keepOriginalNode) {
-            JexlNode child = RebuildingVisitor.copy(original);
+            JexlNode child = copy(original);
             children.add(child);
             // remove this entry from the fieldsToValues to avoid duplication
             for (String identifier : JexlASTHelper.getIdentifierNames(original)) {
@@ -134,6 +135,7 @@ public class JexlNodeFactory {
         for (String field : fields) {
             JexlNode child = createNodeFromValuesForField(field, fieldsToValues, original, containerType, expandValues, isNegated);
             if (child != null) {
+                JexlASTHelper.validateLineage(child, true);
                 children.add(child);
             }
         }
@@ -180,7 +182,7 @@ public class JexlNodeFactory {
         if (!expandValues) {
             
             // If not expanding values set the original node's field name to '_ANYFIELD_'
-            JexlNode child = RebuildingVisitor.copy(original);
+            JexlNode child = copy(original);
             for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(child)) {
                 if (identifier.image.equals(Constants.ANY_FIELD)) {
                     identifier.image = field;
@@ -189,15 +191,16 @@ public class JexlNodeFactory {
             return child;
             
         } else if (valuesForField.isThresholdExceeded()) {
+            
             // a threshold exceeded set of values requires using the original
             // node with a new fieldname, wrapped with a marker node
             
             // create a set of nodes wrapping each pattern
             List<String> patterns = new ArrayList<>(fieldsToValues.getPatterns() == null ? new ArrayList<>() : fieldsToValues.getPatterns());
             if (patterns.isEmpty()) {
-                return new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(original, field));
+                 return new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(copy(original), field));
             } else if (patterns.size() == 1) {
-                return new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(original, field, patterns.get(0)));
+                return new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(copy(original), field, patterns.get(0)));
             } else {
                 
                 JexlNode junction;
@@ -210,7 +213,7 @@ public class JexlNodeFactory {
                 }
                 
                 for (String pattern : patterns) {
-                    JexlNode child = new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(original, field, pattern));
+                    JexlNode child = new ExceededValueThresholdMarkerJexlNode(buildUntypedNode(copy(original), field, pattern));
                     children.add(child);
                 }
                 
@@ -565,12 +568,12 @@ public class JexlNodeFactory {
             return buildUntypedDblIdentifierNode(shallowCopy(original), left, right);
             
         } else if (left instanceof ASTMulNode || right instanceof ASTMulNode) {
-            return RebuildingVisitor.copy(original);
+            return copy(original);
         } else if (left instanceof ASTAdditiveNode || right instanceof ASTAdditiveNode) {
-            return RebuildingVisitor.copy(original);
+            return copy(original);
             
         } else if (left instanceof ASTModNode || right instanceof ASTModNode) {
-            return RebuildingVisitor.copy(original);
+            return copy(original);
             
         } else if (left instanceof ASTDivNode && JexlASTHelper.isLiteral(right)) {
             return buildUntypedDblLiteralNode(shallowCopy(original), left, right);
@@ -663,7 +666,9 @@ public class JexlNodeFactory {
                         || original instanceof ASTAssignment || original instanceof ASTIdentifier || original instanceof ASTTrueNode) {
             JexlNode newNode = shallowCopy(original);
             for (int i = 0; i < original.jjtGetNumChildren(); i++) {
-                newNode.jjtAddChild(buildUntypedNode(original.jjtGetChild(i), fieldName), i);
+                JexlNode newChild = buildUntypedNode(original.jjtGetChild(i), fieldName);
+                newNode.jjtAddChild(newChild, i);
+                newChild.jjtSetParent(newNode);
             }
             return newNode;
         }
