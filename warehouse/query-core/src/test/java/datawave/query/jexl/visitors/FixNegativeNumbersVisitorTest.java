@@ -15,7 +15,7 @@ public class FixNegativeNumbersVisitorTest {
         String query = "FOO == -1";
         ASTJexlScript queryScript = JexlASTHelper.parseJexlQuery(query);
         
-        // Verify the script was parsed with a unary minus node.
+        // Verify the script was parsed with a single unary minus node.
         JexlNodeAssert.assertThat(queryScript).child(0).child(1).isInstanceOf(ASTUnaryMinusNode.class);
         
         ASTJexlScript fixed = FixNegativeNumbersVisitor.fix(queryScript);
