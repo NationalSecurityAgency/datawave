@@ -62,12 +62,23 @@ Query flow:
 |Yes|QueryExecutorBean|/Query|Keep|QueryController|Query Service|Most endpoints will be preserved - some won't.|
 |No|CachedResultsBean|/CachedResults|Keep|?|?|Should this live in the query service, or somewhere else?|
 |Yes|TableAdminBean|/Accumulo|Keep|AdminController|Accumulo Service|Looks like this bean forwards to the accumulo service, so we just need to make sure to add the remote auth profile and add a route in HAProxy.|
-|No|AtomServiceBean|/Atom|?|||Can we drop this?|
+|Yes|StatsBean|/Accumulo|Keep|StatsController|Accumulo Service|Looks like this bean forwards to the accumulo service, so we just need to make sure to add the remote auth profile and add a route in HAProxy.|
+|Yes|LookupBean|/Accumulo|Keep|LookupController|Accumulo Service|Looks like this bean forwards to the accumulo service, so we just need to make sure to add the remote auth profile and add a route in HAProxy.|
+|Yes|PermissionsBean|/Accumulo|Keep|AdminController|Accumulo Service|Looks like this bean forwards to the accumulo service, so we just need to make sure to add the remote auth profile and add a route in HAProxy.|
+|Yes|UpdateBean|/Accumulo|Keep|AdminController|Accumulo Service|Looks like this bean forwards to the accumulo service, so we just need to make sure to add the remote auth profile and add a route in HAProxy.|
+|Yes|ListTablesBean|/Accumulo|Keep|AdminController|Accumulo Service|Looks like this bean forwards to the accumulo service, so we just need to make sure to add the remote auth profile and add a route in HAProxy.|
+|Yes|ListUserAuthorizationsBean|/Accumulo|Keep|AdminController|Accumulo Service|Looks like this bean forwards to the accumulo service, so we just need to make sure to add the remote auth profile and add a route in HAProxy.|
+|Yes|ListUserPermissionsBean|/Accumulo|Keep|AdminController|Accumulo Service|Looks like this bean forwards to the accumulo service, so we just need to make sure to add the remote auth profile and add a route in HAProxy.|
+|Yes|ListUsersBean|/Accumulo|Keep|AdminController|Accumulo Service|Looks like this bean forwards to the accumulo service, so we just need to make sure to add the remote auth profile and add a route in HAProxy.|
+|Yes|DataDictionaryBean|/DataDictionary|Keep|DataDictionaryOperations|Dictionary Service|Looks like this bean forwards to the dictionary service, so we just need to make sure to add the remote auth profile and add a route in HAProxy.|
+|Yes|EdgeDictionaryBean|/EdgeDictionary|Keep|EdgeDictionaryOperations|Dictionary Service|Looks like this bean forwards to the dictionary service, so we just need to make sure to add the remote auth profile and add a route in HAProxy.|
+|No|AtomServiceBean|/Atom|?| | |Can we drop this?|
 |Yes|ConfigurationBean|/Common/Configuration|Keep|*|*|All of the spring-boot microservices have refresh endpoints now, so we should be covered.|
 |No|AccumuloTableCacheBean|/Common/AccumuloTableCache|Keep|QueryExecutorController|Executor Service|The executor service may need the ability to reload it's accumulo table cache.|
 |Yes|AccumuloConnectionFactoryBean|/Common/AccumuloConnectionFactory|Keep|QueryExecutorController|Executor Service|Add remote auth profile and add a route in HAProxy.|
 |No|HealthBean|/Common/Health|Keep|*|*|This provides the shutdown endpoint which is used to drain and shutdown the webservices.  This mechanism will likely differ with our new implementation, but it's a concept we should be aware of.|
 |No|ModelBean|/Model|Keep|?|?|Where should model access/manipulation live?  In the query service?|
+|No|ModificationBean|/Modification|?|?|?|Is this used anywhere?  Do we need this?  It allows us to list and modify modification services.|
 |No|ModificationCacheBean|/Modification|?|?|?|Is this used anywhere?  Do we need this?  It allows us to list mutable fields and reload the mutable field cache.|
 |No|QueryCacheBean|/Query/Cache|?|?|?|All queries are cached now.  What endpoints do we want to support for accessing our query cache and where should that live?|
 |Yes|DashboardBean|/Query/Metrics/dashboard|Drop?| | |As far as I know, this is not used.  Seems droppable to me.|
@@ -75,3 +86,6 @@ Query flow:
 |Yes|QueryMetricsBean|/Query/Metrics|Keep|QueryMetricOperations|Query Metric Service|Just need to add a route in HAProxy for this.|
 |No|BasicQueryBean|/BasicQuery|Drop?| | |Query wizard stuff.  Do we need this?  Does anyone use this?|
 |No|IdTranslatorBean|/Query|?|?|?|Not sure what to do with this.|
+|No|MapReduceStatusUpdateBean|/MapReduceStatus|?|?|?|Looks like this is a callback handler for BulkResults jobs which updates the internal state of the job.  Is this still needed?|
+|No|CredentialsCacheBean|/Security/Admin/Credentials|Keep| | |We need a similar endpoint to enable us to list, flush and evict credentials from the cache.  |
+|No|UserOperationsBase|/Security/User|Keep| | |We need a similar endpoint to enable users to list their effective authorizations, and flush their cached credentials.|
