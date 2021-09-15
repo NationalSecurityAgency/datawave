@@ -35,9 +35,6 @@ spring:
 
 audit:
   confirmAckEnabled: true
-  fsConfigResources:
-    - '/etc/hadoop/conf/core-site.xml'
-    - '/etc/hadoop/conf/hdfs-site.xml'
   auditors:
     log:
       enabled: true

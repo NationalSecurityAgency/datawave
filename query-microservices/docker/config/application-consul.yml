@@ -15,7 +15,6 @@ spring:
       discovery:
         # we can use this
         scheme: https
-        hostname: localhost
         # or alternatively this
         # port: ${server.non-secure-port} 
         

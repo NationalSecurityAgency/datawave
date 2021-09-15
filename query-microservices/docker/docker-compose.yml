@@ -2,15 +2,17 @@ version: '2.2'
 services:
   discovery:
     image: consul:1.9.8
-    hostname: discovery
+    hostname: localhost
     environment:
-      - 'CONSUL_LOCAL_CONFIG={"datacenter": "demo_dc", "disable_update_check": true}'
+      - 'CONSUL_LOCAL_CONFIG={"datacenter": "demo_dc", "disable_update_check": true, "enable_agent_tls_for_checks": true, "key_file": "/etc/pki/testServer.key", "cert_file": "/etc/pki/testServer.crt", "ca_file": "/etc/pki/testCA.pem", "verify_outgoing": true, "verify_server_hostname": false}'
       - CONSUL_BIND_INTERFACE=eth0
     # defined as host:container
     ports:
       - "8400"
-      - "8500"
+      - "8500:8500"
       - "53"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
     networks:
       - demo
 
@@ -83,13 +85,14 @@ services:
       - --spring.cloud.consul.host=discovery
       - --spring.cloud.config.server.native.searchLocations=file:///microservice-config
     environment:
-      - 'KEYSTORE_LOCATION=classpath:/testServer.p12'
+      - 'KEYSTORE_LOCATION=file:///etc/pki/testServer.p12'
       - KEYSTORE_PASSWORD=ChangeIt
       - KEY_ALIAS=certificate
     ports:
       - "8888:8888"
     volumes:
       - ${CONFIG_DIR:-./config}:/microservice-config:ro
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
     networks:
       - demo
@@ -99,12 +102,12 @@ services:
 
   cache:
     image: datawave/hazelcast-service:1.7-SNAPSHOT
-    # This can be scaled up, but sometimes the nodes fail to cluster
     scale: 1
     command:
       - --spring.profiles.active=consul,compose
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
     ports:
       - "5701-5703"
       - "8080"
@@ -116,11 +119,6 @@ services:
       - demo
     healthcheck:
       test: curl -f http://localhost:8080/cache/mgmt/health
-      # If scaling up beyond 1 instance, configure healthchecks
-      # interval: 30s
-      # timeout: 10s
-      # retries: 8
-      # start_period: 80s
     depends_on:
       configuration:
         condition: service_started
@@ -131,6 +129,7 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,mock,compose
       - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
     ports:
       - "8080"
       - "8443"
@@ -151,6 +150,7 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose
       - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
     # This mapping is required to enable the metrics service to communicate
@@ -179,6 +179,7 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
       - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
     # This mapping is required to enable the metrics service to communicate
@@ -210,6 +211,7 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
       - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
     # This mapping is required to enable the metrics service to communicate
@@ -238,6 +240,7 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query
       - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
     environment:
       - AUDIT_SERVER_URL=http://audit:8080/audit
     ports:
@@ -266,6 +269,7 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query,pool1
       - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
     # This mapping is required to enable the metrics service to communicate
@@ -301,6 +305,7 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query,pool2
       - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
     # This mapping is required to enable the metrics service to communicate
@@ -334,6 +339,7 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,storage,query
       - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
     extra_hosts:

@@ -1,6 +1,8 @@
-
+# This profile should be included by any service which depends on the query starter and
+# wants to read/write query stats from/to the query storage cache, or read/write query
+# results from/to the query results backend.
 query:
   storage:
     syncStorage: true
     sendNotifications: true
-    backend: rabbit
+    backend: ${executor.backend}

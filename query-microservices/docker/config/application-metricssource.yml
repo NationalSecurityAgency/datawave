@@ -1,3 +1,5 @@
+# This profile should be added to your service if you depend on the 
+# query metric starter to send metrics to the query metric service.
 spring:
   cloud:
     stream:
@@ -9,5 +11,3 @@ spring:
     # NOTE: When defining your functions, be sure to include busConsumer, or else spring cloud bus will not work
     function:
       definition: queryMetricSource;busConsumer
-
-datawave.query.metric.client.sink.enabled: false

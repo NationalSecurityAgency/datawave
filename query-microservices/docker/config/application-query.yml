@@ -1,3 +1,5 @@
+# This profile should be included by any service which depends on the query starter.  This
+# file contains all of the configuration required to use the QueryLogicFactory.
 warehouse:
   accumulo:
     zookeepers: '${accumulo.zookeepers}'

@@ -119,4 +119,4 @@ echo "$(date): Getting metrics for $QUERY_ID"
 # grab the metrics
 curl -s -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
-    ${METRICS_ENDPOINT}/id/$QUERY_ID > query_$QUERY_ID/queryMetrics.html
+    ${METRICS_ENDPOINT}/id/$QUERY_ID > query_$QUERY_ID/queryMetrics.xml

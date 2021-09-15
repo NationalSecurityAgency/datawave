@@ -1,12 +1,5 @@
-# This template is for configuring your docker-compose profile for all microservices.
-# You should copy this file to application-dev.yml before changing configuration.
-
+# This template is for configuring your site-specific properties for all microservices.
 system.name: DOCKER-COMPOSE
-
-# accumulo:
-#   zookeepers: 'hostname:port,hostname:port,...'
-#   metrics:
-#     zookeepers: 'hostname:port,hostname:port,...'
 
 server:
   ssl:
@@ -27,14 +20,14 @@ spring:
       allowed-callers:
         - "cn=test a. user, ou=example developers, o=example corp, c=us<cn=example corp ca, o=example corp, c=us>"
 
-# To report metrics to the console, uncomment the following:
-#metrics:
-#  reporter:
-#    factory-class: datawave.metrics.ConsoleMetricsReporterFactory
-#    interval: 5
-#    time-unit: MINUTES
-#metrics:
-#  reporter:
-#    factory-class: datawave.metrics.TimelyMetricsReporterFactory
-#    port: 54321
-#    host: localhost
+# This is the accumulo configuration we use in services.  These don't map directly to a properties class, but 
+# they are here to be used as a reference for other properties.
+accumulo:
+  zookeepers: '${ZOOKEEPER_HOST:localhost}:2181'
+  instanceName: 'my-instance-01'
+  username: 'root'
+  password: 'secret'
+
+# Configuration placeholder which determines what backend will be used for transmitting query results.
+executor:
+  backend: rabbit
