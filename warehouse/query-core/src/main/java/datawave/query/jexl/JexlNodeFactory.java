@@ -80,7 +80,7 @@ public class JexlNodeFactory {
      * @param containerType
      *            should we create OR nodes or AND nodes
      * @param isNegated
-     *            is this node negated per {@see ParallelIndexExpansion#isNegativeNode(JexlNode)}
+     *            is this node negated per ParallelIndexExpansion.isNegativeNode
      * @param original
      *            the original JexlNode
      * @param fieldsToValues
