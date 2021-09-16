@@ -157,9 +157,7 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
      */
     public JexlNodeAssert hasNoChildren() {
         isNotNull();
-        if (actual.jjtGetNumChildren() != 0) {
-            failWithMessage("Expected no children, but had children %s", formatChildren(actual));
-        }
+        hasNumChildren(0);
         return this;
     }
     
@@ -233,7 +231,7 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         isNotNull();
         JexlASTHelper.LineageValidation validation = JexlASTHelper.validateLineageVerbosely(actual, false);
         if (!validation.isValid()) {
-            failWithMessage("Expected a valid lineage, but found the following conflicts: \n" + validation.getFormattedInvalidations());
+            failWithMessage("Expected a valid lineage, but found the following conflicts: \n" + validation.getFormattedViolations());
         }
         return this;
     }
