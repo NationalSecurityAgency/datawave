@@ -1550,25 +1550,29 @@ public class JexlASTHelper {
     public static class LineageValidation {
         
         private final List<String> violations = new ArrayList<>();
-    
+        
         /**
          * Returns whether a valid lineage was confirmed.
+         * 
          * @return true if no violations were found, or false otherwise
          */
         public boolean isValid() {
             return violations.isEmpty();
         }
-    
+        
         /**
          * Add a message describing an encountered violation.
-         * @param message the description message
+         * 
+         * @param message
+         *            the description message
          */
         public void addViolation(String message) {
             violations.add(message);
         }
-    
+        
         /**
          * Return a string containing each violation message on a new line.
+         * 
          * @return the formatted string, or null if there are no violations.
          */
         public String getFormattedViolations() {

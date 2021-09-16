@@ -16,26 +16,30 @@ public class FieldToFieldComparisonVisitorTest {
     
     @Test
     public void testEq() throws ParseException {
-        ASTJexlScript query = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("FOO == BAR"));
-        JexlNodeAssert.assertThat(query).isEqualTo("((_Eval_ = true) && (FOO == BAR))").matches(ASTEvaluationOnly::instanceOf);
+        String query = "((_Eval_ = true) && (FOO == BAR))";
+        ASTJexlScript script = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("FOO == BAR"));
+        JexlNodeAssert.assertThat(script).isEqualTo(query).matches(ASTEvaluationOnly::instanceOf);
     }
     
     @Test
     public void testEqDoNothing() throws ParseException {
-        ASTJexlScript query = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("FOO == 'bar'"));
-        JexlNodeAssert.assertThat(query).isEqualTo("FOO == 'bar'").matches(notASTEvaluationOnlyInstance);
+        String query = "FOO == 'bar'";
+        ASTJexlScript script = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("FOO == 'bar'"));
+        JexlNodeAssert.assertThat(script).isEqualTo(query).matches(notASTEvaluationOnlyInstance);
     }
     
     @Test
     public void testEqDoNothingFieldsToLiteral() throws ParseException {
-        ASTJexlScript query = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("(FOO || BAR).min().hashCode() == 0"));
-        JexlNodeAssert.assertThat(query).isEqualTo("(FOO || BAR).min().hashCode() == 0").matches(notASTEvaluationOnlyInstance);
+        String query = "(FOO || BAR).min().hashCode() == 0";
+        ASTJexlScript script = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("(FOO || BAR).min().hashCode() == 0"));
+        JexlNodeAssert.assertThat(script).isEqualTo(query).matches(notASTEvaluationOnlyInstance);
     }
     
     @Test
     public void testEqDoNothing2() throws ParseException {
-        ASTJexlScript query = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("(UUID =~ 'C.*?' || UUID =~ 'S.*?')"));
-        JexlNodeAssert.assertThat(query).isEqualTo("(UUID =~ 'C.*?' || UUID =~ 'S.*?')").matches(notASTEvaluationOnlyInstance);
+        String query = "(UUID =~ 'C.*?' || UUID =~ 'S.*?')";
+        ASTJexlScript script = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("(UUID =~ 'C.*?' || UUID =~ 'S.*?')"));
+        JexlNodeAssert.assertThat(script).isEqualTo(query).matches(notASTEvaluationOnlyInstance);
     }
     
     @Test(expected = ParseException.class)
