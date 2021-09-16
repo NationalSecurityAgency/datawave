@@ -7,6 +7,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.jexl2.parser.ASTAndNode;
@@ -66,7 +67,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         node = (ASTAndNode) (super.visit(node, data));
         
         // if this and node itself is the exceeded value threshold, then abort
-        if (ExceededValueThresholdMarkerJexlNode.instanceOf(node)) {
+        if (QueryPropertyMarker.findInstance(node).isType(ExceededValueThresholdMarkerJexlNode.class)) {
             return node;
         }
         
@@ -159,8 +160,9 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
     }
     
     private boolean isExceededValueRangeNode(JexlNode child) {
-        if (ExceededValueThresholdMarkerJexlNode.instanceOf(child)) {
-            JexlNode source = ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(child);
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(child);
+        if (instance.isType(ExceededValueThresholdMarkerJexlNode.class)) {
+            JexlNode source = instance.getSource();
             source = JexlASTHelper.dereference(source);
             if (source instanceof ASTAndNode && source.jjtGetNumChildren() == 2) {
                 JexlNode sourceChild = JexlASTHelper.dereference(source.jjtGetChild(0));
@@ -178,24 +180,14 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
     }
     
     private String getRangeField(JexlNode child) {
-        JexlNode source = ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(child);
+        JexlNode source = QueryPropertyMarker.findInstance(child).getSource();
         source = JexlASTHelper.dereference(source);
         List<ASTIdentifier> fields = JexlASTHelper.getIdentifiers(source);
         return fields.get(0).image;
     }
     
-    private JexlNode pushFunctionIntoExceededValueRange(JexlNode filter, JexlNode range) {
-        JexlNode source = ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(range);
-        source = JexlASTHelper.dereference(source);
-        JexlNode parent = source.jjtGetParent();
-        ASTAndNode andNode = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
-        andNode = children(andNode, source, filter);
-        children(parent, andNode);
-        return range;
-    }
-    
     private JexlNode pushFunctionIntoExceededValueRange(Collection<JexlNode> functions, JexlNode range) {
-        JexlNode source = ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(range);
+        JexlNode source = QueryPropertyMarker.findInstance(range).getSource();
         source = JexlASTHelper.dereference(source);
         JexlNode parent = source.jjtGetParent();
         ASTAndNode andNode = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
