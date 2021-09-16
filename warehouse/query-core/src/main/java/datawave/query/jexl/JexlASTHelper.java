@@ -1482,19 +1482,28 @@ public class JexlASTHelper {
     }
     
     /**
-     * Checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage.
+     * Returns whether the tree contains any null children, children with null parents, or children with conflicting parentage.
      *
      * @param rootNode
      *            the tree to validate
      * @param failHard
-     *            whether or not to throw an exception if validation fails
+     *            whether to throw an exception if validation fails
      * @return true if valid, false otherwise
      */
-    // checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage
     public static boolean validateLineage(JexlNode rootNode, boolean failHard) {
         return validateLineageVerbosely(rootNode, failHard).isValid();
     }
     
+    /**
+     * Checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage, and returns a
+     * {@link LineageValidation} with any identified violations.
+     * 
+     * @param rootNode
+     *            the tree to validate
+     * @param failHard
+     *            if true, throws an exception when a violation is encountered for the first time
+     * @return the {@link LineageValidation}
+     */
     public static LineageValidation validateLineageVerbosely(JexlNode rootNode, boolean failHard) {
         // Prepare a working stack to iterate through.
         Deque<JexlNode> workingStack = new LinkedList<>();
@@ -1511,15 +1520,15 @@ public class JexlASTHelper {
                     if (child != null) {
                         if (child.jjtGetParent() == null) {
                             String message = "Tree included child " + child + " with a null parent";
-                            handleInvalidation(message, failHard, validation);
+                            recordViolation(message, failHard, validation);
                         } else if (child.jjtGetParent() != node) {
                             String message = "Included a child " + child + " with conflicting parent. Expected " + node + " but was " + child.jjtGetParent();
-                            handleInvalidation(message, failHard, validation);
+                            recordViolation(message, failHard, validation);
                         }
                         workingStack.push(child);
                     } else {
                         String message = "Included a null child under parent " + node;
-                        handleInvalidation(message, failHard, validation);
+                        recordViolation(message, failHard, validation);
                     }
                 }
             }
@@ -1528,36 +1537,36 @@ public class JexlASTHelper {
         return validation;
     }
     
-    private static void handleInvalidation(String message, boolean failHard, LineageValidation validation) {
+    // Record the specified violation message. Throw an exception if failHard is true.
+    private static void recordViolation(String message, boolean failHard, LineageValidation validation) {
         if (failHard) {
             throw new RuntimeException("Failed to validate lineage: " + message);
         } else {
             log.error("Failed to validate lineage: " + message);
-            validation.addInvalidation(message);
+            validation.addViolation(message);
         }
     }
     
     public static class LineageValidation {
-        private final List<String> invalidations = new ArrayList<>();
+        
+        private final List<String> violations = new ArrayList<>();
         
         public boolean isValid() {
-            return invalidations.isEmpty();
+            return violations.isEmpty();
         }
         
-        public void addInvalidation(String message) {
-            invalidations.add(message);
+        public void addViolation(String message) {
+            violations.add(message);
         }
         
-        public String getFormattedInvalidations() {
+        public String getFormattedViolations() {
             if (isValid()) {
                 return null;
-            } else if (invalidations.size() == 1) {
-                return invalidations.get(0);
             } else {
                 StringBuilder sb = new StringBuilder();
-                sb.append(invalidations.get(0));
-                for (int i = 1; i < invalidations.size(); i++) {
-                    sb.append("\n").append(invalidations.get(i));
+                sb.append(violations.get(0));
+                for (int i = 1; i < violations.size(); i++) {
+                    sb.append("\n").append(violations.get(i));
                 }
                 return sb.toString();
             }
