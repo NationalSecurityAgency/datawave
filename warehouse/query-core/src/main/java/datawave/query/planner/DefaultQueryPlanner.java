@@ -74,6 +74,7 @@ import datawave.query.jexl.visitors.PushdownMissingIndexRangeNodesVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
+import datawave.query.jexl.visitors.QueryPropertyMarkerSourceConsolidator;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
 import datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
@@ -681,7 +682,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveQueryException("Something bad happened", e1);
         }
         if (log.isDebugEnabled()) {
-            logQuery(queryTree, "Query afterfixing not null intent:");
+            logQuery(queryTree, "Query after fixing not null intent:");
         }
         
         stopwatch.stop();
@@ -727,6 +728,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             logQuery(queryTree, "Query after initial flatten:");
         }
         
+        stopwatch.stop();
+        
+        // Fix query property markers with multiple sources.
+        stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - fix query property markers with multiple sources");
+        try {
+            queryTree = QueryPropertyMarkerSourceConsolidator.consolidate(queryTree);
+        } catch (Exception e) {
+            throw new DatawaveQueryException("Failed to fix query property markers with multiple sources", e);
+        }
+        if (log.isDebugEnabled()) {
+            logQuery(queryTree, "Query after fixing query property markers with multiple sources");
+        }
         stopwatch.stop();
         
         validateQuerySize("initial parse", queryTree, config);

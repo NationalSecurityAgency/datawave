@@ -1,5 +1,6 @@
 package datawave.query.jexl.nodes;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
@@ -29,11 +30,11 @@ public class QueryPropertyMarkerTest {
         assertEmptyInstance(findInstance("((_Bounded_ = true) && (FOO > 1 && FOO < 2)) && ((_EvalOnly_ = true) && (FOO == 1 && BAR == 2))"));
         
         // Test unwrapped marker and unwrapped sources
-        assertInstance(findInstance("(_Delayed_ = true) && FOO == 1 && BAR == 2"), ASTDelayedPredicate.class, "(BAR == 2 && FOO == 1)");
+        assertInstance(findInstance("(_Delayed_ = true) && FOO == 1 && BAR == 2"), ASTDelayedPredicate.class, "(FOO == 1 && BAR == 2)");
         // Test unwrapped marker and wrapped sources
         assertInstance(findInstance("(_Delayed_ = true) && (FOO == 1 && BAR == 2)"), ASTDelayedPredicate.class, "FOO == 1 && BAR == 2");
         // Test wrapped marker and unwrapped sources
-        assertInstance(findInstance("((_Delayed_ = true) && FOO == 1 && BAR == 2)"), ASTDelayedPredicate.class, "(BAR == 2 && FOO == 1)");
+        assertInstance(findInstance("((_Delayed_ = true) && FOO == 1 && BAR == 2)"), ASTDelayedPredicate.class, "(FOO == 1 && BAR == 2)");
         // Test wrapped marker and wrapped sources
         assertInstance(findInstance("((_Delayed_ = true) && (FOO == 1 && BAR == 2))"), ASTDelayedPredicate.class, "FOO == 1 && BAR == 2");
     }
@@ -48,7 +49,7 @@ public class QueryPropertyMarkerTest {
         assertSame(instance, secondInstance);
         
         JexlNode source = parseJexlQuery("(FOO == 'a')");
-        instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, source);
+        instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, Lists.newArrayList(source));
         assertEquals(ASTDelayedPredicate.class, instance.getType());
         assertEquals(source, instance.getSource());
     }
@@ -57,13 +58,13 @@ public class QueryPropertyMarkerTest {
     public void testInstance_isAnyType() throws ParseException {
         assertFalse(QueryPropertyMarker.Instance.of().isAnyType());
         
-        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, parseJexlQuery("FOO == 'a'"));
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, Lists.newArrayList(parseJexlQuery("FOO == 'a'")));
         assertTrue(instance.isAnyType());
     }
     
     @Test
     public void testInstance_isType() throws ParseException {
-        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, parseJexlQuery("FOO == 'a'"));
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, Lists.newArrayList(parseJexlQuery("FOO == 'a'")));
         assertTrue(instance.isType(ASTDelayedPredicate.class));
         assertFalse(instance.isType(null));
         assertFalse(instance.isType(BoundedRange.class));
@@ -74,7 +75,7 @@ public class QueryPropertyMarkerTest {
     
     @Test
     public void testInstance_isAnyTypeOf() throws ParseException {
-        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, parseJexlQuery("FOO == 'a'"));
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, Lists.newArrayList(parseJexlQuery("FOO == 'a'")));
         
         assertTrue(instance.isAnyTypeOf(ASTDelayedPredicate.class, BoundedRange.class));
         assertTrue(instance.isAnyTypeOf(Sets.newHashSet(ASTDelayedPredicate.class, BoundedRange.class)));
@@ -88,7 +89,7 @@ public class QueryPropertyMarkerTest {
     
     @Test
     public void testInstance_isAnyTypeExcept() throws ParseException {
-        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, parseJexlQuery("FOO == 'a'"));
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, Lists.newArrayList(parseJexlQuery("FOO == 'a'")));
         assertTrue(instance.isAnyTypeExcept(IndexHoleMarkerJexlNode.class, BoundedRange.class));
         assertTrue(instance.isAnyTypeExcept(Sets.newHashSet(IndexHoleMarkerJexlNode.class, BoundedRange.class)));
         assertTrue(instance.isAnyTypeExcept());
@@ -101,7 +102,7 @@ public class QueryPropertyMarkerTest {
     
     @Test
     public void testInstance_isNotAnyTypeOf() throws ParseException {
-        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, parseJexlQuery("FOO == 'a'"));
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, Lists.newArrayList(parseJexlQuery("FOO == 'a'")));
         
         assertTrue(instance.isNotAnyTypeOf(IndexHoleMarkerJexlNode.class, BoundedRange.class));
         assertTrue(instance.isNotAnyTypeOf(Sets.newHashSet(IndexHoleMarkerJexlNode.class, BoundedRange.class)));
