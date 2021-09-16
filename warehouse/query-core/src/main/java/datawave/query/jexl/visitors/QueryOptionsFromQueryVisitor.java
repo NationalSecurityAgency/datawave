@@ -76,7 +76,8 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     }
     
     /**
-     * If the passed OR node contains a f:options
+     * If the passed OR node contains a f:options, descend the tree with a List in the passed userdata. The function args will be collected into the List when
+     * visiting the child ASTStringLiteral nodes.
      *
      * @param node
      *            the {@link ASTOrNode}
