@@ -107,7 +107,7 @@ services:
       - --spring.profiles.active=consul,compose
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.cloud.consul.host=discovery
-      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     ports:
       - "5701-5703"
       - "8080"
@@ -129,7 +129,7 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,mock,compose
       - --spring.cloud.consul.host=discovery
-      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     ports:
       - "8080"
       - "8443"
@@ -150,7 +150,7 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose
       - --spring.cloud.consul.host=discovery
-      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
     # This mapping is required to enable the metrics service to communicate
@@ -173,13 +173,13 @@ services:
       authorization:
         condition: service_healthy
 
-  metrics:
+  querymetric:
     image: datawave/query-metric-service:1.3-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
       - --spring.cloud.consul.host=discovery
-      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
     # This mapping is required to enable the metrics service to communicate
@@ -211,7 +211,7 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
       - --spring.cloud.consul.host=discovery
-      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
     # This mapping is required to enable the metrics service to communicate
@@ -240,7 +240,7 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query
       - --spring.cloud.consul.host=discovery
-      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - AUDIT_SERVER_URL=http://audit:8080/audit
     ports:
@@ -269,7 +269,7 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query,pool1
       - --spring.cloud.consul.host=discovery
-      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
     # This mapping is required to enable the metrics service to communicate
@@ -298,6 +298,9 @@ services:
         condition: service_healthy
 
   executor-pool2:
+    profiles:
+      - pool2
+      - full
     image: datawave/query-executor-service:1.0-SNAPSHOT
     command:
       - --spring.application.name=executor-pool2
@@ -305,7 +308,7 @@ services:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query,pool2
       - --spring.cloud.consul.host=discovery
-      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
     # This mapping is required to enable the metrics service to communicate
@@ -334,12 +337,15 @@ services:
         condition: service_healthy
 
   querystorage:
+    profiles:
+      - storage
+      - full
     image: datawave/query-storage-service:1.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,storage,query
       - --spring.cloud.consul.host=discovery
-      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${vcap.application.instance_id:$${spring.application.instance_id:$${random.value}}}
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
     extra_hosts:
@@ -357,6 +363,51 @@ services:
       test: curl -f http://localhost:8080/query-storage/mgmt/health
     depends_on:
       authorization:
+        condition: service_healthy
+
+  # If you use the management center, you can connect to the hazelcast cache as follows:
+  # In your browser connect to https://localhost:9043/
+  # Enable 'dev' mode
+  # Click 'Add Cluster Config'
+  # Enter the following for the cache service:
+  #  - Cluster Name: cache
+  #  - Cluster Config: Enabled
+  #  - Member Addresses: cache
+  # Enter the following for the query metric service:
+  #  - Cluster Name: querymetric
+  #  - Cluster Config: Enabled
+  #  - Member Addresses: querymetric
+  # Use the console to view the cache contents
+  #  - Select the 'cache' cluster
+  #  - Select 'Console' under the 'CLUSTER' navigation entry
+  #  - Run the following commands to list all entries in the 'datawaveUsers' map:
+  #    - ns datawaveUsers
+  #    - m.entries
+  management-center:
+    profiles:
+      - management
+      - full
+    image: hazelcast/management-center:4.2021.06
+    environment:
+      - |-
+        JAVA_OPTS=
+        -Dhazelcast.mc.healthCheck.enable=true
+        -Dhazelcast.mc.tls.enabled=true
+        -Dhazelcast.mc.tls.keyStore=/etc/pki/testServer.p12
+        -Dhazelcast.mc.tls.keyStorePassword=ChangeIt
+        -Dhazelcast.mc.tls.trustStore=/etc/pki/testCA.p12
+        -Dhazelcast.mc.tls.trustStorePassword=ChangeIt
+    ports:
+      - "8081"
+      - "9043:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+    networks:
+      - demo
+    healthcheck:
+      test: wget -q http://localhost:8081/health -O /dev/null || exit 1
+    depends_on:
+      cache:
         condition: service_healthy
 
 networks:

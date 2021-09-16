@@ -50,9 +50,29 @@ This microservice is in development, and can be found in this repo.
 
 You will need to build the docker image for this service on your local machine following the instructions in the config service README.
 
-### Executor
+### Executor Pool 1
 
 Datawave Executor Service v1.0-SNAPSHOT is the back-end worker for Datawave queries.
+
+This microservice is in development, and can be found in this repo.
+
+You will need to build the docker image for this service on your local machine following the instructions in the config service README.
+
+### Executor Pool 2
+
+Enabled via the 'pool2', or 'full' profile.
+
+Datawave Executor Service v1.0-SNAPSHOT is the back-end worker for Datawave queries.
+
+This microservice is in development, and can be found in this repo.
+
+You will need to build the docker image for this service on your local machine following the instructions in the config service README.
+
+### Query Storage
+
+Enabled via the 'storage', or 'full' profile.
+
+Datawave Query Storage Service v1.0-SNAPSHOT is a utility service used to inspect the storage cache.
 
 This microservice is in development, and can be found in this repo.
 
@@ -64,19 +84,25 @@ You will need to build the docker image for this service on your local machine f
 
 Enabled via the 'kafka', or 'full' profile.
 
-Consul v1.9.8 is a prepacked docker image used for discovery between the various services.
+Zookeeper a prepacked docker image used for distributed synchronization.
 
 ### Kafka
 
 Enabled via the 'kafka', or 'full' profile.
 
-RabbitMQ v3.7.7 is a prepacked docker image used for messaging between the various services.
+Kafka is a prepacked docker image used for messaging between the various services.
 
 ### Kafdrop
 
 Enabled via the 'kafka', or 'full' profile.
 
-Consul v1.9.8 is a prepacked docker image used for discovery between the various services.
+Kafdrop is a prepacked docker image used for kafka cluster management.
+
+### Hazelcast Management Center
+
+Enabled via the 'management', or 'full' profile.
+
+Hazelcast Management Center v4.2021.06 is a prepacked docker image used for hazelcast cluster management.
 
 ### Dictionary
 
@@ -151,6 +177,13 @@ For a specific service:
 ### Stop services
 
 ```docker-compose down```
+
+### Restart a service and pull an updated image
+```
+docker-compose stop audit
+docker-compose rm -f audit
+docker-compose up -d
+```
 
 ### Restart services
 
