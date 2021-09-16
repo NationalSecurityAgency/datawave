@@ -21,6 +21,7 @@ import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
 import datawave.query.jexl.visitors.EvaluationRendering;
@@ -662,10 +663,11 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
     
     @Override
     public Object visit(ASTReference node, Object data) {
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         // if we have a term threshold marker, then we simply could not expand an _ANYFIELD_ identifier, so return EXCEEDED_THRESHOLD
-        if (ExceededTermThresholdMarkerJexlNode.instanceOf(node)) {
+        if (instance.isType(ExceededTermThresholdMarkerJexlNode.class)) {
             return ScannerStream.exceededTermThreshold(node);
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
+        } else if (instance.isAnyTypeOf(ExceededValueThresholdMarkerJexlNode.class, ExceededOrThresholdMarkerJexlNode.class)) {
             try {
                 // When we exceeded the expansion threshold for a regex, the field is an index-only field, and we can't
                 // hook up the hdfs-sorted-set iterator (Ivarator), we can't run the query via the index or
@@ -689,11 +691,11 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 }
             }
             return ScannerStream.exceededValueThreshold(createFullFieldIndexScanList(config, node).iterator(), node);
-        } else if (ASTDelayedPredicate.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
+        } else if (instance.isAnyTypeOf(ASTDelayedPredicate.class, ASTEvaluationOnly.class)) {
             return ScannerStream.ignored(node);
-        } else if (IndexHoleMarkerJexlNode.instanceOf(node)) {
+        } else if (instance.isType(IndexHoleMarkerJexlNode.class)) {
             return ScannerStream.ignored(node);
-        } else if (BoundedRange.instanceOf(node)) {
+        } else if (instance.isType(BoundedRange.class)) {
             // here we must have a bounded range that was not expanded, so it must not be expandable via the index
             return ScannerStream.ignored(node);
         } else {

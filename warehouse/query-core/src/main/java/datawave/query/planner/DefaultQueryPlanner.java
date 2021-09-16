@@ -1268,6 +1268,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
                     innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
                     queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
+                    // regex expansion picks up an extra set of parens, so quickly fix that here
+                    queryTree = (ASTJexlScript) TreeFlatteningRebuildingVisitor.flatten(queryTree);
                     if (log.isDebugEnabled()) {
                         logQuery(queryTree, "Query after expanding regex:");
                     }

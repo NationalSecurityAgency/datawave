@@ -59,26 +59,4 @@ public class ASTDelayedPredicate extends QueryPropertyMarker {
         
         return expr;
     }
-    
-    /**
-     * A routine to determine whether an and node is actually a delayed predicate marker. The reason for this routine is that if the query is serialized and
-     * deserialized, then only the underlying assignment will persist.
-     * 
-     * @param node
-     * @return true if this and node is a delayed predicate marker
-     */
-    public static boolean instanceOf(JexlNode node) {
-        return QueryPropertyMarker.instanceOf(node, ASTDelayedPredicate.class);
-    }
-    
-    /**
-     * A routine to determine get the node which is the source of the delayed predicate
-     * 
-     * @param node
-     * @return the source node or null if not an a delayed predicate marker
-     */
-    public static JexlNode getDelayedPredicateSource(JexlNode node) {
-        return QueryPropertyMarker.getQueryPropertySource(node, ASTDelayedPredicate.class);
-    }
-    
 }
