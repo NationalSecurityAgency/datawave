@@ -46,8 +46,9 @@ public class NodeTransformVisitorTest {
     private static final NodeTransformRule pullUpRule = new NodeTransformRule() {
         @Override
         public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
-            if (QueryPropertyMarker.instanceOf(node, null)) {
-                return QueryPropertyMarker.getQueryPropertySource(node, null);
+            QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+            if (instance.isAnyType()) {
+                return instance.getSource();
             }
             return node;
         }

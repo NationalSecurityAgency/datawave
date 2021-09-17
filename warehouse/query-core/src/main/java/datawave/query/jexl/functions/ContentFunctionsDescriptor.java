@@ -345,6 +345,39 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             return new Set[] {fields, terms};
         }
         
+        /**
+         * Get a space-delimited value when populating the HIT_TERMs
+         *
+         * @return the content args
+         */
+        public String getHitTermValue() {
+            StringBuilder sb = new StringBuilder();
+            JexlNode child;
+            Iterator<JexlNode> iter = args.iterator();
+            while (iter.hasNext()) {
+                child = JexlASTHelper.dereference(iter.next());
+                if (child instanceof ASTStringLiteral) {
+                    sb.append(child.image);
+                    if (iter.hasNext()) {
+                        sb.append(" ");
+                    }
+                }
+            }
+            return sb.toString();
+        }
+        
+        public Set<String> getHitTermValues() {
+            Set<String> values = new HashSet<>();
+            JexlNode child;
+            for (JexlNode arg : args) {
+                child = JexlASTHelper.dereference(arg);
+                if (child instanceof ASTStringLiteral) {
+                    values.add(child.image);
+                }
+            }
+            return values;
+        }
+        
         @Override
         public boolean useOrForExpansion() {
             return true;
