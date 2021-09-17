@@ -1,49 +1,85 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
-import datawave.test.JexlNodeAssert;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Test;
 
-import java.util.function.Predicate;
+import datawave.test.JexlNodeAssert;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.log4j.Logger;
+import org.junit.Test;
 
 public class FieldToFieldComparisonVisitorTest {
     
-    private static final Predicate<JexlNode> notASTEvaluationOnlyInstance = (node) -> !ASTEvaluationOnly.instanceOf(node);
+    private static final Logger log = Logger.getLogger(FieldToFieldComparisonVisitorTest.class);
     
     @Test
-    public void testEq() throws ParseException {
-        String query = "((_Eval_ = true) && (FOO == BAR))";
-        ASTJexlScript script = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("FOO == BAR"));
-        JexlNodeAssert.assertThat(script).isEqualTo(query).matches(ASTEvaluationOnly::instanceOf);
+    public void testEQ() throws ParseException {
+        assertResult("FOO == BAR", "((_Eval_ = true) && (FOO == BAR))");
+        
+        assertResult("FOO == 'bar'", "FOO == 'bar'");
+        assertResult("(FOO || BAR).min().hashCode() == 0", "(FOO || BAR).min().hashCode() == 0");
     }
     
     @Test
-    public void testEqDoNothing() throws ParseException {
-        String query = "FOO == 'bar'";
-        ASTJexlScript script = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("FOO == 'bar'"));
-        JexlNodeAssert.assertThat(script).isEqualTo(query).matches(notASTEvaluationOnlyInstance);
+    public void testNE() throws ParseException {
+        assertResult("FOO != BAR", "((_Eval_ = true) && (FOO != BAR))");
+        
+        assertResult("FOO != 'bar'", "FOO != 'bar'");
+        assertResult("(FOO || BAR).min().hashCode() != 0", "(FOO || BAR).min().hashCode() != 0");
     }
     
     @Test
-    public void testEqDoNothingFieldsToLiteral() throws ParseException {
-        String query = "(FOO || BAR).min().hashCode() == 0";
-        ASTJexlScript script = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("(FOO || BAR).min().hashCode() == 0"));
-        JexlNodeAssert.assertThat(script).isEqualTo(query).matches(notASTEvaluationOnlyInstance);
+    public void testLT() throws ParseException {
+        assertResult("FOO < BAR", "((_Eval_ = true) && (FOO < BAR))");
+        
+        assertResult("FOO < 1", "FOO < 1");
+        assertResult("(FOO || BAR).min().hashCode() < 0", "(FOO || BAR).min().hashCode() < 0");
     }
     
     @Test
-    public void testEqDoNothing2() throws ParseException {
-        String query = "(UUID =~ 'C.*?' || UUID =~ 'S.*?')";
-        ASTJexlScript script = FieldToFieldComparisonVisitor.forceEvaluationOnly(JexlASTHelper.parseJexlQuery("(UUID =~ 'C.*?' || UUID =~ 'S.*?')"));
-        JexlNodeAssert.assertThat(script).isEqualTo(query).matches(notASTEvaluationOnlyInstance);
+    public void testLE() throws ParseException {
+        assertResult("FOO <= BAR", "((_Eval_ = true) && (FOO <= BAR))");
+        
+        assertResult("FOO <= 1", "FOO <= 1");
+        assertResult("(FOO || BAR).min().hashCode() <= 0", "(FOO || BAR).min().hashCode() <= 0");
+    }
+    
+    @Test
+    public void testGT() throws ParseException {
+        assertResult("FOO > BAR", "((_Eval_ = true) && (FOO > BAR))");
+        
+        assertResult("FOO > 1", "FOO > 1");
+        assertResult("(FOO || BAR).min().hashCode() > 0", "(FOO || BAR).min().hashCode() > 0");
+    }
+    
+    @Test
+    public void testGE() throws ParseException {
+        assertResult("FOO >= BAR", "((_Eval_ = true) && (FOO >= BAR))");
+        
+        assertResult("FOO >= 1", "FOO >= 1");
+        assertResult("(FOO || BAR).min().hashCode() >= 0", "(FOO || BAR).min().hashCode() >= 0");
+    }
+    
+    @Test
+    public void testRegexOpsAreNotModified() throws ParseException {
+        assertResult("(UUID =~ 'C.*?' || UUID =~ 'S.*?')", "(UUID =~ 'C.*?' || UUID =~ 'S.*?')");
+        assertResult("(UUID !~ 'C.*?' || UUID !~ 'S.*?')", "(UUID !~ 'C.*?' || UUID !~ 'S.*?')");
     }
     
     @Test(expected = ParseException.class)
-    public void testEqDoNotSupport() throws ParseException {
+    public void testChainedEQThrowsException() throws ParseException {
         JexlASTHelper.parseJexlQuery("FIELD_A == FIELD_B == FIELD_C");
+    }
+    
+    private void assertResult(String original, String expected) throws ParseException {
+        ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
+        
+        ASTJexlScript visitedScript = FieldToFieldComparisonVisitor.forceEvaluationOnly(originalScript);
+        
+        // Verify the script is as expected, and has a valid lineage.
+        JexlNodeAssert.assertThat(visitedScript).isEqualTo(expected).hasValidLineage();
+        
+        // Verify the original script was not modified, and still has a valid lineage.
+        JexlNodeAssert.assertThat(originalScript).isEqualTo(original).hasValidLineage();
     }
 }

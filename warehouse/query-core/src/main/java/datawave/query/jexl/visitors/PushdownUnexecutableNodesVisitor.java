@@ -1,9 +1,8 @@
 package datawave.query.jexl.visitors;
 
-import java.util.Set;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
-
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
@@ -60,6 +59,8 @@ import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.log4j.Logger;
+
+import java.util.Set;
 
 /**
  * Visitor meant to 'push down' predicates for expressions that are only partially executable. Essentially if we have an AND node in which some of the nodes are
@@ -197,7 +198,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         // if a delayed predicate, then leave it alone
-        if (ASTDelayedPredicate.instanceOf(node)) {
+        if (QueryPropertyMarker.findInstance(node).isType(ASTDelayedPredicate.class)) {
             return node;
         } else if (!ExecutableDeterminationVisitor
                         .isExecutable(node, data, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
