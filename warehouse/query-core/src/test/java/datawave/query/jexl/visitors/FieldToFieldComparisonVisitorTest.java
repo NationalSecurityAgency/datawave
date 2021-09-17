@@ -5,12 +5,9 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.junit.Test;
 
 public class FieldToFieldComparisonVisitorTest {
-    
-    private static final Logger log = Logger.getLogger(FieldToFieldComparisonVisitorTest.class);
     
     @Test
     public void testEQ() throws ParseException {
