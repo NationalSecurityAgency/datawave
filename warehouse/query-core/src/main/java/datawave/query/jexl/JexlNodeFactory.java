@@ -125,17 +125,15 @@ public class JexlNodeFactory {
             JexlNode child = copy(original);
             children.add(child);
             // remove this entry from the fieldsToValues to avoid duplication
-            for (String identifier : JexlASTHelper.getIdentifierNames(original)) {
-                for (Object value : JexlASTHelper.getLiteralValues(original)) {
-                    fieldsToValues.remove(identifier, value);
-                }
+            Set<String> identifiers = JexlASTHelper.getIdentifierNames(original);
+            for (Object value : JexlASTHelper.getLiteralValues(original)) {
+                identifiers.forEach((id) -> fieldsToValues.remove(id, value));
             }
         }
         
         for (String field : fields) {
             JexlNode child = createNodeFromValuesForField(field, fieldsToValues, original, containerType, expandValues, isNegated);
             if (child != null) {
-                JexlASTHelper.validateLineage(child, true);
                 children.add(child);
             }
         }
@@ -165,6 +163,7 @@ public class JexlNodeFactory {
      * @param field
      *            create a node for this field
      * @param fieldsToValues
+     *            an {@link datawave.query.jexl.lookups.IndexLookup}
      * @param original
      *            the original JexlNode
      * @param type
@@ -172,6 +171,7 @@ public class JexlNodeFactory {
      * @param expandValues
      *            should we expand values
      * @param isNegated
+     *            boolean indicating if the original node is negated
      * @return a JexlNode
      */
     public static JexlNode createNodeFromValuesForField(String field, IndexLookupMap fieldsToValues, JexlNode original, ContainerType type,
@@ -181,7 +181,7 @@ public class JexlNodeFactory {
         
         if (!expandValues) {
             
-            // If not expanding values set the original node's field name to '_ANYFIELD_'
+            // If not expanding values replace the original node's '_ANYFIELD_' with the specified field
             JexlNode child = copy(original);
             for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(child)) {
                 if (identifier.image.equals(Constants.ANY_FIELD)) {

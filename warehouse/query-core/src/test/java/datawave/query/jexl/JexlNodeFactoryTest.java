@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 
 public class JexlNodeFactoryTest {
     
+    // It's worth noting that 'expandFields' is almost always set to true. This test is a contrived case that exercises a code path.
     @Test
     public void testNoFieldExpansion() throws ParseException {
         IndexLookupMap indexLookupMap = new IndexLookupMap(10, 10);

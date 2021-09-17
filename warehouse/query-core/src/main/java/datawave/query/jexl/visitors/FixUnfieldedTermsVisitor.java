@@ -18,7 +18,6 @@ import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
@@ -26,7 +25,6 @@ import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
@@ -217,9 +215,10 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
                     }
                 }
             } else {
+                JexlNode child = node.jjtGetChild(i);
                 
-                newNode.jjtAddChild(node.jjtGetChild(i), newIndex);
-                node.jjtSetParent(newNode);
+                newNode.jjtAddChild(child, newIndex);
+                child.jjtSetParent(newNode);
                 newIndex++;
             }
         }

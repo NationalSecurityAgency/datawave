@@ -221,8 +221,11 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
     
     /**
      * Performs a lookup in the global index for an ANYFIELD term and returns the field names where the term is found
-     * 
+     *
      * @param node
+     *            a Jexl node
+     * @param keepOriginalNode
+     *            set to true when evaluating a negated node
      * @return set of field names from the global index for the nodes value
      * @throws TableNotFoundException
      * @throws IllegalAccessException
@@ -619,7 +622,10 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
      * Now, when nodes are expanded, we shall create a callable object that will be added to the todo list.
      * 
      * @param node
-     * @return
+     *            a Jexl node
+     * @param keepOriginalNode
+     *            set to true when evaluating a negated node
+     * @return an IndexLookupCallback or the original node if not expanding
      */
     protected Object expandFieldNames(JexlNode node, boolean keepOriginalNode) {
         
@@ -732,7 +738,7 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
             this.enforceTimeout = enforceTimeout;
             this.ignoreComposites = ignoreComposites;
             this.keepOriginalNode = keepOriginalNode;
-            parentNode = currNode.jjtGetParent();
+            this.parentNode = currNode.jjtGetParent();
         }
         
         public void setParentId(JexlNode parentNode, int id) {
@@ -774,8 +780,9 @@ public class ParallelIndexExpansion extends RebuildingVisitor {
                     }
                 }
                 
-                // simply replace the _ANYFIELD_ with _NOFIELD_ denoting that there was no expansion. This will naturally evaluate correctly when applying
-                // the query against the document
+                // 'keepOriginalNode' is only true for negated terms.
+                // in the case of a non-negative _ANYFIELD_ marker, if no matches were found denote this with a _NOFIELD_ marker.
+                // in the case of a negative _ANYFIELD_ marker, persist the _ANYFIELD_ for proper evaluation against the document.
                 for (ASTIdentifier id : JexlASTHelper.getIdentifiers(node)) {
                     if (!keepOriginalNode && Constants.ANY_FIELD.equals(id.image)) {
                         id.image = Constants.NO_FIELD;
