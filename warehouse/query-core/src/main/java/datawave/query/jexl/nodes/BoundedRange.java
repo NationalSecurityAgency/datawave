@@ -56,26 +56,4 @@ public class BoundedRange extends QueryPropertyMarker {
         
         return expr;
     }
-    
-    /**
-     * A routine to determine whether an and node is actually an singe value evaluation marker. The reason for this routine is that if the query is serialized
-     * and deserialized, then only the underlying assignment will persist.
-     * 
-     * @param node
-     * @return true if this and node is a bounded range marker
-     */
-    public static boolean instanceOf(JexlNode node) {
-        return instanceOf(node, BoundedRange.class);
-    }
-    
-    /**
-     * A routine to determine get the node which is the source of the single value evaluation (i.e. the underlying range)
-     * 
-     * @param node
-     * @return the source node or null if not a bounded range marker
-     */
-    public static JexlNode getBoundedRangeSource(JexlNode node) {
-        return getQueryPropertySource(node, BoundedRange.class);
-    }
-    
 }

@@ -228,7 +228,7 @@ public class FixUnfieldedTermsVisitor extends ParallelIndexExpansion {
     public Object visit(ASTAndNode node, Object data) {
         
         // ignore already marked expressions
-        if (QueryPropertyMarker.instanceOf(node, null)) {
+        if (QueryPropertyMarker.findInstance(node).isAnyType()) {
             return node;
         }
         

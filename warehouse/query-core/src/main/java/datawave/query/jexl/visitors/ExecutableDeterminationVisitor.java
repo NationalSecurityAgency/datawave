@@ -8,6 +8,7 @@ import datawave.query.Constants;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
@@ -466,25 +467,28 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         STATE state;
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         // until we implement an ivarator that can handle an ExceededTermThreshold node, and ensure that the JexlContext gets
         // _ANYFIELD_ values, then we cannot execute these nodes
-        if (ExceededTermThresholdMarkerJexlNode.instanceOf(node)) {
+        if (instance.isType(ExceededTermThresholdMarkerJexlNode.class)) {
             state = STATE.NON_EXECUTABLE;
             if (output != null) {
                 output.writeLine(data + node.toString() + "( Exceeded Term Threshold ) -> " + state);
             }
         }
         // if an ivarator then return true, else check out children
-        else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
+        else if (instance.isAnyTypeOf(ExceededValueThresholdMarkerJexlNode.class, ExceededOrThresholdMarkerJexlNode.class)) {
             state = STATE.EXECUTABLE;
             if (output != null) {
                 output.writeLine(data + node.toString() + "( Exceeded Or / Value Threshold ) -> " + state);
             }
         }
         // if a delayed predicate, then this is not-executable against the index by choice
-        else if (ASTDelayedPredicate.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
+        else if (instance.isAnyTypeOf(ASTDelayedPredicate.class, ASTEvaluationOnly.class)) {
             if (isNoFieldOnly(node)) {
                 state = STATE.IGNORABLE;
+            } else if (instance.isType(ASTEvaluationOnly.class) && isNonEvent(node)) {
+                state = STATE.ERROR;
             } else {
                 state = STATE.NON_EXECUTABLE;
             }
@@ -493,13 +497,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             }
         }
         // if we got to a bounded range, then this was expanded and is not executable against the index
-        else if (BoundedRange.instanceOf(node)) {
+        else if (instance.isType(BoundedRange.class)) {
             state = STATE.NON_EXECUTABLE;
             if (output != null) {
-                output.writeLine(data + node.toString() + '(' + JexlASTHelper.getIdentifierNames(BoundedRange.getBoundedRangeSource(node))
-                                + " bounded range) -> " + state);
+                output.writeLine(data + node.toString() + '(' + JexlASTHelper.getIdentifierNames(instance.getSource()) + " bounded range) -> " + state);
             }
-        } else if (IndexHoleMarkerJexlNode.instanceOf(node)) {
+        } else if (instance.isType(IndexHoleMarkerJexlNode.class)) {
             state = STATE.NON_EXECUTABLE;
         } else {
             state = allOrNone(node, data + PREFIX);
