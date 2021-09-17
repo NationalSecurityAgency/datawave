@@ -5,20 +5,17 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.Set;
 
-import static org.junit.Assert.assertTrue;
-
 public class AllTermsIndexedVisitorTest {
     
-    private static final Logger log = Logger.getLogger(AllTermsIndexedVisitorTest.class);
     private static final Set<String> indexedFields = Sets.newHashSet("FOO", "FOO2", "FOO3");
     private static MockMetadataHelper helper;
     private static ShardQueryConfiguration config;
@@ -173,24 +170,9 @@ public class AllTermsIndexedVisitorTest {
         JexlNode result = AllTermsIndexedVisitor.isIndexed(original, config, helper);
         
         // Verify the resulting script has a valid lineage.
-        assertLineage(result);
+        JexlNodeAssert.assertThat(result).hasValidLineage();
         
         // Verify the original script was not modified and has a valid lineage.
-        assertScriptEquality(original, query);
-        assertLineage(original);
-    }
-    
-    private void assertScriptEquality(JexlNode actual, String expected) throws ParseException {
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedScript, actual);
-        if (!comparison.isEqual()) {
-            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
-            log.error("Actual " + PrintingVisitor.formattedQueryString(actual));
-        }
-        assertTrue(comparison.getReason(), comparison.isEqual());
-    }
-    
-    private void assertLineage(JexlNode node) {
-        assertTrue(JexlASTHelper.validateLineage(node, true));
+        JexlNodeAssert.assertThat(original).isEqualTo(query).hasValidLineage();
     }
 }
