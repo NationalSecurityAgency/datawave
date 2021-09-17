@@ -695,7 +695,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (optionsMap.containsKey(QueryParameters.SHARDS_AND_DAYS)) {
             queryTree = timedAddShardsAndDaysFromOptions(timers, queryTree, optionsMap);
         }
-
+        
         // flatten the tree
         queryTree = timedFlatten(timers, queryTree);
         
@@ -769,8 +769,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         return queryTree;
     }
-
-
+    
     protected ASTJexlScript processTree(final ASTJexlScript originalQueryTree, ShardQueryConfiguration config, Query settings, MetadataHelper metadataHelper,
                     ScannerFactory scannerFactory, QueryData queryData, QueryStopwatch timers, QueryModel queryModel) throws DatawaveQueryException {
         ASTJexlScript queryTree = originalQueryTree;
@@ -1147,13 +1146,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected ASTJexlScript timedFlatten(QueryStopwatch timers, ASTJexlScript script) throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, "Flatten", () -> (TreeFlatteningRebuildingVisitor.flatten(script)));
     }
-
-
-    protected ASTJexlScript timedAddShardsAndDaysFromOptions(QueryStopwatch timers, ASTJexlScript script, Map<String, String> optionsMap) throws DatawaveQueryException {
+    
+    protected ASTJexlScript timedAddShardsAndDaysFromOptions(QueryStopwatch timers, ASTJexlScript script, Map<String,String> optionsMap)
+                    throws DatawaveQueryException {
         String shardsAndDays = optionsMap.get(QueryParameters.SHARDS_AND_DAYS);
         return visitorManager.timedVisit(timers, "Add SHARDS_AND_DAYS From Options", () -> (AddShardsAndDaysVisitor.update(script, shardsAndDays)));
     }
-
+    
     protected ASTJexlScript timedApplyRules(QueryStopwatch timers, ASTJexlScript script, ShardQueryConfiguration config, MetadataHelper metadataHelper,
                     ScannerFactory scannerFactory) throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, "Apply Pushdown Rules", () -> (applyRules(script, scannerFactory, metadataHelper, config)));
