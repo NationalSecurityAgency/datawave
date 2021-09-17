@@ -260,6 +260,7 @@ public abstract class ExecutorAction implements Runnable {
         // start the timer on the query status to ensure we flush numResultsGenerated updates periodically
         queryStatus.startTimer();
         try {
+            String queryId = taskKey.getQueryId();
             TransformIterator iter = queryLogic.getTransformIterator(queryStatus.getQuery());
             long maxResults = queryLogic.getResultLimit(queryStatus.getQuery().getDnList());
             if (maxResults != queryLogic.getMaxResults()) {
@@ -277,44 +278,47 @@ public abstract class ExecutorAction implements Runnable {
             while (running && iter.hasNext()) {
                 Object result = iter.next();
                 log.trace("Generated results for " + taskKey);
-                queues.sendMessage(taskKey.getQueryId(), new Result(UUID.randomUUID().toString(), result));
+                queues.sendMessage(queryId, new Result(UUID.randomUUID().toString(), result));
                 queryStatus.incrementNumResultsGenerated(1);
-                
-                // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
-                if (iter.getTransformer() instanceof WritesQueryMetrics) {
-                    WritesQueryMetrics metrics = ((WritesQueryMetrics) iter.getTransformer());
-                    if (metrics.hasMetrics()) {
-                        BaseQueryMetric baseQueryMetric = metricFactory.createMetric();
-                        baseQueryMetric.setQueryId(taskKey.getQueryId());
-                        baseQueryMetric.setSourceCount(metrics.getSourceCount());
-                        baseQueryMetric.setNextCount(metrics.getNextCount());
-                        baseQueryMetric.setSeekCount(metrics.getSeekCount());
-                        baseQueryMetric.setYieldCount(metrics.getYieldCount());
-                        baseQueryMetric.setDocRanges(metrics.getDocRanges());
-                        baseQueryMetric.setFiRanges(metrics.getFiRanges());
-                        baseQueryMetric.setLastUpdated(new Date(queryStatus.getLastUpdatedMillis()));
-                        try {
-                            // @formatter:off
-                            metricClient.submit(
-                                    new QueryMetricClient.Request.Builder()
-                                            .withMetric(baseQueryMetric)
-                                            .withMetricType(QueryMetricType.DISTRIBUTED)
-                                            .build());
-                            // @formatter:on
-                            metrics.resetMetrics();
-                        } catch (Exception e) {
-                            log.error("Error updating query metric", e);
-                        }
-                    }
-                }
-                
+                updateMetrics(queryId, queryStatus, iter);
                 running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
             }
+            updateMetrics(queryId, queryStatus, iter);
             
             return !iter.hasNext();
         } finally {
             queryStatus.stopTimer();
             queryStatus.forceCacheUpdateIfDirty();
+        }
+    }
+    
+    private void updateMetrics(String queryId, CachedQueryStatus queryStatus, TransformIterator iter) {
+        // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
+        if (iter.getTransformer() instanceof WritesQueryMetrics) {
+            WritesQueryMetrics metrics = ((WritesQueryMetrics) iter.getTransformer());
+            if (metrics.hasMetrics()) {
+                BaseQueryMetric baseQueryMetric = metricFactory.createMetric();
+                baseQueryMetric.setQueryId(queryId);
+                baseQueryMetric.setSourceCount(metrics.getSourceCount());
+                baseQueryMetric.setNextCount(metrics.getNextCount());
+                baseQueryMetric.setSeekCount(metrics.getSeekCount());
+                baseQueryMetric.setYieldCount(metrics.getYieldCount());
+                baseQueryMetric.setDocRanges(metrics.getDocRanges());
+                baseQueryMetric.setFiRanges(metrics.getFiRanges());
+                baseQueryMetric.setLastUpdated(new Date(queryStatus.getLastUpdatedMillis()));
+                try {
+                    // @formatter:off
+                    metricClient.submit(
+                            new QueryMetricClient.Request.Builder()
+                                    .withMetric(baseQueryMetric)
+                                    .withMetricType(QueryMetricType.DISTRIBUTED)
+                                    .build());
+                    // @formatter:on
+                    metrics.resetMetrics();
+                } catch (Exception e) {
+                    log.error("Error updating query metric", e);
+                }
+            }
         }
     }
     
