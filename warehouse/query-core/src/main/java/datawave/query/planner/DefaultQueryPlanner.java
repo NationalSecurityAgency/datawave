@@ -42,6 +42,7 @@ import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.CaseSensitivityVisitor;
 import datawave.query.jexl.visitors.ConjunctionEliminationVisitor;
@@ -652,10 +653,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         stopwatch.stop();
         
+        Map<String,String> optionsMap = new HashMap<>();
         if (query.contains(QueryFunctions.QUERY_FUNCTION_NAMESPACE + ':')) {
             // only do the extra tree visit if the function is present
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - parse out queryOptions from options function");
-            Map<String,String> optionsMap = new HashMap<>();
             queryTree = QueryOptionsFromQueryVisitor.collect(queryTree, optionsMap);
             if (!optionsMap.isEmpty()) {
                 QueryOptionsSwitch.apply(optionsMap, config);
@@ -708,6 +709,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // Find unmarked bounded ranges
         if (UnmarkedBoundedRangeDetectionVisitor.findUnmarkedBoundedRanges(queryTree)) {
             throw new DatawaveFatalQueryException("Found incorrectly marked bounded ranges");
+        }
+        
+        if (optionsMap.containsKey(QueryParameters.SHARDS_AND_DAYS)) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Add SHARDS_AND_DAYS from options");
+            String shardsAndDays = optionsMap.get(QueryParameters.SHARDS_AND_DAYS);
+            queryTree = AddShardsAndDaysVisitor.update(queryTree, shardsAndDays);
+            stopwatch.stop();
         }
         
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - flatten");
@@ -1260,6 +1268,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
                     innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
                     queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
+                    // regex expansion picks up an extra set of parens, so quickly fix that here
+                    queryTree = (ASTJexlScript) TreeFlatteningRebuildingVisitor.flatten(queryTree);
                     if (log.isDebugEnabled()) {
                         logQuery(queryTree, "Query after expanding regex:");
                     }

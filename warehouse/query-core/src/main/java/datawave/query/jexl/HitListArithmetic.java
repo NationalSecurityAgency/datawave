@@ -542,7 +542,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
     public Set<String> getHitSet() {
         Set<String> hits = new HashSet<>();
         for (ValueTuple value : hitSet) {
-            hits.add(value.getFieldName().toString() + ':' + value.getValue());
+            hits.add(value.getFieldName() + ':' + value.getValue());
         }
         return hits;
     }

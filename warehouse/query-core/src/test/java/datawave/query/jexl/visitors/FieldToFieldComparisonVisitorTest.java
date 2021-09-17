@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;

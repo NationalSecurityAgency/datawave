@@ -31,6 +31,7 @@ import org.junit.Test;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1557,23 +1558,23 @@ public class ContentFunctionsTest {
         // full terms list
         Assert.assertNotNull(termList.get("his"));
         String[] terms = new String[] {"go", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertTrue(ContentFunctions.phrase("BODY", termList, terms));
+        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termList, terms));
         
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertTrue(!ContentFunctions.phrase("BODY", termList, terms));
+        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termList, terms));
         
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come"};
-        Assert.assertTrue(!ContentFunctions.phrase("BODY", termList, terms));
+        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termList, terms));
         
         // subset(1, end)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertTrue(ContentFunctions.phrase("BODY", termList, terms));
+        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termList, terms));
         
         // subset(1,end-5)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and"};
-        Assert.assertTrue(ContentFunctions.phrase("BODY", termList, terms));
+        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termList, terms));
         
         // ///////////////////////////
         // Within functions
@@ -1581,23 +1582,23 @@ public class ContentFunctionsTest {
         
         // full terms list
         terms = new String[] {"go", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertTrue(ContentFunctions.within("BODY", 14, termList, terms));
+        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 14, termList, terms));
         
         // duplicate consecutive terms fail here
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertTrue(!ContentFunctions.within("BODY", 15, termList, terms));
+        Assert.assertEquals(Collections.emptySet(), ContentFunctions.within("BODY", 15, termList, terms));
         
         // placement does not matter
         terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come"};
-        Assert.assertTrue(ContentFunctions.within("BODY", 11, termList, terms));
+        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 11, termList, terms));
         
         // subset(1, end)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
-        Assert.assertTrue(ContentFunctions.within("BODY", 12, termList, terms));
+        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 12, termList, terms));
         
         // subset(1,end-5)
         terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and"};
-        Assert.assertTrue(ContentFunctions.within("BODY", 10, termList, terms));
+        Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 10, termList, terms));
     }
     
     private Zone genTestZone() {
@@ -1643,15 +1644,15 @@ public class ContentFunctionsTest {
         
         // The only match, [19, 20], is in ZONE2.
         // Thus, evaluating ZONE1 should return false here (see #1171)...
-        Assert.assertFalse(ContentFunctions.phrase(zone1.getZone(), termList, terms));
+        Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase(zone1.getZone(), termList, terms));
         
         // Ensure that we do get the hit if we evaluate the other zone
-        Assert.assertTrue(ContentFunctions.phrase(zone2.getZone(), termList, terms));
+        Assert.assertEquals(Collections.singleton(zone2.getZone()), ContentFunctions.phrase(zone2.getZone(), termList, terms));
         
         // Ensure that we get the hit if we evaluate both zones
-        Assert.assertTrue(ContentFunctions.phrase(Arrays.asList(zone1.getZone(), zone2.getZone()), termList, terms));
+        Assert.assertEquals(Collections.singleton(zone2.getZone()), ContentFunctions.phrase(Arrays.asList(zone1.getZone(), zone2.getZone()), termList, terms));
         
         // Ensure that we get the hit if we evaluate null zone
-        Assert.assertTrue(ContentFunctions.phrase((Object) null, termList, terms));
+        Assert.assertEquals(Collections.singleton(zone2.getZone()), ContentFunctions.phrase((Object) null, termList, terms));
     }
 }
