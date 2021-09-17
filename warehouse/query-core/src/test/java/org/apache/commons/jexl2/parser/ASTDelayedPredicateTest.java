@@ -1,6 +1,7 @@
 package org.apache.commons.jexl2.parser;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.junit.Test;
 
@@ -13,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 public class ASTDelayedPredicateTest {
     
     @Test
-    public void testMultipleDelays() throws ParseException {
+    public void testDoNotDelayMultipleTimes() throws ParseException {
         String query = "FOO == 'bar'";
         String expected = "((_Delayed_ = true) && (FOO == 'bar'))";
         
@@ -26,6 +27,22 @@ public class ASTDelayedPredicateTest {
         assertEquals(expected, delayedQuery);
     }
     
+    // this verifies that getting the source node only unwraps the first layer
+    @Test
+    public void testGetSourceOfManyDelays() throws ParseException {
+        String query = "((_Delayed_ = true) && ((_Delayed_ = true) && (FOO == 'bar')))";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        
+        String expectedSource = "(_Delayed_ = true) && (FOO == 'bar')";
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+        JexlNode source = instance.getSource();
+        assertEquals(expectedSource, JexlStringBuildingVisitor.buildQueryWithoutParse(source));
+        
+        expectedSource = "FOO == 'bar'";
+        source = ASTDelayedPredicate.unwrapFully(node);
+        assertEquals(expectedSource, JexlStringBuildingVisitor.buildQueryWithoutParse(source));
+    }
+    
     @Test
     public void testIsNodeAlreadyDelayed() throws ParseException {
         String query = "FOO == 'bar'";
@@ -36,7 +53,7 @@ public class ASTDelayedPredicateTest {
         
         JexlNode delayed = ASTDelayedPredicate.create(node);
         assertNotNull(node.jjtGetParent());
-        assertTrue(ASTDelayedPredicate.instanceOf(delayed));
+        assertTrue(QueryPropertyMarker.findInstance(delayed).isType(ASTDelayedPredicate.class));
         assertTrue(ASTDelayedPredicate.isSubTreeAlreadyDelayed(node));
     }
 }

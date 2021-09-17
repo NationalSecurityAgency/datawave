@@ -1,9 +1,8 @@
 package datawave.query.jexl.visitors;
 
-import java.util.Set;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
-
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
@@ -61,6 +60,8 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.log4j.Logger;
+
+import java.util.Set;
 
 /**
  * Visitor meant to 'pull up' delayed predicates for expressions that are not executable. Essentially if we have an OR of nodes in which some of the nodes are
@@ -241,22 +242,11 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         // if a delayed predicate, then change it to a regular reference
-        if (ASTDelayedPredicate.instanceOf(node)) {
-            
-            // continue to pull up delayed markers in the odd case that a double delay ocurred
-            JexlNode marker = node;
-            while (ASTDelayedPredicate.instanceOf(marker)) {
-                if (node.jjtGetNumChildren() > 1) {
-                    log.warn("Tried to pull up a delayed marker that had more than one child.");
-                }
-                
-                // This swap should be safe, the reference node should have a single child that is a reference expression
-                JexlNode source = ASTDelayedPredicate.getDelayedPredicateSource(marker);
-                JexlNode wrappedSource = JexlNodes.wrap(source);
-                JexlNodes.swap(node, marker.jjtGetChild(0), wrappedSource);
-            }
-            return marker;
-            
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+        if (instance.isType(ASTDelayedPredicate.class)) {
+            JexlNode source = ASTDelayedPredicate.unwrapFully(node);
+            JexlNodes.swap(node.jjtGetParent(), node, source);
+            return source;
         } else if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             super.visit(node, data);
         }

@@ -251,7 +251,7 @@ public class JexlNodeSet implements Set<JexlNode> {
     
     // Is a node marked as delayed for any reason?
     protected boolean isDelayed(JexlNode node) {
-        return QueryPropertyMarker.instanceOf(node, null);
+        return QueryPropertyMarker.findInstance(node).isAnyType();
     }
     
     /**
@@ -262,8 +262,9 @@ public class JexlNodeSet implements Set<JexlNode> {
      * @return
      */
     public String buildKey(JexlNode node) {
-        if (useSourceNodeForKeys && isDelayed(node)) {
-            JexlNode sourceNode = QueryPropertyMarker.getQueryPropertySource(node, null);
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+        if (useSourceNodeForKeys && instance.isAnyType()) {
+            JexlNode sourceNode = instance.getSource();
             return nodeToKey(sourceNode);
         } else {
             return nodeToKey(node);

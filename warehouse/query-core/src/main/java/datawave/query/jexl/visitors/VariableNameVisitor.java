@@ -1,17 +1,17 @@
 package datawave.query.jexl.visitors;
 
-import java.io.StringReader;
-import java.util.Set;
-
+import com.google.common.collect.Sets;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.Parser;
-
-import com.google.common.collect.Sets;
 import org.apache.commons.jexl2.parser.TokenMgrError;
+
+import java.io.StringReader;
+import java.util.Set;
 
 /**
  * Extracts all of the identifier names from a query. This exists only because the getVariables() method in JexlEngine is broken in the released versions of
@@ -60,7 +60,7 @@ public class VariableNameVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
+        if (QueryPropertyMarker.findInstance(node).isType(ExceededOrThresholdMarkerJexlNode.class)) {
             this.variableNames.add(ExceededOrThresholdMarkerJexlNode.getField(node));
             return data;
         } else {

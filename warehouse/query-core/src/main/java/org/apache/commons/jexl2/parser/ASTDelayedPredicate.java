@@ -53,7 +53,7 @@ public class ASTDelayedPredicate extends QueryPropertyMarker {
     public static JexlNode create(JexlNode node) {
         
         // Do not delay if this subtree is already delayed
-        if (instanceOf(node, ASTDelayedPredicate.class) || ASTDelayedPredicate.isSubTreeAlreadyDelayed(node)) {
+        if (QueryPropertyMarker.findInstance(node).isType(ASTDelayedPredicate.class) || ASTDelayedPredicate.isSubTreeAlreadyDelayed(node)) {
             return node;
         }
         
@@ -77,7 +77,7 @@ public class ASTDelayedPredicate extends QueryPropertyMarker {
      */
     public static boolean isSubTreeAlreadyDelayed(JexlNode node) {
         if (node instanceof ASTAndNode && node.jjtGetNumChildren() == 2) {
-            if (instanceOf(node, ASTDelayedPredicate.class)) {
+            if (QueryPropertyMarker.findInstance(node).isType(ASTDelayedPredicate.class)) {
                 return true;
             }
         }
@@ -90,24 +90,25 @@ public class ASTDelayedPredicate extends QueryPropertyMarker {
     }
     
     /**
-     * A routine to determine whether an and node is actually a delayed predicate marker. The reason for this routine is that if the query is serialized and
-     * deserialized, then only the underlying assignment will persist.
-     * 
+     * Unwrap a delayed predicate, fully. Intended to handle the odd edge case when multiple delayed predicate markers are applied to the same node
+     *
      * @param node
-     * @return true if this and node is a delayed predicate marker
+     *            an arbitrary jexl node
+     * @return the source node, or the original node if this node is not delayed
      */
-    public static boolean instanceOf(JexlNode node) {
-        return QueryPropertyMarker.instanceOf(node, ASTDelayedPredicate.class);
+    public static JexlNode unwrapFully(JexlNode node) {
+        if (QueryPropertyMarker.findInstance(node).isType(ASTDelayedPredicate.class)) {
+            
+            QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+            JexlNode source = instance.getSource();
+            
+            while (QueryPropertyMarker.findInstance(source).isType(ASTDelayedPredicate.class)) {
+                instance = QueryPropertyMarker.findInstance(source);
+                source = instance.getSource();
+            }
+            
+            return source;
+        }
+        return node;
     }
-    
-    /**
-     * A routine to determine get the node which is the source of the delayed predicate
-     * 
-     * @param node
-     * @return the source node or null if not an a delayed predicate marker
-     */
-    public static JexlNode getDelayedPredicateSource(JexlNode node) {
-        return QueryPropertyMarker.getQueryPropertySource(node, ASTDelayedPredicate.class);
-    }
-    
 }
