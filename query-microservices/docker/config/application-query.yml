@@ -170,7 +170,7 @@ datawave:
             TOKENIZED-LUCENE: "TokenizedLuceneToJexlQueryParser"
           sendTimingToStatsd: false
           collectQueryMetrics: true
-          logTimingDetails: false
+          logTimingDetails: true
           statsdHost: ${warehouse.statsd.host}
           statsdPort: ${warehouse.statsd.port}
           evaluationOnlyFields: ""
