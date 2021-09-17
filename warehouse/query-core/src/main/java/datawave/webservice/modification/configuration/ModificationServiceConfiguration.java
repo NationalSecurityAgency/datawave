@@ -1,15 +1,14 @@
 package datawave.webservice.modification.configuration;
 
+import datawave.services.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.modification.ModificationRequestBase;
+import datawave.webservice.query.runner.QueryExecutorBean;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.security.Authorizations;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.modification.ModificationRequestBase;
-import datawave.webservice.query.runner.QueryExecutorBean;
-
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.security.Authorizations;
 
 public abstract class ModificationServiceConfiguration {
     

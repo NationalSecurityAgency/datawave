@@ -8,7 +8,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.system.AuthorizationCache;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.GenericResponse;

@@ -1,10 +1,10 @@
 package datawave.query.metrics;
 
-import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
+import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;

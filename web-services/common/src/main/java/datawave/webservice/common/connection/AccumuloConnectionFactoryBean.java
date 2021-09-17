@@ -2,10 +2,12 @@ package datawave.webservice.common.connection;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.common.cache.AccumuloTableCache;
+import datawave.services.common.cache.AccumuloTableCache;
+import datawave.services.common.connection.AccumuloConnectionFactory;
+import datawave.services.common.connection.AccumuloConnectionFactoryImpl;
+import datawave.services.common.result.ConnectionPool;
 import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
 import datawave.webservice.common.result.ConnectionFactoryResponse;
-import datawave.webservice.common.result.ConnectionPool;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;

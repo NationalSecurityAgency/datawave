@@ -53,8 +53,9 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>query</artifactId>
+            <groupId>gov.nsa.datawave.services</groupId>
+            <artifactId>datawave-services-query</artifactId>
+            <version>${project.version}</version>
             <classifier>jboss</classifier>
         </dependency>
         <dependency>

@@ -1,7 +1,7 @@
 package datawave.query.config;
 
-import datawave.microservice.query.configuration.GenericQueryConfiguration;
-import datawave.microservice.query.logic.BaseQueryLogic;
+import datawave.services.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.logic.BaseQueryLogic;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.data.Range;
 

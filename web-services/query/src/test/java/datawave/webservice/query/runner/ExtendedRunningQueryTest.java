@@ -1,15 +1,15 @@
 package datawave.webservice.query.runner;
 
 import com.google.common.collect.Lists;
-import datawave.microservice.query.configuration.GenericQueryConfiguration;
-import datawave.microservice.query.logic.QueryLogic;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.services.common.connection.AccumuloConnectionFactory;
+import datawave.services.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.services.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.logic.QueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.cache.ResultsPage;

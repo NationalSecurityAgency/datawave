@@ -1,6 +1,6 @@
 package datawave.query.tables.chunk;
 
-import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.Query;
 
 import java.util.Iterator;

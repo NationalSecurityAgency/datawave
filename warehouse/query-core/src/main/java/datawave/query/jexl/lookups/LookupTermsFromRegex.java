@@ -1,30 +1,24 @@
 package datawave.query.jexl.lookups;
 
-import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import datawave.core.iterators.TimeoutExceptionIterator;
 import datawave.core.iterators.TimeoutIterator;
-import datawave.microservice.query.configuration.Result;
+import datawave.query.Constants;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
-import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.BatchResource;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
 import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
+import datawave.services.query.configuration.Result;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
-
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -33,10 +27,14 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
+import java.text.MessageFormat;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 public class LookupTermsFromRegex extends RegexIndexLookup {
     private static final Logger log = Logger.getLogger(LookupTermsFromRegex.class);

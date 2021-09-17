@@ -52,10 +52,6 @@
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>query</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>query-api</artifactId>
         </dependency>
         <dependency>
@@ -69,6 +65,10 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>spring-boot-starter-datawave-query</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.services</groupId>
+            <artifactId>datawave-services-query</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>

@@ -1,8 +1,8 @@
 package datawave.query.transformer;
 
-import datawave.microservice.query.logic.QueryLogic;
-import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.query.model.QueryModel;
+import datawave.services.query.logic.QueryLogic;
+import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;

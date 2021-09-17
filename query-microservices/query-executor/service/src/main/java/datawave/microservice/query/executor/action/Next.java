@@ -1,12 +1,12 @@
 package datawave.microservice.query.executor.action;
 
 import datawave.microservice.query.executor.QueryExecutor;
-import datawave.microservice.query.logic.CheckpointableQueryLogic;
-import datawave.microservice.query.logic.QueryLogic;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.CachedQueryStatus;
 import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.TaskKey;
+import datawave.services.query.logic.CheckpointableQueryLogic;
+import datawave.services.query.logic.QueryLogic;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 

@@ -3,9 +3,9 @@ package datawave.query.tables;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
-import datawave.microservice.query.configuration.Result;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.services.query.configuration.Result;
 import org.apache.accumulo.core.data.ByteSequence;
 
 import java.io.Serializable;

@@ -113,7 +113,7 @@
     <bean id="DatawaveSelectorExtractor" scope="prototype" class="datawave.audit.DatawaveSelectorExtractor" />
 
     <!-- End SelectorExtractors -->
-    <bean id="responseObjectFactory" class="datawave.microservice.query.result.event.DefaultResponseObjectFactory" />
+    <bean id="responseObjectFactory" class="datawave.services.query.result.event.DefaultResponseObjectFactory" />
 
     <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
         <property name="markingFunctions" ref="markingFunctions" />

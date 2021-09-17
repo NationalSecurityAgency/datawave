@@ -1,7 +1,7 @@
 package datawave.query.tables;
 
-import datawave.microservice.query.configuration.Result;
 import datawave.query.Constants;
+import datawave.services.query.configuration.Result;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;

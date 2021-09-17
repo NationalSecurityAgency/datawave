@@ -1,6 +1,39 @@
 package datawave.query.tables;
 
-import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Queues;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.Service;
+import datawave.mr.bulk.RfileResource;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.tables.async.Scan;
+import datawave.query.tables.async.ScannerChunk;
+import datawave.query.tables.async.SessionArbiter;
+import datawave.query.tables.async.SpeculativeScan;
+import datawave.services.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.configuration.QueryData;
+import datawave.services.query.configuration.Result;
+import datawave.services.query.configuration.ResultContext;
+import datawave.services.query.logic.QueryCheckpoint;
+import datawave.services.query.logic.QueryKey;
+import datawave.webservice.query.Query;
+import org.apache.accumulo.core.client.impl.ScannerOptions;
+import org.apache.accumulo.core.client.impl.TabletLocator;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.log4j.Logger;
+
 import java.io.InterruptedIOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
@@ -19,41 +52,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import com.google.common.base.Throwables;
-import datawave.microservice.query.configuration.QueryData;
-import datawave.microservice.query.configuration.Result;
-import datawave.microservice.query.configuration.ResultContext;
-import datawave.microservice.query.logic.QueryCheckpoint;
-import datawave.microservice.query.logic.QueryKey;
-import datawave.query.config.ShardQueryConfiguration;
-import org.apache.accumulo.core.client.impl.ScannerOptions;
-import org.apache.accumulo.core.client.impl.TabletLocator;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.log4j.Logger;
-
-import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Queues;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.Service;
-
-import datawave.mr.bulk.RfileResource;
-import datawave.query.tables.async.Scan;
-import datawave.query.tables.async.ScannerChunk;
-import datawave.query.tables.async.SessionArbiter;
-import datawave.query.tables.async.SpeculativeScan;
-import datawave.webservice.query.Query;
 
 /**
  * 

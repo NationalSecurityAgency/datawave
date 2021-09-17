@@ -1,6 +1,6 @@
 package datawave.query.scheduler;
 
-import datawave.microservice.query.configuration.QueryData;
+import datawave.services.query.configuration.QueryData;
 import org.apache.accumulo.core.data.Range;
 
 import java.util.Collections;

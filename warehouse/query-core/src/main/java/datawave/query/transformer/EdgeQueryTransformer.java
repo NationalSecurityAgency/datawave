@@ -6,7 +6,7 @@ import datawave.edge.util.EdgeKey;
 import datawave.edge.util.EdgeValue;
 import datawave.edge.util.EdgeValueHelper;
 import datawave.marking.MarkingFunctions;
-import datawave.microservice.query.cachedresults.CacheableLogic;
+import datawave.services.query.cachedresults.CacheableLogic;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.edge.EdgeBase;

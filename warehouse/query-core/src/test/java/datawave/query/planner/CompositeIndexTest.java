@@ -23,9 +23,8 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.partition.BalancedShardPartitioner;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.DefaultQueryParameters;
-import datawave.microservice.query.configuration.QueryData;
+import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.composite.CompositeMetadataHelper;
 import datawave.query.config.ShardQueryConfiguration;
@@ -33,6 +32,7 @@ import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.services.query.configuration.QueryData;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
@@ -194,7 +194,7 @@ public class CompositeIndexTest {
         return ShrinkWrap
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event",
-                                        "datawave.microservice.query.result.event")
+                                        "datawave.services.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class)
                         .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)

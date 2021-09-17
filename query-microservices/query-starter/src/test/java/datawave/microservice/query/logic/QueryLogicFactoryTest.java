@@ -1,5 +1,7 @@
 package datawave.microservice.query.logic;
 
+import datawave.services.query.logic.QueryLogic;
+import datawave.services.query.logic.QueryLogicFactory;
 import datawave.webservice.query.exception.QueryException;
 import org.junit.Test;
 import org.junit.runner.RunWith;

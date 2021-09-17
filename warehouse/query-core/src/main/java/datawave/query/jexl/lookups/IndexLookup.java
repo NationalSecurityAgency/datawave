@@ -1,8 +1,12 @@
 package datawave.query.jexl.lookups;
 
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.tables.ScannerFactory;
+import datawave.services.query.configuration.Result;
+import org.apache.log4j.Logger;
+
 import java.util.Iterator;
 import java.util.Set;
-import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -10,14 +14,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import datawave.microservice.query.configuration.Result;
-import datawave.query.config.ShardQueryConfiguration;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.log4j.Logger;
-
-import datawave.query.tables.ScannerFactory;
 
 public abstract class IndexLookup {
     

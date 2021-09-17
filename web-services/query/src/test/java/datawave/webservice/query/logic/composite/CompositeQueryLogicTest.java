@@ -1,12 +1,12 @@
 package datawave.webservice.query.logic.composite;
 
 import datawave.marking.MarkingFunctions;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.microservice.query.configuration.GenericQueryConfiguration;
-import datawave.microservice.query.logic.BaseQueryLogic;
-import datawave.microservice.query.logic.BaseQueryLogicTransformer;
-import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.security.util.DnUtils.NpeUtils;
+import datawave.services.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.services.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.logic.BaseQueryLogic;
+import datawave.services.query.logic.BaseQueryLogicTransformer;
+import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.ResultsPage;

@@ -1,6 +1,6 @@
 package datawave.webservice.results.cached;
 
-import datawave.microservice.query.cachedresults.CacheableQueryRowImpl;
+import datawave.services.query.cachedresults.CacheableQueryRowImpl;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Before;

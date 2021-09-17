@@ -1,9 +1,9 @@
 package datawave.query.edge;
 
 import datawave.configuration.spring.SpringBean;
-import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.query.tables.edge.EdgeQueryFunctionalTest;
 import datawave.query.tables.edge.EdgeQueryLogic;
+import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;

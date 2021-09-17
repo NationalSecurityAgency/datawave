@@ -1,7 +1,7 @@
 package datawave.webservice.query.cache;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.microservice.query.logic.QueryLogic;
+import datawave.services.query.logic.QueryLogic;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.VoidResponse;

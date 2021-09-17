@@ -1,6 +1,8 @@
 package datawave.microservice.query.logic;
 
 import datawave.microservice.query.logic.config.QueryLogicFactoryProperties;
+import datawave.services.query.logic.QueryLogic;
+import datawave.services.query.logic.QueryLogicFactory;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;

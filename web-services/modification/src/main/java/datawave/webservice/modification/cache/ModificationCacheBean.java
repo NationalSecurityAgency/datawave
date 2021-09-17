@@ -4,7 +4,7 @@ import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.security.util.ScannerHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.configuration.ModificationConfiguration;
 import datawave.webservice.result.VoidResponse;
 import datawave.webservice.results.modification.MutableFieldListResponse;
@@ -43,7 +43,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import static datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import static datawave.services.common.connection.AccumuloConnectionFactory.Priority;
 
 @Path("/Modification")
 @RunAs("InternalUser")

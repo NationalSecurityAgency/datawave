@@ -16,6 +16,7 @@
     </licenses>
     <modules>
         <module>common-test</module>
+        <module>services</module>
         <module>web-services</module>
         <module>warehouse</module>
         <module>query-microservices</module>
@@ -83,12 +84,10 @@
         <version.microservice.audit-api>1.10-SNAPSHOT</version.microservice.audit-api>
         <version.microservice.authorization-api>1.11-SNAPSHOT</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>1.3-SNAPSHOT</version.microservice.base-rest-responses>
-        <version.microservice.common>1.0-SNAPSHOT</version.microservice.common>
         <version.microservice.common-utils>1.2-SNAPSHOT</version.microservice.common-utils>
         <version.microservice.dictionary-api>1.2-SNAPSHOT</version.microservice.dictionary-api>
         <version.microservice.metadata-utils>1.8-SNAPSHOT</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>1.4-SNAPSHOT</version.microservice.metrics-reporter>
-        <version.microservice.query>1.0-SNAPSHOT</version.microservice.query>
         <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
         <version.microservice.type-utils>1.9-SNAPSHOT</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
@@ -322,11 +321,6 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>common</artifactId>
-                <version>${version.microservice.common}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>common-utils</artifactId>
                 <version>${version.microservice.common-utils}</version>
             </dependency>
@@ -344,12 +338,6 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>metrics-reporter</artifactId>
                 <version>${version.microservice.metrics-reporter}</version>
-            </dependency>
-            <dependency>
-                <groupId>gov.nsa.datawave.microservice</groupId>
-                <artifactId>query</artifactId>
-                <version>${version.microservice.query}</version>
-                <classifier>jboss</classifier>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>

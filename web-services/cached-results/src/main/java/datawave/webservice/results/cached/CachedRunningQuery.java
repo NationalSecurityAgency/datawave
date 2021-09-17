@@ -1,10 +1,10 @@
 package datawave.webservice.results.cached;
 
-import datawave.microservice.query.cachedresults.CacheableLogic;
-import datawave.microservice.query.cachedresults.CacheableQueryRowReader;
-import datawave.microservice.query.logic.QueryLogic;
-import datawave.microservice.query.logic.QueryLogicFactory;
-import datawave.microservice.query.logic.QueryLogicTransformer;
+import datawave.services.query.cachedresults.CacheableLogic;
+import datawave.services.query.cachedresults.CacheableQueryRowReader;
+import datawave.services.query.logic.QueryLogic;
+import datawave.services.query.logic.QueryLogicFactory;
+import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.AbstractRunningQuery;

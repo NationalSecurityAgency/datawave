@@ -176,7 +176,7 @@ public class MixedGeoAndGeoWaveTest {
         return ShrinkWrap
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event",
-                                        "datawave.microservice.query.result.event")
+                                        "datawave.services.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class)
                         .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)

@@ -1,11 +1,6 @@
 package datawave.query.testframework;
 
 import datawave.data.type.Type;
-import datawave.microservice.query.configuration.QueryData;
-import datawave.microservice.query.logic.BaseQueryLogic;
-import datawave.microservice.query.logic.QueryCheckpoint;
-import datawave.microservice.query.logic.QueryKey;
-import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Attributes;
@@ -14,10 +9,13 @@ import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.services.query.configuration.QueryData;
+import datawave.services.query.logic.BaseQueryLogic;
+import datawave.services.query.logic.CheckpointableQueryLogic;
+import datawave.services.query.logic.QueryCheckpoint;
+import datawave.services.query.logic.QueryKey;
+import datawave.services.query.logic.QueryLogicFactory;
 import datawave.webservice.query.exception.QueryException;
-import datawave.microservice.query.logic.CheckpointableQueryLogic;
-import java.util.LinkedList;
-import java.util.Queue;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -27,9 +25,11 @@ import org.junit.Assert;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Set;
 
 public class QueryLogicTestHarness {

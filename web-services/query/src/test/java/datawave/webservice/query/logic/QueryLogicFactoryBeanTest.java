@@ -1,12 +1,12 @@
 package datawave.webservice.query.logic;
 
-import datawave.microservice.query.logic.BaseQueryLogic;
-import datawave.microservice.query.logic.QueryLogic;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
+import datawave.services.query.logic.BaseQueryLogic;
+import datawave.services.query.logic.QueryLogic;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;

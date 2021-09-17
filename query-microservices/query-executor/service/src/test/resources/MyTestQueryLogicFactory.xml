@@ -8,7 +8,7 @@
         http://www.springframework.org/schema/util
         http://www.springframework.org/schema/util/spring-util.xsd">
 
-    <bean id="baseQueryLogic" class="datawave.microservice.query.logic.BaseQueryLogic" abstract="true" >
+    <bean id="baseQueryLogic" class="datawave.services.query.logic.BaseQueryLogic" abstract="true" >
         <!-- This is injected via java -->
         <property name="markingFunctions" ref="markingFunctions" />
         <!-- This is injected via java -->
@@ -335,7 +335,7 @@
     <!--    <bean id="DatawaveSelectorExtractor" scope="prototype" class="datawave.audit.DatawaveSelectorExtractor" />-->
 
     <!--    &lt;!&ndash; End SelectorExtractors &ndash;&gt;-->
-    <!--    <bean id="responseObjectFactory" class="datawave.microservice.query.result.event.DefaultResponseObjectFactory" />-->
+    <!--    <bean id="responseObjectFactory" class="datawave.services.query.result.event.DefaultResponseObjectFactory" />-->
 
     <!--    <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >-->
     <!--        <property name="markingFunctions" ref="markingFunctions" />-->

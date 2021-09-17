@@ -11,7 +11,7 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;

@@ -1,7 +1,7 @@
 package datawave.microservice.query.storage;
 
-import datawave.microservice.query.logic.QueryCheckpoint;
 import datawave.microservice.query.remote.QueryRequest;
+import datawave.services.query.logic.QueryCheckpoint;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.security.Authorizations;
 

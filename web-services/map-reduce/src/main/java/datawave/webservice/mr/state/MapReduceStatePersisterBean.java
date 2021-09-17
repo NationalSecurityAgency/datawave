@@ -1,9 +1,9 @@
 package datawave.webservice.mr.state;
 
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
+import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;

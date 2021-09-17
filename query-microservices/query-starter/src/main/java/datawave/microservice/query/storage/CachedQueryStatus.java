@@ -1,7 +1,7 @@
 package datawave.microservice.query.storage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import datawave.microservice.query.logic.QueryKey;
+import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.security.Authorizations;
 

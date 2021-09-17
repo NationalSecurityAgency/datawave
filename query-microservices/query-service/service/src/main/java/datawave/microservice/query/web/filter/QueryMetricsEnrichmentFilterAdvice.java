@@ -1,12 +1,12 @@
 package datawave.microservice.query.web.filter;
 
-import datawave.microservice.query.logic.QueryLogicFactory;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.web.annotation.EnrichQueryMetrics;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricClient;
 import datawave.microservice.querymetric.QueryMetricType;
+import datawave.services.query.logic.QueryLogicFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 import org.apache.log4j.Logger;

@@ -1,6 +1,6 @@
 package datawave.webservice.query.logic;
 
-import datawave.microservice.query.logic.QueryLogic;
+import datawave.services.query.logic.QueryLogic;
 
 import java.util.Map;
 

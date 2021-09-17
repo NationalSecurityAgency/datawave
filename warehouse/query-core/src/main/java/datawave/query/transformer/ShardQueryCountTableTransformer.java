@@ -2,10 +2,10 @@ package datawave.query.transformer;
 
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
-import datawave.microservice.query.cachedresults.CacheableLogic;
-import datawave.microservice.query.cachedresults.CacheableQueryRowImpl;
-import datawave.microservice.query.logic.BaseQueryLogicTransformer;
 import datawave.query.Constants;
+import datawave.services.query.cachedresults.CacheableLogic;
+import datawave.services.query.cachedresults.CacheableQueryRowImpl;
+import datawave.services.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;

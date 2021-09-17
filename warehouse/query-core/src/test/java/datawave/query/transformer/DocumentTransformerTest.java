@@ -1,12 +1,12 @@
 package datawave.query.transformer;
 
 import datawave.marking.MarkingFunctions;
-import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.services.query.logic.BaseQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.result.event.ResponseObjectFactory;

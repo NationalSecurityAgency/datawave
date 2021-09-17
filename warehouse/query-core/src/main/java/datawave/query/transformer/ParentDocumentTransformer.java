@@ -1,8 +1,8 @@
 package datawave.query.transformer;
 
 import datawave.marking.MarkingFunctions;
-import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.query.tld.TLD;
+import datawave.services.query.logic.BaseQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.Metadata;

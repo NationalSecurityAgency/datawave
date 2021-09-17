@@ -1,11 +1,10 @@
 package datawave.webservice.common.result;
 
-import java.text.NumberFormat;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import datawave.services.common.result.Connection;
+import datawave.services.common.result.ConnectionPool;
+import datawave.webservice.HtmlProvider;
+import datawave.webservice.result.BaseResponse;
+import org.apache.commons.lang.StringEscapeUtils;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -14,11 +13,12 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
-
-import datawave.webservice.HtmlProvider;
-import datawave.webservice.result.BaseResponse;
-
-import org.apache.commons.lang.StringEscapeUtils;
+import java.text.NumberFormat;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 @XmlRootElement(name = "ConnectionFactoryResponse")
 @XmlAccessorType(XmlAccessType.NONE)

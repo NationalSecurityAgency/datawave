@@ -1,21 +1,6 @@
 package datawave.query.index.lookup;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import datawave.microservice.query.configuration.Result;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
-
 import com.google.common.base.Function;
-
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
@@ -24,6 +9,16 @@ import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
+import datawave.services.query.configuration.Result;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
+
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.util.Set;
 
 /**
  * Parses entries returned from an index lookup, see {@link RangeStream#visit(ASTEQNode, Object)}.

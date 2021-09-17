@@ -2,13 +2,13 @@ package datawave.query.tables;
 
 import com.google.common.base.Preconditions;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.microservice.query.configuration.GenericQueryConfiguration;
 import datawave.mr.bulk.BulkInputFormat;
 import datawave.mr.bulk.MultiRfileInputformat;
 import datawave.mr.bulk.RfileScanner;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.util.QueryScannerHelper;
+import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.common.connection.WrappedConnector;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.BatchScanner;

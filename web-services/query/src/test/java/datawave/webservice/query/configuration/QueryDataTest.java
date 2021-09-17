@@ -1,7 +1,7 @@
 package datawave.webservice.query.configuration;
 
 import com.google.common.collect.Lists;
-import datawave.microservice.query.configuration.QueryData;
+import datawave.services.query.configuration.QueryData;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Range;
 import org.junit.Assert;

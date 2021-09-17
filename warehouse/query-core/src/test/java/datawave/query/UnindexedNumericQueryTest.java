@@ -1,7 +1,6 @@
 package datawave.query;
 
 import datawave.data.type.NumberType;
-import datawave.microservice.query.configuration.QueryData;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
@@ -14,6 +13,7 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
+import datawave.services.query.configuration.QueryData;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.log4j.Logger;
 import org.junit.Assert;

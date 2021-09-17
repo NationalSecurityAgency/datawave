@@ -11,8 +11,6 @@ import datawave.data.type.NumberType;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.marking.MarkingFunctions;
-import datawave.microservice.query.configuration.GenericQueryConfiguration;
-import datawave.microservice.query.iterator.DatawaveTransformIterator;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.attributes.Attribute;
@@ -23,6 +21,8 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.transformer.GroupingTransform.GroupingTypeAttribute;
 import datawave.query.util.VisibilityWiseGuysIngestWithModel;
+import datawave.services.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.iterator.DatawaveTransformIterator;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
@@ -148,7 +148,7 @@ public abstract class GroupingTestWithModel {
         return ShrinkWrap
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
-                                        "datawave.webservice.query.result.event", "datawave.microservice.query.result.event")
+                                        "datawave.webservice.query.result.event", "datawave.services.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class)
                         .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)

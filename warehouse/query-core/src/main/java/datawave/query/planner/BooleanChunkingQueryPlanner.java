@@ -1,7 +1,6 @@
 package datawave.query.planner;
 
 import com.google.common.collect.Lists;
-import datawave.microservice.query.configuration.QueryData;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -15,6 +14,7 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
+import datawave.services.query.configuration.QueryData;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.query.Query;
 import org.apache.commons.jexl2.parser.ASTJexlScript;

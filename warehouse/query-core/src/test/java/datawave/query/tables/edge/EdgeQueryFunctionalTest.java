@@ -1,7 +1,7 @@
 package datawave.query.tables.edge;
 
 import datawave.configuration.spring.SpringBean;
-import datawave.microservice.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.security.Authorizations;
@@ -42,7 +42,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         return ShrinkWrap
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event",
-                                        "datawave.microservice.query.result.event")
+                                        "datawave.services.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class)
                         .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)

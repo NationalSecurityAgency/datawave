@@ -8,8 +8,8 @@ import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.DatawaveUserInfo;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.result.ConnectionPool;
+import datawave.services.common.connection.AccumuloConnectionFactory;
+import datawave.services.common.result.ConnectionPool;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
@@ -26,7 +26,6 @@ import org.junit.runner.RunWith;
 import javax.annotation.Priority;
 import javax.enterprise.inject.Alternative;
 import javax.inject.Inject;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;

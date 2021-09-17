@@ -1,7 +1,7 @@
 package datawave.webservice.query.logic;
 
 import datawave.marking.MarkingFunctions;
-import datawave.microservice.query.logic.BaseQueryLogicTransformer;
+import datawave.services.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;

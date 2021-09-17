@@ -2,9 +2,9 @@ package datawave.microservice.query.storage;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import datawave.microservice.query.logic.QueryCheckpoint;
-import datawave.microservice.query.logic.QueryKey;
 import datawave.microservice.query.remote.QueryRequest;
+import datawave.services.query.logic.QueryCheckpoint;
+import datawave.services.query.logic.QueryKey;
 import org.junit.Test;
 
 import java.util.HashMap;

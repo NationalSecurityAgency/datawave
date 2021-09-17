@@ -1,9 +1,9 @@
 package datawave.webservice.query.logic;
 
-import datawave.microservice.query.configuration.GenericQueryConfiguration;
-import datawave.microservice.query.logic.BaseQueryLogic;
-import datawave.microservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.services.common.connection.AccumuloConnectionFactory;
+import datawave.services.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.logic.BaseQueryLogic;
+import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;

@@ -1,7 +1,7 @@
 package datawave.microservice.query.logic.config;
 
-import datawave.microservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.query.data.UUIDType;
+import datawave.services.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -53,15 +53,16 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>metrics-reporter</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-connection-pool</artifactId>
+            <groupId>gov.nsa.datawave.services</groupId>
+            <artifactId>datawave-services-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.services</groupId>
+            <artifactId>datawave-services-connection-pool</artifactId>
             <version>${project.version}</version>
             <classifier>jboss</classifier>
         </dependency>

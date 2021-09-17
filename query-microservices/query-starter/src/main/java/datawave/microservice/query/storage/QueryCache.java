@@ -1,9 +1,9 @@
 package datawave.microservice.query.storage;
 
 import datawave.microservice.cached.LockableCacheInspector;
-import datawave.microservice.query.logic.QueryCheckpoint;
-import datawave.microservice.query.logic.QueryKey;
 import datawave.microservice.query.remote.QueryRequest;
+import datawave.services.query.logic.QueryCheckpoint;
+import datawave.services.query.logic.QueryKey;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

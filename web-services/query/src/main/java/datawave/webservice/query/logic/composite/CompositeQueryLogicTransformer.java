@@ -1,8 +1,8 @@
 package datawave.webservice.query.logic.composite;
 
-import datawave.microservice.query.cachedresults.CacheableLogic;
-import datawave.microservice.query.logic.AbstractQueryLogicTransformer;
-import datawave.microservice.query.logic.QueryLogicTransformer;
+import datawave.services.query.cachedresults.CacheableLogic;
+import datawave.services.query.logic.AbstractQueryLogicTransformer;
+import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;

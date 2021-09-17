@@ -1,8 +1,6 @@
 package datawave.springframework.integration;
 
 import datawave.microservice.query.config.QueryExpirationProperties;
-import datawave.microservice.query.logic.QueryLogic;
-import datawave.microservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.query.discovery.DiscoveryLogic;
 import datawave.query.metrics.QueryMetricQueryLogic;
 import datawave.query.planner.BooleanChunkingQueryPlanner;
@@ -19,6 +17,8 @@ import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
+import datawave.services.query.logic.QueryLogic;
+import datawave.services.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.edgedictionary.EdgeDictionaryResponseTypeProducer;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;

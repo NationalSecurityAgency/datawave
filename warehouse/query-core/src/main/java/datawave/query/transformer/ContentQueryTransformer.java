@@ -2,9 +2,9 @@ package datawave.query.transformer;
 
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
-import datawave.microservice.query.logic.BaseQueryLogicTransformer;
 import datawave.query.table.parser.ContentKeyValueFactory;
 import datawave.query.table.parser.ContentKeyValueFactory.ContentKeyValue;
+import datawave.services.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;

@@ -24,8 +24,8 @@ import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
-import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.QueryParameters;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -132,7 +132,7 @@ public class ContentFunctionQueryTest {
         return ShrinkWrap
                         .create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event",
-                                        "datawave.microservice.query.result.event", "datawave.microservice.query.result.event")
+                                        "datawave.services.query.result.event")
                         .deleteClass(DefaultEdgeEventQueryLogic.class)
                         .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)

@@ -1,6 +1,6 @@
 package datawave.microservice.query.storage;
 
-import datawave.microservice.query.logic.QueryKey;
+import datawave.services.query.logic.QueryKey;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;

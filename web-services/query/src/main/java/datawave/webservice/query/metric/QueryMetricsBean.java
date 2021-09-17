@@ -6,7 +6,7 @@ import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.map.QueryGeometryHandler;
 import datawave.webservice.query.map.QueryGeometryResponse;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;

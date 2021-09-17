@@ -1,11 +1,10 @@
 package datawave.query.index.lookup;
 
-import com.google.common.collect.Maps;
 import datawave.ingest.protobuf.Uid;
-import datawave.microservice.query.configuration.Result;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.util.Tuple2;
+import datawave.services.query.configuration.Result;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -19,7 +18,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 
 import static org.junit.Assert.assertEquals;

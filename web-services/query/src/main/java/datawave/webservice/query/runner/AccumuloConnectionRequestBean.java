@@ -1,5 +1,6 @@
 package datawave.webservice.query.runner;
 
+import datawave.services.query.runner.AccumuloConnectionRequestMap;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Resource;

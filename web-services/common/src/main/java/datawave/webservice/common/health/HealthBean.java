@@ -2,7 +2,7 @@ package datawave.webservice.common.health;
 
 import com.sun.management.OperatingSystemMXBean;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.result.GenericResponse;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;

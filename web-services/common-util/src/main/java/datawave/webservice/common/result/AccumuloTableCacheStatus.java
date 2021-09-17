@@ -1,7 +1,7 @@
 package datawave.webservice.common.result;
 
+import datawave.services.common.cache.TableCacheDescription;
 import datawave.webservice.HtmlProvider;
-import datawave.webservice.common.cache.TableCacheDescription;
 import datawave.webservice.result.BaseResponse;
 
 import javax.xml.bind.annotation.XmlAccessOrder;

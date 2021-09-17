@@ -2,8 +2,8 @@ package datawave.query.tables.edge;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.normalizer.Normalizer;
-import datawave.microservice.query.logic.BaseQueryLogic;
 import datawave.query.MockAccumuloRecordWriter;
+import datawave.services.query.logic.BaseQueryLogic;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;

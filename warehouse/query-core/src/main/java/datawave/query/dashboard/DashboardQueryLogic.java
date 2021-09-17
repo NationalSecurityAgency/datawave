@@ -1,7 +1,7 @@
 package datawave.query.dashboard;
 
-import datawave.microservice.query.logic.QueryLogicTransformer;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.webservice.common.extjs.ExtJsResponse;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;

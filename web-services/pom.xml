@@ -12,7 +12,6 @@
     <name>${project.artifactId}</name>
     <modules>
         <module>accumulo</module>
-        <module>connection-pool</module>
         <module>common-util</module>
         <module>security</module>
         <module>common</module>
