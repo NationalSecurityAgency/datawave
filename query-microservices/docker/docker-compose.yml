@@ -258,7 +258,7 @@ services:
         condition: service_healthy
       authorization:
         condition: service_healthy
-      metrics:
+      querymetric:
         condition: service_healthy
 
   executor-pool1:
@@ -294,7 +294,7 @@ services:
         condition: service_started
       authorization:
         condition: service_healthy
-      metrics:
+      querymetric:
         condition: service_healthy
 
   executor-pool2:
@@ -333,7 +333,7 @@ services:
         condition: service_started
       authorization:
         condition: service_healthy
-      metrics:
+      querymetric:
         condition: service_healthy
 
   querystorage:
