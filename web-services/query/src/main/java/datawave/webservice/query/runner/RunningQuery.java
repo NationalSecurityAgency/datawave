@@ -10,6 +10,7 @@ import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.logic.WritesResultCardinalities;
@@ -173,6 +174,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             // TODO: applyPrediction("Plan");
         } catch (Exception e) {
             log.error(e.getMessage(), e);
+            if (this.logic instanceof BaseQueryLogic) {
+                this.getMetric().setPlan(((BaseQueryLogic) this.logic).getConfig().getQueryString());
+            }
             this.getMetric().setError(e);
             throw e;
         } finally {

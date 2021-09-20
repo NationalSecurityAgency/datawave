@@ -420,6 +420,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             
             // abort if we cannot handle full table scans
             if (isFullTable && !config.getFullTableScanEnabled()) {
+                attemptToRecordPlan(config, queryTree);
                 PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
                 throw new FullTableScansDisallowedException(qe);
             }
@@ -436,6 +437,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (StringUtils.isBlank(newQueryString)) {
             stopwatch.stop();
             QueryException qe = new QueryException(DatawaveErrorCode.EMPTY_QUERY_STRING_AFTER_MODIFICATION);
+            config.setQueryString("");
             throw new DatawaveFatalQueryException(qe);
         }
         
@@ -622,6 +624,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (depth > config.getMaxDepthThreshold()) {
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_THRESHOLD_EXCEEDED, MessageFormat.format(
                             "{0} > {1}, last operation: {2}", depth, config.getMaxDepthThreshold(), lastOperation));
+            // static method...
             throw new DatawaveFatalQueryException(qe);
         }
         
@@ -630,6 +633,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (termCount > config.getMaxTermThreshold()) {
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TERM_THRESHOLD_EXCEEDED, MessageFormat.format(
                             "{0} > {1}, last operation: {2}", termCount, config.getMaxTermThreshold(), lastOperation));
+            // static method
             throw new DatawaveFatalQueryException(qe);
         }
         
@@ -677,6 +681,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         try {
             queryTree = IsNotNullIntentVisitor.fixNotNullIntent(queryTree);
         } catch (Exception e1) {
+            attemptToRecordPlan(config, queryTree);
             throw new DatawaveQueryException("Something bad happened", e1);
         }
         if (log.isDebugEnabled()) {
@@ -690,6 +695,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         try {
             queryTree = addDateFilters(queryTree, scannerFactory, metadataHelper, dateIndexHelper, config, settings);
         } catch (TableNotFoundException e1) {
+            attemptToRecordPlan(config, queryTree);
             throw new DatawaveQueryException("Unable to resolve date index", e1);
         }
         if (log.isDebugEnabled()) {
@@ -707,6 +713,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         // Find unmarked bounded ranges
         if (UnmarkedBoundedRangeDetectionVisitor.findUnmarkedBoundedRanges(queryTree)) {
+            attemptToRecordPlan(config, queryTree);
             throw new DatawaveFatalQueryException("Found incorrectly marked bounded ranges");
         }
         
@@ -816,6 +823,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
+            attemptToRecordPlan(config, queryTree);
             throw new DatawaveFatalQueryException(qe);
         }
         if (disableBoundedLookup) {
@@ -862,6 +870,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         } catch (TableNotFoundException e) {
             stopwatch.stop();
             QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITES_RETRIEVAL_ERROR, e);
+            attemptToRecordPlan(config, queryTree);
             throw new DatawaveFatalQueryException(qe);
         }
         
@@ -911,6 +920,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         } catch (TableNotFoundException e) {
             stopwatch.stop();
             QueryException qe = new QueryException(DatawaveErrorCode.TERM_FREQUENCY_FIELDS_RETRIEVAL_ERROR, e);
+            attemptToRecordPlan(config, queryTree);
             throw new DatawaveFatalQueryException(qe);
         }
         if (!termFrequencyFields.isEmpty()) {
@@ -998,11 +1008,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.UNFIELDED_QUERY_ZERO_MATCHES, e, MessageFormat.format("Query: ",
                                 queryData.getQuery()));
                 log.info(qe);
+                attemptToRecordPlan(config, queryTree);
                 throw new NoResultsException(qe);
             } catch (InstantiationException | TableNotFoundException | IllegalAccessException e) {
                 stopwatch.stop();
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
                 log.info(qe);
+                attemptToRecordPlan(config, queryTree);
                 throw new DatawaveFatalQueryException(qe);
             }
             
@@ -1042,6 +1054,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             try {
                 allFields = metadataHelper.getAllFields(config.getDatatypeFilter());
             } catch (TableNotFoundException e) {
+                attemptToRecordPlan(config, queryTree);
                 throw new DatawaveQueryException("Unable get get data dictionary", e);
             }
             
@@ -1082,6 +1095,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                 "Datatype Filter: {0}, Missing Fields: {1}, Auths: {2}", datatypeFilterSet, nonexistentFields,
                                 settings.getQueryAuthorizations()));
                 log.error(qe);
+                attemptToRecordPlan(config, queryTree);
                 throw new InvalidQueryException(qe);
             }
             
@@ -1127,6 +1141,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             
         } catch (InstantiationException | IllegalAccessException | AccumuloException | AccumuloSecurityException | TableNotFoundException | ExecutionException e) {
+            attemptToRecordPlan(config, queryTree);
             throw new DatawaveFatalQueryException(e);
         }
         
@@ -1187,6 +1202,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 nonEventFields = metadataHelper.getNonEventFields(config.getDatatypeFilter());
             } catch (TableNotFoundException te) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, te);
+                attemptToRecordPlan(config, queryTree);
                 throw new DatawaveFatalQueryException(qe);
             }
         }
@@ -1236,6 +1252,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 config.setFieldToDiscreteIndexTypes(CompositeUtils.getFieldToDiscreteIndexTypeMap(config.getQueryFieldsDatatypes()));
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
+                attemptToRecordPlan(config, queryTree);
                 throw new DatawaveFatalQueryException(qe);
             }
             
@@ -1397,8 +1414,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             } catch (TableNotFoundException | InstantiationException | IllegalAccessException e1) {
                 stopwatch.stop();
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e1);
+                attemptToRecordPlan(config, queryTree);
                 throw new DatawaveFatalQueryException(qe);
             } catch (CannotExpandUnfieldedTermFatalException e) {
+                attemptToRecordPlan(config, queryTree);
                 if (null != e.getCause() && e.getCause() instanceof DoNotPerformOptimizedQueryException)
                     throw (DoNotPerformOptimizedQueryException) e.getCause();
                 QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
@@ -1557,6 +1576,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             stopwatch.stop();
             QueryException qe = new QueryException(DatawaveErrorCode.FIELD_FETCH_ERROR, e);
             log.error(qe);
+            attemptToRecordPlan(config, queryTree);
             throw new DatawaveFatalQueryException(qe);
         }
         queryTree = QueryModelVisitor.applyModel(queryTree, queryModel, allFields);
@@ -1663,6 +1683,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.info("Using the date index for " + dateType);
             // if no date index helper configured, then we are in error
             if (dateIndexHelper == null) {
+                attemptToRecordPlan(config, queryTree);
                 throw new DatawaveQueryException("Requested date range of type " + dateType + " but no date index is configured");
             }
             // get all of the fields used for this date type
@@ -2181,6 +2202,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (state == STATE.ERROR) {
                 log.warn("After expanding the query, it is determined that the query cannot be executed due to index-only fields mixed with expressions that cannot be run against the index.");
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_MIXED_INVALID_EXPRESSIONS);
+                attemptToRecordPlan(config, queryTree);
                 throw new InvalidQueryException(qe);
             }
             log.warn("After expanding the query, it is determined that the query cannot be executed against the field index and a full table scan is required");
@@ -2213,6 +2235,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // throw unsupported
             boolean thresholdExceeded = StreamContext.EXCEEDED_TERM_THRESHOLD.equals(stream.context());
             if (thresholdExceeded && !config.canHandleExceededTermThreshold()) {
+                attemptToRecordPlan(config, queryTree);
                 throw new UnsupportedOperationException(EXCEED_TERM_EXPANSION_ERROR);
             }
             
@@ -2238,7 +2261,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             } else {
                 if (log.isTraceEnabled())
                     log.trace("Full table scans are not enabled, query will not be run");
+                
                 QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
+                attemptToRecordPlan(config, queryTree);
                 throw new FullTableScansDisallowedException(qe);
             }
             if (log.isTraceEnabled())
@@ -2246,6 +2271,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
         
         return new Tuple2<>(ranges, needsFullTable);
+    }
+    
+    private void attemptToRecordPlan(ShardQueryConfiguration config, JexlNode queryTree) {
+        if (null == this.plannedScript) {
+            try {
+                this.plannedScript = JexlStringBuildingVisitor.buildQuery(queryTree);
+            } catch (Exception e) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Unable to set plannedScript.");
+                }
+            }
+        }
+        config.setQueryString(this.plannedScript);
     }
     
     /**
@@ -2417,6 +2455,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             return configureIndexedAndNormalizedFields(fieldToDatatypeMap, metadataHelper.getIndexedFields(null), metadataHelper.getReverseIndexedFields(null),
                             metadataHelper.getAllNormalized(), config, queryTree);
         } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
+            attemptToRecordPlan(config, queryTree);
             throw new DatawaveFatalQueryException(e);
         }
         
