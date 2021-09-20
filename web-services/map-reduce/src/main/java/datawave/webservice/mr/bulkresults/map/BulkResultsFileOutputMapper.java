@@ -1,10 +1,10 @@
 package datawave.webservice.mr.bulkresults.map;
 
+import datawave.services.query.cache.ResultsPage;
 import datawave.services.query.exception.EmptyObjectException;
 import datawave.services.query.logic.QueryLogic;
 import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.util.ProtostuffMessageBodyWriter;
 import org.apache.accumulo.core.data.Key;

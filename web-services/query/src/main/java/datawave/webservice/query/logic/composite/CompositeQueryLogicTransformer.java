@@ -1,9 +1,9 @@
 package datawave.webservice.query.logic.composite;
 
+import datawave.services.query.cache.ResultsPage;
 import datawave.services.query.cachedresults.CacheableLogic;
 import datawave.services.query.logic.AbstractQueryLogicTransformer;
 import datawave.services.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.BaseQueryResponse;

@@ -1,11 +1,11 @@
 package datawave.webservice.query.logic.composite;
 
 import datawave.services.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.services.query.cache.ResultsPage;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.BaseQueryLogic;
 import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.result.BaseResponse;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;

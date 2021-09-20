@@ -25,6 +25,7 @@ import datawave.security.system.CallerPrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.services.query.cache.ResultsPage;
 import datawave.services.query.logic.QueryLogic;
 import datawave.services.query.logic.QueryLogicFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -32,7 +33,6 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.cache.QueryMetricFactory;
-import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.metric.BaseQueryMetric;
@@ -460,9 +460,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             Map<String,String> trackingMap = this.connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             connector = this.connectionFactory.getConnection(null, null, Priority.ADMIN, trackingMap);
             QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(query.getQueryLogicName(), datawavePrincipal.getPrimaryUser().getRoles());
-            if (queryLogic instanceof QueryMetricQueryLogic) {
-                ((QueryMetricQueryLogic) queryLogic).setRolesSets(datawavePrincipal.getPrimaryUser().getRoles());
-            }
             runningQuery = new RunningQuery(null, connector, Priority.ADMIN, queryLogic, query, query.getQueryAuthorizations(), datawavePrincipal,
                             metricFactory);
             

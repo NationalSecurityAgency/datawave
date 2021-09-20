@@ -7,7 +7,7 @@ import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.ResultsPage;
+import datawave.services.query.cache.ResultsPage;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;

@@ -46,6 +46,12 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.services</groupId>
+            <artifactId>datawave-services-common-util</artifactId>
+            <version>${project.version}</version>
+            <classifier>jboss</classifier>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.services</groupId>
             <artifactId>datawave-services-connection-pool</artifactId>
             <version>${project.version}</version>
             <classifier>jboss</classifier>

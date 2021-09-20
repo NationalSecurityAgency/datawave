@@ -1,10 +1,10 @@
-package datawave.webservice.query.cache;
+package datawave.services.query.cache;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 
+ *
  */
 public class ResultsPage<T> {
     public enum Status {

@@ -2,6 +2,7 @@ package datawave.webservice.query.runner;
 
 import datawave.security.util.AuthorizationsUtil;
 import datawave.services.common.connection.AccumuloConnectionFactory;
+import datawave.services.query.cache.ResultsPage;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.QueryLogic;
 import datawave.services.query.logic.WritesQueryMetrics;
@@ -10,7 +11,6 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.QueryMetricFactoryImpl;
-import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.metric.BaseQueryMetric;

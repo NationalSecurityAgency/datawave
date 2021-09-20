@@ -2,14 +2,11 @@ package datawave.query.metrics;
 
 import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.system.CallerPrincipal;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
@@ -42,15 +39,9 @@ import java.util.Set;
  */
 public class QueryMetricQueryLogic extends ShardQueryLogic {
     
-    @Inject
-    @CallerPrincipal
-    private DatawavePrincipal callerPrincipal;
+    private static final String METRICS_ADMIN_ROLE = "MetricsAdministrator";
     
-    private Collection<String> roles = null;
-    
-    public void setRolesSets(Collection<String> roleSets) {
-        this.roles = roleSets;
-    }
+    boolean runAsMetricsAdministrator = false;
     
     public QueryMetricQueryLogic() {
         super();
@@ -58,16 +49,17 @@ public class QueryMetricQueryLogic extends ShardQueryLogic {
     
     public QueryMetricQueryLogic(QueryMetricQueryLogic other) {
         super(other);
-        callerPrincipal = other.callerPrincipal;
-        if (other.roles != null) {
-            roles = new ArrayList<>();
-            roles.addAll(other.roles);
-        }
     }
     
     @Override
     public QueryMetricQueryLogic clone() {
         return new QueryMetricQueryLogic(this);
+    }
+    
+    @Override
+    public boolean canRunQuery(Collection<String> userRoles) {
+        this.runAsMetricsAdministrator = userRoles.stream().anyMatch(role -> role.equals(METRICS_ADMIN_ROLE));
+        return super.canRunQuery(userRoles);
     }
     
     @Override
@@ -77,13 +69,8 @@ public class QueryMetricQueryLogic extends ShardQueryLogic {
     
     @Override
     public final String getJexlQueryString(Query settings) throws ParseException {
-        
-        if (null == this.roles) {
-            this.roles = callerPrincipal.getPrimaryUser().getRoles();
-        }
-        
         String query = super.getJexlQueryString(settings);
-        if (this.roles.contains("MetricsAdministrator")) {
+        if (this.runAsMetricsAdministrator) {
             return query;
         }
         

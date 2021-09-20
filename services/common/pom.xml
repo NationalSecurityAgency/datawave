@@ -8,10 +8,7 @@
     </parent>
     <artifactId>datawave-services-common</artifactId>
     <name>${project.artifactId}</name>
-    <properties>
-        <version.accumulo>1.9.2</version.accumulo>
-        <version.spring-core>5.3.5</version.spring-core>
-    </properties>
+    <properties />
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -44,7 +41,7 @@
             <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-core</artifactId>
-                <version>${version.spring-core}</version>
+                <version>${version.spring}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -1,7 +1,7 @@
 package datawave.services.query.logic;
 
 import datawave.services.query.exception.EmptyObjectException;
-import datawave.webservice.query.cache.ResultsPage;
+import datawave.services.query.cache.ResultsPage;
 import datawave.webservice.result.BaseQueryResponse;
 import org.apache.commons.collections4.Transformer;
 

@@ -1,6 +1,6 @@
 package datawave.services.query.logic;
 
-import datawave.webservice.query.cache.ResultsPage;
+import datawave.services.query.cache.ResultsPage;
 import datawave.webservice.result.BaseQueryResponse;
 
 import java.util.List;
