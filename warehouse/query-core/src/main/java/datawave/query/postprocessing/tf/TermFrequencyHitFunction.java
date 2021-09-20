@@ -11,6 +11,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -464,14 +465,14 @@ public class TermFrequencyHitFunction {
             // If a child is an instance of an ASTDelayedPredicate
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 JexlNode child = node.jjtGetChild(i);
-                if (!seen.contains(child) && ASTDelayedPredicate.instanceOf(child)) {
+                if (!seen.contains(child) && QueryPropertyMarker.findInstance(child).isType(ASTDelayedPredicate.class)) {
                     return true;
                 }
             }
             
             // If no child was delayed, continue ascending
             return isFunctionDelayed(node.jjtGetParent(), seen);
-        } else if (ASTDelayedPredicate.instanceOf(node)) {
+        } else if (QueryPropertyMarker.findInstance(node).isType(ASTDelayedPredicate.class)) {
             return true;
         } else {
             return isFunctionDelayed(node.jjtGetParent(), seen);
