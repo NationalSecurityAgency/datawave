@@ -58,7 +58,6 @@ import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
@@ -68,9 +67,10 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
@@ -250,8 +250,8 @@ public class ContentFunctionQueryTest {
     public void withinTestWithAlternateDate() throws Exception {
         String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','cat')";
         
-        MultivaluedMap<String,String> optionalParams = new MultivaluedMapImpl<>();
-        optionalParams.putSingle(DATE_RANGE_TYPE, "BOGUSDATETYPE");
+        MultiValueMap<String,String> optionalParams = new LinkedMultiValueMap<>();
+        optionalParams.set(DATE_RANGE_TYPE, "BOGUSDATETYPE");
         
         final List<DefaultEvent> events = getQueryResults(query, true, optionalParams);
         Assert.assertEquals(0, events.size());
@@ -319,7 +319,7 @@ public class ContentFunctionQueryTest {
         }
     }
     
-    private List<DefaultEvent> getQueryResults(String queryString, boolean useIvarator, MultivaluedMap<String,String> optionalParams) throws Exception {
+    private List<DefaultEvent> getQueryResults(String queryString, boolean useIvarator, MultiValueMap<String,String> optionalParams) throws Exception {
         ShardQueryLogic logic = getShardQueryLogic(useIvarator);
         
         Iterator iter = getResultsIterator(queryString, logic, optionalParams);
@@ -329,16 +329,16 @@ public class ContentFunctionQueryTest {
         return events;
     }
     
-    private Iterator getResultsIterator(String queryString, ShardQueryLogic logic, MultivaluedMap<String,String> optionalParams) throws Exception {
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
-        params.putSingle(QUERY_STRING, queryString);
-        params.putSingle(QUERY_NAME, "contentQuery");
-        params.putSingle(QUERY_LOGIC_NAME, "EventQueryLogic");
-        params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
-        params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
-        params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
-        params.putSingle(QUERY_BEGIN, BEGIN_DATE);
-        params.putSingle(QUERY_END, END_DATE);
+    private Iterator getResultsIterator(String queryString, ShardQueryLogic logic, MultiValueMap<String,String> optionalParams) throws Exception {
+        MultiValueMap<String,String> params = new LinkedMultiValueMap<>();
+        params.set(QUERY_STRING, queryString);
+        params.set(QUERY_NAME, "contentQuery");
+        params.set(QUERY_LOGIC_NAME, "EventQueryLogic");
+        params.set(QUERY_PERSISTENCE, "PERSISTENT");
+        params.set(QUERY_AUTHORIZATIONS, AUTHS);
+        params.set(QUERY_EXPIRATION, "20200101 000000.000");
+        params.set(QUERY_BEGIN, BEGIN_DATE);
+        params.set(QUERY_END, END_DATE);
         
         QueryParameters queryParams = new QueryParametersImpl();
         queryParams.validate(params);
@@ -506,12 +506,12 @@ public class ContentFunctionQueryTest {
         @Override
         public boolean isIndexListField(String field) {
             return false;
-        };
+        }
         
         @Override
         public boolean isReverseIndexListField(String field) {
             return false;
-        };
+        }
         
         @Override
         public String getListDelimiter() {

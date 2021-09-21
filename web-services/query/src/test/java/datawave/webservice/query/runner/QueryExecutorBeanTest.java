@@ -250,7 +250,8 @@ public class QueryExecutorBeanTest {
     
     private MultivaluedMap<String,String> createNewQueryParameters(QueryImpl q, MultivaluedMap<String,String> p) {
         QueryParameters qp = new QueryParametersImpl();
-        MultivaluedMap<String,String> optionalParameters = qp.getUnknownParameters(p);
+        MultivaluedMap<String,String> optionalParameters = new MultivaluedMapImpl<>();
+        optionalParameters.putAll(qp.getUnknownParameters(p));
         optionalParameters.putSingle(PrivateAuditConstants.USER_DN, userDN.toLowerCase());
         optionalParameters.putSingle(PrivateAuditConstants.COLUMN_VISIBILITY, "PRIVATE|PUBLIC");
         optionalParameters.putSingle(PrivateAuditConstants.LOGIC_CLASS, q.getQueryLogicName());
@@ -346,7 +347,8 @@ public class QueryExecutorBeanTest {
         AccumuloClient client = new InMemoryAccumuloClient("root", instance);
         
         QueryParameters qp = new QueryParametersImpl();
-        MultivaluedMap<String,String> optionalParameters = qp.getUnknownParameters(p);
+        MultivaluedMap<String,String> optionalParameters = new MultivaluedMapImpl<>();
+        optionalParameters.putAll(qp.getUnknownParameters(p));
         
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of(userDN, "<CN=MY_CA, OU=MY_SUBDIVISION, OU=MY_DIVISION, O=ORG, C=US>"), UserType.USER,
                         Arrays.asList(auths), null, null, 0L);

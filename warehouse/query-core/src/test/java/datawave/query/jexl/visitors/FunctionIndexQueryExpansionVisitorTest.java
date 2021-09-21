@@ -12,13 +12,12 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.test.JexlNodeAssert;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,11 +25,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TimeZone;
 
-import static org.junit.Assert.assertTrue;
-
 public class FunctionIndexQueryExpansionVisitorTest {
-    
-    private static final Logger log = Logger.getLogger(FunctionIndexQueryExpansionVisitorTest.class);
     
     private ShardQueryConfiguration config;
     
@@ -94,25 +89,9 @@ public class FunctionIndexQueryExpansionVisitorTest {
         ASTJexlScript actualScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelper, originalScript);
         
         // Verify the script is as expected, and has a valid lineage.
-        assertScriptEquality(actualScript, expected);
-        assertLineage(actualScript);
+        JexlNodeAssert.assertThat(actualScript).isEqualTo(expected).hasValidLineage();
         
         // Verify that the original script was not modified.
-        assertScriptEquality(originalScript, originalQuery);
-        assertLineage(originalScript);
-    }
-    
-    private void assertScriptEquality(ASTJexlScript actualScript, String expected) throws ParseException {
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedScript, actualScript);
-        if (!comparison.isEqual()) {
-            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
-            log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
-        }
-        assertTrue(comparison.getReason(), comparison.isEqual());
-    }
-    
-    private void assertLineage(JexlNode node) {
-        assertTrue(JexlASTHelper.validateLineage(node, true));
+        JexlNodeAssert.assertThat(originalScript).isEqualTo(originalQuery).hasValidLineage();
     }
 }

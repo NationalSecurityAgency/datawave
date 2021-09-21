@@ -7,6 +7,7 @@ import java.util.Locale;
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
 
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 
@@ -107,7 +108,7 @@ class ContentFunctionArguments {
                 }
             }
             
-            String nextArg = JexlASTHelper.dereference(args.get(currentArg++)).image.trim();
+            String nextArg = getValue(args.get(currentArg++));
             
             // Test for if the next arg is the term offset map first, This catch exists since it is the most likely query scenario
             if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME.equalsIgnoreCase(nextArg)) {
@@ -130,6 +131,11 @@ class ContentFunctionArguments {
         } else {
             throw new ParseException("Unrecognized content function: " + f.name());
         }
+    }
+    
+    // this is added to fix the case where a UnaryMinusNode returns a null image
+    private String getValue(JexlNode arg) {
+        return JexlStringBuildingVisitor.buildQuery(JexlASTHelper.dereference(arg)).trim();
     }
     
     private List<String> constructZone(JexlNode node) {
