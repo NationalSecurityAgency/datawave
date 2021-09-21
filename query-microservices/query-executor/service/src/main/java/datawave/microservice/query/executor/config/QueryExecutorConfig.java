@@ -1,6 +1,9 @@
 package datawave.microservice.query.executor.config;
 
 import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.query.executor.QueryExecutor;
+import datawave.microservice.query.executor.task.FindWorkTask;
+import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.services.common.cache.AccumuloTableCache;
@@ -13,8 +16,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Configuration
+@EnableScheduling
 public class QueryExecutorConfig {
     
     @Bean
@@ -62,4 +67,15 @@ public class QueryExecutorConfig {
     public QueryMetricFactory queryMetricFactory() {
         return new QueryMetricFactoryImpl();
     }
+    
+    /**
+     * A task that is invoked via the scheduling mechanism
+     * 
+     * @return
+     */
+    @Bean
+    public FindWorkTask findWorkTask(QueryStorageCache cache, QueryExecutor executor) {
+        return new FindWorkTask(cache, executor);
+    }
+    
 }

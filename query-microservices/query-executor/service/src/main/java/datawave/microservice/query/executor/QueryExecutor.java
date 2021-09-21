@@ -119,14 +119,18 @@ public class QueryExecutor implements QueryRequestHandler {
     
     @Override
     public void handleRemoteRequest(QueryRequest queryRequest, String originService, String destinationService) {
-        handleRemoteRequest(queryRequest, originService, destinationService, false);
+        handleRemoteRequest(queryRequest, originService, false);
     }
     
-    public void handleRemoteRequest(QueryRequest queryRequest, String originService, String destinationService, boolean wait) {
+    public void handleRemoteRequest(QueryRequest queryRequest, String originService, boolean wait) {
         final String queryId = queryRequest.getQueryId();
         final QueryRequest.Method action = queryRequest.getMethod();
         log.info("Received request " + queryRequest);
         
+        handleRequest(queryId, action, originService, wait);
+    }
+    
+    public void handleRequest(String queryId, QueryRequest.Method action, String originService, boolean wait) {
         final QueryStatus queryStatus = cache.getQueryStatus(queryId);
         
         // validate we actual have such a query
@@ -157,41 +161,51 @@ public class QueryExecutor implements QueryRequestHandler {
                 // get the query states from the cache
                 TaskStates taskStates = cache.getTaskStates(queryId);
                 
-                log.debug("Searching for a task ready to run for " + queryId);
-                Map<TaskStates.TASK_STATE,Set<TaskKey>> taskStateMap = taskStates.getTaskStates();
-                TaskKey taskKey = null;
-                if (taskStateMap.containsKey(TaskStates.TASK_STATE.READY)) {
-                    for (TaskKey key : taskStateMap.get(TaskStates.TASK_STATE.READY)) {
-                        if (key.getAction() == queryRequest.getMethod()) {
-                            taskKey = key;
-                            log.info("Found task " + taskKey);
-                            break;
+                if (taskStates != null) {
+                    log.debug("Searching for a task ready to run for " + queryId);
+                    Map<TaskStates.TASK_STATE,Set<TaskKey>> taskStateMap = taskStates.getTaskStates();
+                    TaskKey taskKey = null;
+                    if (taskStateMap.containsKey(TaskStates.TASK_STATE.READY)) {
+                        for (TaskKey key : taskStateMap.get(TaskStates.TASK_STATE.READY)) {
+                            if (key.getAction() == action) {
+                                taskKey = key;
+                                log.info("Found task " + taskKey);
+                                break;
+                            }
                         }
                     }
-                }
-                
-                if (taskKey != null) {
-                    QueryTask task = cache.getTask(taskKey);
-                    ExecutorAction runnable = null;
-                    switch (action) {
-                        case CREATE:
-                            runnable = new Create(this, task, originService);
-                            break;
-                        case NEXT:
-                            runnable = new Next(this, task);
-                            break;
-                        case PLAN:
-                            runnable = new Plan(this, task);
-                            break;
-                        default:
-                            throw new UnsupportedOperationException(task.getTaskKey().toString());
-                    }
                     
-                    if (wait) {
-                        runnable.run();
-                    } else {
-                        threadPool.execute(runnable);
+                    if (taskKey != null) {
+                        QueryTask task = cache.getTask(taskKey);
+                        if (task != null) {
+                            ExecutorAction runnable = null;
+                            switch (action) {
+                                case CREATE:
+                                    runnable = new Create(this, task, originService);
+                                    break;
+                                case NEXT:
+                                    runnable = new Next(this, task);
+                                    break;
+                                case PLAN:
+                                    runnable = new Plan(this, task);
+                                    break;
+                                default:
+                                    throw new UnsupportedOperationException(task.getTaskKey().toString());
+                            }
+                            
+                            if (wait) {
+                                runnable.run();
+                            } else {
+                                threadPool.execute(runnable);
+                            }
+                        } else {
+                            log.error("Need to cleanup task states because we are referencing a task that no longer exists: " + taskKey);
+                            cache.updateTaskState(taskKey, TaskStates.TASK_STATE.FAILED);
+                        }
                     }
+                } else {
+                    log.error("Need to cleanup query because we have no task states: " + queryId);
+                    // TODO: cleanup the query because we are referencing a query that has no task states ??
                 }
             }
         }

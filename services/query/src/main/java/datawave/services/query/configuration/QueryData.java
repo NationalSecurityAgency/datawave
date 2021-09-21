@@ -6,6 +6,12 @@ import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -15,7 +21,7 @@ import java.util.List;
  * Class to encapsulate all required information to run a query.
  *
  */
-public class QueryData implements ResultContext {
+public class QueryData implements ResultContext, Externalizable {
     List<IteratorSetting> settings = Lists.newArrayList();
     String query;
     Collection<Range> ranges = Sets.newHashSet();
@@ -115,5 +121,68 @@ public class QueryData implements ResultContext {
         sb.append("Query: '").append(this.query).append("', Ranges: ").append(this.ranges).append(", lastResult: ").append(this.lastResult)
                         .append(", Settings: ").append(this.settings);
         return sb.toString();
+    }
+    
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        out.writeInt(settings.size());
+        for (IteratorSetting setting : settings) {
+            setting.write(out);
+        }
+        if (query != null) {
+            out.writeBoolean(true);
+            out.writeUTF(query);
+        } else {
+            out.writeBoolean(false);
+        }
+        out.writeInt(ranges.size());
+        for (Range range : ranges) {
+            range.write(out);
+        }
+        out.writeInt(columnFamilies.size());
+        for (String cf : columnFamilies) {
+            out.writeUTF(cf);
+        }
+        if (lastResult != null) {
+            out.writeBoolean(true);
+            lastResult.write(out);
+        } else {
+            out.writeBoolean(false);
+        }
+        out.writeBoolean(finished);
+    }
+    
+    @Override
+    public void readExternal(ObjectInput in) throws IOException {
+        settings.clear();
+        int count = in.readInt();
+        for (int i = 0; i < count; i++) {
+            settings.add(new IteratorSetting(in));
+        }
+        boolean exists = in.readBoolean();
+        if (exists) {
+            query = in.readUTF();
+        }
+        ranges.clear();
+        count = in.readInt();
+        for (int i = 0; i < count; i++) {
+            Range range = new Range();
+            range.readFields(in);
+            ranges.add(range);
+        }
+        count = in.readInt();
+        for (int i = 0; i < count; i++) {
+            columnFamilies.add(in.readUTF());
+        }
+        exists = in.readBoolean();
+        if (exists) {
+            lastResult = new Key();
+            lastResult.readFields(in);
+        }
+        finished = in.readBoolean();
+    }
+    
+    public QueryData(ObjectInput in) throws IOException {
+        readExternal(in);
     }
 }

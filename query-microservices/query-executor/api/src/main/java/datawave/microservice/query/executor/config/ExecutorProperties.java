@@ -2,6 +2,7 @@ package datawave.microservice.query.executor.config;
 
 import org.springframework.validation.annotation.Validated;
 
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.PositiveOrZero;
 import java.util.concurrent.TimeUnit;
 
@@ -26,6 +27,10 @@ public class ExecutorProperties {
     private long keepAliveMs = 10 * 60 * 1000;
     // The amount of time before invalidating the local QueryStatus object
     private long queryStatusExpirationMs = 60 * 1000;
+    @PositiveOrZero
+    private long monitorTaskLease = TimeUnit.MILLISECONDS.toMillis(100);
+    @NotNull
+    private TimeUnit monitorTaskLeaseTimeUnit = TimeUnit.MILLISECONDS;
     // The amount of time to wait for the lock to be acquired
     @PositiveOrZero
     private long lockWaitTimeMillis = TimeUnit.SECONDS.toMillis(5);
@@ -119,5 +124,25 @@ public class ExecutorProperties {
     
     public void setLockLeaseTimeMillis(long lockLeaseTimeMillis) {
         this.lockLeaseTimeMillis = lockLeaseTimeMillis;
+    }
+    
+    public long getMonitorTaskLease() {
+        return monitorTaskLease;
+    }
+    
+    public void setMonitorTaskLease(long monitorTaskLease) {
+        this.monitorTaskLease = monitorTaskLease;
+    }
+    
+    public long getMonitorTaskLeaseMillis() {
+        return monitorTaskLeaseTimeUnit.toMillis(monitorTaskLease);
+    }
+    
+    public TimeUnit getMonitorTaskLeaseTimeUnit() {
+        return monitorTaskLeaseTimeUnit;
+    }
+    
+    public void setMonitorTaskLeaseTimeUnit(TimeUnit monitorTaskLeaseTimeUnit) {
+        this.monitorTaskLeaseTimeUnit = monitorTaskLeaseTimeUnit;
     }
 }

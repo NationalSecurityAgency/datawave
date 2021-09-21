@@ -556,9 +556,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         
         this.setQueries(queries.iterator());
         
+        this.setTableName(other.getTableName());
+        this.setShardTableName(other.getShardTableName());
+        this.setModelTableName(other.getModelTableName());
+        this.setModelName(other.getModelName());
+        this.setMetadataTableName(other.getMetadataTableName());
+        
         this.setQuery(other.getQuery());
         this.setCheckpointable(other.isCheckpointable());
-        this.setMetadataTableName(other.getMetadataTableName());
         this.setSpeculativeScanning(other.getSpeculativeScanning());
         this.setMaxDocScanTimeout(other.getMaxDocScanTimeout());
         this.setBackoffEnabled(other.getBackoffEnabled());

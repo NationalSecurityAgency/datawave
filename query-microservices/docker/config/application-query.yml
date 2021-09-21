@@ -23,7 +23,7 @@ warehouse:
     model:
       name: 'datawave.metadata'
   defaults:
-    checkpointable: false
+    checkpointable: true
     queryThreads: 100
     indexLookupThreads: 100
     dateIndexThreads: 20

@@ -50,3 +50,9 @@ datawave:
       queryStatusExpirationMs: 60000
       lockWaitTimeMillis: 5000
       lockLeaseTimeMillis: 30000
+      monitorTaskLease: 30
+      monitorTaskLeaseTimeUnit: SECONDS
+      monitor:
+        enabled: true
+        scheduler-crontab: '* * * * * ?'
+

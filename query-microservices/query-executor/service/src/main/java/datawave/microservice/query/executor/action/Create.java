@@ -68,10 +68,16 @@ public class Create extends ExecutorAction {
             log.debug("Checkpointing " + queryId);
             CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
             queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
+            
+            notifyOriginOfCreation(queryId);
+            
             checkpoint(task.getTaskKey().getQueryKey(), cpQueryLogic);
             taskComplete = true;
         } else {
             queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
+            
+            notifyOriginOfCreation(queryId);
+            
             log.debug("Exhausting results for " + queryId);
             taskComplete = pullResults(task.getTaskKey(), queryLogic, queryStatus, true);
             if (!taskComplete) {
@@ -81,17 +87,21 @@ public class Create extends ExecutorAction {
             }
         }
         
-        log.debug("Publishing a create request to the originating service: " + originService);
-        // @formatter:off
-        publisher.publishEvent(
-                new RemoteQueryRequestEvent(
-                        this,
-                        busProperties.getId(),
-                        originService,
-                        QueryRequest.create(queryId)));
-        // @formatter:on
-        
         return taskComplete;
+    }
+    
+    private void notifyOriginOfCreation(String queryId) {
+        if (originService != null) {
+            log.debug("Publishing a create request to the originating service: " + originService);
+            // @formatter:off
+            publisher.publishEvent(
+                    new RemoteQueryRequestEvent(
+                            this,
+                            busProperties.getId(),
+                            originService,
+                            QueryRequest.create(queryId)));
+            // @formatter:on
+        }
     }
     
 }
