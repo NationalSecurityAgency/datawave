@@ -7,7 +7,7 @@ import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.services.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.webservice.common.edgedictionary.EdgeDictionaryProvider;
 import datawave.webservice.query.Query;
 import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
 import datawave.webservice.results.edgedictionary.MetadataBase;
@@ -16,7 +16,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,8 +34,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     
     protected EdgeDictionaryBase<?,? extends MetadataBase<?>> dict;
     
-    @Inject
-    protected RemoteEdgeDictionary remoteEdgeDictionary;
+    protected EdgeDictionaryProvider edgeDictionaryProvider;
     
     public DefaultEdgeEventQueryLogic() {}
     
@@ -57,7 +55,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     
     @SuppressWarnings("unchecked")
     protected EdgeDictionaryBase<?,? extends MetadataBase<?>> getEdgeDictionary(String queryAuths) {
-        return remoteEdgeDictionary.getEdgeDictionary(getMetadataTableName(), queryAuths);
+        return edgeDictionaryProvider.getEdgeDictionary(getMetadataTableName(), queryAuths);
     }
     
     protected DefaultEventQueryBuilder getEventQueryBuilder() {
@@ -147,4 +145,11 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
         return getEventQueryBuilder().getEventQuery(getJexlQueryString(settings));
     }
     
+    public EdgeDictionaryProvider getEdgeDictionaryProvider() {
+        return edgeDictionaryProvider;
+    }
+    
+    public void setEdgeDictionaryProvider(EdgeDictionaryProvider edgeDictionaryProvider) {
+        this.edgeDictionaryProvider = edgeDictionaryProvider;
+    }
 }

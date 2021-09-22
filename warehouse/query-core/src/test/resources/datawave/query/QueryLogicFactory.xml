@@ -83,7 +83,10 @@
         <property name="edgeQueryModel" ref="edgeQueryModel" />
         <property name="edgeModelName" value="DATAWAVE_EDGE" />
         <property name="modelTableName" value="DatawaveMetadata" />
+        <property name="edgeDictionaryProvider" ref="edgeDictionaryProvider" />
     </bean>
+
+    <bean id="edgeDictionaryProvider" scope="prototype" class="datawave.webservice.edgedictionary.RemoteEdgeDictionary" />
 
     <bean id="ExtendedEdgeQuery" scope="prototype" parent="RewriteEdgeQuery" class="datawave.query.edge.DefaultExtendedEdgeQueryLogic">
         <property name="edgeQueryModel" ref="edgeQueryModel" />

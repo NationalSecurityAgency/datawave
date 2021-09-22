@@ -87,6 +87,13 @@
             <groupId>javax.enterprise</groupId>
             <artifactId>cdi-api</artifactId>
         </dependency>
+        <!-- MultivaluedMap source for Spring Boot deployment -->
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>jsr311-api</artifactId>
+            <version>1.1.1</version>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-jexl</artifactId>
@@ -137,9 +144,11 @@
             <groupId>org.javatuples</groupId>
             <artifactId>javatuples</artifactId>
         </dependency>
+        <!-- MultivaluedMap source for JBOSS deployment -->
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.ow2.asm</groupId>
@@ -194,6 +203,12 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-configuration2</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-edge-dictionary-core</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>

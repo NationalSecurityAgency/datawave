@@ -809,7 +809,10 @@
     <!--        <property name="edgeQueryModel" ref="edgeEventQueryModel" />-->
     <!--        <property name="edgeModelName" value="DATAWAVE_EDGE" />-->
     <!--        <property name="modelTableName" value="${metadata.table.name}" />-->
-    <!--    </bean>-->
+<!--    <property name="edgeDictionaryProvider" ref="edgeDictionaryProvider" />-->
+<!--</bean>-->
+
+<!--<bean id="edgeDictionaryProvider" scope="prototype" class="datawave.webservice.edgedictionary.RemoteEdgeDictionary" />-->
 
 
 
