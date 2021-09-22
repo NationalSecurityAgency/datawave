@@ -174,7 +174,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             // TODO: applyPrediction("Plan");
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            if (this.logic instanceof BaseQueryLogic) {
+            if (this.logic instanceof BaseQueryLogic && ((BaseQueryLogic)this.logic).getCollectQueryMetrics()) {
                 this.getMetric().setPlan(((BaseQueryLogic) this.logic).getConfig().getQueryString());
             }
             this.getMetric().setError(e);
