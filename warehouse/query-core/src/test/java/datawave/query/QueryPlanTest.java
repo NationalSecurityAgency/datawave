@@ -23,28 +23,27 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * QueryPlanTest verifies that the query plan is being properly set in
- * the query metrics, even in cases where the query fails during creation.
+ * QueryPlanTest verifies that the query plan is being properly set in the query metrics, even in cases where the query fails during creation.
  */
 public class QueryPlanTest extends AbstractFunctionalQuery {
-
+    
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
-
+    
     private static final Logger log = Logger.getLogger(AnyFieldQueryTest.class);
-
+    
     // To be inspected
     private QueryMetric metric;
-
+    
     public QueryPlanTest() {
         super(CitiesDataType.getManager());
     }
-
+    
     @Override
     protected void testInit() {
         this.auths = CitiesDataType.getTestAuths();
     }
-
+    
     @BeforeClass
     public static void filterSetup() throws Exception {
         FieldConfig generic = new GenericCityFields();
@@ -53,20 +52,20 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         generic.addReverseIndexField(CitiesDataType.CityField.CONTINENT.name());
         DataTypeHadoopConfig dataType = new CitiesDataType(CitiesDataType.CityEntry.generic, generic);
         accumuloSetup.setData(FileType.CSV, dataType);
-
+        
         connector = accumuloSetup.loadTables(log);
     }
-
+    
     @Before
     public void before() {
         // Use RunningQuery to test that query metrics being updated with plan
         this.useRunningQuery();
-
+        
         // Provide a QueryMetric to test harness to verify it's updated
         metric = new QueryMetric();
         this.withMetric(metric);
     }
-
+    
     @Test
     public void planInMetricsAfterInvalidQueryException() throws Exception {
         String query = "species != " + "'dog'";
@@ -78,7 +77,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
-
+    
     @Test
     public void planInMetricsAfterMissingIndexException() throws Exception {
         String query = "CITY == 'london' && CITY != 'london'";
@@ -91,12 +90,12 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
-
+    
     @Test
     public void planInMetricsAfterTableNotFoundException() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
         String expectedPlan = "!(" + Constants.ANY_FIELD + " == 'london')";
-
+        
         this.logic.setMetadataTableName("missing");
         try {
             runTest(query, query);
@@ -105,7 +104,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
-
+    
     @Test
     public void planInMetricsAfterFTSDException() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
@@ -117,12 +116,12 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }
-
+    
     @Test
     public void planInMetricsAfterCEUTFException() throws Exception {
         String query = Constants.ANY_FIELD + RE_OP + "'.*iss.*'";
         String expectedPlan = query;
-
+        
         try {
             runTest(query, query);
             fail("Expected CannotExpandUnfieldedTermFatalException.");

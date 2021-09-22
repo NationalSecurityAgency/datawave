@@ -114,10 +114,10 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             Assert.fail();
         }
     }
-
+    
     private boolean useRunningQuery = false;
     private QueryMetricFactory metricFactory;
-
+    
     /**
      * Contains a list of cities that are specified in the test data. Additional cities can be added to the test data and do not specifically need to be added
      * here. The purpose is to provide a location where the city names are specified without having to hard code these entries throughout the test cases.
@@ -640,20 +640,18 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         writer.close();
         connector.tableOperations().compact(QueryTestTableHelper.METADATA_TABLE_NAME, new Text("\0"), new Text("~"), true, true);
     }
-
+    
     /**
-     * The test framework typically just calls logic.initialize and logic.setupQuery.
-     * The typical code path for a query, as seen in RunningQuery, involves more.
-     * This method will ensure that RunningQuery is used to more fully exercise the
-     * query.
+     * The test framework typically just calls logic.initialize and logic.setupQuery. The typical code path for a query, as seen in RunningQuery, involves more.
+     * This method will ensure that RunningQuery is used to more fully exercise the query.
      */
     protected void useRunningQuery() {
         this.useRunningQuery = true;
     }
-
+    
     /**
-     * When provided, the QueryMetric object will be used for running the query
-     * and so can be later inspected.  Also see #useRunningQuery()
+     * When provided, the QueryMetric object will be used for running the query and so can be later inspected. Also see #useRunningQuery()
+     * 
      * @param metric
      */
     protected void withMetric(BaseQueryMetric metric) {
