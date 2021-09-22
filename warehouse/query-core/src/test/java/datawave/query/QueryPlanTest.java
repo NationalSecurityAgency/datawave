@@ -1,7 +1,9 @@
 package datawave.query;
 
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
+import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -46,6 +48,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @BeforeClass
     public static void filterSetup() throws Exception {
         FieldConfig generic = new GenericCityFields();
+        generic.addIndexField(CitiesDataType.CityField.STATE.name());
         generic.addReverseIndexField(CitiesDataType.CityField.STATE.name());
         generic.addReverseIndexField(CitiesDataType.CityField.CONTINENT.name());
         DataTypeHadoopConfig dataType = new CitiesDataType(CitiesDataType.CityEntry.generic, generic);
@@ -65,7 +68,46 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void planIsInMetricsAfterFullTableScanException() throws Exception {
+    public void planInMetricsAfterInvalidQueryException() throws Exception {
+        String query = "species != " + "'dog'";
+        String expectedPlan = "!(SPECIES == 'dog')";
+        try {
+            runTest(query, query);
+            fail("Expected InvalidQueryException.");
+        } catch (InvalidQueryException e) {
+            assertEquals(expectedPlan, metric.getPlan());
+        }
+    }
+
+    @Test
+    public void planInMetricsAfterMissingIndexException() throws Exception {
+        String query = "CITY == 'london' && CITY != 'london'";
+        String expectedPlan = query;
+        this.logic.setIndexTableName("missing");
+        try {
+            runTest(query, query);
+            fail("Expected RuntimeException.");
+        } catch (RuntimeException e) {
+            assertEquals(expectedPlan, metric.getPlan());
+        }
+    }
+
+    @Test
+    public void planInMetricsAfterTableNotFoundException() throws Exception {
+        String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
+        String expectedPlan = "!(" + Constants.ANY_FIELD + " == 'london')";
+
+        this.logic.setMetadataTableName("missing");
+        try {
+            runTest(query, query);
+            fail("Expected DatawaveFatalQueryException.");
+        } catch (DatawaveFatalQueryException e) {
+            assertEquals(expectedPlan, metric.getPlan());
+        }
+    }
+
+    @Test
+    public void planInMetricsAfterFTSDException() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
         String expectedPlan = "(((!(_ANYFIELD_ == 'london') && !(CITY == 'london') && !(STATE == 'london'))))";
         try {
@@ -77,7 +119,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     }
 
     @Test
-    public void getPlanAfterDatawaveFatalQueryException() throws Exception {
+    public void planInMetricsAfterCEUTFException() throws Exception {
         String query = Constants.ANY_FIELD + RE_OP + "'.*iss.*'";
         String expectedPlan = query;
 

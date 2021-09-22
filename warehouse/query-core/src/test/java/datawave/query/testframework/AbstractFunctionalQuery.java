@@ -405,7 +405,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         q.setQueryAuthorizations(auths.toString());
         if (useRunningQuery) {
             QueryMetricFactory queryMetricFactory = (metricFactory == null) ? new QueryMetricFactoryImpl() : metricFactory;
-            new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, this.countLogic, q, "", principal, queryMetricFactory);
+            new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, this.logic, q, "", principal, queryMetricFactory);
         } else {
             GenericQueryConfiguration config = this.logic.initialize(connector, q, this.authSet);
             this.logic.setupQuery(config);

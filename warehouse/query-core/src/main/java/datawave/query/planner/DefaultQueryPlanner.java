@@ -624,7 +624,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (depth > config.getMaxDepthThreshold()) {
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_THRESHOLD_EXCEEDED, MessageFormat.format(
                             "{0} > {1}, last operation: {2}", depth, config.getMaxDepthThreshold(), lastOperation));
-            // static method...
             throw new DatawaveFatalQueryException(qe);
         }
         
@@ -633,7 +632,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (termCount > config.getMaxTermThreshold()) {
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TERM_THRESHOLD_EXCEEDED, MessageFormat.format(
                             "{0} > {1}, last operation: {2}", termCount, config.getMaxTermThreshold(), lastOperation));
-            // static method
             throw new DatawaveFatalQueryException(qe);
         }
         
