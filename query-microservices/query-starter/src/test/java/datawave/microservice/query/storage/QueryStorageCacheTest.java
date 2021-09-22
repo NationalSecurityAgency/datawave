@@ -136,7 +136,7 @@ public abstract class QueryStorageCacheTest {
         String queryPool = TEST_POOL;
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
-        TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
+        TaskKey key = storageService.createQuery(queryPool, query, "testCreateQuery", auths, 3);
         createdQueries.add(key.getQueryId());
         assertNotNull(key);
         
@@ -409,7 +409,7 @@ public abstract class QueryStorageCacheTest {
         String queryPool = TEST_POOL;
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
-        TaskKey taskKey = storageService.createQuery(queryPool, query, auths, 2);
+        TaskKey taskKey = storageService.createQuery(queryPool, query, "testQueryStateUpdate", auths, 2);
         String queryId = taskKey.getQueryId();
         createdQueries.add(queryId);
         
@@ -429,7 +429,7 @@ public abstract class QueryStorageCacheTest {
         String queryPool = TEST_POOL;
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
-        TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
+        TaskKey key = storageService.createQuery(queryPool, query, "testResultsQueue", auths, 3);
         createdQueries.add(key.getQueryId());
         assertNotNull(key);
         

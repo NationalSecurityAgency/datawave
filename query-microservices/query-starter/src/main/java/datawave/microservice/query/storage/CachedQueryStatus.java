@@ -12,9 +12,9 @@ import java.util.TimerTask;
 /**
  * This class will cache a QueryStatus object for a specified query. The underlying storage will be polled at a specified interval, or on demand if the current
  * object is deemed too old. If it is desired that the storage is polled at a specified interval, then use startTimer after construction. Otherwise the query
- * status will be updated when a getter is called iff the current instance is too old. All setter methods (exception incrementNumResultsReturned and
- * incrementNumResultsGenerated) will force an update and will update the underlying storage. Updates made via the incrementNumResultReturned and
- * incrementNumResultsGenerated methods will only be updated in the underlying storage when the cache is refreshed per the specified interval.
+ * status will be updated when a getter is called iff the current instance is too old. All setter methods except for numResultsReturned, numResultsGenerated,
+ * nextCount, and seekCount will force an update and will update the underlying storage. Updates made for the counters specified will only be updated in the
+ * underlying storage when the cache is refreshed per the specified interval.
  */
 public class CachedQueryStatus extends QueryStatus {
     private final QueryStorageCache cache;
@@ -32,25 +32,22 @@ public class CachedQueryStatus extends QueryStatus {
         forceCacheUpdate();
     }
     
+    public boolean hasPendingUpdates() {
+        return super.getNumResultsGenerated() > 0 || super.getNumResultsReturned() > 0 || super.getNextCount() > 0 || super.getSeekCount() > 0;
+    }
+    
     /**
      * Force the cache to be updated. This will also store any pending numResults increments.
      */
     public synchronized void forceCacheUpdate() {
         QueryStorageLock lock = null;
-        if (super.getNumResultsGenerated() > 0 || super.getNumResultsReturned() > 0) {
+        if (hasPendingUpdates()) {
             lock = cache.getQueryStatusLock(queryId);
             lock.lock();
         }
         try {
-            queryStatus = cache.getQueryStatus(queryId);
-            if (super.getNumResultsGenerated() > 0 || super.getNumResultsReturned() > 0) {
-                queryStatus.incrementNumResultsGenerated(super.getNumResultsGenerated());
-                queryStatus.incrementNumResultsReturned(super.getNumResultsReturned());
-                cache.updateQueryStatus(queryStatus);
-                super.setNumResultsGenerated(0);
-                super.setNumResultsReturned(0);
-            }
-            queryStatusTimeStamp = System.currentTimeMillis();
+            loadQueryStatus();
+            cache.updateQueryStatus(queryStatus);
         } finally {
             if (lock != null) {
                 lock.unlock();
@@ -62,7 +59,7 @@ public class CachedQueryStatus extends QueryStatus {
      * Force the cache to be updated with any pending numResult increments.
      */
     public synchronized void forceCacheUpdateIfDirty() {
-        if (super.getNumResultsGenerated() > 0 || super.getNumResultsReturned() > 0) {
+        if (hasPendingUpdates()) {
             forceCacheUpdate();
         }
     }
@@ -71,15 +68,26 @@ public class CachedQueryStatus extends QueryStatus {
      * Force the cache to be updated. It is expected that the caller has locked the query status in the cache.
      */
     private synchronized void forceCacheUpdateInsideSetter() {
+        loadQueryStatus();
+        queryStatus.setLastUpdatedMillis(queryStatusTimeStamp);
+    }
+    
+    /**
+     * Load the query status, updating the pending counts if any
+     */
+    private synchronized void loadQueryStatus() {
         queryStatus = cache.getQueryStatus(queryId);
-        if (super.getNumResultsGenerated() > 0 || super.getNumResultsReturned() > 0) {
+        if (hasPendingUpdates()) {
             queryStatus.incrementNumResultsGenerated(super.getNumResultsGenerated());
             queryStatus.incrementNumResultsReturned(super.getNumResultsReturned());
+            queryStatus.incrementNextCount(super.getNextCount());
+            queryStatus.incrementSeekCount(super.getSeekCount());
             super.setNumResultsGenerated(0);
             super.setNumResultsReturned(0);
+            super.setNextCount(0);
+            super.setSeekCount(0);
         }
         queryStatusTimeStamp = System.currentTimeMillis();
-        queryStatus.setLastUpdatedMillis(queryStatusTimeStamp);
     }
     
     /**
@@ -120,6 +128,26 @@ public class CachedQueryStatus extends QueryStatus {
     }
     
     @Override
+    public boolean isProgressIdle(long currentTimeMillis, long idleTimeoutMillis) {
+        return get().isProgressIdle(currentTimeMillis, idleTimeoutMillis);
+    }
+    
+    @Override
+    public boolean isUserIdle(long currentTimeMillis, long idleTimeoutMillis) {
+        return get().isUserIdle(currentTimeMillis, idleTimeoutMillis);
+    }
+    
+    @Override
+    public boolean isInactive(long currentTimeMillis, long evictionTimeoutMillis) {
+        return get().isInactive(currentTimeMillis, evictionTimeoutMillis);
+    }
+    
+    @Override
+    public boolean isRunning() {
+        return get().isRunning();
+    }
+    
+    @Override
     public synchronized void setQueryKey(QueryKey key) {
         QueryStorageLock lock = cache.getQueryStatusLock(queryId);
         lock.lock();
@@ -135,6 +163,24 @@ public class CachedQueryStatus extends QueryStatus {
     @Override
     public QueryKey getQueryKey() {
         return get().getQueryKey();
+    }
+    
+    @Override
+    public String getOriginService() {
+        return get().getOriginService();
+    }
+    
+    @Override
+    public void setOriginService(String originService) {
+        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
+        lock.lock();
+        try {
+            forceCacheUpdateInsideSetter();
+            queryStatus.setOriginService(originService);
+            cache.updateQueryStatus(queryStatus);
+        } finally {
+            lock.unlock();
+        }
     }
     
     @Override
@@ -357,6 +403,35 @@ public class CachedQueryStatus extends QueryStatus {
         } finally {
             lock.unlock();
         }
+    }
+    
+    @Override
+    public long getNextCount() {
+        return get().getNextCount() + super.getNextCount();
+    }
+    
+    public void incrementNextCount(long cnt) {
+        super.incrementNextCount(cnt);
+    }
+    
+    @Override
+    public void setNextCount(long nextCount) {
+        super.setNextCount(nextCount);
+    }
+    
+    @Override
+    public long getSeekCount() {
+        return get().getSeekCount() + super.getSeekCount();
+    }
+    
+    @Override
+    public void incrementSeekCount(long cnt) {
+        super.incrementSeekCount(cnt);
+    }
+    
+    @Override
+    public void setSeekCount(long seekCount) {
+        super.setSeekCount(seekCount);
     }
     
     @Override

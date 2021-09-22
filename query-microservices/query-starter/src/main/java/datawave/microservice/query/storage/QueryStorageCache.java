@@ -37,6 +37,8 @@ public interface QueryStorageCache {
      *            The query pool
      * @param query
      *            The query parameters
+     * @param originService
+     *            The origin service, used to get a response when the create call has completed
      * @param calculatedAuths
      *            The intersection of the user's auths with the requested auths
      * @param count
@@ -45,7 +47,7 @@ public interface QueryStorageCache {
      * @throws IOException
      *             underlying storage error
      */
-    TaskKey createQuery(String queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
+    TaskKey createQuery(String queryPool, Query query, String originService, Set<Authorizations> calculatedAuths, int count) throws IOException;
     
     /**
      * Get the current query state. This includes the query status and the task statuses

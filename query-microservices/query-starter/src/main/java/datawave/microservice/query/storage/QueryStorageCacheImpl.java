@@ -53,7 +53,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public TaskKey defineQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
-        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.DEFINED);
+        return storeQuery(queryPool, query, null, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.DEFINED);
     }
     
     /**
@@ -70,12 +70,13 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return The task key
      */
     @Override
-    public TaskKey createQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
-        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATED);
+    public TaskKey createQuery(String queryPool, Query query, String originService, Set<Authorizations> calculatedAuthorizations, int count)
+                    throws IOException {
+        return storeQuery(queryPool, query, originService, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATED);
     }
     
-    private TaskKey storeQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count, QueryStatus.QUERY_STATE queryState)
-                    throws IOException {
+    private TaskKey storeQuery(String queryPool, Query query, String originService, Set<Authorizations> calculatedAuthorizations, int count,
+                    QueryStatus.QUERY_STATE queryState) throws IOException {
         UUID queryUuid = query.getId();
         if (queryUuid == null) {
             // create the query String
@@ -93,6 +94,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         QueryStatus queryStatus = new QueryStatus(checkpoint.getQueryKey());
         queryStatus.setQueryState(queryState);
         queryStatus.setQuery(query);
+        queryStatus.setOriginService(originService);
         queryStatus.setCalculatedAuthorizations(calculatedAuthorizations);
         queryStatus.setLastUsedMillis(System.currentTimeMillis());
         queryStatus.setLastUpdatedMillis(queryStatus.getLastUsedMillis());

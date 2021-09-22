@@ -21,20 +21,20 @@ public class FindWorkTask implements Callable<Void> {
         for (QueryStatus queryStatus : cache.getQueryStatus()) {
             switch (queryStatus.getQueryState()) {
                 case CLOSED:
-                    executor.handleRequest(queryStatus.getQueryKey().getQueryId(), QueryRequest.Method.CLOSE, null, false);
+                    executor.handleRequest(queryStatus.getQueryKey().getQueryId(), QueryRequest.Method.CLOSE, false);
                     break;
                 case CANCELED:
-                    executor.handleRequest(queryStatus.getQueryKey().getQueryId(), QueryRequest.Method.CANCEL, null, false);
+                    executor.handleRequest(queryStatus.getQueryKey().getQueryId(), QueryRequest.Method.CANCEL, false);
                     break;
                 case DEFINED:
-                    executor.handleRequest(queryStatus.getQueryKey().getQueryId(), QueryRequest.Method.CREATE, null, false);
+                    executor.handleRequest(queryStatus.getQueryKey().getQueryId(), QueryRequest.Method.CREATE, false);
                     // could also have plan tasks
-                    executor.handleRequest(queryStatus.getQueryKey().getQueryId(), QueryRequest.Method.PLAN, null, false);
+                    executor.handleRequest(queryStatus.getQueryKey().getQueryId(), QueryRequest.Method.PLAN, false);
                     break;
                 case CREATED:
-                    executor.handleRequest(queryStatus.getQueryKey().getQueryId(), QueryRequest.Method.NEXT, null, false);
+                    executor.handleRequest(queryStatus.getQueryKey().getQueryId(), QueryRequest.Method.NEXT, false);
                     // could also have plan tasks
-                    executor.handleRequest(queryStatus.getQueryKey().getQueryId(), QueryRequest.Method.PLAN, null, false);
+                    executor.handleRequest(queryStatus.getQueryKey().getQueryId(), QueryRequest.Method.PLAN, false);
                     break;
                 case FAILED:
                     // noop

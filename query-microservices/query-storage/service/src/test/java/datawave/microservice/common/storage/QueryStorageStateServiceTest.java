@@ -106,7 +106,7 @@ public class QueryStorageStateServiceTest {
         String queryPool = TEST_POOL;
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
-        TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
+        TaskKey key = storageService.createQuery(queryPool, query, "testStateStorageService", auths, 3);
         assertNotNull(key);
         QueryTask storedTask = storageService.getTask(key);
         assertNotNull(storedTask);

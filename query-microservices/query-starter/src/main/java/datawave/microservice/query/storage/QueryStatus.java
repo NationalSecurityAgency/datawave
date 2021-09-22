@@ -26,6 +26,7 @@ public class QueryStatus implements Serializable {
     }
     
     private QueryKey queryKey;
+    private String originService;
     private QUERY_STATE queryState = QUERY_STATE.DEFINED;
     private Query query;
     private Set<String> calculatedAuths;
@@ -83,6 +84,14 @@ public class QueryStatus implements Serializable {
     
     public QueryKey getQueryKey() {
         return queryKey;
+    }
+    
+    public String getOriginService() {
+        return originService;
+    }
+    
+    public void setOriginService(String originService) {
+        this.originService = originService;
     }
     
     public QUERY_STATE getQueryState() {
@@ -206,12 +215,20 @@ public class QueryStatus implements Serializable {
         return nextCount;
     }
     
+    public void incrementNextCount(long increment) {
+        this.nextCount += increment;
+    }
+    
     public void setNextCount(long nextCount) {
         this.nextCount = nextCount;
     }
     
     public long getSeekCount() {
         return seekCount;
+    }
+    
+    public void incrementSeekCount(long increment) {
+        this.seekCount += increment;
     }
     
     public void setSeekCount(long seekCount) {
@@ -239,6 +256,7 @@ public class QueryStatus implements Serializable {
         // @formatter:off
         return new HashCodeBuilder()
                 .append(queryKey)
+                .append(originService)
                 .append(queryState)
                 .append(query)
                 .append(calculatedAuths)
@@ -263,6 +281,7 @@ public class QueryStatus implements Serializable {
             // @formatter:off
             return new EqualsBuilder()
                     .append(queryKey, other.queryKey)
+                    .append(originService, other.originService)
                     .append(queryState, other.queryState)
                     .append(query, other.query)
                     .append(calculatedAuths, other.calculatedAuths)
@@ -287,6 +306,7 @@ public class QueryStatus implements Serializable {
         // @formatter:off
         return new ToStringBuilder(this)
                 .append("queryKey", queryKey)
+                .append("originService", originService)
                 .append("queryState", queryState)
                 .append("query", query)
                 .append("calculatedAuths", calculatedAuths)

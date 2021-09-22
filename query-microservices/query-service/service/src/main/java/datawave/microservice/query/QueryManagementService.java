@@ -402,6 +402,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 taskKey = queryStorageCache.createQuery(
                         getPoolName(),
                         query,
+                        busProperties.getId(),
                         downgradedAuthorizations,
                         getMaxConcurrentTasks(queryLogic));
                 // @formatter:on

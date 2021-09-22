@@ -21,11 +21,8 @@ import java.util.Date;
 public class Create extends ExecutorAction {
     private static final Logger log = Logger.getLogger(Create.class);
     
-    private final String originService;
-    
-    public Create(QueryExecutor source, QueryTask task, String originService) {
+    public Create(QueryExecutor source, QueryTask task) {
         super(source, task);
-        this.originService = originService;
     }
     
     @Override
@@ -69,14 +66,14 @@ public class Create extends ExecutorAction {
             CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
             queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
             
-            notifyOriginOfCreation(queryId);
+            notifyOriginOfCreation(queryId, queryStatus.getOriginService());
             
             checkpoint(task.getTaskKey().getQueryKey(), cpQueryLogic);
             taskComplete = true;
         } else {
             queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
             
-            notifyOriginOfCreation(queryId);
+            notifyOriginOfCreation(queryId, queryStatus.getOriginService());
             
             log.debug("Exhausting results for " + queryId);
             taskComplete = pullResults(task.getTaskKey(), queryLogic, queryStatus, true);
@@ -90,7 +87,7 @@ public class Create extends ExecutorAction {
         return taskComplete;
     }
     
-    private void notifyOriginOfCreation(String queryId) {
+    private void notifyOriginOfCreation(String queryId, String originService) {
         if (originService != null) {
             log.debug("Publishing a create request to the originating service: " + originService);
             // @formatter:off

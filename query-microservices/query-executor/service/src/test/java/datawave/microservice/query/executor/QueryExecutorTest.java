@@ -231,9 +231,11 @@ public abstract class QueryExecutorTest {
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 3);
+        TaskKey key = storageService.createQuery(queryPool, query, "testCheckpointQuery", Collections.singleton(CitiesDataType.getTestAuths()), 3);
         createdQueries.add(key.getQueryId());
         assertNotNull(key);
+        
+        QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
         
         TaskStates states = storageService.getTaskStates(key.getQueryId());
         assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
@@ -244,7 +246,7 @@ public abstract class QueryExecutorTest {
         
         // pass a create request to the executor
         QueryRequest request = QueryRequest.request(QueryRequest.Method.CREATE, key.getQueryId());
-        queryExecutor.handleRemoteRequest(request, "origin", true);
+        queryExecutor.handleRemoteRequest(request, true);
         RemoteQueryRequestEvent notification = queryRequestsEvents.getLast();
         assertNotNull(notification);
         // now we need to wait for its completion
@@ -271,7 +273,7 @@ public abstract class QueryExecutorTest {
         // while the query
         states = storageService.getTaskStates(key.getQueryId());
         while (states.hasReadyTasks()) {
-            queryExecutor.handleRemoteRequest(request, "origin", true);
+            queryExecutor.handleRemoteRequest(request, true);
             queryStatus = storageService.getQueryStatus(key.getQueryId());
             assertEquals(QueryStatus.QUERY_STATE.CREATED, queryStatus.getQueryState());
             
@@ -313,7 +315,7 @@ public abstract class QueryExecutorTest {
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 3);
+        TaskKey key = storageService.createQuery(queryPool, query, "testNonCheckpointableQuery", Collections.singleton(CitiesDataType.getTestAuths()), 3);
         createdQueries.add(key.getQueryId());
         assertNotNull(key);
         
@@ -352,7 +354,7 @@ public abstract class QueryExecutorTest {
                         }, publisher, metricFactory, metricClient);
         // pass a create request to the executor
         QueryRequest request = QueryRequest.request(QueryRequest.Method.CREATE, key.getQueryId());
-        queryExecutor.handleRemoteRequest(request, "origin", true);
+        queryExecutor.handleRemoteRequest(request, true);
         RemoteQueryRequestEvent notification = queryRequestsEvents.poll();
         assertNotNull(notification);
         

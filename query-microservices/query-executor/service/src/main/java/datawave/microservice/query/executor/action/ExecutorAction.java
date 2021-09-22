@@ -300,7 +300,9 @@ public abstract class ExecutorAction implements Runnable {
                 BaseQueryMetric baseQueryMetric = metricFactory.createMetric();
                 baseQueryMetric.setQueryId(queryId);
                 baseQueryMetric.setSourceCount(metrics.getSourceCount());
+                queryStatus.incrementNextCount(metrics.getNextCount());
                 baseQueryMetric.setNextCount(metrics.getNextCount());
+                queryStatus.incrementSeekCount(metrics.getSeekCount());
                 baseQueryMetric.setSeekCount(metrics.getSeekCount());
                 baseQueryMetric.setYieldCount(metrics.getYieldCount());
                 baseQueryMetric.setDocRanges(metrics.getDocRanges());
