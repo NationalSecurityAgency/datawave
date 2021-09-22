@@ -32,6 +32,7 @@
         <version.accumulo>1.9.2</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
+        <version.assertj>3.20.2</version.assertj>
         <version.avro>1.8.2</version.avro>
         <version.caffeine>2.7.0</version.caffeine>
         <version.commons-beanutils>1.9.4</version.commons-beanutils>
@@ -965,6 +966,12 @@
                 <version>${version.curator}</version>
                 <scope>test</scope>
                 <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${version.assertj}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.easymock</groupId>
