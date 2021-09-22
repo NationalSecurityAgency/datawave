@@ -394,6 +394,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         ASTJexlScript queryTree = null;
         try {
             queryTree = updateQueryTree(scannerFactory, metadataHelper, dateIndexHelper, config, query, queryData, settings);
+            recordPlan(queryTree, config);
         } catch (StackOverflowError e) {
             if (log.isTraceEnabled()) {
                 log.trace("Stack trace for overflow " + e);
@@ -420,7 +421,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             
             // abort if we cannot handle full table scans
             if (isFullTable && !config.getFullTableScanEnabled()) {
-                attemptToRecordPlan(config, queryTree);
                 PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
                 throw new FullTableScansDisallowedException(qe);
             }
@@ -459,6 +459,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch.stop();
         
         this.plannedScript = newQueryString;
+        config.setQueryString(this.plannedScript);
         // docsToCombineForEvaluation is only enabled when threading is used
         if (config.getMaxEvaluationPipelines() == 1)
             docsToCombineForEvaluation = -1;
@@ -647,6 +648,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Parse query");
         
         ASTJexlScript queryTree = parseQueryAndValidatePattern(query, stopwatch);
+        recordPlan(queryTree, config);
         
         if (log.isDebugEnabled()) {
             logQuery(queryTree, "Query after initial parse:");
@@ -659,6 +661,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - parse out queryOptions from options function");
             Map<String,String> optionsMap = new HashMap<>();
             queryTree = QueryOptionsFromQueryVisitor.collect(queryTree, optionsMap);
+            recordPlan(queryTree, config);
             if (!optionsMap.isEmpty()) {
                 QueryOptionsSwitch.apply(optionsMap, config);
             }
@@ -669,6 +672,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // the right will be re-ordered to simplify subsequent processing
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - fix not null intent");
         queryTree = JexlASTHelper.InvertNodeVisitor.invertSwappedNodes(queryTree);
+        recordPlan(queryTree, config);
         if (log.isDebugEnabled()) {
             logQuery(queryTree, "Query after inverting swapped nodes:");
         }
@@ -678,8 +682,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         try {
             queryTree = IsNotNullIntentVisitor.fixNotNullIntent(queryTree);
+            recordPlan(queryTree, config);
         } catch (Exception e1) {
-            attemptToRecordPlan(config, queryTree);
             throw new DatawaveQueryException("Something bad happened", e1);
         }
         if (log.isDebugEnabled()) {
@@ -692,8 +696,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         try {
             queryTree = addDateFilters(queryTree, scannerFactory, metadataHelper, dateIndexHelper, config, settings);
+            recordPlan(queryTree, config);
         } catch (TableNotFoundException e1) {
-            attemptToRecordPlan(config, queryTree);
             throw new DatawaveQueryException("Unable to resolve date index", e1);
         }
         if (log.isDebugEnabled()) {
@@ -711,7 +715,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         // Find unmarked bounded ranges
         if (UnmarkedBoundedRangeDetectionVisitor.findUnmarkedBoundedRanges(queryTree)) {
-            attemptToRecordPlan(config, queryTree);
             throw new DatawaveFatalQueryException("Found incorrectly marked bounded ranges");
         }
         
@@ -719,6 +722,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         // flatten the tree
         queryTree = TreeFlatteningRebuildingVisitor.flatten(queryTree);
+        recordPlan(queryTree, config);
         
         if (log.isDebugEnabled()) {
             logQuery(queryTree, "Query after initial flatten:");
@@ -731,6 +735,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - initial re-write");
         
         queryTree = applyRules(queryTree, scannerFactory, metadataHelper, config);
+        recordPlan(queryTree, config);
         
         if (log.isDebugEnabled()) {
             logQuery(queryTree, "Query after applying pushdown rules:");
@@ -740,6 +745,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Restructure negative numbers");
         
         queryTree = FixNegativeNumbersVisitor.fix(queryTree);
+        recordPlan(queryTree, config);
         
         if (log.isDebugEnabled()) {
             logQuery(queryTree, "Query after restructuring negative numbers:");
@@ -778,6 +784,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         if (null != queryModel) {
             queryTree = applyQueryModel(metadataHelper, config, stopwatch, queryTree, queryModel);
+            recordPlan(queryTree, config);
         }
         
         if (log.isDebugEnabled()) {
@@ -790,6 +797,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (config.getEnforceUniqueTermsWithinExpressions()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Enforce unique terms within AND and OR expressions");
             queryTree = UniqueExpressionTermsVisitor.enforce(queryTree);
+            recordPlan(queryTree, config);
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after duplicate terms removed from AND and OR expressions:");
             }
@@ -800,6 +808,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (config.getEnforceUniqueConjunctionsWithinExpression()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Enforce unique AND'd terms within OR expressions");
             queryTree = ConjunctionEliminationVisitor.optimize(queryTree);
+            recordPlan(queryTree, config);
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after duplicate AND'd terms remove from OR expressions.");
             }
@@ -810,6 +819,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (config.getEnforceUniqueDisjunctionsWithinExpression()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Enforce unique OR'd terms within AND expressions");
             queryTree = DisjunctionEliminationVisitor.optimize(queryTree);
+            recordPlan(queryTree, config);
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after duplicate OR'd terms remove from AND expressions.");
             }
@@ -821,7 +831,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
-            attemptToRecordPlan(config, queryTree);
             throw new DatawaveFatalQueryException(qe);
         }
         if (disableBoundedLookup) {
@@ -833,9 +842,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!indexOnlyFields.isEmpty()) {
             // rebuild the query tree
             queryTree = RegexFunctionVisitor.expandRegex(config, metadataHelper, indexOnlyFields, queryTree);
+            recordPlan(queryTree, config);
         }
         
         queryTree = processTree(queryTree, config, settings, metadataHelper, scannerFactory, queryData, timers, queryModel);
+        recordPlan(queryTree, config);
         
         // ExpandCompositeTerms was here
         
@@ -868,7 +879,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         } catch (TableNotFoundException e) {
             stopwatch.stop();
             QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITES_RETRIEVAL_ERROR, e);
-            attemptToRecordPlan(config, queryTree);
             throw new DatawaveFatalQueryException(qe);
         }
         
@@ -918,7 +928,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         } catch (TableNotFoundException e) {
             stopwatch.stop();
             QueryException qe = new QueryException(DatawaveErrorCode.TERM_FREQUENCY_FIELDS_RETRIEVAL_ERROR, e);
-            attemptToRecordPlan(config, queryTree);
             throw new DatawaveFatalQueryException(qe);
         }
         if (!termFrequencyFields.isEmpty()) {
@@ -951,6 +960,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             
             // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
             queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+            recordPlan(queryTree, config);
             
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after final reduction:");
@@ -965,6 +975,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected ASTJexlScript processTree(final ASTJexlScript originalQueryTree, ShardQueryConfiguration config, Query settings, MetadataHelper metadataHelper,
                     ScannerFactory scannerFactory, QueryData queryData, QueryStopwatch timers, QueryModel queryModel) throws DatawaveQueryException {
         ASTJexlScript queryTree = originalQueryTree;
+        recordPlan(queryTree, config);
         
         TraceStopwatch stopwatch = null;
         
@@ -973,6 +984,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             
             // expand the index queries for the functions
             queryTree = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelper, queryTree);
+            recordPlan(queryTree, config);
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after function index queries were expanded:");
             }
@@ -983,6 +995,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // apply the node transform rules
         // running it here before any unfielded expansions to enable potentially pushing down terms before index lookups
         queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, metadataHelper, "Pre unfielded expansions");
+        recordPlan(queryTree, config);
         
         // Find unfielded terms, and fully qualify them with an OR of all fields
         // found in the index
@@ -1000,19 +1013,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 config.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
                 queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields,
                                 config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
+                recordPlan(queryTree, config);
             } catch (EmptyUnfieldedTermExpansionException e) {
                 // The visitor will only throw this if we cannot expand anything resulting in empty query
                 stopwatch.stop();
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.UNFIELDED_QUERY_ZERO_MATCHES, e, MessageFormat.format("Query: ",
                                 queryData.getQuery()));
                 log.info(qe);
-                attemptToRecordPlan(config, queryTree);
                 throw new NoResultsException(qe);
             } catch (InstantiationException | TableNotFoundException | IllegalAccessException e) {
                 stopwatch.stop();
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
                 log.info(qe);
-                attemptToRecordPlan(config, queryTree);
                 throw new DatawaveFatalQueryException(qe);
             }
             
@@ -1027,6 +1039,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             
             // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
             queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+            recordPlan(queryTree, config);
             
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after anyfield expansion reduction:");
@@ -1052,7 +1065,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             try {
                 allFields = metadataHelper.getAllFields(config.getDatatypeFilter());
             } catch (TableNotFoundException e) {
-                attemptToRecordPlan(config, queryTree);
                 throw new DatawaveQueryException("Unable get get data dictionary", e);
             }
             
@@ -1093,7 +1105,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                 "Datatype Filter: {0}, Missing Fields: {1}, Auths: {2}", datatypeFilterSet, nonexistentFields,
                                 settings.getQueryAuthorizations()));
                 log.error(qe);
-                attemptToRecordPlan(config, queryTree);
                 throw new InvalidQueryException(qe);
             }
             
@@ -1103,6 +1114,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // apply the node transform rules
         // running it here before any regex or range expansions to enable potentially pushing down terms before index lookups
         queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, metadataHelper, "Pre regex/range expansions");
+        recordPlan(queryTree, config);
         
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Fetch required dataTypes");
         Multimap<String,Type<?>> fieldToDatatypeMap = null;
@@ -1139,7 +1151,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             
         } catch (InstantiationException | IllegalAccessException | AccumuloException | AccumuloSecurityException | TableNotFoundException | ExecutionException e) {
-            attemptToRecordPlan(config, queryTree);
             throw new DatawaveFatalQueryException(e);
         }
         
@@ -1147,6 +1158,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Fix unindexed numerics");
         
         queryTree = FixUnindexedNumericTerms.fixNumerics(config, queryTree);
+        recordPlan(queryTree, config);
         
         if (log.isDebugEnabled()) {
             logQuery(queryTree, "Query after fixing unindexed numerics:");
@@ -1157,6 +1169,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand query from normalizers");
         
         queryTree = ExpandMultiNormalizedTerms.expandTerms(config, metadataHelper, queryTree);
+        recordPlan(queryTree, config);
         
         if (log.isDebugEnabled()) {
             logQuery(queryTree, "Query after normalizers were applied:");
@@ -1169,6 +1182,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Mark Index Holes");
             
             queryTree = PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(queryTree, config, metadataHelper);
+            recordPlan(queryTree, config);
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after marking index holes:");
             }
@@ -1181,6 +1195,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             
             // apply distributive property to deal with executability if necessary
             queryTree = ExecutableExpansionVisitor.expand(queryTree, config, metadataHelper);
+            recordPlan(queryTree, config);
             
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after ExecutableExpansion");
@@ -1200,19 +1215,20 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 nonEventFields = metadataHelper.getNonEventFields(config.getDatatypeFilter());
             } catch (TableNotFoundException te) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, te);
-                attemptToRecordPlan(config, queryTree);
                 throw new DatawaveFatalQueryException(qe);
             }
         }
         
         // apply the node transform rules
         queryTree = applyNodeTransformRules(queryTree, getTransformRules(), config, metadataHelper, "Pre pushdown-pullup");
+        recordPlan(queryTree, config);
         
         // push down terms that are over the min selectivity
         if (config.getMinSelectivity() > 0) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Pushdown Low-Selective Terms");
             
             queryTree = PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(queryTree, config, metadataHelper);
+            recordPlan(queryTree, config);
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after pushing down low-selective terms:");
             }
@@ -1224,6 +1240,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (!ExecutableDeterminationVisitor.isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
                 queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, false, config, indexedFields, indexOnlyFields,
                                 nonEventFields, metadataHelper);
+                recordPlan(queryTree, config);
                 if (log.isDebugEnabled()) {
                     logDebug(debugOutput, "Executable state after pushing low-selective terms:");
                     logQuery(queryTree, "Query after partially executable pushdown :");
@@ -1235,6 +1252,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Force field-to-field comparison to evaluation only");
         queryTree = FieldToFieldComparisonVisitor.forceEvaluationOnly(queryTree);
+        recordPlan(queryTree, config);
         if (log.isDebugEnabled()) {
             logQuery(queryTree, "Query after forceEvaluationOnly is applied");
         }
@@ -1250,11 +1268,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 config.setFieldToDiscreteIndexTypes(CompositeUtils.getFieldToDiscreteIndexTypeMap(config.getQueryFieldsDatatypes()));
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
-                attemptToRecordPlan(config, queryTree);
                 throw new DatawaveFatalQueryException(qe);
             }
             
             queryTree = ExpandCompositeTerms.expandTerms(config, queryTree);
+            recordPlan(queryTree, config);
             stopwatch.stop();
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after expanding composite terms:");
@@ -1275,8 +1293,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
                     innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
                     queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
+                    recordPlan(queryTree, config);
                     // regex expansion picks up an extra set of parens, so quickly fix that here
                     queryTree = (ASTJexlScript) TreeFlatteningRebuildingVisitor.flatten(queryTree);
+                    recordPlan(queryTree, config);
                     if (log.isDebugEnabled()) {
                         logQuery(queryTree, "Query after expanding regex:");
                     }
@@ -1288,6 +1308,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ranges");
                     queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
                                     config.isExpandValues());
+                    recordPlan(queryTree, config);
                     if (log.isDebugEnabled()) {
                         logQuery(queryTree, "Query after expanding ranges:");
                     }
@@ -1299,6 +1320,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     
                     // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
                     queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+                    recordPlan(queryTree, config);
                     
                     if (log.isDebugEnabled()) {
                         logQuery(queryTree, "Query after range expansion reduction:");
@@ -1310,6 +1332,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Prune GeoWave terms");
                 Multimap<String,String> prunedTerms = HashMultimap.create();
                 queryTree = GeoWavePruningVisitor.pruneTree(queryTree, prunedTerms, metadataHelper);
+                recordPlan(queryTree, config);
                 if (log.isDebugEnabled()) {
                     log.debug("Pruned the following GeoWave terms: ["
                                     + prunedTerms.entries().stream().map(x -> x.getKey() + "==" + x.getValue()).collect(Collectors.joining(",")) + "]");
@@ -1320,6 +1343,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 if (nodeCount.hasAll(ASTFunctionNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
                     innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand pushing functions into exceeded value ranges");
                     queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
+                    recordPlan(queryTree, config);
                     if (log.isDebugEnabled()) {
                         logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges:");
                     }
@@ -1341,6 +1365,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                 .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
                     queryTree = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(queryTree, false, config, indexedFields,
                                     indexOnlyFields, nonEventFields, metadataHelper);
+                    recordPlan(queryTree, config);
                     if (log.isDebugEnabled()) {
                         logDebug(debugOutput, "Executable state after expanding ranges:");
                         logQuery(queryTree, "Query after delayed pullup:");
@@ -1355,6 +1380,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
                     if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
                         queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
+                        recordPlan(queryTree, config);
                         if (log.isDebugEnabled()) {
                             logQuery(queryTree, "Query after expanding regex again:");
                         }
@@ -1364,6 +1390,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     if (nodeCount.isPresent(BoundedRange.class)) {
                         queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
                                         config.isExpandValues());
+                        recordPlan(queryTree, config);
                         if (log.isDebugEnabled()) {
                             logQuery(queryTree, "Query after expanding ranges again:");
                         }
@@ -1372,6 +1399,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     if (reduceQuery) {
                         // only show pruned sections of the tree's via assignments if debug to reduce runtime when possible
                         queryTree = (ASTJexlScript) QueryPruningVisitor.reduce(queryTree, showReducedQueryPrune);
+                        recordPlan(queryTree, config);
                         
                         if (log.isDebugEnabled()) {
                             logQuery(queryTree, "Query after range expansion reduction again:");
@@ -1381,6 +1409,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     // Check if there are functions that can be pushed into exceeded value ranges.
                     if (nodeCount.hasAll(ASTFunctionNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
                         queryTree = PushFunctionsIntoExceededValueRanges.pushFunctions(queryTree, metadataHelper, config.getDatatypeFilter());
+                        recordPlan(queryTree, config);
                         if (log.isDebugEnabled()) {
                             logQuery(queryTree, "Query after expanding pushing functions into exceeded value ranges again:");
                         }
@@ -1402,6 +1431,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                                 .isExecutable(queryTree, config, indexedFields, indexOnlyFields, nonEventFields, debugOutput, metadataHelper)) {
                     queryTree = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(queryTree, false, config, indexedFields, indexOnlyFields,
                                     nonEventFields, metadataHelper);
+                    recordPlan(queryTree, config);
                     if (log.isDebugEnabled()) {
                         logDebug(debugOutput, "Executable state after expanding ranges and regex again:");
                         logQuery(queryTree, "Query after partially executable pushdown:");
@@ -1412,10 +1442,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             } catch (TableNotFoundException | InstantiationException | IllegalAccessException e1) {
                 stopwatch.stop();
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e1);
-                attemptToRecordPlan(config, queryTree);
                 throw new DatawaveFatalQueryException(qe);
             } catch (CannotExpandUnfieldedTermFatalException e) {
-                attemptToRecordPlan(config, queryTree);
                 if (null != e.getCause() && e.getCause() instanceof DoNotPerformOptimizedQueryException)
                     throw (DoNotPerformOptimizedQueryException) e.getCause();
                 QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
@@ -1437,6 +1465,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
         
         return queryTree;
+    }
+    
+    private void recordPlan(ASTJexlScript queryTree, ShardQueryConfiguration config) {
+        this.plannedScript = JexlStringBuildingVisitor.buildQuery(queryTree);
+        config.setQueryString(plannedScript);
     }
     
     /**
@@ -1574,10 +1607,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             stopwatch.stop();
             QueryException qe = new QueryException(DatawaveErrorCode.FIELD_FETCH_ERROR, e);
             log.error(qe);
-            attemptToRecordPlan(config, queryTree);
             throw new DatawaveFatalQueryException(qe);
         }
         queryTree = QueryModelVisitor.applyModel(queryTree, queryModel, allFields);
+        recordPlan(queryTree, config);
         if (log.isTraceEnabled())
             log.trace("queryTree:" + PrintingVisitor.formattedQueryString(queryTree));
         return queryTree;
@@ -1681,7 +1714,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.info("Using the date index for " + dateType);
             // if no date index helper configured, then we are in error
             if (dateIndexHelper == null) {
-                attemptToRecordPlan(config, queryTree);
                 throw new DatawaveQueryException("Requested date range of type " + dateType + " but no date index is configured");
             }
             // get all of the fields used for this date type
@@ -1795,6 +1827,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             final TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("DefaultQueryPlanner - Apply Node Transform Rules: " + instance);
             
             queryTree = NodeTransformVisitor.transform(queryTree, rules, config, helper);
+            recordPlan(queryTree, config);
             
             if (log.isDebugEnabled()) {
                 logQuery(queryTree, "Query after function index queries were expanded:");
@@ -2200,7 +2233,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (state == STATE.ERROR) {
                 log.warn("After expanding the query, it is determined that the query cannot be executed due to index-only fields mixed with expressions that cannot be run against the index.");
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_MIXED_INVALID_EXPRESSIONS);
-                attemptToRecordPlan(config, queryTree);
                 throw new InvalidQueryException(qe);
             }
             log.warn("After expanding the query, it is determined that the query cannot be executed against the field index and a full table scan is required");
@@ -2233,7 +2265,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // throw unsupported
             boolean thresholdExceeded = StreamContext.EXCEEDED_TERM_THRESHOLD.equals(stream.context());
             if (thresholdExceeded && !config.canHandleExceededTermThreshold()) {
-                attemptToRecordPlan(config, queryTree);
                 throw new UnsupportedOperationException(EXCEED_TERM_EXPANSION_ERROR);
             }
             
@@ -2261,7 +2292,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     log.trace("Full table scans are not enabled, query will not be run");
                 
                 QueryException qe = new QueryException(DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
-                attemptToRecordPlan(config, queryTree);
                 throw new FullTableScansDisallowedException(qe);
             }
             if (log.isTraceEnabled())
@@ -2269,19 +2299,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
         
         return new Tuple2<>(ranges, needsFullTable);
-    }
-    
-    private void attemptToRecordPlan(ShardQueryConfiguration config, JexlNode queryTree) {
-        if (null == this.plannedScript) {
-            try {
-                this.plannedScript = JexlStringBuildingVisitor.buildQuery(queryTree);
-            } catch (Exception e) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Unable to set plannedScript.");
-                }
-            }
-        }
-        config.setQueryString(this.plannedScript);
     }
     
     /**
@@ -2453,7 +2470,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             return configureIndexedAndNormalizedFields(fieldToDatatypeMap, metadataHelper.getIndexedFields(null), metadataHelper.getReverseIndexedFields(null),
                             metadataHelper.getAllNormalized(), config, queryTree);
         } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
-            attemptToRecordPlan(config, queryTree);
             throw new DatawaveFatalQueryException(e);
         }
         
