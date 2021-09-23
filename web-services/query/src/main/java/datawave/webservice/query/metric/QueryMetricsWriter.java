@@ -5,6 +5,7 @@ import datawave.configuration.RefreshEvent;
 import datawave.configuration.spring.SpringBean;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.services.common.connection.AccumuloConnectionFactory;
+import datawave.services.query.metric.QueryMetricHandler;
 import datawave.util.timely.UdpClient;
 import datawave.webservice.query.metric.BaseQueryMetric.Lifecycle;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;

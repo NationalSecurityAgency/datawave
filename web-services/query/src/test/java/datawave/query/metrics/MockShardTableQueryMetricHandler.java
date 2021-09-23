@@ -1,17 +1,16 @@
 package datawave.query.metrics;
 
-import java.util.Date;
-import java.util.Map;
-
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.services.query.metric.QueryMetricHandler;
 import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.QueryMetric;
-import datawave.webservice.query.metric.QueryMetricHandler;
 import datawave.webservice.query.metric.QueryMetricListResponse;
 import datawave.webservice.query.metric.QueryMetricsSummaryHtmlResponse;
 import datawave.webservice.query.metric.QueryMetricsSummaryResponse;
 
 import javax.inject.Singleton;
+import java.util.Date;
+import java.util.Map;
 
 /**
  * Simulated QueryMetricHandler to prevent classloading failure in unit test for UpgradeTo_2_2 and QueryMetricsBean. Used in conjunction with PowerMock to

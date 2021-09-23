@@ -13,7 +13,16 @@
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-query</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>

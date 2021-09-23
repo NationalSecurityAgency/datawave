@@ -12,6 +12,7 @@
     <description>DATAWAVE Query Executor Service</description>
     <properties>
         <start-class>datawave.microservice.query.executor.QueryExecutorService</start-class>
+        <version.accumulo>1.9.2</version.accumulo>
         <version.curator>4.2.0</version.curator>
         <version.datawave>3.2.1-SNAPSHOT</version.datawave>
         <version.in-memory-accumulo>1.9.2.3</version.in-memory-accumulo>
@@ -41,6 +42,12 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave-query</artifactId>
                 <version>${version.microservice.starter-query}</version>
+            </dependency>
+            <!-- Added to get the service working again -->
+            <dependency>
+                <groupId>org.apache.accumulo</groupId>
+                <artifactId>accumulo-tserver</artifactId>
+                <version>${version.accumulo}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
@@ -214,6 +221,11 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>spring-boot-starter-datawave-query</artifactId>
+        </dependency>
+        <!-- Added to get the service working again -->
+        <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-tserver</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.kafka</groupId>

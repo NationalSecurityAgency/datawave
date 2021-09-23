@@ -56,28 +56,33 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-ingest-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>metadata-utils</artifactId>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-common</artifactId>
+            <groupId>gov.nsa.datawave.services</groupId>
+            <artifactId>datawave-services-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-common-util</artifactId>
+            <groupId>gov.nsa.datawave.services</groupId>
+            <artifactId>datawave-services-common-util</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-query</artifactId>
+            <groupId>gov.nsa.datawave.services</groupId>
+            <artifactId>datawave-services-query</artifactId>
             <version>${project.version}</version>
             <type>ejb</type>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-client</artifactId>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
@@ -231,6 +236,12 @@
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-cached-results</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-query</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

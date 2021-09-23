@@ -47,6 +47,11 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
+            <groupId>gov.nsa.datawave.webservices</groupId>
+            <artifactId>datawave-ws-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
         </dependency>

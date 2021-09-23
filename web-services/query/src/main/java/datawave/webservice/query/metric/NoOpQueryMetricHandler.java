@@ -1,6 +1,7 @@
 package datawave.webservice.query.metric;
 
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.services.query.metric.QueryMetricHandler;
 
 import java.util.Date;
 import java.util.HashMap;

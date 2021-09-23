@@ -1,4 +1,4 @@
-package datawave.webservice.query.dashboard;
+package datawave.services.query.dashboard;
 
 import java.util.Arrays;
 import java.util.List;

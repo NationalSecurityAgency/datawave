@@ -1,4 +1,4 @@
-package datawave.webservice.common.extjs;
+package datawave.services.common.extjs;
 
 import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;

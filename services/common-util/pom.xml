@@ -12,7 +12,12 @@
     <dependencyManagement>
         <dependencies />
     </dependencyManagement>
-    <dependencies />
+    <dependencies>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>authorization-api</artifactId>
+        </dependency>
+    </dependencies>
     <build>
         <plugins>
             <plugin>

@@ -1,4 +1,4 @@
-package datawave.webservice.query.util;
+package datawave.services.query.util;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.protostuff.LinkedBuffer;
@@ -15,8 +15,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
-// TODO: JWO: Remove this once we finally move away from the WildFly Webservice
-@Deprecated
 public class QueryUtil {
     public static final String PARAMETER_SEPARATOR = ";";
     public static final String PARAMETER_NAME_VALUE_SEPARATOR = ":";

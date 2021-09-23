@@ -1,4 +1,4 @@
-package datawave.webservice.common.edgedictionary;
+package datawave.services.common.edgedictionary;
 
 import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
 import datawave.webservice.results.edgedictionary.MetadataBase;

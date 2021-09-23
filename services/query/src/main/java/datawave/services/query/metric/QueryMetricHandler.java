@@ -1,9 +1,13 @@
-package datawave.webservice.query.metric;
+package datawave.services.query.metric;
 
 import java.util.Date;
 import java.util.Map;
 
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.webservice.query.metric.BaseQueryMetricListResponse;
+import datawave.webservice.query.metric.QueryMetricsSummaryHtmlResponse;
+import datawave.webservice.query.metric.QueryMetricsSummaryResponse;
 
 public interface QueryMetricHandler<T extends BaseQueryMetric> {
     

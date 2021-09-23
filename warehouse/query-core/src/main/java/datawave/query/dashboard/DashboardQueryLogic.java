@@ -1,12 +1,12 @@
 package datawave.query.dashboard;
 
 import datawave.query.tables.ShardQueryLogic;
+import datawave.services.common.extjs.ExtJsResponse;
 import datawave.services.query.cache.ResultsPage;
+import datawave.services.query.dashboard.DashboardFields;
+import datawave.services.query.dashboard.DashboardSummary;
 import datawave.services.query.logic.QueryLogicTransformer;
-import datawave.webservice.common.extjs.ExtJsResponse;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.dashboard.DashboardFields;
-import datawave.webservice.query.dashboard.DashboardSummary;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 import org.apache.commons.collections4.iterators.TransformIterator;

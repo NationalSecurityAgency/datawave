@@ -1,4 +1,4 @@
-package datawave.webservice.query.dashboard;
+package datawave.services.query.dashboard;
 
 import java.util.Date;
 import java.util.Objects;

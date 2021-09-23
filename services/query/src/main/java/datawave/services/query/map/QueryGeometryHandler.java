@@ -1,5 +1,6 @@
-package datawave.webservice.query.map;
+package datawave.services.query.map;
 
+import datawave.webservice.query.map.QueryGeometryResponse;
 import datawave.webservice.query.metric.BaseQueryMetric;
 
 import java.util.List;

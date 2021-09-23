@@ -1,22 +1,21 @@
 package datawave.webservice.query.metric;
 
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-
-import java.util.Date;
-
-import javax.ejb.EJBContext;
-
 import datawave.security.authorization.DatawavePrincipal;
-
+import datawave.services.query.metric.QueryMetricHandler;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
 import org.easymock.TestSubject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import javax.ejb.EJBContext;
+import java.util.Date;
+
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.isA;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 @RunWith(EasyMockRunner.class)
 public class TestQueryMetricsBean extends EasyMockSupport {
