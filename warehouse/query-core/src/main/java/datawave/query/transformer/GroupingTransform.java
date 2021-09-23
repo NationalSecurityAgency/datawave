@@ -438,7 +438,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         for (int i = 0; i < longest; i++) {
             Collection<GroupingTypeAttribute<?>> fieldCollection = new HashSet<>();
             String currentGroupingContext = convertGroupingContext(i);
-
+            
             for (String fieldListItem : expandedGroupFieldsList) {
                 log.trace("fieldListItem: {}", fieldListItem);
                 Collection<String> gtNames = fieldToFieldWithContextMap.get(fieldListItem);
