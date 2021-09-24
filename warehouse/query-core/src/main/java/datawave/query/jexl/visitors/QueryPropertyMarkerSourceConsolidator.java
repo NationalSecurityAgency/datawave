@@ -10,7 +10,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * This visitor will ensure that query marker nodes always have a singular, root source node.
+ * This visitor will ensure that query marker nodes always have a singular, root source node. If multiple source nodes are found, they will be bundled within a
+ * new {@link ASTAndNode} which will in turn be set as the new source node.
  */
 public class QueryPropertyMarkerSourceConsolidator extends RebuildingVisitor {
     
