@@ -197,7 +197,7 @@ public abstract class QueryPropertyMarker extends ASTReference {
         public static Instance of(Class<? extends QueryPropertyMarker> type, List<JexlNode> sources) {
             return new Instance(type, sources);
         }
-    
+        
         /**
          * Return a new {@link Instance} with the specified type and source.
          *
@@ -217,7 +217,7 @@ public abstract class QueryPropertyMarker extends ASTReference {
         private final Class<? extends QueryPropertyMarker> type;
         
         private final List<JexlNode> sources;
-    
+        
         private Instance(Class<? extends QueryPropertyMarker> type, List<JexlNode> sources) {
             this.type = type;
             this.sources = sources == null ? Collections.emptyList() : sources;
