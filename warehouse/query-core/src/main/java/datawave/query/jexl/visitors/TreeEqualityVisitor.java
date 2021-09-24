@@ -1,8 +1,6 @@
 package datawave.query.jexl.visitors;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import datawave.services.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
@@ -59,7 +57,8 @@ import org.apache.commons.jexl2.parser.ParserVisitor;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Determine whether two trees are equivalent, accounting for arbitrary order within subtrees

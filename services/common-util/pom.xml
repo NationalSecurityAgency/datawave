@@ -15,7 +15,32 @@
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>accumulo-utils</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>authorization-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.services</groupId>
+            <artifactId>datawave-services-connection-pool</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.accumulo</groupId>
+            <artifactId>accumulo-core</artifactId>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
     <build>

@@ -2,8 +2,7 @@ package datawave.policy;
 
 import datawave.ingest.data.RawDataErrorNames;
 import datawave.ingest.data.RawRecordContainer;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-
+import datawave.services.common.logging.ThreadConfigurableLogger;
 import org.apache.log4j.Logger;
 
 /**

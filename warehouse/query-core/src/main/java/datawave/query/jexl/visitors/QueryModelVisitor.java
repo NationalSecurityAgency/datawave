@@ -1,18 +1,15 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.model.QueryModel;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.model.QueryModel;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.services.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
@@ -31,7 +28,6 @@ import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTNullLiteral;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
@@ -43,12 +39,9 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.apache.commons.jexl2.parser.JexlNodes.id;
 
 /**
  * Apply the forward mapping

@@ -3,7 +3,7 @@ package datawave.ingest.mapreduce.handler.summary;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.services.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;

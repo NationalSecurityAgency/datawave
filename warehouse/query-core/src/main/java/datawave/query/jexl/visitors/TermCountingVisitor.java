@@ -1,8 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-
+import datawave.services.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;

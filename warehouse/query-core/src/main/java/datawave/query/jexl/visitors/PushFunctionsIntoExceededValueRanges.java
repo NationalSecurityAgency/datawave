@@ -8,7 +8,7 @@ import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.services.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;

@@ -9,8 +9,7 @@ import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.metadata.RawRecordMetadata;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-
+import datawave.services.common.logging.ThreadConfigurableLogger;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;

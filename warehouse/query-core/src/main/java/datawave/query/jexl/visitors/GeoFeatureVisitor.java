@@ -4,7 +4,7 @@ import datawave.query.jexl.functions.GeoFunctionsDescriptor;
 import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.services.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.map.QueryGeometry;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.JexlNode;

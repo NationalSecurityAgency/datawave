@@ -1,7 +1,7 @@
 package datawave.microservice.query.executor;
 
 import com.codahale.metrics.annotation.Timed;
-import datawave.webservice.common.result.ConnectionFactoryResponse;
+import datawave.services.common.result.ConnectionFactoryResponse;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;

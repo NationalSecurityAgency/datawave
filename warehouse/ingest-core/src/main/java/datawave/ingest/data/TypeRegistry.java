@@ -1,5 +1,18 @@
 package datawave.ingest.data;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.filter.KeyValueFilter;
+import datawave.ingest.data.config.ingest.IngestHelperInterface;
+import datawave.ingest.mapreduce.handler.DataTypeHandler;
+import datawave.marking.MarkingFunctions;
+import datawave.services.common.logging.ThreadConfigurableLogger;
+import datawave.util.StringUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.RecordReader;
+import org.apache.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -9,21 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.filter.KeyValueFilter;
-import datawave.ingest.data.config.ingest.IngestHelperInterface;
-import datawave.ingest.mapreduce.handler.DataTypeHandler;
-import datawave.marking.MarkingFunctions;
-import datawave.util.StringUtils;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapreduce.RecordReader;
-import org.apache.log4j.Logger;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 
 public class TypeRegistry extends HashMap<String,Type> {
     

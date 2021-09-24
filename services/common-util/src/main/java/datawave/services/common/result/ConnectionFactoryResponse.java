@@ -1,7 +1,5 @@
-package datawave.webservice.common.result;
+package datawave.services.common.result;
 
-import datawave.services.common.result.Connection;
-import datawave.services.common.result.ConnectionPool;
 import datawave.webservice.HtmlProvider;
 import datawave.webservice.result.BaseResponse;
 import org.apache.commons.lang.StringEscapeUtils;

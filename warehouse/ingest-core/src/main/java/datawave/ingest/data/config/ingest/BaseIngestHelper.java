@@ -15,13 +15,13 @@ import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.FieldConfigHelper;
-import datawave.ingest.data.config.XMLFieldConfigHelper;
 import datawave.ingest.data.config.MarkingsHelper;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.ingest.data.config.XMLFieldConfigHelper;
+import datawave.services.common.logging.ThreadConfigurableLogger;
 import datawave.util.StringUtils;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 

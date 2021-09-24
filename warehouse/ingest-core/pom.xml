@@ -29,8 +29,8 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.webservices</groupId>
-            <artifactId>datawave-ws-common-util</artifactId>
+            <groupId>gov.nsa.datawave.services</groupId>
+            <artifactId>datawave-services-common-util</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

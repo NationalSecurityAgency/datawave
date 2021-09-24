@@ -2,7 +2,7 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.services.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 import org.junit.Assert;

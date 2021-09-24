@@ -11,7 +11,7 @@ import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.services.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.data.Key;

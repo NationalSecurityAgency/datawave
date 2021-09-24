@@ -20,7 +20,7 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.services.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;

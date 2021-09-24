@@ -1,4 +1,4 @@
-package datawave.webservice.common.logging;
+package datawave.services.common.logging;
 
 import org.apache.log4j.Appender;
 import org.apache.log4j.Level;

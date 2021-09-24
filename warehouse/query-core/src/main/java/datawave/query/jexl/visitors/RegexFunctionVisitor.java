@@ -8,7 +8,7 @@ import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.services.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
