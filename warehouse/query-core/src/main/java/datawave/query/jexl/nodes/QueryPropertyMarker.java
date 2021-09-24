@@ -1,6 +1,7 @@
 package datawave.query.jexl.nodes;
 
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import org.apache.commons.jexl2.parser.ASTAndNode;
@@ -196,6 +197,19 @@ public abstract class QueryPropertyMarker extends ASTReference {
         public static Instance of(Class<? extends QueryPropertyMarker> type, List<JexlNode> sources) {
             return new Instance(type, sources);
         }
+    
+        /**
+         * Return a new {@link Instance} with the specified type and source.
+         *
+         * @param type
+         *            the type
+         * @param source
+         *            the source
+         * @return the new {@link Instance}
+         */
+        public static Instance of(Class<? extends QueryPropertyMarker> type, JexlNode source) {
+            return new Instance(type, Lists.newArrayList(source));
+        }
         
         /**
          * The {@link QueryPropertyMarker} type that the node this {@link Instance} represents is.
@@ -203,7 +217,7 @@ public abstract class QueryPropertyMarker extends ASTReference {
         private final Class<? extends QueryPropertyMarker> type;
         
         private final List<JexlNode> sources;
-        
+    
         private Instance(Class<? extends QueryPropertyMarker> type, List<JexlNode> sources) {
             this.type = type;
             this.sources = sources == null ? Collections.emptyList() : sources;
