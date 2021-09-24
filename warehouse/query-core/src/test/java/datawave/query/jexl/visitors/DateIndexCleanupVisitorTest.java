@@ -1,18 +1,14 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import static datawave.query.Constants.SHARD_DAY_HINT;
-import static org.junit.Assert.assertTrue;
 
 public class DateIndexCleanupVisitorTest {
-    
-    private static final Logger log = Logger.getLogger(DateIndexCleanupVisitorTest.class);
     
     @Test
     public void testConjunction() throws ParseException {
@@ -61,26 +57,7 @@ public class DateIndexCleanupVisitorTest {
         
         ASTJexlScript cleaned = DateIndexCleanupVisitor.cleanup(script);
         
-        // Verify the result script is as expected, with a valid lineage.
-        assertScriptEquality(cleaned, expected);
-        assertLineage(cleaned);
-        
-        // Verify the original script was not modified, and has a valid lineage.
-        assertScriptEquality(script, original);
-        assertLineage(script);
-    }
-    
-    private void assertScriptEquality(JexlNode actual, String expected) throws ParseException {
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedScript, actual);
-        if (!comparison.isEqual()) {
-            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
-            log.error("Actual " + PrintingVisitor.formattedQueryString(actual));
-        }
-        assertTrue(comparison.getReason(), comparison.isEqual());
-    }
-    
-    private void assertLineage(JexlNode node) {
-        assertTrue(JexlASTHelper.validateLineage(node, true));
+        JexlNodeAssert.assertThat(cleaned).isEqualTo(expected).hasValidLineage();
+        JexlNodeAssert.assertThat(script).isEqualTo(original).hasValidLineage();
     }
 }

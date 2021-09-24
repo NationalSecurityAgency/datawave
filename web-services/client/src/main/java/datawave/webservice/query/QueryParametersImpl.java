@@ -4,14 +4,15 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
-import javax.ws.rs.core.MultivaluedMap;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +36,7 @@ public class QueryParametersImpl implements QueryParameters {
     protected Date endDate;
     protected String visibility;
     protected String logicName;
-    protected MultivaluedMap<String,String> requestHeaders;
+    protected Map<String,List<String>> requestHeaders;
     
     public QueryParametersImpl() {
         clear();
@@ -257,8 +258,8 @@ public class QueryParametersImpl implements QueryParameters {
     }
     
     /**
-     * Convenience method to generate a MultivaluedMap from the specified arguments. If an argument is null, it's associated parameter name (key) will not be
-     * added to the map, which is why Integer and Boolean wrappers are used for greater flexibility.
+     * Convenience method to generate a {@code Map<String,List<String>>} from the specified arguments. If an argument is null, it's associated parameter name
+     * (key) will not be added to the map, which is why Integer and Boolean wrappers are used for greater flexibility.
      * 
      * The 'parameters' argument will not be parsed, so its internal elements will not be placed into the map. If non-null, the 'parameters' value will be
      * mapped directly to the QUERY_PARAMS key.
@@ -295,54 +296,54 @@ public class QueryParametersImpl implements QueryParameters {
      * @throws ParseException
      *             on date parse/format error
      */
-    public static MultivaluedMap<String,String> paramsToMap(String queryLogicName, String query, String queryName, String queryVisibility, Date beginDate,
+    public static Map<String,List<String>> paramsToMap(String queryLogicName, String query, String queryName, String queryVisibility, Date beginDate,
                     Date endDate, String queryAuthorizations, Date expirationDate, Integer pagesize, Integer pageTimeout, Long maxResultsOverride,
                     QueryPersistence persistenceMode, String parameters, Boolean trace) throws ParseException {
         
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
+        MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         if (queryLogicName != null) {
-            p.putSingle(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+            p.set(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         }
         if (query != null) {
-            p.putSingle(QueryParameters.QUERY_STRING, query);
+            p.set(QueryParameters.QUERY_STRING, query);
         }
         if (queryName != null) {
-            p.putSingle(QueryParameters.QUERY_NAME, queryName);
+            p.set(QueryParameters.QUERY_NAME, queryName);
         }
         if (queryVisibility != null) {
-            p.putSingle(QueryParameters.QUERY_VISIBILITY, queryVisibility);
+            p.set(QueryParameters.QUERY_VISIBILITY, queryVisibility);
         }
         if (beginDate != null) {
-            p.putSingle(QueryParameters.QUERY_BEGIN, formatDate(beginDate));
+            p.set(QueryParameters.QUERY_BEGIN, formatDate(beginDate));
         }
         if (endDate != null) {
-            p.putSingle(QueryParameters.QUERY_END, formatDate(endDate));
+            p.set(QueryParameters.QUERY_END, formatDate(endDate));
         }
         if (queryAuthorizations != null) {
             // ensure that auths are comma separated with no empty values or spaces
             Splitter splitter = Splitter.on(',').omitEmptyStrings().trimResults();
-            p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, StringUtils.join(splitter.splitToList(queryAuthorizations), ","));
+            p.set(QueryParameters.QUERY_AUTHORIZATIONS, StringUtils.join(splitter.splitToList(queryAuthorizations), ","));
         }
         if (expirationDate != null) {
-            p.putSingle(QueryParameters.QUERY_EXPIRATION, formatDate(expirationDate));
+            p.set(QueryParameters.QUERY_EXPIRATION, formatDate(expirationDate));
         }
         if (pagesize != null) {
-            p.putSingle(QueryParameters.QUERY_PAGESIZE, pagesize.toString());
+            p.set(QueryParameters.QUERY_PAGESIZE, pagesize.toString());
         }
         if (pageTimeout != null) {
-            p.putSingle(QueryParameters.QUERY_PAGETIMEOUT, pageTimeout.toString());
+            p.set(QueryParameters.QUERY_PAGETIMEOUT, pageTimeout.toString());
         }
         if (maxResultsOverride != null) {
-            p.putSingle(QueryParameters.QUERY_MAX_RESULTS_OVERRIDE, maxResultsOverride.toString());
+            p.set(QueryParameters.QUERY_MAX_RESULTS_OVERRIDE, maxResultsOverride.toString());
         }
         if (persistenceMode != null) {
-            p.putSingle(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+            p.set(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         }
         if (trace != null) {
-            p.putSingle(QueryParameters.QUERY_TRACE, trace.toString());
+            p.set(QueryParameters.QUERY_TRACE, trace.toString());
         }
         if (parameters != null) {
-            p.putSingle(QueryParameters.QUERY_PARAMS, parameters);
+            p.set(QueryParameters.QUERY_PARAMS, parameters);
         }
         
         return p;
@@ -484,23 +485,21 @@ public class QueryParametersImpl implements QueryParameters {
     }
     
     @Override
-    public MultivaluedMap<String,String> getRequestHeaders() {
+    public Map<String,List<String>> getRequestHeaders() {
         return requestHeaders;
     }
     
     @Override
-    public void setRequestHeaders(MultivaluedMap<String,String> requestHeaders) {
+    public void setRequestHeaders(Map<String,List<String>> requestHeaders) {
         this.requestHeaders = requestHeaders;
     }
     
     @Override
-    public MultivaluedMap<String,String> getUnknownParameters(MultivaluedMap<String,String> allQueryParameters) {
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
+    public Map<String,List<String>> getUnknownParameters(Map<String,List<String>> allQueryParameters) {
+        Map<String,List<String>> p = new LinkedHashMap<>();
         for (String key : allQueryParameters.keySet()) {
             if (!KNOWN_PARAMS.contains(key)) {
-                for (String value : allQueryParameters.get(key)) {
-                    p.add(key, value);
-                }
+                p.put(key, allQueryParameters.get(key));
             }
         }
         return p;

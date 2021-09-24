@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.util.MockMetadataHelper;
+import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
@@ -10,12 +11,11 @@ import org.junit.Test;
 import java.util.Collections;
 
 import static datawave.query.jexl.JexlASTHelper.parseJexlQuery;
-import static org.junit.Assert.assertEquals;
 
 public class CaseSensitivityVisitorTest {
     
-    private MockMetadataHelper helper = new MockMetadataHelper();
-    private ShardQueryConfiguration config = new ShardQueryConfiguration();
+    private final MockMetadataHelper helper = new MockMetadataHelper();
+    private final ShardQueryConfiguration config = new ShardQueryConfiguration();
     
     @Before
     public void beforeTest() {
@@ -59,7 +59,6 @@ public class CaseSensitivityVisitorTest {
         
         CaseSensitivityVisitor.upperCaseIdentifiers(config, helper, script);
         
-        String result = JexlStringBuildingVisitor.buildQuery(script);
-        assertEquals(expected, result);
+        JexlNodeAssert.assertThat(script).hasExactQueryString(expected);
     }
 }

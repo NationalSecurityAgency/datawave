@@ -8,14 +8,12 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.PrintingVisitor;
-import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.util.MetadataHelper;
+import datawave.test.JexlNodeAssert;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -28,11 +26,9 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.getCurrentArguments;
 import static org.easymock.EasyMock.mock;
 import static org.easymock.EasyMock.replay;
-import static org.junit.Assert.assertTrue;
 
 public class FacetCheckTest {
     
-    private static final Logger log = Logger.getLogger(FacetCheckTest.class);
     private static final Set<String> indexedFields = Collections.unmodifiableSet(Sets.newHashSet("FOO", "FOO2", "FOO3"));
     
     private FacetCheck facetCheck;
@@ -235,24 +231,9 @@ public class FacetCheckTest {
         JexlNode result = (JexlNode) script.jjtAccept(facetCheck, null);
         
         // Verify the result script has a valid lineage.
-        assertLineage(result);
+        JexlNodeAssert.assertThat(result).hasValidLineage();
         
         // Verify the original script was not modified, and has a valid lineage.
-        assertScriptEquality(script, query);
-        assertLineage(script);
-    }
-    
-    private void assertScriptEquality(ASTJexlScript actual, String expected) throws ParseException {
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedScript, actual);
-        if (!comparison.isEqual()) {
-            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
-            log.error("Actual " + PrintingVisitor.formattedQueryString(actual));
-        }
-        assertTrue(comparison.getReason(), comparison.isEqual());
-    }
-    
-    private void assertLineage(JexlNode node) {
-        assertTrue(JexlASTHelper.validateLineage(node, true));
+        JexlNodeAssert.assertThat(script).isEqualTo(query).hasValidLineage();
     }
 }

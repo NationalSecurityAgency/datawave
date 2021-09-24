@@ -4,22 +4,19 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import static datawave.query.jexl.functions.GeoWaveFunctionsDescriptorTest.convertFunctionToIndexQuery;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class GeoWavePruningVisitorTest {
-    
-    private static final Logger log = Logger.getLogger(GeoWavePruningVisitorTest.class);
     
     @Test
     public void testNonIntersectingTermIsPruned() throws ParseException {
@@ -60,8 +57,7 @@ public class GeoWavePruningVisitorTest {
         ASTJexlScript actualScript = GeoWavePruningVisitor.pruneTree(originalScript, prunedTerms, null);
         
         // Verify the result is as expected, with a valid lineage.
-        assertScriptEquality(actualScript, expected);
-        assertLineage(actualScript);
+        JexlNodeAssert.assertThat(actualScript).isEqualTo(expected).hasValidLineage();
         
         // Verify there are no empty wrapped nodes.
         assertNoChildlessReferences(actualScript);
@@ -70,22 +66,7 @@ public class GeoWavePruningVisitorTest {
         assertEquals(prunedTerms, expectedPrunedTerms);
         
         // Verify the original script was not modified, and has a valid lineage.
-        assertScriptEquality(originalScript, original);
-        assertLineage(originalScript);
-    }
-    
-    private void assertScriptEquality(JexlNode actual, String expected) throws ParseException {
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedScript, actual);
-        if (!comparison.isEqual()) {
-            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
-            log.error("Actual " + PrintingVisitor.formattedQueryString(actual));
-        }
-        assertTrue(comparison.getReason(), comparison.isEqual());
-    }
-    
-    private void assertLineage(JexlNode node) {
-        assertTrue(JexlASTHelper.validateLineage(node, true));
+        JexlNodeAssert.assertThat(originalScript).isEqualTo(original).hasValidLineage();
     }
     
     private void assertNoChildlessReferences(JexlNode node) {
