@@ -125,7 +125,9 @@ public class QueryCache {
     
     /**
      * This will create and store a new query task.
-     * 
+     *
+     * @param taskId
+     *            The task id
      * @param action
      *            The query action
      * @param checkpoint
@@ -133,8 +135,8 @@ public class QueryCache {
      * @return The new query task
      */
     @CachePut(key = "T(datawave.microservice.query.storage.QueryCache).TASK + #result.getTaskKey().toKey() ")
-    public QueryTask addQueryTask(QueryRequest.Method action, QueryCheckpoint checkpoint) {
-        QueryTask task = new QueryTask(action, checkpoint);
+    public QueryTask addQueryTask(int taskId, QueryRequest.Method action, QueryCheckpoint checkpoint) {
+        QueryTask task = new QueryTask(taskId, action, checkpoint);
         logTask("Adding task", task);
         return task;
     }

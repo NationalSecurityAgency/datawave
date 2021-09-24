@@ -17,9 +17,7 @@ public class TaskKey extends QueryKey implements Serializable {
     public static final String TASK_ACTION_PREFIX = "A-";
     
     @JsonProperty("taskId")
-    private String taskId;
-    @JsonProperty("action")
-    private QueryRequest.Method action;
+    private int taskId;
     
     /**
      * Default constructor for deserialization
@@ -49,38 +47,29 @@ public class TaskKey extends QueryKey implements Serializable {
     @Override
     public void setPart(String part) {
         if (part.startsWith(TASK_ID_PREFIX)) {
-            taskId = part.substring(TASK_ID_PREFIX.length());
+            taskId = Integer.parseInt(part.substring(TASK_ID_PREFIX.length()));
         } else {
             super.setPart(part);
         }
     }
     
     @JsonCreator
-    public TaskKey(@JsonProperty("taskId") String taskId, @JsonProperty("action") QueryRequest.Method action, @JsonProperty("queryPool") String queryPool,
-                    @JsonProperty("queryId") String queryId, @JsonProperty("queryLogic") String queryLogic) {
+    public TaskKey(@JsonProperty("taskId") int taskId, @JsonProperty("queryPool") String queryPool, @JsonProperty("queryId") String queryId,
+                    @JsonProperty("queryLogic") String queryLogic) {
         super(queryPool, queryId, queryLogic);
         this.taskId = taskId;
-        this.action = action;
     }
     
-    public TaskKey(String taskId, QueryRequest.Method action, QueryKey queryKey) {
-        this(taskId, action, queryKey.getQueryPool(), queryKey.getQueryId(), queryKey.getQueryLogic());
+    public TaskKey(int taskId, QueryKey queryKey) {
+        this(taskId, queryKey.getQueryPool(), queryKey.getQueryId(), queryKey.getQueryLogic());
     }
     
-    public String getTaskId() {
+    public int getTaskId() {
         return taskId;
     }
     
-    public QueryRequest.Method getAction() {
-        return action;
-    }
-    
     public String toKey() {
-        return super.toKey() + '.' + TASK_ID_PREFIX + taskId.toString() + '.' + TASK_ACTION_PREFIX + action.name();
-    }
-    
-    public String toRoutingKey() {
-        return super.toRoutingKey() + ".*";
+        return super.toKey() + '.' + TASK_ID_PREFIX + taskId;
     }
     
     @Override
@@ -92,13 +81,13 @@ public class TaskKey extends QueryKey implements Serializable {
     public boolean equals(Object o) {
         if (o instanceof TaskKey) {
             TaskKey other = (TaskKey) o;
-            return new EqualsBuilder().appendSuper(super.equals(o)).append(getTaskId(), other.getTaskId()).append(getAction(), other.getAction()).isEquals();
+            return new EqualsBuilder().appendSuper(super.equals(o)).append(getTaskId(), other.getTaskId()).isEquals();
         }
         return false;
     }
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().appendSuper(super.hashCode()).append(getTaskId()).append(getAction()).toHashCode();
+        return new HashCodeBuilder().appendSuper(super.hashCode()).append(getTaskId()).toHashCode();
     }
 }

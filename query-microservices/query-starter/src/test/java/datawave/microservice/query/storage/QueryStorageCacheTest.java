@@ -106,7 +106,7 @@ public abstract class QueryStorageCacheTest {
         QueryKey queryKey = new QueryKey("default", queryId, "EventQuery");
         queryCache.updateQueryStatus(new QueryStatus(queryKey));
         queryCache.updateTaskStates(new TaskStates(queryKey, 3));
-        QueryTask task = queryCache.addQueryTask(QueryRequest.Method.CREATE, new QueryCheckpoint(queryKey, new HashMap<>()));
+        QueryTask task = queryCache.addQueryTask(0, QueryRequest.Method.CREATE, new QueryCheckpoint(queryKey, new HashMap<>()));
         QueryStorageLock qLock = queryCache.getQueryStatusLock(queryId);
         QueryStorageLock sLock = queryCache.getTaskStatesLock(queryId);
         assertFalse(qLock.isLocked());
@@ -141,7 +141,7 @@ public abstract class QueryStorageCacheTest {
         assertNotNull(key);
         
         TaskStates states = storageService.getTaskStates(key.getQueryId());
-        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
+        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key.getTaskId()));
         
         QueryTask task = storageService.getTask(key);
         assertQueryTask(key.getQueryId(), QueryRequest.Method.CREATE, query, task);
@@ -207,7 +207,7 @@ public abstract class QueryStorageCacheTest {
         assertEquals(checkpoint.getQueryKey(), key);
         
         TaskStates states = storageService.getTaskStates(key.getQueryId());
-        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
+        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key.getTaskId()));
         
         task = storageService.getTask(key);
         assertQueryTask(key, QueryRequest.Method.NEXT, query, task);
@@ -235,7 +235,7 @@ public abstract class QueryStorageCacheTest {
         queryCache.updateTaskStates(new TaskStates(queryKey, 10));
         QueryRequest.Method action = QueryRequest.Method.CREATE;
         
-        TaskKey key = new TaskKey(UUID.randomUUID().toString(), action, queryPool, UUID.randomUUID().toString(), query.getQueryLogicName());
+        TaskKey key = new TaskKey(0, queryPool, UUID.randomUUID().toString(), query.getQueryLogicName());
         try {
             storageService.checkpointTask(key, checkpoint);
             fail("Expected storage service to fail checkpointing an inconsistent query key");
@@ -243,7 +243,7 @@ public abstract class QueryStorageCacheTest {
             // expected
         }
         
-        key = new TaskKey(UUID.randomUUID().toString(), action, checkpoint.getQueryKey());
+        key = new TaskKey(1, checkpoint.getQueryKey());
         try {
             storageService.checkpointTask(key, checkpoint);
             fail("Expected storage service to fail checkpointing a missing task");
@@ -379,21 +379,21 @@ public abstract class QueryStorageCacheTest {
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
         TaskStates states = new TaskStates(queryKey, 2);
         QueryRequest.Method action = QueryRequest.Method.CREATE;
-        TaskKey key = new TaskKey(UUID.randomUUID().toString(), action, queryKey);
-        TaskKey key2 = new TaskKey(UUID.randomUUID().toString(), action, queryKey);
-        TaskKey key3 = new TaskKey(UUID.randomUUID().toString(), action, queryKey);
-        states.setState(key, TaskStates.TASK_STATE.READY);
+        TaskKey key = new TaskKey(0, queryKey);
+        TaskKey key2 = new TaskKey(10, queryKey);
+        TaskKey key3 = new TaskKey(20, queryKey);
+        states.setState(key.getTaskId(), TaskStates.TASK_STATE.READY);
         
         storageService.updateTaskStates(states);
         
-        assertEquals(TaskStates.TASK_STATE.READY, queryCache.getTaskStates(queryId).getState(key));
+        assertEquals(TaskStates.TASK_STATE.READY, queryCache.getTaskStates(queryId).getState(key.getTaskId()));
         assertTrue(storageService.updateTaskState(key, TaskStates.TASK_STATE.RUNNING));
-        assertEquals(TaskStates.TASK_STATE.RUNNING, queryCache.getTaskStates(queryId).getState(key));
+        assertEquals(TaskStates.TASK_STATE.RUNNING, queryCache.getTaskStates(queryId).getState(key.getTaskId()));
         assertTrue(storageService.updateTaskState(key2, TaskStates.TASK_STATE.RUNNING));
         // should fail trying to run another
         assertFalse(storageService.updateTaskState(key3, TaskStates.TASK_STATE.RUNNING));
         assertTrue(storageService.updateTaskState(key, TaskStates.TASK_STATE.COMPLETED));
-        assertEquals(TaskStates.TASK_STATE.COMPLETED, queryCache.getTaskStates(queryId).getState(key));
+        assertEquals(TaskStates.TASK_STATE.COMPLETED, queryCache.getTaskStates(queryId).getState(key.getTaskId()));
         // now this should succeed
         assertTrue(storageService.updateTaskState(key3, TaskStates.TASK_STATE.RUNNING));
     }
@@ -459,7 +459,6 @@ public abstract class QueryStorageCacheTest {
         assertNotNull(task.getTaskKey());
         assertEquals(queryId, task.getTaskKey().getQueryId());
         assertEquals(queryPool, task.getTaskKey().getQueryPool());
-        assertEquals(QueryRequest.Method.CREATE, task.getTaskKey().getAction());
         assertEquals(query.getQuery(), task.getParameters().get(QueryImpl.QUERY));
         assertEquals(DefaultQueryParameters.formatDate(query.getBeginDate()), task.getParameters().get(QueryImpl.BEGIN_DATE));
         assertEquals(DefaultQueryParameters.formatDate(query.getEndDate()), task.getParameters().get(QueryImpl.END_DATE));

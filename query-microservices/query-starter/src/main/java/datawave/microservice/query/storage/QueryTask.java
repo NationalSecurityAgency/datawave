@@ -22,23 +22,20 @@ public class QueryTask implements Serializable {
     public static final String EXPAND_VALUES = "expand.values";
     public static final String EXPAND_FIELDS = "expand.fields";
     
-    private final String taskId;
+    private final int taskId;
     private final QueryRequest.Method action;
     private final QueryCheckpoint queryCheckpoint;
     
-    public QueryTask(QueryRequest.Method action, QueryCheckpoint queryCheckpoint) {
-        this(UUID.randomUUID().toString(), action, queryCheckpoint);
-    }
-    
-    public QueryTask(String taskId, QueryRequest.Method action, QueryCheckpoint queryCheckpoint) {
+    public QueryTask(int taskId, QueryRequest.Method action, QueryCheckpoint queryCheckpoint) {
         this.taskId = taskId;
         this.action = action;
         this.queryCheckpoint = queryCheckpoint;
+        
     }
     
     @JsonIgnore
     public TaskKey getTaskKey() {
-        return new TaskKey(taskId, action, queryCheckpoint.getQueryKey());
+        return new TaskKey(taskId, queryCheckpoint.getQueryKey());
     }
     
     /**
@@ -64,7 +61,7 @@ public class QueryTask implements Serializable {
      *
      * @return The task id
      */
-    public String getTaskId() {
+    public int getTaskId() {
         return taskId;
     }
     

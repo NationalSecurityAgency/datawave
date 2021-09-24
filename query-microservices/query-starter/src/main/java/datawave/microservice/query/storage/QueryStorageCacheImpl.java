@@ -115,7 +115,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         }
         
         // return the an empty task key
-        return new TaskKey(null, QueryRequest.Method.CREATE, new QueryKey(queryPool, queryId, query.getQueryLogicName()));
+        return new TaskKey(-1, new QueryKey(queryPool, queryId, query.getQueryLogicName()));
     }
     
     /**
@@ -217,7 +217,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         lock.lock();
         try {
             TaskStates states = cache.getTaskStates(taskKey.getQueryId());
-            if (states.setState(taskKey, state)) {
+            if (states.setState(taskKey.getTaskId(), state)) {
                 updateTaskStates(states);
                 return true;
             }
@@ -285,13 +285,27 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public QueryTask createTask(QueryRequest.Method action, QueryCheckpoint checkpoint) {
-        // create a query task in the cache
-        QueryTask task = cache.addQueryTask(action, checkpoint);
+        QueryTask task = null;
         
-        // Set the initial ready state in the task states
-        TaskStates states = cache.getTaskStates(checkpoint.getQueryKey().getQueryId());
-        states.setState(task.getTaskKey(), TaskStates.TASK_STATE.READY);
-        cache.updateTaskStates(states);
+        String queryId = checkpoint.getQueryKey().getQueryId();
+        
+        QueryStorageLock lock = cache.getTaskStatesLock(queryId);
+        lock.lock();
+        try {
+            // Set the initial ready state in the task states
+            TaskStates states = cache.getTaskStates(queryId);
+            
+            int taskId = states.getAndIncrementNextTaskId();
+            
+            // create a query task in the cache
+            task = cache.addQueryTask(taskId, action, checkpoint);
+            
+            states.setState(taskId, TaskStates.TASK_STATE.READY);
+            
+            cache.updateTaskStates(states);
+        } finally {
+            lock.unlock();
+        }
         
         // return the task
         return task;

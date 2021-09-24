@@ -81,10 +81,6 @@ public class QueryKey implements Serializable {
         return toUUIDKey() + '.' + POOL_PREFIX + queryPool + '.' + LOGIC_PREFIX + queryLogic;
     }
     
-    public String toRoutingKey() {
-        return "*." + POOL_PREFIX + queryPool + ".*";
-    }
-    
     @Override
     public String toString() {
         return toKey();

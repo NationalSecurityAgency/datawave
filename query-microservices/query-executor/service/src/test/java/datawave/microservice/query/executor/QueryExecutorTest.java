@@ -238,7 +238,7 @@ public abstract class QueryExecutorTest {
         QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
         
         TaskStates states = storageService.getTaskStates(key.getQueryId());
-        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
+        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key.getTaskId()));
         
         // create our query executor
         QueryExecutor queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, appCtx, connectionFactory, storageService,
@@ -322,7 +322,7 @@ public abstract class QueryExecutorTest {
         QueryQueueListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId().toString());
         
         TaskStates states = storageService.getTaskStates(key.getQueryId());
-        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key));
+        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key.getTaskId()));
         
         // pass the notification to the query executor
         QueryExecutor queryExecutor = new QueryExecutor(executorProperties, queryProperties, busProperties, appCtx, connectionFactory, storageService,

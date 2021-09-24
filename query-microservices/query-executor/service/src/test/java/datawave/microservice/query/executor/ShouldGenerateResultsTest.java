@@ -26,7 +26,7 @@ public class ShouldGenerateResultsTest {
         props.setAvailableResultsPageMultiplier(2.0f);
         TestQueryQueueManagerForSize queues = new TestQueryQueueManagerForSize();
         TestExecutorShouldGenerateResults action = new TestExecutorShouldGenerateResults(props, queues);
-        TaskKey key = new TaskKey("taskid", QueryRequest.Method.NEXT, new QueryKey("default", "queryid", "querylogic"));
+        TaskKey key = new TaskKey(1, new QueryKey("default", "queryid", "querylogic"));
         QueryStatus queryStatus = new QueryStatus();
         queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
         queryStatus.setActiveNextCalls(1);

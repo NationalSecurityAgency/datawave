@@ -138,7 +138,6 @@ public class QueryStorageStateServiceTest {
         assertNotNull(task.getTaskKey());
         assertEquals(queryId, task.getTaskKey().getQueryId());
         assertEquals(queryPool, task.getTaskKey().getQueryPool());
-        assertEquals(QueryRequest.Method.CREATE, task.getTaskKey().getAction());
         assertEquals(query.getQuery(), task.getParameters().get(QueryImpl.QUERY));
         assertEquals(DefaultQueryParameters.formatDate(query.getBeginDate()), task.getParameters().get(QueryImpl.BEGIN_DATE));
         assertEquals(DefaultQueryParameters.formatDate(query.getEndDate()), task.getParameters().get(QueryImpl.END_DATE));

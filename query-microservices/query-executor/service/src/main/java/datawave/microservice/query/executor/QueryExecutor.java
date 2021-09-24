@@ -1,5 +1,6 @@
 package datawave.microservice.query.executor;
 
+import com.zaxxer.sparsebits.SparseBitSet;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.executor.action.Create;
 import datawave.microservice.query.executor.action.ExecutorAction;
@@ -30,6 +31,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -163,21 +165,44 @@ public class QueryExecutor implements QueryRequestHandler {
                 
                 if (taskStates != null) {
                     log.debug("Searching for a task ready to run for " + queryId);
-                    Map<TaskStates.TASK_STATE,Set<TaskKey>> taskStateMap = taskStates.getTaskStates();
+                    Map<TaskStates.TASK_STATE,SparseBitSet> taskStateMap = taskStates.getTaskStates();
                     TaskKey taskKey = null;
                     if (taskStateMap.containsKey(TaskStates.TASK_STATE.READY)) {
-                        for (TaskKey key : taskStateMap.get(TaskStates.TASK_STATE.READY)) {
-                            if (key.getAction() == action) {
-                                taskKey = key;
-                                log.info("Found task " + taskKey);
-                                break;
+                        SparseBitSet tasks = taskStateMap.get(TaskStates.TASK_STATE.READY);
+                        // find a random id out of those in the ready state
+                        int taskId = -1;
+                        // first the simple case where there is only one task (e.g. a plan or create task)
+                        if (tasks.cardinality() == 1) {
+                            taskId = tasks.nextSetBit(0);
+                        } else {
+                            int length = tasks.length();
+                            Random random = new Random();
+                            while (taskId == -1) {
+                                int startId = random.nextInt(length);
+                                int previousId = tasks.previousSetBit(startId);
+                                int nextId = tasks.nextSetBit(startId);
+                                if (previousId == -1) {
+                                    taskId = nextId;
+                                } else if (nextId == -1) {
+                                    taskId = previousId;
+                                } else {
+                                    taskId = (startId - previousId < nextId - startId) ? previousId : nextId;
+                                }
                             }
+                        }
+                        if (taskId != -1) {
+                            taskKey = new TaskKey(taskId, queryStatus.getQueryKey());
+                            log.debug("Found " + taskKey);
                         }
                     }
                     
                     if (taskKey != null) {
                         QueryTask task = cache.getTask(taskKey);
+                        // if we have such a task, and the task is for the action requested, then execute it
                         if (task != null) {
+                            if (task.getAction() != action) {
+                                log.warn("Task " + taskKey + " is for " + task.getAction() + " but we were looking for " + action + ", executing task anyway");
+                            }
                             ExecutorAction runnable = null;
                             switch (action) {
                                 case CREATE:
