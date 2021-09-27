@@ -9,9 +9,11 @@ import datawave.microservice.query.executor.action.Plan;
 import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
+import datawave.microservice.query.storage.QueryCache;
 import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
+import datawave.microservice.query.storage.QueryStorageLock;
 import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskStates;
@@ -160,77 +162,88 @@ public class QueryExecutor implements QueryRequestHandler {
                 interruptWork(queryId, queryStatus.getQuery().getUserDN());
                 break;
             default: {
-                // get the query states from the cache
-                TaskStates taskStates = cache.getTaskStates(queryId);
-                
-                if (taskStates != null) {
-                    log.debug("Searching for a task ready to run for " + queryId);
-                    Map<TaskStates.TASK_STATE,SparseBitSet> taskStateMap = taskStates.getTaskStates();
-                    TaskKey taskKey = null;
-                    if (taskStateMap.containsKey(TaskStates.TASK_STATE.READY)) {
-                        SparseBitSet tasks = taskStateMap.get(TaskStates.TASK_STATE.READY);
-                        // find a random id out of those in the ready state
-                        int taskId = -1;
-                        // first the simple case where there is only one task (e.g. a plan or create task)
-                        if (tasks.cardinality() == 1) {
-                            taskId = tasks.nextSetBit(0);
-                        } else {
-                            int length = tasks.length();
-                            Random random = new Random();
-                            while (taskId == -1) {
-                                int startId = random.nextInt(length);
-                                int previousId = tasks.previousSetBit(startId);
-                                int nextId = tasks.nextSetBit(startId);
-                                if (previousId == -1) {
-                                    taskId = nextId;
-                                } else if (nextId == -1) {
-                                    taskId = previousId;
+                TaskKey taskKey = null;
+                QueryStorageLock lock = cache.getTaskStatesLock(queryId);
+                lock.lock();
+                try {
+                    // get the query states from the cache
+                    TaskStates taskStates = cache.getTaskStates(queryId);
+                    
+                    if (taskStates != null) {
+                        log.debug("Searching for a task ready to run for " + queryId);
+                        Map<TaskStates.TASK_STATE,SparseBitSet> taskStateMap = taskStates.getTaskStates();
+                        if (taskStateMap.containsKey(TaskStates.TASK_STATE.READY)) {
+                            SparseBitSet tasks = taskStateMap.get(TaskStates.TASK_STATE.READY);
+                            // find a random id out of those in the ready state
+                            int taskId = -1;
+                            // first the simple case where there is only one task (e.g. a plan or create task)
+                            if (tasks.cardinality() == 1) {
+                                taskId = tasks.nextSetBit(0);
+                            } else {
+                                int length = tasks.length();
+                                Random random = new Random();
+                                while (taskId == -1) {
+                                    int startId = random.nextInt(length);
+                                    int previousId = tasks.previousSetBit(startId);
+                                    int nextId = tasks.nextSetBit(startId);
+                                    if (previousId == -1) {
+                                        taskId = nextId;
+                                    } else if (nextId == -1) {
+                                        taskId = previousId;
+                                    } else {
+                                        taskId = (startId - previousId < nextId - startId) ? previousId : nextId;
+                                    }
+                                }
+                            }
+                            if (taskId != -1) {
+                                taskKey = new TaskKey(taskId, queryStatus.getQueryKey());
+                                log.debug("Found " + taskKey);
+                                if (!cache.updateTaskState(taskKey, TaskStates.TASK_STATE.RUNNING)) {
+                                    taskKey = null;
                                 } else {
-                                    taskId = (startId - previousId < nextId - startId) ? previousId : nextId;
+                                    log.debug("Got lock for task " + taskKey);
                                 }
                             }
                         }
-                        if (taskId != -1) {
-                            taskKey = new TaskKey(taskId, queryStatus.getQueryKey());
-                            log.debug("Found " + taskKey);
-                        }
+                    } else {
+                        log.error("Need to cleanup query because we have no task states: " + queryId);
+                        // TODO: cleanup the query because we are referencing a query that has no task states ??
                     }
-                    
-                    if (taskKey != null) {
-                        QueryTask task = cache.getTask(taskKey);
-                        // if we have such a task, and the task is for the action requested, then execute it
-                        if (task != null) {
-                            if (task.getAction() != action) {
-                                log.warn("Task " + taskKey + " is for " + task.getAction() + " but we were looking for " + action + ", executing task anyway");
-                            }
-                            ExecutorAction runnable = null;
-                            switch (action) {
-                                case CREATE:
-                                    runnable = new Create(this, task);
-                                    break;
-                                case NEXT:
-                                    runnable = new Next(this, task);
-                                    break;
-                                case PLAN:
-                                    runnable = new Plan(this, task);
-                                    break;
-                                default:
-                                    throw new UnsupportedOperationException(task.getTaskKey().toString());
-                            }
-                            
-                            if (wait) {
-                                runnable.run();
-                            } else {
-                                threadPool.execute(runnable);
-                            }
+                } finally {
+                    lock.unlock();
+                }
+                
+                if (taskKey != null) {
+                    QueryTask task = cache.getTask(taskKey);
+                    // if we have such a task, and the task is for the action requested, then execute it
+                    if (task != null) {
+                        if (task.getAction() != action) {
+                            log.warn("Task " + taskKey + " is for " + task.getAction() + " but we were looking for " + action + ", executing task anyway");
+                        }
+                        ExecutorAction runnable = null;
+                        switch (action) {
+                            case CREATE:
+                                runnable = new Create(this, task);
+                                break;
+                            case NEXT:
+                                runnable = new Next(this, task);
+                                break;
+                            case PLAN:
+                                runnable = new Plan(this, task);
+                                break;
+                            default:
+                                throw new UnsupportedOperationException(task.getTaskKey().toString());
+                        }
+                        
+                        if (wait) {
+                            runnable.run();
                         } else {
-                            log.error("Need to cleanup task states because we are referencing a task that no longer exists: " + taskKey);
-                            cache.updateTaskState(taskKey, TaskStates.TASK_STATE.FAILED);
+                            threadPool.execute(runnable);
                         }
+                    } else {
+                        log.error("Need to cleanup task states because we are referencing a task that no longer exists: " + taskKey);
+                        cache.updateTaskState(taskKey, TaskStates.TASK_STATE.FAILED);
                     }
-                } else {
-                    log.error("Need to cleanup query because we have no task states: " + queryId);
-                    // TODO: cleanup the query because we are referencing a query that has no task states ??
                 }
             }
         }

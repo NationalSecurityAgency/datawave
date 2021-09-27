@@ -103,6 +103,9 @@ public abstract class ExecutorAction implements Runnable {
         interrupted = true;
     }
     
+    /**
+     * It is presumsed that a lock for this task has already been obtained by the QueryExecutor
+     */
     @Override
     public void run() {
         
@@ -110,49 +113,44 @@ public abstract class ExecutorAction implements Runnable {
         boolean taskFailed = false;
         
         TaskKey taskKey = task.getTaskKey();
+        log.debug("Running " + taskKey);
+        
         String queryId = taskKey.getQueryId();
-        boolean gotLock = cache.updateTaskState(taskKey, TaskStates.TASK_STATE.RUNNING);
-        if (gotLock) {
-            log.debug("Got lock for task " + taskKey);
-            
-            Connector connector = null;
-            
-            try {
-                CachedQueryStatus queryStatus = new CachedQueryStatus(cache, queryId, executorProperties.getQueryStatusExpirationMs());
-                log.debug("Getting connector for " + taskKey);
-                connector = getConnector(queryStatus, AccumuloConnectionFactory.Priority.LOW);
-                log.debug("Executing task for " + taskKey);
-                taskComplete = executeTask(queryStatus, connector);
-            } catch (Exception e) {
-                log.error("Failed to process task " + taskKey, e);
-                taskFailed = true;
-                cache.updateFailedQueryStatus(taskKey.getQueryId(), e);
-            } finally {
-                if (connector != null) {
-                    try {
-                        connectionFactory.returnConnection(connector);
-                    } catch (Exception e) {
-                        log.error("Failed to return connection for " + taskKey);
-                    }
-                }
-                
-                if (taskComplete) {
-                    cache.updateTaskState(taskKey, TaskStates.TASK_STATE.COMPLETED);
-                    try {
-                        cache.deleteTask(taskKey);
-                    } catch (IOException e) {
-                        log.error("We may be leaving an orphaned task: " + taskKey, e);
-                    }
-                } else if (taskFailed) {
-                    cache.updateTaskState(taskKey, TaskStates.TASK_STATE.FAILED);
-                } else {
-                    cache.updateTaskState(taskKey, TaskStates.TASK_STATE.READY);
+        
+        Connector connector = null;
+        
+        try {
+            CachedQueryStatus queryStatus = new CachedQueryStatus(cache, queryId, executorProperties.getQueryStatusExpirationMs());
+            log.debug("Getting connector for " + taskKey);
+            connector = getConnector(queryStatus, AccumuloConnectionFactory.Priority.LOW);
+            log.debug("Executing task for " + taskKey);
+            taskComplete = executeTask(queryStatus, connector);
+        } catch (Exception e) {
+            log.error("Failed to process task " + taskKey, e);
+            taskFailed = true;
+            cache.updateFailedQueryStatus(taskKey.getQueryId(), e);
+        } finally {
+            if (connector != null) {
+                try {
+                    connectionFactory.returnConnection(connector);
+                } catch (Exception e) {
+                    log.error("Failed to return connection for " + taskKey);
                 }
             }
-        } else {
-            log.warn("Unable to get lock for task " + taskKey);
+            
+            if (taskComplete) {
+                cache.updateTaskState(taskKey, TaskStates.TASK_STATE.COMPLETED);
+                try {
+                    cache.deleteTask(taskKey);
+                } catch (IOException e) {
+                    log.error("We may be leaving an orphaned task: " + taskKey, e);
+                }
+            } else if (taskFailed) {
+                cache.updateTaskState(taskKey, TaskStates.TASK_STATE.FAILED);
+            } else {
+                cache.updateTaskState(taskKey, TaskStates.TASK_STATE.READY);
+            }
         }
-        
     }
     
     /**
