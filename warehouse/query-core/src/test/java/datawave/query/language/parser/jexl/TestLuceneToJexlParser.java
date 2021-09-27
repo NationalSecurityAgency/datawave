@@ -55,19 +55,19 @@ public class TestLuceneToJexlParser {
         LuceneToJexlQueryParser parser = getQueryParser();
         
         QueryNode node = parser.parse("FIELD:SELECTOR AND #INCLUDE(F1, GB.*)");
-        Assert.assertEquals("FIELD == 'SELECTOR' && (filter:includeRegex(F1, 'GB.*'))", node.getOriginalQuery());
+        Assert.assertEquals("FIELD == 'SELECTOR' && filter:includeRegex(F1, 'GB.*')", node.getOriginalQuery());
         
         node = parser.parse("FIELD:SELECTOR AND #INCLUDE(F1, GB.{3})");
-        Assert.assertEquals("FIELD == 'SELECTOR' && (filter:includeRegex(F1, 'GB.{3}'))", node.getOriginalQuery());
+        Assert.assertEquals("FIELD == 'SELECTOR' && filter:includeRegex(F1, 'GB.{3}')", node.getOriginalQuery());
         
         node = parser.parse("FIELD:SELECTOR AND #INCLUDE(F1, GB\\.{3})");
-        Assert.assertEquals("FIELD == 'SELECTOR' && (filter:includeRegex(F1, 'GB\\\\.{3}'))", node.getOriginalQuery());
+        Assert.assertEquals("FIELD == 'SELECTOR' && filter:includeRegex(F1, 'GB\\\\.{3}')", node.getOriginalQuery());
         
         node = parser.parse("FIELD:SELECTOR AND #INCLUDE(F1, GB\\.{3\\,1})");
-        Assert.assertEquals("FIELD == 'SELECTOR' && (filter:includeRegex(F1, 'GB\\\\.{3,1}'))", node.getOriginalQuery());
+        Assert.assertEquals("FIELD == 'SELECTOR' && filter:includeRegex(F1, 'GB\\\\.{3,1}')", node.getOriginalQuery());
         
         node = parser.parse("FIELD:SOMETHING AND #EVALUATION_ONLY('#INCLUDE(F1, GB\\.{3\\,1})')");
-        Assert.assertEquals("FIELD == 'SOMETHING' && ((_Eval_ = true) && (filter:includeRegex(F1, 'GB\\\\.{3,1}')))", node.getOriginalQuery());
+        Assert.assertEquals("FIELD == 'SOMETHING' && ((_Eval_ = true) && filter:includeRegex(F1, 'GB\\\\.{3,1}'))", node.getOriginalQuery());
     }
     
     public static LuceneToJexlQueryParser getQueryParser() {
