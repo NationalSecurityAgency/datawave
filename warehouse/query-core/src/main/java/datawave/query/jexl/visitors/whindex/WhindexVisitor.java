@@ -264,12 +264,12 @@ public class WhindexVisitor extends RebuildingVisitor {
         ExpandData parentData = (ExpandData) data;
         
         // only process delayed and bounded range predicates
-        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Lists.newArrayList(ASTDelayedPredicate.class, BoundedRange.class))) {
+        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(ASTDelayedPredicate.class, BoundedRange.class)) {
             return copy(node);
         }
         
         // if we only have one child, just pass through
-        // this shouldn't ever really happen, but it could
+        // this shouldn't ever really happen, but it could/
         if (node.jjtGetNumChildren() == 1)
             return super.visit(node, data);
         
@@ -439,7 +439,7 @@ public class WhindexVisitor extends RebuildingVisitor {
     // if the node is marked, only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Lists.newArrayList(ASTDelayedPredicate.class, BoundedRange.class))) {
+        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Lists.newArrayList(ASTDelayedPredicate.class, BoundedRange.class))) {
             return RebuildingVisitor.copy(node);
         }
         
@@ -449,7 +449,7 @@ public class WhindexVisitor extends RebuildingVisitor {
     // if the node is marked, only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Lists.newArrayList(ASTDelayedPredicate.class, BoundedRange.class))) {
+        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Lists.newArrayList(ASTDelayedPredicate.class, BoundedRange.class))) {
             return RebuildingVisitor.copy(node);
         }
         
@@ -845,7 +845,7 @@ public class WhindexVisitor extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTReference node) {
         // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(BoundedRange.class))) {
+        if (!QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Collections.singletonList(BoundedRange.class))) {
             if (node.jjtGetNumChildren() == 1) {
                 JexlNode kid = node.jjtGetChild(0);
                 if (kid instanceof ASTReferenceExpression) {
@@ -868,7 +868,7 @@ public class WhindexVisitor extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTReferenceExpression node) {
         // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(BoundedRange.class))) {
+        if (!QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Collections.singletonList(BoundedRange.class))) {
             if (node != null && node.jjtGetNumChildren() == 1) {
                 JexlNode kid = node.jjtGetChild(0);
                 if (kid instanceof ASTAndNode) {
@@ -894,10 +894,10 @@ public class WhindexVisitor extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTAndNode node) {
         // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(BoundedRange.class))) {
+        if (!QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Collections.singletonList(BoundedRange.class))) {
             if (node.jjtGetNumChildren() == 1) {
                 return getLeafNode(node.jjtGetChild(0));
-            } else if (BoundedRange.instanceOf(node)) {
+            } else if (QueryPropertyMarkerVisitor.getInstance(node).isType(BoundedRange.class)) {
                 return node;
             }
         }
@@ -913,7 +913,7 @@ public class WhindexVisitor extends RebuildingVisitor {
      * @return The found leaf node, or null
      */
     private JexlNode getLeafNode(ASTOrNode node) {
-        if (!QueryPropertyMarkerVisitor.instanceOfAny(node)) {
+        if (!QueryPropertyMarkerVisitor.getInstance(node).isAnyType()) {
             if (node.jjtGetNumChildren() == 1) {
                 return getLeafNode(node.jjtGetChild(0));
             }
