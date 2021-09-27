@@ -62,7 +62,7 @@ class TimedVisitorManager {
             
             if (validateAst) {
                 try {
-                    ASTValidator.isValid(script);
+                    ASTValidator.isValid(script, stageName);
                 } catch (InvalidQueryTreeException e) {
                     throw new DatawaveQueryException(e);
                 }
