@@ -30,7 +30,6 @@ import org.apache.commons.jexl2.parser.ASTGTNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTIfStatement;
 import org.apache.commons.jexl2.parser.ASTIntegerLiteral;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTMapEntry;
@@ -70,11 +69,19 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
     
     private boolean isValid = true;
     
+    private enum reason {
+        // the reason a query tree failed validation
+        DOUBLE_PAREN,
+        WRAPPED_SINGLE_CHILD
+    }
+    
     public static boolean validate(JexlNode node) {
         MinimalReferenceExpressionsVisitor visitor = new MinimalReferenceExpressionsVisitor();
         node.jjtAccept(visitor, null);
         return visitor.isValid();
     }
+    
+    private MinimalReferenceExpressionsVisitor() {}
     
     public boolean isValid() {
         return this.isValid;
@@ -86,28 +93,32 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        
-        if (isValid && isParen(node) && isParen(grandChild(node))) {
-            // found a double paren
-            invalidate(node, "double paren");
+        if (!isValid) {
+            // short circuit if the tree is already marked invalid
             return data;
-        } else if (!isValid) {
+        } else if (isParen(node) && isParen(getLeftMostGrandchild(node))) {
+            // found a double paren
+            invalidate(node, reason.DOUBLE_PAREN);
+            return data;
+        } else {
+            node.childrenAccept(this, data);
             return data;
         }
-        
-        node.childrenAccept(this, data);
-        return data;
     }
     
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        if (isValid && isAnyChildAWrappedSingleTerm(node)) {
+        if (!isValid) {
+            // short circuit if the tree is already marked invalid
+            return data;
+        } else if (isAnyChildAWrappedSingleTerm(node)) {
             // found a single term child that is wrapped
-            invalidate(node, "wrapped single child");
+            invalidate(node, reason.WRAPPED_SINGLE_CHILD);
+            return data;
+        } else {
+            node.childrenAccept(this, data);
             return data;
         }
-        node.childrenAccept(this, data);
-        return data;
     }
     
     @Override
@@ -123,7 +134,7 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
             return data;
         } else if (isAnyChildAWrappedSingleTerm(node)) {
             // invalidate
-            invalidate(node, "wrapped single child");
+            invalidate(node, reason.WRAPPED_SINGLE_CHILD);
             return data;
         } else {
             // otherwise continue descent
@@ -142,7 +153,7 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
     }
     
     // fetch the grandchild
-    private JexlNode grandChild(JexlNode node) {
+    private JexlNode getLeftMostGrandchild(JexlNode node) {
         return node.jjtGetChild(0).jjtGetChild(0);
     }
     
@@ -168,42 +179,52 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
         return false;
     }
     
-    private void invalidate(JexlNode node, String cause) {
+    /**
+     * Mark the tree as invalid, print the cause and the node that caused this
+     *
+     * @param node
+     *            the node that caused this tree to be marked invalid
+     * @param cause
+     *            the reason why
+     */
+    private void invalidate(JexlNode node, reason cause) {
         isValid = false;
         log.info("Invalid node (" + cause + "): " + JexlStringBuildingVisitor.buildQueryWithoutParse(node));
     }
     
     /*
-     * Pass through
+     * Pass through ASTJexlScript.
+     * 
+     * Potential to short circuit on SimpleNode, ASTReferenceExpression and ASTNotNode methods
      */
     
     @Override
-    public Object visit(ASTJexlScript node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-    
-    @Override
     public Object visit(SimpleNode node, Object data) {
-        node.childrenAccept(this, data);
+        if (isValid) {
+            node.childrenAccept(this, data);
+        }
         return data;
     }
     
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        node.childrenAccept(this, data);
+        if (isValid) {
+            node.childrenAccept(this, data);
+        }
         return data;
     }
     
     // descend into negated branches of the query
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        node.childrenAccept(this, data);
+        if (isValid) {
+            node.childrenAccept(this, data);
+        }
         return data;
     }
     
     /*
-     * Short circuits
+     * Short circuits, do not descend further into leaf nodes
      */
     
     @Override
