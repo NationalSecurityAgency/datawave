@@ -24,6 +24,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.validation.constraints.AssertTrue;
+
 public class PushdownLargeFieldedListsVisitorTest {
     protected ShardQueryConfiguration conf = null;
     
@@ -91,4 +93,19 @@ public class PushdownLargeFieldedListsVisitorTest {
                         + "') && (field = 'FOO') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}')))", rewritten);
     }
     
+    @Test
+    public void testPushdownIgnoreAnyfield() throws Throwable {
+        String rewritten = JexlStringBuildingVisitor
+                        .buildQuery(PushdownLargeFieldedListsVisitor.pushdown(
+                                        conf,
+                                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper
+                                                        .parseJexlQuery("FOO == 'BAR' || _ANYFIELD_ == 'BAR' || FOO == 'FOO' || _ANYFIELD_ == 'FOO' || FOO == 'FOOBAR' || _ANYFIELD_ == 'FOOBAR'")),
+                                        null, null));
+        String id = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
+        Assert.assertEquals(
+                        "((_List_ = true) && ((id = '"
+                                        + id
+                                        + "') && (field = 'FOO') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}'))) || _ANYFIELD_ == 'BAR' || _ANYFIELD_ == 'FOO' || _ANYFIELD_ == 'FOOBAR'",
+                        rewritten);
+    }
 }
