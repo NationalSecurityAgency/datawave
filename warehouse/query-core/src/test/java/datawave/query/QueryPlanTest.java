@@ -1,9 +1,11 @@
 package datawave.query;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -12,6 +14,7 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.webservice.query.metric.QueryMetric;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -67,6 +70,17 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     }
     
     @Test
+    public void verifyQueryStringUpdatesWithQueryTree() throws ParseException {
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setQueryString("1");
+        assertEquals("1", config.getQueryString());
+        config.setQueryTree(JexlASTHelper.parseAndFlattenJexlQuery("A == B"));
+        assertEquals("A == B", config.getQueryString());
+        config.setQueryTree(JexlASTHelper.parseAndFlattenJexlQuery("B == B"));
+        assertEquals("B == B", config.getQueryString());
+    }
+    
+    @Test
     public void planInMetricsAfterInvalidQueryException() throws Exception {
         String query = "species != " + "'dog'";
         String expectedPlan = "!(SPECIES == 'dog')";
@@ -94,7 +108,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @Test
     public void planInMetricsAfterTableNotFoundException() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
-        String expectedPlan = query;
+        String expectedPlan = "!(_ANYFIELD_ == 'london')";
         
         this.logic.setMetadataTableName("missing");
         try {
