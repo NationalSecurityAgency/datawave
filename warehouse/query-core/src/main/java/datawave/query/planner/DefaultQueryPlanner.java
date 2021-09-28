@@ -715,7 +715,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (optionsMap.containsKey(QueryParameters.SHARDS_AND_DAYS)) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Add SHARDS_AND_DAYS from options");
             String shardsAndDays = optionsMap.get(QueryParameters.SHARDS_AND_DAYS);
-            queryTree = AddShardsAndDaysVisitor.update(queryTree, shardsAndDays);
+            config.setQueryTree(AddShardsAndDaysVisitor.update(config.getQueryTree(), shardsAndDays));
             stopwatch.stop();
         }
         
