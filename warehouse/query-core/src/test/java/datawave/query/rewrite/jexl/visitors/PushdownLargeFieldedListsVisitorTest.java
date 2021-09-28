@@ -59,4 +59,36 @@ public class PushdownLargeFieldedListsVisitorTest {
                         rewritten);
     }
     
+    @Test
+    public void testEscapedValues() throws Throwable {
+        String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf,
+                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery("FOO == 'BAR' || FOO == 'FOO' || FOO == 'FOO,BAR'")), null, null));
+        String id = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
+        Assert.assertEquals("((_List_ = true) && ((id = '" + id + "') && (field = 'FOO') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOO,BAR\"]}')))",
+                        rewritten);
+    }
+    
+    @Test
+    public void testPushdownPartial() throws Throwable {
+        String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf, TreeFlatteningRebuildingVisitor
+                        .flatten(JexlASTHelper.parseJexlQuery("FOO == 'BAR' || BAR == 'BAR' || FOO == 'FOO' || BAR == 'FOO' || FOO == 'FOOBAR'")), null, null));
+        String id = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
+        String expected = "BAR == 'BAR' || BAR == 'FOO' || ((_List_ = true) && ((id = '" + id
+                        + "') && (field = 'FOO') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}')))";
+        Assert.assertEquals("EXPECTED: " + expected + "\nACTUAL: " + rewritten, expected, rewritten);
+    }
+    
+    @Test
+    public void testPushdownMultiple() throws Throwable {
+        String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf, TreeFlatteningRebuildingVisitor
+                        .flatten(JexlASTHelper
+                                        .parseJexlQuery("FOO == 'BAR' || BAR == 'BAR' || FOO == 'FOO' || BAR == 'FOO' || FOO == 'FOOBAR' || BAR == 'FOOBAR'")),
+                        null, null));
+        String id1 = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
+        String id2 = rewritten.substring(rewritten.lastIndexOf("id = '") + 6, rewritten.lastIndexOf("') && (field"));
+        Assert.assertEquals("((_List_ = true) && ((id = '" + id1
+                        + "') && (field = 'BAR') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}'))) || ((_List_ = true) && ((id = '" + id2
+                        + "') && (field = 'FOO') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}')))", rewritten);
+    }
+    
 }
