@@ -39,9 +39,9 @@ public class RootNegationCheckVisitor {
             Class<?> childClass = child.getClass();
             
             // skip over any query property markers/assignments
-            JexlNode sourceNode = QueryPropertyMarker.getQueryPropertySource(child, null);
-            if (sourceNode != null) {
-                child = sourceNode;
+            QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(child);
+            if (instance.isAnyType()) {
+                child = instance.getSource();
             }
             
             if (ASTNENode.class.equals(childClass) || ASTNotNode.class.equals(childClass) || ASTNRNode.class.equals(childClass)) {
