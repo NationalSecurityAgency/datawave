@@ -322,7 +322,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // model. drop others
     private boolean shouldLimitTermExpansionToModel = false;
     private Query query = null;
-    private ASTJexlScript queryTree = null;
+    @JsonIgnore
+    private transient ASTJexlScript queryTree = null;
     private boolean compressServerSideResults = false;
     private boolean indexOnlyFilterFunctionsEnabled = false;
     private boolean compositeFilterFunctionsEnabled = false;
