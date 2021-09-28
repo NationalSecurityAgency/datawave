@@ -436,7 +436,7 @@ public abstract class GroupingTest {
     @Test
     public void testGroupingWithFieldWithSparseGroupingEntries() throws Exception {
         // Testing multivalued atoms where not all atoms have every field populated.
-        // The results in entries where the where the grouping context is sparse;
+        // The results in entries where the grouping context is sparse;
         // that is, not all of the grouping contexts have data for a filed.
         // Look at VisibilityWiseGuysIngest and the DEPENDANT fields in the data
         Map<String,String> extraParameters = new HashMap<>();
