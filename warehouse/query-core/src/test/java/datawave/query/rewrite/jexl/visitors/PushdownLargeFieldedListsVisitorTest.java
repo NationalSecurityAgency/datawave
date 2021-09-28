@@ -16,6 +16,7 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import net.bytebuddy.implementation.bytecode.Throw;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -39,6 +40,23 @@ public class PushdownLargeFieldedListsVisitorTest {
         String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf,
                         TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery("FOO == 'BAR'")), null, null));
         Assert.assertEquals("FOO == 'BAR'", rewritten);
+    }
+    
+    @Test
+    public void testMultipleExpression() throws Throwable {
+        String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf,
+                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery("FOO == 'BAR' || FOO == 'FOO' || BAR == 'FOO'")), null, null));
+        String expected = "BAR == 'FOO' || FOO == 'BAR' || FOO == 'FOO'";
+        Assert.assertEquals("EXPECTED: " + expected + "\nACTUAL: " + rewritten, expected, rewritten);
+    }
+    
+    @Test
+    public void testPushdown() throws Throwable {
+        String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf,
+                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery("FOO == 'BAR' || FOO == 'FOO' || FOO == 'FOOBAR'")), null, null));
+        String id = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
+        Assert.assertEquals("((_List_ = true) && ((id = '" + id + "') && (field = 'FOO') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}')))",
+                        rewritten);
     }
     
 }
