@@ -125,4 +125,19 @@ public class PushdownLargeFieldedListsVisitorTest {
                                         + "') && (field = 'FOO') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}'))) || _ANYFIELD_ == 'BAR' || _ANYFIELD_ == 'FOO' || _ANYFIELD_ == 'FOOBAR'",
                         rewritten);
     }
+    
+    @Test
+    public void testPushdownComplex() throws Throwable {
+        String rewritten = JexlStringBuildingVisitor
+                        .buildQuery(PushdownLargeFieldedListsVisitor.pushdown(
+                                        conf,
+                                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper
+                                                        .parseJexlQuery("f:includeRegex(FOO, 'blabla') && X == 'Y' && (FOO == 'BAR' || BAR == 'BAR' || FOO == 'FOO' || BAR == 'FOO' || FOO == 'FOOBAR' || BAR == 'FOOBAR') && !(Y == 'X')")),
+                                        null, null));
+        String id1 = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
+        String id2 = rewritten.substring(rewritten.lastIndexOf("id = '") + 6, rewritten.lastIndexOf("') && (field"));
+        Assert.assertEquals("f:includeRegex(FOO, 'blabla') && X == 'Y' && (((_List_ = true) && ((id = '" + id1
+                        + "') && (field = 'BAR') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}'))) || ((_List_ = true) && ((id = '" + id2
+                        + "') && (field = 'FOO') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}')))) && !(Y == 'X')", rewritten);
+    }
 }
