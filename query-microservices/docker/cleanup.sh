@@ -1,3 +1,4 @@
 #!/bin/sh
-docker image prune
-docker system prune
+docker image prune -f
+docker system prune -f
+find logs -name '*.log' -delete
