@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.print.attribute.URISyntax;
 import javax.validation.constraints.AssertTrue;
 
 public class PushdownLargeFieldedListsVisitorTest {
@@ -139,5 +140,47 @@ public class PushdownLargeFieldedListsVisitorTest {
         Assert.assertEquals("f:includeRegex(FOO, 'blabla') && X == 'Y' && (((_List_ = true) && ((id = '" + id1
                         + "') && (field = 'BAR') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}'))) || ((_List_ = true) && ((id = '" + id2
                         + "') && (field = 'FOO') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}')))) && !(Y == 'X')", rewritten);
+    }
+    
+    @Test
+    public void testPushdownFst() throws Throwable {
+        conf.setMaxOrExpansionFstThreshold(3);
+        
+        final URI hdfsCacheURI;
+        final FileSystem fileSystem;
+        File tmpDir = null;
+        try {
+            URL hadoopConfig = this.getClass().getResource("/testhadoop.config");
+            Configuration hadoopConf = new Configuration();
+            hadoopConf.addResource(hadoopConfig);
+            
+            File tmpFile = File.createTempFile("Ivarator", ".cache");
+            tmpDir = new File(tmpFile.getAbsoluteFile() + File.separator);
+            tmpFile.delete();
+            tmpDir.mkdir();
+            
+            hdfsCacheURI = new URI("file:" + tmpDir.getPath());
+            fileSystem = FileSystem.get(hdfsCacheURI, hadoopConf);
+            
+            conf.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
+            conf.setIvaratorCacheDirConfigs(Collections.singletonList(new IvaratorCacheDirConfig(hdfsCacheURI.toString())));
+            
+            String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf,
+                            TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery("FOO == 'BAR' || FOO == 'FOO' ||  FOO == 'FOOBAR'")),
+                            fileSystem, hdfsCacheURI.toString()));
+            String id = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
+            Assert.assertEquals("((_List_ = true) && ((id = '" + id + "') && (field = 'FOO') && (params = '{\"fstURI\":\"" + hdfsCacheURI
+                            + "/PushdownLargeFileFst.1.fst\"}')))", rewritten);
+        } catch (MalformedURLException e) {
+            throw new IllegalStateException("Unable to load hadoop configuration", e);
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to create hadoop file system", e);
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException("Invalid hdfs cache dir URI", e);
+        } finally {
+            if (tmpDir != null) {
+                FileUtils.deleteDirectory(tmpDir);
+            }
+        }
     }
 }
