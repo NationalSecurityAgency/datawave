@@ -17,13 +17,9 @@ import datawave.query.index.stats.IndexStatsClient;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.postprocessing.tf.Function;
@@ -72,6 +68,7 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
@@ -112,9 +109,6 @@ public class JexlASTHelper {
     public static final Set<Class<?>> EXCLUSIVE_RANGE_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTGTNode.class, ASTLTNode.class);
     
     public static final Set<Class<?>> LESS_THAN_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTLTNode.class, ASTLENode.class);
-    
-    public static final Set<Class<? extends QueryPropertyMarker>> IVARATOR_PROPERTY_MARKER_CLASSES = Sets.newHashSet(ExceededTermThresholdMarkerJexlNode.class,
-                    ExceededOrThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class);
     
     public static final Set<Class<?>> GREATER_THAN_NODE_CLASSES = Sets.<Class<?>> newHashSet(ASTGTNode.class, ASTLENode.class);
     
@@ -337,7 +331,7 @@ public class JexlASTHelper {
     
     /**
      * Fetch the literal off of the grandchild safely. Return null if there's an exception.
-     * 
+     *
      * @param node
      * @return
      */
@@ -862,12 +856,14 @@ public class JexlASTHelper {
         }
         
         private LiteralRange _getRange(JexlNode node) {
-            boolean marked = BoundedRange.instanceOf(node);
+            QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+            boolean marked = instance.isType(BoundedRange.class);
             
             // first unwrap any delayed expression except for a tag
-            if (includeDelayed && !marked && QueryPropertyMarker.instanceOf(node, null)) {
-                node = QueryPropertyMarker.getQueryPropertySource(node, null);
-                marked = BoundedRange.instanceOf(node);
+            if (includeDelayed && !marked && instance.isAnyType()) {
+                node = instance.getSource();
+                instance = QueryPropertyMarker.findInstance(node);
+                marked = instance.isType(BoundedRange.class);
             }
             
             // It must be marked
@@ -877,7 +873,7 @@ public class JexlASTHelper {
             
             // remove the marker
             if (marked) {
-                node = BoundedRange.getBoundedRangeSource(node);
+                node = instance.getSource();
             }
             
             // remove reference and expression nodes
@@ -1481,23 +1477,36 @@ public class JexlASTHelper {
     }
     
     /**
-     * Checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage.
+     * Returns whether the tree contains any null children, children with null parents, or children with conflicting parentage.
      *
      * @param rootNode
      *            the tree to validate
      * @param failHard
-     *            whether or not to throw an exception if validation fails
+     *            whether to throw an exception if validation fails
      * @return true if valid, false otherwise
      */
-    // checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage
     public static boolean validateLineage(JexlNode rootNode, boolean failHard) {
-        boolean result = true;
-        
-        // add all the nodes to the stack and iterate...
+        return validateLineageVerbosely(rootNode, failHard).isValid();
+    }
+    
+    /**
+     * Checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage, and returns a
+     * {@link LineageValidation} with any identified violations.
+     * 
+     * @param rootNode
+     *            the tree to validate
+     * @param failHard
+     *            if true, throws an exception when a violation is encountered for the first time
+     * @return the {@link LineageValidation}
+     */
+    public static LineageValidation validateLineageVerbosely(JexlNode rootNode, boolean failHard) {
+        // Prepare a working stack to iterate through.
         Deque<JexlNode> workingStack = new LinkedList<>();
         workingStack.push(rootNode);
         
-        // go through all of the nodes from parent to children, and ensure that parent and child relationships are correct
+        LineageValidation validation = new LineageValidation();
+        
+        // Go through all the nodes from parent to children, and ensure that parent and child relationships are correct.
         while (!workingStack.isEmpty()) {
             JexlNode node = workingStack.pop();
             
@@ -1505,43 +1514,74 @@ public class JexlASTHelper {
                 for (JexlNode child : children(node)) {
                     if (child != null) {
                         if (child.jjtGetParent() == null) {
-                            if (failHard)
-                                throw new RuntimeException("Failed to validate lineage: Tree included a child with a null parent.");
-                            else
-                                log.error("Failed to validate lineage: Tree included a child with a null parent.");
-                            
-                            result = false;
+                            String message = "Tree included child " + child + " with a null parent";
+                            recordViolation(message, failHard, validation);
                         } else if (child.jjtGetParent() != node) {
-                            if (failHard)
-                                throw new RuntimeException("Failed to validate lineage:  Included a child with a conflicting parent.");
-                            else
-                                log.error("Failed to validate lineage:  Included a child with a conflicting parent.");
-                            
-                            result = false;
+                            String message = "Included a child " + child + " with conflicting parent. Expected " + node + " but was " + child.jjtGetParent();
+                            recordViolation(message, failHard, validation);
                         }
                         workingStack.push(child);
                     } else {
-                        if (failHard)
-                            throw new RuntimeException("Failed to validate lineage: Included a null child.");
-                        else
-                            log.error("Failed to validate lineage: Included a null child.");
-                        
-                        result = false;
+                        String message = "Included a null child under parent " + node;
+                        recordViolation(message, failHard, validation);
                     }
                 }
             }
         }
-        return result;
+        
+        return validation;
     }
     
-    /**
-     * Determine if an AND node is an ivarator marked node or not
-     * 
-     * @param node
-     * @return true if an instanceof an ivarator typed QueryPropertyMarker, false otherwise
-     */
-    public static boolean isIvaratorMarker(ASTAndNode node) {
-        return QueryPropertyMarkerVisitor.instanceOf(node, IVARATOR_PROPERTY_MARKER_CLASSES);
+    // Record the specified violation message. Throw an exception if failHard is true.
+    private static void recordViolation(String message, boolean failHard, LineageValidation validation) {
+        if (failHard) {
+            throw new RuntimeException("Failed to validate lineage: " + message);
+        } else {
+            log.error("Failed to validate lineage: " + message);
+            validation.addViolation(message);
+        }
+    }
+    
+    public static class LineageValidation {
+        
+        private final List<String> violations = new ArrayList<>();
+        
+        /**
+         * Returns whether a valid lineage was confirmed.
+         * 
+         * @return true if no violations were found, or false otherwise
+         */
+        public boolean isValid() {
+            return violations.isEmpty();
+        }
+        
+        /**
+         * Add a message describing an encountered violation.
+         * 
+         * @param message
+         *            the description message
+         */
+        public void addViolation(String message) {
+            violations.add(message);
+        }
+        
+        /**
+         * Return a string containing each violation message on a new line.
+         * 
+         * @return the formatted string, or null if there are no violations.
+         */
+        public String getFormattedViolations() {
+            if (isValid()) {
+                return null;
+            } else {
+                StringBuilder sb = new StringBuilder();
+                sb.append(violations.get(0));
+                for (int i = 1; i < violations.size(); i++) {
+                    sb.append("\n").append(violations.get(i));
+                }
+                return sb.toString();
+            }
+        }
     }
     
     private JexlASTHelper() {}

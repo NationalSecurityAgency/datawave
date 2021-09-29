@@ -1,10 +1,10 @@
 package datawave.webservice.query;
 
-import java.util.Date;
-
-import javax.ws.rs.core.MultivaluedMap;
-
 import datawave.validation.ParameterValidator;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  * QueryParameters passed in from a client, they are validated and passed through to the iterator stack as QueryOptions.
@@ -81,11 +81,11 @@ public interface QueryParameters extends ParameterValidator {
     
     void setLogicName(String logicName);
     
-    MultivaluedMap<String,String> getRequestHeaders();
+    Map<String,List<String>> getRequestHeaders();
     
-    void setRequestHeaders(MultivaluedMap<String,String> requestHeaders);
+    void setRequestHeaders(Map<String,List<String>> requestHeaders);
     
-    MultivaluedMap<String,String> getUnknownParameters(MultivaluedMap<String,String> allQueryParameters);
+    Map<String,List<String>> getUnknownParameters(Map<String,List<String>> allQueryParameters);
     
     void clear();
     
