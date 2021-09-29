@@ -1,8 +1,12 @@
 package datawave.microservice.common.storage;
 
-import datawave.microservice.query.storage.QueryCache;
 import datawave.microservice.query.storage.QueryState;
+import datawave.microservice.query.storage.QueryStatus;
+import datawave.microservice.query.storage.QueryStatusCache;
+import datawave.microservice.query.storage.TaskCache;
 import datawave.microservice.query.storage.TaskDescription;
+import datawave.microservice.query.storage.TaskStates;
+import datawave.microservice.query.storage.TaskStatesCache;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.security.RolesAllowed;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -19,26 +24,44 @@ import java.util.List;
 @RestController
 @RequestMapping(path = "/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class QueryStorageStateServiceController implements QueryStorageStateService {
-    private final QueryCache cache;
+    private final QueryStatusCache queryStatusCache;
+    private final TaskStatesCache taskStatesCache;
+    private final TaskCache taskCache;
     
-    public QueryStorageStateServiceController(QueryCache cache) {
-        this.cache = cache;
+    public QueryStorageStateServiceController(QueryStatusCache queryStatusCache, TaskStatesCache taskStatesCache, TaskCache taskCache) {
+        this.queryStatusCache = queryStatusCache;
+        this.taskStatesCache = taskStatesCache;
+        this.taskCache = taskCache;
     }
     
-    @ApiOperation(value = "Get the list of running queries.")
+    @ApiOperation(value = "Get the running queries.")
     @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
     @RequestMapping(path = "/queries", method = RequestMethod.GET)
     @Override
     public List<QueryState> getRunningQueries() {
-        return cache.getQueries();
+        List<QueryState> queries = new ArrayList<>();
+        for (QueryStatus query : queryStatusCache.getQueryStatus()) {
+            if (query.getQueryState() == QueryStatus.QUERY_STATE.CREATED || query.getQueryState() == QueryStatus.QUERY_STATE.DEFINED
+                            || query.getQueryState() == QueryStatus.QUERY_STATE.CLOSED) {
+                TaskStates taskStates = taskStatesCache.getTaskStates(query.getQueryKey().getQueryId());
+                if (taskStates.hasRunningTasks() || (query.getQueryState() != QueryStatus.QUERY_STATE.CLOSED && taskStates.hasUnfinishedTasks())) {
+                    queries.add(new QueryState(query, taskStates));
+                }
+            }
+        }
+        return queries;
     }
     
-    @ApiOperation(value = "Get the list of tasks for a query")
+    @ApiOperation(value = "Get the query and task states for a query")
     @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
     @RequestMapping(path = "/query/{id}", method = RequestMethod.GET)
     @Override
     public QueryState getQuery(@PathVariable("id") String queryId) {
-        return cache.getQuery(queryId);
+        QueryStatus query = queryStatusCache.getQueryStatus(queryId);
+        if (query != null) {
+            return new QueryState(query, taskStatesCache.getTaskStates(queryId));
+        }
+        return null;
     }
     
     @ApiOperation(value = "Get the list of tasks for a query")
@@ -46,6 +69,6 @@ public class QueryStorageStateServiceController implements QueryStorageStateServ
     @RequestMapping(path = "/tasks/{id}", method = RequestMethod.GET)
     @Override
     public List<TaskDescription> getTasks(@PathVariable("id") String queryId) {
-        return cache.getTaskDescriptions(queryId);
+        return taskCache.getTaskDescriptions(queryId);
     }
 }

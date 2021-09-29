@@ -5,7 +5,6 @@ import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.remote.QueryRequest;
-import datawave.microservice.query.storage.QueryCache;
 import datawave.microservice.query.storage.QueryQueueListener;
 import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
@@ -109,9 +108,6 @@ public abstract class QueryExecutorTest {
     
     @Autowired
     private ApplicationEventPublisher publisher;
-    
-    @Autowired
-    private QueryCache queryCache;
     
     @Autowired
     private QueryStorageCache storageService;

@@ -23,7 +23,9 @@ import java.util.UUID;
 @Service
 public class QueryStorageCacheImpl implements QueryStorageCache {
     
-    private final QueryCache cache;
+    private final QueryStatusCache queryStatusCache;
+    private final TaskStatesCache taskStatesCache;
+    private final TaskCache taskCache;
     private final QueryQueueManager queue;
     private final QueryStorageProperties properties;
     
@@ -31,9 +33,11 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     private final ApplicationEventPublisher publisher;
     private final BusProperties busProperties;
     
-    public QueryStorageCacheImpl(QueryCache cache, QueryQueueManager queue, QueryStorageProperties properties, QueryProperties queryProperties,
-                    ApplicationEventPublisher publisher, BusProperties busProperties) {
-        this.cache = cache;
+    public QueryStorageCacheImpl(QueryStatusCache queryStatusCache, TaskStatesCache taskStatesCache, TaskCache taskCache, QueryQueueManager queue,
+                    QueryStorageProperties properties, QueryProperties queryProperties, ApplicationEventPublisher publisher, BusProperties busProperties) {
+        this.queryStatusCache = queryStatusCache;
+        this.taskStatesCache = taskStatesCache;
+        this.taskCache = taskCache;
         this.queue = queue;
         this.properties = properties;
         this.queryProperties = queryProperties;
@@ -101,13 +105,13 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         queryStatus.setCalculatedAuthorizations(calculatedAuthorizations);
         queryStatus.setLastUsedMillis(System.currentTimeMillis());
         queryStatus.setLastUpdatedMillis(queryStatus.getLastUsedMillis());
-        cache.updateQueryStatus(queryStatus);
+        queryStatusCache.updateQueryStatus(queryStatus);
         
         // only create tasks if we are creating a query
         if (queryState == QueryStatus.QUERY_STATE.CREATED) {
             // store the initial tasks states
             TaskStates taskStates = new TaskStates(queryKey, count);
-            cache.updateTaskStates(taskStates);
+            taskStatesCache.updateTaskStates(taskStates);
             
             // create the results queue
             queue.ensureQueueCreated(queryId);
@@ -129,7 +133,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return query stats
      */
     public QueryState getQueryState(String queryId) {
-        return cache.getQuery(queryId);
+        return new QueryState(getQueryStatus(queryId), getTaskStates(queryId));
     }
     
     /**
@@ -140,7 +144,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return the query properties
      */
     public QueryStatus getQueryStatus(String queryId) {
-        return cache.getQueryStatus(queryId);
+        return queryStatusCache.getQueryStatus(queryId);
     }
     
     /**
@@ -149,7 +153,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return the query properties
      */
     public List<QueryStatus> getQueryStatus() {
-        return cache.getQueryStatus();
+        return queryStatusCache.getQueryStatus();
     }
     
     /**
@@ -160,7 +164,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     public void updateQueryStatus(QueryStatus queryStatus) {
         queryStatus.setLastUpdatedMillis(System.currentTimeMillis());
-        cache.updateQueryStatus(queryStatus);
+        queryStatusCache.updateQueryStatus(queryStatus);
     }
     
     /**
@@ -173,10 +177,10 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public void updateQueryStatus(String queryId, QueryStatus.QUERY_STATE state) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
+        QueryStorageLock lock = queryStatusCache.getQueryStatusLock(queryId);
         lock.lock();
         try {
-            QueryStatus status = cache.getQueryStatus(queryId);
+            QueryStatus status = queryStatusCache.getQueryStatus(queryId);
             status.setQueryState(state);
             updateQueryStatus(status);
         } finally {
@@ -194,10 +198,10 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public void updateFailedQueryStatus(String queryId, Exception e) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
+        QueryStorageLock lock = queryStatusCache.getQueryStatusLock(queryId);
         lock.lock();
         try {
-            QueryStatus status = cache.getQueryStatus(queryId);
+            QueryStatus status = queryStatusCache.getQueryStatus(queryId);
             status.setQueryState(QueryStatus.QUERY_STATE.FAILED);
             status.setFailure(getErrorCode(e), e);
             updateQueryStatus(status);
@@ -224,10 +228,10 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public boolean updateTaskState(TaskKey taskKey, TaskStates.TASK_STATE state) {
-        QueryStorageLock lock = cache.getTaskStatesLock(taskKey.getQueryId());
+        QueryStorageLock lock = taskStatesCache.getTaskStatesLock(taskKey.getQueryId());
         lock.lock();
         try {
-            TaskStates states = cache.getTaskStates(taskKey.getQueryId());
+            TaskStates states = taskStatesCache.getTaskStates(taskKey.getQueryId());
             if (states.setState(taskKey.getTaskId(), state)) {
                 updateTaskStates(states);
                 return true;
@@ -247,7 +251,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public QueryStorageLock getQueryStatusLock(String queryId) {
-        return cache.getQueryStatusLock(queryId);
+        return queryStatusCache.getQueryStatusLock(queryId);
     }
     
     /**
@@ -259,7 +263,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public QueryStorageLock getTaskStatesLock(String queryId) {
-        return cache.getTaskStatesLock(queryId);
+        return taskStatesCache.getTaskStatesLock(queryId);
     }
     
     /**
@@ -271,7 +275,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public TaskStates getTaskStates(String queryId) {
-        return cache.getTaskStates(queryId);
+        return taskStatesCache.getTaskStates(queryId);
     }
     
     /**
@@ -282,7 +286,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public void updateTaskStates(TaskStates taskStates) {
-        cache.updateTaskStates(taskStates);
+        taskStatesCache.updateTaskStates(taskStates);
     }
     
     /**
@@ -300,20 +304,20 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         
         String queryId = checkpoint.getQueryKey().getQueryId();
         
-        QueryStorageLock lock = cache.getTaskStatesLock(queryId);
+        QueryStorageLock lock = taskStatesCache.getTaskStatesLock(queryId);
         lock.lock();
         try {
             // Set the initial ready state in the task states
-            TaskStates states = cache.getTaskStates(queryId);
+            TaskStates states = taskStatesCache.getTaskStates(queryId);
             
             int taskId = states.getAndIncrementNextTaskId();
             
             // create a query task in the cache
-            task = cache.addQueryTask(taskId, action, checkpoint);
+            task = taskCache.addQueryTask(taskId, action, checkpoint);
             
             states.setState(taskId, TaskStates.TASK_STATE.READY);
             
-            cache.updateTaskStates(states);
+            taskStatesCache.updateTaskStates(states);
         } finally {
             lock.unlock();
         }
@@ -334,7 +338,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public QueryTask getTask(TaskKey taskKey) {
-        return cache.getTask(taskKey);
+        return taskCache.getTask(taskKey);
     }
     
     /**
@@ -348,7 +352,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public QueryTask checkpointTask(TaskKey taskKey, QueryCheckpoint checkpoint) {
-        return cache.updateQueryTask(taskKey, checkpoint);
+        return taskCache.updateQueryTask(taskKey, checkpoint);
     }
     
     /**
@@ -359,7 +363,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public void deleteTask(TaskKey taskKey) {
-        cache.deleteTask(taskKey);
+        taskCache.deleteTask(taskKey);
     }
     
     /**
@@ -371,9 +375,18 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public boolean deleteQuery(String queryId) {
-        int deleted = cache.deleteQuery(queryId);
-        queue.deleteQueue(queryId);
-        return (deleted > 0);
+        QueryStorageLock lock = queryStatusCache.getQueryStatusLock(queryId);
+        lock.lock();
+        try {
+            boolean existed = (queryStatusCache.getQueryStatus(queryId) != null);
+            queryStatusCache.deleteQueryStatus(queryId);
+            taskStatesCache.deleteTaskStates(queryId);
+            taskCache.deleteTasks(queryId);
+            queue.deleteQueue(queryId);
+            return existed;
+        } finally {
+            lock.unlock();
+        }
     }
     
     /**
@@ -381,10 +394,12 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public void clear() {
-        for (QueryState queries : cache.getQueries()) {
-            queue.emptyQueue(queries.getQueryStatus().getQueryKey().getQueryId());
+        for (QueryStatus query : queryStatusCache.getQueryStatus()) {
+            queue.emptyQueue(query.getQueryKey().getQueryId());
         }
-        cache.clear();
+        queryStatusCache.clear();
+        taskStatesCache.clear();
+        taskCache.clear();
     }
     
     /**
@@ -397,7 +412,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     @Override
     public List<TaskKey> getTasks(String queryId) {
         List<TaskKey> tasks = new ArrayList<>();
-        for (QueryTask task : cache.getTasks(queryId)) {
+        for (QueryTask task : taskCache.getTasks(queryId)) {
             tasks.add(task.getTaskKey());
         }
         return tasks;

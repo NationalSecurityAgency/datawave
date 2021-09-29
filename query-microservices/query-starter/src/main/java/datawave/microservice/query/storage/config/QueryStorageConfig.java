@@ -6,7 +6,9 @@ import datawave.microservice.cached.LockableCacheInspector;
 import datawave.microservice.cached.LockableHazelcastCacheInspector;
 import datawave.microservice.cached.UniversalLockableCacheInspector;
 import datawave.microservice.query.config.QueryProperties;
-import datawave.microservice.query.storage.QueryCache;
+import datawave.microservice.query.storage.QueryStatusCache;
+import datawave.microservice.query.storage.TaskCache;
+import datawave.microservice.query.storage.TaskStatesCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -31,13 +33,35 @@ public class QueryStorageConfig {
     }
     
     @Bean
-    public QueryCache queryStorageCache(CacheInspector cacheInspector, CacheManager cacheManager) {
+    public QueryStatusCache queryStatusCache(CacheInspector cacheInspector, CacheManager cacheManager) {
         log.debug("Using " + cacheManager.getClass() + " for caching");
         LockableCacheInspector lockableCacheInspector = null;
         if (cacheManager instanceof HazelcastCacheManager)
             lockableCacheInspector = new LockableHazelcastCacheInspector(cacheManager);
         else
             lockableCacheInspector = new UniversalLockableCacheInspector(cacheInspector);
-        return new QueryCache(lockableCacheInspector);
+        return new QueryStatusCache(lockableCacheInspector);
+    }
+    
+    @Bean
+    public TaskStatesCache taskStatesCache(CacheInspector cacheInspector, CacheManager cacheManager) {
+        log.debug("Using " + cacheManager.getClass() + " for caching");
+        LockableCacheInspector lockableCacheInspector = null;
+        if (cacheManager instanceof HazelcastCacheManager)
+            lockableCacheInspector = new LockableHazelcastCacheInspector(cacheManager);
+        else
+            lockableCacheInspector = new UniversalLockableCacheInspector(cacheInspector);
+        return new TaskStatesCache(lockableCacheInspector);
+    }
+    
+    @Bean
+    public TaskCache taskCache(CacheInspector cacheInspector, CacheManager cacheManager) {
+        log.debug("Using " + cacheManager.getClass() + " for caching");
+        LockableCacheInspector lockableCacheInspector = null;
+        if (cacheManager instanceof HazelcastCacheManager)
+            lockableCacheInspector = new LockableHazelcastCacheInspector(cacheManager);
+        else
+            lockableCacheInspector = new UniversalLockableCacheInspector(cacheInspector);
+        return new TaskCache(lockableCacheInspector);
     }
 }
