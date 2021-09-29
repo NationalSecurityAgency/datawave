@@ -9,7 +9,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -23,14 +22,17 @@ public class FindWorkMonitor {
     private final QueryStorageCache queryStorageCache;
     private final QueryExecutor queryExecutor;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final FindWorkTask.CloseCancelCache closeCancelCache;
     
     private long taskStartTime;
     private Future<Void> taskFuture;
     
-    public FindWorkMonitor(ExecutorProperties executorProperties, QueryStorageCache cache, QueryExecutor executor) {
+    public FindWorkMonitor(ExecutorProperties executorProperties, QueryStorageCache cache, QueryExecutor executor,
+                    FindWorkTask.CloseCancelCache closeCancelCache) {
         this.executorProperties = executorProperties;
         this.queryStorageCache = cache;
         this.queryExecutor = executor;
+        this.closeCancelCache = closeCancelCache;
     }
     
     // this runs in a separate thread every 30 seconds (by default)
@@ -56,7 +58,7 @@ public class FindWorkMonitor {
         // schedule a new monitor task if the previous one has finished
         if (taskFuture == null) {
             taskStartTime = System.currentTimeMillis();
-            taskFuture = executor.submit(new FindWorkTask(queryStorageCache, queryExecutor));
+            taskFuture = executor.submit(new FindWorkTask(queryStorageCache, queryExecutor, closeCancelCache));
         }
     }
     

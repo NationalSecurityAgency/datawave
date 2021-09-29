@@ -9,7 +9,6 @@ import datawave.microservice.query.executor.action.Plan;
 import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
-import datawave.microservice.query.storage.QueryCache;
 import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
@@ -33,7 +32,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -174,27 +172,7 @@ public class QueryExecutor implements QueryRequestHandler {
                         Map<TaskStates.TASK_STATE,SparseBitSet> taskStateMap = taskStates.getTaskStates();
                         if (taskStateMap.containsKey(TaskStates.TASK_STATE.READY)) {
                             SparseBitSet tasks = taskStateMap.get(TaskStates.TASK_STATE.READY);
-                            // find a random id out of those in the ready state
-                            int taskId = -1;
-                            // first the simple case where there is only one task (e.g. a plan or create task)
-                            if (tasks.cardinality() == 1) {
-                                taskId = tasks.nextSetBit(0);
-                            } else {
-                                int length = tasks.length();
-                                Random random = new Random();
-                                while (taskId == -1) {
-                                    int startId = random.nextInt(length);
-                                    int previousId = tasks.previousSetBit(startId);
-                                    int nextId = tasks.nextSetBit(startId);
-                                    if (previousId == -1) {
-                                        taskId = nextId;
-                                    } else if (nextId == -1) {
-                                        taskId = previousId;
-                                    } else {
-                                        taskId = (startId - previousId < nextId - startId) ? previousId : nextId;
-                                    }
-                                }
-                            }
+                            int taskId = tasks.nextSetBit(0);
                             if (taskId != -1) {
                                 taskKey = new TaskKey(taskId, queryStatus.getQueryKey());
                                 log.debug("Found " + taskKey);
@@ -220,6 +198,7 @@ public class QueryExecutor implements QueryRequestHandler {
                         if (task.getAction() != action) {
                             log.warn("Task " + taskKey + " is for " + task.getAction() + " but we were looking for " + action + ", executing task anyway");
                         }
+                        log.debug("Executing task " + taskKey + ": " + task.getQueryCheckpoint());
                         ExecutorAction runnable = null;
                         switch (action) {
                             case CREATE:

@@ -32,6 +32,8 @@ public class Next extends ExecutorAction {
             
             cpQueryLogic.setupQuery(connector, task.getQueryCheckpoint());
             
+            log.debug("Pulling results for  " + task.getTaskKey() + ": " + task.getQueryCheckpoint());
+            
             taskComplete = pullResults(taskKey, queryLogic, queryStatus, false);
             if (!taskComplete) {
                 checkpoint(taskKey.getQueryKey(), cpQueryLogic);

@@ -166,6 +166,7 @@ public abstract class ExecutorAction implements Runnable {
     protected void checkpoint(QueryKey queryKey, CheckpointableQueryLogic cpQueryLogic) throws IOException {
         boolean createdTask = false;
         for (QueryCheckpoint cp : cpQueryLogic.checkpoint(queryKey)) {
+            log.debug("Storing a query checkpoint: " + cp);
             cache.createTask(QueryRequest.Method.NEXT, cp);
             createdTask = true;
         }
@@ -275,7 +276,7 @@ public abstract class ExecutorAction implements Runnable {
             boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
             while (running && iter.hasNext()) {
                 Object result = iter.next();
-                log.trace("Generated results for " + taskKey);
+                log.trace("Generated result for " + taskKey + ": " + result);
                 queues.sendMessage(queryId, new Result(UUID.randomUUID().toString(), result));
                 queryStatus.incrementNumResultsGenerated(1);
                 updateMetrics(queryId, queryStatus, iter);

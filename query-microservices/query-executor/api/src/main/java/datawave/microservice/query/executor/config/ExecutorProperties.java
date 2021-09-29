@@ -31,6 +31,8 @@ public class ExecutorProperties {
     private long monitorTaskLease = TimeUnit.MILLISECONDS.toMillis(100);
     @NotNull
     private TimeUnit monitorTaskLeaseTimeUnit = TimeUnit.MILLISECONDS;
+    // the max cache size used by the monitor to avoid excessive close/cancel task executions
+    private int monitorMaxCacheSize = 500;
     // The amount of time to wait for the lock to be acquired
     @PositiveOrZero
     private long lockWaitTimeMillis = TimeUnit.SECONDS.toMillis(5);
@@ -144,5 +146,13 @@ public class ExecutorProperties {
     
     public void setMonitorTaskLeaseTimeUnit(TimeUnit monitorTaskLeaseTimeUnit) {
         this.monitorTaskLeaseTimeUnit = monitorTaskLeaseTimeUnit;
+    }
+    
+    public int getMonitorMaxCacheSize() {
+        return monitorMaxCacheSize;
+    }
+    
+    public void setMonitorMaxCacheSize(int monitorMaxCacheSize) {
+        this.monitorMaxCacheSize = monitorMaxCacheSize;
     }
 }

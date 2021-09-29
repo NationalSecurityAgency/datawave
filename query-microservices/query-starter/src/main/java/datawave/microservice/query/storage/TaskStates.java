@@ -57,18 +57,18 @@ public class TaskStates implements Serializable {
      * @return taskStates
      */
     @JsonProperty("taskStates")
-    public Map<TASK_STATE,String> getTaskStates2() {
+    public Map<TASK_STATE,String> getTaskStatesAsStrings() {
         return taskStates.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> bitSetToString(e.getValue())));
     }
     
     /**
      * Set task states in a form that was JSON serializable
      * 
-     * @param taskStates2
+     * @param taskStatesStrings
      */
     @JsonProperty("taskStates")
-    public void setTaskStates2(Map<TASK_STATE,String> taskStates2) {
-        taskStates = taskStates2.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> stringToBitSet(e.getValue())));
+    public void setTaskStatesAsStrings(Map<TASK_STATE,String> taskStatesStrings) {
+        taskStates = taskStatesStrings.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> stringToBitSet(e.getValue())));
     }
     
     private String bitSetToString(SparseBitSet bitSet) {
@@ -76,7 +76,9 @@ public class TaskStates implements Serializable {
         for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
             builder.append(Integer.toString(i)).append(',');
         }
-        builder.setLength(builder.length() - 1);
+        if (builder.length() > 0) {
+            builder.setLength(builder.length() - 1);
+        }
         return builder.toString();
     }
     
