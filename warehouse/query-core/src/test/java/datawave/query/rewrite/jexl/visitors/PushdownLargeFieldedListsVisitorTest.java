@@ -108,4 +108,21 @@ public class PushdownLargeFieldedListsVisitorTest {
                                         + "') && (field = 'FOO') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}'))) || _ANYFIELD_ == 'BAR' || _ANYFIELD_ == 'FOO' || _ANYFIELD_ == 'FOOBAR'",
                         rewritten);
     }
+    
+    @Test
+    public void testPushdownIgnoreOtherNodes() throws Throwable {
+        conf.setMaxOrExpansionThreshold(1);
+        String rewritten = JexlStringBuildingVisitor
+                        .buildQuery(PushdownLargeFieldedListsVisitor.pushdown(
+                                        conf,
+                                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper
+                                                        .parseJexlQuery("f:includeRegex(FOO, 'blabla') || FOO == 'BAR' || _ANYFIELD_ == 'BAR' || FOO == 'FOO' || _ANYFIELD_ == 'FOO' || FOO == 'FOOBAR' || _ANYFIELD_ == 'FOOBAR'")),
+                                        null, null));
+        String id = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
+        Assert.assertEquals(
+                        "f:includeRegex(FOO, 'blabla') || ((_List_ = true) && ((id = '"
+                                        + id
+                                        + "') && (field = 'FOO') && (params = '{\"values\":[\"BAR\",\"FOO\",\"FOOBAR\"]}'))) || _ANYFIELD_ == 'BAR' || _ANYFIELD_ == 'FOO' || _ANYFIELD_ == 'FOOBAR'",
+                        rewritten);
+    }
 }
