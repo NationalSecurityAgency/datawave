@@ -3,6 +3,7 @@ package datawave.microservice.query.storage;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 import org.apache.accumulo.core.security.Authorizations;
 
 import java.util.Set;
@@ -311,12 +312,12 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     @JsonIgnore
-    public synchronized void setFailure(Exception failure) {
+    public synchronized void setFailure(DatawaveErrorCode errorCode, Exception failure) {
         QueryStorageLock lock = cache.getQueryStatusLock(queryId);
         lock.lock();
         try {
             forceCacheUpdateInsideSetter();
-            queryStatus.setFailure(failure);
+            queryStatus.setFailure(errorCode, failure);
             cache.updateQueryStatus(queryStatus);
         } finally {
             lock.unlock();

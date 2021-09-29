@@ -3,6 +3,7 @@ package datawave.microservice.query.storage;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -48,6 +49,7 @@ public class QueryStatus implements Serializable {
     // datetime of last service interaction
     private long lastUpdatedMillis;
     
+    private DatawaveErrorCode errorCode;
     private String failureMessage;
     private String stackTrace;
     
@@ -146,6 +148,14 @@ public class QueryStatus implements Serializable {
         getCalculatedAuths();
     }
     
+    public DatawaveErrorCode getErrorCode() {
+        return errorCode;
+    }
+    
+    public void setErrorCode(DatawaveErrorCode errorCode) {
+        this.errorCode = errorCode;
+    }
+    
     public String getFailureMessage() {
         return failureMessage;
     }
@@ -163,7 +173,8 @@ public class QueryStatus implements Serializable {
     }
     
     @JsonIgnore
-    public void setFailure(Exception failure) {
+    public void setFailure(DatawaveErrorCode errorCode, Exception failure) {
+        setErrorCode(errorCode);
         setFailureMessage(failure.getMessage());
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8));

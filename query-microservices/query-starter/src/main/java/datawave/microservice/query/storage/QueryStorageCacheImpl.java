@@ -1,11 +1,14 @@
 package datawave.microservice.query.storage;
 
+import com.ecwid.consul.v1.query.model.QueryExecution;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.config.QueryStorageProperties;
 import datawave.services.query.logic.QueryCheckpoint;
 import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.context.ApplicationEventPublisher;
@@ -196,11 +199,19 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         try {
             QueryStatus status = cache.getQueryStatus(queryId);
             status.setQueryState(QueryStatus.QUERY_STATE.FAILED);
-            status.setFailure(e);
+            status.setFailure(getErrorCode(e), e);
             updateQueryStatus(status);
         } finally {
             lock.unlock();
         }
+    }
+    
+    protected DatawaveErrorCode getErrorCode(Exception e) {
+        DatawaveErrorCode code = DatawaveErrorCode.QUERY_EXECUTION_ERROR;
+        if (e instanceof QueryException) {
+            code = DatawaveErrorCode.findCode(((QueryException) e).getErrorCode());
+        }
+        return code;
     }
     
     /**

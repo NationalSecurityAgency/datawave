@@ -25,6 +25,7 @@ import datawave.services.query.logic.QueryLogicFactory;
 import datawave.services.query.logic.WritesQueryMetrics;
 import datawave.services.query.runner.AccumuloConnectionRequestMap;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -128,6 +129,7 @@ public abstract class ExecutorAction implements Runnable {
         } catch (Exception e) {
             log.error("Failed to process task " + taskKey, e);
             taskFailed = true;
+            DatawaveErrorCode errorCode = DatawaveErrorCode.QUERY_EXECUTION_ERROR;
             cache.updateFailedQueryStatus(taskKey.getQueryId(), e);
         } finally {
             if (connector != null) {

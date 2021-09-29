@@ -14,6 +14,7 @@ import datawave.microservice.querymetric.QueryMetric;
 import datawave.services.query.cache.ResultsPage;
 import datawave.services.query.logic.QueryLogic;
 import datawave.webservice.query.data.ObjectSizeOf;
+import datawave.webservice.query.exception.QueryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.Message;
@@ -124,6 +125,9 @@ public class NextCall implements Callable<ResultsPage<Object>> {
                     }
                 }
             }
+        } catch (QueryException e) {
+            // TODO Is there a better way to pass this exception up?
+            throw new RuntimeException(e);
         } finally {
             // stop the result listener
             resultListener.stop();
@@ -143,13 +147,20 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         baseQueryMetric.setLifecycle(lifecycle);
     }
     
-    private boolean isFinished(String queryId) {
+    private boolean isFinished(String queryId) throws QueryException {
         boolean finished = false;
         long callTimeMillis = System.currentTimeMillis() - startTimeMillis;
         final QueryStatus queryStatus = getQueryStatus();
         
+        // 0) has the query failed?
+        if (queryStatus.getQueryState() == QueryStatus.QUERY_STATE.FAILED) {
+            log.error("Query [{}]: failed: {}\n{}", queryId, queryStatus.getFailureMessage(), queryStatus.getStackTrace());
+            
+            throw new QueryException(queryStatus.getErrorCode(), queryStatus.getFailureMessage());
+        }
+        
         // 1) have we hit the user's results-per-page limit?
-        if (results.size() >= userResultsPerPage) {
+        if (!finished && results.size() >= userResultsPerPage) {
             log.info("Query [{}]: user requested max page size has been reached, aborting next call", queryId);
             
             finished = true;
