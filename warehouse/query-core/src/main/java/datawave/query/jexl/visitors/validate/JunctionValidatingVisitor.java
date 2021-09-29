@@ -27,7 +27,6 @@ import org.apache.commons.jexl2.parser.ASTGTNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTIfStatement;
 import org.apache.commons.jexl2.parser.ASTIntegerLiteral;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTMapEntry;
@@ -65,67 +64,60 @@ public class JunctionValidatingVisitor extends BaseVisitor {
     public static boolean validate(JexlNode script) {
         JunctionValidatingVisitor visitor = new JunctionValidatingVisitor();
         script.jjtAccept(visitor, null);
-        return visitor.getIsValid();
+        return visitor.isValid();
     }
     
-    public boolean getIsValid() {
+    private JunctionValidatingVisitor() {}
+    
+    public boolean isValid() {
         return this.isValid;
     }
     
     /*
-     * Pass through
+     * Pass through visit to ASTJexlScript
+     * 
+     * Attempt to short circuit on ASTReference, ASTReferenceExpressions, SimpleNode, ASTFunctionNode, and ASTNotNode
      */
     
     @Override
-    public Object visit(ASTJexlScript node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-    
-    @Override
     public Object visit(ASTReference node, Object data) {
-        if (!isValid) {
-            return data;
+        if (isValid) {
+            node.childrenAccept(this, data);
         }
-        node.childrenAccept(this, data);
         return data;
     }
     
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        if (!isValid) {
-            return data;
+        if (isValid) {
+            node.childrenAccept(this, data);
         }
-        node.childrenAccept(this, data);
         return data;
     }
     
     @Override
     public Object visit(SimpleNode node, Object data) {
-        if (!isValid) {
-            return data;
+        if (isValid) {
+            node.childrenAccept(this, data);
         }
-        node.childrenAccept(this, data);
         return data;
     }
     
     // check the argument nodes of a function
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        if (!isValid) {
-            return data;
+        if (isValid) {
+            node.childrenAccept(this, data);
         }
-        node.childrenAccept(this, data);
         return data;
     }
     
     // descend into negated branches of the query
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        if (!isValid) {
-            return data;
+        if (isValid) {
+            node.childrenAccept(this, data);
         }
-        node.childrenAccept(this, data);
         return data;
     }
     
@@ -135,31 +127,35 @@ public class JunctionValidatingVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        if (!isJunctionValid(node)) {
-            return data;
-        }
-        node.childrenAccept(this, data);
-        return data;
+        return visitJunction(node, data);
     }
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        if (!isJunctionValid(node)) {
-            return data;
-        }
-        node.childrenAccept(this, data);
-        return data;
+        return visitJunction(node, data);
     }
     
-    private boolean isJunctionValid(JexlNode node) {
+    private Object visitJunction(JexlNode node, Object data) {
         if (!isValid) {
-            return false;
+            return data;
+        } else if (!isJunctionValid(node)) {
+            isValid = false;
+            return data;
+        } else {
+            node.childrenAccept(this, data);
+            return data;
         }
-        if (node.jjtGetNumChildren() < 2) {
-            this.isValid = false;
-            return false;
-        }
-        return true;
+    }
+    
+    /**
+     * A junction is valid if it has two or more children
+     * 
+     * @param node
+     *            an ASTOrNode or ASTAndNode
+     * @return true if the junction is valid
+     */
+    private boolean isJunctionValid(JexlNode node) {
+        return node.jjtGetNumChildren() >= 2;
     }
     
     /*
