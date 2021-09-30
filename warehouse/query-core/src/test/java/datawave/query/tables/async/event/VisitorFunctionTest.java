@@ -93,7 +93,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, "FIELD1 == 'a'");
         options.addScanIterator(iteratorSetting);
         
-        ScannerChunk chunk = new ScannerChunk(options, Collections.singleton(new Range()));
+        ScannerChunk chunk = new ScannerChunk(options, Collections.singleton(new Range("20210101_0", "20210101_0")));
         
         replayAll();
         
@@ -131,7 +131,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, query);
         options.addScanIterator(iteratorSetting);
         
-        ScannerChunk chunk = new ScannerChunk(options, Collections.singleton(new Range()));
+        ScannerChunk chunk = new ScannerChunk(options, Collections.singleton(new Range("20210101_0", "20210101_0")));
         
         replayAll();
         
@@ -177,7 +177,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, query);
         options.addScanIterator(iteratorSetting);
         
-        ScannerChunk chunk = new ScannerChunk(options, Collections.singleton(new Range()));
+        ScannerChunk chunk = new ScannerChunk(options, Collections.singleton(new Range("20210101_0", "20210101_0")));
         
         replayAll();
         
@@ -223,7 +223,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, query);
         options.addScanIterator(iteratorSetting);
         
-        ScannerChunk chunk = new ScannerChunk(options, Collections.singleton(new Range()));
+        ScannerChunk chunk = new ScannerChunk(options, Collections.singleton(new Range("20210101_0", "20210101_0")));
         
         replayAll();
         
@@ -270,7 +270,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, query);
         options.addScanIterator(iteratorSetting);
         
-        ScannerChunk chunk = new ScannerChunk(options, Collections.singleton(new Range()));
+        ScannerChunk chunk = new ScannerChunk(options, Collections.singleton(new Range("20210101_0", "20210101_0")));
         
         replayAll();
         
