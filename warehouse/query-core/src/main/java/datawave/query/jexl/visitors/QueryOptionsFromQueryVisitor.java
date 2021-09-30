@@ -2,38 +2,65 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
-import datawave.query.Constants;
 import datawave.query.QueryParameters;
-import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
+import datawave.query.jexl.functions.QueryFunctions;
+import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
+
+import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTANDNODE;
+import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTORNODE;
 
 /**
- * Visits the query tree and if there is a f:options function, extracts the parameters into a Map
- *
+ * Visits the query tree and extracts the parameters from any options functions present and adds them to the provided data {@link Map}. Any options function
+ * nodes will be subsequently deleted and remaining AND/OR nodes will be optimized to account for the potential removal of their children. The supported options
+ * are as followed:
+ * <ul>
+ * <li>{@code f:options()}: Expects a comma-delimited list of key/value pairs, e.g. {@code f:options('hit.list','true','limit.fields','FOO_1_BAR=3)}</li>
+ * <li>{@code f:groupby()}: Expects a comma-delimited list of fields to group by, e.g. {@code f:groupby('field1','field2',field3')}</li>
+ * <li>{@code f:unique()}: Expects a comma-delimited list of fields to be unique and their granularity levels, e.g.
+ * {@code f:unique('field1[ALL]','field2[DAY]','field3[MINUTE,SECOND]')}</li>
+ * <li>{@code f:unique_by_day()}: Expects a comma-delimited list of fields to be unique with a granularity level of by DAY, e.g.
+ * {@code unique_by_day('field1','field2')}</li>
+ * <li>{@code f:unique_by_minute()}: Expects a comma-delimited list of fields to be unique with a granularity level of by MINUTE, e.g.
+ * {@code unique_by_minute('field1','field2')}</li>
+ * <li>{@code f:unique_by_second()}: Expects a comma-delimited list of fields to be unique with a granularity level of by SECOND, e.g.
+ * {@code unique_by_second('field1','field2')}</li>
+ * </ul>
  */
 public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
+    
+    private static final Joiner JOINER = Joiner.on(',').skipNulls();
     
     private static final Set<String> RESERVED = ImmutableSet.of(QueryFunctions.QUERY_FUNCTION_NAMESPACE, QueryFunctions.OPTIONS_FUNCTION,
                     QueryFunctions.UNIQUE_FUNCTION, QueryFunctions.UNIQUE_BY_DAY_FUNCTION, QueryFunctions.UNIQUE_BY_HOUR_FUNCTION,
                     QueryFunctions.UNIQUE_BY_MINUTE_FUNCTION, QueryFunctions.GROUPBY_FUNCTION);
     
+    @SuppressWarnings("unchecked")
+    public static <T extends JexlNode> T collect(T node, Object data) {
+        QueryOptionsFromQueryVisitor visitor = new QueryOptionsFromQueryVisitor();
+        return (T) node.jjtAccept(visitor, data);
+    }
+    
     /**
-     * If the passed userData is a Map, type cast and call the method to begin collection of the function arguments
+     * If the passed data is a {@link Map}, type cast and call the method to begin collection of the function arguments
      * 
      * @param node
-     *            potentially a f:options function node
+     *            potentially an f:options function node
      * @param data
      *            userData
      * @return the rebuilt node
@@ -49,14 +76,59 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     }
     
     /**
-     * If this is the f:options function, descend the tree with a List in the passed userdata. The function args will be collected into the List when visiting
-     * the child ASTStringLiteral nodes
+     * If the passed OR node contains a f:options, descend the tree with a List in the passed userdata. The function args will be collected into the List when
+     * visiting the child ASTStringLiteral nodes.
+     *
+     * @param node
+     *            the {@link ASTOrNode}
+     * @param data
+     *            the data
+     * @return the rebuilt node, or null if all children of the node were deleted
+     */
+    @Override
+    public Object visit(ASTOrNode node, Object data) {
+        return visitJunction(node, data, () -> new ASTOrNode(JJTORNODE));
+    }
+    
+    @Override
+    public Object visit(ASTAndNode node, Object data) {
+        return visitJunction(node, data, () -> new ASTAndNode(JJTANDNODE));
+    }
+    
+    private Object visitJunction(JexlNode node, Object data, Supplier<JexlNode> creator) {
+        // Visit each child, and keep only the non-null ones.
+        List<JexlNode> children = new ArrayList<>();
+        for (JexlNode child : JexlNodes.children(node)) {
+            Object copy = child.jjtAccept(this, data);
+            if (copy != null) {
+                children.add((JexlNode) copy);
+            }
+        }
+        
+        // If there are no children, return null and effectively delete the junction.
+        if (children.isEmpty()) {
+            return null;
+        } else if (children.size() == 1) {
+            // If there is one child, delete the junction and return the child.
+            return children.get(0);
+        } else {
+            // If there are multiple children, return a new junction with the children.
+            JexlNode copy = creator.get();
+            copy.image = node.image;
+            JexlNodes.children(copy, children.toArray(new JexlNode[0]));
+            return copy;
+        }
+    }
+    
+    /**
+     * If this is a function that contains key/value options, descend the tree with a {@link List} as the data. The function args will be collected into the
+     * list when visiting the child {@link ASTStringLiteral} nodes.
      * 
      * @param node
-     *            the function node potentially for f:options
+     *            the {@link ASTFunctionNode} that potentially contains parsable function options
      * @param optionsMap
-     *            a Map to return option key/values
-     * @return the rebuilt node
+     *            a {@link Map} that any parsed options key/values will be added to
+     * @return null if this is a function with any key/value options, or the rebuilt node
      */
     private Object visit(ASTFunctionNode node, Map<String,String> optionsMap) {
         // if this is the f:options function, create a List for the userData to be passed to the child nodes
@@ -77,7 +149,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     // Get the list of declared fields and join them into a comma-delimited string.
                     List<String> fieldList = new ArrayList<>();
                     this.visit(node, fieldList);
-                    String fieldString = String.join(Constants.COMMA, fieldList);
+                    String fieldString = JOINER.join(fieldList);
                     
                     // Parse the unique fields.
                     UniqueFields uniqueFields = UniqueFields.from(fieldString);
@@ -105,7 +177,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                 case QueryFunctions.GROUPBY_FUNCTION: {
                     List<String> optionsList = new ArrayList<>();
                     this.visit(node, optionsList);
-                    optionsMap.put(QueryParameters.GROUP_FIELDS, Joiner.on(',').join(optionsList));
+                    optionsMap.put(QueryParameters.GROUP_FIELDS, JOINER.join(optionsList));
                     return null;
                 }
             }
@@ -113,30 +185,14 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         return super.visit(node, optionsMap);
     }
     
-    /**
-     * Find all unique fields declared in the provided node and add them to the provided {@link UniqueFields} with the specified transformer.
-     * 
-     * @param node
-     *            the node to find fields in
-     * @param uniqueFields
-     *            the unique fields instance to modify
-     * @param transformer
-     *            the transformer to add any identified fields with.
-     */
+    // Find all unique fields declared in the provided node and add them to the provided {@link UniqueFields} with the specified transformer.
     private void putFieldsFromChildren(JexlNode node, UniqueFields uniqueFields, UniqueGranularity transformer) {
         List<String> fields = new ArrayList<>();
         this.visit(node, fields);
         fields.forEach((field) -> uniqueFields.put(field, transformer));
     }
     
-    /**
-     * Update the {@value QueryParameters#UNIQUE_FIELDS} option to include the given unique fields.
-     * 
-     * @param optionsMap
-     *            the options map
-     * @param uniqueFields
-     *            the unique fields to include
-     */
+    // Update the {@value QueryParameters#UNIQUE_FIELDS} option to include the given unique fields.
     private void updateUniqueFieldsOption(Map<String,String> optionsMap, UniqueFields uniqueFields) {
         // Combine with any previously found unique fields.
         if (optionsMap.containsKey(QueryParameters.UNIQUE_FIELDS)) {
@@ -147,67 +203,45 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     }
     
     /**
-     * if the passed data is a List, call the method that collects the node image strings
+     * If the passed data is a {@link List}, add the node's image to the list.
      * 
      * @param node
-     *            a string literal
+     *            the {@link ASTStringLiteral} node
      * @param data
-     *            userData
+     *            the data, possible a {@link List}
      * @return the rebuilt node
      */
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
-        if (data instanceof List) {
-            return this.visit(node, (List) data);
-        }
+        addImageToListData(node, data);
         return super.visit(node, data);
     }
     
     /**
-     * collect the node.image strings into the passed List
-     * 
-     * @param node
-     *            the ASTLiteralNode that is a child of the f:options function
-     * @param list
-     *            a list for collecting the child image strings (the property key/values)
-     * @return
-     */
-    private Object visit(ASTStringLiteral node, List<String> list) {
-        list.add(node.image);
-        return super.visit(node, list);
-    }
-    
-    /**
-     * if the passed data is a List, call the method that collects the node image strings
+     * If the passed data is a {@link List}, and the node's image is not in the {@link #RESERVED} set, add the node's image to the list.
      *
      * @param node
-     *            an identifier
+     *            the {@link ASTIdentifier} node
      * @param data
-     *            userData
+     *            the data, possibly a {@link List}
      * @return the rebuilt node
      */
     @Override
     public Object visit(ASTIdentifier node, Object data) {
+        // Check if the current node is a child of the f:options function.
         if (!RESERVED.contains(node.image)) {
-            if (data instanceof List) {
-                return this.visit(node, (List) data);
-            }
+            addImageToListData(node, data);
         }
         return super.visit(node, data);
     }
     
-    /**
-     * collect the node.image strings into the passed List
-     *
-     * @param node
-     *            the ASTIdentifier that is a child of the f:options function
-     * @param list
-     *            a list for collecting the child image strings (the property key/values)
-     * @return
-     */
-    private Object visit(ASTIdentifier node, List<String> list) {
-        list.add(node.image);
-        return super.visit(node, list);
+    // If the given data is a list, add the node's image to it.
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void addImageToListData(JexlNode node, Object data) {
+        if (data instanceof List) {
+            List list = (List) data;
+            list.add(node.image);
+        }
     }
     
     /**
@@ -215,8 +249,10 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
      * generate a parseException in the jexl Parser unless the empty ASTReference node is also removed by returning null here.
      * 
      * @param node
+     *            the {@link ASTReference} node
      * @param data
-     * @return
+     *            the data
+     * @return the rebuilt node if it has children, or null otherwise
      */
     @Override
     public Object visit(ASTReference node, Object data) {
@@ -231,8 +267,10 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
      * would generate a parseException in the jexl Parser unless the empty ASTReferenceExpression node is also removed by returning null here.
      *
      * @param node
+     *            the {@link ASTReferenceExpression} node
      * @param data
-     * @return
+     *            the data
+     * @return the rebuilt node if it has children, or null otherwise
      */
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
@@ -240,12 +278,6 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         if (n.jjtGetNumChildren() == 0)
             return null;
         return n;
-        
     }
     
-    @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T collect(T node, Object data) {
-        QueryOptionsFromQueryVisitor visitor = new QueryOptionsFromQueryVisitor();
-        return (T) node.jjtAccept(visitor, data);
-    }
 }

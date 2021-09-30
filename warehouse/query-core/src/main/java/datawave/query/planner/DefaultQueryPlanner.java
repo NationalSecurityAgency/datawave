@@ -42,6 +42,7 @@ import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.CaseSensitivityVisitor;
 import datawave.query.jexl.visitors.ConjunctionEliminationVisitor;
@@ -85,6 +86,7 @@ import datawave.query.jexl.visitors.UniqueExpressionTermsVisitor;
 import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
+import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
 import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
@@ -183,6 +185,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Disables the test for non existent fields.
      */
     protected boolean disableTestNonExistentFields = false;
+    
+    /**
+     * Disables Whindex (value-specific) field mappings for GeoWave functions.
+     * 
+     * @see WhindexVisitor
+     */
+    protected boolean disableWhindexFieldMappings = false;
     
     /**
      * Disables the index expansion function
@@ -652,10 +661,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         stopwatch.stop();
         
+        Map<String,String> optionsMap = new HashMap<>();
         if (query.contains(QueryFunctions.QUERY_FUNCTION_NAMESPACE + ':')) {
             // only do the extra tree visit if the function is present
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - parse out queryOptions from options function");
-            Map<String,String> optionsMap = new HashMap<>();
             queryTree = QueryOptionsFromQueryVisitor.collect(queryTree, optionsMap);
             if (!optionsMap.isEmpty()) {
                 QueryOptionsSwitch.apply(optionsMap, config);
@@ -708,6 +717,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // Find unmarked bounded ranges
         if (UnmarkedBoundedRangeDetectionVisitor.findUnmarkedBoundedRanges(queryTree)) {
             throw new DatawaveFatalQueryException("Found incorrectly marked bounded ranges");
+        }
+        
+        if (optionsMap.containsKey(QueryParameters.SHARDS_AND_DAYS)) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Add SHARDS_AND_DAYS from options");
+            String shardsAndDays = optionsMap.get(QueryParameters.SHARDS_AND_DAYS);
+            queryTree = AddShardsAndDaysVisitor.update(queryTree, shardsAndDays);
+            stopwatch.stop();
         }
         
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - flatten");
@@ -959,6 +975,18 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         ASTJexlScript queryTree = originalQueryTree;
         
         TraceStopwatch stopwatch = null;
+        
+        if (!disableWhindexFieldMappings) {
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Apply Whindex field mappings");
+            
+            // apply the value-specific field mappings for GeoWave functions
+            queryTree = WhindexVisitor.apply(queryTree, config, settings.getBeginDate(), metadataHelper);
+            if (log.isDebugEnabled()) {
+                logQuery(queryTree, "Query after Whindex field mappings are applied:");
+            }
+            
+            stopwatch.stop();
+        }
         
         if (!disableExpandIndexFunction) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand function index queries");
@@ -1260,6 +1288,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
                     innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
                     queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
+                    // regex expansion picks up an extra set of parens, so quickly fix that here
+                    queryTree = (ASTJexlScript) TreeFlatteningRebuildingVisitor.flatten(queryTree);
                     if (log.isDebugEnabled()) {
                         logQuery(queryTree, "Query after expanding regex:");
                     }
@@ -2461,6 +2491,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     public boolean getDisableTestNonExistentFields() {
         return disableTestNonExistentFields;
+    }
+    
+    public void setDisableWhindexFieldMappings(boolean disableWhindexFieldMappings) {
+        this.disableWhindexFieldMappings = disableWhindexFieldMappings;
+    }
+    
+    public boolean getDisableWhindexFieldMappings() {
+        return disableWhindexFieldMappings;
     }
     
     public void setDisableExpandIndexFunction(boolean disableExpandIndexFunction) {

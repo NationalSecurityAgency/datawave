@@ -2,7 +2,6 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.collect.Lists;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -302,7 +301,7 @@ public class TreeFlatteningRebuilder {
         // if this is an assignment node OR
         // if the parent is a NOT node, keep the reference
         if (!removeReferences || parent instanceof ASTNotNode || JexlASTHelper.dereference(node) instanceof ASTAssignment
-                        || QueryPropertyMarker.instanceOf(node, null)) {
+                        || QueryPropertyMarkerVisitor.getCopiedInstance(node).isAnyType()) {
             return node;
         }
         // if this is a (reference -> reference expression) combo with a single child, remove the reference and reference expression
@@ -382,8 +381,8 @@ public class TreeFlatteningRebuilder {
             // @formatter:off
             return  !(candidateNode instanceof ASTAndNode &&
                         (isBoundedRange((ASTAndNode) candidateNode) ||
-                        (isWrapped && (QueryPropertyMarker.instanceOf(candidateNode, null) ||
-                                       QueryPropertyMarker.instanceOf(parentNode, null)))));
+                        (isWrapped && (QueryPropertyMarkerVisitor.getCopiedInstance(candidateNode).isAnyType() ||
+                                       QueryPropertyMarkerVisitor.getCopiedInstance(parentNode).isAnyType()))));
             // @formatter:on
         }
         

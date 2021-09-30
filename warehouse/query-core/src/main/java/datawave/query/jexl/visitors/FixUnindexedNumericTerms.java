@@ -8,7 +8,6 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
@@ -21,17 +20,15 @@ import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
 /**
- * When we have an unindexed field that appears numeric in nature, then convert the string literals to numeric literals.
- *
+ * When we have an unindexed field that appears numeric in nature, convert the string literals to numeric literals.
  */
 public class FixUnindexedNumericTerms extends RebuildingVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(FixUnindexedNumericTerms.class);
     
     private final ShardQueryConfiguration config;
     
@@ -62,54 +59,54 @@ public class FixUnindexedNumericTerms extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        return expandNodeForNormalizers(node, data);
+        return expandNodeForNormalizers(node);
     }
     
     @Override
     public Object visit(ASTNENode node, Object data) {
-        return expandNodeForNormalizers(node, data);
+        return expandNodeForNormalizers(node);
     }
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        return expandNodeForNormalizers(node, data);
+        return expandNodeForNormalizers(node);
     }
     
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        return expandNodeForNormalizers(node, data);
+        return expandNodeForNormalizers(node);
     }
     
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        return expandNodeForNormalizers(node, data);
+        return expandNodeForNormalizers(node);
     }
     
     @Override
     public Object visit(ASTLENode node, Object data) {
-        return expandNodeForNormalizers(node, data);
+        return expandNodeForNormalizers(node);
     }
     
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        return expandNodeForNormalizers(node, data);
+        return expandNodeForNormalizers(node);
     }
     
     @Override
     public Object visit(ASTGENode node, Object data) {
-        return expandNodeForNormalizers(node, data);
+        return expandNodeForNormalizers(node);
     }
     
-    protected JexlNode expandNodeForNormalizers(JexlNode node, Object data) {
+    protected JexlNode expandNodeForNormalizers(JexlNode node) {
         IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
         if (op == null) {
-            return node;
+            return copy(node);
         }
         
         final String fieldName = op.deconstructIdentifier();
         Object literal = op.getLiteralValue();
         
-        // Get all of the normalizers for the field name
+        // Get all the normalizers for the field name
         Collection<Type<?>> normalizers = config.getQueryFieldsDatatypes().get(fieldName);
         
         // Catch the case of the user entering FIELD == null
@@ -122,7 +119,8 @@ public class FixUnindexedNumericTerms extends RebuildingVisitor {
         }
         
         // Return a copy of the node with a potentially converted literal
-        return JexlNodeFactory.buildUntypedNewLiteralNode(node, fieldName, literal);
+        JexlNode copy = copy(node);
+        return JexlNodeFactory.buildUntypedNewLiteralNode(copy, fieldName, literal);
     }
     
 }

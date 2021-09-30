@@ -6,6 +6,7 @@ import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
@@ -123,23 +124,10 @@ public class NodeTypeCountVisitor implements ParserVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        // Check if this is a query property marker type.
-        if (ASTDelayedPredicate.instanceOf(node)) {
-            return count(node, ASTDelayedPredicate.class, data);
-        } else if (ASTEvaluationOnly.instanceOf(node)) {
-            return count(node, ASTEvaluationOnly.class, data);
-        } else if (BoundedRange.instanceOf(node)) {
-            return count(node, BoundedRange.class, data);
-        } else if (ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
-            return count(node, ExceededOrThresholdMarkerJexlNode.class, data);
-        } else if (ExceededTermThresholdMarkerJexlNode.instanceOf(node)) {
-            return count(node, ExceededTermThresholdMarkerJexlNode.class, data);
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node)) {
-            return count(node, ExceededValueThresholdMarkerJexlNode.class, data);
-        } else if (IndexHoleMarkerJexlNode.instanceOf(node)) {
-            return count(node, IndexHoleMarkerJexlNode.class, data);
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+        if (instance.isAnyType()) {
+            return count(node, instance.getType(), data);
         } else {
-            // Otherwise count it as the base reference type.
             return count(node, ASTReference.class, data);
         }
     }

@@ -18,7 +18,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.util.MetadataHelper;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -44,7 +44,6 @@ import org.apache.log4j.Logger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -175,7 +174,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         ExpandData parentData = (ExpandData) data;
         
         // only process delayed and bounded range predicates
-        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Lists.newArrayList(ASTDelayedPredicate.class, BoundedRange.class))) {
+        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(ASTDelayedPredicate.class, BoundedRange.class)) {
             return copy(node);
         }
         
@@ -293,7 +292,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     // only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Lists.newArrayList(ASTDelayedPredicate.class, BoundedRange.class))) {
+        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(ASTDelayedPredicate.class, BoundedRange.class)) {
             return copy(node);
         }
         
@@ -303,7 +302,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     // only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        if (QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Lists.newArrayList(ASTDelayedPredicate.class, BoundedRange.class))) {
+        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(ASTDelayedPredicate.class, BoundedRange.class)) {
             return copy(node);
         }
         
@@ -968,7 +967,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTReference node) {
         // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(BoundedRange.class))) {
+        if (!QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BoundedRange.class)) {
             if (node.jjtGetNumChildren() == 1) {
                 JexlNode kid = node.jjtGetChild(0);
                 if (kid instanceof ASTReferenceExpression) {
@@ -989,7 +988,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTReferenceExpression node) {
         // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(BoundedRange.class))) {
+        if (!QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BoundedRange.class)) {
             if (node != null && node.jjtGetNumChildren() == 1) {
                 JexlNode kid = node.jjtGetChild(0);
                 if (kid instanceof ASTAndNode) {
@@ -1015,10 +1014,11 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTAndNode node) {
         // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.instanceOfAnyExcept(node, Collections.singletonList(BoundedRange.class))) {
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+        if (!instance.isAnyType() || instance.isType(BoundedRange.class)) {
             if (node.jjtGetNumChildren() == 1) {
                 return getLeafNode(node.jjtGetChild(0));
-            } else if (BoundedRange.instanceOf(node)) {
+            } else if (instance.isType(BoundedRange.class)) {
                 return node;
             }
         }
@@ -1146,7 +1146,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             
             // if this node is one of the anded nodes, or a composite
             // comprised of one of the anded nodes, halt recursion
-            List<JexlNode> usedAndedNodes = usesAndedNodes(node);
+            List<JexlNode> usedAndedNodes = usedAndedNodes(node);
             if (!usedAndedNodes.isEmpty()) {
                 parentData.usedAndedNodes.addAll(usedAndedNodes);
                 return node;
@@ -1237,7 +1237,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             
             // if this node is one of the anded nodes, or a composite
             // comprised of one of the anded nodes, halt recursion
-            List<JexlNode> usedAndedNodes = usesAndedNodes(node);
+            List<JexlNode> usedAndedNodes = usedAndedNodes(node);
             if (!usedAndedNodes.isEmpty()) {
                 parentData.usedAndedNodes.addAll(usedAndedNodes);
                 return node;
@@ -1347,7 +1347,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
          *            The node to check for anded components
          * @return A list of anded jexl nodes used to create the composite node
          */
-        private List<JexlNode> usesAndedNodes(JexlNode node) {
+        private List<JexlNode> usedAndedNodes(JexlNode node) {
             List<JexlNode> usedAndedNodes = new ArrayList<>();
             for (JexlNode andedNode : andedNodes)
                 if (compositeNodes.containsKey(node) && compositeNodes.get(node).contains(andedNode))
@@ -1360,7 +1360,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
                 initialNode = node;
             
             DistAndData parentData = (DistAndData) data;
-            parentData.usedAndedNodes.addAll(usesAndedNodes(node));
+            parentData.usedAndedNodes.addAll(usedAndedNodes(node));
         }
     }
 }
