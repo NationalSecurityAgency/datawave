@@ -129,7 +129,7 @@ public class PropogatingIteratorSeekTest {
         }
         
         public IteratorUtil.IteratorScope getIteratorScope() {
-            return IteratorUtil.IteratorScope.scan;
+            return IteratorUtil.IteratorScope.minc;
         }
     }
     
