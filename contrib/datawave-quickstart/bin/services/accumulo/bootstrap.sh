@@ -15,7 +15,7 @@ DW_ACCUMULO_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Zookeeper config
 
 # You may override DW_ZOOKEEPER_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://archive.apache.org/dist/zookeeper/zookeeper-3.4.5/zookeeper-3.4.5.tar.gz}"
+DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://archive.apache.org/dist/zookeeper/zookeeper-3.6.3/apache-zookeeper-3.6.3-bin.tar.gz}"
 DW_ZOOKEEPER_DIST="$( downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
 DW_ZOOKEEPER_BASEDIR="zookeeper-install"
 DW_ZOOKEEPER_SYMLINK="zookeeper"
@@ -36,7 +36,10 @@ tickTime=2000
 syncLimit=5
 clientPort=2181
 dataDir=${DW_CLOUD_DATA}/zookeeper
-maxClientCnxns=100"
+maxClientCnxns=100
+4lw.commands.whitelist=ruok,wchs
+admin.enableServer=false
+"
 
 # Accumulo config
 

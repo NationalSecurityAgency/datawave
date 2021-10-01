@@ -14,7 +14,7 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.minicluster.MiniAccumuloCluster;
+import datawave.accumulo.minicluster.MiniAccumuloClusterForPostZoo34;
 import org.apache.hadoop.io.Text;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -46,14 +46,14 @@ public class ScannerSessionTest {
     
     private static final String PASSWORD = "";
     
-    private static MiniAccumuloCluster instance;
+    private static MiniAccumuloClusterForPostZoo34 instance;
     private static Connector connector;
     private static ResourceQueue resourceQueue;
     
     @BeforeClass
     public static void setupClass() throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException, IOException,
                     InterruptedException {
-        instance = new MiniAccumuloCluster(temporaryFolder.newFolder(), PASSWORD);
+        instance = new MiniAccumuloClusterForPostZoo34(temporaryFolder.newFolder(), PASSWORD);
         instance.start();
         
         connector = instance.getConnector("root", PASSWORD);

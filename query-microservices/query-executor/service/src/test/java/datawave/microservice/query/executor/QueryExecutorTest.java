@@ -153,7 +153,6 @@ public abstract class QueryExecutorTest {
     @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications"})
     public static class LocalQueryExecutorTest extends QueryExecutorTest {}
     
-    @Disabled("Cannot run this test without resolving zookeeper/curator incompatibility with springboot 2.4/kafka 2.6.")
     @EmbeddedKafka
     @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-embedded-kafka"})
     public static class EmbeddedKafkaQueryExecutorTest extends QueryExecutorTest {}

@@ -11,7 +11,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.minicluster.MiniAccumuloCluster;
+import datawave.accumulo.minicluster.MiniAccumuloClusterForPostZoo34;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -96,7 +96,7 @@ public class ShardedTableMapFileTest {
         conf.setInt(ShardedTableMapFile.SHARDS_BALANCED_DAYS_TO_VERIFY, 1);
         String today = formatDay(0) + "_1";
         
-        MiniAccumuloCluster accumuloCluster = null;
+        MiniAccumuloClusterForPostZoo34 accumuloCluster = null;
         try {
             SortedSet<Text> sortedSet = new TreeSet<>();
             sortedSet.add(new Text(today));
@@ -120,12 +120,12 @@ public class ShardedTableMapFileTest {
         Assert.assertEquals(1, result.size());
     }
     
-    private MiniAccumuloCluster createMiniAccumuloWithTestTableAndSplits(SortedSet<Text> sortedSet) throws IOException, InterruptedException,
+    private MiniAccumuloClusterForPostZoo34 createMiniAccumuloWithTestTableAndSplits(SortedSet<Text> sortedSet) throws IOException, InterruptedException,
                     AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
-        MiniAccumuloCluster accumuloCluster;
+        MiniAccumuloClusterForPostZoo34 accumuloCluster;
         File clusterDir = temporaryFolder.newFolder();
         LOG.info("Created local directory for MiniAccumuloCluster: " + clusterDir.getAbsolutePath());
-        accumuloCluster = new MiniAccumuloCluster(clusterDir, PASSWORD);
+        accumuloCluster = new MiniAccumuloClusterForPostZoo34(clusterDir, PASSWORD);
         accumuloCluster.start();
         
         Connector connector = accumuloCluster.getConnector(USERNAME, PASSWORD);
@@ -136,7 +136,7 @@ public class ShardedTableMapFileTest {
         return accumuloCluster;
     }
     
-    private void configureAccumuloHelper(Configuration conf, MiniAccumuloCluster accumuloCluster) {
+    private void configureAccumuloHelper(Configuration conf, MiniAccumuloClusterForPostZoo34 accumuloCluster) {
         AccumuloHelper.setInstanceName(conf, accumuloCluster.getInstanceName());
         AccumuloHelper.setPassword(conf, PASSWORD.getBytes());
         AccumuloHelper.setUsername(conf, USERNAME);

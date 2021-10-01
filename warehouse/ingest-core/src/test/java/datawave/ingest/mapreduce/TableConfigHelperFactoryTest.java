@@ -1,12 +1,11 @@
 package datawave.ingest.mapreduce;
 
+import datawave.accumulo.minicluster.MiniAccumuloClusterForPostZoo34;
 import datawave.ingest.mapreduce.job.TableConfigHelperFactory;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.util.TableName;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -27,7 +26,7 @@ import java.io.File;
  */
 public class TableConfigHelperFactoryTest {
     private static final Logger logger = Logger.getLogger(TableConfigHelperFactoryTest.class);
-    private static MiniAccumuloCluster mac;
+    private static MiniAccumuloClusterForPostZoo34 mac;
     
     private Configuration conf;
     private TableOperations tops;
@@ -40,7 +39,7 @@ public class TableConfigHelperFactoryTest {
         if (macDir.exists())
             FileUtils.deleteDirectory(macDir);
         macDir.mkdirs();
-        mac = new MiniAccumuloCluster(new MiniAccumuloConfig(macDir, "pass"));
+        mac = new MiniAccumuloClusterForPostZoo34(new MiniAccumuloConfig(macDir, "pass"));
         mac.start();
     }
     
