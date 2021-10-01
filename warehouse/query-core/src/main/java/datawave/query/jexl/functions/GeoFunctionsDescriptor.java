@@ -184,7 +184,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
             List<JexlNode> indexNodes = Lists.newArrayList();
             if (fieldsNode.jjtGetNumChildren() > 1) {
                 for (int i = 0; i < fieldsNode.jjtGetNumChildren(); i++) {
-                    JexlNode kid = fieldsNode.jjtGetChild(i);
+                    JexlNode kid = JexlASTHelper.dereference(fieldsNode.jjtGetChild(i));
                     if (kid.image != null) {
                         indexNodes.add(getIndexNode(kid.image, minLon, maxLon, minLat, maxLat, splitChar));
                     }
