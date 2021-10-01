@@ -436,9 +436,9 @@ public abstract class GroupingTest {
     @Test
     public void testGroupingWithFieldWithSparseGroupingEntries() throws Exception {
         // Testing multivalued atoms where not all atoms have every field populated.
-        // The results in entries where the grouping context is sparse;
-        // that is, not all of the grouping contexts have data for a filed.
-        // Look at VisibilityWiseGuysIngest and the DEPENDANT fields in the data
+        // This results in entries where the grouping context is sparse;
+        // that is, not all of the grouping contexts have data for a field.
+        // Look at VisibilityWiseGuysIngest and the DEPENDENTS fields in the data
         Map<String,String> extraParameters = new HashMap<>();
         
         Date startDate = format.parse("20091231");
@@ -447,11 +447,12 @@ public abstract class GroupingTest {
         String queryString = "UUID =~ '^[CS].*'";
         
         // @formatter:off
+        // The expected counts correspond to the listed UIDs and contexts
         Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
-                .put("FEMALE-2", 1)
-                .put("MALE-2", 4)
-                .put("MALE-3", 2)
-                .put("MALE-4", 3)
+                .put("FEMALE-2", 1) // female w/2 dependents: sopranoUID 1
+                .put("MALE-2", 4) // male w/2 dependents: corleoneUID 1, 5, caponeUID 1, 3
+                .put("MALE-3", 2) // male w/3 dependents: corleoneUID 2, caponeUID 2
+                .put("MALE-4", 3) // male w/4 dependents: corleoneUID 4, sopranoUID 0, caponeUID 0
                 .build();
         // @formatter:on
         

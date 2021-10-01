@@ -82,6 +82,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put(datatype + "\u0000" + corleoneUID, "BIRTHDAY.3" + "\u0000" + "4", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "BIRTHDAY.4" + "\u0000" + "5", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "BIRTHDAY.5" + "\u0000" + "22", columnVisibilityItalian, timeStamp, emptyValue);
+            // to test whether sparse fields are properly ignored while grouping, leave dependents field blank for group 0 and 3
             // mutation.put(datatype + "\u0000" + corleoneUID, "DEPENDENTS.0" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "DEPENDENTS.1" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "DEPENDENTS.2" + "\u0000" + "3", columnVisibilityItalian, timeStamp, emptyValue);
