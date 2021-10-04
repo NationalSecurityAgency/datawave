@@ -38,6 +38,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
     public static final String MATCHES_AT_LEAST_COUNT_OF = "matchesAtLeastCountOf";
     public static final String TIME_FUNCTION = "timeFunction";
     public static final String INCLUDE_TEXT = "includeText";
+    private static final String COMPARE = "compare";
     
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
@@ -239,6 +240,9 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
             } else if (TIMEFUNCTION.equals(functionMetadata.name())) {
                 fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
                 fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(1)));
+            } else if (COMPARE.equals(functionMetadata.name())) {
+                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
+                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(3)));
             } else {
                 fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
             }
@@ -255,6 +259,8 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
                 return JexlArgumentDescriptor.Fields.product(arguments.get(1));
             } else if (TIMEFUNCTION.equals(functionMetadata.name())) {
                 return JexlArgumentDescriptor.Fields.product(arguments.get(0), arguments.get(1));
+            } else if (COMPARE.equals(functionMetadata.name())) {
+                return JexlArgumentDescriptor.Fields.product(arguments.get(0), arguments.get(3));
             } else {
                 return JexlArgumentDescriptor.Fields.product(arguments.get(0));
             }
@@ -287,10 +293,20 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
             if (!EvaluationPhaseFilterFunctions.class.equals(clazz)) {
                 throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
             }
+            FunctionJexlNodeVisitor fvis = new FunctionJexlNodeVisitor();
+            fvis.visit(node, null);
+            
+            verify(fvis);
+            
             return new EvaluationPhaseFilterJexlArgumentDescriptor(node);
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException(e);
         }
     }
     
+    private void verify(FunctionJexlNodeVisitor fvis) {
+        if (COMPARE.equalsIgnoreCase(fvis.name())) {
+            CompareFunctionValidator.validate(fvis.name(), fvis.args());
+        }
+    }
 }
