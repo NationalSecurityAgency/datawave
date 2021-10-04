@@ -73,27 +73,6 @@ public final class Uid {
          * <code>repeated string REMOVEDUID = 4;</code>
          */
         com.google.protobuf.ByteString getREMOVEDUIDBytes(int index);
-        
-        // repeated string QUARANTINEUID = 5;
-        /**
-         * <code>repeated string QUARANTINEUID = 5;</code>
-         */
-        java.util.List<java.lang.String> getQUARANTINEUIDList();
-        
-        /**
-         * <code>repeated string QUARANTINEUID = 5;</code>
-         */
-        int getQUARANTINEUIDCount();
-        
-        /**
-         * <code>repeated string QUARANTINEUID = 5;</code>
-         */
-        java.lang.String getQUARANTINEUID(int index);
-        
-        /**
-         * <code>repeated string QUARANTINEUID = 5;</code>
-         */
-        com.google.protobuf.ByteString getQUARANTINEUIDBytes(int index);
     }
     
     /**
@@ -172,14 +151,6 @@ public final class Uid {
                             rEMOVEDUID_.add(input.readBytes());
                             break;
                         }
-                        case 42: {
-                            if (!((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
-                                qUARANTINEUID_ = new com.google.protobuf.LazyStringArrayList();
-                                mutable_bitField0_ |= 0x00000010;
-                            }
-                            qUARANTINEUID_.add(input.readBytes());
-                            break;
-                        }
                     }
                 }
             } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -192,9 +163,6 @@ public final class Uid {
                 }
                 if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
                     rEMOVEDUID_ = new com.google.protobuf.UnmodifiableLazyStringList(rEMOVEDUID_);
-                }
-                if (((mutable_bitField0_ & 0x00000010) == 0x00000010)) {
-                    qUARANTINEUID_ = new com.google.protobuf.UnmodifiableLazyStringList(qUARANTINEUID_);
                 }
                 this.unknownFields = unknownFields.build();
                 makeExtensionsImmutable();
@@ -323,44 +291,11 @@ public final class Uid {
             return rEMOVEDUID_.getByteString(index);
         }
         
-        // repeated string QUARANTINEUID = 5;
-        public static final int QUARANTINEUID_FIELD_NUMBER = 5;
-        private com.google.protobuf.LazyStringList qUARANTINEUID_;
-        
-        /**
-         * <code>repeated string QUARANTINEUID = 5;</code>
-         */
-        public java.util.List<java.lang.String> getQUARANTINEUIDList() {
-            return qUARANTINEUID_;
-        }
-        
-        /**
-         * <code>repeated string QUARANTINEUID = 5;</code>
-         */
-        public int getQUARANTINEUIDCount() {
-            return qUARANTINEUID_.size();
-        }
-        
-        /**
-         * <code>repeated string QUARANTINEUID = 5;</code>
-         */
-        public java.lang.String getQUARANTINEUID(int index) {
-            return qUARANTINEUID_.get(index);
-        }
-        
-        /**
-         * <code>repeated string QUARANTINEUID = 5;</code>
-         */
-        public com.google.protobuf.ByteString getQUARANTINEUIDBytes(int index) {
-            return qUARANTINEUID_.getByteString(index);
-        }
-        
         private void initFields() {
             iGNORE_ = false;
             cOUNT_ = 0L;
             uID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
             rEMOVEDUID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-            qUARANTINEUID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         }
         
         private byte memoizedIsInitialized = -1;
@@ -396,9 +331,6 @@ public final class Uid {
             for (int i = 0; i < rEMOVEDUID_.size(); i++) {
                 output.writeBytes(4, rEMOVEDUID_.getByteString(i));
             }
-            for (int i = 0; i < qUARANTINEUID_.size(); i++) {
-                output.writeBytes(5, qUARANTINEUID_.getByteString(i));
-            }
             getUnknownFields().writeTo(output);
         }
         
@@ -431,14 +363,6 @@ public final class Uid {
                 }
                 size += dataSize;
                 size += 1 * getREMOVEDUIDList().size();
-            }
-            {
-                int dataSize = 0;
-                for (int i = 0; i < qUARANTINEUID_.size(); i++) {
-                    dataSize += com.google.protobuf.CodedOutputStream.computeBytesSizeNoTag(qUARANTINEUID_.getByteString(i));
-                }
-                size += dataSize;
-                size += 1 * getQUARANTINEUIDList().size();
             }
             size += getUnknownFields().getSerializedSize();
             memoizedSerializedSize = size;
@@ -516,7 +440,8 @@ public final class Uid {
         
         @java.lang.Override
         protected Builder newBuilderForType(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
-            return new Builder(parent);
+            Builder builder = new Builder(parent);
+            return builder;
         }
         
         /**
@@ -560,8 +485,6 @@ public final class Uid {
                 bitField0_ = (bitField0_ & ~0x00000004);
                 rEMOVEDUID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
                 bitField0_ = (bitField0_ & ~0x00000008);
-                qUARANTINEUID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-                bitField0_ = (bitField0_ & ~0x00000010);
                 return this;
             }
             
@@ -607,11 +530,6 @@ public final class Uid {
                     bitField0_ = (bitField0_ & ~0x00000008);
                 }
                 result.rEMOVEDUID_ = rEMOVEDUID_;
-                if (((bitField0_ & 0x00000010) == 0x00000010)) {
-                    qUARANTINEUID_ = new com.google.protobuf.UnmodifiableLazyStringList(qUARANTINEUID_);
-                    bitField0_ = (bitField0_ & ~0x00000010);
-                }
-                result.qUARANTINEUID_ = qUARANTINEUID_;
                 result.bitField0_ = to_bitField0_;
                 onBuilt();
                 return result;
@@ -652,16 +570,6 @@ public final class Uid {
                     } else {
                         ensureREMOVEDUIDIsMutable();
                         rEMOVEDUID_.addAll(other.rEMOVEDUID_);
-                    }
-                    onChanged();
-                }
-                if (!other.qUARANTINEUID_.isEmpty()) {
-                    if (qUARANTINEUID_.isEmpty()) {
-                        qUARANTINEUID_ = other.qUARANTINEUID_;
-                        bitField0_ = (bitField0_ & ~0x00000010);
-                    } else {
-                        ensureQUARANTINEUIDIsMutable();
-                        qUARANTINEUID_.addAll(other.qUARANTINEUID_);
                     }
                     onChanged();
                 }
@@ -967,103 +875,6 @@ public final class Uid {
                 return this;
             }
             
-            // repeated string QUARANTINEUID = 5;
-            private com.google.protobuf.LazyStringList qUARANTINEUID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-            
-            private void ensureQUARANTINEUIDIsMutable() {
-                if (!((bitField0_ & 0x00000010) == 0x00000010)) {
-                    qUARANTINEUID_ = new com.google.protobuf.LazyStringArrayList(qUARANTINEUID_);
-                    bitField0_ |= 0x00000010;
-                }
-            }
-            
-            /**
-             * <code>repeated string QUARANTINEUID = 5;</code>
-             */
-            public java.util.List<java.lang.String> getQUARANTINEUIDList() {
-                return java.util.Collections.unmodifiableList(qUARANTINEUID_);
-            }
-            
-            /**
-             * <code>repeated string QUARANTINEUID = 5;</code>
-             */
-            public int getQUARANTINEUIDCount() {
-                return qUARANTINEUID_.size();
-            }
-            
-            /**
-             * <code>repeated string QUARANTINEUID = 5;</code>
-             */
-            public java.lang.String getQUARANTINEUID(int index) {
-                return qUARANTINEUID_.get(index);
-            }
-            
-            /**
-             * <code>repeated string QUARANTINEUID = 5;</code>
-             */
-            public com.google.protobuf.ByteString getQUARANTINEUIDBytes(int index) {
-                return qUARANTINEUID_.getByteString(index);
-            }
-            
-            /**
-             * <code>repeated string QUARANTINEUID = 5;</code>
-             */
-            public Builder setQUARANTINEUID(int index, java.lang.String value) {
-                if (value == null) {
-                    throw new NullPointerException();
-                }
-                ensureQUARANTINEUIDIsMutable();
-                qUARANTINEUID_.set(index, value);
-                onChanged();
-                return this;
-            }
-            
-            /**
-             * <code>repeated string QUARANTINEUID = 5;</code>
-             */
-            public Builder addQUARANTINEUID(java.lang.String value) {
-                if (value == null) {
-                    throw new NullPointerException();
-                }
-                ensureQUARANTINEUIDIsMutable();
-                qUARANTINEUID_.add(value);
-                onChanged();
-                return this;
-            }
-            
-            /**
-             * <code>repeated string QUARANTINEUID = 5;</code>
-             */
-            public Builder addAllQUARANTINEUID(java.lang.Iterable<java.lang.String> values) {
-                ensureQUARANTINEUIDIsMutable();
-                super.addAll(values, qUARANTINEUID_);
-                onChanged();
-                return this;
-            }
-            
-            /**
-             * <code>repeated string QUARANTINEUID = 5;</code>
-             */
-            public Builder clearQUARANTINEUID() {
-                qUARANTINEUID_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-                bitField0_ = (bitField0_ & ~0x00000010);
-                onChanged();
-                return this;
-            }
-            
-            /**
-             * <code>repeated string QUARANTINEUID = 5;</code>
-             */
-            public Builder addQUARANTINEUIDBytes(com.google.protobuf.ByteString value) {
-                if (value == null) {
-                    throw new NullPointerException();
-                }
-                ensureQUARANTINEUIDIsMutable();
-                qUARANTINEUID_.add(value);
-                onChanged();
-                return this;
-            }
-            
             // @@protoc_insertion_point(builder_scope:datawave.ingest.protobuf.List)
         }
         
@@ -1084,17 +895,15 @@ public final class Uid {
     
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
-        java.lang.String[] descriptorData = {"\n\tUid.proto\022\030datawave.ingest.protobuf\"]\n"
+        java.lang.String[] descriptorData = {"\n\tUid.proto\022\030datawave.ingest.protobuf\"F\n"
                         + "\004List\022\016\n\006IGNORE\030\001 \002(\010\022\r\n\005COUNT\030\002 \002(\004\022\013\n\003"
-                        + "UID\030\003 \003(\t\022\022\n\nREMOVEDUID\030\004 \003(\t\022\025\n\rQUARANT"
-                        + "INEUID\030\005 \003(\tB\034\n\030datawave.ingest.protobuf" + "H\001"};
+                        + "UID\030\003 \003(\t\022\022\n\nREMOVEDUID\030\004 \003(\tB\034\n\030datawav" + "e.ingest.protobufH\001"};
         com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner = new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
             public com.google.protobuf.ExtensionRegistry assignDescriptors(com.google.protobuf.Descriptors.FileDescriptor root) {
                 descriptor = root;
                 internal_static_datawave_ingest_protobuf_List_descriptor = getDescriptor().getMessageTypes().get(0);
                 internal_static_datawave_ingest_protobuf_List_fieldAccessorTable = new com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-                                internal_static_datawave_ingest_protobuf_List_descriptor, new java.lang.String[] {"IGNORE", "COUNT", "UID", "REMOVEDUID",
-                                        "QUARANTINEUID",});
+                                internal_static_datawave_ingest_protobuf_List_descriptor, new java.lang.String[] {"IGNORE", "COUNT", "UID", "REMOVEDUID",});
                 return null;
             }
         };

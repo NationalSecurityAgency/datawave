@@ -88,6 +88,7 @@ import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
 import datawave.query.jexl.visitors.validate.ASTValidator;
+import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
 import datawave.query.planner.comparator.GeoWaveQueryPlanComparator;
@@ -186,6 +187,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Disables the test for non existent fields.
      */
     protected boolean disableTestNonExistentFields = false;
+    
+    /**
+     * Disables Whindex (value-specific) field mappings for GeoWave functions.
+     * 
+     * @see WhindexVisitor
+     */
+    protected boolean disableWhindexFieldMappings = false;
     
     /**
      * Disables the index expansion function
@@ -776,6 +784,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         TraceStopwatch stopwatch = null;
         
+        if (!disableWhindexFieldMappings) {
+            // apply the value-specific field mappings for GeoWave functions
+            timedApplyWhindexFieldMappings(timers, queryTree, config, metadataHelper, settings);
+        }
+        
         if (!disableExpandIndexFunction) {
             // expand the index queries for the functions
             queryTree = timedExpandIndexQueriesForFunctions(timers, queryTree, config, metadataHelper);
@@ -1078,6 +1091,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return queryModelProvider.getQueryModel();
     }
     
+    /*
+
+
+     */
+    
     protected Set<String> loadIndexedFields(ShardQueryConfiguration config) {
         try {
             return metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
@@ -1195,6 +1213,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     protected ASTJexlScript expandRegexFunctionNodes(ASTJexlScript script, ShardQueryConfiguration config, MetadataHelper metadataHelper,
                     Set<String> indexOnlyFields) throws DatawaveQueryException {
         return visitorManager.validateAndVisit(() -> (RegexFunctionVisitor.expandRegex(config, metadataHelper, indexOnlyFields, script)));
+    }
+    
+    protected ASTJexlScript timedApplyWhindexFieldMappings(QueryStopwatch timers, ASTJexlScript script, ShardQueryConfiguration config,
+                    MetadataHelper metadataHelper, Query settings) throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, "Apply Whindex Field Mappings",
+                        () -> (WhindexVisitor.apply(script, config, settings.getBeginDate(), metadataHelper)));
     }
     
     protected ASTJexlScript timedExpandIndexQueriesForFunctions(QueryStopwatch timers, ASTJexlScript script, ShardQueryConfiguration config,
@@ -2554,6 +2578,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     public boolean getDisableTestNonExistentFields() {
         return disableTestNonExistentFields;
+    }
+    
+    public void setDisableWhindexFieldMappings(boolean disableWhindexFieldMappings) {
+        this.disableWhindexFieldMappings = disableWhindexFieldMappings;
+    }
+    
+    public boolean getDisableWhindexFieldMappings() {
+        return disableWhindexFieldMappings;
     }
     
     public void setDisableExpandIndexFunction(boolean disableExpandIndexFunction) {
