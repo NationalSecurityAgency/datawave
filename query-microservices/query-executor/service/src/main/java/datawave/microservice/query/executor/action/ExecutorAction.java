@@ -276,7 +276,9 @@ public abstract class ExecutorAction implements Runnable {
                 pageSize = Math.min(pageSize, queryLogic.getMaxPageSize());
             }
             boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
+            int count = 0;
             while (running && iter.hasNext()) {
+                count++;
                 Object result = iter.next();
                 log.trace("Generated result for " + taskKey + ": " + result);
                 queues.sendMessage(queryId, new Result(UUID.randomUUID().toString(), result));
@@ -284,6 +286,7 @@ public abstract class ExecutorAction implements Runnable {
                 updateMetrics(queryId, queryStatus, iter);
                 running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
             }
+            log.debug("Generated " + count + " results for " + taskKey);
             updateMetrics(queryId, queryStatus, iter);
             
             return !iter.hasNext();
