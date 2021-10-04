@@ -1,6 +1,7 @@
 package datawave.query;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -108,8 +109,6 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
     }
     
-    // this test case is randomly failing - will fix later
-    @Ignore
     @Test
     public void testMaxValueNegAnyField() throws Exception {
         log.info("------  testMaxValueNegAnyField  ------");
@@ -126,7 +125,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         try {
             runTest(query, expect);
             Assert.fail("exception expected");
-        } catch (RuntimeException re) {
+        } catch (FullTableScansDisallowedException e) {
             // expected
         }
         
