@@ -39,24 +39,6 @@ public final class UidTestUtils {
         return builderToValue(b);
     }
     
-    public static Value releaseUidList(String... uids) {
-        Uid.List.Builder b = Uid.List.newBuilder();
-        b.setIGNORE(false);
-        b.addAllQUARANTINEUID(asList(uids));
-        b.setCOUNT(uids.length);
-        
-        return builderToValue(b);
-    }
-    
-    public static Value quarantineUidList(String... uids) {
-        Uid.List.Builder b = Uid.List.newBuilder();
-        b.setIGNORE(false);
-        b.addAllQUARANTINEUID(asList(uids));
-        b.setCOUNT(-1 * uids.length);
-        
-        return builderToValue(b);
-    }
-    
     public static Value removeUidList(String... uids) {
         Uid.List.Builder b = Uid.List.newBuilder();
         b.setIGNORE(false);
