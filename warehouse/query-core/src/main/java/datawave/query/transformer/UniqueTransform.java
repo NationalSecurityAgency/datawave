@@ -116,14 +116,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
     
     /**
-     * Determine if the document is a TIMING_METADATA record. They should be skipped.
-     */
-    private boolean isTimingMetadata(Document document) {
-        Attribute<? extends Comparable<?>> timingMetadataAttribute = document.getDictionary().get(LogTiming.TIMING_METADATA);
-        return (timingMetadataAttribute != null && timingMetadataAttribute instanceof TimingMetadata);
-    }
-    
-    /**
      * Determine if a document is unique per the fields specified. If we have seen this set of fields and values before, then it is not unique.
      * 
      * @param document
