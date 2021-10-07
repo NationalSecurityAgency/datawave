@@ -18,9 +18,11 @@ import datawave.query.QueryParameters;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.TableName;
 import datawave.util.UniversalSet;
@@ -214,6 +216,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
     private Set<String> evaluationOnlyFields = new HashSet<>(0);
     
+    /**
+     * Disables Whindex (value-specific) field mappings for GeoWave functions.
+     * 
+     * @see WhindexVisitor
+     */
+    private boolean disableWhindexFieldMappings = false;
+    private Set<String> whindexMappingFields = new HashSet<>();
+    private Map<String,Map<String,String>> whindexFieldMappings = new HashMap<>();
+    
     private boolean sortedUIDs = true;
     // The fields in the the query that are tf fields
     private Set<String> queryTermFrequencyFields = Collections.emptySet();
@@ -326,7 +337,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int groupFieldsBatchSize;
     private boolean accrueStats = false;
     private Set<String> groupFields = new HashSet<>(0);
-    private Set<String> uniqueFields = new HashSet<>(0);
+    private UniqueFields uniqueFields = new UniqueFields();
     private boolean cacheModel = false;
     /**
      * should the sizes of documents be tracked for this query
@@ -520,7 +531,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
         this.setGroupFields(null == other.getGroupFields() ? null : Sets.newHashSet(other.getGroupFields()));
-        this.setUniqueFields(null == other.getUniqueFields() ? null : Sets.newHashSet(other.getUniqueFields()));
+        this.setUniqueFields(UniqueFields.copyOf(other.getUniqueFields()));
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
@@ -528,7 +539,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setActiveQueryLogNameSource(other.getActiveQueryLogNameSource());
         this.setEnforceUniqueConjunctionsWithinExpression(other.getEnforceUniqueConjunctionsWithinExpression());
         this.setEnforceUniqueDisjunctionsWithinExpression(other.getEnforceUniqueDisjunctionsWithinExpression());
-        
+        this.setDisableWhindexFieldMappings(other.isDisableWhindexFieldMappings());
+        this.setWhindexMappingFields(other.getWhindexMappingFields());
+        this.setWhindexFieldMappings(other.getWhindexFieldMappings());
     }
     
     /**
@@ -1530,16 +1543,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return "" + groupFieldsBatchSize;
     }
     
-    public Set<String> getUniqueFields() {
+    public UniqueFields getUniqueFields() {
         return uniqueFields;
     }
     
-    public void setUniqueFields(Set<String> uniqueFields) {
-        this.uniqueFields = deconstruct(uniqueFields);
-    }
-    
-    public String getUniqueFieldsAsString() {
-        return StringUtils.join(this.getUniqueFields(), Constants.PARAM_VALUE_SEP);
+    public void setUniqueFields(UniqueFields uniqueFields) {
+        this.uniqueFields = uniqueFields;
+        // If unique fields are present, make sure they are deconstructed by this point.
+        if (uniqueFields != null) {
+            uniqueFields.deconstructIdentifierFields();
+        }
     }
     
     public boolean isHitList() {
@@ -2104,6 +2117,30 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
             default:
                 return "";
         }
+    }
+    
+    public boolean isDisableWhindexFieldMappings() {
+        return disableWhindexFieldMappings;
+    }
+    
+    public void setDisableWhindexFieldMappings(boolean disableWhindexFieldMappings) {
+        this.disableWhindexFieldMappings = disableWhindexFieldMappings;
+    }
+    
+    public Set<String> getWhindexMappingFields() {
+        return whindexMappingFields;
+    }
+    
+    public void setWhindexMappingFields(Set<String> whindexMappingFields) {
+        this.whindexMappingFields = whindexMappingFields;
+    }
+    
+    public Map<String,Map<String,String>> getWhindexFieldMappings() {
+        return whindexFieldMappings;
+    }
+    
+    public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
+        this.whindexFieldMappings = whindexFieldMappings;
     }
     
     public boolean isGeneratePlanOnly() {

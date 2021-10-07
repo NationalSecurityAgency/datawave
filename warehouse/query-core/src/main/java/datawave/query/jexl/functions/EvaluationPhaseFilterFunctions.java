@@ -5,8 +5,11 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.data.type.Type;
 import datawave.query.attributes.ValueTuple;
+import datawave.query.exceptions.EmptySetComparisonException;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.query.collections.FunctionalSet;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.log4j.Logger;
 
 import java.text.DateFormat;
@@ -16,8 +19,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1562,7 +1567,7 @@ public class EvaluationPhaseFilterFunctions {
      * if the pos is 0, then GGPARENT.GPARENT.PARENT will be returned
      * if the pos is 2, then GGPARENT will be returned
      * </pre>
-     * 
+     *
      * @param input
      * @param pos
      * @return
@@ -1606,4 +1611,98 @@ public class EvaluationPhaseFilterFunctions {
         return indices;
     }
     
+    /**
+     * compare set of value(s) between two fields using the parameter/mode(all or any) that's passed into the function
+     *
+     * @param field
+     * @param operator
+     * @param compareMode
+     * @param field2
+     * @return
+     */
+    public static boolean compare(Object field, String operator, String compareMode, Object field2) {
+        FunctionalSet<ValueTuple> fields = new FunctionalSet<>();
+        if (field instanceof Iterable) {
+            for (Object i : (Iterable) field) {
+                fields.add(ValueTuple.toValueTuple(i));
+            }
+        } else {
+            if (field != null) {
+                fields.add(ValueTuple.toValueTuple(field));
+            }
+        }
+        
+        FunctionalSet<ValueTuple> fields2 = new FunctionalSet<>();
+        if (field2 instanceof Iterable) {
+            for (Object i : (Iterable) field2) {
+                fields2.add(ValueTuple.toValueTuple(i));
+            }
+        } else {
+            if (field2 != null) {
+                fields2.add(ValueTuple.toValueTuple(field2));
+            }
+        }
+        
+        return compareFields(fields, operator, CompareFunctionValidator.Mode.valueOf(compareMode) == CompareFunctionValidator.Mode.ANY, fields2);
+    }
+    
+    private static boolean compareFields(FunctionalSet<ValueTuple> fields, String operator, boolean matchesAny, FunctionalSet<ValueTuple> fields2) {
+        try {
+            switch (CharMatcher.WHITESPACE.removeFrom(operator)) {
+                case "==":
+                    return compareFieldsEqualityHelper(fields, fields2, matchesAny);
+                case "=":
+                    return compareFieldsEqualityHelper(fields, fields2, matchesAny);
+                case "!=":
+                    return !compareFieldsEqualityHelper(fields, fields2, matchesAny);
+                case "<":
+                    // matchesAny: min(fields) < max(fields2)
+                    // matchesAll: min(fields2) > max(fields)
+                    return matchesAny ? compareFieldsHelperMinToMax(fields, fields2) < 0 : compareFieldsHelperMinToMax(fields2, fields) > 0;
+                case "<=":
+                    // matchesAny: min(fields) <= max(fields2)
+                    // matchesAll: min(fields2) >= max(fields)
+                    return matchesAny ? compareFieldsHelperMinToMax(fields, fields2) <= 0 : compareFieldsHelperMinToMax(fields2, fields) >= 0;
+                case ">":
+                    // matchesAny: min(fields2) < max(fields)
+                    // matchesAll: min(fields2) > max(fields)
+                    return matchesAny ? compareFieldsHelperMinToMax(fields2, fields) < 0 : compareFieldsHelperMinToMax(fields, fields2) > 0;
+                case ">=":
+                    // matchesAny: min(fields2) <= max(fields)
+                    // matchesAll: min(fields2) >= max(fields)
+                    return matchesAny ? compareFieldsHelperMinToMax(fields2, fields) <= 0 : compareFieldsHelperMinToMax(fields, fields2) >= 0;
+            }
+        } catch (EmptySetComparisonException e) {
+            // cannot compare empty sets
+            return false;
+        }
+        
+        // this is unexpected exception since the function is validated before it gets here
+        throw new IllegalArgumentException("cannot use " + operator + " in this equation with mode [" + (matchesAny ? "ANY" : "ALL") + "]");
+    }
+    
+    private static int compareFieldsHelperMinToMax(FunctionalSet<ValueTuple> fields, FunctionalSet<ValueTuple> fields2) throws EmptySetComparisonException {
+        if (SetUtils.emptyIfNull(fields).isEmpty() || SetUtils.emptyIfNull(fields2).isEmpty()) {
+            throw new EmptySetComparisonException();
+        }
+        
+        ValueTuple field1Min = ((ValueTuple) fields.min());
+        ValueTuple field2Max = ((ValueTuple) fields2.max());
+        
+        return ((Comparable) (field1Min.getNormalizedValue())).compareTo(field2Max.getNormalizedValue());
+    }
+    
+    private static boolean compareFieldsEqualityHelper(FunctionalSet<ValueTuple> fields, FunctionalSet<ValueTuple> fields2, boolean matchesAny) {
+        Set<Object> fieldValues = new HashSet<>();
+        fields.forEach(f -> fieldValues.add(f.getNormalizedValue()));
+        
+        Set<Object> field2Values = new HashSet<>();
+        fields2.forEach(f -> field2Values.add(f.getNormalizedValue()));
+        
+        if (matchesAny) {
+            return !SetUtils.intersection(fieldValues, field2Values).isEmpty() || CollectionUtils.isEqualCollection(fieldValues, field2Values);
+        } else {
+            return SetUtils.isEqualSet(fieldValues, field2Values);
+        }
+    }
 }

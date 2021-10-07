@@ -18,6 +18,7 @@ public class DatawaveJexlEngine extends JexlEngine {
     
     public DatawaveJexlEngine() {
         super();
+        setDebug(false);
         registerFunctions();
     }
     

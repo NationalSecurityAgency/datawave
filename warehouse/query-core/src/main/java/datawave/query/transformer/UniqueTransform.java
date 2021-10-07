@@ -14,12 +14,13 @@ import datawave.query.attributes.TimingMetadata;
 import datawave.query.function.LogTiming;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.util.StringUtils;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
@@ -28,7 +29,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,29 +48,29 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     
     private static final Logger log = Logger.getLogger(GroupingTransform.class);
     
-    private BloomFilter<byte[]> bloom = null;
-    private Set<String> fields;
+    private final BloomFilter<byte[]> bloom;
+    private UniqueFields uniqueFields;
     private Multimap<String,String> modelMapping;
     
-    public UniqueTransform(Set<String> fields) {
-        this.fields = deconstruct(fields);
+    public UniqueTransform(UniqueFields uniqueFields) {
+        this.uniqueFields = uniqueFields;
+        this.uniqueFields.deconstructIdentifierFields();
         this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
-        if (log.isTraceEnabled())
-            log.trace("unique fields: " + this.fields);
-    }
-    
-    private Set<String> deconstruct(Collection<String> fields) {
-        return fields.stream().map(field -> JexlASTHelper.deconstructIdentifier(field)).collect(Collectors.toSet());
+        if (log.isTraceEnabled()) {
+            log.trace("unique fields: " + this.uniqueFields.getFields());
+        }
     }
     
     /**
-     * If passing the logic in, then the model being used by the logic then capture the reverse field mapping
-     *
+     * Create a new {@link UniqueTransform} that will capture the reverse field mapping defined within the model being used by the logic (if present).
+     * 
      * @param logic
-     * @param fields
+     *            the logic
+     * @param uniqueFields
+     *            the set of fields to find unique values for
      */
-    public UniqueTransform(BaseQueryLogic<Entry<Key,Value>> logic, Set<String> fields) {
-        this(fields);
+    public UniqueTransform(BaseQueryLogic<Entry<Key,Value>> logic, UniqueFields uniqueFields) {
+        this(uniqueFields);
         QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
         if (model != null) {
             modelMapping = HashMultimap.create();
@@ -236,12 +236,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             if (field != null) {
                 String groupingContext = getGroupingContext(documentField);
                 Set<String> values = getValues(document.get(documentField));
+                Set<String> transformedValues = uniqueFields.transformValues(field, values);
                 Multimap<String,String> groupedValues = mapGroupingContextToField.get(groupingContext);
                 if (groupedValues == null) {
                     groupedValues = HashMultimap.create();
                     mapGroupingContextToField.put(groupingContext, groupedValues);
                 }
-                groupedValues.putAll(field, values);
+                groupedValues.putAll(field, transformedValues);
             }
         }
         
@@ -277,9 +278,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             Multimap<String,String> entry = it.next();
             boolean remove = false;
             for (Multimap<String,String> other : set2) {
-                if (entry == other) {
-                    
-                } else if (!intersects(entry.keySet(), other.keySet())) {
+                if (!intersects(entry.keySet(), other.keySet())) {
                     Multimap<String,String> combinedFields = HashMultimap.create(entry);
                     combinedFields.putAll(other);
                     combined.add(combinedFields);
@@ -293,66 +292,31 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         return combined;
     }
     
-    /**
-     * Detemine if two sets of values intersect
-     * 
-     * @param set1
-     * @param set2
-     * @return true if they have a value in common, false otherwise
-     */
+    // Return whether or not at least one element is found in both sets.
     private boolean intersects(Set<String> set1, Set<String> set2) {
-        for (String a : set1) {
-            if (set2.contains(a)) {
-                return true;
-            }
-        }
-        return false;
+        return set1.stream().anyMatch(set2::contains);
     }
     
-    /**
-     * Get the set of values for an attribute
-     * 
-     * @param attr
-     * @return the set of values
-     */
-    private Set<String> getValues(Attribute<?> attr) {
-        Set<String> values = new HashSet<>();
-        if (attr instanceof Attributes) {
-            for (Attribute<?> child : ((Attributes) attr).getAttributes()) {
-                values.addAll(getValues(child));
-            }
+    // Return the set of values for the provided attribute.
+    private Set<String> getValues(Attribute<?> attribute) {
+        if (attribute instanceof Attributes) {
+            // @formatter:off
+            return ((Attributes) attribute).getAttributes().stream()
+                            .map(this::getValues)
+                            .flatMap(Set::stream)
+                            .collect(Collectors.toSet());
+            // @formatter:on
         } else {
-            values.add(String.valueOf(attr.getData()));
-        }
-        return values;
-    }
-    
-    /**
-     * Get the base field name for a field (removed grouping context)
-     *
-     * @param documentField
-     * @return the base field name
-     */
-    private String getBaseFieldname(String documentField) {
-        int index = documentField.indexOf('.');
-        if (index < 0) {
-            return documentField;
-        } else {
-            return documentField.substring(0, index);
+            return Collections.singleton(String.valueOf(attribute.getData()));
         }
     }
     
-    /**
-     * Get the grouping context for a field
-     * 
-     * @param documentField
-     * @return the grouping context (first and last elements of the group). If no grouping context, then a unique group is given for this fieldname.
-     */
-    private String getGroupingContext(String documentField) {
-        String[] parts = StringUtils.split(documentField, '.');
+    // Return the grouping context for the provided field if it exists. If no grouping context is returned, then field.ungrouped is returned.
+    private String getGroupingContext(String field) {
+        String[] parts = StringUtils.split(field, '.');
         if (parts.length == 1) {
             // if the field does not have a grouping context, then it is its own group
-            return documentField + ".ungrouped";
+            return field + ".ungrouped";
         } else if (parts.length == 2) {
             return parts[1];
         } else {
@@ -360,38 +324,28 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
     }
     
-    /**
-     * Get the field that this documentField matches
-     * 
-     * @param documentField
-     * @return the matching field
-     */
+    // Return the query-specified field that the provided document matches, if one exists, or otherwise return null.
     private String getUniqueField(String documentField) {
-        String baseDocumentField = getBaseFieldname(documentField);
-        for (String field : fields) {
-            // Match should be case insensitive
-            if (isMatchingField(baseDocumentField.toUpperCase(), field.toUpperCase())) {
-                return field;
-            }
-        }
-        return null;
+        String baseDocumentField = getFieldWithoutGrouping(documentField);
+        return uniqueFields.getFields().stream().filter((field) -> isMatchingField(baseDocumentField, field)).findFirst().orElse(null);
     }
     
-    /**
-     * Determine if this document field is the same as this field, applying reverse model mappings if configured.
-     * 
-     * @param baseDocumentField
-     * @param field
-     * @return true of matching
-     */
-    private boolean isMatchingField(String baseDocumentField, String field) {
-        if (field.equals(baseDocumentField)) {
-            return true;
+    // Return the provided field with any grouping context removed.
+    private String getFieldWithoutGrouping(String field) {
+        int index = field.indexOf('.');
+        if (index < 0) {
+            return field;
+        } else {
+            return field.substring(0, index);
         }
-        if (modelMapping != null && modelMapping.get(field).contains(baseDocumentField)) {
-            return true;
-        }
-        return false;
+    }
+    
+    // Return whether or not the provided document field is considered a case-insensitive match for the provided field, applying reverse model mappings if
+    // configured.
+    private boolean isMatchingField(String baseField, String field) {
+        baseField = baseField.toUpperCase();
+        field = field.toUpperCase();
+        return field.equals(baseField) || (modelMapping != null && modelMapping.get(field).contains(baseField));
     }
     
     public static class ByteFunnel implements Funnel<byte[]>, Serializable {
@@ -402,7 +356,5 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         public void funnel(byte[] from, PrimitiveSink into) {
             into.putBytes(from);
         }
-        
     }
-    
 }
