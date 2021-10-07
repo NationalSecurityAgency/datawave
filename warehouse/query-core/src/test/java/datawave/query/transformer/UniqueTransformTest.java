@@ -296,21 +296,21 @@ public class UniqueTransformTest {
     public void testUniquenessWithTimingMetric() {
         List<Document> input = new ArrayList<>();
         List<Document> expected = new ArrayList<>();
-
-        String  MARKER_STRING = "\u2735FinalDocument\u2735";
+        
+        String MARKER_STRING = "\u2735FinalDocument\u2735";
         TimingMetadata timingMetadata = new TimingMetadata();
         timingMetadata.setNextCount(5l);
-
+        
         givenInputDocument(MARKER_STRING).withKeyValue(LogTiming.TIMING_METADATA, timingMetadata.toString()).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR1", randomValues.get(1)).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR2", randomValues.get(1));
-
+        
         givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0");
-
+        
         assertUniqueDocuments();
     }
-
+    
     /**
      * Test that groups get placed into separate field sets
      */
@@ -533,15 +533,15 @@ public class UniqueTransformTest {
     private UniqueTransform getUniqueTransform() {
         return new UniqueTransform(uniqueFields);
     }
-
+    
     private InputDocumentBuilder givenInputDocument() {
         return new InputDocumentBuilder();
     }
-
+    
     private InputDocumentBuilder givenInputDocument(String docKey) {
         return new InputDocumentBuilder(docKey);
     }
-
+    
     private ExpectedOrderedFieldSetBuilder givenExpectedOrderedFieldSet() {
         return new ExpectedOrderedFieldSetBuilder();
     }
@@ -554,10 +554,10 @@ public class UniqueTransformTest {
             this.document = new Document();
             inputDocuments.add(document);
         }
-
+        
         @SuppressWarnings({"UnusedReturnValue", "SameParameterValue"})
-        InputDocumentBuilder (String docKey) {
-
+        InputDocumentBuilder(String docKey) {
+            
             Text MARKER_TEXT = new Text(docKey);
             ByteSequence MARKER_SEQUENCE = new ArrayByteSequence(MARKER_TEXT.getBytes(), 0, MARKER_TEXT.getLength());
             byte EMPTY_BYTES[] = new byte[0];
@@ -566,8 +566,9 @@ public class UniqueTransformTest {
             inputDocuments.add(document);
             this.document.getMetadata().set(key);
         }
-            @SuppressWarnings({"UnusedReturnValue", "SameParameterValue"})
-            InputDocumentBuilder withRandomKeyValues(int minKeys, int maxKeys, int maxMultiValueKeys) {
+        
+        @SuppressWarnings({"UnusedReturnValue", "SameParameterValue"})
+        InputDocumentBuilder withRandomKeyValues(int minKeys, int maxKeys, int maxMultiValueKeys) {
             // Create random key-values.
             int totalKeys = random.nextInt((maxKeys + 1)) + minKeys;
             for (int i = 0; i < totalKeys; i++) {
