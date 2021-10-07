@@ -1,18 +1,12 @@
 package datawave.query.jexl.lookups;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.Semaphore;
-
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
-
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -20,12 +14,17 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Semaphore;
 
-public class FieldNameLookup extends IndexLookup {
-    private static final Logger log = Logger.getLogger(FieldNameLookup.class);
+public class FieldNameIndexLookup extends IndexLookup {
+    private static final Logger log = Logger.getLogger(FieldNameIndexLookup.class);
     /**
      * Terms to lookup in index
      */
@@ -41,7 +40,7 @@ public class FieldNameLookup extends IndexLookup {
     
     protected IndexLookupMap fieldToTerms = null;
     
-    public FieldNameLookup(Set<String> fields, Set<String> terms) {
+    public FieldNameIndexLookup(Set<String> fields, Set<String> terms) {
         this.fields = new HashSet<>();
         
         if (fields != null) {
@@ -63,7 +62,17 @@ public class FieldNameLookup extends IndexLookup {
     }
     
     @Override
-    public IndexLookupMap lookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, long lookupTimer) {
+    public void lookupAsync(ShardQueryConfiguration config, ScannerFactory scannerFactory, long timer, ExecutorService execService) {
+        this.config = config;
+        this.scannerFactory = scannerFactory;
+        this.timer = timer;
+        this.execService = execService;
+        
+        lookupStartTimeMillis = System.currentTimeMillis();
+    }
+    
+    @Override
+    public IndexLookupMap lookupWait() {
         try {
             sem.acquire();
         } catch (InterruptedException e1) {
