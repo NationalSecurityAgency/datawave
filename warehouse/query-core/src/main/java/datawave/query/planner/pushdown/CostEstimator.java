@@ -7,7 +7,7 @@ import java.util.NoSuchElementException;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.lookups.RegexIndexLookup;
+import datawave.query.jexl.lookups.BaseRegexIndexLookup;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.Constants;
@@ -56,7 +56,7 @@ public class CostEstimator {
                     }
                     
                     // If we don't globally don't accept this pattern, it has infinite cost
-                    if (!RegexIndexLookup.isAcceptedPattern(pattern)) {
+                    if (!BaseRegexIndexLookup.isAcceptedPattern(pattern)) {
                         return new Cost(Long.MAX_VALUE, 0l);
                     }
                     

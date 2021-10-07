@@ -16,6 +16,7 @@ import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ShardQueryConfiguration;
@@ -44,6 +45,7 @@ import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
+import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
 import datawave.query.jexl.visitors.CaseSensitivityVisitor;
 import datawave.query.jexl.visitors.ConjunctionEliminationVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
@@ -55,9 +57,9 @@ import datawave.query.jexl.visitors.ExpandCompositeTerms;
 import datawave.query.jexl.visitors.ExpandMultiNormalizedTerms;
 import datawave.query.jexl.visitors.FetchDataTypesVisitor;
 import datawave.query.jexl.visitors.FieldMissingFromSchemaVisitor;
+import datawave.query.jexl.visitors.UnfieldedIndexExpansionVisitor;
 import datawave.query.jexl.visitors.FieldToFieldComparisonVisitor;
 import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
-import datawave.query.jexl.visitors.FixUnfieldedTermsVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
@@ -65,7 +67,6 @@ import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.NodeTypeCountVisitor;
-import datawave.query.jexl.visitors.ParallelIndexExpansion;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.PushFunctionsIntoExceededValueRanges;
@@ -75,8 +76,8 @@ import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
-import datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
+import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
 import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
@@ -97,7 +98,6 @@ import datawave.query.planner.rules.NodeTransformVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.ScannerFactory;
-import datawave.query.attributes.UniqueFields;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
@@ -1010,16 +1010,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // returned.
         // If the max regex expansion is reached for a term, then it will be
         // left as a regex
-        Set<String> expansionFields = null;
         if (!disableAnyFieldLookup) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ANYFIELD regex nodes");
             
             try {
-                expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
                 config.setIndexedFields(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
                 config.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
-                queryTree = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, queryTree, expansionFields,
-                                config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
+                queryTree = UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, queryTree);
             } catch (EmptyUnfieldedTermExpansionException e) {
                 // The visitor will only throw this if we cannot expand anything resulting in empty query
                 stopwatch.stop();
@@ -1280,14 +1277,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
-                ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
-                                config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
-                
                 // Check if there is any regex to expand.
                 NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
                 if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
                     innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
-                    queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
+                    queryTree = RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, queryTree);
                     // regex expansion picks up an extra set of parens, so quickly fix that here
                     queryTree = (ASTJexlScript) TreeFlatteningRebuildingVisitor.flatten(queryTree);
                     if (log.isDebugEnabled()) {
@@ -1299,8 +1293,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 // Check if there are any bounded ranges to expand.
                 if (nodeCount.isPresent(BoundedRange.class)) {
                     innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ranges");
-                    queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
-                                    config.isExpandValues());
+                    queryTree = BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, queryTree);
                     if (log.isDebugEnabled()) {
                         logQuery(queryTree, "Query after expanding ranges:");
                     }
@@ -1367,7 +1360,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     // Check if there is any regex to expand after pulling up delayed predicates.
                     nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
                     if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
-                        queryTree = (ASTJexlScript) regexExpansion.visit(queryTree, null);
+                        queryTree = RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, queryTree);
                         if (log.isDebugEnabled()) {
                             logQuery(queryTree, "Query after expanding regex again:");
                         }
@@ -1375,8 +1368,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     
                     // Check if there are any bounded ranges to expand.
                     if (nodeCount.isPresent(BoundedRange.class)) {
-                        queryTree = RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, queryTree, config.isExpandFields(),
-                                        config.isExpandValues());
+                        queryTree = BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, queryTree);
                         if (log.isDebugEnabled()) {
                             logQuery(queryTree, "Query after expanding ranges again:");
                         }
@@ -1422,17 +1414,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
                 innerStopwatch.stop();
                 
-            } catch (TableNotFoundException | InstantiationException | IllegalAccessException e1) {
+            } catch (TableNotFoundException e) {
                 stopwatch.stop();
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e1);
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             } catch (CannotExpandUnfieldedTermFatalException e) {
                 if (null != e.getCause() && e.getCause() instanceof DoNotPerformOptimizedQueryException)
                     throw (DoNotPerformOptimizedQueryException) e.getCause();
                 QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
                 throw new DatawaveFatalQueryException(qe);
-            } catch (ExecutionException e) {
-                log.error("Exception while expanding ranges", e);
             } finally {
                 // Ensure the inner stopwatch is stopped.
                 if (innerStopwatch != null && innerStopwatch.isRunning()) {

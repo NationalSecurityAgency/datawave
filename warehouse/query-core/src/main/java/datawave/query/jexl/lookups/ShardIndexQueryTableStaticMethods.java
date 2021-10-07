@@ -41,16 +41,13 @@ import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.LongRange;
-import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -117,7 +114,7 @@ public class ShardIndexQueryTableStaticMethods {
             }
         }
         
-        return new FieldNameLookup(getIndexedExpansionFields(expansionFields, false, ingestDataTypes, helperRef), terms);
+        return new FieldNameIndexLookup(getIndexedExpansionFields(expansionFields, false, ingestDataTypes, helperRef), terms);
     }
     
     /**
@@ -268,7 +265,7 @@ public class ShardIndexQueryTableStaticMethods {
         
         Set<String> fields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, false, ingestDataTypes, helperRef);
         Set<String> reverseFields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, true, ingestDataTypes, helperRef);
-        return (IndexLookup) new LookupTermsFromRegex(fields, reverseFields, patterns, helperRef, true);
+        return (IndexLookup) new RegexIndexLookup(fields, reverseFields, patterns, helperRef, true);
     }
     
     public static IndexLookup expandRegexTerms(ASTERNode node, String fieldName, Set<Type<?>> dataTypes, MetadataHelper helperRef) {
@@ -313,12 +310,12 @@ public class ShardIndexQueryTableStaticMethods {
             }
         }
         
-        return (IndexLookup) new LookupTermsFromRegex(fieldName, patterns, helperRef);
+        return (IndexLookup) new RegexIndexLookup(fieldName, patterns, helperRef);
     }
     
     public static IndexLookup expandRange(LiteralRange<?> range) {
         
-        return new LookupBoundedRangeForTerms(range);
+        return new BoundedRangeIndexLookup(range);
     }
     
     /**
