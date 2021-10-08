@@ -24,8 +24,10 @@ public abstract class AsyncIndexLookup extends IndexLookup {
     
     protected ExecutorService execService;
     
-    public AsyncIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
+    public AsyncIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, boolean unfieldedLookup, ExecutorService execService) {
         super(config, scannerFactory);
+        this.unfieldedLookup = unfieldedLookup;
+        this.execService = execService;
     }
     
     /**
@@ -38,7 +40,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
         return Math.max(0L, config.getMaxIndexScanTimeMillis() - (System.currentTimeMillis() - startTimeMillis));
     }
     
-    protected void timedScanWait(Future<Boolean> future, CountDownLatch startedLatch, long startTimeMillis) {
+    protected void timedScanWait(Future<Boolean> future, CountDownLatch startedLatch, long startTimeMillis, long timeout) {
         // this ensures that we don't wait for the future response until the task has started
         if (startedLatch != null) {
             try {
@@ -50,7 +52,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
             throw new UnsupportedOperationException("Cannot wait for IndexLookup timed scan that wasn't started");
         }
         
-        long maxLookup = config.getMaxIndexScanTimeMillis();
+        long maxLookup = timeout;
         
         try {
             

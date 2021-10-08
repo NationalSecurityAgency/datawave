@@ -73,13 +73,11 @@ public class RegexIndexLookup extends BaseRegexIndexLookup {
      */
     public RegexIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> fields, Set<String> reverseFields, Set<String> patterns,
                     MetadataHelper helper, boolean unfieldedLookup, ExecutorService execService) {
-        super(config, scannerFactory);
+        super(config, scannerFactory, unfieldedLookup, execService);
         this.fields = fields;
         this.reverseFields = reverseFields;
         this.patterns = patterns;
         this.helper = helper;
-        this.unfieldedLookup = unfieldedLookup;
-        this.execService = execService;
     }
     
     /**
@@ -223,7 +221,8 @@ public class RegexIndexLookup extends BaseRegexIndexLookup {
     public synchronized IndexLookupMap lookup() {
         if (!forwardLookupData.getSessions().isEmpty()) {
             try {
-                timedScanWait(forwardLookupData.getTimedScanFuture(), forwardLookupData.getLookupStartedLatch(), forwardLookupData.getLookupStartTimeMillis());
+                timedScanWait(forwardLookupData.getTimedScanFuture(), forwardLookupData.getLookupStartedLatch(), forwardLookupData.getLookupStartTimeMillis(),
+                                config.getMaxIndexScanTimeMillis());
             } finally {
                 for (ScannerSession sesh : forwardLookupData.getSessions()) {
                     scannerFactory.close(sesh);
@@ -234,7 +233,8 @@ public class RegexIndexLookup extends BaseRegexIndexLookup {
         
         if (!reverseLookupData.getSessions().isEmpty()) {
             try {
-                timedScanWait(reverseLookupData.getTimedScanFuture(), reverseLookupData.getLookupStartedLatch(), reverseLookupData.getLookupStartTimeMillis());
+                timedScanWait(reverseLookupData.getTimedScanFuture(), reverseLookupData.getLookupStartedLatch(), reverseLookupData.getLookupStartTimeMillis(),
+                                config.getMaxIndexScanTimeMillis());
             } finally {
                 for (ScannerSession sesh : reverseLookupData.getSessions()) {
                     scannerFactory.close(sesh);

@@ -19,14 +19,25 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
- * Looks up field names from the index which match the provided set of terms, and optionally limits them to the specified fields
+ * An asynchronous index lookup which Looks up field names from the index which match the provided set of terms, and optionally limits them to the specified
+ * fields
  */
-public class FieldNameIndexLookup extends IndexLookup {
+public class FieldNameIndexLookup extends AsyncIndexLookup {
     private static final Logger log = Logger.getLogger(FieldNameIndexLookup.class);
     
     protected Set<String> terms;
+    
+    protected Future<Boolean> timedScanFuture;
+    protected long lookupStartTimeMillis = Long.MAX_VALUE;
+    protected CountDownLatch lookupStartedLatch;
+    
+    private final Collection<ScannerSession> sessions = Lists.newArrayList();
     
     /**
      *
@@ -38,9 +49,12 @@ public class FieldNameIndexLookup extends IndexLookup {
      *            the fields to limit the lookup, may be null
      * @param terms
      *            the terms to match against, not null
+     * @param execService
+     *            the executor service, not null
      */
-    public FieldNameIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> fields, Set<String> terms) {
-        super(config, scannerFactory);
+    public FieldNameIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> fields, Set<String> terms,
+                    ExecutorService execService) {
+        super(config, scannerFactory, true, execService);
         
         this.fields = new HashSet<>();
         if (fields != null) {
@@ -51,15 +65,11 @@ public class FieldNameIndexLookup extends IndexLookup {
     }
     
     @Override
-    public synchronized IndexLookupMap lookup() {
+    public void submit() {
         if (indexLookupMap == null) {
             indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
             
-            final Text holder = new Text();
-            
             Iterator<Entry<Key,Value>> iter = Iterators.emptyIterator();
-            
-            Collection<ScannerSession> sessions = Lists.newArrayList();
             
             ScannerSession bs;
             
@@ -89,44 +99,75 @@ public class FieldNameIndexLookup extends IndexLookup {
                     }
                 }
                 
-                if (iter != null) {
-                    
-                    while (iter.hasNext()) {
-                        Entry<Key,Value> entry = iter.next();
-                        if (log.isTraceEnabled()) {
-                            log.trace("Index entry: " + entry.getKey());
-                        }
-                        
-                        entry.getKey().getRow(holder);
-                        String row = holder.toString();
-                        
-                        entry.getKey().getColumnFamily(holder);
-                        String colfam = holder.toString();
-                        
-                        entry.getKey().getColumnQualifier(holder);
-                        
-                        if (config.getDatatypeFilter() != null && !config.getDatatypeFilter().isEmpty()) {
-                            try {
-                                String dataType = holder.toString().split(Constants.NULL)[1];
-                                if (!config.getDatatypeFilter().contains(dataType))
-                                    continue;
-                            } catch (Exception e) {
-                                // skip the bad key
-                                continue;
-                            }
-                        }
-                        // We are only returning a mapping of field name to field value, no need to
-                        // determine cardinality and such at this point.
-                        indexLookupMap.put(colfam, row);
-                        
-                        // if we passed the term expansion threshold, then simply return
-                        if (indexLookupMap.isKeyThresholdExceeded()) {
-                            break;
-                        }
-                    }
-                }
+                timedScanFuture = execService.submit(createTimedCallable(iter));
             } catch (TableNotFoundException e) {
                 log.error(e);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+    
+    @Override
+    public synchronized IndexLookupMap lookup() {
+        if (!sessions.isEmpty()) {
+            try {
+                // for field name lookups, we wait indefinitely
+                timedScanWait(timedScanFuture, lookupStartedLatch, lookupStartTimeMillis, Long.MAX_VALUE);
+            } finally {
+                for (ScannerSession sesh : sessions) {
+                    scannerFactory.close(sesh);
+                }
+                sessions.clear();
+            }
+        }
+        
+        return indexLookupMap;
+    }
+    
+    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter) {
+        lookupStartedLatch = new CountDownLatch(1);
+        
+        return () -> {
+            lookupStartTimeMillis = System.currentTimeMillis();
+            lookupStartedLatch.countDown();
+            
+            final Text holder = new Text();
+            
+            try {
+                while (iter.hasNext()) {
+                    Entry<Key,Value> entry = iter.next();
+                    if (log.isTraceEnabled()) {
+                        log.trace("Index entry: " + entry.getKey());
+                    }
+                    
+                    entry.getKey().getRow(holder);
+                    String row = holder.toString();
+                    
+                    entry.getKey().getColumnFamily(holder);
+                    String colfam = holder.toString();
+                    
+                    entry.getKey().getColumnQualifier(holder);
+                    
+                    if (config.getDatatypeFilter() != null && !config.getDatatypeFilter().isEmpty()) {
+                        try {
+                            String dataType = holder.toString().split(Constants.NULL)[1];
+                            if (!config.getDatatypeFilter().contains(dataType))
+                                continue;
+                        } catch (Exception e) {
+                            // skip the bad key
+                            continue;
+                        }
+                    }
+                    // We are only returning a mapping of field name to field value, no need to
+                    // determine cardinality and such at this point.
+                    indexLookupMap.put(colfam, row);
+                    
+                    // if we passed the term expansion threshold, then simply return
+                    if (indexLookupMap.isKeyThresholdExceeded()) {
+                        break;
+                    }
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             } finally {
@@ -134,8 +175,8 @@ public class FieldNameIndexLookup extends IndexLookup {
                     scannerFactory.close(session);
                 }
             }
-        }
-        
-        return indexLookupMap;
+            
+            return true;
+        };
     }
 }

@@ -65,11 +65,9 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
      *            the executor service, not null
      */
     public BoundedRangeIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, LiteralRange<?> literalRange, ExecutorService execService) {
-        super(config, scannerFactory);
+        super(config, scannerFactory, false, execService);
         this.literalRange = literalRange;
-        this.execService = execService;
         this.fields = Collections.singleton(literalRange.getFieldName());
-        this.unfieldedLookup = false;
     }
     
     @Override
@@ -190,7 +188,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
     public synchronized IndexLookupMap lookup() {
         if (bs != null) {
             try {
-                timedScanWait(timedScanFuture, lookupStartedLatch, lookupStartTimeMillis);
+                timedScanWait(timedScanFuture, lookupStartedLatch, lookupStartTimeMillis, config.getMaxIndexScanTimeMillis());
             } finally {
                 scannerFactory.close(bs);
                 bs = null;
