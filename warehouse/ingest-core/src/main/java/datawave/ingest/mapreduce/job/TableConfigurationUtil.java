@@ -351,7 +351,6 @@ public class TableConfigurationUtil {
      * @throws TableNotFoundException
      * @throws ClassNotFoundException
      */
-    // TODO decide if we even need this anymore. serializeConfigIntoConf? vs read into Map
     void serializeConfiguration(AccumuloHelper accumuloHelper, Configuration conf, Logger log) throws AccumuloException, ClassNotFoundException,
                     TableNotFoundException, AccumuloSecurityException {
         
