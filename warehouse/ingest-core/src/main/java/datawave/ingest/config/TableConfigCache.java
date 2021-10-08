@@ -35,7 +35,6 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
         try {
             TableConfigurationUtil tableConfig = new TableConfigurationUtil(conf);
             configMap = tableConfig.getTableConfigs();
-            // configMap = tableConfig.getTableAggregatorConfigs();
         } catch (Exception e) {
             log.error("Unable to get table configurations " + e.getMessage());
         }
@@ -79,7 +78,7 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
                 propName = parts[1];
                 propVal = parts[2];
                 tempMap.put(propName, propVal);
-            }// else warn?
+            }
         }
         in.close();
         
