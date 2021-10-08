@@ -120,7 +120,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        Set<JexlNode> markedParents = (data != null && data instanceof Set) ? (Set) data : null;
+        Set<JexlNode> markedParents = (data instanceof Set) ? (Set) data : null;
         
         // check to see if this is a delayed node already
         if (QueryPropertyMarker.instanceOf(node, null)) {
@@ -143,7 +143,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        Set<JexlNode> markedParents = (data != null && data instanceof Set) ? (Set) data : null;
+        Set<JexlNode> markedParents = (data instanceof Set) ? (Set) data : null;
         
         String fieldName = JexlASTHelper.getIdentifier(node);
         
@@ -312,7 +312,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         }
         // else determine whether we truely need to expand this based on whether other terms will dominate
         else {
-            return ascendTree(node, Maps.<JexlNode,Boolean> newIdentityHashMap());
+            return ascendTree(node, Maps.newIdentityHashMap());
         }
     }
     
@@ -341,7 +341,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
                     if (expand) {
                         return ascendTree(node.jjtGetParent(), visited);
                     } else {
-                        return expand;
+                        return false;
                     }
                 }
                 default:
@@ -442,13 +442,13 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
             
-            if (null != child && child instanceof ASTReference) {
+            if (child instanceof ASTReference) {
                 for (int j = 0; j < child.jjtGetNumChildren(); j++) {
                     JexlNode grandChild = child.jjtGetChild(j);
                     
                     // If the grandchild and its image is non-null and equal to
                     // the any-field identifier
-                    if (null != grandChild && grandChild instanceof ASTIdentifier && null != grandChild.image && Constants.ANY_FIELD.equals(grandChild.image)) {
+                    if (grandChild instanceof ASTIdentifier && Constants.ANY_FIELD.equals(grandChild.image)) {
                         return true;
                     }
                 }
@@ -475,8 +475,8 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     
     protected IndexLookup createLookup(JexlNode node) {
         String fieldName = JexlASTHelper.getIdentifier(node);
-        return ShardIndexQueryTableStaticMethods.expandRegexTerms((ASTERNode) node, fieldName, config.getQueryFieldsDatatypes().get(fieldName),
-                        config.getDatatypeFilter(), helper);
+        return ShardIndexQueryTableStaticMethods.expandRegexTerms(config, scannerFactory, (ASTERNode) node, fieldName,
+                        config.getQueryFieldsDatatypes().get(fieldName), helper, executor);
     }
     
     /**
@@ -497,7 +497,6 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      * @return whether the regex should be processed based on it's cost
      */
     public boolean shouldProcessRegexFromCost(ASTERNode node) {
-        JexlNode nodeToBaseEvaluation = node;
         JexlNode parent = node.jjtGetParent();
         
         ASTAndNode topMostAnd = null;
@@ -511,7 +510,6 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
                     // else we have an or node containing this is several other nodes.
                     // so lets evaluate whether we should expand this regex based on the cost of the or tree
                     else {
-                        nodeToBaseEvaluation = node;
                         parent = parent.jjtGetParent();
                     }
                     break;
@@ -540,7 +538,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         collapseAndSubtrees(topMostAnd, subTrees);
         
         // get the cost of this node (or the subtree that contains it)
-        Cost regexCost = costAnalysis.computeCostForSubtree(nodeToBaseEvaluation);
+        Cost regexCost = costAnalysis.computeCostForSubtree(node);
         
         // Compute the cost to determine whether or not to expand this regex
         return shouldProcessRegexByCostWithChildren(subTrees, regexCost);
@@ -571,10 +569,8 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         
         if (analyzer.isLeadingLiteral() && helper.isIndexed(fieldName, config.getDatatypeFilter())) {
             return true;
-        } else if (analyzer.isTrailingLiteral() && helper.isReverseIndexed(fieldName, config.getDatatypeFilter())) {
-            return true;
         } else {
-            return false;
+            return analyzer.isTrailingLiteral() && helper.isReverseIndexed(fieldName, config.getDatatypeFilter());
         }
     }
     
@@ -589,11 +585,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         String fieldName = JexlASTHelper.getIdentifier(node);
         
         // if the identifier is a non-event field, then we must expand it
-        if (helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName)) {
-            return true;
-        }
-        
-        return false;
+        return helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName);
     }
     
     public void collapseAndSubtrees(ASTAndNode node, List<JexlNode> subTrees) {
@@ -665,7 +657,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     
     protected void rebuildFutureJexlNode(FutureJexlNode futureJexlNode) {
         JexlNode currentNode = futureJexlNode.getOrigNode();
-        IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookupWait();
+        IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
         
         if (futureJexlNode.isIgnoreComposites()) {
             removeCompositeFields(fieldsToTerms);

@@ -4,7 +4,6 @@ import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.lookups.FieldNameIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
@@ -208,14 +207,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         try {
             // Using the datatype filter when expanding this term isn't really
             // necessary
-            IndexLookup lookup = ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, expansionFields, allTypes, config.getDatatypeFilter(), helper);
-            
-            if (lookup instanceof FieldNameIndexLookup && config.getLimitAnyFieldLookups()) {
-                lookup.setLimitToTerms(true);
-                ((FieldNameIndexLookup) lookup).setTypeFilterSet(config.getDatatypeFilter());
-            }
-            
-            return lookup;
+            return ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, config, scannerFactory, expansionFields, allTypes, helper, executor);
         } catch (TableNotFoundException e) {
             throw new DatawaveFatalQueryException(e);
         }

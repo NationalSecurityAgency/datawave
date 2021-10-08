@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
@@ -131,7 +130,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         if (null == lookup) {
             lookup = indexLookupSupplier.get();
             
-            if (lookup.supportReference()) {
+            if (lookup.isSupportReference()) {
                 lookupMap.put(nodeString, lookup);
             }
         }
@@ -153,7 +152,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
      * @return a FutureJexlNode
      */
     protected FutureJexlNode createFutureJexlNode(IndexLookup lookup, JexlNode node, boolean ignoreComposites, boolean keepOriginalNode) {
-        lookup.lookupAsync(config, scannerFactory, config.getMaxIndexScanTimeMillis(), executor);
+        lookup.setup();
         
         FutureJexlNode futureNode = new FutureJexlNode(node, lookup, ignoreComposites, keepOriginalNode);
         futureNode.jjtSetParent(node.jjtGetParent());
@@ -163,36 +162,19 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     }
     
     protected void rebuildFutureJexlNodes() {
-        while (!futureJexlNodes.isEmpty()) {
-            List<FutureJexlNode> rebuiltNodes = new ArrayList<>();
+        for (FutureJexlNode futureJexlNode : futureJexlNodes) {
+            // this call waits for the index lookup to complete, and
+            // uses the configured timeout from ShardQueryConfiguration
+            futureJexlNode.getLookup().lookup();
             
-            for (FutureJexlNode futureJexlNode : futureJexlNodes) {
-                if (futureJexlNode.getLookup().hasStarted()) {
-                    rebuildFutureJexlNode(futureJexlNode);
-                    
-                    JexlNode newNode = futureJexlNode.getRebuiltNode();
-                    
-                    // if the parent is not null, replace the child
-                    // if the parent is null, this is the root node, and we will handle that in the expand method
-                    if (futureJexlNode.jjtGetParent() != null) {
-                        JexlNodes.replaceChild(futureJexlNode.jjtGetParent(), futureJexlNode, newNode);
-                    }
-                    
-                    rebuiltNodes.add(futureJexlNode);
-                }
-            }
+            rebuildFutureJexlNode(futureJexlNode);
             
-            // if we rebuilt some nodes, remove them and let's see if there's more work to do
-            if (!rebuiltNodes.isEmpty()) {
-                futureJexlNodes.removeAll(rebuiltNodes);
-            }
-            // if we didn't rebuild any nodes, and there's more work to do, sleep before checking again
-            else if (!futureJexlNodes.isEmpty()) {
-                try {
-                    Thread.sleep(500L);
-                } catch (InterruptedException e) {
-                    log.warn("Interrupted while waiting for index lookups to finish running", e);
-                }
+            JexlNode newNode = futureJexlNode.getRebuiltNode();
+            
+            // if the parent is not null, replace the child
+            // if the parent is null, this is the root node, and we will handle that in the expand method
+            if (futureJexlNode.jjtGetParent() != null) {
+                JexlNodes.replaceChild(futureJexlNode.jjtGetParent(), futureJexlNode, newNode);
             }
         }
     }
@@ -201,7 +183,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
      * Each Index Expansion visitor should define it's own method for creating a final expanded node from a FutureJexlNode
      * 
      * @param futureJexlNode
-     *            the future jexl node to rebuild, not null
+     *            the future jexl
      */
     protected abstract void rebuildFutureJexlNode(FutureJexlNode futureJexlNode);
     
