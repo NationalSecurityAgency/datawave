@@ -97,12 +97,12 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
     }
     
     protected IndexLookup createLookup(LiteralRange<?> range) {
-        return ShardIndexQueryTableStaticMethods.expandRange(range);
+        return ShardIndexQueryTableStaticMethods.expandRange(config, scannerFactory, range, executor);
     }
     
     protected void rebuildFutureJexlNode(FutureJexlNode futureJexlNode) {
         JexlNode currentNode = futureJexlNode.getOrigNode();
-        IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookupWait();
+        IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
         
         futureJexlNode.setRebuiltNode(JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, new ASTEQNode(
                         ParserTreeConstants.JJTEQNODE), currentNode, fieldsToTerms, expandFields, expandValues, futureJexlNode.isKeepOriginalNode()));

@@ -2,7 +2,6 @@ package datawave.query.jexl.lookups;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
@@ -20,69 +19,24 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Semaphore;
 
 public class FieldNameIndexLookup extends IndexLookup {
     private static final Logger log = Logger.getLogger(FieldNameIndexLookup.class);
+    
     /**
      * Terms to lookup in index
      */
     protected Set<String> terms;
-    /**
-     * Field names that we limit to.
-     */
-    protected Set<Text> fields;
     
-    protected Set<String> typeFilterSet = Sets.newHashSet();
-    
-    protected Semaphore sem = new Semaphore(1);
-    
-    protected IndexLookupMap fieldToTerms = null;
-    
-    public FieldNameIndexLookup(Set<String> fields, Set<String> terms) {
-        this.fields = new HashSet<>();
-        
-        if (fields != null) {
-            for (String field : fields) {
-                this.fields.add(new Text(field));
-            }
-            
-        }
-        
+    public FieldNameIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> fields, Set<String> terms) {
+        super(config, scannerFactory, true);
+        this.fields = fields;
         this.terms = new HashSet<>(terms);
     }
     
-    public void setTypeFilterSet(Set<String> limitSet) {
-        typeFilterSet.addAll(limitSet);
-    }
-    
-    public boolean supportReference() {
-        return true;
-    }
-    
     @Override
-    public void lookupAsync(ShardQueryConfiguration config, ScannerFactory scannerFactory, long timer, ExecutorService execService) {
-        this.config = config;
-        this.scannerFactory = scannerFactory;
-        this.timer = timer;
-        this.execService = execService;
-        
-        lookupStartTimeMillis = System.currentTimeMillis();
-    }
-    
-    @Override
-    public IndexLookupMap lookupWait() {
-        try {
-            sem.acquire();
-        } catch (InterruptedException e1) {
-            throw new RuntimeException(e1);
-        }
-        if (null != fieldToTerms) {
-            return fieldToTerms;
-        }
-        
-        fieldToTerms = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
+    public synchronized IndexLookupMap lookup() {
+        indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
         
         final Text holder = new Text();
         
@@ -90,15 +44,14 @@ public class FieldNameIndexLookup extends IndexLookup {
         
         Collection<ScannerSession> sessions = Lists.newArrayList();
         
-        ScannerSession bs = null;
+        ScannerSession bs;
         
         try {
-            
             if (!fields.isEmpty()) {
                 for (String term : terms) {
                     
                     Set<Range> ranges = Collections.singleton(ShardIndexQueryTableStaticMethods.getLiteralRange(term));
-                    if (limitToTerms) {
+                    if (config.getLimitAnyFieldLookups()) {
                         log.trace("Creating configureTermMatchOnly");
                         bs = ShardIndexQueryTableStaticMethods.configureTermMatchOnly(config, scannerFactory, config.getIndexTableName(), ranges,
                                         Collections.singleton(term), Collections.emptySet(), false, true);
@@ -110,8 +63,8 @@ public class FieldNameIndexLookup extends IndexLookup {
                     /**
                      * Fetch the limited field names for the given rows
                      */
-                    for (Text field : fields) {
-                        bs.getOptions().fetchColumnFamily(field);
+                    for (String field : fields) {
+                        bs.getOptions().fetchColumnFamily(new Text(field));
                     }
                     
                     sessions.add(bs);
@@ -136,10 +89,10 @@ public class FieldNameIndexLookup extends IndexLookup {
                     
                     entry.getKey().getColumnQualifier(holder);
                     
-                    if (!typeFilterSet.isEmpty()) {
+                    if (config.getDatatypeFilter() != null && !config.getDatatypeFilter().isEmpty()) {
                         try {
                             String dataType = holder.toString().split(Constants.NULL)[1];
-                            if (!typeFilterSet.contains(dataType))
+                            if (!config.getDatatypeFilter().contains(dataType))
                                 continue;
                         } catch (Exception e) {
                             // skip the bad key
@@ -148,11 +101,11 @@ public class FieldNameIndexLookup extends IndexLookup {
                     }
                     // We are only returning a mapping of field name to field value, no need to
                     // determine cardinality and such at this point.
-                    fieldToTerms.put(colfam, row);
+                    indexLookupMap.put(colfam, row);
                     
                     // if we passed the term expansion threshold, then simply return
-                    if (fieldToTerms.isKeyThresholdExceeded()) {
-                        return fieldToTerms;
+                    if (indexLookupMap.isKeyThresholdExceeded()) {
+                        break;
                     }
                 }
             }
@@ -161,14 +114,11 @@ public class FieldNameIndexLookup extends IndexLookup {
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            
-            sem.release();
-            
             for (ScannerSession session : sessions) {
                 scannerFactory.close(session);
             }
         }
         
-        return fieldToTerms;
+        return indexLookupMap;
     }
 }
