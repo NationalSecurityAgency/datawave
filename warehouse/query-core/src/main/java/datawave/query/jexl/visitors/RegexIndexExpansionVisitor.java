@@ -72,14 +72,15 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     }
     
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
-    protected RegexIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) throws TableNotFoundException {
-        this(config, scannerFactory, helper, "RegexIndexExpansion");
+    protected RegexIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Map<String,IndexLookup> lookupMap)
+                    throws TableNotFoundException {
+        this(config, scannerFactory, helper, lookupMap, "RegexIndexExpansion");
     }
     
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
-    protected RegexIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName)
-                    throws TableNotFoundException {
-        super(config, scannerFactory, helper, threadName);
+    protected RegexIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
+                    Map<String,IndexLookup> lookupMap, String threadName) throws TableNotFoundException {
+        super(config, scannerFactory, helper, lookupMap, threadName);
         
         this.expandUnfieldedNegations = config.isExpandUnfieldedNegations();
         
@@ -93,6 +94,32 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         } else {
             this.onlyUseThese = null;
         }
+    }
+    
+    /**
+     * Visits the Jexl script, looks for regex terms, and replaces them with concrete values from the index <br>
+     * This version allows for reuse of the index lookup map
+     *
+     * @param config
+     *            the query configuration, not null
+     * @param scannerFactory
+     *            the scanner factory, not null
+     * @param helper
+     *            the metadata helper, not null
+     * @param script
+     *            the Jexl script to expand, not null
+     * @param lookupMap
+     *            the index lookup map to use (or reuse), may be null
+     * @param <T>
+     *            the Jexl node type
+     * @return a rebuilt Jexl tree with it's regex terms expanded
+     * @throws TableNotFoundException
+     *             if we fail to retrieve fields from the metadata helper
+     */
+    public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
+                    Map<String,IndexLookup> lookupMap, T script) throws TableNotFoundException {
+        RegexIndexExpansionVisitor visitor = new RegexIndexExpansionVisitor(config, scannerFactory, helper, lookupMap);
+        return visitor.expand(script);
     }
     
     /**
@@ -114,8 +141,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      */
     public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script)
                     throws TableNotFoundException {
-        RegexIndexExpansionVisitor visitor = new RegexIndexExpansionVisitor(config, scannerFactory, helper);
-        return visitor.expand(script);
+        return expandRegex(config, scannerFactory, helper, null, script);
     }
     
     @Override
@@ -474,7 +500,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     
     protected IndexLookup createLookup(JexlNode node) {
         String fieldName = JexlASTHelper.getIdentifier(node);
-        return ShardIndexQueryTableStaticMethods.expandRegexTerms(config, scannerFactory, (ASTERNode) node, fieldName,
+        return ShardIndexQueryTableStaticMethods.expandRegexTerms((ASTERNode) node, config, scannerFactory, fieldName,
                         config.getQueryFieldsDatatypes().get(fieldName), helper, executor);
     }
     

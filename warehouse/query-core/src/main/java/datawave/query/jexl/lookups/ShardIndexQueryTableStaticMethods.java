@@ -96,7 +96,7 @@ public class ShardIndexQueryTableStaticMethods {
         } else if (node instanceof ASTGTNode) {
             throw new UnsupportedOperationException("Cannot expand an unbounded range");
         } else {
-            return new EmptyIndexLookup(config, scannerFactory);
+            return new EmptyIndexLookup(config);
         }
     }
     
@@ -146,6 +146,8 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param config
+     * @param scannerFactory
      * @param expansionFields
      * @param dataTypes
      * @param helperRef
@@ -161,6 +163,8 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param config
+     * @param scannerFactory
      * @param expansionFields
      * @param dataTypes
      * @param helperRef
@@ -190,43 +194,52 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param config
+     * @param scannerFactory
      * @param expansionFields
      * @param dataTypes
      * @param helperRef
+     * @param execService
      * @return The index lookup instance
      * @throws TableNotFoundException
      */
     public static IndexLookup expandRegexFieldName(ASTERNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
                     Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
-        return _expandRegexFieldName(config, scannerFactory, node, expansionFields, dataTypes, helperRef, execService);
+        return _expandRegexFieldName(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
     }
     
     /**
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param config
+     * @param scannerFactory
      * @param expansionFields
      * @param dataTypes
      * @param helperRef
+     * @param execService
      * @return The index lookup instance
      * @throws TableNotFoundException
      */
     public static IndexLookup expandRegexFieldName(ASTNRNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
                     Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
-        return _expandRegexFieldName(config, scannerFactory, node, expansionFields, dataTypes, helperRef, execService);
+        return _expandRegexFieldName(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
     }
     
     /**
      * A non-public method that implements the expandRegexFieldName to force clients to actually provide an ASTERNode or ASTNRNode
      *
      * @param node
+     * @param config
+     * @param scannerFactory
      * @param expansionFields
      * @param dataTypes
      * @param helperRef
+     * @param execService
      * @return The index lookup instance
      * @throws TableNotFoundException
      */
-    protected static IndexLookup _expandRegexFieldName(ShardQueryConfiguration config, ScannerFactory scannerFactory, JexlNode node,
+    protected static IndexLookup _expandRegexFieldName(JexlNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory,
                     Set<String> expansionFields, Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
         Set<String> patterns = Sets.newHashSet();
         
@@ -270,12 +283,15 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param config
+     * @param scannerFactory
      * @param fieldName
      * @param dataTypes
      * @param helperRef
+     * @param execService
      * @return The index lookup instance
      */
-    public static IndexLookup expandRegexTerms(ShardQueryConfiguration config, ScannerFactory scannerFactory, ASTERNode node, String fieldName,
+    public static IndexLookup expandRegexTerms(ASTERNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, String fieldName,
                     Collection<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) {
         Set<String> patterns = Sets.newHashSet();
         
@@ -545,6 +561,7 @@ public class ShardIndexQueryTableStaticMethods {
      * @param fieldName
      * @param normalizedQueryTerm
      * @param fullTableScanEnabled
+     * @param metadataHelper
      * @param config
      * @return
      * @throws datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException
@@ -722,12 +739,11 @@ public class ShardIndexQueryTableStaticMethods {
     /**
      * Get the accumulo range for a literal query range. Note that it is assumed that the column family set will include the fieldname.
      * 
-     * @param fieldName
      * @param literalRange
      * @return
      * @throws IllegalRangeArgumentException
      */
-    public static Range getBoundedRangeRange(String fieldName, LiteralRange<?> literalRange) throws IllegalRangeArgumentException {
+    public static Range getBoundedRangeRange(LiteralRange<?> literalRange) throws IllegalRangeArgumentException {
         String lower = literalRange.getLower().toString(), upper = literalRange.getUpper().toString();
         
         Key startKey = new Key(new Text(lower));
