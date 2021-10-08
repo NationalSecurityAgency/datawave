@@ -94,7 +94,8 @@ export PATH=${ACCUMULO_HOME}/bin:${ZOOKEEPER_HOME}/bin:$PATH
 
 DW_ZOOKEEPER_CMD_START="( cd ${ZOOKEEPER_HOME}/bin && ./zkServer.sh start )"
 DW_ZOOKEEPER_CMD_STOP="( cd ${ZOOKEEPER_HOME}/bin && ./zkServer.sh stop )"
-DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="pgrep -u ${USER} -d ' ' -f 'zookeeper.server.quorum.QuorumPeerMain'"
+# changed from pgrep because pgrep (before 3.3.15) limits the command line to 4K.  The java classpath on the zookeeper can make that longer.
+DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="jps -m | grep QuorumPeerMain | awk '{print \$1}' | tr '\\n' ' '"
 
 DW_ACCUMULO_CMD_START="( cd ${ACCUMULO_HOME}/bin && ./start-all.sh )"
 DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./stop-all.sh )"
