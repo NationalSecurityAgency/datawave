@@ -39,7 +39,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-public class BoundedRangeIndexLookup extends ThreadedIndexLookup {
+/**
+ * An asynchronous index lookup which looks up concrete values for the specified bounded range.
+ */
+public class BoundedRangeIndexLookup extends AsyncIndexLookup {
     private static final Logger log = ThreadConfigurableLogger.getLogger(BoundedRangeIndexLookup.class);
     
     private final LiteralRange<?> literalRange;
@@ -50,8 +53,19 @@ public class BoundedRangeIndexLookup extends ThreadedIndexLookup {
     
     protected BatchScanner bs;
     
+    /**
+     *
+     * @param config
+     *            the shard query configuration, not null
+     * @param scannerFactory
+     *            the scanner factory, not null
+     * @param literalRange
+     *            the range to lookup, not null
+     * @param execService
+     *            the executor service, not null
+     */
     public BoundedRangeIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, LiteralRange<?> literalRange, ExecutorService execService) {
-        super(config, scannerFactory, false);
+        super(config, scannerFactory);
         this.literalRange = literalRange;
         this.execService = execService;
         this.fields = Collections.singleton(literalRange.getFieldName());
@@ -59,116 +73,116 @@ public class BoundedRangeIndexLookup extends ThreadedIndexLookup {
     }
     
     @Override
-    public synchronized void setup() {
-        String startDay = DateHelper.format(config.getBeginDate());
-        String endDay = DateHelper.format(config.getEndDate());
-        
-        // build the start and end range for the scanner
-        // Key for global index is Row-> Normalized FieldValue, CF-> FieldName,
-        // CQ->shard_id\x00datatype
-        indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
-        
-        IteratorSetting fairnessIterator = null;
-        if (config.getMaxIndexScanTimeMillis() > 0) {
-            /**
-             * The fairness iterator solves the problem whereby we have runaway iterators as a result of an evaluation that never finds anything
-             */
-            fairnessIterator = new IteratorSetting(1, TimeoutIterator.class);
+    public synchronized void submit() {
+        if (indexLookupMap == null) {
+            String startDay = DateHelper.format(config.getBeginDate());
+            String endDay = DateHelper.format(config.getEndDate());
             
-            long maxTime = config.getMaxIndexScanTimeMillis();
-            if (maxTime < Long.MAX_VALUE / 2)
-                maxTime *= 2;
-            fairnessIterator.addOption(TimeoutIterator.MAX_SESSION_TIME, Long.valueOf(maxTime).toString());
+            // build the start and end range for the scanner
+            // Key for global index is Row-> Normalized FieldValue, CF-> FieldName,
+            // CQ->shard_id\x00datatype
+            indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
             
-        }
-        
-        String lower = literalRange.getLower().toString(), upper = literalRange.getUpper().toString();
-        
-        Key startKey;
-        if (literalRange.isLowerInclusive()) { // inclusive
-            startKey = new Key(new Text(lower));
-        } else { // non-inclusive
-            startKey = new Key(new Text(lower + "\0"));
-        }
-        
-        Key endKey;
-        if (literalRange.isUpperInclusive()) {
-            // we should have our end key be the end of the range if we are going to use the WRI
-            endKey = new Key(new Text(upper), new Text(literalRange.getFieldName()), new Text(endDay + Constants.MAX_UNICODE_STRING));
-        } else {
-            endKey = new Key(new Text(upper));
-        }
-        
-        Range range;
-        try {
-            range = new Range(startKey, true, endKey, literalRange.isUpperInclusive());
-        } catch (IllegalArgumentException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.RANGE_CREATE_ERROR, e, MessageFormat.format("{0}", this.literalRange));
-            log.debug(qe);
-            throw new IllegalRangeArgumentException(qe);
-        }
-        
-        log.debug("Range: " + range);
-        bs = null;
-        try {
-            bs = scannerFactory.newScanner(config.getIndexTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
-            
-            bs.setRanges(Collections.singleton(range));
-            bs.fetchColumnFamily(new Text(literalRange.getFieldName()));
-            
-            // set up the GlobalIndexRangeSamplingIterator
-            
-            IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 50, "WholeRowIterator", WholeRowIterator.class);
-            bs.addScanIterator(cfg);
-            
-            cfg = new IteratorSetting(config.getBaseIteratorPriority() + 48, "DateFilter", ColumnQualifierRangeIterator.class);
-            // search from 20YYddMM to 20ZZddMM\uffff to ensure we encompass all of the current day
-            String end = endDay + Constants.MAX_UNICODE_STRING;
-            cfg.addOption(ColumnQualifierRangeIterator.RANGE_NAME, ColumnQualifierRangeIterator.encodeRange(new Range(startDay, end)));
-            
-            bs.addScanIterator(cfg);
-            
-            // If this is a composite field, with multiple terms, we need to setup our query to filter based on each component of the composite range
-            if (config.getCompositeToFieldMap().get(literalRange.getFieldName()) != null) {
+            IteratorSetting fairnessIterator = null;
+            if (config.getMaxIndexScanTimeMillis() > 0) {
+                // The fairness iterator solves the problem whereby we have runaway iterators as a result of an evaluation that never finds anything
+                fairnessIterator = new IteratorSetting(1, TimeoutIterator.class);
                 
-                String compositeSeparator = null;
-                if (config.getCompositeFieldSeparators() != null)
-                    compositeSeparator = config.getCompositeFieldSeparators().get(literalRange.getFieldName());
+                long maxTime = config.getMaxIndexScanTimeMillis();
+                if (maxTime < Long.MAX_VALUE / 2)
+                    maxTime *= 2;
+                fairnessIterator.addOption(TimeoutIterator.MAX_SESSION_TIME, Long.valueOf(maxTime).toString());
                 
-                if (compositeSeparator != null && (lower.contains(compositeSeparator) || upper.contains(compositeSeparator))) {
-                    IteratorSetting compositeIterator = new IteratorSetting(config.getBaseIteratorPriority() + 51, CompositeSeekingIterator.class);
-                    
-                    compositeIterator.addOption(CompositeSeekingIterator.COMPONENT_FIELDS,
-                                    StringUtils.collectionToCommaDelimitedString(config.getCompositeToFieldMap().get(literalRange.getFieldName())));
-                    
-                    for (String fieldName : config.getCompositeToFieldMap().get(literalRange.getFieldName())) {
-                        DiscreteIndexType type = config.getFieldToDiscreteIndexTypes().get(fieldName);
-                        if (type != null)
-                            compositeIterator.addOption(fieldName + CompositeSeekingIterator.DISCRETE_INDEX_TYPE, type.getClass().getName());
-                    }
-                    
-                    compositeIterator.addOption(CompositeSeekingIterator.SEPARATOR, compositeSeparator);
-                    
-                    bs.addScanIterator(compositeIterator);
-                }
             }
             
-            if (null != fairnessIterator) {
-                cfg = new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);
+            String lower = literalRange.getLower().toString(), upper = literalRange.getUpper().toString();
+            
+            Key startKey;
+            if (literalRange.isLowerInclusive()) { // inclusive
+                startKey = new Key(new Text(lower));
+            } else { // non-inclusive
+                startKey = new Key(new Text(lower + "\0"));
+            }
+            
+            Key endKey;
+            if (literalRange.isUpperInclusive()) {
+                // we should have our end key be the end of the range if we are going to use the WRI
+                endKey = new Key(new Text(upper), new Text(literalRange.getFieldName()), new Text(endDay + Constants.MAX_UNICODE_STRING));
+            } else {
+                endKey = new Key(new Text(upper));
+            }
+            
+            Range range;
+            try {
+                range = new Range(startKey, true, endKey, literalRange.isUpperInclusive());
+            } catch (IllegalArgumentException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.RANGE_CREATE_ERROR, e, MessageFormat.format("{0}", this.literalRange));
+                log.debug(qe);
+                throw new IllegalRangeArgumentException(qe);
+            }
+            
+            log.debug("Range: " + range);
+            bs = null;
+            try {
+                bs = scannerFactory.newScanner(config.getIndexTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
+                
+                bs.setRanges(Collections.singleton(range));
+                bs.fetchColumnFamily(new Text(literalRange.getFieldName()));
+                
+                // set up the GlobalIndexRangeSamplingIterator
+                
+                IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 50, "WholeRowIterator", WholeRowIterator.class);
                 bs.addScanIterator(cfg);
+                
+                cfg = new IteratorSetting(config.getBaseIteratorPriority() + 48, "DateFilter", ColumnQualifierRangeIterator.class);
+                // search from 20YYddMM to 20ZZddMM\uffff to ensure we encompass all of the current day
+                String end = endDay + Constants.MAX_UNICODE_STRING;
+                cfg.addOption(ColumnQualifierRangeIterator.RANGE_NAME, ColumnQualifierRangeIterator.encodeRange(new Range(startDay, end)));
+                
+                bs.addScanIterator(cfg);
+                
+                // If this is a composite field, with multiple terms, we need to setup our query to filter based on each component of the composite range
+                if (config.getCompositeToFieldMap().get(literalRange.getFieldName()) != null) {
+                    
+                    String compositeSeparator = null;
+                    if (config.getCompositeFieldSeparators() != null)
+                        compositeSeparator = config.getCompositeFieldSeparators().get(literalRange.getFieldName());
+                    
+                    if (compositeSeparator != null && (lower.contains(compositeSeparator) || upper.contains(compositeSeparator))) {
+                        IteratorSetting compositeIterator = new IteratorSetting(config.getBaseIteratorPriority() + 51, CompositeSeekingIterator.class);
+                        
+                        compositeIterator.addOption(CompositeSeekingIterator.COMPONENT_FIELDS,
+                                        StringUtils.collectionToCommaDelimitedString(config.getCompositeToFieldMap().get(literalRange.getFieldName())));
+                        
+                        for (String fieldName : config.getCompositeToFieldMap().get(literalRange.getFieldName())) {
+                            DiscreteIndexType<?> type = config.getFieldToDiscreteIndexTypes().get(fieldName);
+                            if (type != null)
+                                compositeIterator.addOption(fieldName + CompositeSeekingIterator.DISCRETE_INDEX_TYPE, type.getClass().getName());
+                        }
+                        
+                        compositeIterator.addOption(CompositeSeekingIterator.SEPARATOR, compositeSeparator);
+                        
+                        bs.addScanIterator(compositeIterator);
+                    }
+                }
+                
+                if (null != fairnessIterator) {
+                    cfg = new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);
+                    bs.addScanIterator(cfg);
+                }
+                
+                timedScanFuture = execService.submit(createTimedCallable(bs.iterator()));
+            } catch (TableNotFoundException e) {
+                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.TABLE_NOT_FOUND, e, MessageFormat.format("Table: {0}",
+                                config.getIndexTableName()));
+                log.error(qe);
+                throw new DatawaveFatalQueryException(qe);
+                
+            } catch (IOException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.RANGE_CREATE_ERROR, e, MessageFormat.format("{0}", this.literalRange));
+                log.debug(qe);
+                throw new IllegalRangeArgumentException(qe);
             }
-            
-            timedScanFuture = execService.submit(createTimedCallable(bs.iterator()));
-        } catch (TableNotFoundException e) {
-            NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.TABLE_NOT_FOUND, e, MessageFormat.format("Table: {0}",
-                            config.getIndexTableName()));
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
-            
-        } catch (IOException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.RANGE_CREATE_ERROR, e, MessageFormat.format("{0}", this.literalRange));
-            log.debug(qe);
-            throw new IllegalRangeArgumentException(qe);
         }
     }
     
@@ -179,6 +193,7 @@ public class BoundedRangeIndexLookup extends ThreadedIndexLookup {
                 timedScanWait(timedScanFuture, lookupStartedLatch, lookupStartTimeMillis);
             } finally {
                 scannerFactory.close(bs);
+                bs = null;
             }
             
             if (log.isDebugEnabled()) {

@@ -42,7 +42,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected UnfieldedIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
                     throws TableNotFoundException, IllegalAccessException, InstantiationException {
-        super(config, scannerFactory, helper, "FieldNameIndexExpansion");
+        super(config, scannerFactory, helper, null, "FieldNameIndexExpansion");
         
         this.expansionFields = helper.getExpansionFields(config.getDatatypeFilter());
         if (this.expansionFields == null) {

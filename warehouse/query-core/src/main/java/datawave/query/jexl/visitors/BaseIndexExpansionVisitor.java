@@ -1,8 +1,8 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.Maps;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.lookups.AsyncIndexLookup;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.tables.ScannerFactory;
@@ -16,6 +16,7 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,10 +29,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
- * Abstract class which provides a framework for visitors which perform index lookups based on the contents of the Jexl tree.
+ * Abstract class which provides a framework for visitors which perform index lookups based on the contents of the Jexl tree
  */
 public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     private static final Logger log = Logger.getLogger(BaseIndexExpansionVisitor.class);
+    
     private static final int MIN_THREADS = 1;
     
     protected ShardQueryConfiguration config;
@@ -47,12 +49,17 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     protected CostEstimator costAnalysis;
     
     protected ExecutorService executor;
-    protected Map<String,IndexLookup> lookupMap = Maps.newConcurrentMap();
-    protected List<FutureJexlNode> futureJexlNodes = new ArrayList<>();
+    protected Map<String,IndexLookup> lookupMap;
+    protected List<FutureJexlNode> futureJexlNodes;
     
-    // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName)
                     throws TableNotFoundException {
+        this(config, scannerFactory, helper, null, threadName);
+    }
+    
+    // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
+    protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
+                    Map<String,IndexLookup> lookupMap, String threadName) throws TableNotFoundException {
         this.config = config;
         this.scannerFactory = scannerFactory;
         this.helper = helper;
@@ -64,6 +71,9 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         this.allFields = helper.getAllFields(config.getDatatypeFilter());
         
         this.costAnalysis = new CostEstimator(config, scannerFactory, helper);
+        
+        this.lookupMap = (lookupMap != null) ? lookupMap : new HashMap<>();
+        this.futureJexlNodes = new ArrayList<>();
     }
     
     protected void setupExecutor() {
@@ -129,10 +139,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         
         if (null == lookup) {
             lookup = indexLookupSupplier.get();
-            
-            if (lookup.isSupportReference()) {
-                lookupMap.put(nodeString, lookup);
-            }
+            lookupMap.put(nodeString, lookup);
         }
         
         return createFutureJexlNode(lookup, node, ignoreComposites, keepOriginalNode);
@@ -152,7 +159,11 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
      * @return a FutureJexlNode
      */
     protected FutureJexlNode createFutureJexlNode(IndexLookup lookup, JexlNode node, boolean ignoreComposites, boolean keepOriginalNode) {
-        lookup.setup();
+        // if this is an asynchronous index lookup, set
+        // it up and submit it to the executor service
+        if (lookup instanceof AsyncIndexLookup) {
+            ((AsyncIndexLookup) lookup).submit();
+        }
         
         FutureJexlNode futureNode = new FutureJexlNode(node, lookup, ignoreComposites, keepOriginalNode);
         futureNode.jjtSetParent(node.jjtGetParent());
@@ -251,6 +262,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             this.name = name;
         }
         
+        @Override
         public Thread newThread(Runnable r) {
             Thread thread = dtf.newThread(r);
             thread.setName(name + " Session " + threadIdentifier + " -" + threadNum++);

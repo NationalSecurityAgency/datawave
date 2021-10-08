@@ -12,14 +12,27 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public abstract class ThreadedIndexLookup extends IndexLookup {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(ThreadedIndexLookup.class);
+/**
+ * Abstract index lookup which provides a framework for creating and populating the {@link IndexLookupMap} asynchronously in a separate thread. Async index
+ * lookups may perform some setup in {@link #submit()}, but should not block on any running threads until {@link #lookup()} is called, and even then they should
+ * only block for up to the specified timeout {@link ShardQueryConfiguration#getMaxIndexScanTimeMillis()}
+ */
+public abstract class AsyncIndexLookup extends IndexLookup {
+    private static final Logger log = ThreadConfigurableLogger.getLogger(AsyncIndexLookup.class);
+    
+    protected boolean unfieldedLookup;
     
     protected ExecutorService execService;
     
-    public ThreadedIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, boolean supportReference) {
-        super(config, scannerFactory, supportReference);
+    public AsyncIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
+        super(config, scannerFactory);
     }
+    
+    /**
+     * Non-blocking method which sets up the asynchronous task(s) and submits them to the execService. Implementations of this method should use appropriate
+     * synchronization to prevent multiple task submissions.
+     */
+    public abstract void submit();
     
     protected long getRemainingTimeMillis(long startTimeMillis) {
         return Math.max(0L, config.getMaxIndexScanTimeMillis() - (System.currentTimeMillis() - startTimeMillis));
@@ -41,21 +54,15 @@ public abstract class ThreadedIndexLookup extends IndexLookup {
         
         try {
             
-            /**
-             * Deal with the case we we let ourselves get interrupted AND support timeout.
-             */
-            
+            // Deal with the case we we let ourselves get interrupted AND support timeout.
             boolean swallowTimeout = false;
             if (maxLookup <= 0 || maxLookup == Long.MAX_VALUE) {
                 maxLookup = 1000;
                 swallowTimeout = true;
             }
             
-            /**
-             * Continue in perpetuity iff we swallow the timeout. our state machine has three states 1) timeout exception and continue ( no max lookup ) 2)
-             * timeout exception and except ( a max lookup specified ) 3) we receive a value under timeout and we break
-             *
-             */
+            // Continue in perpetuity iff we swallow the timeout. our state machine has three states 1) timeout exception and continue ( no max lookup ) 2)
+            // timeout exception and except ( a max lookup specified ) 3) we receive a value under timeout and we break
             while (!execService.isShutdown() && !execService.isTerminated()) {
                 try {
                     future.get((swallowTimeout) ? maxLookup : getRemainingTimeMillis(startTimeMillis), TimeUnit.MILLISECONDS);

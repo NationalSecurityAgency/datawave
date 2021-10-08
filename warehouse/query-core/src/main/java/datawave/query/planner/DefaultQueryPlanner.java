@@ -40,6 +40,10 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
+import datawave.query.jexl.lookups.IndexLookup;
+import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
 import datawave.query.jexl.visitors.CaseSensitivityVisitor;
@@ -53,7 +57,6 @@ import datawave.query.jexl.visitors.ExpandCompositeTerms;
 import datawave.query.jexl.visitors.ExpandMultiNormalizedTerms;
 import datawave.query.jexl.visitors.FetchDataTypesVisitor;
 import datawave.query.jexl.visitors.FieldMissingFromSchemaVisitor;
-import datawave.query.jexl.visitors.UnfieldedIndexExpansionVisitor;
 import datawave.query.jexl.visitors.FieldToFieldComparisonVisitor;
 import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
@@ -80,6 +83,7 @@ import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.jexl.visitors.UnfieldedIndexExpansionVisitor;
 import datawave.query.jexl.visitors.UniqueExpressionTermsVisitor;
 import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
@@ -1246,10 +1250,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
                 // Check if there is any regex to expand.
+                Map<String,IndexLookup> indexLookupMap = new HashMap<>();
                 NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
                 if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
                     innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
-                    queryTree = RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, queryTree);
+                    queryTree = RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, indexLookupMap, queryTree);
                     // regex expansion picks up an extra set of parens, so quickly fix that here
                     queryTree = (ASTJexlScript) TreeFlatteningRebuildingVisitor.flatten(queryTree);
                     if (log.isDebugEnabled()) {
@@ -1327,7 +1332,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     // Check if there is any regex to expand after pulling up delayed predicates.
                     nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
                     if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
-                        queryTree = RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, queryTree);
+                        queryTree = RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, indexLookupMap, queryTree);
                         if (log.isDebugEnabled()) {
                             logQuery(queryTree, "Query after expanding regex again:");
                         }
