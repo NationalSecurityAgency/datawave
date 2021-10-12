@@ -1,10 +1,16 @@
 package datawave.query.jexl.functions;
 
 import datawave.data.normalizer.AbstractGeometryNormalizer;
+import datawave.data.normalizer.GeoNormalizer;
 import datawave.data.type.AbstractGeometryType;
+import datawave.data.type.GeoType;
 import datawave.data.type.util.AbstractGeometry;
 import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
+import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.GeometryFactory;
 
 /**
  * Provides functions for doing spatial queries, such as bounding boxes and circles of interest, as well as spatial relationships.
@@ -18,6 +24,10 @@ import org.locationtech.jts.geom.Geometry;
 @JexlFunctions(descriptorFactory = "datawave.query.jexl.functions.GeoWaveFunctionsDescriptor")
 public class GeoWaveFunctions {
     public static final String GEOWAVE_FUNCTION_NAMESPACE = "geowave";
+    
+    // used to handle legacy geo data type
+    private static final GeoNormalizer geoNormalizer = new GeoNormalizer();
+    private static final GeometryFactory geometryFactory = new GeometryFactory();
     
     /**
      * Test intersection of a set of geometry with a field value
@@ -58,19 +68,63 @@ public class GeoWaveFunctions {
     }
     
     private static Geometry getGeometryFromFieldValue(Object fieldValue) {
+        Geometry geometry = null;
         if (fieldValue instanceof Geometry) {
-            return (Geometry) fieldValue;
+            geometry = (Geometry) fieldValue;
+        } else if (fieldValue instanceof GeoNormalizer.GeoPoint) {
+            geometry = geoPointToGeometry((GeoNormalizer.GeoPoint) fieldValue);
         } else if (fieldValue instanceof String) {
-            return AbstractGeometryNormalizer.parseGeometry((String) fieldValue);
+            geometry = parseGeometry((String) fieldValue);
         } else if (fieldValue instanceof ValueTuple) {
             ValueTuple t = (ValueTuple) fieldValue;
             Object o = t.second();
             if (o instanceof AbstractGeometryType) {
-                AbstractGeometryType gt = (AbstractGeometryType) o;
-                return ((AbstractGeometry) gt.getDelegate()).getJTSGeometry();
+                AbstractGeometryType<?> gt = (AbstractGeometryType<?>) o;
+                geometry = ((AbstractGeometry<?>) gt.getDelegate()).getJTSGeometry();
+            } else if (o instanceof GeoType) {
+                geometry = parseGeometryFromGeoType(ValueTuple.getNormalizedStringValue(fieldValue));
             }
+        } else if (fieldValue instanceof FunctionalSet) {
+            FunctionalSet<?> funcSet = (FunctionalSet<?>) fieldValue;
+            Geometry[] geometries = funcSet.stream().map(GeoWaveFunctions::getGeometryFromFieldValue).toArray(Geometry[]::new);
+            geometry = new GeometryCollection(geometries, geometryFactory);
         }
-        throw new IllegalArgumentException("Field Value:" + fieldValue + " cannot be recognized as a geometry");
+        
+        if (geometry == null) {
+            throw new IllegalArgumentException("Field Value:" + fieldValue + " cannot be recognized as a geometry");
+        }
+        
+        return geometry;
+    }
+    
+    private static Geometry parseGeometry(String geomString) {
+        Geometry geom;
+        try {
+            geom = AbstractGeometryNormalizer.parseGeometry(geomString);
+        } catch (IllegalArgumentException e) {
+            geom = parseGeometryFromGeoType(geomString);
+        }
+        
+        if (geom == null) {
+            throw new IllegalArgumentException("Geom string:" + geomString + " cannot be recognized as a geometry");
+        }
+        
+        return geom;
+    }
+    
+    private static Geometry parseGeometryFromGeoType(String geoTypeString) {
+        Geometry geom = null;
+        try {
+            geom = geoPointToGeometry(GeoNormalizer.isNormalized(geoTypeString) ? GeoNormalizer.GeoPoint.decodeZRef(geoTypeString) : GeoNormalizer.GeoPoint
+                            .decodeZRef(geoNormalizer.normalize(geoTypeString)));
+        } catch (Exception e) {
+            // do nothing
+        }
+        return geom;
+    }
+    
+    private static Geometry geoPointToGeometry(GeoNormalizer.GeoPoint geoPoint) {
+        return geometryFactory.createPoint(new Coordinate(geoPoint.getLongitude(), geoPoint.getLatitude()));
     }
     
     public static boolean contains(Object fieldValue, String geoString) {

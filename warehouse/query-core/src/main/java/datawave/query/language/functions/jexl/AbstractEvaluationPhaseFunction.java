@@ -66,7 +66,10 @@ public abstract class AbstractEvaluationPhaseFunction extends JexlQueryFunction 
         if (parameterList.size() == 1) {
             sb.append(prefix).append(Constants.ANY_FIELD).append(", ").append(escapeString(parameterList.get(0))).append(suffix);
         } else {
-            sb.append("(");
+            
+            if (parameterList.size() > 2) // do not wrap single term functions
+                sb.append("(");
+            
             int x = 0;
             while (x < parameterList.size()) {
                 if (x >= 2) {
@@ -76,7 +79,9 @@ public abstract class AbstractEvaluationPhaseFunction extends JexlQueryFunction 
                 String regex = parameterList.get(x++);
                 sb.append(prefix).append(field).append(", ").append(escapeString(regex)).append(suffix);
             }
-            sb.append(")");
+            
+            if (parameterList.size() > 2)
+                sb.append(")");
         }
         return sb.toString();
     }
