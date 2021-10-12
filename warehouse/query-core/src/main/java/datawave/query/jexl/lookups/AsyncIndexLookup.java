@@ -56,7 +56,7 @@ public abstract class AsyncIndexLookup extends IndexLookup {
         
         try {
             
-            // Deal with the case we we let ourselves get interrupted AND support timeout.
+            // Deal with the case where we let ourselves get interrupted AND support timeout.
             boolean swallowTimeout = false;
             if (maxLookup <= 0 || maxLookup == Long.MAX_VALUE) {
                 maxLookup = 1000;
