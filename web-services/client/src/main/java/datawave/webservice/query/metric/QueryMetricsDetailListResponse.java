@@ -1,25 +1,14 @@
 package datawave.webservice.query.metric;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeMap;
-
-import javax.xml.bind.annotation.XmlAccessOrder;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorOrder;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
-
+import datawave.webservice.query.QueryImpl.Parameter;
+import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import datawave.webservice.query.QueryImpl.Parameter;
+import javax.xml.bind.annotation.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @XmlRootElement(name = "QueryMetricListResponse")
 @XmlAccessorType(XmlAccessType.NONE)
