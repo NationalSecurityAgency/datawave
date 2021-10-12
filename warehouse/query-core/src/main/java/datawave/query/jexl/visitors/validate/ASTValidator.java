@@ -14,6 +14,8 @@ import org.apache.log4j.Logger;
  * <pre>
  *     1. Proper lineage with respect to parent-child pointers
  *     2. The tree is flattened
+ *     3. Junctions have two or more children
+ *     4. Minimal reference expressions necessary
  * </pre>
  */
 public class ASTValidator {
@@ -64,9 +66,11 @@ public class ASTValidator {
         
         boolean isLineageValid = isLineageValid(root);
         boolean isTreeFlattened = isTreeFlattened(root);
+        boolean areJunctionsValid = areJunctionsValid(root);
+        boolean areReferenceExpressionsValid = areReferenceExpressionsValid(root);
         
         //  @formatter:off
-        boolean isValid = isLineageValid && isTreeFlattened;
+        boolean isValid = isLineageValid && isTreeFlattened && areJunctionsValid && areReferenceExpressionsValid;
         //  @formatter:on
         
         if (!isValid) {
@@ -74,7 +78,11 @@ public class ASTValidator {
             if (!isLineageValid)
                 log.error("Valid Lineage: " + isLineageValid);
             if (!isTreeFlattened)
-                log.error("Valid flatten: " + isTreeFlattened);
+                log.error("Valid Flatten: " + isTreeFlattened);
+            if (!areJunctionsValid)
+                log.error("Valid Junctions: " + areJunctionsValid);
+            if (!areReferenceExpressionsValid)
+                log.error("Valid RefExpr: " + areReferenceExpressionsValid);
             
             log.error(sourceVisitor + " produced an invalid query tree, see logs for details.");
             if (failHard) {
@@ -113,4 +121,27 @@ public class ASTValidator {
         String flattened = JexlStringBuildingVisitor.buildQueryWithoutParse(TreeFlatteningRebuildingVisitor.flatten(copy));
         return original.equals(flattened);
     }
+    
+    /**
+     * Determine if this AST is valid with respect to And/Or nodes and the number of children
+     *
+     * @param node
+     *            an arbitrary JexlNode
+     * @return true if the tree is valid
+     */
+    private static boolean areJunctionsValid(JexlNode node) {
+        return JunctionValidatingVisitor.validate(node);
+    }
+    
+    /**
+     * Validate the AST with respect to minimal reference expressions
+     *
+     * @param node
+     *            an arbitrary JexlNode
+     * @return true if the tree is valid
+     */
+    private static boolean areReferenceExpressionsValid(JexlNode node) {
+        return MinimalReferenceExpressionsVisitor.validate(node);
+    }
+    
 }
