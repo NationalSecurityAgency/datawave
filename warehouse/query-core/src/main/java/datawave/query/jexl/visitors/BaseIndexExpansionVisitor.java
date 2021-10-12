@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -78,8 +78,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     
     protected void setupExecutor() {
         int threads = Math.max(this.config.getNumIndexLookupThreads(), MIN_THREADS);
-        executor = new ThreadPoolExecutor(threads, threads, 0, TimeUnit.MILLISECONDS, new SynchronousQueue<>(true), new IndexExpansionThreadFactory(
-                        this.config, this.threadName));
+        executor = new ThreadPoolExecutor(threads, threads, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new IndexExpansionThreadFactory(this.config,
+                        this.threadName));
     }
     
     protected void shutdownExecutor() {

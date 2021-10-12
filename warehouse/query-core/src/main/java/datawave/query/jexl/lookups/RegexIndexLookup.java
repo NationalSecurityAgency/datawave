@@ -258,8 +258,8 @@ public class RegexIndexLookup extends BaseRegexIndexLookup {
             try {
                 if (log.isTraceEnabled()) {
                     log.trace("Do we have next? " + iter.hasNext());
-                    
                 }
+                
                 while (iter.hasNext()) {
                     
                     Entry<Key,Value> entry = iter.next();
