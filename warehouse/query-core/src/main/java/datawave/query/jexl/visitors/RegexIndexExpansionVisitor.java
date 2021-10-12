@@ -321,7 +321,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         // if we have already marked this regex as exceeding the threshold, then no
         if (markedParents != null) {
             for (JexlNode markedParent : markedParents) {
-                if (QueryPropertyMarker.findInstance(markedParent).isType(ExceededValueThresholdMarkerJexlNode.class)) {
+                if (ExceededTermThresholdMarkerJexlNode.instanceOf(markedParent)) {
                     return false;
                 }
             }

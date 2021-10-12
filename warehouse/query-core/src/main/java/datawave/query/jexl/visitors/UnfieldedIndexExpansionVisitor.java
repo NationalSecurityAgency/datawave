@@ -114,7 +114,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // ignore already marked expressions
-        if (QueryPropertyMarker.findInstance(node).isAnyType()) {
+        if (QueryPropertyMarkerVisitor.instanceOfAny(node)) {
             return node;
         }
         

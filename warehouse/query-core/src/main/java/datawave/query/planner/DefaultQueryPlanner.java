@@ -16,7 +16,6 @@ import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
-import datawave.query.attributes.UniqueFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ShardQueryConfiguration;
@@ -42,8 +41,6 @@ import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
 import datawave.query.jexl.visitors.CaseSensitivityVisitor;
@@ -65,7 +62,6 @@ import datawave.query.jexl.visitors.GeoWavePruningVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.NodeTypeCountVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.PushFunctionsIntoExceededValueRanges;
@@ -270,12 +266,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Should the ExecutableExpansionVisitor be run
      */
     protected boolean executableExpansion = true;
-    
+
     /**
      * Control if automated logical query reduction should be done
      */
     protected boolean reduceQuery = true;
-    
+
     /**
      * Control if when applying logical query reduction the pruned query should be shown via an assignment node in the resulting query. There may be a
      * performance impact.
@@ -1246,35 +1242,26 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (!disableBoundedLookup) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand bounded query ranges (total)");
             TraceStopwatch innerStopwatch = null;
-            
+
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
-                // Check if there is any regex to expand.
                 Map<String,IndexLookup> indexLookupMap = new HashMap<>();
-                NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
-                if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
-                    innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
-                    queryTree = RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, indexLookupMap, queryTree);
-                    // regex expansion picks up an extra set of parens, so quickly fix that here
-                    queryTree = (ASTJexlScript) TreeFlatteningRebuildingVisitor.flatten(queryTree);
-                    if (log.isDebugEnabled()) {
-                        logQuery(queryTree, "Query after expanding regex:");
-                    }
-                    innerStopwatch.stop();
+                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand regex");
+                queryTree = RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, indexLookupMap, queryTree);
+                // regex expansion picks up an extra set of parens, so quickly fix that here
+                queryTree = (ASTJexlScript) TreeFlatteningRebuildingVisitor.flatten(queryTree);
+                if (log.isDebugEnabled()) {
+                    logQuery(queryTree, "Query after expanding regex:");
                 }
                 innerStopwatch.stop();
-                
-                // Check if there are any bounded ranges to expand.
-                if (nodeCount.isPresent(BoundedRange.class)) {
-                    innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ranges");
-                    queryTree = BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, queryTree);
-                    if (log.isDebugEnabled()) {
-                        logQuery(queryTree, "Query after expanding ranges:");
-                    }
-                    innerStopwatch.stop();
+
+                innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand ranges");
+                queryTree = BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, queryTree);
+                if (log.isDebugEnabled()) {
+                    logQuery(queryTree, "Query after expanding ranges:");
                 }
                 innerStopwatch.stop();
-                
+
                 if (reduceQuery) {
                     innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - reduce after range expansion");
                     
@@ -1328,22 +1315,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     // set the expand all terms flag to avoid any more delayed
                     // predicates based on cost...
                     config.setExpandAllTerms(true);
-                    
-                    // Check if there is any regex to expand after pulling up delayed predicates.
-                    nodeCount = NodeTypeCountVisitor.countNodes(queryTree);
-                    if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
-                        queryTree = RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, indexLookupMap, queryTree);
-                        if (log.isDebugEnabled()) {
-                            logQuery(queryTree, "Query after expanding regex again:");
-                        }
+
+                    queryTree = RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, indexLookupMap, queryTree);
+                    if (log.isDebugEnabled()) {
+                        logQuery(queryTree, "Query after expanding regex again:");
                     }
-                    
-                    // Check if there are any bounded ranges to expand.
-                    if (nodeCount.isPresent(BoundedRange.class)) {
-                        queryTree = BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, queryTree);
-                        if (log.isDebugEnabled()) {
-                            logQuery(queryTree, "Query after expanding ranges again:");
-                        }
+
+                    queryTree = BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, queryTree);
+                    if (log.isDebugEnabled()) {
+                        logQuery(queryTree, "Query after expanding ranges again:");
                     }
                     if (reduceQuery) {
                         

@@ -17,6 +17,7 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import io.jsonwebtoken.lang.Collections;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
@@ -24,6 +25,8 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
+
+import java.util.Arrays;
 
 /**
  * Visits a Jexl tree, looks for bounded ranges, and replaces them with concrete values from the index
@@ -71,15 +74,13 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
-        
         // don't traverse delayed nodes
-        if (instance.isAnyTypeOf(IndexHoleMarkerJexlNode.class, ASTEvaluationOnly.class, ExceededValueThresholdMarkerJexlNode.class,
-                        ExceededTermThresholdMarkerJexlNode.class, ExceededOrThresholdMarkerJexlNode.class)) {
+        if (QueryPropertyMarkerVisitor.instanceOf(node, Arrays.asList(IndexHoleMarkerJexlNode.class, ASTEvaluationOnly.class, ExceededValueThresholdMarkerJexlNode.class,
+                ExceededTermThresholdMarkerJexlNode.class, ExceededOrThresholdMarkerJexlNode.class))) {
             return RebuildingVisitor.copy(node);
         }
         // handle bounded range
-        else if (instance.isType(BoundedRange.class)) {
+        else if (BoundedRange.instanceOf(node)) {
             LiteralRange<?> range = rangeFinder.getRange(node);
             if (range != null) {
                 try {
