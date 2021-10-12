@@ -194,6 +194,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Lists.newArrayList(), config.getContentFieldNames());
         Assert.assertNull(config.getActiveQueryLogNameSource());
         Assert.assertEquals("", config.getActiveQueryLogName());
+        Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
     }
     
     /**
@@ -245,6 +246,7 @@ public class ShardQueryConfigurationTest {
         Set<String> groupFields = Sets.newHashSet("groupFieldA");
         Set<String> uniqueFields = Sets.newHashSet("uniqueFieldA");
         List<String> contentFieldNames = Lists.newArrayList("fieldA");
+        Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
         
         // Set collections on 'other' ShardQueryConfiguration
         other.setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
@@ -276,6 +278,7 @@ public class ShardQueryConfigurationTest {
         other.setGroupFields(groupFields);
         other.setUniqueFields(uniqueFields);
         other.setContentFieldNames(contentFieldNames);
+        other.setDisallowedRegexPatterns(disallowedRegexPatterns);
         
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
@@ -308,6 +311,7 @@ public class ShardQueryConfigurationTest {
         groupFields.add("groupFieldB");
         uniqueFields.add("uniqueFieldB");
         contentFieldNames.add("fieldB");
+        disallowedRegexPatterns.add("blah");
         
         // Assert that copied collections were deep copied and remain unchanged
         Assert.assertEquals(Lists.newArrayList("somePattern"), config.getRealmSuffixExclusionPatterns());
@@ -357,6 +361,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(expectedQueryModel.getForwardQueryMapping(), config.getQueryModel().getForwardQueryMapping());
         Assert.assertEquals(expectedQueryModel.getReverseQueryMapping(), config.getQueryModel().getReverseQueryMapping());
         Assert.assertEquals(expectedQueryModel.getUnevaluatedFields(), config.getQueryModel().getUnevaluatedFields());
+        Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
         
         // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
         QueryImpl expectedQuery = new QueryImpl();
@@ -438,7 +443,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 178;
+        int expectedObjectCount = 179;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

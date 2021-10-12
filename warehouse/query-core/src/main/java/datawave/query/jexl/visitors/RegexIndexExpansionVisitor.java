@@ -681,6 +681,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
         return newNode;
     }
     
+    @Override
     protected void rebuildFutureJexlNode(FutureJexlNode futureJexlNode) {
         JexlNode currentNode = futureJexlNode.getOrigNode();
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();

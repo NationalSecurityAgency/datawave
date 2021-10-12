@@ -2249,4 +2249,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public Set<String> getEvaluationOnlyFields() {
         return getConfig().getEvaluationOnlyFields();
     }
+    
+    public Set<String> getDisallowedRegexPatterns() {
+        return getConfig().getDisallowedRegexPatterns();
+    }
+    
+    public void setDisallowedRegexPatterns(Set<String> disallowedRegexPatterns) {
+        getConfig().setDisallowedRegexPatterns(disallowedRegexPatterns);
+    }
 }
