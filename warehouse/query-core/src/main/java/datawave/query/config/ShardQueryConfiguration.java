@@ -215,6 +215,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Map<String,Date> compositeTransitionDates = new HashMap<>();
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
     private Set<String> evaluationOnlyFields = new HashSet<>(0);
+    private Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
     
     /**
      * Disables Whindex (value-specific) field mappings for GeoWave functions.
@@ -536,6 +537,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
         this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
+        this.setDisallowedRegexPatterns(null == other.getEvaluationOnlyFields() ? null : Sets.newHashSet(other.getDisallowedRegexPatterns()));
         this.setActiveQueryLogNameSource(other.getActiveQueryLogNameSource());
         this.setEnforceUniqueConjunctionsWithinExpression(other.getEnforceUniqueConjunctionsWithinExpression());
         this.setEnforceUniqueDisjunctionsWithinExpression(other.getEnforceUniqueDisjunctionsWithinExpression());
@@ -2084,6 +2086,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public Set<String> getEvaluationOnlyFields() {
         return this.evaluationOnlyFields;
+    }
+    
+    public Set<String> getDisallowedRegexPatterns() {
+        return disallowedRegexPatterns;
+    }
+    
+    public void setDisallowedRegexPatterns(Set<String> disallowedRegexPatterns) {
+        this.disallowedRegexPatterns = disallowedRegexPatterns;
     }
     
     public String getActiveQueryLogNameSource() {

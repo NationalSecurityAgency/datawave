@@ -100,6 +100,7 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         return ShardIndexQueryTableStaticMethods.expandRange(config, scannerFactory, range, executor);
     }
     
+    @Override
     protected void rebuildFutureJexlNode(FutureJexlNode futureJexlNode) {
         JexlNode currentNode = futureJexlNode.getOrigNode();
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();

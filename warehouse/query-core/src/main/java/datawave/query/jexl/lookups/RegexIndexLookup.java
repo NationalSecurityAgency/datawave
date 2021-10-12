@@ -42,7 +42,7 @@ import java.util.concurrent.Future;
 /**
  * An asynchronous index lookup which looks up concrete values for the specified regex term.
  */
-public class RegexIndexLookup extends BaseRegexIndexLookup {
+public class RegexIndexLookup extends AsyncIndexLookup {
     private static final Logger log = ThreadConfigurableLogger.getLogger(RegexIndexLookup.class);
     
     protected MetadataHelper helper;
@@ -123,7 +123,7 @@ public class RegexIndexLookup extends BaseRegexIndexLookup {
             }
             
             for (String pattern : patterns) {
-                if (!isAcceptedPattern(pattern)) {
+                if (config.getDisallowedRegexPatterns().contains(pattern)) {
                     PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.IGNORE_PATTERN_FOR_INDEX_LOOKUP,
                                     MessageFormat.format("Pattern: {0}", pattern));
                     log.debug(qe);
