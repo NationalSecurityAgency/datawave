@@ -17,6 +17,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
+import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -148,7 +149,11 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
                         createTopic(topic, 10, (short) 1);
                         topicReadyWait(topic, 10, TimeUnit.SECONDS);
                     } catch (Exception e) {
-                        Throwables.propagate(e);
+                        if (Throwables.getRootCause(e) instanceof TopicExistsException) {
+                            // no problem
+                        } else {
+                            Throwables.propagate(e);
+                        }
                     }
                     
                     topics.put(topic, routingPattern);

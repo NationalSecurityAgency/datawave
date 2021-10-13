@@ -19,6 +19,12 @@ spring:
       enforce-allowed-callers: false
       allowed-callers:
         - "cn=test a. user, ou=example developers, o=example corp, c=us<cn=example corp ca, o=example corp, c=us>"
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: KafkaQueryQueueManager
+      autoOffsetReset: latest
+
 
 # This is the accumulo configuration we use in services.  These don't map directly to a properties class, but 
 # they are here to be used as a reference for other properties.
@@ -30,4 +36,8 @@ accumulo:
 
 # Configuration placeholder which determines what backend will be used for transmitting query results.
 executor:
-  backend: rabbit
+  backend: kafka
+datawave:
+  query:
+    executor:
+      pollQueueSize: false # cannot poll queue size when using kafka

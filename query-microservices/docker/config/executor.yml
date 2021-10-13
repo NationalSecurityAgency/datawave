@@ -40,7 +40,6 @@ datawave:
   query:
     executor:
       pool: "${executor.poolName}"
-      pollQueueSize: true
       availableResultsPageMultiplier: 2.5
       maxQueryStatusAge: 1000
       maxQueueSize: 400

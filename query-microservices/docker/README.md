@@ -42,6 +42,14 @@ You will need to build the docker image for this service on your local machine f
 
 You will need to build the docker image for this service on your local machine following the instructions in the query metrics service README.
 
+### Zookeeper
+
+Zookeeper a prepacked docker image used for distributed synchronization.
+
+### Kafka
+
+Kafka is a prepacked docker image used for messaging between the various services.
+
 ### Query
 
 Datawave Query Service v1.0-SNAPSHOT is a user-facing interface for Datawave query.
@@ -80,21 +88,9 @@ You will need to build the docker image for this service on your local machine f
 
 ## Optional Components
 
-### Zookeeper
-
-Enabled via the 'kafka', or 'full' profile.
-
-Zookeeper a prepacked docker image used for distributed synchronization.
-
-### Kafka
-
-Enabled via the 'kafka', or 'full' profile.
-
-Kafka is a prepacked docker image used for messaging between the various services.
-
 ### Kafdrop
 
-Enabled via the 'kafka', or 'full' profile.
+Enabled via the 'management', or 'full' profile.
 
 Kafdrop is a prepacked docker image used for kafka cluster management.
 
