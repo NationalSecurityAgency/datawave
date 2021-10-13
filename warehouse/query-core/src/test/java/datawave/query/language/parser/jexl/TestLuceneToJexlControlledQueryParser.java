@@ -112,7 +112,7 @@ public class TestLuceneToJexlControlledQueryParser {
         includedValues.put("FIELD3", Collections.singleton("specialvalue3"));
         parser.setIncludedValues(includedValues);
         
-        Assert.assertEquals("(FIELD1 == 'value') && ((filter:includeRegex(FIELD2, 'specialvalue2')) || (filter:includeRegex(FIELD3, 'specialvalue3')))",
+        Assert.assertEquals("(FIELD1 == 'value') && (filter:includeRegex(FIELD2, 'specialvalue2') || filter:includeRegex(FIELD3, 'specialvalue3'))",
                         parseQuery("FIELD1:value"));
     }
     
@@ -130,8 +130,7 @@ public class TestLuceneToJexlControlledQueryParser {
         excludedValues.put("FIELD3", Collections.singleton("specialvalue3"));
         parser.setExcludedValues(excludedValues);
         
-        Assert.assertEquals(
-                        "(FIELD1 == 'value') && ((not(filter:includeRegex(FIELD2, 'specialvalue2'))) && (not(filter:includeRegex(FIELD3, 'specialvalue3'))))",
+        Assert.assertEquals("(FIELD1 == 'value') && (not(filter:includeRegex(FIELD2, 'specialvalue2')) && not(filter:includeRegex(FIELD3, 'specialvalue3')))",
                         parseQuery("FIELD1:value"));
     }
     
@@ -157,8 +156,7 @@ public class TestLuceneToJexlControlledQueryParser {
         
         String expandedQuery = parseQuery("$9001_1:dudududuu");
         
-        Assert.assertEquals("($9001_1 == 'dudududuu') && ((filter:includeRegex($1337_1, 'John')) && (not(filter:includeRegex($1337_1, 'Cena'))))",
-                        expandedQuery);
+        Assert.assertEquals("($9001_1 == 'dudududuu') && (filter:includeRegex($1337_1, 'John') && not(filter:includeRegex($1337_1, 'Cena')))", expandedQuery);
     }
     
     private String parseQuery(String query) throws ParseException {
