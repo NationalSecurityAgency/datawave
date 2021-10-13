@@ -84,6 +84,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static org.apache.commons.jexl2.parser.JexlNodes.makeRef;
+import static org.apache.commons.jexl2.parser.JexlNodes.wrap;
 
 /**
  *
@@ -481,11 +483,36 @@ public class JexlASTHelper {
         }
     }
     
+    /**
+     * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode
+     * 
+     * @param node
+     *            a JexlNode
+     * @return an unwrapped JexlNode
+     */
     public static JexlNode dereference(JexlNode node) {
         while (node.jjtGetNumChildren() == 1 && (node instanceof ASTReference || node instanceof ASTReferenceExpression)) {
             node = node.jjtGetChild(0);
         }
         return node;
+    }
+    
+    /**
+     * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode. If the final node is a MarkerNode, wrap it
+     * 
+     * @param node
+     *            a JexlNode
+     * @return an unwrapped JexlNode
+     */
+    public static JexlNode dereferenceSafely(JexlNode node) {
+        JexlNode unwrapped = dereference(node);
+        
+        if (QueryPropertyMarker.findInstance(unwrapped).isAnyType()) {
+            // ensure we create a proper ref -> refExpr chain
+            unwrapped = makeRef(wrap(unwrapped));
+        }
+        
+        return unwrapped;
     }
     
     /**
