@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileExistsException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -74,7 +75,8 @@ public class SafeFileOutputCommitterTest {
     private Text val2 = new Text("val2");
     
     private static boolean patched = false;
-    
+    private Configuration configuration;
+
     private static void cleanup() throws IOException {
         Configuration conf = new Configuration();
         FileSystem fs = outDir.getFileSystem(conf);
@@ -93,6 +95,7 @@ public class SafeFileOutputCommitterTest {
     
     @Before
     public void setUp() throws IOException {
+        configuration = new Configuration();
         cleanup();
     }
     
@@ -120,10 +123,8 @@ public class SafeFileOutputCommitterTest {
     
     private void writeMapFileOutput(RecordWriter theRecordWriter, TaskAttemptContext context) throws IOException, InterruptedException {
         try {
-            int key = 0;
-            for (int i = 0; i < 10; ++i) {
-                key = i;
-                Text val = (i % 2 == 1) ? val1 : val2;
+            for (int key = 0; key < 10; ++key) {
+                Text val = (key % 2 == 1) ? val1 : val2;
                 theRecordWriter.write(new LongWritable(key), val);
             }
         } finally {
@@ -132,7 +133,7 @@ public class SafeFileOutputCommitterTest {
     }
     
     private void testRecoveryInternal(int commitVersion, int recoveryVersion) throws Exception {
-        Job job = Job.getInstance();
+        Job job = Job.getInstance(this.configuration);
         FileOutputFormat.setOutputPath(job, outDir);
         Configuration conf = job.getConfiguration();
         conf.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
@@ -148,23 +149,27 @@ public class SafeFileOutputCommitterTest {
         
         // write output
         TextOutputFormat theOutputFormat = new TextOutputFormat();
+
+        // empty file created here:
         RecordWriter theRecordWriter = theOutputFormat.getRecordWriter(tContext);
+
+        // output file goes from empty to containing data:
         writeOutput(theRecordWriter, tContext);
-        
-        // do commit
-        committer.commitTask(tContext);
-        
-        Path jobTempDir1 = committer.getCommittedTaskPath(tContext);
+
+        // Do not call commitTask for attempt #1
+        // committer.commitTask(tContext);
+
+        // Verify task attempt #1 still has a temporary file in the attempt path
+        Path jobTempDir1 = committer.getTaskAttemptPath(tContext);
         File jtd = new File(jobTempDir1.toUri().getPath());
         if (commitVersion == 1 || !patched) {
-            assertTrue("Version 1 commits to temporary dir " + jtd, jtd.exists());
+            assertTrue("Version 1 attempt written to temporary dir " + jtd, jtd.exists());
             validateContent(jtd);
         } else {
-            assertFalse("Version 2 commits to output dir " + jtd, jtd.exists());
+            assertFalse("Version 2 attempt written to output dir " + jtd, jtd.exists());
         }
-        
-        // now while running the second app attempt,
-        // recover the task output from first attempt
+
+        // now run and commit a second app attempt
         Configuration conf2 = job.getConfiguration();
         conf2.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
         conf2.setInt(MRJobConfig.APPLICATION_ATTEMPT_ID, 2);
@@ -173,10 +178,21 @@ public class SafeFileOutputCommitterTest {
         TaskAttemptContext tContext2 = new TaskAttemptContextImpl(conf2, taskID);
         FileOutputCommitter committer2 = new SafeFileOutputCommitter(outDir, tContext2);
         committer2.setupJob(tContext2);
+
+        // setup
+        committer.setupTask(tContext2);
+        // write output
+        TextOutputFormat theOutputFormat2 = new TextOutputFormat();
+
+        RecordWriter theRecordWriter2 = theOutputFormat2.getRecordWriter(tContext2);
+        writeOutput(theRecordWriter2, tContext2);
+
+        // Attempt #2 moves file out from its attempt directory in _temporary and into the commit path
+        committer2.commitTask(tContext2);
+
         Path jobTempDir2 = committer2.getCommittedTaskPath(tContext2);
         File jtd2 = new File(jobTempDir2.toUri().getPath());
-        
-        committer2.recoverTask(tContext2);
+
         if (recoveryVersion == 1 || !patched) {
             assertTrue("Version 1 recovers to " + jtd2, jtd2.exists());
             validateContent(jtd2);
@@ -192,8 +208,14 @@ public class SafeFileOutputCommitterTest {
         FileUtil.fullyDelete(new File(outDir.toString()));
     }
     
-    @Test
+    @Test (expected = FileExistsException.class)
     public void testRecoveryV1() throws Exception {
+        testRecoveryInternal(1, 1);
+    }
+
+    @Test
+    public void testRecoveryV1New() throws Exception {
+        configuration.setBoolean(SafeFileOutputCommitter.ALLOW_EQUIVALENT_FILENAME, true);
         testRecoveryInternal(1, 1);
     }
     

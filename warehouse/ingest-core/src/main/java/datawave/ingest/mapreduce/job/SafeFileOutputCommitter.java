@@ -4,8 +4,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileExistsException;
 import org.apache.hadoop.fs.FileStatus;
@@ -16,36 +18,34 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.JobStatus.State;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This extension of the FileOutputCommitter does a safety check to ensure no files were left around in the temporary directories before terminating. If there
  * were, then this will fail the job.
  */
 public class SafeFileOutputCommitter extends FileOutputCommitter {
-    
-    // a copy of the super classes output path since they keep it private
-    private Path outputPath = null;
+    private static final Logger LOG =
+            LoggerFactory.getLogger(SafeFileOutputCommitter.class);
+
+    public static final String ALLOW_EQUIVALENT_FILENAME =
+            "mapreduce.safefileoutputcommitter.allow.equivalent.filename";
+
+    private static final boolean DEFAULT_ALLOW_EQUIVALENT_FILENAME = false;
+    private final boolean shouldFindEquivalentFilename;
+
     // a boolean denoting whether we should check for an empty directory before cleaning it up
     private volatile boolean checkForEmptyDir = true;
-    
+
     public SafeFileOutputCommitter(Path outputPath, JobContext context) throws IOException {
         super(outputPath, context);
-        
-        // Since the parent class hides its "outputPath", we need to recreate it here
-        if (outputPath != null) {
-            FileSystem fs = outputPath.getFileSystem(context.getConfiguration());
-            this.outputPath = fs.makeQualified(outputPath);
-        }
+        this.shouldFindEquivalentFilename = context.getConfiguration().getBoolean(ALLOW_EQUIVALENT_FILENAME, DEFAULT_ALLOW_EQUIVALENT_FILENAME);
     }
-    
+
     public SafeFileOutputCommitter(Path outputPath, TaskAttemptContext context) throws IOException {
         super(outputPath, context);
-        
-        // Since the parent class hides its "outputPath", we need to recreate it here
-        if (outputPath != null) {
-            FileSystem fs = outputPath.getFileSystem(context.getConfiguration());
-            this.outputPath = fs.makeQualified(outputPath);
-        }
+        this.shouldFindEquivalentFilename = context.getConfiguration().getBoolean(ALLOW_EQUIVALENT_FILENAME, DEFAULT_ALLOW_EQUIVALENT_FILENAME);
     }
     
     @Override
@@ -61,7 +61,7 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
      * @return the location of pending job attempts.
      */
     private Path getPendingJobAttemptsPath() {
-        return new Path(this.outputPath, PENDING_DIR_NAME);
+        return new Path(super.getOutputPath(), PENDING_DIR_NAME);
     }
     
     /**
@@ -70,20 +70,39 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
      */
     @Override
     public void cleanupJob(JobContext context) throws IOException {
-        if (checkForEmptyDir) {
-            if (this.outputPath != null) {
-                Path pendingJobAttemptsPath = getPendingJobAttemptsPath();
-                FileSystem fs = pendingJobAttemptsPath.getFileSystem(context.getConfiguration());
-                // now verify we do not have any files left in the temporary directory structure
-                List<Path> fileList = new ArrayList<>();
-                if (containsFiles(fs, pendingJobAttemptsPath, fileList)) {
-                    throw new FileExistsException("Found files still left in the temporary job attempts path: " + fileList);
-                }
+        if (checkForEmptyDir && super.getOutputPath() != null) {
+            Path pendingJobAttemptsPath = getPendingJobAttemptsPath();
+            FileSystem fs = pendingJobAttemptsPath.getFileSystem(context.getConfiguration());
+            // now verify we do not have any files left in the temporary directory structure
+            List<Path> fileList = new ArrayList<>();
+            boolean containsPendingFiles = containsFiles(fs, pendingJobAttemptsPath, fileList);
+
+            if (containsPendingFiles && !shouldFindEquivalentFilename) {
+                throw new FileExistsException("Found files still left in the temporary job attempts path: " + fileList);
+            }
+            if (containsPendingFiles) {
+                verifyEachFile(fs, fileList);
             }
         }
         super.cleanupJob(context);
     }
-    
+
+    private void verifyEachFile(FileSystem fs, List<Path> pendingFileList) throws IOException {
+        List<Path> allFilesInOutputPath = new ArrayList<>();
+        containsFiles(fs, super.getOutputPath(), allFilesInOutputPath);
+
+        LOG.trace("Number of files in output path: {} and in pending: {}", allFilesInOutputPath.size(), pendingFileList.size());
+        allFilesInOutputPath.removeAll(pendingFileList);
+        LOG.trace("Number of non-pending files: {}", allFilesInOutputPath.size());
+
+        Collection<String> fileNamesOnly = allFilesInOutputPath.stream().map(Path::getName).collect(Collectors.toList());
+        Collection<String> pendingFileNamesOnly = pendingFileList.stream().map(Path::getName).collect(Collectors.toList());
+        pendingFileNamesOnly.removeAll(fileNamesOnly);
+        if (0 < pendingFileNamesOnly.size()) {
+            throw new FileExistsException("Found files in temporary job attempts path with no successful counterpart: " + pendingFileNamesOnly);
+        }
+    }
+
     protected boolean containsFiles(final FileSystem fs, final Path path, final List<Path> list) throws FileNotFoundException, IOException {
         RemoteIterator<Path> listing = listFiles(fs, path);
         while (listing.hasNext()) {
