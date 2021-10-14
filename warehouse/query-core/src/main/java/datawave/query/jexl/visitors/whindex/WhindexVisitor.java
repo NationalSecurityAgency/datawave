@@ -19,7 +19,6 @@ import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.util.MetadataHelper;
-import datawave.util.time.DateHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
@@ -159,8 +158,8 @@ public class WhindexVisitor extends RebuildingVisitor {
                 Map<String,String> mapping = valueSpecificFieldMappings.get(fieldValue);
                 for (String origField : mapping.keySet()) {
                     String newField = mapping.get(origField);
-                    // if the new field predates the query range, we can use this mapping
-                    if (fieldExistsForDay(newField, beginDate)) {
+                    // if the new field predates the query begin date, we can use this mapping
+                    if (fieldPredatesBeginDate(newField, beginDate)) {
                         Map<String,String> newMapping = prunedFieldMappings.computeIfAbsent(fieldValue, k -> new HashMap<>());
                         newMapping.put(origField, newField);
                     }
@@ -170,8 +169,8 @@ public class WhindexVisitor extends RebuildingVisitor {
         return prunedFieldMappings;
     }
     
-    private boolean fieldExistsForDay(String field, Date date) {
-        return metadataHelper.getCountsByFieldInDay(field, DateHelper.format(date)) > 0;
+    private boolean fieldPredatesBeginDate(String field, Date date) {
+        return metadataHelper.getEarliestOccurrenceOfField(field).compareTo(date) < 0;
     }
     
     /**
