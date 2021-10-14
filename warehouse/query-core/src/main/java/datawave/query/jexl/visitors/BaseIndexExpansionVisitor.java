@@ -32,8 +32,6 @@ import java.util.function.Supplier;
  * Abstract class which provides a framework for visitors which perform index lookups based on the contents of the Jexl tree
  */
 public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
-    private static final Logger log = Logger.getLogger(BaseIndexExpansionVisitor.class);
-    
     private static final int MIN_THREADS = 1;
     
     protected ShardQueryConfiguration config;

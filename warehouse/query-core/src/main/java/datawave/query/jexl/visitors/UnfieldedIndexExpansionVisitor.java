@@ -34,8 +34,6 @@ import java.util.Set;
  * Visits a Jexl tree, looks for unfielded terms, and replaces them with fielded terms from the index
  */
 public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
-    private static final Logger log = Logger.getLogger(UnfieldedIndexExpansionVisitor.class);
-    
     protected Set<String> expansionFields;
     protected Set<Type<?>> allTypes;
     

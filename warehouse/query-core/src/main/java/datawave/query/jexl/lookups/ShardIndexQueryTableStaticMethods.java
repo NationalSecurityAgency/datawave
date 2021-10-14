@@ -279,7 +279,7 @@ public class ShardIndexQueryTableStaticMethods {
         
         Set<String> fields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helperRef);
         Set<String> reverseFields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, true, config.getDatatypeFilter(), helperRef);
-        return (IndexLookup) new RegexIndexLookup(config, scannerFactory, fields, reverseFields, patterns, helperRef, true, execService);
+        return new RegexIndexLookup(config, scannerFactory, fields, reverseFields, patterns, helperRef, true, execService);
     }
     
     /**
@@ -322,7 +322,7 @@ public class ShardIndexQueryTableStaticMethods {
             }
         }
         
-        return (IndexLookup) new RegexIndexLookup(config, scannerFactory, fieldName, patterns, helperRef, execService);
+        return new RegexIndexLookup(config, scannerFactory, fieldName, patterns, helperRef, execService);
     }
     
     public static IndexLookup expandRange(ShardQueryConfiguration config, ScannerFactory scannerFactory, LiteralRange<?> range, ExecutorService execService) {
