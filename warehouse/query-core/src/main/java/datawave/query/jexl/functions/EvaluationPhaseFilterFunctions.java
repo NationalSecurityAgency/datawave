@@ -750,7 +750,7 @@ public class EvaluationPhaseFilterFunctions {
             try {
                 for (Object o : fieldValue) {
                     if (betweenInclusive(getTime(o), getTime(start, true), Long.MAX_VALUE)) {
-                        matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                        matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
                 }
@@ -809,7 +809,7 @@ public class EvaluationPhaseFilterFunctions {
                 int granularity = getGranularity(rangePattern);
                 for (Object o : fieldValue) {
                     if (betweenInclusive(getTime(o), getNextTime(start, rangeFormat, granularity), Long.MAX_VALUE)) {
-                        matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                        matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
                 }
@@ -880,7 +880,7 @@ public class EvaluationPhaseFilterFunctions {
                 long lEnd = Long.MAX_VALUE;
                 for (Object o : fieldValue) {
                     if (betweenInclusive(getTime(o, format), lStart, lEnd)) {
-                        matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                        matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
                 }
@@ -933,7 +933,7 @@ public class EvaluationPhaseFilterFunctions {
             try {
                 for (Object o : fieldValue) {
                     if (betweenInclusive(getTime(o), 0, getTime(end) - 1)) {
-                        matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                        matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
                 }
@@ -990,7 +990,7 @@ public class EvaluationPhaseFilterFunctions {
                 DateFormat rangeFormat = newSimpleDateFormat(rangePattern);
                 for (Object o : fieldValue) {
                     if (betweenInclusive(getTime(o), 0, getTime(end, rangeFormat) - 1)) {
-                        matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                        matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
                 }
@@ -1060,7 +1060,7 @@ public class EvaluationPhaseFilterFunctions {
                 long lEnd = getTime(end, rangeFormat) - 1;
                 for (Object o : fieldValue) {
                     if (betweenInclusive(getTime(o, format), lStart, lEnd)) {
-                        matches = FunctionalSet.singleton(getHitTerm(fieldValue));
+                        matches = FunctionalSet.singleton(getHitTerm(o));
                         break;
                     }
                 }
