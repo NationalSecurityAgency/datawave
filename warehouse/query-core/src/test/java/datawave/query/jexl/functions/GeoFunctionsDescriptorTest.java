@@ -12,6 +12,17 @@ import org.junit.Test;
 public class GeoFunctionsDescriptorTest {
     
     @Test
+    public void testMultiFieldGeoFunction() throws Exception {
+        String query = "geo:within_circle(FIELD_1 || FIELD_2, '0_0', '10')";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        JexlArgumentDescriptor argDesc = new GeoFunctionsDescriptor().getArgumentDescriptor((ASTFunctionNode) node.jjtGetChild(0).jjtGetChild(0));
+        JexlNode queryNode = argDesc.getIndexQuery(null, null, null, null);
+        Assert.assertEquals(
+                        "(((_Bounded_ = true) && (FIELD_1 >= '-10.0|-10.0' && FIELD_1 <= '10.0|10.0')) || ((_Bounded_ = true) && (FIELD_2 >= '-10.0|-10.0' && FIELD_2 <= '10.0|10.0')))",
+                        JexlStringBuildingVisitor.buildQuery(queryNode));
+    }
+    
+    @Test
     public void testGeoToGeoWaveFunction() throws Exception {
         String query = "geo:within_bounding_box(GEO_FIELD, \"-12.74,16.30\", \"-3.31,26.16\")";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);

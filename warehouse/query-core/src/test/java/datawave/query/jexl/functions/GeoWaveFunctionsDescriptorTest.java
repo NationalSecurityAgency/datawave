@@ -5,7 +5,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -102,7 +101,8 @@ public class GeoWaveFunctionsDescriptorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryStr);
         ASTFunctionNode func = find(script);
         JexlArgumentDescriptor desc = new GeoWaveFunctionsDescriptor().getArgumentDescriptor(func);
-        MetadataHelper helper = new MockMetadataHelper();
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.addField("GEO_FIELD", "datawave.data.type.GeometryType");
         
         JexlNode indexQuery = desc.getIndexQuery(config, helper, null, null);
         return JexlStringBuildingVisitor.buildQuery(indexQuery);
