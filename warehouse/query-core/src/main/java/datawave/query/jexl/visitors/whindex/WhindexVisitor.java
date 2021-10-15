@@ -169,8 +169,9 @@ public class WhindexVisitor extends RebuildingVisitor {
         return prunedFieldMappings;
     }
     
-    private boolean fieldPredatesBeginDate(String field, Date date) {
-        return metadataHelper.getEarliestOccurrenceOfField(field).compareTo(date) < 0;
+    private boolean fieldPredatesBeginDate(String field, Date beginDate) {
+        Date firstSeenDate = metadataHelper.getEarliestOccurrenceOfField(field);
+        return firstSeenDate != null && firstSeenDate.before(beginDate);
     }
     
     /**
