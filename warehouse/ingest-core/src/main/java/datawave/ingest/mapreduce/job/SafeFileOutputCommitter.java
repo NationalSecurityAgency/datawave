@@ -26,23 +26,21 @@ import org.slf4j.LoggerFactory;
  * were, then this will fail the job.
  */
 public class SafeFileOutputCommitter extends FileOutputCommitter {
-    private static final Logger LOG =
-            LoggerFactory.getLogger(SafeFileOutputCommitter.class);
-
-    public static final String ALLOW_EQUIVALENT_FILENAME =
-            "mapreduce.safefileoutputcommitter.allow.equivalent.filename";
-
+    private static final Logger LOG = LoggerFactory.getLogger(SafeFileOutputCommitter.class);
+    
+    public static final String ALLOW_EQUIVALENT_FILENAME = "mapreduce.safefileoutputcommitter.allow.equivalent.filename";
+    
     private static final boolean DEFAULT_ALLOW_EQUIVALENT_FILENAME = false;
     private final boolean shouldFindEquivalentFilename;
-
+    
     // a boolean denoting whether we should check for an empty directory before cleaning it up
     private volatile boolean checkForEmptyDir = true;
-
+    
     public SafeFileOutputCommitter(Path outputPath, JobContext context) throws IOException {
         super(outputPath, context);
         this.shouldFindEquivalentFilename = context.getConfiguration().getBoolean(ALLOW_EQUIVALENT_FILENAME, DEFAULT_ALLOW_EQUIVALENT_FILENAME);
     }
-
+    
     public SafeFileOutputCommitter(Path outputPath, TaskAttemptContext context) throws IOException {
         super(outputPath, context);
         this.shouldFindEquivalentFilename = context.getConfiguration().getBoolean(ALLOW_EQUIVALENT_FILENAME, DEFAULT_ALLOW_EQUIVALENT_FILENAME);
@@ -76,33 +74,43 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
             // now verify we do not have any files left in the temporary directory structure
             List<Path> fileList = new ArrayList<>();
             boolean containsPendingFiles = containsFiles(fs, pendingJobAttemptsPath, fileList);
-
+            
             if (containsPendingFiles && !shouldFindEquivalentFilename) {
                 throw new FileExistsException("Found files still left in the temporary job attempts path: " + fileList);
             }
             if (containsPendingFiles) {
-                verifyEachFile(fs, fileList);
+                verifyRemainingTemporaryFiles(fs, fileList);
             }
         }
         super.cleanupJob(context);
     }
 
-    private void verifyEachFile(FileSystem fs, List<Path> pendingFileList) throws IOException {
+    /**
+     * Ensure that for each of the pending files in the provided list there is also a successful file with a matching filename.  If not, throw an exception.
+     * @param fs FileSystem to use
+     * @param pendingFileList List of pending files that need to be verified
+     * @throws IOException
+     * @throws FileExistsException a pending file exists and there is no successful file with the same name
+     */
+    private void verifyRemainingTemporaryFiles(FileSystem fs, List<Path> pendingFileList) throws IOException {
         List<Path> allFilesInOutputPath = new ArrayList<>();
         containsFiles(fs, super.getOutputPath(), allFilesInOutputPath);
-
+        
         LOG.trace("Number of files in output path: {} and in pending: {}", allFilesInOutputPath.size(), pendingFileList.size());
+        // Exclude the pending files so that allFilesInOutputPath only contains the successful files
         allFilesInOutputPath.removeAll(pendingFileList);
         LOG.trace("Number of non-pending files: {}", allFilesInOutputPath.size());
 
-        Collection<String> fileNamesOnly = allFilesInOutputPath.stream().map(Path::getName).collect(Collectors.toList());
+        // Retrieve just the filenames
+        Collection<String> successFileNamesOnly = allFilesInOutputPath.stream().map(Path::getName).collect(Collectors.toList());
         Collection<String> pendingFileNamesOnly = pendingFileList.stream().map(Path::getName).collect(Collectors.toList());
-        pendingFileNamesOnly.removeAll(fileNamesOnly);
+        // Identify which pending filenames do not have a matching successful filename
+        pendingFileNamesOnly.removeAll(successFileNamesOnly);
         if (0 < pendingFileNamesOnly.size()) {
             throw new FileExistsException("Found files in temporary job attempts path with no successful counterpart: " + pendingFileNamesOnly);
         }
     }
-
+    
     protected boolean containsFiles(final FileSystem fs, final Path path, final List<Path> list) throws FileNotFoundException, IOException {
         RemoteIterator<Path> listing = listFiles(fs, path);
         while (listing.hasNext()) {

@@ -76,7 +76,7 @@ public class SafeFileOutputCommitterTest {
     
     private static boolean patched = false;
     private Configuration configuration;
-
+    
     private static void cleanup() throws IOException {
         Configuration conf = new Configuration();
         FileSystem fs = outDir.getFileSystem(conf);
@@ -133,7 +133,7 @@ public class SafeFileOutputCommitterTest {
     }
     
     private void testRecoveryInternal(int commitVersion, int recoveryVersion) throws Exception {
-        Job job = Job.getInstance(this.configuration);
+        Job job = Job.getInstance();
         FileOutputFormat.setOutputPath(job, outDir);
         Configuration conf = job.getConfiguration();
         conf.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
@@ -149,27 +149,23 @@ public class SafeFileOutputCommitterTest {
         
         // write output
         TextOutputFormat theOutputFormat = new TextOutputFormat();
-
-        // empty file created here:
         RecordWriter theRecordWriter = theOutputFormat.getRecordWriter(tContext);
-
-        // output file goes from empty to containing data:
         writeOutput(theRecordWriter, tContext);
-
-        // Do not call commitTask for attempt #1
-        // committer.commitTask(tContext);
-
-        // Verify task attempt #1 still has a temporary file in the attempt path
-        Path jobTempDir1 = committer.getTaskAttemptPath(tContext);
+        
+        // do commit
+        committer.commitTask(tContext);
+        
+        Path jobTempDir1 = committer.getCommittedTaskPath(tContext);
         File jtd = new File(jobTempDir1.toUri().getPath());
         if (commitVersion == 1 || !patched) {
-            assertTrue("Version 1 attempt written to temporary dir " + jtd, jtd.exists());
+            assertTrue("Version 1 commits to temporary dir " + jtd, jtd.exists());
             validateContent(jtd);
         } else {
-            assertFalse("Version 2 attempt written to output dir " + jtd, jtd.exists());
+            assertFalse("Version 2 commits to output dir " + jtd, jtd.exists());
         }
-
-        // now run and commit a second app attempt
+        
+        // now while running the second app attempt,
+        // recover the task output from first attempt
         Configuration conf2 = job.getConfiguration();
         conf2.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
         conf2.setInt(MRJobConfig.APPLICATION_ATTEMPT_ID, 2);
@@ -178,21 +174,10 @@ public class SafeFileOutputCommitterTest {
         TaskAttemptContext tContext2 = new TaskAttemptContextImpl(conf2, taskID);
         FileOutputCommitter committer2 = new SafeFileOutputCommitter(outDir, tContext2);
         committer2.setupJob(tContext2);
-
-        // setup
-        committer.setupTask(tContext2);
-        // write output
-        TextOutputFormat theOutputFormat2 = new TextOutputFormat();
-
-        RecordWriter theRecordWriter2 = theOutputFormat2.getRecordWriter(tContext2);
-        writeOutput(theRecordWriter2, tContext2);
-
-        // Attempt #2 moves file out from its attempt directory in _temporary and into the commit path
-        committer2.commitTask(tContext2);
-
         Path jobTempDir2 = committer2.getCommittedTaskPath(tContext2);
         File jtd2 = new File(jobTempDir2.toUri().getPath());
-
+        
+        committer2.recoverTask(tContext2);
         if (recoveryVersion == 1 || !patched) {
             assertTrue("Version 1 recovers to " + jtd2, jtd2.exists());
             validateContent(jtd2);
@@ -208,14 +193,109 @@ public class SafeFileOutputCommitterTest {
         FileUtil.fullyDelete(new File(outDir.toString()));
     }
     
-    @Test (expected = FileExistsException.class)
-    public void testRecoveryV1() throws Exception {
-        testRecoveryInternal(1, 1);
+    private void failFirstAttemptPassSecond(int commitVersion, int recoveryVersion) throws Exception {
+        Job job = Job.getInstance(this.configuration);
+        FileOutputFormat.setOutputPath(job, outDir);
+        Configuration conf = job.getConfiguration();
+        conf.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
+        conf.setInt(MRJobConfig.APPLICATION_ATTEMPT_ID, 1);
+        conf.setInt(FILEOUTPUTCOMMITTER_ALGORITHM_VERSION, commitVersion);
+        JobContext jContext = new JobContextImpl(conf, taskID.getJobID());
+        TaskAttemptContext tContext1 = new TaskAttemptContextImpl(conf, taskID);
+        FileOutputCommitter committer = new SafeFileOutputCommitter(outDir, tContext1);
+        
+        // setup
+        committer.setupJob(jContext);
+        committer.setupTask(tContext1);
+        
+        // write output
+        TextOutputFormat theOutputFormat = new TextOutputFormat();
+        
+        // empty file created here:
+        RecordWriter theRecordWriter = theOutputFormat.getRecordWriter(tContext1);
+        
+        // output file goes from empty to containing data:
+        writeOutput(theRecordWriter, tContext1);
+        
+        // Do not call commitTask for attempt #1
+        // committer.commitTask(tContext);
+        
+        // Verify task attempt #1 still has a temporary file in the attempt path
+        Path jobTempDir1 = committer.getTaskAttemptPath(tContext1);
+        verifyNonEmptyFileInTemporaryDir(jobTempDir1.toUri().getPath());
+        
+        // now run and commit a second app attempt
+        Configuration conf2 = job.getConfiguration();
+        conf2.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
+        conf2.setInt(MRJobConfig.APPLICATION_ATTEMPT_ID, 2);
+        conf2.setInt(FILEOUTPUTCOMMITTER_ALGORITHM_VERSION, recoveryVersion);
+        TaskAttemptContext tContext2 = new TaskAttemptContextImpl(conf2, taskID);
+        
+        // setup
+        committer.setupTask(tContext2);
+        // write output
+        TextOutputFormat theOutputFormat2 = new TextOutputFormat();
+        
+        RecordWriter theRecordWriter2 = theOutputFormat2.getRecordWriter(tContext2);
+        writeOutput(theRecordWriter2, tContext2);
+        
+        // Attempt #2 moves file out from its attempt directory in _temporary and into the commit path
+        committer.commitTask(tContext2);
+        
+        // Just prior to commitJob, when the SafeFileOutputCommitter will look for files left behind, verify that the
+        // attempt #1 file still exists in the temoprary directory
+        if (configuration.getBoolean(SafeFileOutputCommitter.ALLOW_EQUIVALENT_FILENAME, false)) {
+            verifyNonEmptyFileInTemporaryDir(jobTempDir1.toUri().getPath());
+        }
+        
+        committer.commitJob(jContext);
+        
+        validateContent(outDir);
+        FileUtil.fullyDelete(new File(outDir.toString()));
     }
-
+    
+    private void verifyNonEmptyFileInTemporaryDir(String attempt1Path) {
+        File attemptOutputFile = new File(attempt1Path + "/" + partFile);
+        assertTrue("Expected file to exist for attempt. " + attemptOutputFile, attemptOutputFile.exists());
+        assertTrue("Expected file to be in temporary dir. " + attemptOutputFile, attempt1Path.contains("_temporary"));
+        assertTrue("Expected file to be non-empty. " + attemptOutputFile, attemptOutputFile.length() > 0);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV1BackwardsCompatible() throws Exception {
+        failFirstAttemptPassSecond(1, 1);
+    }
+    
     @Test
-    public void testRecoveryV1New() throws Exception {
+    public void testFirstAttemptFailsV1Permissive() throws Exception {
         configuration.setBoolean(SafeFileOutputCommitter.ALLOW_EQUIVALENT_FILENAME, true);
+        failFirstAttemptPassSecond(1, 1);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV2BackwardsCompatible() throws Exception {
+        failFirstAttemptPassSecond(2, 2);
+    }
+    
+    @Test
+    public void testFirstAttemptFailsV2Permissive() throws Exception {
+        configuration.setBoolean(SafeFileOutputCommitter.ALLOW_EQUIVALENT_FILENAME, true);
+        failFirstAttemptPassSecond(2, 2);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV1_V2BackwardsCompatible() throws Exception {
+        failFirstAttemptPassSecond(1, 2);
+    }
+    
+    @Test
+    public void testFirstAttemptFailsV1_V2Permissive() throws Exception {
+        configuration.setBoolean(SafeFileOutputCommitter.ALLOW_EQUIVALENT_FILENAME, true);
+        failFirstAttemptPassSecond(1, 2);
+    }
+    
+    @Test
+    public void testRecoveryV1() throws Exception {
         testRecoveryInternal(1, 1);
     }
     
