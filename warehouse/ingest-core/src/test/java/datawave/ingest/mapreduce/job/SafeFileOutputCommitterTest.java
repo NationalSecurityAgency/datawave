@@ -244,7 +244,7 @@ public class SafeFileOutputCommitterTest {
         
         // Just prior to commitJob, when the SafeFileOutputCommitter will look for files left behind, verify that the
         // attempt #1 file still exists in the temoprary directory
-        if (configuration.getBoolean(SafeFileOutputCommitter.ALLOW_EQUIVALENT_FILENAME, false)) {
+        if (configuration.getBoolean(SafeFileOutputCommitter.LENIENT_MODE, false)) {
             verifyNonEmptyFileInTemporaryDir(jobTempDir1.toUri().getPath());
         }
         
@@ -268,7 +268,7 @@ public class SafeFileOutputCommitterTest {
     
     @Test
     public void testFirstAttemptFailsV1Permissive() throws Exception {
-        configuration.setBoolean(SafeFileOutputCommitter.ALLOW_EQUIVALENT_FILENAME, true);
+        configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
         failFirstAttemptPassSecond(1, 1);
     }
     
@@ -279,7 +279,7 @@ public class SafeFileOutputCommitterTest {
     
     @Test
     public void testFirstAttemptFailsV2Permissive() throws Exception {
-        configuration.setBoolean(SafeFileOutputCommitter.ALLOW_EQUIVALENT_FILENAME, true);
+        configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
         failFirstAttemptPassSecond(2, 2);
     }
     
@@ -290,7 +290,7 @@ public class SafeFileOutputCommitterTest {
     
     @Test
     public void testFirstAttemptFailsV1_V2Permissive() throws Exception {
-        configuration.setBoolean(SafeFileOutputCommitter.ALLOW_EQUIVALENT_FILENAME, true);
+        configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
         failFirstAttemptPassSecond(1, 2);
     }
     

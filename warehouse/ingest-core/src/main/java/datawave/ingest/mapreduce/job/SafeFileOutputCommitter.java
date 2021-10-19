@@ -4,9 +4,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileExistsException;
@@ -28,22 +28,28 @@ import org.slf4j.LoggerFactory;
 public class SafeFileOutputCommitter extends FileOutputCommitter {
     private static final Logger LOG = LoggerFactory.getLogger(SafeFileOutputCommitter.class);
     
-    public static final String ALLOW_EQUIVALENT_FILENAME = "mapreduce.safefileoutputcommitter.allow.equivalent.filename";
+    /**
+     * When LENIENT_MODE is set to false, the legacy behavior is maintained: if any files exist in the pending directory when cleanupJob is called, an exception
+     * is thrown. When LENIENT_MODE is set to true, an exception is only thrown if one or more of the filenames that appear in the pending directory do not also
+     * appear in the success directory. This mode should only be used if the filenames are consistent across multiple attempts of the same task and there is a
+     * guarantee that a successful file is equivalent to, or better than, a pending file.
+     */
+    public static final String LENIENT_MODE = "mapreduce.safefileoutputcommitter.lenient.mode";
     
-    private static final boolean DEFAULT_ALLOW_EQUIVALENT_FILENAME = false;
-    private final boolean shouldFindEquivalentFilename;
+    private static final boolean DEFAULT_LENIENT_MODE = false;
+    private final boolean lenientMode;
     
     // a boolean denoting whether we should check for an empty directory before cleaning it up
     private volatile boolean checkForEmptyDir = true;
     
     public SafeFileOutputCommitter(Path outputPath, JobContext context) throws IOException {
         super(outputPath, context);
-        this.shouldFindEquivalentFilename = context.getConfiguration().getBoolean(ALLOW_EQUIVALENT_FILENAME, DEFAULT_ALLOW_EQUIVALENT_FILENAME);
+        this.lenientMode = context.getConfiguration().getBoolean(LENIENT_MODE, DEFAULT_LENIENT_MODE);
     }
     
     public SafeFileOutputCommitter(Path outputPath, TaskAttemptContext context) throws IOException {
         super(outputPath, context);
-        this.shouldFindEquivalentFilename = context.getConfiguration().getBoolean(ALLOW_EQUIVALENT_FILENAME, DEFAULT_ALLOW_EQUIVALENT_FILENAME);
+        this.lenientMode = context.getConfiguration().getBoolean(LENIENT_MODE, DEFAULT_LENIENT_MODE);
     }
     
     @Override
@@ -75,24 +81,27 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
             List<Path> fileList = new ArrayList<>();
             boolean containsPendingFiles = containsFiles(fs, pendingJobAttemptsPath, fileList);
             
-            if (containsPendingFiles && !shouldFindEquivalentFilename) {
+            if (containsPendingFiles && lenientMode) {
+                verifyRemainingTemporaryFilesByName(fs, fileList);
+            } else if (containsPendingFiles) {
                 throw new FileExistsException("Found files still left in the temporary job attempts path: " + fileList);
-            }
-            if (containsPendingFiles) {
-                verifyRemainingTemporaryFiles(fs, fileList);
             }
         }
         super.cleanupJob(context);
     }
-
+    
     /**
-     * Ensure that for each of the pending files in the provided list there is also a successful file with a matching filename.  If not, throw an exception.
-     * @param fs FileSystem to use
-     * @param pendingFileList List of pending files that need to be verified
+     * Ensure that for each of the pending files in the provided list there is also a successful file with a matching filename. If not, throw an exception.
+     * 
+     * @param fs
+     *            FileSystem to use
+     * @param pendingFileList
+     *            List of pending files that need to be verified
      * @throws IOException
-     * @throws FileExistsException a pending file exists and there is no successful file with the same name
+     * @throws FileExistsException
+     *             a pending file exists and there is no successful file with the same name
      */
-    private void verifyRemainingTemporaryFiles(FileSystem fs, List<Path> pendingFileList) throws IOException {
+    private void verifyRemainingTemporaryFilesByName(FileSystem fs, List<Path> pendingFileList) throws IOException {
         List<Path> allFilesInOutputPath = new ArrayList<>();
         containsFiles(fs, super.getOutputPath(), allFilesInOutputPath);
         
@@ -100,15 +109,22 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
         // Exclude the pending files so that allFilesInOutputPath only contains the successful files
         allFilesInOutputPath.removeAll(pendingFileList);
         LOG.trace("Number of non-pending files: {}", allFilesInOutputPath.size());
-
+        
         // Retrieve just the filenames
-        Collection<String> successFileNamesOnly = allFilesInOutputPath.stream().map(Path::getName).collect(Collectors.toList());
-        Collection<String> pendingFileNamesOnly = pendingFileList.stream().map(Path::getName).collect(Collectors.toList());
+        Set<String> successFileNamesOnly = getNames(allFilesInOutputPath);
+        Set<String> pendingFileNamesOnly = getNames(pendingFileList);
+        
         // Identify which pending filenames do not have a matching successful filename
         pendingFileNamesOnly.removeAll(successFileNamesOnly);
+        LOG.trace("successFileNames: {}", successFileNamesOnly);
+        
         if (0 < pendingFileNamesOnly.size()) {
             throw new FileExistsException("Found files in temporary job attempts path with no successful counterpart: " + pendingFileNamesOnly);
         }
+    }
+    
+    private Set<String> getNames(List<Path> allFilesInOutputPath) {
+        return allFilesInOutputPath.stream().map(Path::getName).collect(Collectors.toSet());
     }
     
     protected boolean containsFiles(final FileSystem fs, final Path path, final List<Path> list) throws FileNotFoundException, IOException {
