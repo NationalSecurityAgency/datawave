@@ -88,7 +88,6 @@ import datawave.query.jexl.visitors.UniqueExpressionTermsVisitor;
 import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
-import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
@@ -711,6 +710,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         validateQuerySize("initial parse", queryTree, config);
         
         queryTree = timedApplyRules(timers, queryTree, config, metadataHelper, scannerFactory);
+        
+        // Fix any query property markers that have multiple unwrapped sources.
+        queryTree = timedFixQueryPropertyMarkers(timers, queryTree);
         
         queryTree = timedFixNegativeNumbers(timers, queryTree);
         
@@ -1552,6 +1554,21 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         // Reset the original expandAllTerms value.
         config.setExpandAllTerms(expandAllTerms);
+        stopwatch.stop();
+        return script;
+    }
+    
+    protected ASTJexlScript timedFixQueryPropertyMarkers(QueryStopwatch timers, ASTJexlScript script) throws DatawaveQueryException {
+        // Fix query property markers with multiple sources.
+        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - fix query property markers with multiple sources");
+        try {
+            script = QueryPropertyMarkerSourceConsolidator.consolidate(script);
+        } catch (Exception e) {
+            throw new DatawaveQueryException("Failed to fix query property markers with multiple sources", e);
+        }
+        if (log.isDebugEnabled()) {
+            logQuery(script, "Query after fixing query property markers with multiple sources");
+        }
         stopwatch.stop();
         return script;
     }
