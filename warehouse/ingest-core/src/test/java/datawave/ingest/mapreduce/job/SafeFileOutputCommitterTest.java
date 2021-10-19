@@ -243,12 +243,18 @@ public class SafeFileOutputCommitterTest {
         committer.commitTask(tContext2);
         
         // Just prior to commitJob, when the SafeFileOutputCommitter will look for files left behind, verify that the
-        // attempt #1 file still exists in the temoprary directory
+        // attempt #1 file still exists in the temporary directory
         if (configuration.getBoolean(SafeFileOutputCommitter.LENIENT_MODE, false)) {
             verifyNonEmptyFileInTemporaryDir(jobTempDir1.toUri().getPath());
         }
         
         committer.commitJob(jContext);
+        
+        // Just after commitJob, verify that the attempt #1 file does not still exist in the temporary directory
+        if (configuration.getBoolean(SafeFileOutputCommitter.LENIENT_MODE, false)) {
+            File attempt1File = new File(jobTempDir1.toUri().getPath() + "/" + partFile);
+            assertFalse("Attempt 1 file should have been eliminated after jobCommit", attempt1File.exists());
+        }
         
         validateContent(outDir);
         FileUtil.fullyDelete(new File(outDir.toString()));
