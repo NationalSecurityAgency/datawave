@@ -36,12 +36,12 @@ public class PushdownLargeFieldedListsVisitorTest {
     
     @Test
     public void testSimpleExpression() throws Throwable {
-        test("FOO == 'BAR'", "FOO == 'BAR'");
+        testSimple("FOO == 'BAR'", "FOO == 'BAR'");
     }
     
     @Test
     public void testMultipleExpression() throws Throwable {
-        test("FOO == 'BAR' || FOO == 'FOO' || BAR == 'FOO'", "BAR == 'FOO' || FOO == 'BAR' || FOO == 'FOO'");
+        testSimple("FOO == 'BAR' || FOO == 'FOO' || BAR == 'FOO'", "BAR == 'FOO' || FOO == 'BAR' || FOO == 'FOO'");
     }
     
     @Test
@@ -96,6 +96,42 @@ public class PushdownLargeFieldedListsVisitorTest {
     
     @Test
     public void testPushdownFst() throws Throwable {
+        setupFst("FOO == 'BAR' || FOO == 'FOO' ||  FOO == 'FOOBAR'", "((_List_ = true) && ((id = '", "') && (field = 'FOO') && (params = '{\"fstURI\":\"");
+    }
+    
+    private void testSimple(String query, String expected) throws Throwable {
+        testSimple(query, expected, conf); // pass in the default shard query config
+    }
+    
+    private void testSimple(String query, String expected, ShardQueryConfiguration config) throws Throwable {
+        String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(config,
+                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query)), null, null));
+        assertEquals("EXPECTED: " + expected + "\nACTUAL: " + rewritten, expected, rewritten);
+    }
+    
+    private void testSingleId(String query, String left, String right) throws Throwable {
+        String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf,
+                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query)), null, null));
+        String id = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
+        assertEquals(left + id + right, rewritten);
+    }
+    
+    private void testDoubleId(String query, String left1, String right1, String left2) throws Throwable {
+        String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf,
+                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query)), null, null));
+        String id1 = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
+        String id2 = rewritten.substring(rewritten.lastIndexOf("id = '") + 6, rewritten.lastIndexOf("') && (field"));
+        assertEquals(left1 + id1 + right1 + id2 + left2, rewritten);
+    }
+    
+    private void testFst(String query, String left, String right, FileSystem fileSystem, URI hdfsCacheURI) throws Throwable {
+        String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf,
+                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query)), fileSystem, hdfsCacheURI.toString()));
+        String id = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
+        assertEquals(left + id + right + hdfsCacheURI + "/PushdownLargeFileFst.1.fst\"}')))", rewritten);
+    }
+    
+    private void setupFst(String query, String left, String right) throws Throwable {
         conf.setMaxOrExpansionFstThreshold(3);
         
         final URI hdfsCacheURI;
@@ -116,13 +152,8 @@ public class PushdownLargeFieldedListsVisitorTest {
             
             conf.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
             conf.setIvaratorCacheDirConfigs(Collections.singletonList(new IvaratorCacheDirConfig(hdfsCacheURI.toString())));
+            testFst(query, left, right, fileSystem, hdfsCacheURI);
             
-            String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf,
-                            TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery("FOO == 'BAR' || FOO == 'FOO' ||  FOO == 'FOOBAR'")),
-                            fileSystem, hdfsCacheURI.toString()));
-            String id = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
-            assertEquals("((_List_ = true) && ((id = '" + id + "') && (field = 'FOO') && (params = '{\"fstURI\":\"" + hdfsCacheURI
-                            + "/PushdownLargeFileFst.1.fst\"}')))", rewritten);
         } catch (MalformedURLException e) {
             throw new IllegalStateException("Unable to load hadoop configuration", e);
         } catch (IOException e) {
@@ -134,30 +165,5 @@ public class PushdownLargeFieldedListsVisitorTest {
                 FileUtils.deleteDirectory(tmpDir);
             }
         }
-    }
-    
-    private void test(String query, String expected) throws Throwable {
-        test(query, expected, conf); // pass in the default shard query config
-    }
-    
-    private void test(String query, String expected, ShardQueryConfiguration config) throws Throwable {
-        String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(config,
-                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query)), null, null));
-        assertEquals("EXPECTED: " + expected + "\nACTUAL: " + rewritten, expected, rewritten);
-    }
-    
-    private void testSingleId(String query, String left, String right) throws Throwable {
-        String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf,
-                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query)), null, null));
-        String id = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
-        assertEquals(left + id + right, rewritten);
-    }
-    
-    private void testDoubleId(String query, String left1, String right1, String left2) throws Throwable {
-        String rewritten = JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(conf,
-                        TreeFlatteningRebuildingVisitor.flatten(JexlASTHelper.parseJexlQuery(query)), null, null));
-        String id1 = rewritten.substring(rewritten.indexOf("id = '") + 6, rewritten.indexOf("') && (field"));
-        String id2 = rewritten.substring(rewritten.lastIndexOf("id = '") + 6, rewritten.lastIndexOf("') && (field"));
-        assertEquals(left1 + id1 + right1 + id2 + left2, rewritten);
     }
 }
