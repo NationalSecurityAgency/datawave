@@ -1769,7 +1769,7 @@ public class EvaluationPhaseFilterFunctions {
      * <li>{@code compareMode} ALL: Return true if {@code field1} and {@code field2} do not have any normalized value in common.</li>
      * </ul>
      * </li>
-     * <li>Less Than comparison: use operator <
+     * <li>Less Than comparison: use operator &lt;
      * <ul>
      * <li>{@code compareMode} ANY: Return true if there is any normalized value in {@code field1} that is considered less than a normalized value in
      * {@code field2}. Return false otherwise.</li>
@@ -1777,7 +1777,7 @@ public class EvaluationPhaseFilterFunctions {
      * false otherwise.</li>
      * </ul>
      * </li>
-     * <li>Less Than Equals comparison: use operator <=
+     * <li>Less Than Equals comparison: use operator &lt;=
      * <ul>
      * <li>{@code compareMode} ANY: Return true if there is any normalized value in {@code field1} that is considered less than or equal to a normalized value
      * in {@code field2}. Return false otherwise.</li>
@@ -1785,7 +1785,7 @@ public class EvaluationPhaseFilterFunctions {
      * {@code field2}. Return false otherwise.</li>
      * </ul>
      * </li>
-     * <li>Greater Than comparison: use operator >
+     * <li>Greater Than comparison: use operator &gt;
      * <ul>
      * <li>{@code compareMode} ANY: Return true if there is any normalized value in {@code field1} that is considered greater than a normalized value in
      * {@code field2}. Return false otherwise.</li>
@@ -1793,7 +1793,7 @@ public class EvaluationPhaseFilterFunctions {
      * Return false otherwise.</li>
      * </ul>
      * </li>
-     * <li>Greater Than Equals comparison: use operator >=
+     * <li>Greater Than Equals comparison: use operator &gt;=
      * <ul>
      * <li>{@code compareMode} ANY: Return true if there is any normalized value in {@code field1} that is considered greater than or equal to a normalized
      * value in {@code field2}. Return false otherwise.</li>
