@@ -5,6 +5,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
 import org.apache.accumulo.core.data.Key;
 import org.junit.Assert;
 import org.junit.Test;
@@ -676,5 +677,89 @@ public class EvaluationPhaseFilterFunctionsTest {
                         makeValueTuple("STOOGE.1,MOE,moe"))
         ));
         // @formatter:on
+    }
+    
+    @Test
+    public void testAfterDateIterator() {
+        FunctionalSet<ValueTuple> values = new FunctionalSet<>();
+        values.add(new ValueTuple("DATE_FIELD", "2021-10-15", "2021-10-15", null));
+        
+        FunctionalSet<ValueTuple> result = EvaluationPhaseFilterFunctions.afterDate(values, "2021-10-14");
+        
+        Assert.assertTrue(result != null);
+        Assert.assertTrue(result.size() == 1);
+        for (ValueTuple valueTuple : result) {
+            Assert.assertEquals("2021-10-15", valueTuple.getValue());
+        }
+    }
+    
+    @Test
+    public void testAfterDateFormatterIterator() {
+        FunctionalSet<ValueTuple> values = new FunctionalSet<>();
+        values.add(new ValueTuple("DATE_FIELD", "2021-10-15", "2021-10-15", null));
+        
+        FunctionalSet<ValueTuple> result = EvaluationPhaseFilterFunctions.afterDate(values, "2021-10-14", "yyyy-MM-dd");
+        
+        Assert.assertTrue(result != null);
+        Assert.assertTrue(result.size() == 1);
+        for (ValueTuple valueTuple : result) {
+            Assert.assertEquals("2021-10-15", valueTuple.getValue());
+        }
+    }
+    
+    @Test
+    public void testAfterDateFormatter2Iterator() {
+        FunctionalSet<ValueTuple> values = new FunctionalSet<>();
+        values.add(new ValueTuple("DATE_FIELD", "2021-10-15", "2021-10-15", null));
+        
+        FunctionalSet<ValueTuple> result = EvaluationPhaseFilterFunctions.afterDate(values, "yyyy-MM-dd", "2021-10-14", "yyyy-MM-dd");
+        
+        Assert.assertTrue(result != null);
+        Assert.assertTrue(result.size() == 1);
+        for (ValueTuple valueTuple : result) {
+            Assert.assertEquals("2021-10-15", valueTuple.getValue());
+        }
+    }
+    
+    @Test
+    public void testBeforeDateIterator() {
+        FunctionalSet<ValueTuple> values = new FunctionalSet<>();
+        values.add(new ValueTuple("DATE_FIELD", "2021-10-15", "2021-10-15", null));
+        
+        FunctionalSet<ValueTuple> result = EvaluationPhaseFilterFunctions.beforeDate(values, "2021-10-16");
+        
+        Assert.assertTrue(result != null);
+        Assert.assertTrue(result.size() == 1);
+        for (ValueTuple valueTuple : result) {
+            Assert.assertEquals("2021-10-15", valueTuple.getValue());
+        }
+    }
+    
+    @Test
+    public void testBeforeDateFormatterIterator() {
+        FunctionalSet<ValueTuple> values = new FunctionalSet<>();
+        values.add(new ValueTuple("DATE_FIELD", "2021-10-15", "2021-10-15", null));
+        
+        FunctionalSet<ValueTuple> result = EvaluationPhaseFilterFunctions.beforeDate(values, "2021-10-16", "yyyy-MM-dd");
+        
+        Assert.assertTrue(result != null);
+        Assert.assertTrue(result.size() == 1);
+        for (ValueTuple valueTuple : result) {
+            Assert.assertEquals("2021-10-15", valueTuple.getValue());
+        }
+    }
+    
+    @Test
+    public void testBeforeDateFormatter2Iterator() {
+        FunctionalSet<ValueTuple> values = new FunctionalSet<>();
+        values.add(new ValueTuple("DATE_FIELD", "2021-10-15", "2021-10-15", null));
+        
+        FunctionalSet<ValueTuple> result = EvaluationPhaseFilterFunctions.beforeDate(values, "yyyy-MM-dd", "2021-10-16", "yyyy-MM-dd");
+        
+        Assert.assertTrue(result != null);
+        Assert.assertTrue(result.size() == 1);
+        for (ValueTuple valueTuple : result) {
+            Assert.assertEquals("2021-10-15", valueTuple.getValue());
+        }
     }
 }
