@@ -47,6 +47,7 @@ public class ContentFunctionsTest {
     private Map<String,TermFrequencyList> termOffSetMap;
     
     private String phraseFunction = ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
+    private String scoredPhraseFunction = ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
     private String eventId = "shard\0type\0uid";
     
     @BeforeClass
@@ -1134,7 +1135,7 @@ public class ContentFunctionsTest {
     
     @Test
     public void testEvaluationScorePass() {
-        String query = buildFunction(phraseFunction, "'CONTENT'", "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
+        String query = buildFunction(scoredPhraseFunction, "'CONTENT'", "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
         Expression expr = engine.createExpression(query);
         
         List<TermWeightPosition> list1, list2;
@@ -1152,7 +1153,7 @@ public class ContentFunctionsTest {
     
     @Test
     public void testEvaluationScoreNoZonePass() {
-        String query = buildFunction(phraseFunction, "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
+        String query = buildFunction(scoredPhraseFunction, "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
         Expression expr = engine.createExpression(query);
         
         List<TermWeightPosition> list1, list2;
@@ -1170,7 +1171,7 @@ public class ContentFunctionsTest {
     
     @Test
     public void testEvaluationScoreFail() {
-        String query = buildFunction(phraseFunction, "'CONTENT'", "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
+        String query = buildFunction(scoredPhraseFunction, "'CONTENT'", "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
         Expression expr = engine.createExpression(query);
         
         List<TermWeightPosition> list1, list2;
@@ -1356,7 +1357,7 @@ public class ContentFunctionsTest {
     
     @Test
     public void testJexlFunctionArgumentDescriptor10() throws ParseException {
-        String query = "content:" + phraseFunction + "(-1.1, termOffsetMap, 'hello', 'world')";
+        String query = "content:" + scoredPhraseFunction + "(-1.1, termOffsetMap, 'hello', 'world')";
         String expected = "((META == 'hello' and META == 'world') or (BODY == 'hello' and BODY == 'world'))";
         
         testJexlFunctionArgumentDescriptors(query, expected);
