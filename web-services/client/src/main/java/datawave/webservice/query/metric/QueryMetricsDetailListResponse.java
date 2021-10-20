@@ -83,7 +83,7 @@ public class QueryMetricsDetailListResponse extends QueryMetricListResponse {
             builder.append("<td>").append(metric.getQueryType()).append("</td>");
             builder.append("<td>").append(metric.getQueryLogic()).append("</td>");
             builder.append("<td style=\"word-wrap: break-word;\">").append(StringEscapeUtils.escapeHtml(metric.getQuery())).append("</td>");
-            builder.append("<td style=\"word-wrap: break-word;\">").append(StringEscapeUtils.escapeHtml(metric.getPlan())).append("</td>");
+            builder.append("<td style=\"word-break: break-word;\">").append(StringEscapeUtils.escapeHtml(metric.getPlan())).append("</td>");
             builder.append("<td>").append(metric.getQueryName()).append("</td>");
             
             String beginDate = metric.getBeginDate() == null ? "" : sdf.format(metric.getBeginDate());
