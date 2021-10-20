@@ -1,10 +1,14 @@
 package datawave.query.planner.rules;
 
+import com.google.common.collect.Multimap;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.postprocessing.tf.Function;
 import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -16,13 +20,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This class is intended to simplify when multiple .* or .*? are consecutively placed in a regex. The reason we need to simplify this is because there is an
- * exponential increase in the time to match relative to the number of consecutive .* or .*? and to the size of the value. This has been witnessed to take over
- * many days to complete with 8 consecutive .*? and a value length on the order of 1K+.
+ * This class is intended to simplify the (\s|.) with just a . since we have added the DOTALL flag to
  */
-public class RegexSimplifierTransformRule implements NodeTransformRule {
-    private static final Logger log = Logger.getLogger(RegexSimplifierTransformRule.class);
-    private Pattern pattern = Pattern.compile("(\\.\\*\\??){2,}");
+public class RegexDotallTransformRule implements NodeTransformRule {
+    private static final Logger log = Logger.getLogger(RegexDotallTransformRule.class);
+    private Pattern pattern = Pattern.compile("\\((\\\\s\\|\\.|\\.\\|\\\\s)\\)");
     
     @Override
     public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
@@ -47,7 +49,7 @@ public class RegexSimplifierTransformRule implements NodeTransformRule {
         Matcher matcher = pattern.matcher(regex);
         StringBuffer sb = new StringBuffer();
         while (matcher.find()) {
-            matcher.appendReplacement(sb, ".*?");
+            matcher.appendReplacement(sb, ".");
             changed = true;
         }
         if (changed) {
