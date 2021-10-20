@@ -5,6 +5,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
 import org.apache.accumulo.core.data.Key;
 import org.junit.Assert;
 import org.junit.Test;
@@ -113,4 +114,652 @@ public class EvaluationPhaseFilterFunctionsTest {
         }
     }
     
+    @Test
+    public void testCompareLT() {
+        // @formatter:off
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(null, "<", "ANY", Lists.newArrayList()));
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(Lists.newArrayList(), "<", "ANY",null));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                "<", "ANY",
+                Lists.newArrayList()
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(),
+                "<", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                "<", "ALL",
+                Lists.newArrayList()
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(),
+                "<", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                "<", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                )
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                ),
+                "<", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe")),
+                "<", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                )
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                ),
+                "<", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"))
+        ));
+        // @formatter:on
+    }
+    
+    @Test
+    public void testCompareLE() {
+        // @formatter:off
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(null, "<=", "ANY", Lists.newArrayList()));
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(Lists.newArrayList(), "<=", "ANY",null));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                "<=", "ANY",
+                Lists.newArrayList()
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(),
+                "<=", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                "<=", "ALL",
+                Lists.newArrayList()
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(),
+                "<=", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                "<=", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                )
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                ),
+                "<=", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe")),
+                "<=", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                )
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                ),
+                "<=", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"))
+        ));
+        // @formatter:on
+    }
+    
+    @Test
+    public void testCompareGT() {
+        // @formatter:off
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(null, ">", "ANY", Lists.newArrayList()));
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(Lists.newArrayList(), ">", "ANY",null));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                ">", "ANY",
+                Lists.newArrayList()
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(),
+                ">", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                ">", "ALL",
+                Lists.newArrayList()
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(),
+                ">", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                ">", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                )
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                ),
+                ">", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe")),
+                ">", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                )
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                ),
+                ">", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"))
+        ));
+        // @formatter:on
+    }
+    
+    @Test
+    public void testCompareGE() {
+        // @formatter:off
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(null, ">=", "ANY", Lists.newArrayList()));
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(Lists.newArrayList(), ">=", "ANY",null));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                ">=", "ANY",
+                Lists.newArrayList()
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(),
+                ">=", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                ">=", "ALL",
+                Lists.newArrayList()
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(),
+                ">=", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                ">=", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                )
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                ),
+                ">=", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe")),
+                ">=", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                )
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                ),
+                ">=", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"))
+        ));
+        // @formatter:on
+    }
+    
+    @Test
+    public void testCompareEQ() {
+        testCompareEQHelper("=");
+    }
+    
+    @Test
+    public void testCompareEQ2() {
+        testCompareEQHelper("==");
+    }
+    
+    private void testCompareEQHelper(String operator) {
+        // @formatter:off
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(null, operator, "ANY", Lists.newArrayList()));
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(Lists.newArrayList(), operator, "ANY",null));
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(null, operator, "ANY",null));
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(null, operator, "ALL", Lists.newArrayList()));
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(Lists.newArrayList(), operator, "ALL",null));
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(null, operator, "ALL", null));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                operator, "ANY",
+                Lists.newArrayList()
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(),
+                operator, "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                operator, "ALL",
+                Lists.newArrayList()
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(),
+                operator, "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                operator, "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                )
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                ),
+                operator, "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe")),
+                operator, "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                )
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                ),
+                operator, "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"))
+        ));
+        // @formatter:on
+    }
+    
+    @Test
+    public void testCompareNE() {
+        // @formatter:off
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(null, "!=", "ANY", Lists.newArrayList()));
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(Lists.newArrayList(), "!=", "ANY",null));
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(null, "!=", "ANY",null));
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(null, "!=", "ALL", Lists.newArrayList()));
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(Lists.newArrayList(), "!=", "ALL",null));
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(null, "!=", "ALL", null));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                "!=", "ANY",
+                Lists.newArrayList()
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(),
+                "!=", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                "!=", "ALL",
+                Lists.newArrayList()
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(),
+                "!=", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")),
+                "!=", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                )
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                ),
+                "!=", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe"))
+        ));
+
+        Assert.assertFalse(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe")),
+                "!=", "ANY",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                )
+        ));
+
+        Assert.assertTrue(EvaluationPhaseFilterFunctions.compare(
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"),
+                        makeValueTuple("STOOGE.2,LARRY,larry"),
+                        makeValueTuple("STOOGE.3,JOE,joe")
+                ),
+                "!=", "ALL",
+                Lists.newArrayList(
+                        makeValueTuple("STOOGE.1,MOE,moe"))
+        ));
+        // @formatter:on
+    }
+    
+    @Test
+    public void testAfterDateIterator() {
+        FunctionalSet<ValueTuple> values = new FunctionalSet<>();
+        values.add(new ValueTuple("DATE_FIELD", "2021-10-15", "2021-10-15", null));
+        
+        FunctionalSet<ValueTuple> result = EvaluationPhaseFilterFunctions.afterDate(values, "2021-10-14");
+        
+        Assert.assertTrue(result != null);
+        Assert.assertTrue(result.size() == 1);
+        for (ValueTuple valueTuple : result) {
+            Assert.assertEquals("2021-10-15", valueTuple.getValue());
+        }
+    }
+    
+    @Test
+    public void testAfterDateFormatterIterator() {
+        FunctionalSet<ValueTuple> values = new FunctionalSet<>();
+        values.add(new ValueTuple("DATE_FIELD", "2021-10-15", "2021-10-15", null));
+        
+        FunctionalSet<ValueTuple> result = EvaluationPhaseFilterFunctions.afterDate(values, "2021-10-14", "yyyy-MM-dd");
+        
+        Assert.assertTrue(result != null);
+        Assert.assertTrue(result.size() == 1);
+        for (ValueTuple valueTuple : result) {
+            Assert.assertEquals("2021-10-15", valueTuple.getValue());
+        }
+    }
+    
+    @Test
+    public void testAfterDateFormatter2Iterator() {
+        FunctionalSet<ValueTuple> values = new FunctionalSet<>();
+        values.add(new ValueTuple("DATE_FIELD", "2021-10-15", "2021-10-15", null));
+        
+        FunctionalSet<ValueTuple> result = EvaluationPhaseFilterFunctions.afterDate(values, "yyyy-MM-dd", "2021-10-14", "yyyy-MM-dd");
+        
+        Assert.assertTrue(result != null);
+        Assert.assertTrue(result.size() == 1);
+        for (ValueTuple valueTuple : result) {
+            Assert.assertEquals("2021-10-15", valueTuple.getValue());
+        }
+    }
+    
+    @Test
+    public void testBeforeDateIterator() {
+        FunctionalSet<ValueTuple> values = new FunctionalSet<>();
+        values.add(new ValueTuple("DATE_FIELD", "2021-10-15", "2021-10-15", null));
+        
+        FunctionalSet<ValueTuple> result = EvaluationPhaseFilterFunctions.beforeDate(values, "2021-10-16");
+        
+        Assert.assertTrue(result != null);
+        Assert.assertTrue(result.size() == 1);
+        for (ValueTuple valueTuple : result) {
+            Assert.assertEquals("2021-10-15", valueTuple.getValue());
+        }
+    }
+    
+    @Test
+    public void testBeforeDateFormatterIterator() {
+        FunctionalSet<ValueTuple> values = new FunctionalSet<>();
+        values.add(new ValueTuple("DATE_FIELD", "2021-10-15", "2021-10-15", null));
+        
+        FunctionalSet<ValueTuple> result = EvaluationPhaseFilterFunctions.beforeDate(values, "2021-10-16", "yyyy-MM-dd");
+        
+        Assert.assertTrue(result != null);
+        Assert.assertTrue(result.size() == 1);
+        for (ValueTuple valueTuple : result) {
+            Assert.assertEquals("2021-10-15", valueTuple.getValue());
+        }
+    }
+    
+    @Test
+    public void testBeforeDateFormatter2Iterator() {
+        FunctionalSet<ValueTuple> values = new FunctionalSet<>();
+        values.add(new ValueTuple("DATE_FIELD", "2021-10-15", "2021-10-15", null));
+        
+        FunctionalSet<ValueTuple> result = EvaluationPhaseFilterFunctions.beforeDate(values, "yyyy-MM-dd", "2021-10-16", "yyyy-MM-dd");
+        
+        Assert.assertTrue(result != null);
+        Assert.assertTrue(result.size() == 1);
+        for (ValueTuple valueTuple : result) {
+            Assert.assertEquals("2021-10-15", valueTuple.getValue());
+        }
+    }
 }
