@@ -30,7 +30,6 @@ import java.util.Set;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class BaseQueryMetric implements HasMarkings, Serializable {
-    
     @XmlAccessorType(XmlAccessType.NONE)
     public static class PageMetric implements Serializable, Message<PageMetric> {
         
@@ -573,6 +572,8 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     @XmlElement
     protected long yieldCount = 0L;
     @XmlElement
+    protected String version = null;
+    @XmlElement
     protected long docRanges = 0;
     @XmlElement
     protected long fiRanges = 0;
@@ -700,6 +701,14 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     public void setHost(String host) {
         this.host = host;
+    }
+    
+    public String getVersion() {
+        return version;
+    }
+    
+    public void setVersion(String version) {
+        this.version = version;
     }
     
     public void addPageTime(long pagesize, long timeToReturn, long requestedTime, long returnedTime) {

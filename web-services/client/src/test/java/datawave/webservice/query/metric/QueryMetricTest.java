@@ -1,15 +1,5 @@
 package datawave.webservice.query.metric;
 
-import static org.junit.Assert.assertEquals;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import datawave.marking.MarkingFunctions;
@@ -17,7 +7,6 @@ import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.metric.BaseQueryMetric.Lifecycle;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
@@ -27,6 +16,12 @@ import org.junit.Test;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.util.*;
+
+import static org.junit.Assert.assertEquals;
 
 public class QueryMetricTest {
     
@@ -39,6 +34,7 @@ public class QueryMetricTest {
     
     @BeforeClass
     public static void setup() {
+        
         queryMetric = new QueryMetric();
         markings = new HashMap<String,String>();
         markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, "PUBLIC");
@@ -99,6 +95,18 @@ public class QueryMetricTest {
         queryMetric.setSetupTime(0);
         queryMetric.setUser("user");
         queryMetric.setUserDN("userDN");
+        try {
+            final Properties props = new Properties();
+            String inputPath = QueryMetricTest.class.getClassLoader().getResource("version.properties").getPath();
+            props.load(new FileInputStream(inputPath));
+            String propStr = props.getProperty("currentVersion");
+            queryMetric.setVersion(propStr);
+            
+            System.out.println("*** Version: ***");
+            System.out.println(queryMetric.getVersion());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         
         assertEquals(d, queryMetric.getBeginDate());
         assertEquals("PUBLIC", queryMetric.getColumnVisibility());
@@ -128,6 +136,7 @@ public class QueryMetricTest {
         assertEquals(0, queryMetric.getSetupTime());
         assertEquals("user", queryMetric.getUser());
         assertEquals("userDN", queryMetric.getUserDN());
+        assertEquals("3.5.0-SNAPSHOT", queryMetric.getVersion());
     }
     
     @Test

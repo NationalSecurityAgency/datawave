@@ -10,6 +10,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.common.audit.AuditBean;
 import datawave.webservice.common.audit.AuditParameterBuilder;
@@ -153,6 +154,7 @@ public class QueryExecutorBeanTest {
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
+        System.setProperty(DnUtils.SUBJECT_DN_PATTERN_PROPERTY, "(?:^|,)\\\\s*OU\\\\s*=\\\\s*Subject DN OU\\\\s*(?:,|$)");
         QueryTraceCache traceCache = new QueryTraceCache();
         Whitebox.invokeMethod(traceCache, "init");
         
@@ -457,7 +459,8 @@ public class QueryExecutorBeanTest {
                                     .append(this.getNextCount(), other.getNextCount()).append(this.getSeekCount(), other.getSeekCount())
                                     .append(this.getYieldCount(), other.getYieldCount()).append(this.getDocRanges(), other.getDocRanges())
                                     .append(this.getFiRanges(), other.getFiRanges()).append(this.getPlan(), other.getPlan())
-                                    .append(this.getLoginTime(), other.getLoginTime()).append(this.getPredictions(), other.getPredictions()).isEquals();
+                                    .append(this.getVersion(), other.getVersion()).append(this.getLoginTime(), other.getLoginTime())
+                                    .append(this.getPredictions(), other.getPredictions()).isEquals();
                 } else {
                     return false;
                 }
@@ -477,7 +480,8 @@ public class QueryExecutorBeanTest {
         
         Object cachedRunningQuery = cache.get(q.getId().toString());
         Assert.assertNull(cachedRunningQuery);
-        
+        // System.out.println("*** testMetric ***");
+        // System.out.println(testMetric.toString());
         Assert.assertEquals(predictions.toString(), response.getResult());
     }
     
