@@ -1,5 +1,6 @@
 package datawave.query;
 
+import datawave.query.jexl.functions.ContentFunctions;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -62,11 +63,12 @@ public class Constants {
     public static final Text TERM_FREQUENCY_COLUMN_FAMILY = new Text("tf");
     
     // content functions
-    public static final String TERM_OFFSET_MAP_JEXL_VARIABLE_NAME = "termOffsetMap";
-    public static final String CONTENT_FUNCTION_NAMESPACE = "content";
-    public static final String CONTENT_WITHIN_FUNCTION_NAME = "within";
-    public static final String CONTENT_ADJACENT_FUNCTION_NAME = "adjacent";
-    public static final String CONTENT_PHRASE_FUNCTION_NAME = "phrase";
+    public static final String TERM_OFFSET_MAP_JEXL_VARIABLE_NAME = ContentFunctions.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME;
+    public static final String CONTENT_FUNCTION_NAMESPACE = ContentFunctions.CONTENT_FUNCTION_NAMESPACE;
+    public static final String CONTENT_WITHIN_FUNCTION_NAME = ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME;
+    public static final String CONTENT_ADJACENT_FUNCTION_NAME = ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME;
+    public static final String CONTENT_PHRASE_FUNCTION_NAME = ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
+    public static final String CONTENT_SCORED_PHRASE_FUNCTION_NAME = ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
     
     // RangeStream, temporary move
     public static final String SHARD_DAY_HINT = "SHARDS_AND_DAYS";
