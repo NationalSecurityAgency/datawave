@@ -13,8 +13,6 @@ import java.util.List;
 
 @Component
 @ConditionalOnBusEnabled
-// TODO: Figure out how to do this correctly
-// @ConditionalOnBean(type = "QueryRequestHandler")
 public class QueryRemoteRequestEventListener implements ApplicationListener<RemoteQueryRequestEvent> {
     private final Logger log = LoggerFactory.getLogger(getClass());
     
@@ -30,15 +28,25 @@ public class QueryRemoteRequestEventListener implements ApplicationListener<Remo
     public void onApplicationEvent(RemoteQueryRequestEvent event) {
         // Ignore events that this service instance published, since we publish from a place
         // that takes the same action we do here, and we don't want to repeat the work.
-        if (serviceMatcher.isFromSelf(event)) {
-            log.debug("Dropping {} since it is from us.", event);
-            return;
+        boolean isSelfRequest = serviceMatcher.isFromSelf(event);
+        if (isSelfRequest) {
+            log.debug("Received a self-request {}.", event);
         }
         
         // process the event using each query request handler.
         // By default, for parallelStreams java uses threads equal to the number of cores.
         // if we need more than that, we can specify our own ForkJoinPool.
-        queryRequestHandlers.parallelStream().forEach(h -> handleRequest(h, event));
+        // @formatter:off
+        queryRequestHandlers
+                .stream()
+                .filter(requestHandler -> shouldHandleRequest(requestHandler, isSelfRequest))
+                .parallel()
+                .forEach(h -> handleRequest(h, event));
+        // @formatter:on
+    }
+    
+    private boolean shouldHandleRequest(QueryRequestHandler handler, boolean isSelfRequest) {
+        return !isSelfRequest || handler instanceof QueryRequestHandler.QuerySelfRequestHandler;
     }
     
     private void handleRequest(QueryRequestHandler queryRequestHandler, RemoteQueryRequestEvent queryRequestEvent) {

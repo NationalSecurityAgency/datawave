@@ -71,8 +71,8 @@ echo "$(date): Creating query"
 echo "$(date): Creating query" > querySummary.txt
 curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
-    --data-urlencode "begin=20210901 000000.000" \
-    --data-urlencode "end=20211001 235959.999" \
+    --data-urlencode "begin=20200101 000000.000" \
+    --data-urlencode "end=20300101 235959.999" \
     --data-urlencode "columnVisibility=PUBLIC" \
     --data-urlencode "query=GENRES:Comedy" \
     --data-urlencode "query.syntax=LUCENE" \
