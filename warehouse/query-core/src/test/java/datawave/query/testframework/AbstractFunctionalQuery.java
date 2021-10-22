@@ -585,11 +585,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         expectedTree = TreeFlatteningRebuildingVisitor.flattenAll(expectedTree);
         ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(query);
         queryTree = TreeFlatteningRebuildingVisitor.flattenAll(queryTree);
-        TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
-        boolean equal = TreeEqualityVisitor.isEqual(expectedTree, queryTree, reason);
-        
-        if (!equal) {
-            throw new ComparisonFailure(reason.reason, expected, query);
+        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedTree, queryTree);
+        if (!comparison.isEqual()) {
+            throw new ComparisonFailure(comparison.getReason(), expected, query);
         }
     }
     

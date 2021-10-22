@@ -7,6 +7,7 @@ import java.util.Locale;
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
 
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 
@@ -74,6 +75,44 @@ class ContentFunctionArguments {
                 
                 terms.add(term);
             }
+        } else if (functionName.equals(Constants.CONTENT_SCORED_PHRASE_FUNCTION_NAME)) {
+            // if the first argument is a float, then we have no zone provided
+            Float minScoreArg = readMinScore(getValue(args.get(currentArg)));
+            if (null != minScoreArg) {
+                minScore = minScoreArg.floatValue();
+                // Don't want to do the inline ++ in case currentArg still gets
+                // incremented on exception
+                currentArg++;
+            } else {
+                // If the first arg isn't an int, then it's the zone
+                zone = constructZone(args.get(currentArg++));
+                
+                minScoreArg = readMinScore(getValue(args.get(currentArg)));
+                if (minScoreArg == null) {
+                    throw new ParseException("Could not parse a float min score value");
+                } else {
+                    minScore = minScoreArg.floatValue();
+                }
+            }
+            
+            // Ensure the next term is the termOffsetMap variable
+            if (args.get(currentArg++) == null) {
+                throw new ParseException("Did not find the term offset map name where expected in the function arguments: " + f.name() + " '"
+                                + args.get(currentArg - 1) + "'");
+            }
+            
+            terms = new ArrayList<>(args.size() - currentArg);
+            
+            // Get the actual terms
+            for (int i = currentArg; i < args.size(); i++) {
+                String term = JexlASTHelper.dereference(args.get(i)).image.trim();
+                
+                if (term.length() > 1 && term.charAt(0) == '\'' && term.charAt(term.length() - 1) == '\'') {
+                    term = term.substring(1, term.length() - 1);
+                }
+                
+                terms.add(term);
+            }
         } else if (functionName.startsWith(Constants.CONTENT_ADJACENT_FUNCTION_NAME)) {
             // Pull off the zone if it's the zone adjacent function
             if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME.equalsIgnoreCase(JexlASTHelper.dereference(args.get(currentArg)).image)) {
@@ -107,19 +146,7 @@ class ContentFunctionArguments {
                 }
             }
             
-            String nextArg = JexlASTHelper.dereference(args.get(currentArg++)).image.trim();
-            
-            // Test for if the next arg is the term offset map first, This catch exists since it is the most likely query scenario
-            if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME.equalsIgnoreCase(nextArg)) {
-                Float minScoreArg = readMinScore(nextArg);
-                if (null != minScoreArg) {
-                    minScore = minScoreArg.floatValue();
-                    nextArg = JexlASTHelper.dereference(args.get(currentArg++)).image.trim();
-                }
-            } else { // short circuit, term offset map and it's terms are the final arguments
-                readTerms(args, currentArg);
-                return;
-            }
+            String nextArg = getValue(args.get(currentArg++));
             
             // Ensure the next term is the termOffsetMap variable
             if (!Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME.equalsIgnoreCase(nextArg)) {
@@ -130,6 +157,11 @@ class ContentFunctionArguments {
         } else {
             throw new ParseException("Unrecognized content function: " + f.name());
         }
+    }
+    
+    // this is added to fix the case where a UnaryMinusNode returns a null image
+    private String getValue(JexlNode arg) {
+        return JexlStringBuildingVisitor.buildQuery(JexlASTHelper.dereference(arg)).trim();
     }
     
     private List<String> constructZone(JexlNode node) {

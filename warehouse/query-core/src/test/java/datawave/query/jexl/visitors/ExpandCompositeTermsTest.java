@@ -14,10 +14,9 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -32,12 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 public class ExpandCompositeTermsTest {
-    
-    private static final Logger log = Logger.getLogger(ExpandCompositeTermsTest.class);
     
     private static final Set<String> INDEX_FIELDS = Sets.newHashSet("MAKE", "COLOR", "WHEELS", "TEAM", "NAME", "POINTS");
     
@@ -1230,11 +1224,11 @@ public class ExpandCompositeTermsTest {
         ASTJexlScript expand = FunctionIndexQueryExpansionVisitor.expandFunctions(conf, helper, DateIndexHelper.getInstance(), original);
         expand = ExpandCompositeTerms.expandTerms(conf, expand);
         
-        assertQueryStringEquality(expand, expected);
-        assertLineage(expand);
+        // Verify the script is as expected, and has a valid lineage.
+        JexlNodeAssert.assertThat(expand).isEqualTo(expected).hasValidLineage();
         
-        assertScriptEquality(original, query);
-        assertLineage(original);
+        // Verify the original script was not modified, and still has a valid lineage.
+        JexlNodeAssert.assertThat(original).isEqualTo(query).hasValidLineage();
     }
     
     void workIt(String query) throws Exception {
@@ -1254,26 +1248,6 @@ public class ExpandCompositeTermsTest {
         PrintingVisitor.printQuery(script);
         System.err.println(JexlStringBuildingVisitor.buildQuery(script));
         System.err.println();
-    }
-    
-    private void assertQueryStringEquality(ASTJexlScript actualScript, String expected) {
-        String actual = JexlStringBuildingVisitor.buildQuery(actualScript);
-        assertEquals(expected, actual);
-    }
-    
-    private void assertScriptEquality(ASTJexlScript actualScript, String expected) throws ParseException {
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
-        boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actualScript, reason);
-        if (!equal) {
-            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
-            log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
-        }
-        assertTrue(reason.reason, equal);
-    }
-    
-    private void assertLineage(JexlNode node) {
-        assertTrue(JexlASTHelper.validateLineage(node, true));
     }
     
     private static class MockDiscreteIndexType extends BaseType<String> implements DiscreteIndexType<String> {

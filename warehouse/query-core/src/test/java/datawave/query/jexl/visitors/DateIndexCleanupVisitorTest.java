@@ -1,18 +1,14 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import static datawave.query.Constants.SHARD_DAY_HINT;
-import static org.junit.Assert.assertTrue;
 
 public class DateIndexCleanupVisitorTest {
-    
-    private static final Logger log = Logger.getLogger(DateIndexCleanupVisitorTest.class);
     
     @Test
     public void testConjunction() throws ParseException {
@@ -43,6 +39,13 @@ public class DateIndexCleanupVisitorTest {
     }
     
     @Test
+    public void testNegatedHint() throws ParseException {
+        String original = "(FOO == 'bar' && (!(filter:betweenDates(SOME_DATE, 'beginDate', 'endDate')) || !((SHARDS_AND_DAYS = '1111,2222'))))";
+        String expected = "(FOO == 'bar' && (!(filter:betweenDates(SOME_DATE, 'beginDate', 'endDate'))))";
+        testCleanup(original, expected);
+    }
+    
+    @Test
     public void testOnlyHint() throws ParseException {
         String original = "(" + SHARD_DAY_HINT + " = 'hello,world')";
         String expected = "";
@@ -54,28 +57,7 @@ public class DateIndexCleanupVisitorTest {
         
         ASTJexlScript cleaned = DateIndexCleanupVisitor.cleanup(script);
         
-        // Verify the result script is as expected, with a valid lineage.
-        assertScriptEquality(cleaned, expected);
-        assertLineage(cleaned);
-        
-        // Verify the original script was not modified, and has a valid lineage.
-        assertScriptEquality(script, original);
-        assertLineage(script);
-    }
-    
-    private void assertScriptEquality(JexlNode actual, String expected) throws ParseException {
-        ASTJexlScript actualScript = JexlASTHelper.parseJexlQuery(JexlStringBuildingVisitor.buildQuery(actual));
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
-        boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actualScript, reason);
-        if (!equal) {
-            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
-            log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
-        }
-        assertTrue(reason.reason, equal);
-    }
-    
-    private void assertLineage(JexlNode node) {
-        assertTrue(JexlASTHelper.validateLineage(node, true));
+        JexlNodeAssert.assertThat(cleaned).isEqualTo(expected).hasValidLineage();
+        JexlNodeAssert.assertThat(script).isEqualTo(original).hasValidLineage();
     }
 }

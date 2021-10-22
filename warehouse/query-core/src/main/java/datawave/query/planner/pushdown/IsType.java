@@ -22,7 +22,7 @@ public class IsType implements Predicate<JexlNode> {
     public boolean apply(JexlNode node) {
         Preconditions.checkNotNull(node);
         if (QueryPropertyMarker.class.isAssignableFrom(type)) {
-            return QueryPropertyMarker.instanceOf(node, (Class<? extends QueryPropertyMarker>) type);
+            return QueryPropertyMarker.findInstance(node).isType(type.asSubclass(QueryPropertyMarker.class));
         } else {
             return node.getClass().isAssignableFrom(type);
         }

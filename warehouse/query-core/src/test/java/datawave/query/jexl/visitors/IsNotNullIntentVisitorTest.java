@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
@@ -10,8 +11,6 @@ import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 
 public class IsNotNullIntentVisitorTest {
-    
-    private static final Logger log = Logger.getLogger(IsNotNullIntentVisitorTest.class);
     
     @Test
     public void testMatchAnythingRegex() throws ParseException {
@@ -41,28 +40,7 @@ public class IsNotNullIntentVisitorTest {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
         ASTJexlScript actual = IsNotNullIntentVisitor.fixNotNullIntent(originalScript);
         
-        // Verify the resulting script is as expected and has a valid lineage.
-        assertScriptEquality(actual, expected);
-        assertLineage(actual);
-        
-        // Verify the original script was not modified and has a valid lineage.
-        assertScriptEquality(originalScript, original);
-        assertLineage(originalScript);
-    }
-    
-    private void assertScriptEquality(JexlNode actual, String expected) throws ParseException {
-        ASTJexlScript actualScript = JexlASTHelper.parseJexlQuery(JexlStringBuildingVisitor.buildQuery(actual));
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
-        boolean equal = TreeEqualityVisitor.isEqual(expectedScript, actualScript, reason);
-        if (!equal) {
-            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
-            log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
-        }
-        assertTrue(reason.reason, equal);
-    }
-    
-    private void assertLineage(JexlNode node) {
-        assertTrue(JexlASTHelper.validateLineage(node, true));
+        JexlNodeAssert.assertThat(actual).isEqualTo(expected).hasValidLineage();
+        JexlNodeAssert.assertThat(originalScript).isEqualTo(original).hasValidLineage();
     }
 }
