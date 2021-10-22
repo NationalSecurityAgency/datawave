@@ -18,6 +18,7 @@ import datawave.query.QueryParameters;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
@@ -29,6 +30,7 @@ import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -330,6 +332,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // model. drop others
     private boolean shouldLimitTermExpansionToModel = false;
     private Query query = null;
+    @JsonIgnore
+    private transient ASTJexlScript queryTree = null;
     private boolean compressServerSideResults = false;
     private boolean indexOnlyFilterFunctionsEnabled = false;
     private boolean compositeFilterFunctionsEnabled = false;
@@ -1777,6 +1781,29 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setQuery(Query query) {
         this.query = query;
+    }
+    
+    public ASTJexlScript getQueryTree() {
+        return queryTree;
+    }
+    
+    public void setQueryTree(ASTJexlScript queryTree) {
+        this.queryTree = queryTree;
+        // invalidate the prior queryString, forcing lazily reinitialization of queryString with provided queryTree
+        super.setQueryString(null);
+    }
+    
+    @Override
+    public String getQueryString() {
+        // lazy initialization if null
+        if (null == super.getQueryString()) {
+            if (this.queryTree == null) {
+                return null;
+            }
+            super.setQueryString(JexlStringBuildingVisitor.buildQuery(this.queryTree));
+        }
+        
+        return super.getQueryString();
     }
     
     public boolean isCompressServerSideResults() {
