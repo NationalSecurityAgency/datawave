@@ -367,6 +367,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean enforceUniqueDisjunctionsWithinExpression = false;
     
+    // fields exempt from query model expansion
+    private Set<String> noExpansionFields = new HashSet<>();
+    
     /**
      * Default constructor
      */
@@ -546,6 +549,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setDisableWhindexFieldMappings(other.isDisableWhindexFieldMappings());
         this.setWhindexMappingFields(other.getWhindexMappingFields());
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
+        this.setNoExpansionFields(other.getNoExpansionFields());
     }
     
     /**
@@ -2192,5 +2196,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueDisjunctionsWithinExpression) {
         this.enforceUniqueDisjunctionsWithinExpression = enforceUniqueDisjunctionsWithinExpression;
+    }
+    
+    public Set<String> getNoExpansionFields() {
+        return this.noExpansionFields;
+    }
+    
+    public void setNoExpansionFields(Set<String> noExpansionFields) {
+        this.noExpansionFields = noExpansionFields;
     }
 }
