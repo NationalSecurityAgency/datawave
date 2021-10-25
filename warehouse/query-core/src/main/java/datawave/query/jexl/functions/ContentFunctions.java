@@ -69,11 +69,12 @@ import org.apache.log4j.Logger;
 public class ContentFunctions {
     private static final Logger log = Logger.getLogger(ContentFunctions.class);
     
+    public static final String TERM_OFFSET_MAP_JEXL_VARIABLE_NAME = "termOffsetMap";
     public static final String CONTENT_FUNCTION_NAMESPACE = "content";
-    
     public static final String CONTENT_WITHIN_FUNCTION_NAME = "within";
     public static final String CONTENT_ADJACENT_FUNCTION_NAME = "adjacent";
     public static final String CONTENT_PHRASE_FUNCTION_NAME = "phrase";
+    public static final String CONTENT_SCORED_PHRASE_FUNCTION_NAME = "scoredPhrase";
     
     /**
      * Determine if the given offset lists have any permutation of across each offset list that is within the distance given.
@@ -198,12 +199,23 @@ public class ContentFunctions {
         return new ContentOrderedEvaluator(getFields(zone), 1, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
     }
     
-    public static Collection<String> phrase(Float minScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    /**
+     * Determine if we have a phrase for any zone under the specified score.
+     * 
+     * @param minScore
+     *            The lowest score allowed for a term
+     * @param termOffsetMap
+     *            A map of terms and their offset lists
+     * @param terms
+     *            The array of terms
+     * @return a collection of fields that satisfy the content function
+     */
+    public static Collection<String> scoredPhrase(Float minScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
         return new ContentOrderedEvaluator(Collections.EMPTY_SET, 1, minScore, termOffsetMap, terms).evaluate();
     }
     
     /**
-     * Wrapper around {@link #phrase} in which a zone is provided
+     * Wrapper around {@link #scoredPhrase} in which a zone is provided
      *
      * @param zone
      *            The zone the phrase must occure in
@@ -215,7 +227,7 @@ public class ContentFunctions {
      *            The array of terms
      * @return a collection of fields that satisfy the content function
      */
-    public static Collection<String> phrase(Object zone, Float minScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> scoredPhrase(Object zone, Float minScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
         return new ContentOrderedEvaluator(getFields(zone), 1, minScore, termOffsetMap, terms).evaluate();
     }
     
