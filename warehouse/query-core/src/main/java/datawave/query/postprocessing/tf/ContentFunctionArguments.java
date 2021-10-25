@@ -77,7 +77,7 @@ class ContentFunctionArguments {
             }
         } else if (functionName.equals(Constants.CONTENT_SCORED_PHRASE_FUNCTION_NAME)) {
             // if the first argument is a float, then we have no zone provided
-            Float minScoreArg = readMinScore(args.get(currentArg).image);
+            Float minScoreArg = readMinScore(getValue(args.get(currentArg)));
             if (null != minScoreArg) {
                 minScore = minScoreArg.floatValue();
                 // Don't want to do the inline ++ in case currentArg still gets
@@ -87,7 +87,7 @@ class ContentFunctionArguments {
                 // If the first arg isn't an int, then it's the zone
                 zone = constructZone(args.get(currentArg++));
                 
-                minScoreArg = readMinScore(args.get(currentArg).image);
+                minScoreArg = readMinScore(getValue(args.get(currentArg)));
                 if (minScoreArg == null) {
                     throw new ParseException("Could not parse a float min score value");
                 } else {
