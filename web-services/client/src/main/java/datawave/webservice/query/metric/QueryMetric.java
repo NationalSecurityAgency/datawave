@@ -355,10 +355,14 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                 output.writeString(34, message.plan, false);
             }
             
+            // I'm open to move this logic elsewhere, with the intent being that the version will always be presented
+            // in the QueryMetric object for display.
             if (message.version == null) {
-                String vers = getVersionFromProperties();
-                message.setVersion(vers);
-                output.writeString(35, vers, false);
+                String propertyVersion = getVersionFromProperties();
+                message.setVersion(propertyVersion);
+                output.writeString(35, propertyVersion, false);
+            } else {
+                output.writeString(35, message.version, false);
             }
             
             if (message.loginTime != -1) {

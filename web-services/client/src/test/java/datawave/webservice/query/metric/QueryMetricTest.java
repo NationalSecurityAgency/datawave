@@ -68,6 +68,77 @@ public class QueryMetricTest {
     }
     
     @Test
+    public void testMetricVersion() {
+        QueryMetric metric = new QueryMetric();
+        Date d = new Date();
+        metric.setBeginDate(d);
+        metric.setCreateCallTime(0);
+        metric.setCreateDate(d);
+        metric.setEndDate(d);
+        metric.setErrorCode("error");
+        metric.setErrorMessage("errorMessage");
+        metric.setHost("host");
+        metric.setLastUpdated(d);
+        metric.setLastWrittenHash(0);
+        metric.setLifecycle(Lifecycle.INITIALIZED);
+        metric.setMarkings(markings);
+        metric.setNegativeSelectors(negativeSelectors);
+        metric.setNumUpdates(0);
+        metric.setPageTimes(pageTimes);
+        metric.setPositiveSelectors(positiveSelectors);
+        metric.setProxyServers(proxyServers);
+        metric.setQuery("query");
+        metric.setQueryAuthorizations("auths");
+        metric.setQueryId("queryId");
+        metric.setQueryLogic("queryLogic");
+        metric.setQueryType(this.getClass());
+        metric.setQueryType("queryType");
+        metric.setSetupTime(0);
+        metric.setUser("user");
+        metric.setUserDN("userDN");
+        
+        try {
+            final Properties props = new Properties();
+            String inputPath = QueryMetricTest.class.getClassLoader().getResource("version.properties").getPath();
+            props.load(new FileInputStream(inputPath));
+            String propStr = props.getProperty("currentVersion");
+            metric.setVersion(propStr);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        assertEquals(d, metric.getBeginDate());
+        assertEquals("PUBLIC", metric.getColumnVisibility());
+        assertEquals(0, metric.getCreateCallTime());
+        assertEquals(d, metric.getCreateDate());
+        assertEquals(0, metric.getElapsedTime());
+        assertEquals(d, metric.getEndDate());
+        assertEquals("error", metric.getErrorCode());
+        assertEquals("errorMessage", metric.getErrorMessage());
+        assertEquals("host", metric.getHost());
+        assertEquals(d, metric.getLastUpdated());
+        assertEquals(0, metric.getLastWrittenHash());
+        assertEquals(Lifecycle.INITIALIZED, metric.getLifecycle());
+        assertEquals("PUBLIC", metric.getMarkings().get(MarkingFunctions.Default.COLUMN_VISIBILITY));
+        assertEquals("negativeSelector1", metric.getNegativeSelectors().get(0));
+        assertEquals(0, metric.getNumPages());
+        assertEquals(0, metric.getNumResults());
+        assertEquals(0, metric.getNumUpdates());
+        assertEquals(0, metric.getPageTimes().get(0).getCallTime());
+        assertEquals("positiveSelector1", metric.getPositiveSelectors().get(0));
+        assertEquals("proxyServer1", metric.getProxyServers().iterator().next());
+        assertEquals("query", metric.getQuery());
+        assertEquals("auths", metric.getQueryAuthorizations());
+        assertEquals("queryId", metric.getQueryId());
+        assertEquals("queryLogic", metric.getQueryLogic());
+        assertEquals("queryType", metric.getQueryType());
+        assertEquals(0, metric.getSetupTime());
+        assertEquals("user", metric.getUser());
+        assertEquals("userDN", metric.getUserDN());
+        assertEquals("3.5.1-TEST", metric.getVersion());
+    }
+    
+    @Test
     public void testSettersGetters() {
         Date d = new Date();
         queryMetric.setBeginDate(d);
@@ -95,18 +166,6 @@ public class QueryMetricTest {
         queryMetric.setSetupTime(0);
         queryMetric.setUser("user");
         queryMetric.setUserDN("userDN");
-        try {
-            final Properties props = new Properties();
-            String inputPath = QueryMetricTest.class.getClassLoader().getResource("version.properties").getPath();
-            props.load(new FileInputStream(inputPath));
-            String propStr = props.getProperty("currentVersion");
-            queryMetric.setVersion(propStr);
-            
-            System.out.println("*** Version: ***");
-            System.out.println(queryMetric.getVersion());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         
         assertEquals(d, queryMetric.getBeginDate());
         assertEquals("PUBLIC", queryMetric.getColumnVisibility());
@@ -136,7 +195,6 @@ public class QueryMetricTest {
         assertEquals(0, queryMetric.getSetupTime());
         assertEquals("user", queryMetric.getUser());
         assertEquals("userDN", queryMetric.getUserDN());
-        assertEquals("3.5.0-SNAPSHOT", queryMetric.getVersion());
     }
     
     @Test

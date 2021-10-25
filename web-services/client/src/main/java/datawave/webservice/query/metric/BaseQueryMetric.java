@@ -30,6 +30,7 @@ import java.util.Set;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class BaseQueryMetric implements HasMarkings, Serializable {
+    
     @XmlAccessorType(XmlAccessType.NONE)
     public static class PageMetric implements Serializable, Message<PageMetric> {
         
