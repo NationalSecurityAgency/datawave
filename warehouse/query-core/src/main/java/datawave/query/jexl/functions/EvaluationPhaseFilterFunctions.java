@@ -1643,7 +1643,9 @@ public class EvaluationPhaseFilterFunctions {
             }
         }
         
-        return compareFields(fields, operator, CompareFunctionValidator.Mode.valueOf(compareMode) == CompareFunctionValidator.Mode.ANY, fields2);
+        boolean matchesAny = compareMode.equalsIgnoreCase("any");
+        
+        return compareFields(fields, operator, matchesAny, fields2);
     }
     
     private static boolean compareFields(FunctionalSet<ValueTuple> fields, String operator, boolean matchesAny, FunctionalSet<ValueTuple> fields2) {

@@ -16,7 +16,8 @@ import java.util.List;
  * </pre>
  */
 public class CompareFunctionValidator {
-    public static enum Mode {
+    
+    public enum Mode {
         ANY, ALL
     }
     

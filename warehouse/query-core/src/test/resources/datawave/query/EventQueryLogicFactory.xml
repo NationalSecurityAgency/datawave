@@ -36,6 +36,7 @@
         <bean class="datawave.query.language.functions.jexl.Geowave.Overlaps"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Within"/>
         <bean class="datawave.query.language.functions.jexl.EvaluationOnly"/>
+        <bean class="datawave.query.language.functions.jexl.Compare"/>
     </util:list>
 
 

@@ -163,6 +163,30 @@ public class JexlEvaluationTest {
         assertTrue(foundPhrase);
     }
     
+    @Test
+    public void testCompareFunction() {
+        String query = "FOO == 'bar' && filter:compare(FIELD_A,'<','all',FIELD_B)";
+        
+        // populate doc
+        Key docKey = new Key("shard", "datatype\0uid");
+        Document d = new Document();
+        d.put("FOO", new Content("bar", docKey, true));
+        d.put("FIELD_A", new Content("apple", docKey, true));
+        d.put("FIELD_A", new Content("banana", docKey, true));
+        d.put("FIELD_B", new Content("xylophone", docKey, true));
+        d.put("FIELD_B", new Content("zephyr", docKey, true));
+        
+        // populate context from doc
+        DatawaveJexlContext context = new DatawaveJexlContext();
+        d.visit(Arrays.asList("FOO", "FIELD_A", "FIELD_B"), context);
+        
+        JexlEvaluation evaluation = new JexlEvaluation(query, new HitListArithmetic());
+        
+        Tuple3<Key,Document,DatawaveJexlContext> tuple = new Tuple3<>(docKey, d, context);
+        boolean result = evaluation.apply(tuple);
+        assertTrue(result);
+    }
+    
     private TermFrequencyList buildTfList(String field, int... offsets) {
         TermFrequencyList.Zone zone = buildZone(field);
         List<TermWeightPosition> position = buildTermWeightPositions(offsets);

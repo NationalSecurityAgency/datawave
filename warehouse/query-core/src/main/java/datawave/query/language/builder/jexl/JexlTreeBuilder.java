@@ -3,6 +3,7 @@ package datawave.query.language.builder.jexl;
 import java.util.List;
 
 import datawave.query.language.functions.jexl.AtomValuesMatchFunction;
+import datawave.query.language.functions.jexl.Compare;
 import datawave.query.language.functions.jexl.DateFunction;
 import datawave.query.language.functions.jexl.EvaluationOnly;
 import datawave.query.language.functions.jexl.Exclude;
@@ -56,7 +57,7 @@ public class JexlTreeBuilder extends QueryTreeBuilder {
             new GeoFunction(), new Contains(), new CoveredBy(), new Covers(), new Crosses(), new Intersects(), new Overlaps(), new Within(), new Loaded(),
             new DateFunction(), new OccurrenceFunction(), new MatchesInGroupFunction(), new MatchesInGroupLeft(), new GetAllMatches(),
             new MatchesAtLeastCountOf(), new Jexl(), new TimeFunction(), new AtomValuesMatchFunction(), new Options(), new Unique(), new GroupBy(),
-            new EvaluationOnly(), new UniqueByDay(), new UniqueByHour(), new UniqueByMinute()};
+            new EvaluationOnly(), new UniqueByDay(), new UniqueByHour(), new UniqueByMinute(), new Compare()};
     
     public static final List<JexlQueryFunction> DEFAULT_ALLOWED_FUNCTION_LIST;
     

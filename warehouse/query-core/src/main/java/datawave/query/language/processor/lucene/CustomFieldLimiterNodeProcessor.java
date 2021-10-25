@@ -64,6 +64,9 @@ public class CustomFieldLimiterNodeProcessor extends QueryNodeProcessorImpl {
                 }
             } else if (function.equalsIgnoreCase("isnull") || function.equalsIgnoreCase("isnotnull")) {
                 fields.add(parameterList.get(0));
+            } else if (function.equalsIgnoreCase("compare")) {
+                fields.add(parameterList.get(0));
+                fields.add(parameterList.get(3));
             }
         } else if (node instanceof MultiPhraseQueryNode) {
             fields.add(((MultiPhraseQueryNode) node).getField().toString());
