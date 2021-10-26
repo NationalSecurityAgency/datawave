@@ -170,6 +170,41 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
     }
     
     /**
+     * A class that holds the results of a traversal. If we have a NavigableSet then we can restart the traversal with that set. Otherwise we will have a result
+     * to return.
+     */
+    private static class TraverseResult {
+        private static final TraverseResult FINAL_NULL_RESULT = new TraverseResult((List<EvaluateTermPosition>) null);
+        private final boolean finalResult;
+        private final List<EvaluateTermPosition> result;
+        private final NavigableSet<EvaluateTermPosition> sub;
+        
+        public TraverseResult(List<EvaluateTermPosition> result) {
+            this.finalResult = true;
+            this.result = result;
+            this.sub = null;
+        }
+        
+        public TraverseResult(NavigableSet<EvaluateTermPosition> sub) {
+            this.finalResult = false;
+            this.result = null;
+            this.sub = sub;
+        }
+        
+        private boolean hasFinalResult() {
+            return finalResult;
+        }
+        
+        private List<EvaluateTermPosition> getResult() {
+            return result;
+        }
+        
+        private NavigableSet<EvaluateTermPosition> getNextTraversal() {
+            return sub;
+        }
+    }
+    
+    /**
      *
      * The traverse function descend the tree until a term is out of reach. When the next erm is out of reach it will fall back to the last "first term" and
      * start over.
@@ -185,49 +220,47 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
      * @return
      */
     protected List<EvaluateTermPosition> traverse(NavigableSet<EvaluateTermPosition> sub, int direction) {
-        List<EvaluateTermPosition> skipped = new ArrayList<>();
-        List<EvaluateTermPosition> found = new ArrayList<>();
         int targetIndex = (direction == FORWARD) ? 0 : (terms.length - 1);
         
-        // Find first root node
-        for (EvaluateTermPosition b : sub) {
-            if (b.phraseIndex == targetIndex) {
-                found.add(0, b);
-                
-                if (!skipped.isEmpty()) {
-                    // Add the skipped values that are at the same offset or within the distance of teh first term
-                    evaluateSkipped(b, skipped, found, direction);
+        // start with an initial non-final result
+        TraverseResult result = new TraverseResult(sub);
+        
+        // while we do not have a final result, process
+        while (!result.hasFinalResult()) {
+            List<EvaluateTermPosition> skipped = new ArrayList<>();
+            List<EvaluateTermPosition> found = new ArrayList<>();
+            
+            // use the navigable set from the last non-final result
+            sub = result.getNextTraversal();
+            
+            // set result to the null list in case we never get to traverse
+            result = TraverseResult.FINAL_NULL_RESULT;
+            
+            // Find first root node
+            for (EvaluateTermPosition b : sub) {
+                if (b.phraseIndex == targetIndex) {
+                    found.add(0, b);
                     
-                    // Test for completion
-                    if (found.size() == terms.length) {
-                        return found;
+                    if (!skipped.isEmpty()) {
+                        // Add the skipped values that are at the same offset or within the distance of teh first term
+                        evaluateSkipped(b, skipped, found, direction);
+                        
+                        // Test for completion
+                        if (found.size() == terms.length) {
+                            return found;
+                        }
                     }
+                    
+                    // Search based on the largest found term index
+                    result = traverse(found.get(found.size() - 1), sub.tailSet(b, false), found, direction);
+                    break;
                 }
-                
-                // Start the search based on the largest found term index
-                return traverse(found.get(found.size() - 1), sub.tailSet(b, false), found, direction);
+                skipped.add(b);
             }
-            skipped.add(b);
         }
         
-        // No root node fail
-        return null;
-    }
-    
-    /**
-     *
-     * @param root
-     *            the last term and position matched
-     * @param sub
-     *            sorted navigable set of the remaining tree to match
-     * @param direction
-     *            1 == forward, -1 reverse
-     * @return number of matched terms
-     */
-    protected List<EvaluateTermPosition> traverse(EvaluateTermPosition root, NavigableSet<EvaluateTermPosition> sub, int direction) {
-        List<EvaluateTermPosition> etpa = new ArrayList<>(terms.length);
-        etpa.add(0, root);
-        return traverse(root, sub, etpa, direction);
+        // return the final result
+        return result.getResult();
     }
     
     /**
@@ -242,11 +275,10 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
      *            1 == forward, -1 reverse
      * @return number of matched terms
      */
-    protected List<EvaluateTermPosition> traverse(EvaluateTermPosition root, NavigableSet<EvaluateTermPosition> sub, List<EvaluateTermPosition> found,
-                    int direction) {
+    protected TraverseResult traverse(EvaluateTermPosition root, NavigableSet<EvaluateTermPosition> sub, List<EvaluateTermPosition> found, int direction) {
         // Success, why keep going.
         if (found.size() == terms.length) {
-            return found;
+            return new TraverseResult(found);
         }
         
         List<EvaluateTermPosition> skipped = new ArrayList<>();
@@ -263,13 +295,13 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                 } else {
                     // Not with in distance
                     if (found.size() == terms.length) {
-                        return found;
+                        return new TraverseResult(found);
                     }
                     
                     // The term was to large for the currant found terms
                     // We will grab the last skipped value, set it as the new root
                     // and roll back to the last found term and try again.
-                    return traverseFailure(sub, skipped, termPosition, direction, found);
+                    return traverseFailure(sub, skipped, termPosition);
                 }
             }
             
@@ -284,22 +316,24 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                     updateFound(termPosition, found, direction);
                     
                     if (found.size() == terms.length) {
-                        return found;
+                        return new TraverseResult(found);
                     }
                     
                     NavigableSet<EvaluateTermPosition> subB = sub.tailSet(termPosition, false);
                     
-                    List<EvaluateTermPosition> results = traverse(termPosition, subB, found, direction);
-                    if (null == results || results.size() != terms.length) {
+                    TraverseResult result = traverse(termPosition, subB, found, direction);
+                    if (result.hasFinalResult() && (result.getResult() == null || result.getResult().size() != terms.length)) {
                         if (!skipped.isEmpty()) {
                             evaluateSkipped(found.get(found.size() - 1), skipped, found, direction);
                         }
+                        return new TraverseResult(found);
+                    } else {
+                        return result;
                     }
-                    return found;
                 }
                 
                 // Failure for current root node find next
-                return traverseFailure(sub, skipped, termPosition, direction, found);
+                return traverseFailure(sub, skipped, termPosition);
             }
             
             if (log.isTraceEnabled()) {
@@ -309,7 +343,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
         }
         
         // empty sub
-        return found;
+        return new TraverseResult(found);
     }
     
     /**
@@ -320,14 +354,9 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
      *            list of terms that were skipped for being out of order, sorted in the same order as the set
      * @param term
      *            current term that failed against the current found terms
-     * @param direction
-     *            1 == FORWARD, -1 == REVERSE
-     * @param found
-     *            updated as required, if subsequent traversal yields a match for all terms
      * @return number of found terms for the given criteria
      */
-    protected List<EvaluateTermPosition> traverseFailure(NavigableSet<EvaluateTermPosition> sub, List<EvaluateTermPosition> skipped, EvaluateTermPosition term,
-                    int direction, List<EvaluateTermPosition> found) {
+    protected TraverseResult traverseFailure(NavigableSet<EvaluateTermPosition> sub, List<EvaluateTermPosition> skipped, EvaluateTermPosition term) {
         
         // Failure for current root node find next
         NavigableSet<EvaluateTermPosition> subB;
@@ -337,16 +366,12 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
             subB = sub.tailSet(term, true);
         }
         
-        if (!subB.isEmpty()) { // Nothing after a, so it will fall out of the loop
-            List<EvaluateTermPosition> results = traverse(subB, direction);
-            if (null != results && results.size() == terms.length) {
-                found.clear();
-                found.addAll(results);
-            }
-            return results;
+        if (!subB.isEmpty()) { // retry with this new tail set
+            return new TraverseResult(subB);
         }
         
-        return null;
+        // we have a final result, and it is null
+        return TraverseResult.FINAL_NULL_RESULT;
     }
     
     /**
@@ -521,6 +546,8 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                 return result;
             }
             
+            // todo: comparing the term value makes no sense given how this class is used to subset a list of ordered term positions
+            // perhaps we are never supposed to get here?
             return term.compareTo(o.term);
         }
         
