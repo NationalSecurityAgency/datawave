@@ -31,8 +31,10 @@ import datawave.services.query.logic.QueryLogic;
 import datawave.services.query.logic.QueryLogicFactory;
 import datawave.services.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.runner.RunningQuery;
@@ -115,6 +117,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             Assert.fail();
         }
     }
+    
+    private boolean useRunningQuery = false;
+    private QueryMetricFactory metricFactory;
     
     /**
      * Contains a list of cities that are specified in the test data. Additional cities can be added to the test data and do not specifically need to be added
@@ -472,11 +477,15 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         q.setId(UUID.randomUUID());
         q.setPagesize(Integer.MAX_VALUE);
         q.setQueryAuthorizations(auths.toString());
-        
-        GenericQueryConfiguration config = this.logic.initialize(connector, q, this.authSet);
-        this.logic.setupQuery(config);
-        if (log.isDebugEnabled()) {
-            log.debug("Plan: " + config.getQueryString());
+        if (useRunningQuery) {
+            QueryMetricFactory queryMetricFactory = (metricFactory == null) ? new QueryMetricFactoryImpl() : metricFactory;
+            new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, this.logic, q, "", principal, queryMetricFactory);
+        } else {
+            GenericQueryConfiguration config = this.logic.initialize(connector, q, this.authSet);
+            this.logic.setupQuery(config);
+            if (log.isDebugEnabled()) {
+                log.debug("Plan: " + config.getQueryString());
+            }
         }
         testHarness.assertLogicResults(this.logic, this.logicFactory, expected, checkers);
     }
@@ -706,4 +715,20 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         connector.tableOperations().compact(QueryTestTableHelper.METADATA_TABLE_NAME, new Text("\0"), new Text("~"), true, true);
     }
     
+    /**
+     * The test framework typically just calls logic.initialize and logic.setupQuery. The typical code path for a query, as seen in RunningQuery, involves more.
+     * This method will ensure that RunningQuery is used to more fully exercise the query.
+     */
+    protected void useRunningQuery() {
+        this.useRunningQuery = true;
+    }
+    
+    /**
+     * When provided, the QueryMetric object will be used for running the query and so can be later inspected. Also see #useRunningQuery()
+     * 
+     * @param metric
+     */
+    protected void withMetric(BaseQueryMetric metric) {
+        this.metricFactory = () -> metric;
+    }
 }

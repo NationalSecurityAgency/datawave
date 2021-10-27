@@ -579,7 +579,7 @@ public class QueryExecutorBean implements QueryExecutor {
         Span defineSpan = null;
         RunningQuery rq;
         try {
-            MultiValueMap<String,String> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
+            Map<String,List<String>> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
             Query q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
             response.setResult(q.getId().toString());
             
@@ -680,7 +680,7 @@ public class QueryExecutorBean implements QueryExecutor {
             
             AuditType auditType = qd.logic.getAuditType(null);
             try {
-                MultiValueMap<String,String> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
+                Map<String,List<String>> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
                 q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
                 auditType = qd.logic.getAuditType(q);
             } finally {
@@ -862,7 +862,7 @@ public class QueryExecutorBean implements QueryExecutor {
             
             AuditType auditType = qd.logic.getAuditType(null);
             try {
-                MultiValueMap<String,String> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
+                Map<String,List<String>> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
                 q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
                 auditType = qd.logic.getAuditType(q);
             } finally {
@@ -984,7 +984,7 @@ public class QueryExecutorBean implements QueryExecutor {
         if (predictor != null) {
             try {
                 qp.setPersistenceMode(QueryPersistence.TRANSIENT);
-                MultiValueMap<String,String> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
+                Map<String,List<String>> optionalQueryParameters = qp.getUnknownParameters(MapUtils.toMultiValueMap(queryParameters));
                 Query q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, MapUtils.toMultivaluedMap(optionalQueryParameters));
                 
                 BaseQueryMetric metric = metricFactory.createMetric();
@@ -1522,7 +1522,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupContentUUIDBatch", absolute = true)
-    public <T> T lookupContentByUUIDBatch(MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
+    public <T> T lookupContentByUUIDBatch(MultivaluedMap<String,String> queryParameters, @Required("httpHeaders") @Context HttpHeaders httpHeaders) {
         if (!queryParameters.containsKey("uuidPairs")) {
             throw new BadRequestException(new IllegalArgumentException("uuidPairs missing from query parameters"), new VoidResponse());
         }
@@ -3259,8 +3259,9 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         if (null == responseType) {
             QueryException qe = new QueryException(DatawaveErrorCode.UNSUPPORTED_MEDIA_TYPE);
+            response.setHasResults(false);
             response.addException(qe);
-            throw new DatawaveWebApplicationException(qe, response);
+            throw new DatawaveWebApplicationException(qe, response, MediaType.APPLICATION_XML_TYPE);
         }
         
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
@@ -3284,9 +3285,10 @@ public class QueryExecutorBean implements QueryExecutor {
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_TRANSFORM_ERROR, e);
             log.error(qe, e);
+            response.setHasResults(false);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
-            throw new DatawaveWebApplicationException(qe, response, statusCode);
+            throw new DatawaveWebApplicationException(qe, response, statusCode, MediaType.APPLICATION_XML_TYPE);
         }
         
         SerializationType s;
@@ -3297,26 +3299,43 @@ public class QueryExecutorBean implements QueryExecutor {
         } else if (responseType.equals(PB_MEDIA_TYPE)) {
             if (!(Message.class.isAssignableFrom(responseClass))) {
                 QueryException qe = new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS, MessageFormat.format("Response  class: {0}", responseClass));
+                response.setHasResults(false);
                 response.addException(qe);
-                throw new DatawaveWebApplicationException(qe, response);
+                throw new DatawaveWebApplicationException(qe, response, MediaType.APPLICATION_XML_TYPE);
             }
             s = SerializationType.PB;
         } else if (responseType.equals(YAML_MEDIA_TYPE)) {
             if (!(Message.class.isAssignableFrom(responseClass))) {
                 QueryException qe = new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS, MessageFormat.format("Response  class: {0}", responseClass));
+                response.setHasResults(false);
                 response.addException(qe);
-                throw new DatawaveWebApplicationException(qe, response);
+                throw new DatawaveWebApplicationException(qe, response, MediaType.APPLICATION_XML_TYPE);
             }
             s = SerializationType.YAML;
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.INVALID_FORMAT, MessageFormat.format("format: {0}", responseType.toString()));
+            response.setHasResults(false);
             response.addException(qe);
-            throw new DatawaveWebApplicationException(qe, response);
+            throw new DatawaveWebApplicationException(qe, response, MediaType.APPLICATION_XML_TYPE);
         }
         
         long start = System.nanoTime();
         GenericResponse<String> createResponse = null;
-        createResponse = this.createQuery(logicName, queryParameters, httpHeaders);
+        
+        try {
+            createResponse = this.createQuery(logicName, queryParameters, httpHeaders);
+        } catch (Throwable t) {
+            if (t instanceof DatawaveWebApplicationException) {
+                QueryException qe = (QueryException) ((DatawaveWebApplicationException) t).getCause();
+                response.setHasResults(false);
+                response.addException(qe.getBottomQueryException());
+                int statusCode = qe.getBottomQueryException().getStatusCode();
+                throw new DatawaveWebApplicationException(qe, response, statusCode, MediaType.APPLICATION_XML_TYPE);
+            } else {
+                throw t;
+            }
+        }
+        
         long createCallTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         final String queryId = createResponse.getResult();
         

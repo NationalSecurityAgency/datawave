@@ -135,7 +135,7 @@ public class DefaultModificationRequest extends ModificationRequestBase implemen
     }
     
     @Override
-    public MultiValueMap<String,String> toMap() {
+    public Map<String,List<String>> toMap() {
         MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         p.putAll(super.toMap());
         if (this.events != null) {

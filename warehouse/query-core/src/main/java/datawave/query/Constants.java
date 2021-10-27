@@ -23,6 +23,12 @@ public class Constants {
     
     public static final String COLON = ":";
     
+    public static final String COMMA = ",";
+    
+    public static final String BRACKET_START = "[";
+    
+    public static final String BRACKET_END = "]";
+    
     public static final Text TEXT_NULL = new Text(NULL);
     
     public static final Text FI_PREFIX = new Text("fi");

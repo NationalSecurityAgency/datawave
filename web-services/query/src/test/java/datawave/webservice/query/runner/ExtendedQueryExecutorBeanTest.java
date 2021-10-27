@@ -21,6 +21,7 @@ import datawave.services.query.logic.QueryLogic;
 import datawave.services.query.logic.QueryLogicFactory;
 import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.webservice.common.audit.AuditBean;
+import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.audit.PrivateAuditConstants;
 import datawave.webservice.common.exception.BadRequestException;
@@ -756,7 +757,6 @@ public class ExtendedQueryExecutorBeanTest {
         qp.validate(queryParameters);
         
         MultiValueMap<String,String> op = qp.getUnknownParameters(queryParameters);
-        // op.putSingle(PrivateAuditConstants.AUDIT_TYPE, AuditType.NONE.name());
         op.add(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         op.add(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         op.add(PrivateAuditConstants.USER_DN, userDNpair.subjectDN());
@@ -2811,6 +2811,9 @@ public class ExtendedQueryExecutorBeanTest {
         map.set(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         map.set(PrivateAuditConstants.COLUMN_VISIBILITY, authorization);
         map.set(PrivateAuditConstants.USER_DN, userDN);
+        map.set(AuditParameters.AUDIT_ID, queryName);
+        MultiValueMap<String,String> auditMap = new LinkedMultiValueMap();
+        auditMap.putAll(map);
         
         // Set expectations
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
@@ -2851,7 +2854,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.toMap()).andReturn(map);
         expect(this.query.getColumnVisibility()).andReturn(authorization);
         expect(this.queryLogic1.getSelectors(this.query)).andReturn(null);
-        expect(this.auditor.audit(map)).andReturn(null);
+        expect(this.auditor.audit(auditMap)).andReturn(null);
         this.query.populateMetric(anyObject(QueryMetric.class));
         //
         // Advice from a test-driven development perspective...
@@ -3064,6 +3067,9 @@ public class ExtendedQueryExecutorBeanTest {
         p.set(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         p.set(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         p.set(PrivateAuditConstants.USER_DN, userDN);
+        MultiValueMap<String,String> auditMap = new LinkedMultiValueMap();
+        auditMap.putAll(p);
+        auditMap.set(AuditParameters.AUDIT_ID, queryId.toString());
         
         // Set expectations
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).times(4);
@@ -3089,7 +3095,7 @@ public class ExtendedQueryExecutorBeanTest {
         duplicateQuery.setPageTimeout(pageTimeout);
         duplicateQuery.setParameters(isA(Set.class));
         expect(duplicateQuery.toMap()).andReturn(p);
-        expect(this.auditor.audit(eq(p))).andReturn(null);
+        expect(this.auditor.audit(eq(auditMap))).andReturn(null);
         this.query.setQueryLogicName(queryLogicName);
         this.query.setQuery(query);
         this.query.setBeginDate(beginDate);
@@ -3731,6 +3737,9 @@ public class ExtendedQueryExecutorBeanTest {
         map.set(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         map.set(PrivateAuditConstants.COLUMN_VISIBILITY, authorization);
         map.set(PrivateAuditConstants.USER_DN, userDN);
+        map.set(AuditParameters.AUDIT_ID, queryName);
+        MultiValueMap<String,String> auditMap = new LinkedMultiValueMap();
+        auditMap.putAll(map);
         
         // Set expectations
         expect(this.context.getUserTransaction()).andReturn(this.transaction).anyTimes();
@@ -3763,7 +3772,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getColumnVisibility()).andReturn(authorization);
         this.query.populateMetric(anyObject(QueryMetric.class));
         expect(this.queryLogic1.getSelectors(this.query)).andReturn(new ArrayList<>());
-        expect(this.auditor.audit(map)).andReturn(null);
+        expect(this.auditor.audit(auditMap)).andReturn(null);
         expectLastCall().andThrow(new Exception("EXPECTED EXCEPTION IN AUDIT"));
         cache.unlock(queryName);
         transaction.commit();
@@ -3832,6 +3841,9 @@ public class ExtendedQueryExecutorBeanTest {
         p.set(PrivateAuditConstants.LOGIC_CLASS, queryLogicName);
         p.set(PrivateAuditConstants.COLUMN_VISIBILITY, queryVisibility);
         p.set(PrivateAuditConstants.USER_DN, userDN);
+        p.set(AuditParameters.AUDIT_ID, queryId.toString());
+        MultiValueMap<String,String> auditMap = new LinkedMultiValueMap();
+        auditMap.putAll(p);
         
         // Set expectations
         expect(this.context.getCallerPrincipal()).andReturn(this.principal).anyTimes();
@@ -3865,7 +3877,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.LOCALONLY);
         expect(this.query.getQueryAuthorizations()).andReturn(queryAuthorizations);
         
-        expect(this.auditor.audit(eq(p))).andThrow(new Exception("INTENTIONALLY THROWN EXCEPTION"));
+        expect(this.auditor.audit(eq(auditMap))).andThrow(new Exception("INTENTIONALLY THROWN EXCEPTION"));
         
         // Run the test
         PowerMock.replayAll();

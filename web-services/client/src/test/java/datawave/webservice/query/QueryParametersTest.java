@@ -131,7 +131,8 @@ public class QueryParametersTest {
         // Add an unknown parameter
         params.add("key", "value");
         
-        MultiValueMap<String,String> unknownParams = qp.getUnknownParameters(params);
+        MultiValueMap<String,String> unknownParams = new LinkedMultiValueMap<>();
+        unknownParams.putAll(qp.getUnknownParameters(params));
         Assert.assertEquals("params", unknownParams.getFirst(QueryParameters.QUERY_PARAMS));
         Assert.assertEquals("value", unknownParams.getFirst("key"));
         Assert.assertEquals(2, unknownParams.size());

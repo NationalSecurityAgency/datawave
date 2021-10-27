@@ -5,6 +5,10 @@ import org.springframework.util.MultiValueMap;
 
 import java.util.Date;
 
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
 /**
  * QueryParameters passed in from a client, they are validated and passed through to the iterator stack as QueryOptions.
  *
@@ -92,11 +96,11 @@ public interface QueryParameters extends ParameterValidator {
     
     boolean isMaxConcurrentTasksOverridden();
     
-    MultiValueMap<String,String> getRequestHeaders();
+    Map<String,List<String>> getRequestHeaders();
     
-    void setRequestHeaders(MultiValueMap<String,String> requestHeaders);
+    void setRequestHeaders(Map<String,List<String>> requestHeaders);
     
-    MultiValueMap<String,String> getUnknownParameters(MultiValueMap<String,String> allQueryParameters);
+    MultiValueMap<String,String> getUnknownParameters(Map<String,List<String>> allQueryParameters);
     
     void clear();
     

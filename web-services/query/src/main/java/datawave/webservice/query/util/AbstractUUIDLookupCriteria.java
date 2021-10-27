@@ -1,9 +1,10 @@
 package datawave.webservice.query.util;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
-
 import datawave.webservice.query.Query;
+
+import javax.ws.rs.core.HttpHeaders;
+
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 /**
@@ -23,7 +24,8 @@ public abstract class AbstractUUIDLookupCriteria {
      */
     public AbstractUUIDLookupCriteria(final Query settings) {
         if (null != settings) {
-            this.queryParameters = settings.toMap();
+            this.queryParameters = new LinkedMultiValueMap<>();
+            this.queryParameters.putAll(settings.toMap());
         }
     }
     

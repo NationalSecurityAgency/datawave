@@ -32,7 +32,7 @@ public abstract class Query implements Externalizable {
     private static final long serialVersionUID = -5980134700364340930L;
     
     public abstract void initialize(String userDN, List<String> dnList, String queryLogicName, QueryParameters qp,
-                    MultiValueMap<String,String> optionalQueryParameters);
+                    Map<String,List<String>> optionalQueryParameters);
     
     public abstract String getQueryLogicName();
     
@@ -125,10 +125,10 @@ public abstract class Query implements Externalizable {
     
     public abstract void populateMetric(BaseQueryMetric metric);
     
-    public abstract void setOptionalQueryParameters(MultiValueMap<String,String> optionalQueryParameters);
+    public abstract void setOptionalQueryParameters(Map<String,List<String>> optionalQueryParameters);
     
     @JsonDeserialize(as = LinkedMultiValueMap.class)
-    public abstract MultiValueMap<String,String> getOptionalQueryParameters();
+    public abstract Map<String,List<String>> getOptionalQueryParameters();
     
     public abstract void removeParameter(String key);
     
@@ -153,7 +153,7 @@ public abstract class Query implements Externalizable {
     
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        MultiValueMap<String,String> map = toMap();
+        Map<String,List<String>> map = toMap();
         Set<String> keys = map.keySet();
         out.writeInt(keys.size());
         for (String key : keys) {

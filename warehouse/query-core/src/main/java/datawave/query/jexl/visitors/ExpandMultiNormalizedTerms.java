@@ -14,6 +14,7 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import datawave.services.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -138,7 +139,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         /**
          * If we have a delayed predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types
          */
-        if (QueryPropertyMarkerVisitor.isDelayedPredicate(node) || this.expandedNodes.contains(node)) {
+        if (QueryPropertyMarker.findInstance(node).isDelayedPredicate() || this.expandedNodes.contains(node)) {
             return node;
         }
         

@@ -5,6 +5,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import javax.ws.rs.core.MultivaluedMap;
+import java.util.List;
+import java.util.Map;
 
 public class MapUtils {
     
@@ -17,7 +19,7 @@ public class MapUtils {
         return multiValueMap;
     }
     
-    public static <A,B> MultivaluedMap<A,B> toMultivaluedMap(MultiValueMap<A,B> multiValueMap) {
+    public static <A,B> MultivaluedMap<A,B> toMultivaluedMap(Map<A,List<B>> multiValueMap) {
         MultivaluedMap<A,B> multivaluedMap = null;
         if (multiValueMap != null) {
             multivaluedMap = new MultivaluedMapImpl<>();

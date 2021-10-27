@@ -24,6 +24,9 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -43,6 +46,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MultivaluedMap;
 import java.security.Principal;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -188,7 +192,9 @@ public class ModificationBean {
             
             if (service.getRequiresAudit()) {
                 try {
-                    auditParameterBuilder.convertAndValidate(request.toMap());
+                    MultiValueMap<String,String> requestMap = new LinkedMultiValueMap();
+                    requestMap.putAll(request.toMap());
+                    auditParameterBuilder.convertAndValidate(requestMap);
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.QUERY_AUDITING_ERROR, e);
                     log.error(qe);

@@ -13,6 +13,7 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 @XmlRootElement(name = "DefaultUUIDModificationRequest")
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -41,7 +42,7 @@ public class DefaultUUIDModificationRequest extends ModificationRequestBase impl
     }
     
     @Override
-    public MultiValueMap<String,String> toMap() {
+    public Map<String,List<String>> toMap() {
         MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         p.putAll(super.toMap());
         if (this.events != null) {

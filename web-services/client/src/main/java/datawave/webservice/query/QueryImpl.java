@@ -251,7 +251,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     @XmlElement
     protected String columnVisibility;
     @XmlTransient
-    protected MultiValueMap<String,String> optionalQueryParameters;
+    protected Map<String,List<String>> optionalQueryParameters;
     
     protected transient QueryUncaughtExceptionHandler uncaughtExceptionHandler;
     
@@ -414,11 +414,11 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         this.endDate = endDate;
     }
     
-    public MultiValueMap<String,String> getOptionalQueryParameters() {
+    public Map<String,List<String>> getOptionalQueryParameters() {
         return optionalQueryParameters;
     }
     
-    public void setOptionalQueryParameters(MultiValueMap<String,String> optionalQueryParameters) {
+    public void setOptionalQueryParameters(Map<String,List<String>> optionalQueryParameters) {
         this.optionalQueryParameters = optionalQueryParameters;
     }
     
@@ -734,7 +734,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         this.uncaughtExceptionHandler = uncaughtExceptionHandler;
     }
     
-    public void initialize(String userDN, List<String> dnList, String queryLogicName, QueryParameters qp, MultiValueMap<String,String> optionalQueryParameters) {
+    public void initialize(String userDN, List<String> dnList, String queryLogicName, QueryParameters qp, Map<String,List<String>> optionalQueryParameters) {
         this.dnList = dnList;
         this.expirationDate = qp.getExpirationDate();
         this.id = java.util.UUID.randomUUID().toString();
@@ -801,6 +801,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     }
     
     public MultiValueMap<String,String> toMap() {
+        // TODO: missing variables uuid and owner -- not going into map
         MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         if (this.id != null) {
             p.set(QUERY_ID, this.id);
@@ -855,7 +856,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
             }
         }
         if (this.optionalQueryParameters != null) {
-            p.addAll(this.optionalQueryParameters);
+            p.putAll(this.optionalQueryParameters);
         }
         return p;
     }

@@ -230,6 +230,7 @@ public abstract class GroupingTest {
                         break;
                     case "AGE":
                     case "AG":
+                    case "RECORD":
                         secondKey = fieldBase.getValueString();
                         break;
                 }
@@ -252,7 +253,6 @@ public abstract class GroupingTest {
     @Test
     public void testGrouping() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
         
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
@@ -311,7 +311,6 @@ public abstract class GroupingTest {
     @Test
     public void testGrouping2() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
         
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
@@ -343,7 +342,6 @@ public abstract class GroupingTest {
     @Test
     public void testGrouping3() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
         
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
@@ -365,7 +363,6 @@ public abstract class GroupingTest {
     @Test
     public void testGrouping4() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
         
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
@@ -385,9 +382,58 @@ public abstract class GroupingTest {
     }
     
     @Test
+    public void testGroupingEntriesWithNoContext() throws Exception {
+        // Testing multivalued entries with no grouping context
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        Map<String,Integer> expectedMap = ImmutableMap.of("1", 3, "2", 3, "3", 1);
+        
+        extraParameters.put("group.fields", "RECORD");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+    
+    @Test
+    public void testGroupingMixedEntriesWithAndWithNoContext() throws Exception {
+        // Testing multivalued entries with no grouping context in combination with a grouping context entries
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        // @formatter:off
+        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+                .put("FEMALE-2", 1)
+                .put("MALE-1", 3)
+                .put("MALE-2", 2)
+                .put("MALE-3", 1)
+                .build();
+        // @formatter:on
+        
+        extraParameters.put("group.fields", "GENDER,RECORD");
+        // extraParameters.put("group.fields.batch.size", "12");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+    
+    @Test
     public void testGroupingUsingFunction() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
         extraParameters.put("group.fields.batch.size", "6");
         
         Date startDate = format.parse("20091231");
@@ -418,7 +464,6 @@ public abstract class GroupingTest {
     @Test
     public void testGroupingUsingLuceneFunction() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
         extraParameters.put("group.fields.batch.size", "6");
         
         Date startDate = format.parse("20091231");
@@ -450,7 +495,6 @@ public abstract class GroupingTest {
     @Test
     public void testGroupingUsingLuceneFunctionWithDuplicateValues() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
         extraParameters.put("group.fields.batch.size", "6");
         
         Date startDate = format.parse("20091231");

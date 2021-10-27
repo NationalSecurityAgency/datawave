@@ -94,7 +94,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, "FIELD1 == 'a'");
         options.addScanIterator(iteratorSetting);
         
-        QueryData qd = new QueryData("FIELD1 == 'a'", Collections.singleton(new Range()), Collections.singletonList(iteratorSetting));
+        QueryData qd = new QueryData("FIELD1 == 'a'", Collections.singleton(new Range("20210101_0", "20210101_0")), Collections.singletonList(iteratorSetting));
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
         
         replayAll();
@@ -133,7 +133,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, query);
         options.addScanIterator(iteratorSetting);
         
-        QueryData qd = new QueryData(query, Collections.singleton(new Range()), Collections.singletonList(iteratorSetting));
+        QueryData qd = new QueryData(query, Collections.singleton(new Range("20210101_0", "20210101_0")), Collections.singletonList(iteratorSetting));
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
         
         replayAll();
@@ -180,7 +180,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, query);
         options.addScanIterator(iteratorSetting);
         
-        QueryData qd = new QueryData(query, Collections.singleton(new Range()), Collections.singletonList(iteratorSetting));
+        QueryData qd = new QueryData(query, Collections.singleton(new Range("20210101_0", "20210101_0")), Collections.singletonList(iteratorSetting));
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
         
         replayAll();
@@ -227,7 +227,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, query);
         options.addScanIterator(iteratorSetting);
         
-        QueryData qd = new QueryData(query, Collections.singleton(new Range()), Collections.singletonList(iteratorSetting));
+        QueryData qd = new QueryData(query, Collections.singleton(new Range("20210101_0", "20210101_0")), Collections.singletonList(iteratorSetting));
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
         
         replayAll();
@@ -275,7 +275,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         iteratorSetting.addOption(QueryOptions.QUERY, query);
         options.addScanIterator(iteratorSetting);
         
-        QueryData qd = new QueryData(query, Collections.singleton(new Range()), Collections.singletonList(iteratorSetting));
+        QueryData qd = new QueryData(query, Collections.singleton(new Range("20210101_0", "20210101_0")), Collections.singletonList(iteratorSetting));
         ScannerChunk chunk = new ScannerChunk(options, qd.getRanges(), qd);
         
         replayAll();

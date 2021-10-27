@@ -4,6 +4,7 @@ import datawave.security.util.AuthorizationsUtil;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.query.cache.ResultsPage;
 import datawave.services.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.logic.BaseQueryLogic;
 import datawave.services.query.logic.QueryLogic;
 import datawave.services.query.logic.WritesQueryMetrics;
 import datawave.services.query.logic.WritesResultCardinalities;
@@ -173,6 +174,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             // TODO: applyPrediction("Plan");
         } catch (Exception e) {
             log.error(e.getMessage(), e);
+            if (this.logic instanceof BaseQueryLogic && this.logic.getCollectQueryMetrics() && null != this.getMetric()) {
+                GenericQueryConfiguration config = ((BaseQueryLogic) this.logic).getConfig();
+                if (null != config) {
+                    this.getMetric().setPlan(config.getQueryString());
+                }
+            }
             this.getMetric().setError(e);
             throw e;
         } finally {

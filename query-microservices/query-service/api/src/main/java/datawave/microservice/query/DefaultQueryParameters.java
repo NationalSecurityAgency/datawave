@@ -12,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,7 +39,7 @@ public class DefaultQueryParameters implements QueryParameters {
     protected String pool;
     protected boolean isMaxConcurrentTasksOverridden;
     protected int maxConcurrentTasks;
-    protected MultiValueMap<String,String> requestHeaders;
+    protected Map<String,List<String>> requestHeaders;
     
     public DefaultQueryParameters() {
         clear();
@@ -276,9 +277,9 @@ public class DefaultQueryParameters implements QueryParameters {
     }
     
     /**
-     * Convenience method to generate a MultivaluedMap from the specified arguments. If an argument is null, it's associated parameter name (key) will not be
-     * added to the map, which is why Integer and Boolean wrappers are used for greater flexibility.
-     *
+     * Convenience method to generate a {@code Map<String,List<String>>} from the specified arguments. If an argument is null, it's associated parameter name
+     * (key) will not be added to the map, which is why Integer and Boolean wrappers are used for greater flexibility.
+     * 
      * The 'parameters' argument will not be parsed, so its internal elements will not be placed into the map. If non-null, the 'parameters' value will be
      * mapped directly to the QUERY_PARAMS key.
      *
@@ -316,54 +317,54 @@ public class DefaultQueryParameters implements QueryParameters {
      * @throws ParseException
      *             on date parse/format error
      */
-    public static MultiValueMap<String,String> paramsToMap(String queryLogicName, String query, String queryName, String queryVisibility, Date beginDate,
+    public static Map<String,List<String>> paramsToMap(String queryLogicName, String query, String queryName, String queryVisibility, Date beginDate,
                     Date endDate, String queryAuthorizations, Date expirationDate, Integer pagesize, Integer pageTimeout, Long maxResultsOverride,
                     QueryPersistence persistenceMode, String parameters, Boolean trace) throws ParseException {
         
         MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         if (queryLogicName != null) {
-            p.add(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
+            p.set(QueryParameters.QUERY_LOGIC_NAME, queryLogicName);
         }
         if (query != null) {
-            p.add(QueryParameters.QUERY_STRING, query);
+            p.set(QueryParameters.QUERY_STRING, query);
         }
         if (queryName != null) {
-            p.add(QueryParameters.QUERY_NAME, queryName);
+            p.set(QueryParameters.QUERY_NAME, queryName);
         }
         if (queryVisibility != null) {
-            p.add(QueryParameters.QUERY_VISIBILITY, queryVisibility);
+            p.set(QueryParameters.QUERY_VISIBILITY, queryVisibility);
         }
         if (beginDate != null) {
-            p.add(QueryParameters.QUERY_BEGIN, formatDate(beginDate));
+            p.set(QueryParameters.QUERY_BEGIN, formatDate(beginDate));
         }
         if (endDate != null) {
-            p.add(QueryParameters.QUERY_END, formatDate(endDate));
+            p.set(QueryParameters.QUERY_END, formatDate(endDate));
         }
         if (queryAuthorizations != null) {
             // ensure that auths are comma separated with no empty values or spaces
             Splitter splitter = Splitter.on(',').omitEmptyStrings().trimResults();
-            p.add(QueryParameters.QUERY_AUTHORIZATIONS, StringUtils.join(splitter.splitToList(queryAuthorizations), ","));
+            p.set(QueryParameters.QUERY_AUTHORIZATIONS, StringUtils.join(splitter.splitToList(queryAuthorizations), ","));
         }
         if (expirationDate != null) {
-            p.add(QueryParameters.QUERY_EXPIRATION, formatDate(expirationDate));
+            p.set(QueryParameters.QUERY_EXPIRATION, formatDate(expirationDate));
         }
         if (pagesize != null) {
-            p.add(QueryParameters.QUERY_PAGESIZE, pagesize.toString());
+            p.set(QueryParameters.QUERY_PAGESIZE, pagesize.toString());
         }
         if (pageTimeout != null) {
-            p.add(QueryParameters.QUERY_PAGETIMEOUT, pageTimeout.toString());
+            p.set(QueryParameters.QUERY_PAGETIMEOUT, pageTimeout.toString());
         }
         if (maxResultsOverride != null) {
-            p.add(QueryParameters.QUERY_MAX_RESULTS_OVERRIDE, maxResultsOverride.toString());
+            p.set(QueryParameters.QUERY_MAX_RESULTS_OVERRIDE, maxResultsOverride.toString());
         }
         if (persistenceMode != null) {
-            p.add(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
+            p.set(QueryParameters.QUERY_PERSISTENCE, persistenceMode.name());
         }
         if (trace != null) {
-            p.add(QueryParameters.QUERY_TRACE, trace.toString());
+            p.set(QueryParameters.QUERY_TRACE, trace.toString());
         }
         if (parameters != null) {
-            p.add(QueryParameters.QUERY_PARAMS, parameters);
+            p.set(QueryParameters.QUERY_PARAMS, parameters);
         }
         
         return p;
@@ -530,23 +531,21 @@ public class DefaultQueryParameters implements QueryParameters {
     }
     
     @Override
-    public MultiValueMap<String,String> getRequestHeaders() {
+    public Map<String,List<String>> getRequestHeaders() {
         return requestHeaders;
     }
     
     @Override
-    public void setRequestHeaders(MultiValueMap<String,String> requestHeaders) {
+    public void setRequestHeaders(Map<String,List<String>> requestHeaders) {
         this.requestHeaders = requestHeaders;
     }
     
     @Override
-    public MultiValueMap<String,String> getUnknownParameters(MultiValueMap<String,String> allQueryParameters) {
+    public MultiValueMap<String,String> getUnknownParameters(Map<String,List<String>> allQueryParameters) {
         MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         for (String key : allQueryParameters.keySet()) {
             if (!KNOWN_PARAMS.contains(key)) {
-                for (String value : allQueryParameters.get(key)) {
-                    p.add(key, value);
-                }
+                p.put(key, allQueryParameters.get(key));
             }
         }
         return p;

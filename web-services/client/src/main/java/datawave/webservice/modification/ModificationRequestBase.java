@@ -1,10 +1,9 @@
 package datawave.webservice.modification;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
-import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorOrder;
@@ -13,11 +12,10 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlEnum;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
-
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
@@ -60,7 +58,7 @@ public class ModificationRequestBase implements Serializable {
         return tsb.toString();
     }
     
-    public MultiValueMap<String,String> toMap() {
+    public Map<String,List<String>> toMap() {
         MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         if (this.mode != null) {
             p.set("mode", this.mode.name());

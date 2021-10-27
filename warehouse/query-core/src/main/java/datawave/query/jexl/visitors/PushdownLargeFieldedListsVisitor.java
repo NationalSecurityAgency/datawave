@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
@@ -11,6 +12,7 @@ import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.services.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -203,7 +205,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             }
         }
         
-        return children(newNode, children.toArray(new JexlNode[children.size()]));
+        return children.size() == 1 ? Iterables.getOnlyElement(children) : children(newNode, children.toArray(new JexlNode[0]));
     }
     
     /**
@@ -292,11 +294,12 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
     
     protected void assignNodeByField(JexlNode origNode, JexlNode subNode, Multimap<String,JexlNode> eqNodes, Multimap<String,JexlNode> rangeNodes,
                     List<JexlNode> otherNodes) {
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(subNode);
         if (subNode instanceof ASTEQNode) {
             eqNodes.put(JexlASTHelper.getIdentifier(subNode, false), origNode);
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(subNode)) {
-            assignNodeByField(origNode, ExceededValueThresholdMarkerJexlNode.getExceededValueThresholdSource(subNode), eqNodes, rangeNodes, otherNodes);
-        } else if (BoundedRange.instanceOf(subNode)) {
+        } else if (instance.isType(ExceededValueThresholdMarkerJexlNode.class)) {
+            assignNodeByField(origNode, instance.getSource(), eqNodes, rangeNodes, otherNodes);
+        } else if (instance.isType(BoundedRange.class)) {
             LiteralRange range = JexlASTHelper.findRange().getRange(subNode);
             rangeNodes.put(JexlASTHelper.rebuildIdentifier(range.getFieldName()), origNode);
         } else if ((subNode.jjtGetNumChildren() == 1)
