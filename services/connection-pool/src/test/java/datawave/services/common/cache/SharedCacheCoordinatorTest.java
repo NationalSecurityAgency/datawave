@@ -120,9 +120,9 @@ public class SharedCacheCoordinatorTest {
                     break;
                 Thread.sleep(200L);
             }
-
+            
             // unfortunately curator does not always propogate the RECONNECTED state to the listener
-            //assertEquals("Client never reconnected.", ConnectionState.RECONNECTED, state[0]);
+            // assertEquals("Client never reconnected.", ConnectionState.RECONNECTED, state[0]);
             
             newCount = 42;
             oldCount = counter.getVersionedValue();
