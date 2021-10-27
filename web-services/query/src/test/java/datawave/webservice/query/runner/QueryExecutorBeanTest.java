@@ -11,14 +11,29 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils.NpeUtils;
-import datawave.webservice.common.audit.*;
+import datawave.webservice.common.audit.AuditBean;
+import datawave.webservice.common.audit.AuditParameterBuilder;
+import datawave.webservice.common.audit.AuditParameters;
+import datawave.webservice.common.audit.AuditService;
 import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.common.audit.DefaultAuditParameterBuilder;
+import datawave.webservice.common.audit.PrivateAuditConstants;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.query.*;
-import datawave.webservice.query.cache.*;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.QueryParameters;
+import datawave.webservice.query.QueryParametersImpl;
+import datawave.webservice.query.QueryPersistence;
+import datawave.webservice.query.cache.ClosedQueryCache;
+import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
+import datawave.webservice.query.cache.QueryCache;
+import datawave.webservice.query.cache.QueryExpirationConfiguration;
+import datawave.webservice.query.cache.QueryMetricFactory;
+import datawave.webservice.query.cache.QueryMetricFactoryImpl;
+import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -71,12 +86,23 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.eq;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createStrictMock;
 import static org.powermock.api.support.membermodification.MemberMatcher.constructor;
@@ -452,6 +478,7 @@ public class QueryExecutorBeanTest {
         
         Object cachedRunningQuery = cache.get(q.getId().toString());
         Assert.assertNull(cachedRunningQuery);
+
         Assert.assertEquals(predictions.toString(), response.getResult());
     }
     

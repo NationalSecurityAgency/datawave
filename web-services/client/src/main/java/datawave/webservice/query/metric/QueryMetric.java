@@ -1,25 +1,33 @@
 package datawave.webservice.query.metric;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.collect.Lists;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.result.event.HasMarkings;
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang.time.DateUtils;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Properties;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.*;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import datawave.webservice.query.QueryImpl.Parameter;
+import datawave.webservice.query.result.event.HasMarkings;
+
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.time.DateUtils;
+
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
+
+import com.google.common.collect.Lists;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
@@ -35,6 +43,8 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
     public QueryMetric() {
         this.createDate = DateUtils.truncate(new Date(), Calendar.SECOND);
         this.host = System.getProperty("jboss.host.name");
+        String version = getVersionFromProperties();
+        this.version = version;
     }
     
     public QueryMetric(QueryMetric other) {
@@ -366,13 +376,9 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                     }
                 }
             }
-            
-            // I'm open to move this logic elsewhere, with the intent being that the version will always be presented
-            // in the QueryMetric object for display.
+
             if (message.version != null) {
-                String propertyVersion = getVersionFromProperties();
-                message.setVersion(propertyVersion);
-                output.writeString(37, propertyVersion, false);
+                output.writeString(37, message.version, false);
             }
         }
         
