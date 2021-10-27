@@ -478,7 +478,7 @@ public class QueryExecutorBeanTest {
         
         Object cachedRunningQuery = cache.get(q.getId().toString());
         Assert.assertNull(cachedRunningQuery);
-
+        
         Assert.assertEquals(predictions.toString(), response.getResult());
     }
     

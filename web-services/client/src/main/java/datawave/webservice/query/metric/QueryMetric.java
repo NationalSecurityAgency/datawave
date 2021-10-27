@@ -28,6 +28,7 @@ import io.protostuff.Output;
 import io.protostuff.Schema;
 
 import com.google.common.collect.Lists;
+import org.apache.log4j.Logger;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
@@ -39,6 +40,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
     }
     
     private static final long serialVersionUID = 1L;
+    private static final Logger log = Logger.getLogger(QueryMetric.class);
     
     public QueryMetric() {
         this.createDate = DateUtils.truncate(new Date(), Calendar.SECOND);
@@ -376,7 +378,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                     }
                 }
             }
-
+            
             if (message.version != null) {
                 output.writeString(37, message.version, false);
             }
@@ -660,7 +662,11 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             props.load(new FileInputStream(inputPath));
             returnStr = props.getProperty("currentVersion");
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Unable to find a version from resources properties file: ", e);
+            returnStr = "";
+        } catch (NullPointerException e) {
+            log.error("Null pointer encountered attempting to draw version.properties resource file: ", e);
+            returnStr = "";
         }
         return returnStr;
     }
