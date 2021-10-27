@@ -34,6 +34,7 @@ import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTFloatLiteral;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTNumberLiteral;
@@ -129,7 +130,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                             firstTermIndex = 2;
                         }
                     }
-                } else if (ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME.equals(funcName)) {
+                } else if (ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME.equals(funcName)
+                                || ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME.equals(funcName)) {
                     firstTermIndex = 2;
                     JexlNode nextArg = args.next();
                     
@@ -140,7 +142,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     }
                     
                     // we can trash the distance
-                    if (!(nextArg instanceof ASTNumberLiteral)) {
+                    if (!(nextArg instanceof ASTNumberLiteral || nextArg instanceof ASTUnaryMinusNode || nextArg instanceof ASTFloatLiteral)) {
                         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NUMERIC_DISTANCE_ARGUMENT_MISSING);
                         throw new IllegalArgumentException(qe);
                     }
@@ -251,7 +253,30 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 } else if (ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME.equals(funcName)) {
                     JexlNode firstArg = args.next();
                     
-                    if (firstArg instanceof ASTNumberLiteral || firstArg instanceof ASTUnaryMinusNode) {
+                    // we override the zones if the first argument is a string
+                    if (firstArg instanceof ASTStringLiteral) {
+                        fields = Collections.singleton(firstArg.image);
+                        
+                        termOffsetMap = args.next();
+                    } else {
+                        JexlNode nextArg = args.peek();
+                        
+                        // The zones may (more likely) be specified as an identifier
+                        if (!JexlASTHelper.getIdentifiers(firstArg).isEmpty() && !JexlASTHelper.getIdentifiers(nextArg).isEmpty()) {
+                            if (oredFields != null && firstArg instanceof ASTAndNode) {
+                                oredFields.setValue(false);
+                            }
+                            
+                            fields = JexlASTHelper.getIdentifierNames(firstArg);
+                            termOffsetMap = args.next();
+                        } else {
+                            termOffsetMap = firstArg;
+                        }
+                    }
+                } else if (ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME.equals(funcName)) {
+                    JexlNode firstArg = args.next();
+                    
+                    if (firstArg instanceof ASTNumberLiteral || firstArg instanceof ASTUnaryMinusNode || firstArg instanceof ASTFloatLiteral) {
                         // firstArg is max score value, skip
                         firstArg = args.next();
                     }
@@ -260,7 +285,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     if (firstArg instanceof ASTStringLiteral) {
                         fields = Collections.singleton(firstArg.image);
                         
-                        if (args.peek() instanceof ASTNumberLiteral || args.peek() instanceof ASTUnaryMinusNode) {
+                        if (args.peek() instanceof ASTNumberLiteral || args.peek() instanceof ASTUnaryMinusNode || firstArg instanceof ASTFloatLiteral) {
                             args.next(); // max score not needed for fields and terms
                         }
                         
@@ -297,7 +322,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     }
                     
                     // we can trash the distance
-                    if (!(arg instanceof ASTNumberLiteral)) {
+                    if (!(arg instanceof ASTNumberLiteral || arg instanceof ASTUnaryMinusNode || arg instanceof ASTFloatLiteral)) {
                         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NUMERIC_DISTANCE_ARGUMENT_MISSING);
                         throw new IllegalArgumentException(qe);
                     }
@@ -343,6 +368,39 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             }
             
             return new Set[] {fields, terms};
+        }
+        
+        /**
+         * Get a space-delimited value when populating the HIT_TERMs
+         *
+         * @return the content args
+         */
+        public String getHitTermValue() {
+            StringBuilder sb = new StringBuilder();
+            JexlNode child;
+            Iterator<JexlNode> iter = args.iterator();
+            while (iter.hasNext()) {
+                child = JexlASTHelper.dereference(iter.next());
+                if (child instanceof ASTStringLiteral) {
+                    sb.append(child.image);
+                    if (iter.hasNext()) {
+                        sb.append(" ");
+                    }
+                }
+            }
+            return sb.toString();
+        }
+        
+        public Set<String> getHitTermValues() {
+            Set<String> values = new HashSet<>();
+            JexlNode child;
+            for (JexlNode arg : args) {
+                child = JexlASTHelper.dereference(arg);
+                if (child instanceof ASTStringLiteral) {
+                    values.add(child.image);
+                }
+            }
+            return values;
         }
         
         @Override

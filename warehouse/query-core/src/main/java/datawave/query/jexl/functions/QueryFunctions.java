@@ -37,20 +37,24 @@ public class QueryFunctions {
     
     public static Collection<?> length(Object field, long lower, long upper) {
         Set<String> matches = Collections.emptySet();
-        String fieldValue = ValueTuple.getNormalizedStringValue(field);
-        if (upper < lower)
-            throw new IllegalArgumentException("upper bound must be greater than the lower bound");
-        if (fieldValue != null && fieldValue.length() >= lower && fieldValue.length() <= upper) {
-            matches = Collections.singleton(getHitTermString(field));
+        if (field != null) {
+            String fieldValue = ValueTuple.getNormalizedStringValue(field);
+            if (upper < lower)
+                throw new IllegalArgumentException("upper bound must be greater than the lower bound");
+            if (fieldValue != null && fieldValue.length() >= lower && fieldValue.length() <= upper) {
+                matches = Collections.singleton(getHitTermString(field));
+            }
         }
         return matches;
     }
     
     public static Collection<?> length(Iterable<?> values, long lower, long upper) {
-        for (Object value : values) {
-            Collection<?> matches = length(value, lower, upper);
-            if (!matches.isEmpty()) {
-                return matches;
+        if (values != null) {
+            for (Object value : values) {
+                Collection<?> matches = length(value, lower, upper);
+                if (!matches.isEmpty()) {
+                    return matches;
+                }
             }
         }
         return Collections.emptySet();
@@ -61,14 +65,16 @@ public class QueryFunctions {
     }
     
     public static Collection<?> between(Object field, String left, boolean leftInclusive, String right, boolean rightInclusive) {
-        // we only want to test against the normalized variant to be consistent with the DatawaveArithmetic
-        String fieldValue = ValueTuple.getNormalizedStringValue(field);
-        if (fieldValue != null) {
-            int leftComparison = fieldValue.compareTo(left);
-            if (leftComparison > 0 || (leftInclusive && leftComparison == 0)) {
-                int rightComparison = fieldValue.compareTo(right);
-                if (rightComparison < 0 || (rightInclusive && rightComparison == 0)) {
-                    return Collections.singleton(getHitTermString(field));
+        if (field != null) {
+            // we only want to test against the normalized variant to be consistent with the DatawaveArithmetic
+            String fieldValue = ValueTuple.getNormalizedStringValue(field);
+            if (fieldValue != null) {
+                int leftComparison = fieldValue.compareTo(left);
+                if (leftComparison > 0 || (leftInclusive && leftComparison == 0)) {
+                    int rightComparison = fieldValue.compareTo(right);
+                    if (rightComparison < 0 || (rightInclusive && rightComparison == 0)) {
+                        return Collections.singleton(getHitTermString(field));
+                    }
                 }
             }
         }
@@ -80,10 +86,12 @@ public class QueryFunctions {
     }
     
     public static Collection<?> between(Iterable<?> values, String left, boolean leftInclusive, String right, boolean rightInclusive) {
-        for (Object value : values) {
-            Collection<?> matches = between(value, left, leftInclusive, right, rightInclusive);
-            if (!matches.isEmpty()) {
-                return matches;
+        if (values != null) {
+            for (Object value : values) {
+                Collection<?> matches = between(value, left, leftInclusive, right, rightInclusive);
+                if (!matches.isEmpty()) {
+                    return matches;
+                }
             }
         }
         return Collections.emptySet();
@@ -94,23 +102,27 @@ public class QueryFunctions {
     }
     
     public static Collection<?> between(Object field, float left, boolean leftInclusive, float right, boolean rightInclusive) {
-        String fieldValue = ValueTuple.getNormalizedStringValue(field);
-        Number value;
-        if (fieldValue != null && NumericalEncoder.isPossiblyEncoded(fieldValue)) {
-            try {
-                value = NumericalEncoder.decode(fieldValue);
-            } catch (NumberFormatException nfe) {
-                try {
-                    value = NumberUtils.createNumber(fieldValue);
-                } catch (Exception nfe2) {
-                    throw new NumberFormatException("Cannot decode " + fieldValue + " using NumericalEncoder or float");
+        Number value = null;
+        if (field != null) {
+            String fieldValue = ValueTuple.getNormalizedStringValue(field);
+            if (fieldValue != null) {
+                if (NumericalEncoder.isPossiblyEncoded(fieldValue)) {
+                    try {
+                        value = NumericalEncoder.decode(fieldValue);
+                    } catch (NumberFormatException nfe) {
+                        try {
+                            value = NumberUtils.createNumber(fieldValue);
+                        } catch (Exception nfe2) {
+                            throw new NumberFormatException("Cannot decode " + fieldValue + " using NumericalEncoder or float");
+                        }
+                    }
+                } else {
+                    try {
+                        value = NumberUtils.createNumber(fieldValue);
+                    } catch (Exception nfe2) {
+                        throw new NumberFormatException("Cannot decode " + fieldValue + " using float");
+                    }
                 }
-            }
-        } else {
-            try {
-                value = NumberUtils.createNumber(fieldValue);
-            } catch (Exception nfe2) {
-                throw new NumberFormatException("Cannot decode " + fieldValue + " using float");
             }
         }
         if (value != null) {
@@ -127,10 +139,12 @@ public class QueryFunctions {
     }
     
     public static Collection<?> between(Iterable<?> values, float left, boolean leftInclusive, float right, boolean rightInclusive) {
-        for (Object value : values) {
-            Collection<?> matches = between(value, left, leftInclusive, right, rightInclusive);
-            if (!matches.isEmpty()) {
-                return matches;
+        if (values != null) {
+            for (Object value : values) {
+                Collection<?> matches = between(value, left, leftInclusive, right, rightInclusive);
+                if (!matches.isEmpty()) {
+                    return matches;
+                }
             }
         }
         return Collections.emptySet();

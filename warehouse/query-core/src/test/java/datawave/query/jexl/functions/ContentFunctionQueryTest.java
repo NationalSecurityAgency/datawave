@@ -288,7 +288,7 @@ public class ContentFunctionQueryTest {
     
     @Test
     public void phraseScoreTest() throws Exception {
-        String query = "ID == 'TEST_ID' && content:phrase(-1.5, termOffsetMap,'boy','car')";
+        String query = "ID == 'TEST_ID' && content:scoredPhrase(-1.5, termOffsetMap,'boy','car')";
         
         final List<DefaultEvent> events = getQueryResults(query, true, null);
         Assert.assertEquals(1, events.size());
@@ -298,7 +298,7 @@ public class ContentFunctionQueryTest {
     
     @Test
     public void phraseScoreFilterTest() throws Exception {
-        String query = "ID == 'TEST_ID' && content:phrase(-1.4, termOffsetMap,'boy','car')";
+        String query = "ID == 'TEST_ID' && content:scoredPhrase(-1.4, termOffsetMap,'boy','car')";
         
         final List<DefaultEvent> events = getQueryResults(query, true, null);
         Assert.assertEquals(0, events.size());
