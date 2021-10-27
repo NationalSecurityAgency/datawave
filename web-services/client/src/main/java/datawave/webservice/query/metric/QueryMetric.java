@@ -182,8 +182,8 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
         buf.append(" Doc Ranges: ").append(this.getDocRanges());
         buf.append(" FI Ranges: ").append(this.getFiRanges());
         buf.append(" Login Time: ").append(this.getLoginTime());
-        buf.append(" Version: ").append(this.getVersion());
         buf.append(" Predictions: ").append(this.getPredictions());
+        buf.append(" Version: ").append(this.getVersion());
         buf.append("\n");
         return buf.toString();
     }
@@ -355,26 +355,24 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                 output.writeString(34, message.plan, false);
             }
             
-            // I'm open to move this logic elsewhere, with the intent being that the version will always be presented
-            // in the QueryMetric object for display.
-            if (message.version == null) {
-                String propertyVersion = getVersionFromProperties();
-                message.setVersion(propertyVersion);
-                output.writeString(35, propertyVersion, false);
-            } else {
-                output.writeString(35, message.version, false);
-            }
-            
             if (message.loginTime != -1) {
-                output.writeUInt64(36, message.loginTime, false);
+                output.writeUInt64(35, message.loginTime, false);
             }
             
             if (message.predictions != null) {
                 for (Prediction prediction : message.predictions) {
                     if (prediction != null) {
-                        output.writeObject(37, prediction, Prediction.getSchema(), true);
+                        output.writeObject(36, prediction, Prediction.getSchema(), true);
                     }
                 }
+            }
+            
+            // I'm open to move this logic elsewhere, with the intent being that the version will always be presented
+            // in the QueryMetric object for display.
+            if (message.version != null) {
+                String propertyVersion = getVersionFromProperties();
+                message.setVersion(propertyVersion);
+                output.writeString(37, propertyVersion, false);
             }
         }
         
@@ -500,16 +498,16 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                         message.plan = input.readString();
                         break;
                     case 35:
-                        message.version = input.readString();
-                        break;
-                    case 36:
                         message.loginTime = input.readUInt64();
                         break;
-                    case 37:
+                    case 36:
                         if (message.predictions == null) {
                             message.predictions = new HashSet<Prediction>();
                         }
                         message.predictions.add(input.mergeObject(null, Prediction.getSchema()));
+                        break;
+                    case 37:
+                        message.version = input.readString();
                         break;
                     default:
                         input.handleUnknownField(number, this);
@@ -590,11 +588,11 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
                 case 34:
                     return "plan";
                 case 35:
-                    return "version";
-                case 36:
                     return "loginTime";
-                case 37:
+                case 36:
                     return "predictions";
+                case 37:
+                    return "version";
                 default:
                     return null;
             }
@@ -642,9 +640,9 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             fieldMap.put("docRanges", 32);
             fieldMap.put("fiRanges", 33);
             fieldMap.put("plan", 34);
-            fieldMap.put("version", 35);
-            fieldMap.put("loginTime", 36);
-            fieldMap.put("predictions", 37);
+            fieldMap.put("loginTime", 35);
+            fieldMap.put("predictions", 36);
+            fieldMap.put("version", 37);
         }
     };
     
