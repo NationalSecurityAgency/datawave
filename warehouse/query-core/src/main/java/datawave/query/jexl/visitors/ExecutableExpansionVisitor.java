@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -286,8 +287,8 @@ public class ExecutableExpansionVisitor extends BaseVisitor {
             // hold the new combined terms
             ASTAndNode newAnd = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
             
-            // get new term
-            JexlNode term = orTerms.get(i);
+            // get new term, unwrapping it as necessary
+            JexlNode term = JexlASTHelper.dereferenceSafely(orTerms.get(i));
             
             // link the new andNode and the old orNode
             newAnd.jjtAddChild(term, 0);
