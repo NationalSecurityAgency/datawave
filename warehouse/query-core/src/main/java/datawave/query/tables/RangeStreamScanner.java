@@ -76,7 +76,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     // simply compare the strings. no need for a date formatter
     protected static final int dateCfLength = 8;
     protected boolean seenUnexpectedKey = false;
-    protected ArrayDeque<Entry<Key,Value>> currentQueue;
+    protected ArrayDeque<Result> currentQueue;
     
     protected Result prevDay = null;
     
@@ -303,8 +303,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
      *            shard to seek to
      * @return the matched shard, the next highest shard, or null
      */
-    public String advanceQueueToShard(Queue<Entry<Key,Value>> queue, String shard) {
-        Entry<Key,Value> top;
+    public String advanceQueueToShard(Queue<Result> queue, String shard) {
+        Result top;
         String topShard = null;
         
         boolean advancing = true;
@@ -886,9 +886,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     }
     
     // Overloaded
-    public static Entry<Key,Value> trimTrailingUnderscore(Entry<Key,Value> entry) {
+    public static Result trimTrailingUnderscore(Result entry) {
         Key nextKey = trimTrailingUnderscore(entry.getKey());
-        return new AbstractMap.SimpleEntry<>(nextKey, entry.getValue());
+        return new Result(entry.getContext(), nextKey, entry.getValue());
     }
     
     /**
