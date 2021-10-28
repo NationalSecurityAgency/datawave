@@ -654,7 +654,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         logic.setupQuery(config);
         
         return Iterators.transform(
-                        config.getQueries(),
+                        config.getQueriesIter(),
                         queryData -> {
                             try {
                                 return JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(config,

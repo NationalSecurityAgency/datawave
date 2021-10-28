@@ -3,7 +3,6 @@ package datawave.microservice.query.storage;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.services.query.logic.QueryCheckpoint;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.exception.DatawaveErrorCode;
 import org.apache.accumulo.core.security.Authorizations;
 
 import java.io.IOException;

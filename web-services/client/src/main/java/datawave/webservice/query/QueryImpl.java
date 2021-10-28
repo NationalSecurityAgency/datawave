@@ -13,8 +13,6 @@ import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
 import io.protostuff.UninitializedMessageException;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -39,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -341,7 +340,6 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     
     public void setMaxResultsOverride(long maxResults) {
         this.maxResultsOverride = maxResults;
-        this.maxResultsOverridden = true;
     }
     
     public void setPagesize(int pagesize) {
@@ -430,9 +428,8 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         query.setId(java.util.UUID.randomUUID());
         query.setPagesize(this.getPagesize());
         query.setPageTimeout(this.getPageTimeout());
-        if (query.isMaxResultsOverridden()) {
-            query.setMaxResultsOverride(this.getMaxResultsOverride());
-        }
+        query.setMaxResultsOverridden(this.isMaxResultsOverridden());
+        query.setMaxResultsOverride(this.getMaxResultsOverride());
         query.setQuery(this.getQuery());
         query.setQueryAuthorizations(this.getQueryAuthorizations());
         query.setUserDN(this.getUserDN());
@@ -444,15 +441,6 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
             query.setParameters(new HashSet<Parameter>(this.parameters));
         query.setDnList(this.dnList);
         return query;
-    }
-    
-    @Override
-    public int hashCode() {
-        return new HashCodeBuilder(17, 37).append(this.getQueryLogicName()).append(this.getQueryName()).append(this.getExpirationDate())
-                        .append(java.util.UUID.randomUUID()).append(this.getPagesize()).append(this.getPageTimeout())
-                        .append(this.isMaxResultsOverridden() ? this.getMaxResultsOverride() : 0).append(this.getQuery()).append(this.getQueryAuthorizations())
-                        .append(this.getUserDN()).append(this.getOwner()).append(this.getParameters()).append(this.getDnList())
-                        .append(this.getColumnVisibility()).append(this.getBeginDate()).append(this.getEndDate()).toHashCode();
     }
     
     @Override
@@ -479,34 +467,24 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     
     @Override
     public boolean equals(Object o) {
-        if (null == o)
-            return false;
-        if (!(o instanceof QueryImpl))
-            return false;
         if (this == o)
             return true;
-        QueryImpl other = (QueryImpl) o;
-        EqualsBuilder eb = new EqualsBuilder();
-        eb.append(this.getQueryLogicName(), other.getQueryLogicName());
-        eb.append(this.getId(), other.getId());
-        eb.append(this.getQueryName(), other.getQueryName());
-        eb.append(this.getUserDN(), other.getUserDN());
-        eb.append(this.getOwner(), other.getOwner());
-        eb.append(this.getQuery(), other.getQuery());
-        eb.append(this.getQueryAuthorizations(), other.getQueryAuthorizations());
-        eb.append(this.getExpirationDate(), other.getExpirationDate());
-        eb.append(this.getPagesize(), other.getPagesize());
-        eb.append(this.getPageTimeout(), other.getPageTimeout());
-        eb.append(this.isMaxResultsOverridden(), other.isMaxResultsOverridden());
-        if (this.isMaxResultsOverridden()) {
-            eb.append(this.getMaxResultsOverride(), other.getMaxResultsOverride());
-        }
-        eb.append(this.getColumnVisibility(), other.getColumnVisibility());
-        eb.append(this.getBeginDate(), other.getBeginDate());
-        eb.append(this.getEndDate(), other.getEndDate());
-        eb.append(this.getDnList(), other.getDnList());
-        eb.append(this.getParameters(), other.getParameters());
-        return eb.isEquals();
+        if (o == null || getClass() != o.getClass())
+            return false;
+        QueryImpl that = (QueryImpl) o;
+        return pagesize == that.pagesize && pageTimeout == that.pageTimeout && maxResultsOverridden == that.maxResultsOverridden
+                        && maxResultsOverride == that.maxResultsOverride && Objects.equals(queryLogicName, that.queryLogicName) && Objects.equals(id, that.id)
+                        && Objects.equals(queryName, that.queryName) && Objects.equals(userDN, that.userDN) && Objects.equals(query, that.query)
+                        && Objects.equals(beginDate, that.beginDate) && Objects.equals(endDate, that.endDate)
+                        && Objects.equals(queryAuthorizations, that.queryAuthorizations) && Objects.equals(expirationDate, that.expirationDate)
+                        && Objects.equals(parameters, that.parameters) && Objects.equals(dnList, that.dnList) && Objects.equals(owner, that.owner)
+                        && Objects.equals(columnVisibility, that.columnVisibility) && Objects.equals(optionalQueryParameters, that.optionalQueryParameters);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(queryLogicName, id, queryName, userDN, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout,
+                        maxResultsOverridden, maxResultsOverride, parameters, dnList, owner, columnVisibility, optionalQueryParameters);
     }
     
     public Parameter findParameter(String parameter) {

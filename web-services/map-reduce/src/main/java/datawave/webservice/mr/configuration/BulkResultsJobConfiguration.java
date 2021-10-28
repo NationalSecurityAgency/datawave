@@ -250,7 +250,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             throw new UnsupportedOperationException("Unable to run query");
         }
         
-        Iterator<QueryData> iter = queryConfig.getQueries();
+        Iterator<QueryData> iter = queryConfig.getQueriesIter();
         while (iter.hasNext()) {
             queryData = iter.next();
             ranges.addAll(queryData.getRanges());

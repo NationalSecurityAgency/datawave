@@ -423,7 +423,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
         
         if (this.queries != null) {
-            config.setQueries(this.queries.iterator());
+            config.setQueriesIter(this.queries.iterator());
         }
         
         config.setQueryString(getQueryPlanner().getPlannedScript());
@@ -1546,10 +1546,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         return getConfig().getUnevaluatedFields();
     }
     
-    public void setUnevaluatedFields(String unevaluatedFieldList) {
-        getConfig().setUnevaluatedFieldsAsString(unevaluatedFieldList);
-    }
-    
     public void setUnevaluatedFields(Collection<String> unevaluatedFields) {
         getConfig().setUnevaluatedFields(unevaluatedFields);
     }
@@ -2300,7 +2296,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
      */
     @Override
     public void setupQuery(Connector connection, QueryCheckpoint checkpoint) throws Exception {
-        ShardQueryConfiguration config = new ShardQueryConfiguration(checkpoint.getProperties());
+        ShardQueryConfiguration config = (ShardQueryConfiguration) checkpoint.getConfig();
         config.setConnector(connection);
         setScannerFactory(new ScannerFactory(config));
         
@@ -2345,7 +2341,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
     
     public static QueryCheckpoint checkpoint(QueryKey queryKey, ShardQueryConfiguration config) {
-        return new QueryCheckpoint(queryKey, config.toMap());
+        return new QueryCheckpoint(queryKey, config);
     }
     
     public Set<String> getDisallowedRegexPatterns() {

@@ -2,13 +2,10 @@ package datawave.microservice.query.storage;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
+import datawave.services.query.configuration.GenericQueryConfiguration;
 
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Objects;
 
 /**
  * A task description
@@ -16,25 +13,25 @@ import java.util.Map;
 @XmlRootElement
 public class TaskDescription {
     private final TaskKey taskKey;
-    private final Map<String,String> parameters;
+    private final GenericQueryConfiguration config;
     
     @JsonCreator
-    public TaskDescription(@JsonProperty("taskKey") TaskKey taskKey, @JsonProperty("parameters") Map<String,String> parameters) {
+    public TaskDescription(@JsonProperty("taskKey") TaskKey taskKey, @JsonProperty("config") GenericQueryConfiguration config) {
         this.taskKey = taskKey;
-        this.parameters = Collections.unmodifiableMap(new HashMap<>(parameters));
+        this.config = config;
     }
     
     public TaskKey getTaskKey() {
         return taskKey;
     }
     
-    public Map<String,String> getParameters() {
-        return parameters;
+    public GenericQueryConfiguration getConfig() {
+        return config;
     }
     
     @Override
     public String toString() {
-        return getTaskKey() + " on " + getParameters();
+        return getTaskKey() + " on " + getConfig();
     }
     
     public String toDebug() {
@@ -43,15 +40,16 @@ public class TaskDescription {
     
     @Override
     public boolean equals(Object o) {
-        if (o instanceof TaskDescription) {
-            TaskDescription other = (TaskDescription) o;
-            return new EqualsBuilder().append(getTaskKey(), other.getTaskKey()).append(getParameters(), other.getParameters()).isEquals();
-        }
-        return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        TaskDescription that = (TaskDescription) o;
+        return Objects.equals(taskKey, that.taskKey) && Objects.equals(config, that.config);
     }
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(getTaskKey()).append(getParameters()).toHashCode();
+        return Objects.hash(taskKey, config);
     }
 }

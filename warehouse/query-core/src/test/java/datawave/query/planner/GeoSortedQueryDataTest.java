@@ -338,7 +338,7 @@ public class GeoSortedQueryDataTest {
         
         logic.setupQuery(config);
         
-        return config.getQueries();
+        return config.getQueriesIter();
     }
     
     public static class TestIngestHelper extends ContentBaseIngestHelper {

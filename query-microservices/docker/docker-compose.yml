@@ -54,7 +54,7 @@ services:
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
       - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://${HOSTNAME}:9093
       - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
       - KAFKA_CFG_DELETE_TOPICS_ENABLE=true
@@ -72,7 +72,12 @@ services:
     networks:
       - demo
     environment:
-      - KAFKA_BROKERCONNECT=kafka:9092
+      - "KAFKA_BROKERCONNECT=${HOSTNAME}:9093"
+    # This mapping is required to enable kafdrop to communicate with
+    # the external, host-bound port for kafka
+    extra_hosts:
+      - "${HOSTNAME}:${HOST_IP}"
+      - "${HOST_FQDN}:${HOST_IP}"
     depends_on:
       kafka:
         condition: service_started

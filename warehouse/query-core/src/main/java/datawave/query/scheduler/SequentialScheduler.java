@@ -100,7 +100,7 @@ public class SequentialScheduler extends Scheduler {
         public SequentialSchedulerIterator(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
             this.config = config;
             this.scannerFactory = scannerFactory;
-            this.queries = config.getQueries();
+            this.queries = config.getQueriesIter();
             if (this.config.isCheckpointable()) {
                 this.queries = new SingleRangeQueryDataIterator(this.queries);
             }
@@ -192,6 +192,7 @@ public class SequentialScheduler extends Scheduler {
                 checkpoints.add(ShardQueryLogic.checkpoint(queryKey, config, Collections.singleton(queries.next())));
             }
             config.setQueries(null);
+            config.setQueriesIter(null);
             return checkpoints;
         }
         

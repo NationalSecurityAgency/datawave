@@ -1,16 +1,18 @@
 package datawave.query.discovery;
 
+import com.google.common.collect.Multimap;
 import datawave.query.config.ShardIndexQueryConfiguration;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.tables.ShardIndexQueryTable;
 import datawave.webservice.query.Query;
 
-import com.google.common.collect.Multimap;
+import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Adds the ability to hold on to two multimaps. They map literals and patterns to the fields they were associated with in the query.
  */
-public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration {
+public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration implements Serializable {
     private Multimap<String,String> literals, patterns;
     private Multimap<String,LiteralRange<String>> ranges;
     private Boolean separateCountsByColVis = false;
@@ -59,5 +61,23 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration {
     public void setShowReferenceCount(Boolean showReferenceCount) {
         this.showReferenceCount = showReferenceCount;
         
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
+        DiscoveryQueryConfiguration that = (DiscoveryQueryConfiguration) o;
+        return Objects.equals(literals, that.literals) && Objects.equals(patterns, that.patterns) && Objects.equals(ranges, that.ranges)
+                        && Objects.equals(separateCountsByColVis, that.separateCountsByColVis) && Objects.equals(showReferenceCount, that.showReferenceCount);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), literals, patterns, ranges, separateCountsByColVis, showReferenceCount);
     }
 }

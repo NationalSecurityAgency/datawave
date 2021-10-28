@@ -1,18 +1,18 @@
 package datawave.query.config;
 
-import java.util.Map;
-import java.util.Map.Entry;
-
-import datawave.query.tables.ShardIndexQueryTable;
-import datawave.webservice.query.Query;
-
-import org.apache.accumulo.core.data.Range;
-
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import datawave.query.tables.ShardIndexQueryTable;
+import datawave.webservice.query.Query;
+import org.apache.accumulo.core.data.Range;
 
-public class ShardIndexQueryConfiguration extends ShardQueryConfiguration {
+import java.io.Serializable;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+
+public class ShardIndexQueryConfiguration extends ShardQueryConfiguration implements Serializable {
     private static final long serialVersionUID = 7616552164239289739L;
     
     private Multimap<String,String> normalizedTerms = HashMultimap.create();
@@ -60,5 +60,23 @@ public class ShardIndexQueryConfiguration extends ShardQueryConfiguration {
     
     public Map<Entry<String,String>,Entry<Range,Boolean>> getRangesForPatterns() {
         return this.rangesForPatterns;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
+        ShardIndexQueryConfiguration that = (ShardIndexQueryConfiguration) o;
+        return Objects.equals(normalizedTerms, that.normalizedTerms) && Objects.equals(normalizedPatterns, that.normalizedPatterns)
+                        && Objects.equals(rangesForTerms, that.rangesForTerms) && Objects.equals(rangesForPatterns, that.rangesForPatterns);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), normalizedTerms, normalizedPatterns, rangesForTerms, rangesForPatterns);
     }
 }

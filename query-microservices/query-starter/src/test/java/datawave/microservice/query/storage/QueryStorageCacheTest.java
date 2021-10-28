@@ -1,7 +1,7 @@
 package datawave.microservice.query.storage;
 
-import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.remote.QueryRequest;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.services.query.logic.QueryCheckpoint;
 import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
@@ -26,11 +26,9 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
@@ -112,7 +110,7 @@ public abstract class QueryStorageCacheTest {
         QueryKey queryKey = new QueryKey("default", queryId, "EventQuery");
         queryStatusCache.updateQueryStatus(new QueryStatus(queryKey));
         taskStatesCache.updateTaskStates(new TaskStates(queryKey, 3));
-        QueryTask task = taskCache.addQueryTask(0, QueryRequest.Method.CREATE, new QueryCheckpoint(queryKey, new HashMap<>()));
+        QueryTask task = taskCache.addQueryTask(0, QueryRequest.Method.CREATE, new QueryCheckpoint(queryKey));
         QueryStorageLock qLock = queryStatusCache.getQueryStatusLock(queryId);
         QueryStorageLock sLock = taskStatesCache.getTaskStatesLock(queryId);
         assertFalse(qLock.isLocked());
@@ -150,12 +148,12 @@ public abstract class QueryStorageCacheTest {
         assertEquals(TaskStates.TASK_STATE.READY, states.getState(key.getTaskId()));
         
         QueryTask task = storageService.getTask(key);
-        assertQueryTask(key.getQueryId(), QueryRequest.Method.CREATE, query, task);
+        assertCreateQueryTask(key.getQueryId(), QueryRequest.Method.CREATE, task);
         
         List<QueryTask> tasks = taskCache.getTasks(key.getQueryId());
         assertNotNull(tasks);
         assertEquals(1, tasks.size());
-        assertQueryTask(key, QueryRequest.Method.CREATE, query, tasks.get(0));
+        assertCreateQueryTask(key, QueryRequest.Method.CREATE, tasks.get(0));
         
         List<QueryStatus> queries = queryStatusCache.getQueryStatus();
         assertNotNull(queries);
@@ -163,9 +161,11 @@ public abstract class QueryStorageCacheTest {
         assertQueryCreate(key.getQueryId(), queryPool, queries.get(0));
         
         List<TaskDescription> taskDescs = taskCache.getTaskDescriptions(key.getQueryId());
+        QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
         assertNotNull(taskDescs);
+        assertNotNull(queryStatus);
         assertEquals(1, taskDescs.size());
-        assertQueryCreate(key.getQueryId(), queryPool, query, taskDescs.get(0));
+        assertQueryCreate(key.getQueryId(), queryPool, query, taskDescs.get(0), queryStatus);
     }
     
     public static class QueryTaskHolder {
@@ -202,11 +202,13 @@ public abstract class QueryStorageCacheTest {
         query.setQuery("foo == bar");
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setQuery(query);
         String queryId = UUID.randomUUID().toString();
         createdQueries.add(queryId);
         String queryPool = TEST_POOL;
         QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, config);
         taskStatesCache.updateTaskStates(new TaskStates(queryKey, 10));
         QueryTask task = storageService.createTask(QueryRequest.Method.NEXT, checkpoint);
         TaskKey key = task.getTaskKey();
@@ -233,11 +235,13 @@ public abstract class QueryStorageCacheTest {
         query.setQuery("foo == bar");
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setQuery(query);
         String queryId = UUID.randomUUID().toString();
         createdQueries.add(queryId);
         String queryPool = TEST_POOL;
         QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, config);
         taskStatesCache.updateTaskStates(new TaskStates(queryKey, 10));
         QueryRequest.Method action = QueryRequest.Method.CREATE;
         
@@ -264,9 +268,11 @@ public abstract class QueryStorageCacheTest {
         assertEquals(task, task2);
         
         // now update the task
-        Map<String,Object> props = new HashMap<>();
-        props.put("checkpoint", Boolean.TRUE);
-        checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), props);
+        QueryImpl query2 = new QueryImpl();
+        query2.setQueryName("update");
+        ShardQueryConfiguration config2 = new ShardQueryConfiguration();
+        config.setQuery(query2);
+        checkpoint = new QueryCheckpoint(queryPool, queryId, query.getQueryLogicName(), config2);
         storageService.checkpointTask(task.getTaskKey(), checkpoint);
         
         task2 = storageService.getTask(task.getTaskKey());
@@ -281,11 +287,13 @@ public abstract class QueryStorageCacheTest {
         query.setQuery("foo == bar");
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setQuery(query);
         String queryId = UUID.randomUUID().toString();
         createdQueries.add(queryId);
         String queryPool = TEST_POOL;
         QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, config);
         taskStatesCache.updateTaskStates(new TaskStates(queryKey, 10));
         
         QueryTask task = storageService.createTask(QueryRequest.Method.NEXT, checkpoint);
@@ -309,11 +317,13 @@ public abstract class QueryStorageCacheTest {
         query.setQuery("foo == bar");
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setQuery(query);
         String queryId = UUID.randomUUID().toString();
         createdQueries.add(queryId);
         String queryPool = TEST_POOL;
         QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, config);
         taskStatesCache.updateTaskStates(new TaskStates(queryKey, 10));
         
         TaskKey taskKey = storageService.createTask(QueryRequest.Method.NEXT, checkpoint).getTaskKey();
@@ -342,12 +352,14 @@ public abstract class QueryStorageCacheTest {
         query.setQuery("foo == bar");
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setQuery(query);
         String queryId = UUID.randomUUID().toString();
         createdQueries.add(queryId);
         String queryPool = TEST_POOL;
         QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
         QueryStatus queryStatus = new QueryStatus(queryKey);
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, config);
         taskStatesCache.updateTaskStates(new TaskStates(queryKey, 10));
         
         storageService.updateQueryStatus(queryStatus);
@@ -378,11 +390,13 @@ public abstract class QueryStorageCacheTest {
         query.setQuery("foo == bar");
         query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
         query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setQuery(query);
         String queryId = UUID.randomUUID().toString();
         createdQueries.add(queryId);
         String queryPool = TEST_POOL;
         QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, config);
         TaskStates states = new TaskStates(queryKey, 2);
         QueryRequest.Method action = QueryRequest.Method.CREATE;
         TaskKey key = new TaskKey(0, queryKey);
@@ -459,20 +473,30 @@ public abstract class QueryStorageCacheTest {
         assertEquals(queryPool, status.getQueryKey().getQueryPool());
     }
     
-    private void assertQueryCreate(String queryId, String queryPool, Query query, TaskDescription task) throws ParseException {
+    private void assertQueryCreate(String queryId, String queryPool, Query query, TaskDescription task, QueryStatus queryStatus) throws ParseException {
         assertNotNull(task.getTaskKey());
         assertEquals(queryId, task.getTaskKey().getQueryId());
         assertEquals(queryPool, task.getTaskKey().getQueryPool());
-        assertEquals(query.getQuery(), task.getParameters().get(QueryImpl.QUERY));
-        assertEquals(DefaultQueryParameters.formatDate(query.getBeginDate()), task.getParameters().get(QueryImpl.BEGIN_DATE));
-        assertEquals(DefaultQueryParameters.formatDate(query.getEndDate()), task.getParameters().get(QueryImpl.END_DATE));
+        assertEquals(query.getQuery(), queryStatus.getQuery().getQuery());
+        assertEquals(query.getBeginDate(), queryStatus.getQuery().getBeginDate());
+        assertEquals(query.getEndDate(), queryStatus.getQuery().getEndDate());
+    }
+    
+    private void assertCreateQueryTask(String queryId, QueryRequest.Method action, QueryTask task) throws ParseException {
+        assertEquals(queryId, task.getTaskKey().getQueryId());
+        assertEquals(action, task.getAction());
+        assertEquals(task.getQueryCheckpoint().getQueryKey().getQueryId(), queryId);
     }
     
     private void assertQueryTask(String queryId, QueryRequest.Method action, Query query, QueryTask task) throws ParseException {
         assertEquals(queryId, task.getTaskKey().getQueryId());
         assertEquals(action, task.getAction());
         assertEquals(task.getQueryCheckpoint().getQueryKey().getQueryId(), queryId);
-        assertEquals(query, task.getQueryCheckpoint().getPropertiesAsQuery());
+        assertEquals(query, task.getQueryCheckpoint().getConfig().getQuery());
+    }
+    
+    private void assertCreateQueryTask(TaskKey taskKey, QueryRequest.Method action, QueryTask task) throws ParseException {
+        assertCreateQueryTask(taskKey.getQueryId(), action, task);
     }
     
     private void assertQueryTask(TaskKey taskKey, QueryRequest.Method action, Query query, QueryTask task) throws ParseException {

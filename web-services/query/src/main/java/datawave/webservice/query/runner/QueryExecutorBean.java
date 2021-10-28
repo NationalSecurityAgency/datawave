@@ -2730,6 +2730,7 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             if (newMaxResultsOverride != null) {
                 q.setMaxResultsOverride(newMaxResultsOverride);
+                q.setMaxResultsOverridden(true);
             }
             if (newPageTimeout != null) {
                 q.setPageTimeout(newPageTimeout);
@@ -2955,6 +2956,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         if (maxResultsOverride != null) {
             q.setMaxResultsOverride(maxResultsOverride);
+            q.setMaxResultsOverridden(true);
         }
         if (parameters != null) {
             Set<Parameter> params = new HashSet<>();

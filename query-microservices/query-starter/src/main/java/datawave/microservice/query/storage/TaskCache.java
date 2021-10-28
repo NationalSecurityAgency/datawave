@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @CacheConfig(cacheNames = TaskCache.CACHE_NAME)
@@ -194,8 +193,7 @@ public class TaskCache {
     private List<TaskDescription> getTaskDescriptions(List<QueryTask> tasks) {
         List<TaskDescription> descriptions = new ArrayList<>();
         for (QueryTask task : tasks) {
-            descriptions.add(new TaskDescription(task.getTaskKey(), task.getQueryCheckpoint().getProperties().entrySet().stream()
-                            .collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())))));
+            descriptions.add(new TaskDescription(task.getTaskKey(), task.getQueryCheckpoint().getConfig()));
         }
         return descriptions;
     }

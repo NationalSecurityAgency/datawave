@@ -5,7 +5,10 @@ import datawave.services.query.logic.BaseQueryLogic;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.data.Range;
 
-public class TermFrequencyQueryConfiguration extends GenericQueryConfiguration {
+import java.io.Serializable;
+import java.util.Objects;
+
+public class TermFrequencyQueryConfiguration extends GenericQueryConfiguration implements Serializable {
     
     private static final long serialVersionUID = 1L;
     
@@ -22,5 +25,22 @@ public class TermFrequencyQueryConfiguration extends GenericQueryConfiguration {
     
     public void setRange(Range range) {
         this.range = range;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
+        TermFrequencyQueryConfiguration that = (TermFrequencyQueryConfiguration) o;
+        return Objects.equals(range, that.range);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), range);
     }
 }

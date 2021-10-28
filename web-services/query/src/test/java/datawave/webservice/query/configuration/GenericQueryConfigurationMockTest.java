@@ -41,8 +41,8 @@ public class GenericQueryConfigurationMockTest {
     public void setup() {
         this.config = new GenericQueryConfiguration() {
             @Override
-            public Iterator<QueryData> getQueries() {
-                return super.getQueries();
+            public Iterator<QueryData> getQueriesIter() {
+                return super.getQueriesIter();
             }
         };
     }
@@ -69,6 +69,8 @@ public class GenericQueryConfigurationMockTest {
     
     @Test
     public void testCanRunQuery_HappyPath() {
+        expect(this.authorizations.getAuthorizations()).andReturn(Collections.emptyList());
+        
         // Run the test
         PowerMock.replayAll();
         GenericQueryConfiguration subject = new GenericQueryConfiguration() {};

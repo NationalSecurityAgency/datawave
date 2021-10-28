@@ -4,7 +4,10 @@ import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 
-public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration {
+import java.io.Serializable;
+import java.util.Objects;
+
+public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration implements Serializable {
     
     public static final String SUMMARIZE = "summarize";
     public static final String LIMITED_JEXL = "LIMITED_JEXL";
@@ -114,5 +117,25 @@ public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration {
     
     public boolean isOverRideInput() {
         return overRideInput;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
+        EdgeExtendedSummaryConfiguration that = (EdgeExtendedSummaryConfiguration) o;
+        return delimiter == that.delimiter && scannerThreads == that.scannerThreads && includeRelationships == that.includeRelationships
+                        && summaryInputType == that.summaryInputType && aggregateResults == that.aggregateResults && overRideInput == that.overRideInput
+                        && overRideOutput == that.overRideOutput && Objects.equals(edgeTypes, that.edgeTypes);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), delimiter, scannerThreads, includeRelationships, edgeTypes, summaryInputType, aggregateResults, overRideInput,
+                        overRideOutput);
     }
 }

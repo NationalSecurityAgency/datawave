@@ -60,7 +60,7 @@ public class PartitionedQueryLogic extends ShardQueryLogic {
         
         if (chunker.preInitializeQueryLogic()) {
             GenericQueryConfiguration config = super.initialize(this.connector, this.settings, this.auths);
-            if (!config.getQueries().hasNext()) {
+            if (!config.getQueriesIter().hasNext()) {
                 return config;
             }
             

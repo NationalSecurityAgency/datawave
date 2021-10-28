@@ -102,7 +102,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     }
     
     @Override
-    public ResultsPage<Object> call() {
+    public ResultsPage<Object> call() throws Exception {
         startTimeMillis = System.currentTimeMillis();
         
         QueryQueueListener resultListener = queryQueueManager.createListener(UUID.randomUUID().toString(), queryId);
@@ -125,9 +125,6 @@ public class NextCall implements Callable<ResultsPage<Object>> {
                     }
                 }
             }
-        } catch (QueryException e) {
-            // TODO Is there a better way to pass this exception up?
-            throw new RuntimeException(e);
         } finally {
             // stop the result listener
             resultListener.stop();
@@ -152,15 +149,15 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         long callTimeMillis = System.currentTimeMillis() - startTimeMillis;
         final QueryStatus queryStatus = getQueryStatus();
         
-        // 0) has the query failed?
+        // if the query state is FAILED, throw an exception up to the query management service with the failure message
         if (queryStatus.getQueryState() == QueryStatus.QUERY_STATE.FAILED) {
-            log.error("Query [{}]: failed: {}\n{}", queryId, queryStatus.getFailureMessage(), queryStatus.getStackTrace());
+            log.error("Query [{}]: query failed, aborting next call. Cause: {}", queryId, queryStatus.getFailureMessage());
             
             throw new QueryException(queryStatus.getErrorCode(), queryStatus.getFailureMessage());
         }
         
         // 1) have we hit the user's results-per-page limit?
-        if (!finished && results.size() >= userResultsPerPage) {
+        if (results.size() >= userResultsPerPage) {
             log.info("Query [{}]: user requested max page size has been reached, aborting next call", queryId);
             
             finished = true;

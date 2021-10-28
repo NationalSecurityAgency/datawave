@@ -1,6 +1,5 @@
 package datawave.microservice.query.storage;
 
-import com.ecwid.consul.v1.query.model.QueryExecution;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.config.QueryStorageProperties;
@@ -95,7 +94,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
         
         // create the initial query checkpoint
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, query);
+        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey);
         
         // store the initial query properties
         QueryStatus queryStatus = new QueryStatus(checkpoint.getQueryKey());

@@ -1,6 +1,7 @@
 package datawave.services.query.configuration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.Iterators;
 import datawave.services.query.logic.BaseQueryLogic;
 import datawave.util.TableName;
@@ -10,10 +11,15 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 
 import javax.xml.bind.annotation.XmlTransient;
+import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -26,11 +32,15 @@ import java.util.Set;
  * </p>
  *
  */
-public abstract class GenericQueryConfiguration {
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
+public abstract class GenericQueryConfiguration implements Serializable {
     // is this execution expected to be checkpointable (changes how we allocate ranges to scanners)
     private boolean checkpointable = false;
     
-    private Connector connector = null;
+    private transient Connector connector = null;
+    
+    // This is just used for (de)serialization
+    private Set<String> auths = Collections.emptySet();
     private Set<Authorizations> authorizations = Collections.singleton(Authorizations.EMPTY);
     
     private Query query = null;
@@ -49,7 +59,10 @@ public abstract class GenericQueryConfiguration {
     // Table name
     private String tableName = TableName.SHARD;
     
-    private Iterator<QueryData> queries = Collections.emptyIterator();
+    private Collection<QueryData> queries = Collections.emptyList();
+    
+    @JsonIgnore
+    private transient Iterator<QueryData> queriesIter = Collections.emptyIterator();
     
     protected boolean bypassAccumulo;
     
@@ -79,8 +92,17 @@ public abstract class GenericQueryConfiguration {
         this.setEndDate(genericConfig.getEndDate());
         this.setMaxWork(genericConfig.getMaxWork());
         this.setQueries(genericConfig.getQueries());
+        this.setQueriesIter(genericConfig.getQueriesIter());
         this.setQueryString(genericConfig.getQueryString());
         this.setTableName(genericConfig.getTableName());
+    }
+    
+    public Collection<QueryData> getQueries() {
+        return queries;
+    }
+    
+    public void setQueries(Collection<QueryData> queries) {
+        this.queries = queries;
     }
     
     /**
@@ -88,18 +110,22 @@ public abstract class GenericQueryConfiguration {
      *
      * @return An iterator of query ranges
      */
-    public Iterator<QueryData> getQueries() {
-        return Iterators.unmodifiableIterator(this.queries);
+    public Iterator<QueryData> getQueriesIter() {
+        if (queriesIter == null && queries != null) {
+            return Iterators.unmodifiableIterator(queries.iterator());
+        } else {
+            return Iterators.unmodifiableIterator(this.queriesIter);
+        }
     }
     
     /**
      * Set the queries to be run.
      *
-     * @param queries
+     * @param queriesIter
      *            An iterator of query ranges
      */
-    public void setQueries(Iterator<QueryData> queries) {
-        this.queries = queries;
+    public void setQueriesIter(Iterator<QueryData> queriesIter) {
+        this.queriesIter = queriesIter;
     }
     
     public boolean isCheckpointable() {
@@ -136,12 +162,33 @@ public abstract class GenericQueryConfiguration {
         return queryString;
     }
     
+    public Set<String> getAuths() {
+        if (auths == null && authorizations != null) {
+            auths = authorizations.stream().flatMap(a -> a.getAuthorizations().stream()).map(b -> new String(b, StandardCharsets.UTF_8))
+                            .collect(Collectors.toSet());
+        }
+        return auths;
+    }
+    
+    public void setAuths(Set<String> auths) {
+        this.auths = auths;
+        this.authorizations = null;
+        getAuthorizations();
+    }
+    
+    @JsonIgnore
     public Set<Authorizations> getAuthorizations() {
+        if (authorizations == null && auths != null) {
+            authorizations = Collections
+                            .singleton(new Authorizations(auths.stream().map(a -> a.getBytes(StandardCharsets.UTF_8)).collect(Collectors.toList())));
+        }
         return authorizations;
     }
     
-    public void setAuthorizations(Set<Authorizations> auths) {
-        this.authorizations = auths;
+    public void setAuthorizations(Set<Authorizations> authorizations) {
+        this.authorizations = authorizations;
+        this.auths = null;
+        getAuths();
     }
     
     public int getBaseIteratorPriority() {
@@ -214,10 +261,31 @@ public abstract class GenericQueryConfiguration {
         }
         
         // At least one QueryData was provided
-        if (null == this.queries) {
+        if (null == this.getQueriesIter()) {
             return false;
         }
         
         return true;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        GenericQueryConfiguration that = (GenericQueryConfiguration) o;
+        return isCheckpointable() == that.isCheckpointable() && getBaseIteratorPriority() == that.getBaseIteratorPriority()
+                        && getBypassAccumulo() == that.getBypassAccumulo() && Objects.equals(getAuthorizations(), that.getAuthorizations())
+                        && Objects.equals(getQuery(), that.getQuery()) && Objects.equals(getQueryString(), that.getQueryString())
+                        && Objects.equals(getBeginDate(), that.getBeginDate()) && Objects.equals(getEndDate(), that.getEndDate())
+                        && Objects.equals(getMaxWork(), that.getMaxWork()) && Objects.equals(getTableName(), that.getTableName())
+                        && Objects.equals(getQueries(), that.getQueries());
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(isCheckpointable(), getAuthorizations(), getQuery(), getQueryString(), getBeginDate(), getEndDate(), getMaxWork(),
+                        getBaseIteratorPriority(), getTableName(), getQueries(), getBypassAccumulo());
     }
 }

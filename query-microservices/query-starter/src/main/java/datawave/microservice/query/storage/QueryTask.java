@@ -8,7 +8,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.io.Serializable;
-import java.util.UUID;
 
 /**
  * A query task is an action to perform for a specified query.
@@ -67,7 +66,7 @@ public class QueryTask implements Serializable {
     
     @Override
     public String toString() {
-        return getTaskKey() + " with " + getQueryCheckpoint().getProperties();
+        return getTaskKey() + " with " + getQueryCheckpoint().getConfig();
     }
     
     /**

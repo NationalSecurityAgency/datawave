@@ -3,6 +3,8 @@
 DATAWAVE_ENDPOINT=https://localhost:8443/query/v1
 METRICS_ENDPOINT=https://localhost:8543/querymetric/v1
 
+PAUSE='false'
+
 POOL="${POOL:-pool1}"
 
 MAX_PAGES=100
@@ -74,7 +76,7 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "begin=20200101 000000.000" \
     --data-urlencode "end=20300101 235959.999" \
     --data-urlencode "columnVisibility=PUBLIC" \
-    --data-urlencode "query=GENRES:Comedy" \
+    --data-urlencode "query=GENRES:[Action to Western]" \
     --data-urlencode "query.syntax=LUCENE" \
     --data-urlencode "auths=PUBLIC,PRIVATE,BAR,FOO" \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
@@ -100,6 +102,11 @@ while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
         i=-1
     else
         ((i++))
+    fi
+
+    if [ "$PAUSE" == "true" ]; then
+        echo "press any key to continue"
+        read -n 1
     fi
 done
 

@@ -5,15 +5,17 @@ import datawave.services.query.logic.BaseQueryLogic;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.data.Range;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.TreeSet;
 
 /**
  * Thin wrapper around GenericQueryConfiguration for use by the {@link datawave.query.tables.content.ContentQueryTable}
  * 
  */
-public class ContentQueryConfiguration extends GenericQueryConfiguration {
+public class ContentQueryConfiguration extends GenericQueryConfiguration implements Serializable {
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 1662850178943683419L;
     
@@ -49,5 +51,22 @@ public class ContentQueryConfiguration extends GenericQueryConfiguration {
                 this.ranges.addAll(ranges);
             }
         }
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
+        ContentQueryConfiguration that = (ContentQueryConfiguration) o;
+        return Objects.equals(ranges, that.ranges);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), ranges);
     }
 }

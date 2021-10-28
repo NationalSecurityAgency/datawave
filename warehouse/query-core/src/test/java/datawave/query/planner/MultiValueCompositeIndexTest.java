@@ -422,7 +422,7 @@ public class MultiValueCompositeIndexTest {
         
         logic.setupQuery(config);
         
-        return config.getQueries();
+        return config.getQueriesIter();
     }
     
     private Iterator getResultsIterator(String queryString, ShardQueryLogic logic) throws Exception {

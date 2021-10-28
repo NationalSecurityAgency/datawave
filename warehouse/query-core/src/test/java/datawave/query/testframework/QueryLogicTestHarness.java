@@ -9,7 +9,6 @@ import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
-import datawave.services.query.configuration.QueryData;
 import datawave.services.query.logic.BaseQueryLogic;
 import datawave.services.query.logic.CheckpointableQueryLogic;
 import datawave.services.query.logic.QueryCheckpoint;
@@ -68,10 +67,9 @@ public class QueryLogicTestHarness {
     // assert methods
     
     private void dumpCp(String start, QueryCheckpoint cp) {
-        Collection<QueryData> queries = (Collection<QueryData>) cp.getProperties().get("queries");
-        for (QueryData qd : queries) {
+        cp.getConfig().getQueriesIter().forEachRemaining(qd -> {
             System.out.println(">>>> " + start + ": " + qd.getRanges() + " -> " + qd.getLastResult());
-        }
+        });
     }
     
     /**

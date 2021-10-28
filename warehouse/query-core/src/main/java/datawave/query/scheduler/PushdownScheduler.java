@@ -144,7 +144,7 @@ public class PushdownScheduler extends Scheduler {
      * @throws AccumuloException
      */
     protected Iterator<Result> concatIterators() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ParseException {
-        boolean hasNext = config.getQueries().hasNext();
+        boolean hasNext = config.getQueriesIter().hasNext();
         String tableName = config.getShardTableName();
         
         Set<Authorizations> auths = config.getAuthorizations();
@@ -195,9 +195,9 @@ public class PushdownScheduler extends Scheduler {
     
     protected Iterator<QueryData> getQueryDataIterator() {
         if (config.isCheckpointable()) {
-            return new SingleRangeQueryDataIterator(config.getQueries());
+            return new SingleRangeQueryDataIterator(config.getQueriesIter());
         } else {
-            return config.getQueries();
+            return config.getQueriesIter();
         }
     }
     

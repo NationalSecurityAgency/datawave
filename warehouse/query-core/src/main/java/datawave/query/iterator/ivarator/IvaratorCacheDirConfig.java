@@ -7,13 +7,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.log4j.Logger;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class IvaratorCacheDirConfig {
+public class IvaratorCacheDirConfig implements Serializable {
     private static final Logger log = Logger.getLogger(IvaratorCacheDir.class);
     
     public static final int DEFAULT_PRIORITY = Integer.MAX_VALUE;
@@ -39,7 +40,7 @@ public class IvaratorCacheDirConfig {
         objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
     }
     
-    public IvaratorCacheDirConfig() {
+    private IvaratorCacheDirConfig() {
         this(null);
     }
     

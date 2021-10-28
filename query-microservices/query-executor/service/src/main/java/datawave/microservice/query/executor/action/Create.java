@@ -12,7 +12,6 @@ import datawave.microservice.querymetric.QueryMetricType;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.CheckpointableQueryLogic;
 import datawave.services.query.logic.QueryLogic;
-import datawave.webservice.query.exception.DatawaveErrorCode;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;

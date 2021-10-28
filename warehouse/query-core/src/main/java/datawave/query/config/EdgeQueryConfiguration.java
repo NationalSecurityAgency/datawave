@@ -7,12 +7,14 @@ import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 
+import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created with IntelliJ IDEA. To change this template use File | Settings | File Templates.
  */
-public class EdgeQueryConfiguration extends GenericQueryConfiguration {
+public class EdgeQueryConfiguration extends GenericQueryConfiguration implements Serializable {
     private static final long serialVersionUID = -2795330785878662313L;
     
     // We originally had the two choices:
@@ -192,5 +194,27 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration {
     
     public void setModelTableName(String modelTableName) {
         this.modelTableName = modelTableName;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
+        EdgeQueryConfiguration that = (EdgeQueryConfiguration) o;
+        return numQueryThreads == that.numQueryThreads && protobufEdgeFormat == that.protobufEdgeFormat && includeStats == that.includeStats
+                        && maxQueryTerms == that.maxQueryTerms && maxPrefilterValues == that.maxPrefilterValues && aggregateResults == that.aggregateResults
+                        && Objects.equals(modelName, that.modelName) && Objects.equals(modelTableName, that.modelTableName)
+                        && Objects.equals(edgeQueryModel, that.edgeQueryModel) && Objects.equals(dataTypes, that.dataTypes)
+                        && dateRangeType == that.dateRangeType;
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), modelName, modelTableName, edgeQueryModel, dataTypes, numQueryThreads, protobufEdgeFormat, includeStats,
+                        maxQueryTerms, maxPrefilterValues, dateRangeType, aggregateResults);
     }
 }

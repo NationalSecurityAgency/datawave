@@ -2,17 +2,18 @@ package datawave.microservice.query.storage;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.zaxxer.sparsebits.SparseBitSet;
 import datawave.microservice.query.remote.QueryRequest;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.services.query.logic.QueryCheckpoint;
 import datawave.services.query.logic.QueryKey;
+import datawave.webservice.query.QueryImpl;
 import org.junit.Test;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -107,23 +108,27 @@ public class QueryTaskCheckpointTest {
         String uuid = UUID.randomUUID().toString();
         String queryPool = "default";
         String queryLogic = "EventQuery";
-        Map<String,Object> props = new HashMap<>();
-        props.put("name", "foo");
-        props.put("query", "foo == bar");
-        QueryCheckpoint qcp = new QueryCheckpoint(queryPool, uuid, queryLogic, props);
+        QueryImpl query = new QueryImpl();
+        query.setQueryName("foo");
+        query.setQuery("foo == bar");
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setQuery(query);
+        QueryCheckpoint qcp = new QueryCheckpoint(queryPool, uuid, queryLogic, config);
         
         assertEquals(queryPool, qcp.getQueryKey().getQueryPool());
-        assertEquals(props, qcp.getProperties());
+        assertEquals(config, qcp.getConfig());
         assertEquals(uuid, qcp.getQueryKey().getQueryId());
         
         String uuid2 = uuid;
         String queryPool2 = "default";
         String queryLogic2 = "EventQuery";
-        Map<String,Object> props2 = new HashMap<>();
-        props2.put("name", "foo");
-        props2.put("query", "foo == bar");
-        assertEquals(props, props2);
-        QueryCheckpoint qcp2 = new QueryCheckpoint(queryPool2, uuid2, queryLogic2, props2);
+        QueryImpl query2 = new QueryImpl();
+        query2.setQueryName("foo");
+        query2.setQuery("foo == bar");
+        ShardQueryConfiguration config2 = new ShardQueryConfiguration();
+        config2.setQuery(query2);
+        assertEquals(config, config2);
+        QueryCheckpoint qcp2 = new QueryCheckpoint(queryPool2, uuid2, queryLogic2, config2);
         
         assertEquals(qcp, qcp2);
         assertEquals(qcp.hashCode(), qcp2.hashCode());
@@ -131,15 +136,17 @@ public class QueryTaskCheckpointTest {
         String otherId = UUID.randomUUID().toString();
         String otherPool = "other";
         String otherLogic = "EdgeQuery";
-        Map<String,Object> otherProps = new HashMap<>();
-        otherProps.put("name", "bar");
-        QueryCheckpoint otherCp = new QueryCheckpoint(otherPool, uuid, queryLogic, props);
+        QueryImpl otherQuery = new QueryImpl();
+        otherQuery.setQueryName("bar");
+        ShardQueryConfiguration otherConfig = new ShardQueryConfiguration();
+        otherConfig.setQuery(otherQuery);
+        QueryCheckpoint otherCp = new QueryCheckpoint(otherPool, uuid, queryLogic, config);
         assertNotEquals(otherCp, qcp);
-        otherCp = new QueryCheckpoint(queryPool, otherId, queryLogic, props);
+        otherCp = new QueryCheckpoint(queryPool, otherId, queryLogic, config);
         assertNotEquals(otherCp, qcp);
-        otherCp = new QueryCheckpoint(queryPool, uuid, otherLogic, props);
+        otherCp = new QueryCheckpoint(queryPool, uuid, otherLogic, config);
         assertNotEquals(otherCp, qcp);
-        otherCp = new QueryCheckpoint(queryPool, uuid, queryLogic, otherProps);
+        otherCp = new QueryCheckpoint(queryPool, uuid, queryLogic, otherConfig);
         assertNotEquals(otherCp, qcp);
     }
     
@@ -148,10 +155,12 @@ public class QueryTaskCheckpointTest {
         String uuid = UUID.randomUUID().toString();
         String queryPool = "default";
         String queryLogic = "EventQuery";
-        Map<String,Object> props = new HashMap<>();
-        props.put("name", "foo");
-        props.put("query", "foo == bar");
-        QueryCheckpoint qcp = new QueryCheckpoint(queryPool, uuid, queryLogic, props);
+        QueryImpl query = new QueryImpl();
+        query.setQueryName("foo");
+        query.setQuery("foo == bar");
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setQuery(query);
+        QueryCheckpoint qcp = new QueryCheckpoint(queryPool, uuid, queryLogic, config);
         QueryTask task = new QueryTask(0, QueryRequest.Method.CREATE, qcp);
         
         assertEquals(QueryRequest.Method.CREATE, task.getAction());
@@ -160,10 +169,12 @@ public class QueryTaskCheckpointTest {
         String uuid2 = uuid;
         String queryPool2 = "default";
         String queryLogic2 = "EventQuery";
-        Map<String,Object> props2 = new HashMap<>();
-        props2.put("name", "foo");
-        props2.put("query", "foo == bar");
-        QueryCheckpoint qcp2 = new QueryCheckpoint(queryPool2, uuid2, queryLogic2, props2);
+        QueryImpl query2 = new QueryImpl();
+        query2.setQueryName("foo");
+        query2.setQuery("foo == bar");
+        ShardQueryConfiguration config2 = new ShardQueryConfiguration();
+        config2.setQuery(query2);
+        QueryCheckpoint qcp2 = new QueryCheckpoint(queryPool2, uuid2, queryLogic2, config2);
         assertEquals(qcp, qcp2);
         QueryTask task2 = new QueryTask(task.getTaskKey().getTaskId(), QueryRequest.Method.CREATE, qcp2);
         
@@ -172,7 +183,7 @@ public class QueryTaskCheckpointTest {
         assertEquals(task.getTaskKey(), task2.getTaskKey());
         
         String otherId = UUID.randomUUID().toString();
-        QueryCheckpoint otherCp = new QueryCheckpoint(queryPool, otherId, queryLogic, props);
+        QueryCheckpoint otherCp = new QueryCheckpoint(queryPool, otherId, queryLogic, config);
         QueryTask otherTask = new QueryTask(1, QueryRequest.Method.CREATE, qcp);
         assertNotEquals(otherTask, task);
         assertNotEquals(otherTask.getTaskKey(), task.getTaskKey());
@@ -187,35 +198,44 @@ public class QueryTaskCheckpointTest {
     @Test
     public void testTaskDescription() throws JsonProcessingException {
         TaskKey key = new TaskKey(0, "default", UUID.randomUUID().toString(), "EventQuery");
-        Map<String,String> props = new HashMap<>();
-        props.put("name", "foo");
-        props.put("query", "foo == bar");
-        TaskDescription desc = new TaskDescription(key, props);
+        QueryImpl query = new QueryImpl();
+        UUID queryId = UUID.randomUUID();
+        query.setId(queryId);
+        query.setQueryName("foo");
+        query.setQuery("foo == bar");
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setQuery(query);
+        TaskDescription desc = new TaskDescription(key, config);
         
         assertEquals(key, desc.getTaskKey());
-        assertEquals(props, desc.getParameters());
+        assertEquals(config, desc.getConfig());
         
-        String json = new ObjectMapper().writeValueAsString(desc);
-        TaskDescription desc2 = new ObjectMapper().readerFor(TaskDescription.class).readValue(json);
+        String json = new ObjectMapper().registerModule(new GuavaModule()).writeValueAsString(desc);
+        TaskDescription desc2 = new ObjectMapper().registerModule(new GuavaModule()).readerFor(TaskDescription.class).readValue(json);
         assertEquals(desc, desc2);
         assertEquals(desc.hashCode(), desc2.hashCode());
         
         TaskKey key2 = new TaskKey(key.getTaskId(), key.getQueryPool(), key.getQueryId(), key.getQueryLogic());
-        Map<String,String> props2 = new HashMap<>();
-        props2.put("name", "foo");
-        props2.put("query", "foo == bar");
-        desc2 = new TaskDescription(key2, props2);
+        QueryImpl query2 = new QueryImpl();
+        query2.setId(queryId);
+        query2.setQueryName("foo");
+        query2.setQuery("foo == bar");
+        ShardQueryConfiguration config2 = new ShardQueryConfiguration();
+        config2.setQuery(query2);
+        desc2 = new TaskDescription(key2, config2);
         
         assertEquals(desc, desc2);
         assertEquals(desc.hashCode(), desc.hashCode());
         
         TaskKey otherKey = new TaskKey(key.getTaskId() + 1, key.getQueryPool(), key.getQueryId(), key.getQueryLogic());
-        Map<String,String> otherProps = new HashMap<>();
-        otherProps.put("name", "bar");
-        otherProps.put("query", "foo == bar");
-        TaskDescription otherDesc = new TaskDescription(otherKey, props);
+        QueryImpl otherQuery = new QueryImpl();
+        otherQuery.setQueryName("bar");
+        otherQuery.setQuery("foo == bar");
+        ShardQueryConfiguration otherConfig = new ShardQueryConfiguration();
+        otherConfig.setQuery(otherQuery);
+        TaskDescription otherDesc = new TaskDescription(otherKey, config);
         assertNotEquals(otherDesc, desc);
-        otherDesc = new TaskDescription(key, otherProps);
+        otherDesc = new TaskDescription(key, otherConfig);
         assertNotEquals(otherDesc, desc);
     }
     

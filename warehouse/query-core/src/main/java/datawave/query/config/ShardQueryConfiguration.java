@@ -1,8 +1,6 @@
 package datawave.query.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
@@ -17,6 +15,7 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -26,7 +25,6 @@ import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
-import datawave.query.attributes.UniqueFields;
 import datawave.query.util.QueryStopwatch;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.configuration.QueryData;
@@ -37,14 +35,11 @@ import datawave.webservice.query.QueryImpl;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.springframework.beans.BeanWrapper;
-import org.springframework.beans.PropertyAccessorFactory;
 
-import javax.xml.bind.annotation.XmlTransient;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -53,6 +48,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -186,7 +182,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Integer maxDocScanTimeout = -1;
     // A counter used to uniquely identify FSTs generated in the
     // PushdownLargeFieldedListsVisitor
-    private AtomicInteger fstCount = new AtomicInteger(0);
+    @JsonIgnore
+    private transient AtomicInteger fstCount = new AtomicInteger(0);
     // the percent shards marked when querying the date index after which the
     // shards are collapsed down to the entire day.
     private float collapseDatePercentThreshold = 0.99f;
@@ -195,13 +192,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private List<String> realmSuffixExclusionPatterns = null;
     // A default normalizer to use
     private Class<? extends Type<?>> defaultType = NoOpType.class;
-    private SimpleDateFormat shardDateFormatter = new SimpleDateFormat("yyyyMMdd");
+    private String shardDateFormat = "yyyyMMdd";
+    private SimpleDateFormat shardDateFormatter = new SimpleDateFormat(this.shardDateFormat);
     // Enrichment properties
     private Boolean useEnrichers = false;
     private List<String> enricherClassNames = null;
     // Filter properties
     private Boolean useFilters = false;
-    private List<String> filterClassNames = null;
+    private List<String> filterClassNames = Collections.emptyList();
     private List<String> indexFilteringClassNames = new ArrayList<>();
     // Used for ignoring 'd' and 'tf' column family in `shard`
     private Set<String> nonEventKeyPrefixes = Sets.newHashSet("d", "tf");
@@ -455,8 +453,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setRealmSuffixExclusionPatterns(null == other.getRealmSuffixExclusionPatterns() ? null : Lists.newArrayList(other
                         .getRealmSuffixExclusionPatterns()));
         this.setDefaultType(other.getDefaultType());
-        this.setShardDateFormatter(null == other.getShardDateFormatter() ? null : new SimpleDateFormat(other.getShardDateFormatter().toPattern())); // TODO --
-                                                                                                                                                    // deep copy
+        this.setShardDateFormat(other.getShardDateFormat());
+        this.setShardDateFormatter(new SimpleDateFormat(this.getShardDateFormat()));
         this.setUseEnrichers(other.getUseEnrichers());
         this.setEnricherClassNames(null == other.getEnricherClassNames() ? null : Lists.newArrayList(other.getEnricherClassNames()));
         this.setUseFilters(other.getUseFilters());
@@ -575,7 +573,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public ShardQueryConfiguration(ShardQueryConfiguration other, Collection<QueryData> queries) {
         super(other);
         
-        this.setQueries(queries.iterator());
+        this.setQueries(queries);
+        
+        // do not preserve the original queries iter. getQueriesIter will create a new
+        // iterator based off of the queries collection if queriesIter is null
+        this.setQueriesIter(null);
         
         this.setTableName(other.getTableName());
         this.setShardTableName(other.getShardTableName());
@@ -613,59 +615,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         
         this.setSortedUIDs(other.isSortedUIDs());
         this.setBloom(other.getBloom());
-    }
-    
-    public ShardQueryConfiguration(Map<String,Object> properties) {
-        Map<String,Object> setProperties = new HashMap<>(properties);
-        if (properties.containsKey("queries")) {
-            setProperties.put("queries", ((List) properties.get("queries")).iterator());
-        }
-        List<Map<String,Object>> ivaratorCacheDirConfigs = (List) properties.get("ivaratorCacheDirConfigs");
-        if (ivaratorCacheDirConfigs != null && !ivaratorCacheDirConfigs.isEmpty()) {
-            List<IvaratorCacheDirConfig> configs = new ArrayList<>();
-            for (Map<String,Object> map : ivaratorCacheDirConfigs) {
-                IvaratorCacheDirConfig cacheConfig = new IvaratorCacheDirConfig();
-                BeanWrapper wrapper = PropertyAccessorFactory.forBeanPropertyAccess(cacheConfig);
-                wrapper.setPropertyValues(map);
-                configs.add(cacheConfig);
-            }
-            setProperties.put("ivaratorCacheDirConfigs", configs);
-        }
-        
-        // TODO Fix properties as needed
-        BeanWrapper wrapper = PropertyAccessorFactory.forBeanPropertyAccess(this);
-        
-        wrapper.setPropertyValues(setProperties);
-    }
-    
-    public Map<String,Object> toMap() {
-        // first save off the queries
-        List<QueryData> queries = Lists.newArrayList(getQueries());
-        
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-        Map<String,Object> props = mapper.convertValue(this, Map.class);
-        
-        // fix elements that are converted incorrectly
-        putConditionally(props, "endDate", getEndDate());
-        putConditionally(props, "beginDate", getBeginDate());
-        putConditionally(props, "queryFieldsDatatypes", getQueryFieldsDatatypes());
-        putConditionally(props, "compositeToFieldMap", getCompositeToFieldMap());
-        putConditionally(props, "dataTypes", getDataTypes());
-        putConditionally(props, "queries", queries);
-        putConditionally(props, "query", getQuery());
-        putConditionally(props, "normalizedFieldsDatatypes", getNormalizedFieldsDatatypes());
-        putConditionally(props, "authorizations", getAuthorizations());
-        putConditionally(props, "fstCount", getFstCount());
-        putConditionally(props, "bloom", getBloom());
-        
-        return props;
-    }
-    
-    private void putConditionally(Map<String,Object> map, String prop, Object value) {
-        if (value != null) {
-            map.put(prop, value);
-        }
     }
     
     /**
@@ -889,8 +838,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.fullTableScanEnabled = fullTableScanEnabled;
     }
     
+    public String getShardDateFormat() {
+        return shardDateFormat;
+    }
+    
+    public void setShardDateFormat(String shardDateFormat) {
+        this.shardDateFormat = shardDateFormat;
+    }
+    
     @JsonIgnore
-    @XmlTransient
     public SimpleDateFormat getShardDateFormatter() {
         return shardDateFormatter;
     }
@@ -899,30 +855,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.shardDateFormatter = shardDateFormatter;
     }
     
-    public String getShardDateFormatterAsString() {
-        return (shardDateFormatter == null ? null : shardDateFormatter.toPattern());
-    }
-    
-    public void setShardDateFormatterAsString(String pattern) {
-        this.shardDateFormatter = (pattern == null ? null : new SimpleDateFormat(pattern));
-    }
-    
-    @JsonIgnore
-    @XmlTransient
     public Set<String> getDatatypeFilter() {
         return datatypeFilter;
     }
     
     public void setDatatypeFilter(Set<String> typeFilter) {
-        this.datatypeFilter = typeFilter;
+        if (typeFilter.isEmpty()) {
+            this.datatypeFilter = UniversalSet.instance();
+        } else {
+            this.datatypeFilter = typeFilter;
+        }
     }
     
+    @JsonIgnore
     public String getDatatypeFilterAsString() {
         return StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
-    }
-    
-    public void setDatatypeFilterAsString(String typeFilter) {
-        this.setDatatypeFilter(typeFilter == null ? null : new HashSet<>(Arrays.asList(typeFilter.split(PARAM_VALUE_SEP_STR))));
     }
     
     private Set<String> deconstruct(Collection<String> fields) {
@@ -933,22 +880,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return projectFields;
     }
     
-    @JsonIgnore
-    @XmlTransient
     public void setProjectFields(Set<String> projectFields) {
         this.projectFields = deconstruct(projectFields);
     }
     
+    @JsonIgnore
     public String getProjectFieldsAsString() {
         return StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
     }
     
-    public void setProjectFieldsAsString(String fields) {
-        this.setProjectFields(fields == null ? null : new HashSet<>(Arrays.asList(fields.split(PARAM_VALUE_SEP_STR))));
-    }
-    
-    @JsonIgnore
-    @XmlTransient
     public Set<String> getBlacklistedFields() {
         return blacklistedFields;
     }
@@ -957,12 +897,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.blacklistedFields = deconstruct(blacklistedFields);
     }
     
+    @JsonIgnore
     public String getBlacklistedFieldsAsString() {
         return StringUtils.join(this.getBlacklistedFields(), Constants.PARAM_VALUE_SEP);
-    }
-    
-    public void setBlacklistedFieldsAsString(String fields) {
-        this.setBlacklistedFields(fields == null ? null : new HashSet<>(Arrays.asList(fields.split(PARAM_VALUE_SEP_STR))));
     }
     
     public Boolean getUseEnrichers() {
@@ -973,22 +910,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.useEnrichers = useEnrichers;
     }
     
-    @JsonIgnore
-    @XmlTransient
     public List<String> getEnricherClassNames() {
         return enricherClassNames;
     }
     
     public void setEnricherClassNames(List<String> enricherClassNames) {
         this.enricherClassNames = enricherClassNames;
-    }
-    
-    public String getEnricherClassNamesAsString() {
-        return StringUtils.join(this.getEnricherClassNames(), Constants.PARAM_VALUE_SEP);
-    }
-    
-    public void setEnricherClassNamesAsString(String names) {
-        this.setEnricherClassNames(names == null ? null : Arrays.asList(names.split(PARAM_VALUE_SEP_STR)));
     }
     
     public boolean isTldQuery() {
@@ -1149,8 +1076,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * @see QueryIterator
      * @see TLDQueryIterator
      */
-    @JsonIgnore
-    @XmlTransient
     public List<String> getIndexFilteringClassNames() {
         return indexFilteringClassNames;
     }
@@ -1165,14 +1090,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     @SuppressWarnings("unchecked")
     public void setIndexFilteringClassNames(List<String> classNames) {
         this.indexFilteringClassNames = new ArrayList<>((classNames != null ? classNames : Collections.EMPTY_LIST));
-    }
-    
-    public String getIndexFilteringClassNamesAsString() {
-        return StringUtils.join(this.getFilterClassNames(), Constants.PARAM_VALUE_SEP);
-    }
-    
-    public void setIndexFilteringClassNamesAsString(String names) {
-        this.setIndexFilteringClassNames(names == null ? null : Arrays.asList(names.split(PARAM_VALUE_SEP_STR)));
     }
     
     public Class<? extends Type<?>> getDefaultType() {
@@ -1192,8 +1109,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
     
-    @JsonIgnore
-    @XmlTransient
     public Set<String> getNonEventKeyPrefixes() {
         return nonEventKeyPrefixes;
     }
@@ -1206,16 +1121,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
     
+    @JsonIgnore
     public String getNonEventKeyPrefixesAsString() {
         return StringUtils.join(this.getNonEventKeyPrefixes(), Constants.PARAM_VALUE_SEP);
     }
     
-    public void setNonEventKeyPrefixesAsString(String prefixes) {
-        this.setNonEventKeyPrefixes(prefixes == null ? null : Arrays.asList(prefixes.split(PARAM_VALUE_SEP_STR)));
-    }
-    
-    @JsonIgnore
-    @XmlTransient
     public Set<String> getUnevaluatedFields() {
         return unevaluatedFields;
     }
@@ -1226,20 +1136,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         } else {
             this.unevaluatedFields = deconstruct(unevaluatedFields);
         }
-    }
-    
-    /**
-     * Join unevaluated fields together on comma
-     *
-     * @return
-     */
-    
-    public String getUnevaluatedFieldsAsString() {
-        return StringUtils.join(this.unevaluatedFields, Constants.PARAM_VALUE_SEP);
-    }
-    
-    public void setUnevaluatedFieldsAsString(String unevaluatedFieldList) {
-        this.setUnevaluatedFields(unevaluatedFieldList == null ? null : Arrays.asList(unevaluatedFieldList.split(PARAM_VALUE_SEP_STR)));
     }
     
     public int getEventPerDayThreshold() {
@@ -1513,7 +1409,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * @return FIELDNAME1:normalizer.class;FIELDNAME2:normalizer.class;
      */
     @JsonIgnore
-    @XmlTransient
     public String getIndexedFieldDataTypesAsString() {
         
         if (null == this.getIndexedFields() || this.getIndexedFields().isEmpty()) {
@@ -1533,7 +1428,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     @JsonIgnore
-    @XmlTransient
     public String getNormalizedFieldNormalizersAsString() {
         
         if (null == this.getNormalizedFields() || this.getNormalizedFields().isEmpty()) {
@@ -1556,6 +1450,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return indexedFields;
     }
     
+    @JsonIgnore
     public void setIndexedFields(Multimap<String,Type<?>> indexedFieldsAndTypes) {
         this.indexedFields = Sets.newHashSet(indexedFieldsAndTypes.keySet());
     }
@@ -1568,6 +1463,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return reverseIndexedFields;
     }
     
+    @JsonIgnore
     public void setReverseIndexedFields(Multimap<String,Type<?>> reverseIndexedFieldsAndTypes) {
         this.reverseIndexedFields = Sets.newHashSet(reverseIndexedFieldsAndTypes.keySet());
     }
@@ -1649,8 +1545,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.normalizedFields = Sets.newHashSet(this.normalizedFieldsDatatypes.keySet());
     }
     
-    @JsonIgnore
-    @XmlTransient
     public Set<String> getLimitFields() {
         return limitFields;
     }
@@ -1659,12 +1553,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.limitFields = deconstruct(limitFields);
     }
     
+    @JsonIgnore
     public String getLimitFieldsAsString() {
         return StringUtils.join(this.getLimitFields(), Constants.PARAM_VALUE_SEP);
-    }
-    
-    public void setLimitFieldsAsString(String fields) {
-        this.setLimitFields(fields == null ? null : new HashSet<>(Arrays.asList(fields.split(PARAM_VALUE_SEP_STR))));
     }
     
     public boolean isLimitFieldsPreQueryEvaluation() {
@@ -1707,8 +1598,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.failOutsideValidDateRange = failOutsideValidDateRange;
     }
     
-    @JsonIgnore
-    @XmlTransient
     public Set<String> getGroupFields() {
         return groupFields;
     }
@@ -1717,16 +1606,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.groupFields = deconstruct(groupFields);
     }
     
+    @JsonIgnore
     public String getGroupFieldsAsString() {
         return StringUtils.join(this.getGroupFields(), Constants.PARAM_VALUE_SEP);
     }
     
-    public void setGroupFieldsAsString(String fields) {
-        this.setGroupFields(fields == null ? null : new HashSet<>(Arrays.asList(fields.split(PARAM_VALUE_SEP_STR))));
-    }
-    
-    @JsonIgnore
-    @XmlTransient
     public int getGroupFieldsBatchSize() {
         return groupFieldsBatchSize;
     }
@@ -1735,16 +1619,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.groupFieldsBatchSize = groupFieldsBatchSize;
     }
     
+    @JsonIgnore
     public String getGroupFieldsBatchSizeAsString() {
         return "" + groupFieldsBatchSize;
     }
     
-    public void setGroupFieldsBatchSizeAsString(String size) {
-        setGroupFieldsBatchSize(size == null ? 0 : Integer.parseInt(size));
-    }
-    
-    @JsonIgnore
-    @XmlTransient
     public UniqueFields getUniqueFields() {
         return uniqueFields;
     }
@@ -2408,4 +2287,157 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.bloom = bloom;
     }
     
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
+        ShardQueryConfiguration that = (ShardQueryConfiguration) o;
+        return isTldQuery() == that.isTldQuery() && isDisableIndexOnlyDocuments() == that.isDisableIndexOnlyDocuments()
+                        && getMaxScannerBatchSize() == that.getMaxScannerBatchSize() && getMaxIndexBatchSize() == that.getMaxIndexBatchSize()
+                        && isAllTermsIndexOnly() == that.isAllTermsIndexOnly() && getMaxIndexScanTimeMillis() == that.getMaxIndexScanTimeMillis()
+                        && getParseTldUids() == that.getParseTldUids() && getCollapseUids() == that.getCollapseUids()
+                        && getCollapseUidsThreshold() == that.getCollapseUidsThreshold()
+                        && getEnforceUniqueTermsWithinExpressions() == that.getEnforceUniqueTermsWithinExpressions()
+                        && getSequentialScheduler() == that.getSequentialScheduler() && getCollectTimingDetails() == that.getCollectTimingDetails()
+                        && getLogTimingDetails() == that.getLogTimingDetails() && getSendTimingToStatsd() == that.getSendTimingToStatsd()
+                        && getStatsdPort() == that.getStatsdPort() && getStatsdMaxQueueSize() == that.getStatsdMaxQueueSize()
+                        && getLimitAnyFieldLookups() == that.getLimitAnyFieldLookups() && isBypassExecutabilityCheck() == that.isBypassExecutabilityCheck()
+                        && isGeneratePlanOnly() == that.isGeneratePlanOnly() && getBackoffEnabled() == that.getBackoffEnabled()
+                        && getUnsortedUIDsEnabled() == that.getUnsortedUIDsEnabled() && getSerializeQueryIterator() == that.getSerializeQueryIterator()
+                        && isDebugMultithreadedSources() == that.isDebugMultithreadedSources() && isSortGeoWaveQueryRanges() == that.isSortGeoWaveQueryRanges()
+                        && getNumRangesToBuffer() == that.getNumRangesToBuffer() && getRangeBufferTimeoutMillis() == that.getRangeBufferTimeoutMillis()
+                        && getRangeBufferPollMillis() == that.getRangeBufferPollMillis() && getGeometryMaxExpansion() == that.getGeometryMaxExpansion()
+                        && getPointMaxExpansion() == that.getPointMaxExpansion() && getGeoWaveRangeSplitThreshold() == that.getGeoWaveRangeSplitThreshold()
+                        && Double.compare(that.getGeoWaveMaxRangeOverlap(), getGeoWaveMaxRangeOverlap()) == 0
+                        && isOptimizeGeoWaveRanges() == that.isOptimizeGeoWaveRanges() && getGeoWaveMaxEnvelopes() == that.getGeoWaveMaxEnvelopes()
+                        && isCleanupShardsAndDaysQueryHints() == that.isCleanupShardsAndDaysQueryHints()
+                        && Float.compare(that.getCollapseDatePercentThreshold(), getCollapseDatePercentThreshold()) == 0
+                        && isSortedUIDs() == that.isSortedUIDs() && isTermFrequenciesRequired() == that.isTermFrequenciesRequired()
+                        && isLimitFieldsPreQueryEvaluation() == that.isLimitFieldsPreQueryEvaluation() && isHitList() == that.isHitList()
+                        && isDateIndexTimeTravel() == that.isDateIndexTimeTravel() && getBeginDateCap() == that.getBeginDateCap()
+                        && isFailOutsideValidDateRange() == that.isFailOutsideValidDateRange() && isRawTypes() == that.isRawTypes()
+                        && Double.compare(that.getMinSelectivity(), getMinSelectivity()) == 0
+                        && getIncludeDataTypeAsField() == that.getIncludeDataTypeAsField() && getIncludeRecordId() == that.getIncludeRecordId()
+                        && getIncludeHierarchyFields() == that.getIncludeHierarchyFields() && getIncludeGroupingContext() == that.getIncludeGroupingContext()
+                        && getFilterMaskedValues() == that.getFilterMaskedValues() && isReducedResponse() == that.isReducedResponse()
+                        && getAllowShortcutEvaluation() == that.getAllowShortcutEvaluation() && getSpeculativeScanning() == that.getSpeculativeScanning()
+                        && isDisableEvaluation() == that.isDisableEvaluation() && isContainsIndexOnlyTerms() == that.isContainsIndexOnlyTerms()
+                        && isContainsCompositeTerms() == that.isContainsCompositeTerms() && isAllowFieldIndexEvaluation() == that.isAllowFieldIndexEvaluation()
+                        && isAllowTermFrequencyLookup() == that.isAllowTermFrequencyLookup()
+                        && isExpandUnfieldedNegations() == that.isExpandUnfieldedNegations() && getEventPerDayThreshold() == that.getEventPerDayThreshold()
+                        && getShardsPerDayThreshold() == that.getShardsPerDayThreshold() && getMaxTermThreshold() == that.getMaxTermThreshold()
+                        && getMaxDepthThreshold() == that.getMaxDepthThreshold() && isExpandFields() == that.isExpandFields()
+                        && getMaxUnfieldedExpansionThreshold() == that.getMaxUnfieldedExpansionThreshold() && isExpandValues() == that.isExpandValues()
+                        && getMaxValueExpansionThreshold() == that.getMaxValueExpansionThreshold()
+                        && getMaxOrExpansionThreshold() == that.getMaxOrExpansionThreshold() && getMaxOrRangeThreshold() == that.getMaxOrRangeThreshold()
+                        && getMaxOrRangeIvarators() == that.getMaxOrRangeIvarators() && getMaxRangesPerRangeIvarator() == that.getMaxRangesPerRangeIvarator()
+                        && getMaxOrExpansionFstThreshold() == that.getMaxOrExpansionFstThreshold() && getYieldThresholdMs() == that.getYieldThresholdMs()
+                        && getIvaratorCacheBufferSize() == that.getIvaratorCacheBufferSize()
+                        && getIvaratorCacheScanPersistThreshold() == that.getIvaratorCacheScanPersistThreshold()
+                        && getIvaratorCacheScanTimeout() == that.getIvaratorCacheScanTimeout()
+                        && getMaxFieldIndexRangeSplit() == that.getMaxFieldIndexRangeSplit() && getIvaratorMaxOpenFiles() == that.getIvaratorMaxOpenFiles()
+                        && getIvaratorNumRetries() == that.getIvaratorNumRetries() && isIvaratorPersistVerify() == that.isIvaratorPersistVerify()
+                        && getIvaratorPersistVerifyCount() == that.getIvaratorPersistVerifyCount() && getMaxIvaratorSources() == that.getMaxIvaratorSources()
+                        && getMaxIvaratorResults() == that.getMaxIvaratorResults() && getMaxEvaluationPipelines() == that.getMaxEvaluationPipelines()
+                        && getMaxPipelineCachedResults() == that.getMaxPipelineCachedResults() && isExpandAllTerms() == that.isExpandAllTerms()
+                        && shouldLimitTermExpansionToModel == that.shouldLimitTermExpansionToModel
+                        && isCompressServerSideResults() == that.isCompressServerSideResults()
+                        && isIndexOnlyFilterFunctionsEnabled() == that.isIndexOnlyFilterFunctionsEnabled()
+                        && isCompositeFilterFunctionsEnabled() == that.isCompositeFilterFunctionsEnabled()
+                        && getGroupFieldsBatchSize() == that.getGroupFieldsBatchSize() && getAccrueStats() == that.getAccrueStats()
+                        && getCacheModel() == that.getCacheModel() && isTrackSizes() == that.isTrackSizes()
+                        && getEnforceUniqueConjunctionsWithinExpression() == that.getEnforceUniqueConjunctionsWithinExpression()
+                        && getEnforceUniqueDisjunctionsWithinExpression() == that.getEnforceUniqueDisjunctionsWithinExpression()
+                        && Objects.equals(getFilterOptions(), that.getFilterOptions()) && Objects.equals(getAccumuloPassword(), that.getAccumuloPassword())
+                        && Objects.equals(getStatsdHost(), that.getStatsdHost()) && Objects.equals(getShardTableName(), that.getShardTableName())
+                        && Objects.equals(getIndexTableName(), that.getIndexTableName())
+                        && Objects.equals(getReverseIndexTableName(), that.getReverseIndexTableName())
+                        && Objects.equals(getMetadataTableName(), that.getMetadataTableName())
+                        && Objects.equals(getDateIndexTableName(), that.getDateIndexTableName())
+                        && Objects.equals(getIndexStatsTableName(), that.getIndexStatsTableName())
+                        && Objects.equals(getDefaultDateTypeName(), that.getDefaultDateTypeName())
+                        && Objects.equals(getNumQueryThreads(), that.getNumQueryThreads()) && Objects.equals(numLookupThreads, that.numLookupThreads)
+                        && Objects.equals(getNumDateIndexThreads(), that.getNumDateIndexThreads())
+                        && Objects.equals(getMaxDocScanTimeout(), that.getMaxDocScanTimeout())
+                        && Objects.equals(getFullTableScanEnabled(), that.getFullTableScanEnabled())
+                        && Objects.equals(getRealmSuffixExclusionPatterns(), that.getRealmSuffixExclusionPatterns())
+                        && Objects.equals(getDefaultType(), that.getDefaultType()) && Objects.equals(getShardDateFormat(), that.getShardDateFormat())
+                        && Objects.equals(getUseEnrichers(), that.getUseEnrichers()) && Objects.equals(getEnricherClassNames(), that.getEnricherClassNames())
+                        && Objects.equals(getUseFilters(), that.getUseFilters()) && Objects.equals(getFilterClassNames(), that.getFilterClassNames())
+                        && Objects.equals(getIndexFilteringClassNames(), that.getIndexFilteringClassNames())
+                        && Objects.equals(getNonEventKeyPrefixes(), that.getNonEventKeyPrefixes())
+                        && Objects.equals(getUnevaluatedFields(), that.getUnevaluatedFields()) && Objects.equals(getDatatypeFilter(), that.getDatatypeFilter())
+                        && Objects.equals(getIndexHoles(), that.getIndexHoles()) && Objects.equals(getProjectFields(), that.getProjectFields())
+                        && Objects.equals(getBlacklistedFields(), that.getBlacklistedFields()) && Objects.equals(getIndexedFields(), that.getIndexedFields())
+                        && Objects.equals(getReverseIndexedFields(), that.getReverseIndexedFields())
+                        && Objects.equals(getNormalizedFields(), that.getNormalizedFields()) && Objects.equals(getDataTypes(), that.getDataTypes())
+                        && Objects.equals(getQueryFieldsDatatypes(), that.getQueryFieldsDatatypes())
+                        && Objects.equals(getNormalizedFieldsDatatypes(), that.getNormalizedFieldsDatatypes())
+                        && Objects.equals(getFieldToDiscreteIndexTypes(), that.getFieldToDiscreteIndexTypes())
+                        && Objects.equals(getCompositeToFieldMap(), that.getCompositeToFieldMap())
+                        && Objects.equals(getCompositeTransitionDates(), that.getCompositeTransitionDates())
+                        && Objects.equals(getCompositeFieldSeparators(), that.getCompositeFieldSeparators())
+                        && Objects.equals(getEvaluationOnlyFields(), that.getEvaluationOnlyFields())
+                        && Objects.equals(getQueryTermFrequencyFields(), that.getQueryTermFrequencyFields())
+                        && Objects.equals(getLimitFields(), that.getLimitFields()) && Objects.equals(getLimitFieldsField(), that.getLimitFieldsField())
+                        && Objects.equals(getHierarchyFieldOptions(), that.getHierarchyFieldOptions())
+                        && Objects.equals(getDocumentPermutations(), that.getDocumentPermutations()) && getReturnType() == that.getReturnType()
+                        && Objects.equals(getHdfsSiteConfigURLs(), that.getHdfsSiteConfigURLs())
+                        && Objects.equals(getHdfsFileCompressionCodec(), that.getHdfsFileCompressionCodec())
+                        && Objects.equals(getZookeeperConfig(), that.getZookeeperConfig())
+                        && Objects.equals(getIvaratorCacheDirConfigs(), that.getIvaratorCacheDirConfigs())
+                        && Objects.equals(getIvaratorFstHdfsBaseURIs(), that.getIvaratorFstHdfsBaseURIs())
+                        && Objects.equals(getQueryModel(), that.getQueryModel()) && Objects.equals(getModelName(), that.getModelName())
+                        && Objects.equals(getModelTableName(), that.getModelTableName()) && Objects.equals(getGroupFields(), that.getGroupFields())
+                        && Objects.equals(getUniqueFields(), that.getUniqueFields()) && Objects.equals(getContentFieldNames(), that.getContentFieldNames())
+                        && Objects.equals(getActiveQueryLogNameSource(), that.getActiveQueryLogNameSource());
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), isTldQuery(), getFilterOptions(), isDisableIndexOnlyDocuments(), getMaxScannerBatchSize(),
+                        getMaxIndexBatchSize(), isAllTermsIndexOnly(), getAccumuloPassword(), getMaxIndexScanTimeMillis(), getParseTldUids(),
+                        getCollapseUids(), getCollapseUidsThreshold(), getEnforceUniqueTermsWithinExpressions(), getSequentialScheduler(),
+                        getCollectTimingDetails(), getLogTimingDetails(), getSendTimingToStatsd(), getStatsdHost(), getStatsdPort(), getStatsdMaxQueueSize(),
+                        getLimitAnyFieldLookups(), isBypassExecutabilityCheck(), isGeneratePlanOnly(), getBackoffEnabled(), getUnsortedUIDsEnabled(),
+                        getSerializeQueryIterator(), isDebugMultithreadedSources(), isSortGeoWaveQueryRanges(), getNumRangesToBuffer(),
+                        getRangeBufferTimeoutMillis(), getRangeBufferPollMillis(), getGeometryMaxExpansion(), getPointMaxExpansion(),
+                        getGeoWaveRangeSplitThreshold(), getGeoWaveMaxRangeOverlap(), isOptimizeGeoWaveRanges(), getGeoWaveMaxEnvelopes(), getShardTableName(),
+                        getIndexTableName(), getReverseIndexTableName(), getMetadataTableName(), getDateIndexTableName(), getIndexStatsTableName(),
+                        getDefaultDateTypeName(), isCleanupShardsAndDaysQueryHints(), getNumQueryThreads(), numLookupThreads, getNumDateIndexThreads(),
+                        getMaxDocScanTimeout(), getCollapseDatePercentThreshold(), getFullTableScanEnabled(), getRealmSuffixExclusionPatterns(),
+                        getDefaultType(), getShardDateFormat(), getUseEnrichers(), getEnricherClassNames(), getUseFilters(), getFilterClassNames(),
+                        getIndexFilteringClassNames(), getNonEventKeyPrefixes(), getUnevaluatedFields(), getDatatypeFilter(), getIndexHoles(),
+                        getProjectFields(), getBlacklistedFields(), getIndexedFields(), getReverseIndexedFields(), getNormalizedFields(), getDataTypes(),
+                        getQueryFieldsDatatypes(), getNormalizedFieldsDatatypes(), getFieldToDiscreteIndexTypes(), getCompositeToFieldMap(),
+                        getCompositeTransitionDates(), getCompositeFieldSeparators(), getEvaluationOnlyFields(), isSortedUIDs(), getQueryTermFrequencyFields(),
+                        isTermFrequenciesRequired(), getLimitFields(), isLimitFieldsPreQueryEvaluation(), getLimitFieldsField(), isHitList(),
+                        isDateIndexTimeTravel(), getBeginDateCap(), isFailOutsideValidDateRange(), isRawTypes(), getMinSelectivity(),
+                        getIncludeDataTypeAsField(), getIncludeRecordId(), getIncludeHierarchyFields(), getHierarchyFieldOptions(),
+                        getIncludeGroupingContext(), getDocumentPermutations(), getFilterMaskedValues(), isReducedResponse(), getAllowShortcutEvaluation(),
+                        getSpeculativeScanning(), isDisableEvaluation(), isContainsIndexOnlyTerms(), isContainsCompositeTerms(), isAllowFieldIndexEvaluation(),
+                        isAllowTermFrequencyLookup(), isExpandUnfieldedNegations(), getReturnType(), getEventPerDayThreshold(), getShardsPerDayThreshold(),
+                        getMaxTermThreshold(), getMaxDepthThreshold(), isExpandFields(), getMaxUnfieldedExpansionThreshold(), isExpandValues(),
+                        getMaxValueExpansionThreshold(), getMaxOrExpansionThreshold(), getMaxOrRangeThreshold(), getMaxOrRangeIvarators(),
+                        getMaxRangesPerRangeIvarator(), getMaxOrExpansionFstThreshold(), getYieldThresholdMs(), getHdfsSiteConfigURLs(),
+                        getHdfsFileCompressionCodec(), getZookeeperConfig(), getIvaratorCacheDirConfigs(), getIvaratorFstHdfsBaseURIs(),
+                        getIvaratorCacheBufferSize(), getIvaratorCacheScanPersistThreshold(), getIvaratorCacheScanTimeout(), getMaxFieldIndexRangeSplit(),
+                        getIvaratorMaxOpenFiles(), getIvaratorNumRetries(), isIvaratorPersistVerify(), getIvaratorPersistVerifyCount(),
+                        getMaxIvaratorSources(), getMaxIvaratorResults(), getMaxEvaluationPipelines(), getMaxPipelineCachedResults(), isExpandAllTerms(),
+                        getQueryModel(), getModelName(), getModelTableName(), shouldLimitTermExpansionToModel, isCompressServerSideResults(),
+                        isIndexOnlyFilterFunctionsEnabled(), isCompositeFilterFunctionsEnabled(), getGroupFieldsBatchSize(), getAccrueStats(),
+                        getGroupFields(), getUniqueFields(), getCacheModel(), isTrackSizes(), getContentFieldNames(), getActiveQueryLogNameSource(),
+                        getEnforceUniqueConjunctionsWithinExpression(), getEnforceUniqueDisjunctionsWithinExpression());
+    }
+    
+    // Part of the Serializable interface used to initialize any transient members during deserialization
+    private Object readResolve() throws ObjectStreamException {
+        this.timers = new QueryStopwatch();
+        this.fstCount = new AtomicInteger(0);
+        return this;
+    }
 }

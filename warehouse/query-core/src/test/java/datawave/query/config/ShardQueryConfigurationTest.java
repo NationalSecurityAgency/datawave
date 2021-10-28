@@ -15,11 +15,11 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.StringType;
 import datawave.data.type.Type;
 import datawave.query.DocumentSerialization;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.attributes.UniqueGranularity;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.model.QueryModel;
-import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.UniqueGranularity;
 import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import org.junit.Assert;
@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -105,7 +106,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.getUseEnrichers());
         Assert.assertNull(config.getEnricherClassNames());
         Assert.assertFalse(config.getUseFilters());
-        Assert.assertNull(config.getFilterClassNames());
+        Assert.assertEquals(config.getFilterClassNames(), Collections.emptyList());
         Assert.assertEquals(Lists.newArrayList(), config.getIndexFilteringClassNames());
         Assert.assertEquals(Sets.newHashSet("d", "tf"), config.getNonEventKeyPrefixes());
         Assert.assertEquals(Sets.newHashSet(), config.getUnevaluatedFields());
@@ -451,7 +452,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 169;
+        int expectedObjectCount = 168;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
