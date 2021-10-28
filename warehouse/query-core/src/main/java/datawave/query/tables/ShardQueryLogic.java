@@ -2274,6 +2274,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return getConfig().getEvaluationOnlyFields();
     }
     
+    public Set<String> getDisallowedRegexPatterns() {
+        return getConfig().getDisallowedRegexPatterns();
+    }
+    
+    public void setDisallowedRegexPatterns(Set<String> disallowedRegexPatterns) {
+        getConfig().setDisallowedRegexPatterns(disallowedRegexPatterns);
+    }
+    
     public boolean isDisableWhindexFieldMappings() {
         return getConfig().isDisableWhindexFieldMappings();
     }
