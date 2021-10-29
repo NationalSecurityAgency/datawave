@@ -1,6 +1,7 @@
 package datawave.query.iterator.logic;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import datawave.data.hash.UIDBuilder;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.query.Constants;
 import datawave.query.data.parsers.DatawaveKey;
@@ -30,18 +31,16 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     public static final String FIELD_NAME = "field.name";
     
     protected SortedKeyValueIterator<Key,Value> source;
-    
-    // The fiKey will supply the field and the document uid.
-    protected DatawaveKey keyParser;
+
+    protected String fieldName;
     protected int startOffset;
     protected int endOffset;
-    protected String fieldName;
-    
+
     protected Range scanRange;
     
     protected Key tk;
     protected Value tv;
-    
+
     public TermFrequencyExcerptIterator() {}
     
     @Override
@@ -77,7 +76,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
             if (dtUid.equals(getDtUid(top))) {
                 
                 String[] fieldAndValue = getFieldAndValue(top);
-                if (keyParser.getFieldName().equals(fieldAndValue[0])) {
+                if (fieldName.equals(fieldAndValue[0])) {
                     TermWeight.Info.Builder infoBuilder = TermWeight.Info.newBuilder();
                     
                     try {
@@ -111,7 +110,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                     }
                 }
                 
-                tk = new Key(row, new Text(dtUid), new Text(keyParser.getFieldName() + Constants.NULL + phrase.toString()), cv, ts);
+                tk = new Key(row, new Text(dtUid), new Text(fieldName + Constants.NULL + phrase), cv, ts);
                 tv = new Value();
             }
         }
@@ -160,7 +159,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         TermFrequencyExcerptIterator it = new TermFrequencyExcerptIterator();
         it.startOffset = startOffset;
         it.endOffset = endOffset;
-        it.keyParser = keyParser;
+        it.fieldName = fieldName;
         it.source = source.deepCopy(env);
         return it;
     }
@@ -175,22 +174,21 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        DatawaveKey startParser = new DatawaveKey(range.getStartKey());
-        DatawaveKey endParser = new DatawaveKey(range.getEndKey());
-        
-        Key startKey = null;
+        Key startKey;
         if (range.isStartKeyInclusive()) {
-            startKey = new Key(startParser.getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(startParser.getDataType() + Constants.NULL
-                            + startParser.getUid() + Constants.NULL));
+            startKey = new Key(range.getStartKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(range.getStartKey().getColumnFamily().toString() + Constants.NULL));
         } else {
-            // need to start at the ned UID
-            startKey = new Key(startParser.getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(startParser.getDataType() + Constants.NULL
-                            + startParser.getUid() + '.'));
+            // need to start at the next UID
+            startKey = new Key(range.getStartKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(range.getStartKey().getColumnFamily().toString() + '.'));
         }
-        
-        Key endKey = new Key(endParser.getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(endParser.getDataType() + Constants.NULL + endParser.getUid()
-                        + '.'));
-        
+
+        Key endKey;
+        if (range.isEndKeyInclusive()) {
+            endKey = new Key(range.getEndKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(range.getStartKey().getColumnFamily().toString() + '.'));
+        } else {
+            endKey = new Key(range.getEndKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(range.getStartKey().getColumnFamily().toString() + Constants.NULL));
+        }
+
         this.scanRange = new Range(startKey, false, endKey, false);
         
         if (log.isTraceEnabled()) {
@@ -205,7 +203,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("TermFrequencyContextIterator: ");
-        sb.append(this.keyParser);
+        sb.append(this.fieldName);
         sb.append(", ");
         sb.append(this.startOffset);
         sb.append(", ");
