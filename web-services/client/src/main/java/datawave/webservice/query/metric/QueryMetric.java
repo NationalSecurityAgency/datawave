@@ -46,7 +46,9 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
         this.createDate = DateUtils.truncate(new Date(), Calendar.SECOND);
         this.host = System.getProperty("jboss.host.name");
         String version = getVersionFromProperties();
-        this.version = version;
+        if (version.length() > 0) {
+            this.version = version;
+        }
     }
     
     public QueryMetric(QueryMetric other) {
