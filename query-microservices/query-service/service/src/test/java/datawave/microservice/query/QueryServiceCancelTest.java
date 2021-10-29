@@ -134,12 +134,16 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         // verify that query status was created correctly
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
+        // wait for the next call to drop out before checking status
+        // since we canceled, this should quit immediately, but just in case, we add a timeout
+        nextFuture.get(10, TimeUnit.SECONDS);
+        
         // @formatter:off
         assertQueryStatus(
                 QueryStatus.QUERY_STATE.CANCELED,
                 0,
                 0,
-                1,
+                0,
                 0,
                 currentTimeMillis,
                 queryStatus);
