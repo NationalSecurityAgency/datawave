@@ -3,6 +3,7 @@ package datawave.query;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.jexl.JexlASTHelper;
@@ -132,14 +133,14 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     }
     
     @Test
-    public void planInMetricsAfterCEUTFException() throws Exception {
+    public void planInMetricsAfterDNPOQException() throws Exception {
         String query = Constants.ANY_FIELD + RE_OP + "'.*iss.*'";
         String expectedPlan = query;
         
         try {
             runTest(query, query);
-            fail("Expected CannotExpandUnfieldedTermFatalException.");
-        } catch (CannotExpandUnfieldedTermFatalException e) {
+            fail("Expected DoNotPerformOptimizedQueryException.");
+        } catch (DoNotPerformOptimizedQueryException e) {
             assertEquals(expectedPlan, metric.getPlan());
         }
     }

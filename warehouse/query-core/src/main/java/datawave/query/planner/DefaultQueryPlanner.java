@@ -16,6 +16,7 @@ import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ShardQueryConfiguration;
@@ -26,7 +27,6 @@ import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.exceptions.InvalidQueryException;
-import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.exceptions.NoResultsException;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.index.lookup.IndexStream.StreamContext;
@@ -41,10 +41,12 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.NodeTypeCount;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
+import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
+import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
 import datawave.query.jexl.visitors.CaseSensitivityVisitor;
 import datawave.query.jexl.visitors.ConjunctionEliminationVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
@@ -58,7 +60,6 @@ import datawave.query.jexl.visitors.FetchDataTypesVisitor;
 import datawave.query.jexl.visitors.FieldMissingFromSchemaVisitor;
 import datawave.query.jexl.visitors.FieldToFieldComparisonVisitor;
 import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
-import datawave.query.jexl.visitors.FixUnfieldedTermsVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
@@ -66,7 +67,6 @@ import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.NodeTypeCountVisitor;
-import datawave.query.jexl.visitors.ParallelIndexExpansion;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.PushFunctionsIntoExceededValueRanges;
@@ -76,18 +76,18 @@ import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
-import datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
+import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
 import datawave.query.jexl.visitors.RewriteNegationsVisitor;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.jexl.visitors.UnfieldedIndexExpansionVisitor;
 import datawave.query.jexl.visitors.UniqueExpressionTermsVisitor;
 import datawave.query.jexl.visitors.UnmarkedBoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.ValidComparisonVisitor;
 import datawave.query.jexl.visitors.ValidPatternVisitor;
-import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.comparator.DefaultQueryPlanComparator;
@@ -99,7 +99,6 @@ import datawave.query.planner.rules.NodeTransformVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.ScannerFactory;
-import datawave.query.attributes.UniqueFields;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
@@ -807,11 +806,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // returned.
         // If the max regex expansion is reached for a term, then it will be
         // left as a regex
-        Set<String> expansionFields = null;
         if (!disableAnyFieldLookup) {
-            expansionFields = loadExpansionFields(config);
-            config.setQueryTree(timedExpandAnyFieldRegexNodes(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, expansionFields,
-                            settings.getQuery()));
+            config.setQueryTree(timedExpandAnyFieldRegexNodes(timers, config.getQueryTree(), config, metadataHelper, scannerFactory, settings.getQuery()));
         }
         
         if (reduceQuery) {
@@ -877,17 +873,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
-                if (expansionFields == null) {
-                    expansionFields = loadExpansionFields(config);
-                }
-                
-                ParallelIndexExpansion regexExpansion = new ParallelIndexExpansion(config, scannerFactory, metadataHelper, expansionFields,
-                                config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations());
+                Map<String,IndexLookup> indexLookupMap = new HashMap<>();
                 
                 // Check if there is any regex to expand.
                 NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(config.getQueryTree());
                 if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
-                    config.setQueryTree(timedExpandRegex(timers, "Expand Regex", config.getQueryTree(), regexExpansion));
+                    config.setQueryTree(timedExpandRegex(timers, "Expand Regex", config.getQueryTree(), config, metadataHelper, scannerFactory, indexLookupMap));
                 }
                 
                 // Check if there are any bounded ranges to expand.
@@ -920,7 +911,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     // predicates, then remove delayed predicates as needed and
                     // reexpand
                     config.setQueryTree(timedRemoveDelayedPredicates(timers, "Remove Delayed Predicates", config.getQueryTree(), config, metadataHelper,
-                                    indexedFields, indexOnlyFields, nonEventFields, regexExpansion, scannerFactory, debugOutput));
+                                    indexedFields, indexOnlyFields, nonEventFields, indexLookupMap, scannerFactory, metadataHelper, debugOutput));
                 }
                 
                 // if we now have an unexecutable tree because of missing
@@ -929,9 +920,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 config.setQueryTree(timedAddDelayedPredicates(timers, "Add Delayed Predicates", config.getQueryTree(), config, metadataHelper, indexedFields,
                                 indexOnlyFields, nonEventFields, debugOutput));
                 
-            } catch (TableNotFoundException | InstantiationException | IllegalAccessException e1) {
+            } catch (TableNotFoundException e) {
                 stopwatch.stop();
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e1);
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             } catch (CannotExpandUnfieldedTermFatalException e) {
                 if (null != e.getCause() && e.getCause() instanceof DoNotPerformOptimizedQueryException)
@@ -1239,7 +1230,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     protected ASTJexlScript timedExpandAnyFieldRegexNodes(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
-                    MetadataHelper metadataHelper, ScannerFactory scannerFactory, Set<String> expansionFields, String query) throws DatawaveQueryException {
+                    MetadataHelper metadataHelper, ScannerFactory scannerFactory, String query) throws DatawaveQueryException {
         try {
             config.setIndexedFields(metadataHelper.getIndexedFields(config.getDatatypeFilter()));
             config.setReverseIndexedFields(metadataHelper.getReverseIndexedFields(config.getDatatypeFilter()));
@@ -1247,9 +1238,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             //  @formatter:off
             return visitorManager.timedVisit(timers, "Expand ANYFIELD Regex Nodes", () -> {
                 try {
-                    return (
-                            FixUnfieldedTermsVisitor.fixUnfieldedTree(config, scannerFactory, metadataHelper, script, expansionFields, config.isExpandFields(), config.isExpandValues(), config.isExpandUnfieldedNegations())
-                    );
+                    return UnfieldedIndexExpansionVisitor.expandUnfielded(config, scannerFactory, metadataHelper, script);
                 } catch (InstantiationException | IllegalAccessException | TableNotFoundException e) {
                     //  rethrow as a datawave query exception because method contracts
                     throw new DatawaveQueryException(e);
@@ -1450,9 +1439,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return containsIndexOnlyFields;
     }
     
-    protected ASTJexlScript timedExpandRegex(QueryStopwatch timers, String stage, final ASTJexlScript script, ParallelIndexExpansion regexExpansion)
-                    throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, stage, () -> (regexExpansion.apply(script)));
+    protected ASTJexlScript timedExpandRegex(QueryStopwatch timers, String stage, final ASTJexlScript script, ShardQueryConfiguration config,
+                    MetadataHelper metadataHelper, ScannerFactory scannerFactory, Map<String,IndexLookup> indexLookupMap) throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, stage, () -> {
+            try {
+                return RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, metadataHelper, indexLookupMap, script);
+            } catch (TableNotFoundException e) {
+                throw new DatawaveQueryException("Failed to Expand Ranges", e);
+            }
+        });
     }
     
     private ASTJexlScript timedExpandRanges(QueryStopwatch timers, String stage, final ASTJexlScript script, ShardQueryConfiguration config,
@@ -1460,9 +1455,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setQueryTree(script);
         TraceStopwatch innerStopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
         try {
-            config.setQueryTree(RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, config.getQueryTree(),
-                            config.isExpandFields(), config.isExpandValues()));
-        } catch (TableNotFoundException | ExecutionException e) {
+            config.setQueryTree(BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, config.getQueryTree()));
+        } catch (TableNotFoundException e) {
             throw new DatawaveQueryException("Failed to Expand Ranges", e);
         }
         
@@ -1500,7 +1494,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     protected ASTJexlScript timedRemoveDelayedPredicates(QueryStopwatch timers, String stage, ASTJexlScript script, ShardQueryConfiguration config,
                     MetadataHelper metadataHelper, Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> nonEventFields,
-                    ParallelIndexExpansion regexExpansion, ScannerFactory scannerFactory, List<String> debugOutput) {
+                    Map<String,IndexLookup> indexLookupMap, ScannerFactory scannerFactory, MetadataHelper helper, List<String> debugOutput)
+                    throws TableNotFoundException {
         
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
         
@@ -1519,7 +1514,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // Check if there is any regex to expand after pulling up delayed predicates.
         NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(config.getQueryTree());
         if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
-            config.setQueryTree((ASTJexlScript) regexExpansion.visit(config.getQueryTree(), null));
+            config.setQueryTree(RegexIndexExpansionVisitor.expandRegex(config, scannerFactory, helper, indexLookupMap, config.getQueryTree()));
             if (log.isDebugEnabled()) {
                 logQuery(config.getQueryTree(), "Query after expanding regex again:");
             }
@@ -1529,9 +1524,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (nodeCount.isPresent(BoundedRange.class)) {
             
             try {
-                config.setQueryTree(RangeConjunctionRebuildingVisitor.expandRanges(config, scannerFactory, metadataHelper, config.getQueryTree(),
-                                config.isExpandFields(), config.isExpandValues()));
-            } catch (TableNotFoundException | ExecutionException e) {
+                config.setQueryTree(BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, config.getQueryTree()));
+            } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             }
