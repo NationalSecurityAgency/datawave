@@ -531,7 +531,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setModelTableName(other.getModelTableName());
         this.setLimitTermExpansionToModel(other.isExpansionLimitedToModelContents());
         this.setQuery(null == other.getQuery() ? null : other.getQuery().duplicate(other.getQuery().getQueryName()));
-        this.setQueryTree(null == other.getQueryTree() ? null : (ASTJexlScript) RebuildingVisitor.copy(this.queryTree()));
+        this.setQueryTree(null == other.getQueryTree() ? null : (ASTJexlScript) RebuildingVisitor.copy(other.queryTree()));
         this.setCompressServerSideResults(other.isCompressServerSideResults());
         this.setIndexOnlyFilterFunctionsEnabled(other.isIndexOnlyFilterFunctionsEnabled());
         this.setCompositeFilterFunctionsEnabled(other.isCompositeFilterFunctionsEnabled());
