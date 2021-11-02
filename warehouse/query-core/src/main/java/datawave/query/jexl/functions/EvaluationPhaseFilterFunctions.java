@@ -1968,9 +1968,4 @@ public class EvaluationPhaseFilterFunctions {
     private static Set<Object> getNormalizedValues(FunctionalSet<ValueTuple> set) {
         return set.stream().map((value) -> value.getNormalizedValue()).collect(Collectors.toSet());
     }
-    
-    // Do not allow this class to be instantiated.
-    private EvaluationPhaseFilterFunctions() {
-        throw new UnsupportedOperationException();
-    }
 }
