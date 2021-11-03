@@ -110,20 +110,24 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             // keep waiting for results until we're finished
             // Note: isFinished should be checked once per result
             while (!isFinished(queryId)) {
-                if (pullResult(resultListener) == null) {
-                    break;
+                Message<Result> message = resultListener.receive(nextCallProperties.getResultPollIntervalMillis());
+                if (message != null) {
+                    Object result = message.getPayload().getPayload();
+                    if (result != null) {
+                        results.add(result);
+                        
+                        if (logicBytesPerPage > 0) {
+                            pageSizeBytes += ObjectSizeOf.Sizer.getObjectSize(result);
+                        }
+                    } else {
+                        log.debug("Null result encountered, no more results");
+                        break;
+                    }
                 }
             }
         } finally {
             // stop the result listener
             resultListener.stop();
-        }
-        
-        // now that we have stopped the listener, make sure we use any results that may have arrived in the meantime
-        while (resultListener.hasResults()) {
-            if (pullResult(resultListener) != null) {
-                log.info("Got result after we were finished with the page!");
-            }
         }
         
         // update some values for metrics
@@ -133,24 +137,6 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         }
         
         return new ResultsPage<>(results, status);
-    }
-    
-    private Object pullResult(QueryQueueListener resultListener) {
-        Message<Result> message = resultListener.receive(nextCallProperties.getResultPollIntervalMillis());
-        if (message != null) {
-            Object result = message.getPayload().getPayload();
-            if (result != null) {
-                results.add(result);
-                
-                if (logicBytesPerPage > 0) {
-                    pageSizeBytes += ObjectSizeOf.Sizer.getObjectSize(result);
-                }
-            } else {
-                log.debug("Null result encountered, no more results");
-            }
-            return result;
-        }
-        return null;
     }
     
     public void updateQueryMetric(BaseQueryMetric baseQueryMetric) {
