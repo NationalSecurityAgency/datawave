@@ -99,7 +99,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
      */
     @Override
     public void deleteQueue(String queryId) {
-        deleteTopic(queryId);
+        // deleteTopic(queryId);
     }
     
     /**
@@ -423,6 +423,11 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         @Override
         public void stop() {
             container.stop();
+        }
+        
+        @Override
+        public boolean hasResults() {
+            return !messageQueue.isEmpty();
         }
         
         @Override

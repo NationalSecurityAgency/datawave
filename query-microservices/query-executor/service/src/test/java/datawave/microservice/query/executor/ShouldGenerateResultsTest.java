@@ -1,6 +1,6 @@
 package datawave.microservice.query.executor;
 
-import datawave.microservice.query.executor.action.ExecutorAction;
+import datawave.microservice.query.executor.action.ExecutorTask;
 import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.storage.CachedQueryStatus;
 import datawave.microservice.query.storage.QueryQueueListener;
@@ -104,7 +104,7 @@ public class ShouldGenerateResultsTest {
         public void sendMessage(String queryId, Result result) {}
     }
     
-    public class TestExecutorShouldGenerateResults extends ExecutorAction {
+    public class TestExecutorShouldGenerateResults extends ExecutorTask {
         public TestExecutorShouldGenerateResults(ExecutorProperties executorProperties, QueryQueueManager queues) {
             super(null, executorProperties, null, null, null, null, null, queues, null, null, null, null, null);
         }

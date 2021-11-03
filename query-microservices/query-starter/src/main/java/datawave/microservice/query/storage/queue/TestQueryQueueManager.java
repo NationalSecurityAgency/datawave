@@ -193,6 +193,11 @@ public class TestQueryQueueManager implements QueryQueueManager {
         }
         
         @Override
+        public boolean hasResults() {
+            return !messageQueue.isEmpty();
+        }
+        
+        @Override
         public Message<Result> receive() {
             return receive(WAIT_MS_DEFAULT);
         }
