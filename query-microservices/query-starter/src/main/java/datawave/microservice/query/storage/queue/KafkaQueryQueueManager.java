@@ -99,7 +99,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
      */
     @Override
     public void deleteQueue(String queryId) {
-        // deleteTopic(queryId);
+        deleteTopic(queryId);
     }
     
     /**
