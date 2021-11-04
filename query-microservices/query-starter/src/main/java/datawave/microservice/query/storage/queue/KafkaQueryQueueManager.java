@@ -426,6 +426,11 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
         }
         
         @Override
+        public boolean hasResults() {
+            return !messageQueue.isEmpty();
+        }
+        
+        @Override
         public Message<Result> receive(long waitMs) {
             Message<Result> result = null;
             try {

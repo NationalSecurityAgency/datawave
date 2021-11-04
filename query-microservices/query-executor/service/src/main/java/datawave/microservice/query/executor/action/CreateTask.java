@@ -18,10 +18,10 @@ import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
 
 import java.util.Date;
 
-public class Create extends ExecutorAction {
-    private static final Logger log = Logger.getLogger(Create.class);
+public class CreateTask extends ExecutorTask {
+    private static final Logger log = Logger.getLogger(CreateTask.class);
     
-    public Create(QueryExecutor source, QueryTask task) {
+    public CreateTask(QueryExecutor source, QueryTask task) {
         super(source, task);
     }
     

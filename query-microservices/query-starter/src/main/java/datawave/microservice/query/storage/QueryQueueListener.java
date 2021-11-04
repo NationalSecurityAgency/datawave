@@ -31,6 +31,13 @@ public interface QueryQueueListener {
     Message<Result> receive(long waitMs);
     
     /**
+     * Do we have any results pending
+     * 
+     * @return true if we have results, false if none pending (yet as they could be in transit)
+     */
+    boolean hasResults();
+    
+    /**
      * Stop the listener, effectively destroying the listener
      */
     void stop();

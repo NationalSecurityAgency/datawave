@@ -10,10 +10,10 @@ import datawave.services.query.logic.QueryLogic;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 
-public class Next extends ExecutorAction {
-    private static final Logger log = Logger.getLogger(Next.class);
+public class ResultsTask extends ExecutorTask {
+    private static final Logger log = Logger.getLogger(ResultsTask.class);
     
-    public Next(QueryExecutor source, QueryTask task) {
+    public ResultsTask(QueryExecutor source, QueryTask task) {
         super(source, task);
     }
     

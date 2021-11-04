@@ -122,8 +122,10 @@ if [ ! -z "$QUERY_ID" ]; then
     mv $FOLDER query_$QUERY_ID
 fi
 
-echo "$(date): Getting metrics for $QUERY_ID"
+echo "$(date): Getting metrics for $QUERY_ID in 5 seconds"
+sleep 5
 # grab the metrics
 curl -s -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
     ${METRICS_ENDPOINT}/id/$QUERY_ID > query_$QUERY_ID/queryMetrics.xml
+cat query_$QUERY_ID/queryMetrics.xml

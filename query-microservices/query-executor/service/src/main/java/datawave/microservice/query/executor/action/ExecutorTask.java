@@ -40,9 +40,9 @@ import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
-public abstract class ExecutorAction implements Runnable {
+public abstract class ExecutorTask implements Runnable {
     
-    private static final Logger log = Logger.getLogger(ExecutorAction.class);
+    private static final Logger log = Logger.getLogger(ExecutorTask.class);
     
     protected final QueryExecutor source;
     protected final AccumuloConnectionRequestMap connectionMap;
@@ -59,13 +59,13 @@ public abstract class ExecutorAction implements Runnable {
     protected final QueryTask task;
     protected boolean interrupted = false;
     
-    public ExecutorAction(QueryExecutor source, QueryTask task) {
+    public ExecutorTask(QueryExecutor source, QueryTask task) {
         this(source, source.getExecutorProperties(), source.getQueryProperties(), source.getBusProperties(), source.getConnectionRequestMap(),
                         source.getConnectionFactory(), source.getCache(), source.getQueues(), source.getQueryLogicFactory(), source.getPublisher(),
                         source.getMetricFactory(), source.getMetricClient(), task);
     }
     
-    public ExecutorAction(QueryExecutor source, ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties,
+    public ExecutorTask(QueryExecutor source, ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties,
                     AccumuloConnectionRequestMap connectionMap, AccumuloConnectionFactory connectionFactory, QueryStorageCache cache, QueryQueueManager queues,
                     QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher, QueryMetricFactory metricFactory, QueryMetricClient metricClient,
                     QueryTask task) {
@@ -151,6 +151,8 @@ public abstract class ExecutorAction implements Runnable {
                 cache.updateTaskState(taskKey, TaskStates.TASK_STATE.FAILED);
             } else {
                 cache.updateTaskState(taskKey, TaskStates.TASK_STATE.READY);
+                // more work to do on this task, lets notify
+                publishExecutorEvent(QueryRequest.next(queryId), task.getTaskKey().getQueryPool());
             }
         }
     }
@@ -166,13 +168,9 @@ public abstract class ExecutorAction implements Runnable {
      *             if checkpointing fails
      */
     protected void checkpoint(QueryKey queryKey, CheckpointableQueryLogic cpQueryLogic) throws IOException {
-        boolean createdTask = false;
         for (QueryCheckpoint cp : cpQueryLogic.checkpoint(queryKey)) {
             log.debug("Storing a query checkpoint: " + cp);
             cache.createTask(QueryRequest.Method.NEXT, cp);
-            createdTask = true;
-        }
-        if (createdTask) {
             publishExecutorEvent(QueryRequest.next(queryKey.getQueryId()), queryKey.getQueryPool());
         }
     }
@@ -296,7 +294,7 @@ public abstract class ExecutorAction implements Runnable {
         }
     }
     
-    private void updateMetrics(String queryId, CachedQueryStatus queryStatus, TransformIterator iter) {
+    protected void updateMetrics(String queryId, CachedQueryStatus queryStatus, TransformIterator iter) {
         // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
         if (iter.getTransformer() instanceof WritesQueryMetrics) {
             WritesQueryMetrics metrics = ((WritesQueryMetrics) iter.getTransformer());
@@ -328,7 +326,7 @@ public abstract class ExecutorAction implements Runnable {
         }
     }
     
-    private void publishExecutorEvent(QueryRequest queryRequest, String queryPool) {
+    protected void publishExecutorEvent(QueryRequest queryRequest, String queryPool) {
         // @formatter:off
         publisher.publishEvent(
                 new RemoteQueryRequestEvent(

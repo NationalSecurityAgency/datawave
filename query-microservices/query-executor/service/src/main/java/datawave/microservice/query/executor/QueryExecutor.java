@@ -2,10 +2,10 @@ package datawave.microservice.query.executor;
 
 import com.zaxxer.sparsebits.SparseBitSet;
 import datawave.microservice.query.config.QueryProperties;
-import datawave.microservice.query.executor.action.Create;
-import datawave.microservice.query.executor.action.ExecutorAction;
-import datawave.microservice.query.executor.action.Next;
-import datawave.microservice.query.executor.action.Plan;
+import datawave.microservice.query.executor.action.CreateTask;
+import datawave.microservice.query.executor.action.ExecutorTask;
+import datawave.microservice.query.executor.action.ResultsTask;
+import datawave.microservice.query.executor.action.PlanTask;
 import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
  *
  **/
 @Service
-public class QueryExecutor implements QueryRequestHandler {
+public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandler {
     private static final Logger log = Logger.getLogger(QueryExecutor.class);
     
     protected final BlockingQueue<Runnable> workQueue;
@@ -97,7 +97,7 @@ public class QueryExecutor implements QueryRequestHandler {
     private void removeFromWorkQueue(String queryId) {
         List<Runnable> removals = new ArrayList<Runnable>();
         for (Runnable action : workQueue) {
-            if (((ExecutorAction) action).getTaskKey().getQueryId().equals(queryId)) {
+            if (((ExecutorTask) action).getTaskKey().getQueryId().equals(queryId)) {
                 removals.add(action);
             }
         }
@@ -110,8 +110,8 @@ public class QueryExecutor implements QueryRequestHandler {
         // interrupt any working requests
         synchronized (working) {
             for (Runnable action : working) {
-                if (((ExecutorAction) action).getTaskKey().getQueryId().equals(queryId)) {
-                    ((ExecutorAction) action).interrupt();
+                if (((ExecutorTask) action).getTaskKey().getQueryId().equals(queryId)) {
+                    ((ExecutorTask) action).interrupt();
                 }
             }
         }
@@ -199,16 +199,16 @@ public class QueryExecutor implements QueryRequestHandler {
                             log.warn("Task " + taskKey + " is for " + task.getAction() + " but we were looking for " + action + ", executing task anyway");
                         }
                         log.debug("Executing task " + taskKey + ": " + task.getQueryCheckpoint());
-                        ExecutorAction runnable = null;
+                        ExecutorTask runnable = null;
                         switch (action) {
                             case CREATE:
-                                runnable = new Create(this, task);
+                                runnable = new CreateTask(this, task);
                                 break;
                             case NEXT:
-                                runnable = new Next(this, task);
+                                runnable = new ResultsTask(this, task);
                                 break;
                             case PLAN:
-                                runnable = new Plan(this, task);
+                                runnable = new PlanTask(this, task);
                                 break;
                             default:
                                 throw new UnsupportedOperationException(task.getTaskKey().toString());
