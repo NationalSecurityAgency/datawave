@@ -180,6 +180,86 @@ public class ContentFunctionsTest {
         Assert.assertTrue(expect(o, true));
     }
     
+    @Test
+    public void reverseSharedTokenIndex() {
+        String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'a'", "'b'", "'c'");
+        Expression expr = engine.createExpression(query);
+        
+        List<TermWeightPosition> t1, t2, t3;
+        t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        t2 = asList(Arrays.asList(212, 229, 252, 272), Arrays.asList(0, 0, 0, 0));
+        t3 = asList(Arrays.asList(1, 101, 202, 213, 253, 312, 336), Arrays.asList(0, 0, 0, 0, 0, 0, 0));
+        
+        termOffSetMap.put("a", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t1)));
+        termOffSetMap.put("b", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t2)));
+        termOffSetMap.put("c", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t3)));
+        
+        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
+        Object o = expr.evaluate(context);
+        
+        Assert.assertTrue(expect(o, true));
+    }
+    
+    @Test
+    public void forwardSharedTokenIndex() {
+        String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'c'", "'b'", "'a'");
+        Expression expr = engine.createExpression(query);
+        
+        List<TermWeightPosition> t1, t2, t3;
+        t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        t2 = asList(Arrays.asList(212, 229, 252, 272), Arrays.asList(0, 0, 0, 0));
+        t3 = asList(Arrays.asList(1, 101, 202, 213, 251, 312, 336), Arrays.asList(0, 0, 0, 0, 0, 0, 0));
+        
+        termOffSetMap.put("a", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t1)));
+        termOffSetMap.put("b", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t2)));
+        termOffSetMap.put("c", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t3)));
+        
+        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
+        Object o = expr.evaluate(context);
+        
+        Assert.assertTrue(expect(o, true));
+    }
+    
+    @Test
+    public void reverseAllSharedTokenIndex() {
+        String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'a'", "'b'", "'c'");
+        Expression expr = engine.createExpression(query);
+        
+        List<TermWeightPosition> t1, t2, t3;
+        t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        t2 = asList(Arrays.asList(212, 229, 252, 272), Arrays.asList(0, 0, 0, 0));
+        t3 = asList(Arrays.asList(1, 101, 202, 213, 252, 312, 336), Arrays.asList(0, 0, 0, 0, 0, 0, 0));
+        
+        termOffSetMap.put("a", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t1)));
+        termOffSetMap.put("b", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t2)));
+        termOffSetMap.put("c", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t3)));
+        
+        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
+        Object o = expr.evaluate(context);
+        
+        Assert.assertTrue(expect(o, true));
+    }
+    
+    @Test
+    public void forwardAllSharedTokenIndex() {
+        String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'c'", "'b'", "'a'");
+        Expression expr = engine.createExpression(query);
+        
+        List<TermWeightPosition> t1, t2, t3;
+        t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        t2 = asList(Arrays.asList(212, 229, 252, 272), Arrays.asList(0, 0, 0, 0));
+        t3 = asList(Arrays.asList(1, 101, 202, 213, 252, 312, 336), Arrays.asList(0, 0, 0, 0, 0, 0, 0));
+        
+        termOffSetMap.put("a", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t1)));
+        termOffSetMap.put("b", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t2)));
+        termOffSetMap.put("c", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t3)));
+        
+        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
+        Object o = expr.evaluate(context);
+        
+        Assert.assertTrue(expect(o, true));
+    }
+    
     /**
      * Same as testEvaluation1, however the term frequency list marks teh fields as non-content expansion fields and hence we expect no results
      */
