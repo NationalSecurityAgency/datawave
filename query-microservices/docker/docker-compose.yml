@@ -179,7 +179,7 @@ services:
         condition: service_healthy
 
   querymetric:
-    image: datawave/query-metric-service:1.3-SNAPSHOT
+    image: datawave/query-metric-service:1.4-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
