@@ -127,9 +127,7 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
         if (!isValid)
             return data;
         
-        JexlASTHelper.validateLineage(node, true);
-        QueryPropertyMarker.Instance instance = QueryPropertyMarkerVisitor.getCopiedInstance(node);
-        JexlASTHelper.validateLineage(node, true);
+        QueryPropertyMarker.Instance instance = QueryPropertyMarkerVisitor.getInstance(node);
         
         if (instance.isAnyType()) {
             // descend into the marker's source node
@@ -173,7 +171,7 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
     
     private boolean isWrappedSingleTerm(JexlNode node) {
         if (isParen(node)) {
-            boolean isMarkerNode = QueryPropertyMarkerVisitor.getCopiedInstance(node).isAnyType();
+            boolean isMarkerNode = QueryPropertyMarkerVisitor.getInstance(node).isAnyType();
             if (!isMarkerNode) {
                 JexlNode unwrapped = JexlASTHelper.dereference(node);
                 
