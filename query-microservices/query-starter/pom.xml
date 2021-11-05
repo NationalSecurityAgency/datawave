@@ -14,7 +14,7 @@
         <version.microservice.hazelcast-client>1.7-SNAPSHOT</version.microservice.hazelcast-client>
         <version.microservice.starter>1.6.6-SNAPSHOT</version.microservice.starter>
         <version.microservice.starter-metadata>1.0-SNAPSHOT</version.microservice.starter-metadata>
-        <version.microservice.starter-metrics>1.4-SNAPSHOT</version.microservice.starter-metrics>
+        <version.microservice.starter-metrics>1.5-SNAPSHOT</version.microservice.starter-metrics>
     </properties>
     <dependencyManagement>
         <dependencies>
