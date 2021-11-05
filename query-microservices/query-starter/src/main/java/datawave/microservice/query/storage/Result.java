@@ -1,5 +1,6 @@
 package datawave.microservice.query.storage;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.springframework.integration.acks.SimpleAcknowledgment;
@@ -35,9 +36,12 @@ public class Result {
     }
     
     public Object getPayload() {
-        if (acknowledgement != null) {
-            acknowledgement.acknowledge();
-        }
+        return payload;
+    }
+    
+    @JsonIgnore
+    public Object getAndAcknowledgePayload() {
+        acknowledgement.acknowledge();
         return payload;
     }
 }

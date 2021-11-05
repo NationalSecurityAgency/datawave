@@ -24,7 +24,8 @@ spring:
     consumer:
       group-id: KafkaQueryQueueManager
       autoOffsetReset: latest
-
+    listener:
+      enable-auto-commit: false
 
 # This is the accumulo configuration we use in services.  These don't map directly to a properties class, but 
 # they are here to be used as a reference for other properties.
