@@ -165,7 +165,86 @@ public class JexlEvaluationTest {
     
     @Test
     public void testCompareFunction() {
-        String query = "FOO == 'bar' && filter:compare(FIELD_A,'<','all',FIELD_B)";
+        // eq op
+        String query = "FOO == 'bar' && filter:compare(FIELD_A,'==','all',FIELD_B)";
+        testCompare(query, false);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_A,'==','any',FIELD_B)";
+        testCompare(query, false);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_C,'==','all',FIELD_B)";
+        testCompare(query, false);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_C,'==','any',FIELD_B)";
+        testCompare(query, true);
+        
+        // eq op, alternate form
+        query = "FOO == 'bar' && filter:compare(FIELD_A,'=','all',FIELD_B)";
+        testCompare(query, false);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_A,'=','any',FIELD_B)";
+        testCompare(query, false);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_C,'=','all',FIELD_B)";
+        testCompare(query, false);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_C,'=','any',FIELD_B)";
+        testCompare(query, true);
+        
+        // lt op
+        query = "FOO == 'bar' && filter:compare(FIELD_A,'<','all',FIELD_B)";
+        testCompare(query, true);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_A,'<','any',FIELD_B)";
+        testCompare(query, true);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_C,'<','all',FIELD_B)";
+        testCompare(query, false);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_C,'<','any',FIELD_B)";
+        testCompare(query, true);
+        
+        // le op
+        query = "FOO == 'bar' && filter:compare(FIELD_A,'<=','all',FIELD_B)";
+        testCompare(query, true);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_A,'<=','any',FIELD_B)";
+        testCompare(query, true);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_C,'<=','all',FIELD_B)";
+        testCompare(query, false);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_C,'<=','any',FIELD_B)";
+        testCompare(query, true);
+        
+        // gt op
+        query = "FOO == 'bar' && filter:compare(FIELD_A,'>','all',FIELD_B)";
+        testCompare(query, false);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_A,'>','any',FIELD_B)";
+        testCompare(query, false);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_C,'>','all',FIELD_B)";
+        testCompare(query, false);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_C,'>','any',FIELD_B)";
+        testCompare(query, true);
+        
+        // ge op
+        query = "FOO == 'bar' && filter:compare(FIELD_A,'>=','all',FIELD_B)";
+        testCompare(query, false);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_A,'>=','any',FIELD_B)";
+        testCompare(query, false);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_C,'>=','all',FIELD_B)";
+        testCompare(query, false);
+        
+        query = "FOO == 'bar' && filter:compare(FIELD_C,'>=','any',FIELD_B)";
+        testCompare(query, true);
+    }
+    
+    private void testCompare(String query, boolean expected) {
         
         // populate doc
         Key docKey = new Key("shard", "datatype\0uid");
@@ -175,16 +254,19 @@ public class JexlEvaluationTest {
         d.put("FIELD_A", new Content("banana", docKey, true));
         d.put("FIELD_B", new Content("xylophone", docKey, true));
         d.put("FIELD_B", new Content("zephyr", docKey, true));
+        d.put("FIELD_C", new Content("zebra", docKey, true));
+        d.put("FIELD_C", new Content("zephyr", docKey, true));
         
         // populate context from doc
         DatawaveJexlContext context = new DatawaveJexlContext();
-        d.visit(Arrays.asList("FOO", "FIELD_A", "FIELD_B"), context);
-        
-        JexlEvaluation evaluation = new JexlEvaluation(query, new HitListArithmetic());
+        d.visit(Arrays.asList("FOO", "FIELD_A", "FIELD_B", "FIELD_C"), context);
         
         Tuple3<Key,Document,DatawaveJexlContext> tuple = new Tuple3<>(docKey, d, context);
+        
+        JexlEvaluation evaluation = new JexlEvaluation(query, new HitListArithmetic());
         boolean result = evaluation.apply(tuple);
-        assertTrue(result);
+        
+        assertEquals(expected, result);
     }
     
     private TermFrequencyList buildTfList(String field, int... offsets) {

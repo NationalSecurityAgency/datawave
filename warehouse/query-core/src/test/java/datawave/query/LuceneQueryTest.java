@@ -254,19 +254,6 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
         
         String jexlQueryPlan = getPlan(lucene, true, true);
         assertPlanEquals(expectedJexlPlan, jexlQueryPlan);
-        
-        // the QueryJexl does not register datawave functions so we cannot actually execute this query
-        // lucene = "STATE:Ohio AND #COMPARE(CITY,<,ANY,STATE)";
-        // expectedJexlPlan = "STATE == 'ohio' && filter:compare(CITY,'<','ANY',STATE)";
-        // runTest(lucene, expectedJexlPlan);
-        
-        // lucene = "STATE:Ohio AND #COMPARE(CITY,>,ANY,STATE)";
-        // expectedJexlPlan = "STATE == 'ohio' && filter:compare(CITY,'>','ANY',STATE)";
-        // runTest(lucene, expectedJexlPlan);
-        
-        // lucene = "STATE:Ohio AND #COMPARE(CITY,>=,ANY,STATE)";
-        // expectedJexlPlan = "STATE == 'ohio' && filter:compare(CITY,'>=','ALL',STATE)";
-        // runTest(lucene, expectedJexlPlan);
     }
     
     // ============================================
