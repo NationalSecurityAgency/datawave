@@ -88,7 +88,6 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     protected Collection<FilterRule> loadContents(InputStream in) throws IOException {
         
         try {
-            // todo - determine if we can copy the parent rules and use the child's filterClassName
             List<RuleConfig> mergedRuleConfigs = loadRuleConfigs(in);
             List<FilterRule> filterRules = new ArrayList<>();
             /**
@@ -206,10 +205,9 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     
     boolean mergeIfPossible(RuleConfig child, List<RuleConfig> parents) {
         // @formatter:off
-        // find parent with matching label and filter class
+        // find parent with matching label
         List<RuleConfig> candidates = parents.stream()
             .filter(r -> r.getLabel().equals(child.label)
-//                    && r.filterClassName.equals(child.filterClassName)
             )
             .collect(Collectors.toList());
         // should we be able to have more than one matching parent?
@@ -220,20 +218,27 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         return !candidates.isEmpty();
         // @formatter:on
     }
-    
-    void mergeChildIntoParent(RuleConfig child, RuleConfig parent) {
-        if (child.isMerge) {
-            if (null != child.ttlValue) {
-                parent.ttlValue = child.ttlValue;
+
+    /**
+     * combinedRule is expected to be a copy of the parent rule, which will be modified to also contain overrides from
+     * additionalRule.  additionalRule is the child rule.
+     * @param additionalRule contains the modifications that will be introduced into combinedRule
+     * @param combinedRule contains the base rule, to be amended with additionalRule
+     */
+    void mergeChildIntoParent(RuleConfig additionalRule, RuleConfig combinedRule) {
+        if (additionalRule.isMerge) {
+            if (null != additionalRule.ttlValue) {
+                combinedRule.ttlValue = additionalRule.ttlValue;
             }
-            if (null != child.ttlUnits) {
-                parent.ttlUnits = child.ttlUnits;
+            if (null != additionalRule.ttlUnits) {
+                combinedRule.ttlUnits = additionalRule.ttlUnits;
             }
-            parent.extendedOptions.putAll(child.extendedOptions);
-            if (null != child.matchPattern && !child.matchPattern.trim().isEmpty()) {
-                parent.matchPattern += "\n" + child.matchPattern;
+            combinedRule.extendedOptions.putAll(additionalRule.extendedOptions);
+            if (null != additionalRule.matchPattern && !additionalRule.matchPattern.trim().isEmpty()) {
+                combinedRule.matchPattern += "\n" + additionalRule.matchPattern;
             }
-            parent.filterClassName = child.filterClassName;
+            // Override the filterClassName
+            combinedRule.filterClassName = additionalRule.filterClassName;
         }
     }
     
