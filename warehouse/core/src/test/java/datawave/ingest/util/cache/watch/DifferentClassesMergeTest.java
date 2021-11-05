@@ -44,30 +44,48 @@ public class DifferentClassesMergeTest {
     
     @Test
     public void verifyInheritedParentConfigs() throws IOException {
-        Key key = new Key("row", "cf", "coffeeGround", "coffeeGround", VERY_OLD_TIMESTAMP);
+        Key key = new Key("row", "cf", "cqDoesntMatch", "coffeeGround", VERY_OLD_TIMESTAMP);
         assertThat(parentFilter.accept(key, new Value()), is(false));
         
-        key = new Key("row", "cf", "2/coffeeGround/chocolate", "coffeeGround&chocolate", TIMESTAMP_IN_FUTURE);
+        key = new Key("row", "cf", "cqDoesntMatch", "coffeeGround&chocolate", TIMESTAMP_IN_FUTURE);
         assertThat(parentFilter.accept(key, new Value()), is(true));
         
-        key = new Key("row", "cf", "2/coffeeGround/chocolate", "coffeeGround&chocolate", VERY_OLD_TIMESTAMP);
+        key = new Key("row", "cf", "2/coffeeGround/chocolate", "cvDoesntMatch", VERY_OLD_TIMESTAMP);
         assertThat(childFilter.accept(key, new Value()), is(false));
         
-        key = new Key("row", "cf", "2/coffeeGround/chocolate", "coffeeGround&chocolate", TIMESTAMP_IN_FUTURE);
+        key = new Key("row", "cf", "2/coffeeGround/chocolate", "cvDoesntMatch", TIMESTAMP_IN_FUTURE);
         assertThat(childFilter.accept(key, new Value()), is(true));
     }
     
     @Test
     public void verifyOverrides() throws IOException {
-        Key key = new Key("row", "cf", "1/bakingPowder/chocolate", "bakingPowder&chocolate", VERY_OLD_TIMESTAMP);
-        assertThat(childFilter.accept(key, new Value()), is(false));
-        
-        // key = new Key("row", "cf", "1/bakingPowder/chocolate", "bakingPowder&chocolate", System.currentTimeMillis() - 1000*60*60*24*366);
-        key = new Key("row", "cf", "1/bakingPowder/chocolate", "bakingPowder&chocolate", -1000L * 60 * 60 * 24 * 370);
+        Key key = new Key("row", "cf", "cqDoesntMatch", "bakingPowder&chocolate", TIMESTAMP_IN_FUTURE);
+        assertThat(parentFilter.accept(key, new Value()), is(true));
+
+        // according to alternate-root.xml's 365d rule, this should be eliminated
+        key = new Key("row", "cf", "cqDoesntMatch", "bakingPowder&chocolate", -1000L * 60 * 60 * 24 * 370);
+        assertThat(parentFilter.accept(key, new Value()), is(false));
+
+        key = new Key("row", "cf", "cqDoesntMatch", "bakingPowder&chocolate", -1000L * 60 * 60 * 24 * 550);
+        assertThat(parentFilter.accept(key, new Value()), is(false));
+
+        key = new Key("row", "cf", "cqDoesntMatch", "bakingPowder&chocolate", VERY_OLD_TIMESTAMP);
+        assertThat(parentFilter.accept(key, new Value()), is(false));
+
+
+        key = new Key("row", "cf", "1/bakingPowder/chocolate", "cvDoesntMatch", TIMESTAMP_IN_FUTURE);
         assertThat(childFilter.accept(key, new Value()), is(true));
-        
-        key = new Key("row", "cf", "1/bakingPowder/chocolate", "bakingPowder&chocolate", -1000L * 60 * 60 * 24 * 550);
-        // key = new Key("row", "cf", "1/bakingPowder/chocolate", "bakingPowder&chocolate", System.currentTimeMillis() - 1000*60*60*24*549);
+
+        // according to alternate-root.xml's 365d rule, this should be eliminated but this is overridden in alternate-child.xml
+        // so it is not eliminated
+        key = new Key("row", "cf", "1/bakingPowder/chocolate", "cvDoesntMatch", -1000L * 60 * 60 * 24 * 370);
+        assertThat(childFilter.accept(key, new Value()), is(true));
+
+        // alternate-child's 548d limit is applied to eliminate the following keys
+        key = new Key("row", "cf", "1/bakingPowder/chocolate", "cvDoesntMatch", -1000L * 60 * 60 * 24 * 550);
+        assertThat(childFilter.accept(key, new Value()), is(false));
+
+        key = new Key("row", "cf", "1/bakingPowder/chocolate", "cvDoesntMatch", VERY_OLD_TIMESTAMP);
         assertThat(childFilter.accept(key, new Value()), is(false));
     }
     
