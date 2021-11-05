@@ -1,0 +1,19 @@
+TokenSpecParser - normally takes format of
+"a" : 1
+
+Other Filters - take format of
+label a=1
+
+EdgeColumnQualifierTokenFilter uses format 1.
+The other filter uses format 2.  Example lowside?
+EdgeColumnQualifierTokenFilter should now be able to use format 2.
+
+I want to confirm that EdgeColumnQualifierTokenFilter can inherit a matchPattern from a filter that uses format 2.
+
+1. Create a parent configuration file that uses format 2.
+2. Create a child configuration file that extends the parent, using EdgeColumnQualifierTokenFilter.  Have it override a few things.
+Perhaps: Create another child configuration file that extends the parent, using ExampleFilter.  Have it override a few things as well.
+
+Create some data to be run through the configuration file 2 filter.
+Verify the data is aged off in a way that could only be done by matching a rule in the parent.
+Verify the data is aged off in a way that could only be done by matching the overridden rule from the child.

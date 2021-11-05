@@ -1,0 +1,16 @@
+<ageoffConfiguration>
+    <parent>alternate-root.xml</parent>
+    <rules>
+        <rule label="labeledPatternsFormat" mode="merge">
+            <ttl units="d">0</ttl>
+            <filterClass>datawave.iterators.filter.EdgeColumnQualifierTokenFilter</filterClass>
+            <!-- Overrides some, but not all, of the parent's ttl entries -->
+            <matchPattern>
+                001 bakingPowder=548d   <!-- in mylar bag with desiccant -->
+                002 driedBeans=90d      <!-- in cardboard box -->
+                003 bakingSoda=365d     <!-- in cardboard box -->
+                006 coffeeInstant=365d  <!-- in cardboard box -->
+            </matchPattern>
+        </rule>
+    </rules>
+</ageoffConfiguration>

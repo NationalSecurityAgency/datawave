@@ -88,6 +88,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     protected Collection<FilterRule> loadContents(InputStream in) throws IOException {
         
         try {
+            // todo - determine if we can copy the parent rules and use the child's filterClassName
             List<RuleConfig> mergedRuleConfigs = loadRuleConfigs(in);
             List<FilterRule> filterRules = new ArrayList<>();
             /**
@@ -207,7 +208,9 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         // @formatter:off
         // find parent with matching label and filter class
         List<RuleConfig> candidates = parents.stream()
-            .filter(r -> r.getLabel().equals(child.label) && r.filterClassName.equals(child.filterClassName))
+            .filter(r -> r.getLabel().equals(child.label)
+//                    && r.filterClassName.equals(child.filterClassName)
+            )
             .collect(Collectors.toList());
         // should we be able to have more than one matching parent?
         for (RuleConfig parent : candidates) {
@@ -230,6 +233,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             if (null != child.matchPattern && !child.matchPattern.trim().isEmpty()) {
                 parent.matchPattern += "\n" + child.matchPattern;
             }
+            parent.filterClassName = child.filterClassName;
         }
     }
     
@@ -301,6 +305,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         // @formatter:on
     }
     
+    // Return the RuleConfigs found within the configuration file referenced in the provided Node's text
     private Collection<? extends RuleConfig> loadParentRuleConfigs(Node parent) throws IOException {
         Collection<RuleConfig> rules = new ArrayList<>();
         String parentPathStr = parent.getTextContent();

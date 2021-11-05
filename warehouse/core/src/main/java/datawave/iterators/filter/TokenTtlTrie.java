@@ -40,7 +40,7 @@ public final class TokenTtlTrie {
      */
     public Long scan(byte[] rawString) {
         int bestPriority = Integer.MAX_VALUE;
-        float ttl = 0;
+        long ttl = 0;
         int curState = 0;
         for (byte b : rawString) {
             short charClass = charClasses[0xff & (int) b];

@@ -27,18 +27,33 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
      *
      * <pre>
      * tokens    &lt;- &lt;empty&gt;
-     *           &lt;- &lt;tokens&gt; &lt;tokenspec&gt;
+     *           &lt;- &lt;tokens&gt;&lt;separator&gt;&lt;tokenspec&gt;
      * tokenspec &lt;- "strliteral"
      *           &lt;- "strliteral" : &lt;num&gt;&lt;unit&gt;
+     *           &lt;- word strliteral2
      *           &lt;- word strliteral2=&lt;num&gt;&lt;unit&gt;
+     * separator &lt;- ,
+     *           &lt;- \n
+     *           &lt;- <space>
+     *           &lt;- &lt;separator&gt;&lt;separator&gt;
      * </pre>
      */
     protected static class ParserState {
         
         private enum ParseTokenType {
-            SEPARATION("[\\s\\n,]+"), STRLITERAL("\"(?:[^\\\"]|\\.)*\""), WORD("^[a-z]{3,}"), STRLITERAL2("[\\w]*\\="), COLON(":"), EQUALS("="), NUMBER(
-                            "[0-9]+"), UNIT(AgeOffTtlUnits.MILLISECONDS + "|" + AgeOffTtlUnits.DAYS + "|" + AgeOffTtlUnits.HOURS + "|" + AgeOffTtlUnits.MINUTES
-                            + "|" + AgeOffTtlUnits.SECONDS);
+            //@formatter:off
+            SEPARATION("[\\s\\n,]+"),
+            STRLITERAL("\"(?:[^\\\"]|\\.)*\""), // "strliteral"
+            LABEL_AND_STRLITERAL2("^[\\w]*[ \\t]+[\\w]+"), // word strliteral2 // expected to be followed by colon or equals
+            COLON(":"),
+            EQUALS("="),
+            NUMBER("[0-9]+"),
+            UNIT(AgeOffTtlUnits.MILLISECONDS + "|" +
+                    AgeOffTtlUnits.DAYS + "|" +
+                    AgeOffTtlUnits.HOURS + "|" +
+                    AgeOffTtlUnits.MINUTES + "|" +
+                    AgeOffTtlUnits.SECONDS);
+            //@formatter:on
             
             private final Pattern matchPattern;
             
@@ -95,14 +110,8 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
                                 continue;
                             }
                             foundMatch = true;
-                            if (type != ParseTokenType.SEPARATION && type != ParseTokenType.WORD) {
-                                if (type == ParseTokenType.STRLITERAL2) {
-                                    result.add(new ParseToken(type, input.substring(curPos, curPos + m.end() - 1), curPos));
-                                    result.add(new ParseToken(ParseTokenType.EQUALS, input.substring(curPos + m.end() - 1, curPos + m.end()), curPos + m.end()
-                                                    - 1));
-                                } else {
-                                    result.add(new ParseToken(type, input.substring(curPos, curPos + m.end()), curPos));
-                                }
+                            if (type != ParseTokenType.SEPARATION) {
+                                result.add(new ParseToken(type, input.substring(curPos, curPos + m.end()), curPos));
                             }
                             curPos += m.end();
                             break nextToken;
@@ -173,8 +182,11 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             if (token.type == ParseTokenType.STRLITERAL) {
                 literalContent = expect(ParseTokenType.STRLITERAL);
                 literalContent = literalContent.substring(1, literalContent.length() - 1);
-            } else if (token.type == ParseTokenType.STRLITERAL2) {
-                literalContent = expect(ParseTokenType.STRLITERAL2);
+            } else if (token.type == ParseTokenType.LABEL_AND_STRLITERAL2) {
+                literalContent = expect(ParseTokenType.LABEL_AND_STRLITERAL2);
+                String[] parts = literalContent.trim().split("\\s");
+                literalContent = parts[parts.length - 1];
+                literalContent = literalContent.substring(0, literalContent.length());
             }
             
             StringBuilder sb = new StringBuilder();

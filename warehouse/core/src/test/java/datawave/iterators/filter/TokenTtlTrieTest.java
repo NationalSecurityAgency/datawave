@@ -1,12 +1,7 @@
 package datawave.iterators.filter;
 
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertEquals;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +17,7 @@ import org.junit.Assert;
 
 public class TokenTtlTrieTest {
     public static Logger log = Logger.getLogger(TokenTtlTrieTest.class);
+    public static final long MILLIS_IN_DAY = 24 * 60 * 60 * 1000L;
     public static int BENCHMARK_SIZE = 10000;
     
     @BeforeClass
@@ -43,13 +39,38 @@ public class TokenTtlTrieTest {
     }
     
     @Test(expected = IllegalArgumentException.class)
-    public void tokensMayNotContainDelimiters() {
+    public void addedTokensMayNotContainDelimiters() {
         new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).addToken("foo,".getBytes(), 1).build();
     }
     
     @Test(expected = IllegalArgumentException.class)
     public void tokensMustBeUnique() {
         new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).addToken("foo".getBytes(), 1).addToken("foo".getBytes(), 2).build();
+    }
+    
+    @Test
+    public void tokensOverridesPermittedWhenMergeEnabled() {
+        byte[] token = "foo".getBytes();
+        
+        //@formatter:off
+        TokenTtlTrie trie = new TokenTtlTrie.Builder(MERGE_MODE.ON).setDelimiters(",".getBytes())
+                .addToken(token, 1)
+                .addToken(token, 2)
+                .build();
+        //@formatter:on
+        
+        assertEquals((Long) 2L, trie.scan(token));
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void parsedTokensMayNotContainDelimiters() {
+        new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).parse("\"foo,\":10s").build();
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testTokensMustBeUniqueAcrossFormats() {
+        String input = "foo bar : 2s\n\"bar\"=42s";
+        new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(input).build();
     }
     
     @Test
@@ -99,11 +120,11 @@ public class TokenTtlTrieTest {
         
         TokenTtlTrie trie = new TokenTtlTrie.Builder(MERGE_MODE.ON).setDelimiters("/".getBytes()).parse(initial + override).build();
         // original values
-        assertThat(trie.scan("foo".getBytes()), is(equalTo(1L)));
-        assertThat(trie.scan("baz".getBytes()), is(equalTo(5L)));
+        assertEquals((Long) 1L, trie.scan("foo".getBytes()));
+        assertEquals((Long) 5L, trie.scan("baz".getBytes()));
         // overridden values
-        assertThat(trie.scan("bar".getBytes()), is(equalTo(5L)));
-        assertThat(trie.scan("zip".getBytes()), is(equalTo(9L)));
+        assertEquals((Long) 5L, trie.scan("bar".getBytes()));
+        assertEquals((Long) 9L, trie.scan("zip".getBytes()));
     }
     
     @Test
@@ -112,16 +133,11 @@ public class TokenTtlTrieTest {
                         + "\"coffee grounds\" : 4d\n\t\t\t\t" + "\"coffee whole bean\" : 5d\n\t\t\t\t" + "\"coffee instant\" : 6d";
         
         TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(initial).build();
-        assertThat(trie.scan("baking powder".getBytes()), is(notNullValue()));
-        assertThat(trie.scan("dried beans".getBytes()), is(notNullValue()));
-        assertThat(trie.scan("baking soda".getBytes()), is(notNullValue()));
+        assertEquals((Long) (1 * MILLIS_IN_DAY), trie.scan("baking powder".getBytes()));
+        assertEquals((Long) (2 * MILLIS_IN_DAY), trie.scan("dried beans".getBytes()));
+        assertEquals((Long) (3 * MILLIS_IN_DAY), trie.scan("baking soda".getBytes()));
         // not one of the ones we configured the tree with
-        assertThat(trie.scan("zip foo".getBytes()), is(nullValue()));
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void parsedTokensMayNotContainDelimiters() {
-        new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).parse("\"foo,\":10s").build();
+        assertNull(trie.scan("zip foo".getBytes()));
     }
     
     @Test
@@ -129,8 +145,17 @@ public class TokenTtlTrieTest {
         String initial = "foobar 1234abcd=42d\nbarbaz ABCD1234=9001d";
         
         TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(initial).build();
-        assertThat(trie.scan("1234abcd".getBytes()), is(notNullValue()));
-        assertThat(trie.scan("ABCD1234".getBytes()), is(notNullValue()));
+        assertEquals((Long) (42 * MILLIS_IN_DAY), trie.scan("1234abcd".getBytes()));
+        assertEquals((Long) (9001L * MILLIS_IN_DAY), trie.scan("ABCD1234".getBytes()));
+    }
+    
+    @Test
+    public void testNewFormatOnlyAndSpaces() {
+        String initial = "    foobar 1234abcd=42d   \n\tbarbaz ABCD1234=9001d\n\n\t";
+        
+        TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(initial).build();
+        assertEquals((Long) (42 * MILLIS_IN_DAY), trie.scan("1234abcd".getBytes()));
+        assertEquals((Long) (9001 * MILLIS_IN_DAY), trie.scan("ABCD1234".getBytes()));
     }
     
     @Test
@@ -138,10 +163,91 @@ public class TokenTtlTrieTest {
         String initial = "foobar 3001futurama=42d\nbarbaz 42planetExpress=9001d\n\"moocow\" : 1234d";
         
         TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(initial).build();
-        assertThat(trie.scan("3001futurama".getBytes()), is(notNullValue()));
-        assertThat(trie.scan("42planetExpress".getBytes()), is(notNullValue()));
-        assertThat(trie.scan("momCorp".getBytes()), is(nullValue()));
-        assertThat(trie.scan("moocow".getBytes()), is(notNullValue()));
+        verifyMixedFormats(trie);
     }
     
+    @Test
+    public void testNewFormatWithOldFormatAndSpaces() {
+        //@formatter:off
+        String initial = "    foobar 3001futurama=42d   \n" +
+                "   007 buggy=9001d   \n" +
+                "   Barbaz 42planetExpress=9001d  \n" +
+                "  \"moocow\" : 1234d   ";
+        //@formatter:on
+        
+        TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(initial).build();
+        verifyMixedFormats(trie);
+    }
+    
+    @Test
+    public void testEmptyStrLiteral() {
+        String input = "\"\" : 42s";
+        String expectedKey = "";
+        Long expectedValue = 42 * 1000L;
+        verifyParsing(input, expectedKey, expectedValue);
+    }
+    
+    private void verifyParsing(String input, String expectedKey, Long expectedValue) {
+        TokenTtlTrie trie = new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(input).build();
+        assertEquals(expectedValue, trie.scan(expectedKey.getBytes()));
+    }
+    
+    @Test
+    public void testOldStrLiteralWithEqualSign() {
+        String input = "\"blah\" = 42s";
+        String expectedKey = "blah";
+        Long expectedValue = 42 * 1000L;
+        verifyParsing(input, expectedKey, expectedValue);
+    }
+    
+    @Test
+    public void testNewStrLiteralWithColon() {
+        String input = "foo bar : 42s";
+        String expectedKey = "bar";
+        Long expectedValue = 42 * 1000L;
+        verifyParsing(input, expectedKey, expectedValue);
+    }
+    
+    @Test
+    public void testOverrideMixedFormats() {
+        String input = "foo bar : 2s\n\"bar\"=42s";
+        String expectedKey = "bar";
+        TokenTtlTrie trie = new TokenTtlTrie.Builder(MERGE_MODE.ON).setDelimiters("/".getBytes()).parse(input).build();
+        assertEquals(42 * 1000L, (long) trie.scan(expectedKey.getBytes()));
+    }
+    
+    @Test
+    public void testOverrideMixedFormatsBackwards() {
+        // Same as testOverrideMixedFormats, just reversed the lines
+        String input = "\"bar\"=42s\nfoo bar : 2s";
+        String expectedKey = "bar";
+        Long expectedValue = 2 * 1000L;
+        
+        TokenTtlTrie trie = new TokenTtlTrie.Builder(MERGE_MODE.ON).setDelimiters("/".getBytes()).parse(input).build();
+        
+        assertEquals(expectedValue, trie.scan(expectedKey.getBytes()));
+    }
+    
+    @Test
+    public void testNoDurationOldFormat() {
+        String input = "\"blah\"";
+        String expectedKey = "blah";
+        Long expectedValue = -1L;
+        verifyParsing(input, expectedKey, expectedValue);
+    }
+    
+    @Test
+    public void testNoDurationNewFormat() {
+        String input = "foo bar";
+        String expectedKey = "bar";
+        Long expectedValue = -1L;
+        verifyParsing(input, expectedKey, expectedValue);
+    }
+    
+    private void verifyMixedFormats(TokenTtlTrie trie) {
+        assertEquals(42 * MILLIS_IN_DAY, (long) trie.scan("3001futurama".getBytes()));
+        assertEquals(9001 * MILLIS_IN_DAY, (long) trie.scan("42planetExpress".getBytes()));
+        assertNull(trie.scan("momCorp".getBytes()));
+        assertEquals(1234 * MILLIS_IN_DAY, (long) trie.scan("moocow".getBytes()));
+    }
 }
