@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -366,7 +367,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
      * A listener for local queues
      */
     public class KafkaQueueListener implements QueryQueueListener, AcknowledgingMessageListener<String,String> {
-        private ArrayBlockingQueue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
+        private ArrayBlockingQueue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(250);
         private final String listenerId;
         private final String topicId;
         private final String groupId;
@@ -383,7 +384,7 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
             ContainerProperties props = new ContainerProperties(topicId);
             props.setMessageListener(this);
             props.setGroupId(groupId);
-            props.setAckMode(ContainerProperties.AckMode.MANUAL);
+            props.setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
             
             container = new ConcurrentMessageListenerContainer<>(kafkaConsumerFactory, props);
             
@@ -500,22 +501,26 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
             MessagingMessageConverter converter = new MessagingMessageConverter();
             Message<String> message = (Message<String>) converter.toMessage(data, acknowledgment, consumer, String.class);
             Message<Result> resultMessage = null;
+            final CountDownLatch latch = new CountDownLatch(1);
             try {
                 Result result = new ObjectMapper().readerFor(Result.class).readValue(message.getPayload());
-                if (acknowledgment != null) {
-                    result.setAcknowledgement(new SimpleAcknowledgment() {
-                        @Override
-                        public void acknowledge() {
-                            acknowledgment.acknowledge();
-                        }
-                    });
-                }
+                result.setAcknowledgement(new SimpleAcknowledgment() {
+                    @Override
+                    public void acknowledge() {
+                        latch.countDown();
+                    }
+                });
                 resultMessage = new GenericMessage<>(result, message.getHeaders());
             } catch (JsonProcessingException e) {
                 throw new RuntimeException("Unable to deserialize results", e);
             }
             messageQueue.add(resultMessage);
+            try {
+                latch.await();
+                acknowledgment.acknowledge();
+            } catch (InterruptedException ie) {
+                acknowledgment.nack(0);
+            }
         }
     }
-    
 }

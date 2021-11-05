@@ -112,7 +112,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             while (!isFinished(queryId)) {
                 Message<Result> message = resultListener.receive(nextCallProperties.getResultPollIntervalMillis());
                 if (message != null) {
-                    Object result = message.getPayload().getPayload();
+                    Object result = message.getPayload().getAndAcknowledgePayload();
                     if (result != null) {
                         results.add(result);
                         

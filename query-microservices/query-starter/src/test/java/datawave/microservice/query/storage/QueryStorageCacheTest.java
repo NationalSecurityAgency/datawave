@@ -465,7 +465,7 @@ public abstract class QueryStorageCacheTest {
         Message<Result> msg = listener.receive();
         
         assertNotNull(msg, "Got no result message");
-        assertEquals(result.getPayload(), msg.getPayload().getPayload());
+        assertEquals(result.getPayload(), msg.getPayload().getAndAcknowledgePayload());
     }
     
     private void assertQueryCreate(String queryId, String queryPool, QueryStatus status) {

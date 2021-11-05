@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.integration.acks.SimpleAcknowledgment;
+import org.springframework.kafka.support.SimpleKafkaHeaderMapper;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.messaging.support.MessageHeaderAccessor;
@@ -137,7 +139,7 @@ public class TestQueryQueueManager implements QueryQueueManager {
     public class TestQueueListener implements Runnable, QueryQueueListener {
         private static final long WAIT_MS_DEFAULT = 100;
         
-        private ArrayBlockingQueue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(1500);
+        private ArrayBlockingQueue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(250);
         private final String listenerId;
         private Thread thread;
         
@@ -186,7 +188,15 @@ public class TestQueryQueueManager implements QueryQueueManager {
         
         public void message(Message<Result> message) {
             try {
-                messageQueue.offer(message, 10, TimeUnit.SECONDS);
+                message.getPayload().setAcknowledgement(new SimpleAcknowledgment() {
+                    @Override
+                    public void acknowledge() {
+                        log.debug("result acknowledged");
+                    }
+                });
+                if (!messageQueue.offer(message, 10, TimeUnit.SECONDS)) {
+                    log.error("Messages are not being pulled off the queue in time.  " + message.getPayload().getResultId() + " is being dropped!");
+                }
             } catch (InterruptedException e) {
                 throw new IllegalStateException(e);
             }

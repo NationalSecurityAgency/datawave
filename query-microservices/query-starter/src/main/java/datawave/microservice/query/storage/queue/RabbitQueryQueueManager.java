@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static datawave.microservice.query.storage.queue.RabbitQueryQueueManager.RABBIT;
@@ -291,7 +292,7 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
      * A listener for local queues
      */
     public class RabbitQueueListener implements QueryQueueListener, ChannelAwareMessageListener {
-        private ArrayBlockingQueue<org.springframework.messaging.Message<Result>> messageQueue = new ArrayBlockingQueue<>(100);
+        private ArrayBlockingQueue<org.springframework.messaging.Message<Result>> messageQueue = new ArrayBlockingQueue<>(250);
         private final String listenerId;
         
         public RabbitQueueListener(String listenerId, String queueName) {
@@ -323,26 +324,34 @@ public class RabbitQueryQueueManager implements QueryQueueManager {
                 container.stop();
                 rabbitListenerEndpointRegistry.unregisterListenerContainer(getListenerId());
             }
+            
+            // now for any messages remaining in the queue, lets nack them up.
         }
         
         @Override
         public void onMessage(org.springframework.amqp.core.Message message, final Channel channel) throws Exception {
             final long deliveryTag = message.getMessageProperties().getDeliveryTag();
             Result result = new ObjectMapper().readerFor(Result.class).readValue(message.getBody());
+            final CountDownLatch latch = new CountDownLatch(1);
             result.setAcknowledgement(new SimpleAcknowledgment() {
                 @Override
                 public void acknowledge() {
-                    try {
-                        channel.basicAck(deliveryTag, true);
-                        if (rabbitTemplate.isChannelTransacted()) {
-                            channel.txCommit();
-                        }
-                    } catch (IOException e) {
-                        Throwables.rethrow(e);
-                    }
+                    latch.countDown();
                 }
             });
             messageQueue.add(new GenericMessage<>(result, message.getMessageProperties().getHeaders()));
+            try {
+                latch.await();
+                channel.basicAck(deliveryTag, true);
+                if (rabbitTemplate.isChannelTransacted()) {
+                    channel.txCommit();
+                }
+            } catch (InterruptedException ie) {
+                channel.basicNack(deliveryTag, true, false);
+                if (rabbitTemplate.isChannelTransacted()) {
+                    channel.txCommit();
+                }
+            }
         }
         
         @Override
