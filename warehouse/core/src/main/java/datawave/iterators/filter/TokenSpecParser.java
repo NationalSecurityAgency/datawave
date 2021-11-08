@@ -153,7 +153,6 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
          * Parse the entire input and add it to the TtlTrieBuilder.
          */
         protected void parseTo(TokenSpecParser builder) {
-            long startTime = System.currentTimeMillis();
             ParseToken initialToken;
             while ((initialToken = peek()) != null) {
                 String tokenStr = parseStrliteral();
@@ -186,7 +185,6 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
                 literalContent = expect(ParseTokenType.LABELED_STRLITERAL);
                 String[] parts = literalContent.trim().split("\\s");
                 literalContent = parts[parts.length - 1];
-                literalContent = literalContent.substring(0, literalContent.length());
             }
             
             StringBuilder sb = new StringBuilder();
