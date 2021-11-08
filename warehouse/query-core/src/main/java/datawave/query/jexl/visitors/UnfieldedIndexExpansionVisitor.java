@@ -3,12 +3,16 @@ package datawave.query.jexl.visitors;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NotFoundQueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -34,6 +38,8 @@ import java.util.Set;
  * Visits a Jexl tree, looks for unfielded terms, and replaces them with fielded terms from the index
  */
 public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
+    private static final Logger log = ThreadConfigurableLogger.getLogger(UnfieldedIndexExpansionVisitor.class);
+    
     protected Set<String> expansionFields;
     protected Set<Type<?>> allTypes;
     
@@ -76,10 +82,19 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         // if not expanding fields or values, then this is a noop
         if (config.isExpandFields() || config.isExpandValues()) {
             UnfieldedIndexExpansionVisitor visitor = new UnfieldedIndexExpansionVisitor(config, scannerFactory, helper);
-            return visitor.expand(script);
+            return ensureTreeNotEmpty(visitor.expand(script));
         } else {
             return script;
         }
+    }
+    
+    private static <T extends JexlNode> T ensureTreeNotEmpty(T script) throws EmptyUnfieldedTermExpansionException {
+        if (script.jjtGetNumChildren() == 0) {
+            NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_UNFIELDED_TERM_EXPANSION_MATCH);
+            log.warn(qe);
+            throw new EmptyUnfieldedTermExpansionException(qe);
+        }
+        return script;
     }
     
     @Override
