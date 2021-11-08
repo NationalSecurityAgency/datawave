@@ -234,7 +234,7 @@ fi
 #
 declare -a _IngestConfig
 i=0
-for f in ../../config/shard-stats-config.xml; do
+for f in ../../config/shard-stats-config.xml ../../config/shard-ingest-config.xml; do
     _IngestConfig[i++]=$(basename $f)
 done
 
@@ -343,6 +343,7 @@ declare -r _IngestOpts="\
 -contextWriterCounters \
 -disableRefreshSplits \
 -distCpConfDir ${WAREHOUSE_HADOOP_CONF} \
+-partitioner.default.delegate=datawave.ingest.mapreduce.partition.MultiTableRRRangePartitioner \
 -datawave-ingest.splits.cache.dir=${WAREHOUSE_NAME_BASE_DIR}/data/splitsCache \
 -BulkInputFormat.working.dir=${WAREHOUSE_NAME_BASE_DIR}/tmp/shardStats \
 -ingestMetricsDisabled \
