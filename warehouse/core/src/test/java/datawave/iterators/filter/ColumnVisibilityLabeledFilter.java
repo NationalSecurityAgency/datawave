@@ -98,9 +98,14 @@ public class ColumnVisibilityLabeledFilter extends AppliedRule {
         for (Map.Entry<String,Long> entry : this.patternToTtl.entrySet()) {
             if (columnVisibilityStr.contains(entry.getKey())) {
                 Long timeToLive = entry.getValue();
-                long age = System.currentTimeMillis() - k.getTimestamp();
+                long cutOff = ageOffPeriod.getCutOffMilliseconds();
+                // move cut-off back by the timeToLive
+                if (timeToLive > 0 ) {
+                    cutOff -= timeToLive;
+                    cutOff += ageOffPeriod.getTtl() * ageOffPeriod.getTtlUnitsFactor();
+                }
                 this.filterRuleApplied = true;
-                return age < timeToLive;
+                return k.getTimestamp() > cutOff;
             }
         }
         return true;

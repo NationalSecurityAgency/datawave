@@ -101,10 +101,9 @@ public abstract class TokenizingFilterBase extends AppliedRule {
             ruleApplied = false;
             return true;
         }
-        // set timestamp to default cut-off
         long cutoffTimestamp = period.getCutOffMilliseconds();
         
-        // if ttl exists, subtract it from the cut off timestamp and add AgeOffPeriod ttl
+        // if ttl exists, subtract it from the cut off timestamp
         if (calculatedTTL > 0) {
             cutoffTimestamp -= calculatedTTL - period.getTtl() * period.getTtlUnitsFactor();
         }

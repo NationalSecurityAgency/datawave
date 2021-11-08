@@ -1,6 +1,7 @@
 <ageoffConfiguration>
     <rules>
         <rule label="labeledPatternsFormat">
+            <ttl units="d">0</ttl>
             <filterClass>datawave.iterators.filter.ColumnVisibilityLabeledFilter</filterClass>
             <matchPattern>
                 001 bakingPowder=365d       <!-- bucket -->

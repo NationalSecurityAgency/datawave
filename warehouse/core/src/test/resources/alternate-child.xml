@@ -10,6 +10,7 @@
                 002 driedBeans=90d      <!-- in cardboard box -->
                 003 bakingSoda=365d     <!-- in cardboard box -->
                 006 coffeeInstant=365d  <!-- in cardboard box -->
+                007 mysteryMeat=3650d   <!-- in mylar bag with desiccant -->
             </matchPattern>
         </rule>
     </rules>
