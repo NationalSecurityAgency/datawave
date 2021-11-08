@@ -1643,7 +1643,7 @@ public class EvaluationPhaseFilterFunctions {
             }
         }
         
-        boolean matchesAny = compareMode.equalsIgnoreCase("any");
+        boolean matchesAny = compareMode.equalsIgnoreCase(CompareFunctionValidator.Mode.ANY.toString());
         
         return compareFields(fields, operator, matchesAny, fields2);
     }
