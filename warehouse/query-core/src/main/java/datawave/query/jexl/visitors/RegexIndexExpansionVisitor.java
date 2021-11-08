@@ -6,6 +6,7 @@ import com.google.common.collect.Maps;
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.lookups.IndexLookup;
@@ -55,7 +56,7 @@ import static org.apache.commons.jexl2.parser.JexlNodes.id;
  * Visits a Jexl tree, looks for regex terms, and replaces them with concrete values from the index
  */
 public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(BoundedRangeIndexExpansionVisitor.class);
+    private static final Logger log = ThreadConfigurableLogger.getLogger(RegexIndexExpansionVisitor.class);
     
     protected boolean expandUnfieldedNegations;
     
@@ -119,7 +120,15 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
                     Map<String,IndexLookup> lookupMap, T script) throws TableNotFoundException {
         RegexIndexExpansionVisitor visitor = new RegexIndexExpansionVisitor(config, scannerFactory, helper, lookupMap);
-        return visitor.expand(script);
+        return ensureTreeNotEmpty(visitor.expand(script));
+    }
+    
+    private static <T extends JexlNode> T ensureTreeNotEmpty(T script) throws EmptyUnfieldedTermExpansionException {
+        if (script.jjtGetNumChildren() == 0) {
+            log.warn("Did not find any matches in index for the expansion of unfielded terms.");
+            throw new EmptyUnfieldedTermExpansionException("Did not find any matches in index for the expansion of unfielded terms.");
+        }
+        return script;
     }
     
     /**

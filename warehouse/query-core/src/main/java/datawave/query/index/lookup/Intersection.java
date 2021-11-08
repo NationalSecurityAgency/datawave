@@ -210,6 +210,13 @@ public class Intersection extends BaseIndexStream {
             final SortedSet<String> keys = children.keySet();
             if (keys.size() == 1) {
                 intersect(keys);
+                
+                // ensure consistency with current state since underlying iterators may not be updated to reflect previous seek calls
+                // the next key should be beyond the current key, otherwise look again
+                if (next != null && ret != null && next.first().compareTo(ret.first()) <= 0) {
+                    // force it to compute again
+                    next = null;
+                }
             } else {
                 // Seek all child IndexStreams to the highest top key.
                 String max = children.keySet().last();
