@@ -220,8 +220,10 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     }
 
     /**
-     * combinedRule is expected to be a copy of the parent rule, which will be modified to also contain overrides from
-     * additionalRule.  additionalRule is the child rule.
+     * combinedRule is expected to be a copy of the parent rule, which will be modified with overrides
+     * from additionalRule.  The matchPatterns in combinedRule will also be appended with the matchPatterns
+     * from additionalRule.  additionalRule is expected to be the child rule.
+     *
      * @param additionalRule contains the modifications that will be introduced into combinedRule
      * @param combinedRule contains the base rule, to be amended with additionalRule
      */

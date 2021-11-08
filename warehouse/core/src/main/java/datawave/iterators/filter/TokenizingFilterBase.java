@@ -104,9 +104,7 @@ public abstract class TokenizingFilterBase extends AppliedRule {
         // set timestamp to default cut-off
         long cutoffTimestamp = period.getCutOffMilliseconds();
         
-        // why would calculated TTL ever be negative?
-        // if positive, this will
-        // if ttl exists, subtract it from the cut off
+        // if ttl exists, subtract it from the cut off timestamp and add AgeOffPeriod ttl
         if (calculatedTTL > 0) {
             cutoffTimestamp -= calculatedTTL - period.getTtl() * period.getTtlUnitsFactor();
         }

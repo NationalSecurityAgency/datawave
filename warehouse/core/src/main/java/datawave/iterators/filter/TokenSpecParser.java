@@ -30,8 +30,8 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
      *           &lt;- &lt;tokens&gt;&lt;separator&gt;&lt;tokenspec&gt;
      * tokenspec &lt;- "strliteral"
      *           &lt;- "strliteral" : &lt;num&gt;&lt;unit&gt;
-     *           &lt;- word strliteral2
-     *           &lt;- word strliteral2=&lt;num&gt;&lt;unit&gt;
+     *           &lt;- label strliteral2
+     *           &lt;- label strliteral2=&lt;num&gt;&lt;unit&gt;
      * separator &lt;- ,
      *           &lt;- \n
      *           &lt;- <space>
@@ -44,7 +44,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             //@formatter:off
             SEPARATION("[\\s\\n,]+"),
             STRLITERAL("\"(?:[^\\\"]|\\.)*\""), // "strliteral"
-            LABEL_AND_STRLITERAL2("^[\\w]*[ \\t]+[\\w]+"), // word strliteral2 // expected to be followed by colon or equals
+            LABELED_STRLITERAL("[\\w]+[ \\t]+[\\w]+"), // label strliteral2
             COLON(":"),
             EQUALS("="),
             NUMBER("[0-9]+"),
@@ -182,8 +182,8 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             if (token.type == ParseTokenType.STRLITERAL) {
                 literalContent = expect(ParseTokenType.STRLITERAL);
                 literalContent = literalContent.substring(1, literalContent.length() - 1);
-            } else if (token.type == ParseTokenType.LABEL_AND_STRLITERAL2) {
-                literalContent = expect(ParseTokenType.LABEL_AND_STRLITERAL2);
+            } else if (token.type == ParseTokenType.LABELED_STRLITERAL) {
+                literalContent = expect(ParseTokenType.LABELED_STRLITERAL);
                 String[] parts = literalContent.trim().split("\\s");
                 literalContent = parts[parts.length - 1];
                 literalContent = literalContent.substring(0, literalContent.length());
