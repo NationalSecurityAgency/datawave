@@ -48,20 +48,6 @@ public class TokenTtlTrieTest {
         new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).addToken("foo".getBytes(), 1).addToken("foo".getBytes(), 2).build();
     }
     
-    @Test
-    public void tokensOverridesPermittedWhenMergeEnabled() {
-        byte[] token = "foo".getBytes();
-        
-        //@formatter:off
-        TokenTtlTrie trie = new TokenTtlTrie.Builder(MERGE_MODE.ON).setDelimiters(",".getBytes())
-                .addToken(token, 1)
-                .addToken(token, 2)
-                .build();
-        //@formatter:on
-        
-        assertEquals((Long) 2L, trie.scan(token));
-    }
-    
     @Test(expected = IllegalArgumentException.class)
     public void parsedTokensMayNotContainDelimiters() {
         new TokenTtlTrie.Builder().setDelimiters(",".getBytes()).parse("\"foo,\":10s").build();
@@ -71,6 +57,32 @@ public class TokenTtlTrieTest {
     public void testTokensMustBeUniqueAcrossFormats() {
         String input = "foo bar : 2s\n\"bar\"=42s";
         new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(input).build();
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testColonEqualsFails() {
+        String input = "foo bar =: 2s";
+        new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(input).build();
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testEqualsColonFails() {
+        String input = "foo bar:=2s";
+        new TokenTtlTrie.Builder().setDelimiters("/".getBytes()).parse(input).build();
+    }
+    
+    @Test
+    public void tokensOverridesPermittedWhenMergeEnabled() {
+        byte[] token = "foo".getBytes();
+        
+        //@formatter:off
+        TokenTtlTrie trie = new TokenTtlTrie.Builder(MERGE_MODE.ON)
+                .addToken(token, 1)
+                .addToken(token, 2)
+                .build();
+        //@formatter:on
+        
+        assertEquals((Long) 2L, trie.scan(token));
     }
     
     @Test

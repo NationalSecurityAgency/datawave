@@ -100,7 +100,7 @@ public class ColumnVisibilityLabeledFilter extends AppliedRule {
                 Long timeToLive = entry.getValue();
                 long cutOff = ageOffPeriod.getCutOffMilliseconds();
                 // move cut-off back by the timeToLive
-                if (timeToLive > 0 ) {
+                if (timeToLive > 0) {
                     cutOff -= timeToLive;
                     cutOff += ageOffPeriod.getTtl() * ageOffPeriod.getTtlUnitsFactor();
                 }
