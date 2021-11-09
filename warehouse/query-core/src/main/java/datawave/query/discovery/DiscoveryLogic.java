@@ -386,7 +386,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                 familiesToSeek.add(new Text(field));
             }
             try {
-                forwardRanges.add(ShardIndexQueryTableStaticMethods.getBoundedRangeRange(field, range));
+                forwardRanges.add(ShardIndexQueryTableStaticMethods.getBoundedRangeRange(range));
             } catch (IllegalRangeArgumentException e) {
                 log.error("Error using range [" + range + "]", e);
                 continue;
