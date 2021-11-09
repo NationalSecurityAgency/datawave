@@ -6,6 +6,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -21,7 +22,7 @@ public class CompareFunctionValidator {
         ANY, ALL
     }
     
-    public static final List<String> operators = Arrays.asList("<", "<=", ">", ">=", "==", "=", "!=");
+    public static final List<String> operators = Collections.unmodifiableList(Arrays.asList("<", "<=", ">", ">=", "==", "=", "!="));
     
     public static void validate(String function, List<JexlNode> args) throws IllegalArgumentException {
         if (args.size() != 4) {
