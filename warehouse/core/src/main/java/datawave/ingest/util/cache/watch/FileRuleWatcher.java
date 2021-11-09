@@ -207,8 +207,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         // @formatter:off
         // find parent with matching label
         List<RuleConfig> candidates = parents.stream()
-            .filter(r -> r.getLabel().equals(child.label)
-            )
+            .filter(r -> r.getLabel().equals(child.label))
             .collect(Collectors.toList());
         // should we be able to have more than one matching parent?
         for (RuleConfig parent : candidates) {

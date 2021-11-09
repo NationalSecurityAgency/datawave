@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Test class used for the purposes of providing an alternative matchPattern format from TokenSpecParser with some overlap.
+ * Test class used for the purpose of providing an alternative matchPattern format from TokenSpecParser with some overlap.
  *
  * The matchPattern format is expected to contain multiple newline-separated lines, with each line conforming to the following format:
  * "<descriptiveLabel> <pattern>=<number><duration units>" where "descriptiveLabel" and "pattern" each contain one or more alphanumeric characters. "number"
