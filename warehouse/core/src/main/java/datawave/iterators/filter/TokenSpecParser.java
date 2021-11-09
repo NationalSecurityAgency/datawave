@@ -34,7 +34,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
      *           &lt;- label strliteral2=&lt;num&gt;&lt;unit&gt;
      * separator &lt;- ,
      *           &lt;- \n
-     *           &lt;- <space>
+     *           &lt;- &lt;space&gt;
      *           &lt;- &lt;separator&gt;&lt;separator&gt;
      * </pre>
      */
