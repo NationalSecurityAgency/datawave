@@ -34,14 +34,17 @@ import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTFloatLiteral;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTNumberLiteral;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
+import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.log4j.Logger;
 
 public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
     
@@ -49,6 +52,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
      * This is the JexlNode descriptor which can be used to normalize and optimize function node queries
      */
     public static class ContentJexlArgumentDescriptor implements JexlArgumentDescriptor {
+        
+        private static final Logger log = Logger.getLogger(ContentJexlArgumentDescriptor.class);
         
         private final ASTFunctionNode node;
         private final String namespace, name;
@@ -64,13 +69,23 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         @Override
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             try {
-                return getIndexQuery(helper.getTermFrequencyFields(datatypeFilter), helper.getIndexedFields(datatypeFilter),
-                                helper.getContentFields(datatypeFilter));
+                Set<String> tfFields = new HashSet<>(helper.getTermFrequencyFields(datatypeFilter));
+                Set<String> indexedFields = new HashSet<>(helper.getIndexedFields(datatypeFilter));
+                Set<String> contentFields = new HashSet<>(helper.getContentFields(datatypeFilter));
+                
+                if (config != null && !config.getNoExpansionFields().isEmpty()) {
+                    // exclude fields from expansion
+                    Set<String> noExpansionFields = config.getNoExpansionFields();
+                    tfFields.removeAll(noExpansionFields);
+                    indexedFields.removeAll(noExpansionFields);
+                    contentFields.removeAll(noExpansionFields);
+                }
+                
+                return getIndexQuery(tfFields, indexedFields, contentFields);
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             }
-            
         }
         
         public JexlNode getIndexQuery(Set<String> termFrequencyFields, Set<String> indexedFields, Set<String> contentFields) {
@@ -88,8 +103,11 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 }
             }
             
-            // A single field needs no wrapper node.
-            if (1 == fieldsAndTerms[0].size()) {
+            if (fieldsAndTerms[0].size() == 0) {
+                log.warn("No fields found for content function, will not expand index query");
+                return new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
+            } else if (fieldsAndTerms[0].size() == 1) {
+                // A single field needs no wrapper node.
                 return nodes.iterator().next();
             } else if (oredFields.booleanValue()) {
                 return JexlNodeFactory.createOrNode(nodes);
@@ -129,7 +147,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                             firstTermIndex = 2;
                         }
                     }
-                } else if (ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME.equals(funcName)) {
+                } else if (ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME.equals(funcName)
+                                || ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME.equals(funcName)) {
                     firstTermIndex = 2;
                     JexlNode nextArg = args.next();
                     
@@ -140,7 +159,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     }
                     
                     // we can trash the distance
-                    if (!(nextArg instanceof ASTNumberLiteral)) {
+                    if (!(nextArg instanceof ASTNumberLiteral || nextArg instanceof ASTUnaryMinusNode || nextArg instanceof ASTFloatLiteral)) {
                         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NUMERIC_DISTANCE_ARGUMENT_MISSING);
                         throw new IllegalArgumentException(qe);
                     }
@@ -251,7 +270,30 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 } else if (ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME.equals(funcName)) {
                     JexlNode firstArg = args.next();
                     
-                    if (firstArg instanceof ASTNumberLiteral || firstArg instanceof ASTUnaryMinusNode) {
+                    // we override the zones if the first argument is a string
+                    if (firstArg instanceof ASTStringLiteral) {
+                        fields = Collections.singleton(firstArg.image);
+                        
+                        termOffsetMap = args.next();
+                    } else {
+                        JexlNode nextArg = args.peek();
+                        
+                        // The zones may (more likely) be specified as an identifier
+                        if (!JexlASTHelper.getIdentifiers(firstArg).isEmpty() && !JexlASTHelper.getIdentifiers(nextArg).isEmpty()) {
+                            if (oredFields != null && firstArg instanceof ASTAndNode) {
+                                oredFields.setValue(false);
+                            }
+                            
+                            fields = JexlASTHelper.getIdentifierNames(firstArg);
+                            termOffsetMap = args.next();
+                        } else {
+                            termOffsetMap = firstArg;
+                        }
+                    }
+                } else if (ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME.equals(funcName)) {
+                    JexlNode firstArg = args.next();
+                    
+                    if (firstArg instanceof ASTNumberLiteral || firstArg instanceof ASTUnaryMinusNode || firstArg instanceof ASTFloatLiteral) {
                         // firstArg is max score value, skip
                         firstArg = args.next();
                     }
@@ -260,7 +302,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     if (firstArg instanceof ASTStringLiteral) {
                         fields = Collections.singleton(firstArg.image);
                         
-                        if (args.peek() instanceof ASTNumberLiteral || args.peek() instanceof ASTUnaryMinusNode) {
+                        if (args.peek() instanceof ASTNumberLiteral || args.peek() instanceof ASTUnaryMinusNode || firstArg instanceof ASTFloatLiteral) {
                             args.next(); // max score not needed for fields and terms
                         }
                         
@@ -297,7 +339,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     }
                     
                     // we can trash the distance
-                    if (!(arg instanceof ASTNumberLiteral)) {
+                    if (!(arg instanceof ASTNumberLiteral || arg instanceof ASTUnaryMinusNode || arg instanceof ASTFloatLiteral)) {
                         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NUMERIC_DISTANCE_ARGUMENT_MISSING);
                         throw new IllegalArgumentException(qe);
                     }

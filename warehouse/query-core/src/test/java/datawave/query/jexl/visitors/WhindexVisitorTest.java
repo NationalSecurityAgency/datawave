@@ -4,7 +4,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.util.MockMetadataHelper;
-import datawave.util.time.DateHelper;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Assert;
@@ -27,12 +26,8 @@ public class WhindexVisitorTest {
     
     private static final MockMetadataHelper metadataHelper = new MockMetadataHelper() {
         @Override
-        public Long getCountsByFieldInDay(String fieldName, String date) {
-            Long count = 0L;
-            if (date.equals(DateHelper.format(new Date()))) {
-                count++;
-            }
-            return count;
+        public Date getEarliestOccurrenceOfField(String fieldName) {
+            return new Date(new Date(0).getTime() + TimeUnit.DAYS.toMillis(1));
         }
     };
     
@@ -85,7 +80,7 @@ public class WhindexVisitorTest {
         config.setWhindexFieldMappings(singleFieldMapping);
         
         ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
-        jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1)), metadataHelper);
+        jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(0), metadataHelper);
         
         Assert.assertEquals("geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && TOPPINGS == 'HOT_FUDGE'",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));

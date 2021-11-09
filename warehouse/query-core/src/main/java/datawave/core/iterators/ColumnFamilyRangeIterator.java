@@ -41,7 +41,7 @@ public class ColumnFamilyRangeIterator extends ColumnRangeIterator {
             if (getColumnRange().beforeStartKey(topColumnFamily)) { // top key's CF is before the desired range starts, need to skip some CFs...
             
                 if (count < limit) {
-                    getSource().next();
+                    advanceSource();
                     ++count;
                 } else {
                     Text row = getSource().getTopKey().getRow();
@@ -52,7 +52,7 @@ public class ColumnFamilyRangeIterator extends ColumnRangeIterator {
                 }
             } else if (getColumnRange().afterEndKey(topColumnFamily)) { // reached the end of the desired CF range, need to go to the next row
                 if (count < limit) {
-                    getSource().next();
+                    advanceSource();
                     ++count;
                 } else {
                     Text nextRow = new Text(followingArray(getSource().getTopKey().getRow().getBytes()));
