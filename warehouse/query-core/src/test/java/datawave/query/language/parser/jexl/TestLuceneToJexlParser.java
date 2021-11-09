@@ -2,6 +2,7 @@ package datawave.query.language.parser.jexl;
 
 import datawave.query.language.functions.jexl.EvaluationOnly;
 import datawave.query.language.functions.jexl.JexlQueryFunction;
+import datawave.query.language.parser.ParseException;
 import datawave.query.language.tree.QueryNode;
 
 import org.junit.Assert;
@@ -47,6 +48,13 @@ public class TestLuceneToJexlParser {
         node = parser.parse("FIELD:SOMETHING AND #EVALUATION_ONLY('NUM_FIELD: [0 TO 50}')");
         Assert.assertEquals("FIELD == 'SOMETHING' && ((_Eval_ = true) && ((_Bounded_ = true) && (NUM_FIELD >= '0' && NUM_FIELD < '50')))",
                         node.getOriginalQuery());
+    }
+    
+    @Test
+    public void testParseFunction_NoExpansion() throws ParseException {
+        LuceneToJexlQueryParser parser = getQueryParser();
+        QueryNode node = parser.parse("FIELD:SOMETHING AND #NOEXPANSION(FIELD)");
+        Assert.assertEquals("FIELD == 'SOMETHING' && filter:noExpansion(FIELD)", node.getOriginalQuery());
     }
     
     @Test

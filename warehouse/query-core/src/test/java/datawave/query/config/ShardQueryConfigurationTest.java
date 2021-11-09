@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -199,6 +200,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.isDisableWhindexFieldMappings());
         Assert.assertEquals(Sets.newHashSet(), config.getWhindexMappingFields());
         Assert.assertEquals(Maps.newHashMap(), config.getWhindexFieldMappings());
+        Assert.assertEquals(Collections.emptySet(), config.getNoExpansionFields());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
     }
     
@@ -252,6 +254,7 @@ public class ShardQueryConfigurationTest {
         UniqueFields uniqueFields = new UniqueFields();
         uniqueFields.put("uniqueFieldA", UniqueGranularity.ALL);
         List<String> contentFieldNames = Lists.newArrayList("fieldA");
+        Set<String> noExpansionFields = Sets.newHashSet("NoExpansionFieldA");
         Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
         
         // Set collections on 'other' ShardQueryConfiguration
@@ -284,6 +287,7 @@ public class ShardQueryConfigurationTest {
         other.setGroupFields(groupFields);
         other.setUniqueFields(uniqueFields);
         other.setContentFieldNames(contentFieldNames);
+        other.setNoExpansionFields(noExpansionFields);
         other.setDisallowedRegexPatterns(disallowedRegexPatterns);
         
         // Copy 'other' ShardQueryConfiguration into a new config
@@ -378,6 +382,7 @@ public class ShardQueryConfigurationTest {
         expectedUniqueFields.put("uniqueFieldA", UniqueGranularity.ALL);
         Assert.assertEquals(expectedUniqueFields, config.getUniqueFields());
         Assert.assertEquals(Lists.newArrayList("fieldA"), config.getContentFieldNames());
+        Assert.assertEquals(Sets.newHashSet("NoExpansionFieldA"), config.getNoExpansionFields());
     }
     
     @Test
@@ -451,7 +456,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 181;
+        int expectedObjectCount = 182;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

@@ -322,14 +322,14 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                     NavigableSet<EvaluateTermPosition> subB = sub.tailSet(termPosition, false);
                     
                     TraverseResult result = traverse(termPosition, subB, found, direction);
-                    if (result.hasFinalResult() && (result.getResult() == null || result.getResult().size() != terms.length)) {
+                    if (result.getResult() == null || result.getResult().size() != terms.length) {
                         if (!skipped.isEmpty()) {
                             evaluateSkipped(found.get(found.size() - 1), skipped, found, direction);
+                            result = new TraverseResult(found);
                         }
-                        return new TraverseResult(found);
-                    } else {
-                        return result;
                     }
+                    
+                    return result;
                 }
                 
                 // Failure for current root node find next
