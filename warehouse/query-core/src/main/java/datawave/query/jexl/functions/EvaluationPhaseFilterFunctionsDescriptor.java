@@ -39,7 +39,8 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
     public static final String TIME_FUNCTION = "timeFunction";
     public static final String INCLUDE_TEXT = "includeText";
     public static final String COMPARE = "compare";
-    
+    public static final String NO_EXPANSION = "noExpansion";
+
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
      *
