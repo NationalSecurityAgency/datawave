@@ -59,7 +59,7 @@ public class JexlTreeBuilder extends QueryTreeBuilder {
             new DateFunction(), new OccurrenceFunction(), new MatchesInGroupFunction(), new MatchesInGroupLeft(), new GetAllMatches(),
             new MatchesAtLeastCountOf(), new Jexl(), new TimeFunction(), new AtomValuesMatchFunction(), new Options(), new Unique(), new GroupBy(),
             new EvaluationOnly(), new UniqueByDay(), new UniqueByHour(), new UniqueByMinute(), new NoExpansion(), new Compare()};
-
+    
     public static final List<JexlQueryFunction> DEFAULT_ALLOWED_FUNCTION_LIST;
     
     static {
