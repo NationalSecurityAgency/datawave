@@ -171,7 +171,7 @@ public class JexlNodes {
     }
     
     public static ASTNotNode negate(JexlNode node) {
-        return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), wrap(node));
+        return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), makeRef(wrap(node)));
     }
     
     public static ASTIdentifier makeIdentifierWithImage(String image) {
