@@ -39,10 +39,12 @@ import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTNumberLiteral;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
+import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.log4j.Logger;
 
 public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
     
@@ -50,6 +52,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
      * This is the JexlNode descriptor which can be used to normalize and optimize function node queries
      */
     public static class ContentJexlArgumentDescriptor implements JexlArgumentDescriptor {
+        
+        private static final Logger log = Logger.getLogger(ContentJexlArgumentDescriptor.class);
         
         private final ASTFunctionNode node;
         private final String namespace, name;
@@ -65,13 +69,23 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         @Override
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             try {
-                return getIndexQuery(helper.getTermFrequencyFields(datatypeFilter), helper.getIndexedFields(datatypeFilter),
-                                helper.getContentFields(datatypeFilter));
+                Set<String> tfFields = new HashSet<>(helper.getTermFrequencyFields(datatypeFilter));
+                Set<String> indexedFields = new HashSet<>(helper.getIndexedFields(datatypeFilter));
+                Set<String> contentFields = new HashSet<>(helper.getContentFields(datatypeFilter));
+                
+                if (config != null && !config.getNoExpansionFields().isEmpty()) {
+                    // exclude fields from expansion
+                    Set<String> noExpansionFields = config.getNoExpansionFields();
+                    tfFields.removeAll(noExpansionFields);
+                    indexedFields.removeAll(noExpansionFields);
+                    contentFields.removeAll(noExpansionFields);
+                }
+                
+                return getIndexQuery(tfFields, indexedFields, contentFields);
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             }
-            
         }
         
         public JexlNode getIndexQuery(Set<String> termFrequencyFields, Set<String> indexedFields, Set<String> contentFields) {
@@ -89,8 +103,11 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 }
             }
             
-            // A single field needs no wrapper node.
-            if (1 == fieldsAndTerms[0].size()) {
+            if (fieldsAndTerms[0].size() == 0) {
+                log.warn("No fields found for content function, will not expand index query");
+                return new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
+            } else if (fieldsAndTerms[0].size() == 1) {
+                // A single field needs no wrapper node.
                 return nodes.iterator().next();
             } else if (oredFields.booleanValue()) {
                 return JexlNodeFactory.createOrNode(nodes);
