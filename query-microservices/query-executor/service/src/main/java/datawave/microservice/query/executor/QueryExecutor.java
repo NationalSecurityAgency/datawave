@@ -200,7 +200,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                         }
                         log.debug("Executing task " + taskKey + ": " + task.getQueryCheckpoint());
                         ExecutorTask runnable = null;
-                        switch (action) {
+                        switch (task.getAction()) {
                             case CREATE:
                                 runnable = new CreateTask(this, task);
                                 break;

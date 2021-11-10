@@ -30,7 +30,7 @@ public class CachedQueryStatus extends QueryStatus {
         this.cache = cache;
         this.queryId = queryId;
         this.invalidCacheMs = invalidCacheMs;
-        forceCacheUpdate();
+        loadQueryStatus();
     }
     
     public boolean hasPendingUpdates() {
@@ -41,18 +41,13 @@ public class CachedQueryStatus extends QueryStatus {
      * Force the cache to be updated. This will also store any pending numResults increments.
      */
     public synchronized void forceCacheUpdate() {
-        QueryStorageLock lock = null;
-        if (hasPendingUpdates()) {
-            lock = cache.getQueryStatusLock(queryId);
-            lock.lock();
-        }
+        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
+        lock.lock();
         try {
             loadQueryStatus();
             cache.updateQueryStatus(queryStatus);
         } finally {
-            if (lock != null) {
-                lock.unlock();
-            }
+            lock.unlock();
         }
     }
     
