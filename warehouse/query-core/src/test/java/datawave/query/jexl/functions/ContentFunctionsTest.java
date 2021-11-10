@@ -47,6 +47,7 @@ public class ContentFunctionsTest {
     private Map<String,TermFrequencyList> termOffSetMap;
     
     private String phraseFunction = ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
+    private String scoredPhraseFunction = ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
     private String eventId = "shard\0type\0uid";
     
     @BeforeClass
@@ -172,6 +173,86 @@ public class ContentFunctionsTest {
         
         termOffSetMap.put("dog", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list1)));
         termOffSetMap.put("cat", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), list2)));
+        
+        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
+        Object o = expr.evaluate(context);
+        
+        Assert.assertTrue(expect(o, true));
+    }
+    
+    @Test
+    public void reverseSharedTokenIndex() {
+        String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'a'", "'b'", "'c'");
+        Expression expr = engine.createExpression(query);
+        
+        List<TermWeightPosition> t1, t2, t3;
+        t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        t2 = asList(Arrays.asList(212, 229, 252, 272), Arrays.asList(0, 0, 0, 0));
+        t3 = asList(Arrays.asList(1, 101, 202, 213, 253, 312, 336), Arrays.asList(0, 0, 0, 0, 0, 0, 0));
+        
+        termOffSetMap.put("a", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t1)));
+        termOffSetMap.put("b", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t2)));
+        termOffSetMap.put("c", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t3)));
+        
+        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
+        Object o = expr.evaluate(context);
+        
+        Assert.assertTrue(expect(o, true));
+    }
+    
+    @Test
+    public void forwardSharedTokenIndex() {
+        String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'c'", "'b'", "'a'");
+        Expression expr = engine.createExpression(query);
+        
+        List<TermWeightPosition> t1, t2, t3;
+        t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        t2 = asList(Arrays.asList(212, 229, 252, 272), Arrays.asList(0, 0, 0, 0));
+        t3 = asList(Arrays.asList(1, 101, 202, 213, 251, 312, 336), Arrays.asList(0, 0, 0, 0, 0, 0, 0));
+        
+        termOffSetMap.put("a", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t1)));
+        termOffSetMap.put("b", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t2)));
+        termOffSetMap.put("c", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t3)));
+        
+        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
+        Object o = expr.evaluate(context);
+        
+        Assert.assertTrue(expect(o, true));
+    }
+    
+    @Test
+    public void reverseAllSharedTokenIndex() {
+        String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'a'", "'b'", "'c'");
+        Expression expr = engine.createExpression(query);
+        
+        List<TermWeightPosition> t1, t2, t3;
+        t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        t2 = asList(Arrays.asList(212, 229, 252, 272), Arrays.asList(0, 0, 0, 0));
+        t3 = asList(Arrays.asList(1, 101, 202, 213, 252, 312, 336), Arrays.asList(0, 0, 0, 0, 0, 0, 0));
+        
+        termOffSetMap.put("a", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t1)));
+        termOffSetMap.put("b", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t2)));
+        termOffSetMap.put("c", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t3)));
+        
+        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
+        Object o = expr.evaluate(context);
+        
+        Assert.assertTrue(expect(o, true));
+    }
+    
+    @Test
+    public void forwardAllSharedTokenIndex() {
+        String query = buildFunction(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME, Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'c'", "'b'", "'a'");
+        Expression expr = engine.createExpression(query);
+        
+        List<TermWeightPosition> t1, t2, t3;
+        t1 = asList(Arrays.asList(234, 239, 252, 257, 265, 281, 286, 340, 363, 367), Arrays.asList(0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        t2 = asList(Arrays.asList(212, 229, 252, 272), Arrays.asList(0, 0, 0, 0));
+        t3 = asList(Arrays.asList(1, 101, 202, 213, 252, 312, 336), Arrays.asList(0, 0, 0, 0, 0, 0, 0));
+        
+        termOffSetMap.put("a", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t1)));
+        termOffSetMap.put("b", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t2)));
+        termOffSetMap.put("c", new TermFrequencyList(Maps.immutableEntry(new Zone("CONTENT", true, eventId), t3)));
         
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         Object o = expr.evaluate(context);
@@ -1134,7 +1215,7 @@ public class ContentFunctionsTest {
     
     @Test
     public void testEvaluationScorePass() {
-        String query = buildFunction(phraseFunction, "'CONTENT'", "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
+        String query = buildFunction(scoredPhraseFunction, "'CONTENT'", "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
         Expression expr = engine.createExpression(query);
         
         List<TermWeightPosition> list1, list2;
@@ -1152,7 +1233,7 @@ public class ContentFunctionsTest {
     
     @Test
     public void testEvaluationScoreNoZonePass() {
-        String query = buildFunction(phraseFunction, "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
+        String query = buildFunction(scoredPhraseFunction, "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
         Expression expr = engine.createExpression(query);
         
         List<TermWeightPosition> list1, list2;
@@ -1170,7 +1251,7 @@ public class ContentFunctionsTest {
     
     @Test
     public void testEvaluationScoreFail() {
-        String query = buildFunction(phraseFunction, "'CONTENT'", "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
+        String query = buildFunction(scoredPhraseFunction, "'CONTENT'", "-0.200", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
         Expression expr = engine.createExpression(query);
         
         List<TermWeightPosition> list1, list2;
@@ -1356,7 +1437,7 @@ public class ContentFunctionsTest {
     
     @Test
     public void testJexlFunctionArgumentDescriptor10() throws ParseException {
-        String query = "content:" + phraseFunction + "(-1.1, termOffsetMap, 'hello', 'world')";
+        String query = "content:" + scoredPhraseFunction + "(-1.1, termOffsetMap, 'hello', 'world')";
         String expected = "((META == 'hello' and META == 'world') or (BODY == 'hello' and BODY == 'world'))";
         
         testJexlFunctionArgumentDescriptors(query, expected);

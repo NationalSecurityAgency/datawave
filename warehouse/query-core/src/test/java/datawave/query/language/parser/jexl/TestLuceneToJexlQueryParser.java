@@ -1,29 +1,14 @@
 package datawave.query.language.parser.jexl;
 
 import com.google.common.collect.Sets;
+import datawave.query.Constants;
 import datawave.query.language.parser.ParseException;
-import datawave.query.language.processor.lucene.CustomAnalyzerQueryNodeProcessor;
-import datawave.query.language.processor.lucene.CustomFieldLimiterNodeProcessor;
-import datawave.query.language.processor.lucene.CustomWildcardQueryNodeProcessor;
 import datawave.query.language.processor.lucene.QueryNodeProcessorFactory;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
-import datawave.query.Constants;
-
 import org.apache.lucene.queryparser.flexible.core.config.QueryConfigHandler;
-import org.apache.lucene.queryparser.flexible.core.processors.NoChildOptimizationQueryNodeProcessor;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessorPipeline;
-import org.apache.lucene.queryparser.flexible.core.processors.RemoveDeletedQueryNodesProcessor;
-import org.apache.lucene.queryparser.flexible.standard.processors.AllowLeadingWildcardProcessor;
-import org.apache.lucene.queryparser.flexible.standard.processors.BooleanSingleChildOptimizationQueryNodeProcessor;
-import org.apache.lucene.queryparser.flexible.standard.processors.DefaultPhraseSlopQueryNodeProcessor;
-import org.apache.lucene.queryparser.flexible.standard.processors.FuzzyQueryNodeProcessor;
-import org.apache.lucene.queryparser.flexible.standard.processors.MatchAllDocsQueryNodeProcessor;
-import org.apache.lucene.queryparser.flexible.standard.processors.MultiFieldQueryNodeProcessor;
-import org.apache.lucene.queryparser.flexible.standard.processors.MultiTermRewriteMethodProcessor;
-import org.apache.lucene.queryparser.flexible.standard.processors.RemoveEmptyNonLeafQueryNodeProcessor;
-import org.apache.lucene.queryparser.flexible.standard.processors.TermRangeQueryNodeProcessor;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +16,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TestLuceneToJexlQueryParser {
     
@@ -45,23 +31,16 @@ public class TestLuceneToJexlQueryParser {
     
     private static final String anyField = Constants.ANY_FIELD;
     
-    @Test
-    public void testFunctionArgumentEscapingFailures() throws ParseException {
-        try {
-            // mismatched quotes
-            parseQuery("Field:Selector AND #INCLUDE('AND', 'FIELD1, ' regex')");
-            Assert.fail("Expected ParseException");
-        } catch (ParseException e) {
-            
-        }
-        
-        try {
-            // mismatched quotes
-            parseQuery("F:S AND #INCLUDE(FIELD, 'reg\\)ex)'");
-            Assert.fail("Expected ParseException");
-        } catch (ParseException e) {
-            
-        }
+    @Test(expected = ParseException.class)
+    public void testFunctionArgsWithMisMatchedQuotes_case01() throws ParseException {
+        // mismatched quotes
+        parseQuery("Field:Selector AND #INCLUDE('AND', 'FIELD1, ' regex')");
+    }
+    
+    @Test(expected = ParseException.class)
+    public void testFunctionArgsWithMisMatchedQuotes_case02() throws ParseException {
+        // mismatched quotes
+        parseQuery("F:S AND #INCLUDE(FIELD, 'reg\\)ex)'");
     }
     
     @Test
@@ -85,8 +64,7 @@ public class TestLuceneToJexlQueryParser {
     
     @Test
     public void testOneCharacterFunctionArgument() throws ParseException {
-        
-        assertEquals("F == 'S' && (filter:includeRegex(F, 'test'))", parseQuery("F:S AND #INCLUDE(F, 'test')"));
+        assertEquals("F == 'S' && filter:includeRegex(F, 'test')", parseQuery("F:S AND #INCLUDE(F, 'test')"));
     }
     
     @Test
@@ -97,10 +75,10 @@ public class TestLuceneToJexlQueryParser {
         // inside single quotes, double quotes can not be escaped, so if you have a \" it shows up as a \"
         // inside single quotes, single quotes must be escaped, the escape gets removed, but then it gets escaped inside a JEXL string literal
         // F:S AND #INCLUDE(FIELD, '"\\\'test\'\"') --> F == 'S' && (filter:includeRegex(FIELD, '"\\\\\'test\'\\"'))
-        assertEquals("F == 'S' && (filter:includeRegex(FIELD, '\"\\\\\\\\\\'test\\'\\\\\"'))", parseQuery("F:S AND #INCLUDE(FIELD, '\"\\\\\\'test\\'\\\"')"));
+        assertEquals("F == 'S' && filter:includeRegex(FIELD, '\"\\\\\\\\\\'test\\'\\\\\"')", parseQuery("F:S AND #INCLUDE(FIELD, '\"\\\\\\'test\\'\\\"')"));
         
         // if you want a backslash right before a closing single (or double) quote, you need to escape the backslash
-        assertEquals("F == 'S' && (filter:includeRegex(FIELD, 'test\\\\\\\\'))", parseQuery("F:S AND #INCLUDE(FIELD, 'test\\\\')"));
+        assertEquals("F == 'S' && filter:includeRegex(FIELD, 'test\\\\\\\\')", parseQuery("F:S AND #INCLUDE(FIELD, 'test\\\\')"));
         
         try {
             assertEquals("", parseQuery("F:S AND #INCLUDE(FIELD, 'test\\')"));
@@ -120,11 +98,11 @@ public class TestLuceneToJexlQueryParser {
                         parseQuery("F:S AND #INCLUDE(AND, FIELD1, 'rege(x)', FIELD2, 'reg,e(x)')"));
         
         // escaped parentheses or commas remain in the result because they are quoted
-        assertEquals("F == 'S' && (filter:includeRegex(FIELD, 'reg\\\\)ex'))", parseQuery("F:S AND #INCLUDE(FIELD, 'reg\\)ex')"));
-        assertEquals("F == 'S' && (filter:includeRegex(FIELD, 'reg\\\\(ex'))", parseQuery("F:S AND #INCLUDE(FIELD, 'reg\\(ex')"));
-        assertEquals("F == 'S' && (filter:includeRegex(FIELD, 'reg\\\\,ex'))", parseQuery("F:S AND #INCLUDE(FIELD, 'reg\\,ex')"));
+        assertEquals("F == 'S' && filter:includeRegex(FIELD, 'reg\\\\)ex')", parseQuery("F:S AND #INCLUDE(FIELD, 'reg\\)ex')"));
+        assertEquals("F == 'S' && filter:includeRegex(FIELD, 'reg\\\\(ex')", parseQuery("F:S AND #INCLUDE(FIELD, 'reg\\(ex')"));
+        assertEquals("F == 'S' && filter:includeRegex(FIELD, 'reg\\\\,ex')", parseQuery("F:S AND #INCLUDE(FIELD, 'reg\\,ex')"));
         
-        assertEquals("F == 'S' && (filter:includeRegex(FIELD, 're[a,b,c]g.*\\\\.\\\\,ex'))", parseQuery("F:S AND #INCLUDE(FIELD, 're[a,b,c]g.*\\.\\,ex')"));
+        assertEquals("F == 'S' && filter:includeRegex(FIELD, 're[a,b,c]g.*\\\\.\\\\,ex')", parseQuery("F:S AND #INCLUDE(FIELD, 're[a,b,c]g.*\\.\\,ex')"));
         
     }
     
@@ -140,19 +118,18 @@ public class TestLuceneToJexlQueryParser {
     
     @Test
     public void testFunctionArgumentEscapingNoQuotes() throws ParseException {
-        assertEquals("F == 'S' && (filter:includeRegex(FIELD, 'regex'))", parseQuery("F:S AND #INCLUDE(FIELD, regex)"));
+        assertEquals("F == 'S' && filter:includeRegex(FIELD, 'regex')", parseQuery("F:S AND #INCLUDE(FIELD, regex)"));
         
         // escaped the parentheses and commas get by the lucene parser, but gets removed because they are not quoted
-        assertEquals("F == 'S' && (filter:includeRegex(FIELD, 'reg)ex'))", parseQuery("F:S AND #INCLUDE(FIELD, reg\\)ex)"));
-        assertEquals("F == 'S' && (filter:includeRegex(FIELD, 'reg(ex'))", parseQuery("F:S AND #INCLUDE(FIELD, reg\\(ex)"));
-        assertEquals("F == 'S' && (filter:includeRegex(FIELD, 'reg,ex'))", parseQuery("F:S AND #INCLUDE(FIELD, reg\\,ex)"));
+        assertEquals("F == 'S' && filter:includeRegex(FIELD, 'reg)ex')", parseQuery("F:S AND #INCLUDE(FIELD, reg\\)ex)"));
+        assertEquals("F == 'S' && filter:includeRegex(FIELD, 'reg(ex')", parseQuery("F:S AND #INCLUDE(FIELD, reg\\(ex)"));
+        assertEquals("F == 'S' && filter:includeRegex(FIELD, 'reg,ex')", parseQuery("F:S AND #INCLUDE(FIELD, reg\\,ex)"));
         
-        assertEquals("F == 'S' && (filter:includeRegex(FIELD, 'reg\"ex'))", parseQuery("F:S AND #INCLUDE(FIELD, reg\"ex)"));
-        assertEquals("F == 'S' && (filter:includeRegex(FIELD, 'reg\\\\\"ex'))", parseQuery("F:S AND #INCLUDE(FIELD, reg\\\"ex)"));
-        assertEquals("F == 'S' && (filter:includeRegex(FIELD, 'reg\\\\\\'ex'))", parseQuery("F:S AND #INCLUDE(FIELD, reg\\'ex)"));
-        assertEquals("F == 'S' && (filter:includeRegex(FIELD, 'reg\\\\ex'))", parseQuery("F:S AND #INCLUDE(FIELD, reg\\\\ex)"));
-        assertEquals("F == 'S' && (filter:getAllMatches(FIELD, 'reg\\\\ex'))", parseQuery("F:S AND #GET_ALL_MATCHES(FIELD, reg\\\\ex)"));
-        
+        assertEquals("F == 'S' && filter:includeRegex(FIELD, 'reg\"ex')", parseQuery("F:S AND #INCLUDE(FIELD, reg\"ex)"));
+        assertEquals("F == 'S' && filter:includeRegex(FIELD, 'reg\\\\\"ex')", parseQuery("F:S AND #INCLUDE(FIELD, reg\\\"ex)"));
+        assertEquals("F == 'S' && filter:includeRegex(FIELD, 'reg\\\\\\'ex')", parseQuery("F:S AND #INCLUDE(FIELD, reg\\'ex)"));
+        assertEquals("F == 'S' && filter:includeRegex(FIELD, 'reg\\\\ex')", parseQuery("F:S AND #INCLUDE(FIELD, reg\\\\ex)"));
+        assertEquals("F == 'S' && filter:getAllMatches(FIELD, 'reg\\\\ex')", parseQuery("F:S AND #GET_ALL_MATCHES(FIELD, reg\\\\ex)"));
     }
     
     @Test
@@ -191,6 +168,34 @@ public class TestLuceneToJexlQueryParser {
         assertEquals("(F1 == 'A' && F2 == 'B') && !(F3 == 'C') && !(F4 == 'D')", parseQuery("(F1:A AND F2:B) NOT F3:C NOT F4:D"));
         assertEquals("(F1 == 'A' && F2 == 'B' || F3 == 'C') && !(F4 == 'D') && !(F5 == 'E') && !(F6 == 'F')",
                         parseQuery("(F1:A AND F2:B OR F3:C) NOT F4:D NOT F5:E NOT F6:F"));
+    }
+    
+    @Test
+    public void testCompare() throws ParseException {
+        assertEquals("F1 == 'A' && F2 == 'B' && filter:compare(F1, '<', 'ALL', F2)", parseQuery("F1:A AND F2:B AND #COMPARE(F1, <, ALL, F2)"));
+        assertEquals("F1 == 'A' && F2 == 'B' && filter:compare(F1, '>=', 'ANY', F2)", parseQuery("F1:A AND F2:B AND #COMPARE(F1, >=, ANY, F2)"));
+    }
+    
+    @Test
+    public void testCompareInvalidOpArg() {
+        try {
+            parseQuery("F1:A AND F2:B AND #COMPARE(F1, <>, ALL, F2)");
+            fail("Expected an IllegalArgumentException");
+        } catch (ParseException e) {
+            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
+            assertTrue(e.getCause().getMessage().startsWith("#COMPARE function requires a valid op arg:"));
+        }
+    }
+    
+    @Test
+    public void testCompareInvalidModeArg() {
+        try {
+            parseQuery("F1:A AND F2:B AND #COMPARE(F1, <, A FEW OR SEVERAL, F2)");
+            fail("Expected an IllegalArgumentException");
+        } catch (ParseException e) {
+            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
+            assertTrue(e.getCause().getMessage().startsWith("#COMPARE function requires a valid mode arg:"));
+        }
     }
     
     @Test
@@ -618,4 +623,9 @@ public class TestLuceneToJexlQueryParser {
         Assert.assertEquals("content:phrase(TOKFIELD, termOffsetMap, 'quick', 'wi-fi', 'fox')", parseQuery(query));
     }
     
+    @Test
+    public void testParseIncludeFunctionPartOfUnion() throws ParseException {
+        testFunction("(filter:includeRegex(f1, 'r1') || filter:includeRegex(f2, 'r2'))", "#include(OR, f1, r1, f2, r2)");
+        testFunction("filter:includeRegex(f1, 'r1')", "#include(f1, r1)");
+    }
 }

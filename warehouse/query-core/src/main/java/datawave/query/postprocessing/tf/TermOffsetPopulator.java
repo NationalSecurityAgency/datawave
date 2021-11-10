@@ -54,6 +54,7 @@ public class TermOffsetPopulator {
         _phraseFunctions.add(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME);
         _phraseFunctions.add(ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME);
         _phraseFunctions.add(ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME);
+        _phraseFunctions.add(ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME);
         phraseFunctions = Collections.unmodifiableSet(_phraseFunctions);
     }
     

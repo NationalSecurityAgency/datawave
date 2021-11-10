@@ -2,6 +2,7 @@ package datawave.query.language.parser.jexl;
 
 import datawave.query.language.functions.jexl.EvaluationOnly;
 import datawave.query.language.functions.jexl.JexlQueryFunction;
+import datawave.query.language.parser.ParseException;
 import datawave.query.language.tree.QueryNode;
 
 import org.junit.Assert;
@@ -50,24 +51,31 @@ public class TestLuceneToJexlParser {
     }
     
     @Test
+    public void testParseFunction_NoExpansion() throws ParseException {
+        LuceneToJexlQueryParser parser = getQueryParser();
+        QueryNode node = parser.parse("FIELD:SOMETHING AND #NOEXPANSION(FIELD)");
+        Assert.assertEquals("FIELD == 'SOMETHING' && filter:noExpansion(FIELD)", node.getOriginalQuery());
+    }
+    
+    @Test
     public void test2() throws Exception {
         
         LuceneToJexlQueryParser parser = getQueryParser();
         
         QueryNode node = parser.parse("FIELD:SELECTOR AND #INCLUDE(F1, GB.*)");
-        Assert.assertEquals("FIELD == 'SELECTOR' && (filter:includeRegex(F1, 'GB.*'))", node.getOriginalQuery());
+        Assert.assertEquals("FIELD == 'SELECTOR' && filter:includeRegex(F1, 'GB.*')", node.getOriginalQuery());
         
         node = parser.parse("FIELD:SELECTOR AND #INCLUDE(F1, GB.{3})");
-        Assert.assertEquals("FIELD == 'SELECTOR' && (filter:includeRegex(F1, 'GB.{3}'))", node.getOriginalQuery());
+        Assert.assertEquals("FIELD == 'SELECTOR' && filter:includeRegex(F1, 'GB.{3}')", node.getOriginalQuery());
         
         node = parser.parse("FIELD:SELECTOR AND #INCLUDE(F1, GB\\.{3})");
-        Assert.assertEquals("FIELD == 'SELECTOR' && (filter:includeRegex(F1, 'GB\\\\.{3}'))", node.getOriginalQuery());
+        Assert.assertEquals("FIELD == 'SELECTOR' && filter:includeRegex(F1, 'GB\\\\.{3}')", node.getOriginalQuery());
         
         node = parser.parse("FIELD:SELECTOR AND #INCLUDE(F1, GB\\.{3\\,1})");
-        Assert.assertEquals("FIELD == 'SELECTOR' && (filter:includeRegex(F1, 'GB\\\\.{3,1}'))", node.getOriginalQuery());
+        Assert.assertEquals("FIELD == 'SELECTOR' && filter:includeRegex(F1, 'GB\\\\.{3,1}')", node.getOriginalQuery());
         
         node = parser.parse("FIELD:SOMETHING AND #EVALUATION_ONLY('#INCLUDE(F1, GB\\.{3\\,1})')");
-        Assert.assertEquals("FIELD == 'SOMETHING' && ((_Eval_ = true) && (filter:includeRegex(F1, 'GB\\\\.{3,1}')))", node.getOriginalQuery());
+        Assert.assertEquals("FIELD == 'SOMETHING' && ((_Eval_ = true) && filter:includeRegex(F1, 'GB\\\\.{3,1}'))", node.getOriginalQuery());
     }
     
     public static LuceneToJexlQueryParser getQueryParser() {

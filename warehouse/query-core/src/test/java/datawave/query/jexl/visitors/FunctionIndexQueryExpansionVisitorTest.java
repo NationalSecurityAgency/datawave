@@ -76,6 +76,81 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
     
     @Test
+    public void expandContentPhraseFunctionIntoSingleField() throws ParseException {
+        Set<String> fields = Sets.newHashSet("FOO", "BAR");
+        Set<String> tfFields = Sets.newHashSet("FOO");
+        
+        // Configure the mock metadata helper.
+        MockMetadataHelper mockMetadataHelper = new MockMetadataHelper();
+        mockMetadataHelper.setIndexedFields(fields);
+        mockMetadataHelper.addTermFrequencyFields(tfFields);
+        this.metadataHelper = mockMetadataHelper;
+        
+        // Execute the test.
+        String original = "content:phrase(termOffsetMap, 'abc', 'def')";
+        String expected = "(content:phrase(termOffsetMap, 'abc', 'def') && (FOO == 'def' && FOO == 'abc'))";
+        
+        runTest(original, expected);
+    }
+    
+    @Test
+    public void expandContentPhraseFunctionIntoMultipleFields() throws ParseException {
+        Set<String> fields = Sets.newHashSet("FOO", "BAR");
+        Set<String> tfFields = Sets.newHashSet("FOO", "BAR");
+        
+        // Configure the mock metadata helper.
+        MockMetadataHelper mockMetadataHelper = new MockMetadataHelper();
+        mockMetadataHelper.setIndexedFields(fields);
+        mockMetadataHelper.addTermFrequencyFields(tfFields);
+        
+        // Execute the test.
+        String original = "content:phrase(termOffsetMap, 'abc', 'def')";
+        String expected = "(content:phrase(termOffsetMap, 'abc', 'def') && ((BAR == 'def' && BAR == 'abc') || (FOO == 'def' && FOO == 'abc')))";
+        
+        runTest(original, expected, mockMetadataHelper);
+    }
+    
+    // no expansion function also applies to index query expansion
+    @Test
+    public void expandContentPhraseFunctionIntoMultipleFieldsWithNoExpansion() throws ParseException {
+        Set<String> fields = Sets.newHashSet("FOO", "BAR");
+        Set<String> tfFields = Sets.newHashSet("FOO", "BAR");
+        
+        // Configure the mock metadata helper.
+        MockMetadataHelper mockMetadataHelper = new MockMetadataHelper();
+        mockMetadataHelper.setIndexedFields(fields);
+        mockMetadataHelper.addTermFrequencyFields(tfFields);
+        
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setNoExpansionFields(Sets.newHashSet("BAR"));
+        
+        // Execute the test.
+        String original = "content:phrase(termOffsetMap, 'abc', 'def')";
+        String expected = "(content:phrase(termOffsetMap, 'abc', 'def') && (FOO == 'def' && FOO == 'abc'))";
+        
+        runTest(original, expected, config, mockMetadataHelper);
+    }
+    
+    @Test
+    public void expandContentPhraseFunctionIntoSingleFieldWithNoExpansion() throws ParseException {
+        Set<String> fields = Sets.newHashSet("FOO", "BAR");
+        Set<String> tfFields = Sets.newHashSet("FOO");
+        
+        // Configure the mock metadata helper.
+        MockMetadataHelper mockMetadataHelper = new MockMetadataHelper();
+        mockMetadataHelper.setIndexedFields(fields);
+        mockMetadataHelper.addTermFrequencyFields(tfFields);
+        
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setNoExpansionFields(Sets.newHashSet("FOO"));
+        
+        // Execute the test.
+        String original = "content:phrase(termOffsetMap, 'abc', 'def')";
+        
+        runTest(original, original, config, mockMetadataHelper);
+    }
+    
+    @Test
     public void expandDateIndex() throws Exception {
         // Set the default TimeZone.
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -104,6 +179,23 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
     
     private void runTest(String originalQuery, String expected) throws ParseException {
+        runTest(originalQuery, expected, config, metadataHelper, dateIndexHelper);
+    }
+    
+    private void runTest(String originalQuery, String expected, ShardQueryConfiguration config) throws ParseException {
+        runTest(originalQuery, expected, config, metadataHelper, dateIndexHelper);
+    }
+    
+    private void runTest(String originalQuery, String expected, MetadataHelper metadataHelper) throws ParseException {
+        runTest(originalQuery, expected, config, metadataHelper, dateIndexHelper);
+    }
+    
+    private void runTest(String originalQuery, String expected, ShardQueryConfiguration config, MetadataHelper metadataHelper) throws ParseException {
+        runTest(originalQuery, expected, config, metadataHelper, dateIndexHelper);
+    }
+    
+    private void runTest(String originalQuery, String expected, ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper)
+                    throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(originalQuery);
         
         ASTJexlScript actualScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelper, originalScript);

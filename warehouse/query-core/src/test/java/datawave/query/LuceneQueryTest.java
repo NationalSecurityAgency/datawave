@@ -246,6 +246,16 @@ public class LuceneQueryTest extends AbstractFunctionalQuery {
         runTest(query, expect);
     }
     
+    @Test
+    public void testCompareFunction() throws Exception {
+        log.info("------  testCompareFunction  ------");
+        String lucene = "CITY:bar AND #COMPARE(CITY,<,ANY,STATE)";
+        String expectedJexlPlan = "CITY == 'bar' && filter:compare(CITY,'<','ANY',STATE)";
+        
+        String jexlQueryPlan = getPlan(lucene, true, true);
+        assertPlanEquals(expectedJexlPlan, jexlQueryPlan);
+    }
+    
     // ============================================
     // implemented abstract methods
     protected void testInit() {
