@@ -16,6 +16,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TestLuceneToJexlQueryParser {
     
@@ -167,6 +168,34 @@ public class TestLuceneToJexlQueryParser {
         assertEquals("(F1 == 'A' && F2 == 'B') && !(F3 == 'C') && !(F4 == 'D')", parseQuery("(F1:A AND F2:B) NOT F3:C NOT F4:D"));
         assertEquals("(F1 == 'A' && F2 == 'B' || F3 == 'C') && !(F4 == 'D') && !(F5 == 'E') && !(F6 == 'F')",
                         parseQuery("(F1:A AND F2:B OR F3:C) NOT F4:D NOT F5:E NOT F6:F"));
+    }
+    
+    @Test
+    public void testCompare() throws ParseException {
+        assertEquals("F1 == 'A' && F2 == 'B' && filter:compare(F1, '<', 'ALL', F2)", parseQuery("F1:A AND F2:B AND #COMPARE(F1, <, ALL, F2)"));
+        assertEquals("F1 == 'A' && F2 == 'B' && filter:compare(F1, '>=', 'ANY', F2)", parseQuery("F1:A AND F2:B AND #COMPARE(F1, >=, ANY, F2)"));
+    }
+    
+    @Test
+    public void testCompareInvalidOpArg() {
+        try {
+            parseQuery("F1:A AND F2:B AND #COMPARE(F1, <>, ALL, F2)");
+            fail("Expected an IllegalArgumentException");
+        } catch (ParseException e) {
+            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
+            assertTrue(e.getCause().getMessage().startsWith("#COMPARE function requires a valid op arg:"));
+        }
+    }
+    
+    @Test
+    public void testCompareInvalidModeArg() {
+        try {
+            parseQuery("F1:A AND F2:B AND #COMPARE(F1, <, A FEW OR SEVERAL, F2)");
+            fail("Expected an IllegalArgumentException");
+        } catch (ParseException e) {
+            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
+            assertTrue(e.getCause().getMessage().startsWith("#COMPARE function requires a valid mode arg:"));
+        }
     }
     
     @Test
