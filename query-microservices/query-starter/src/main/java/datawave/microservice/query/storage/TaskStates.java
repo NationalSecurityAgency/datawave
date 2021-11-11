@@ -22,6 +22,7 @@ public class TaskStates implements Serializable {
     private QueryKey queryKey;
     private int maxRunning = 1;
     private int nextTaskId = 1;
+    private boolean creatingTasks = true;
     @JsonIgnore
     private Map<TASK_STATE,SparseBitSet> taskStates = new HashMap<>();
     
@@ -42,6 +43,10 @@ public class TaskStates implements Serializable {
     
     public int getNextTaskId() {
         return nextTaskId;
+    }
+    
+    public boolean isCreatingTasks() {
+        return creatingTasks;
     }
     
     @JsonIgnore
@@ -92,6 +97,10 @@ public class TaskStates implements Serializable {
     
     public void setNextTaskId(int nextTaskId) {
         this.nextTaskId = nextTaskId;
+    }
+    
+    public void setCreatingTasks(boolean creatingTasks) {
+        this.creatingTasks = creatingTasks;
     }
     
     public int getMaxRunning() {

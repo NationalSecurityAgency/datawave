@@ -8,6 +8,8 @@ logging:
     root: INFO
     org.springframework.cloud.bootstrap.config: DEBUG
     datawave.microservice.query: DEBUG
+    org.apache.kafka: ERROR
+    datawave.microservice.query.storage: WARN
 
 datawave:
   query:

@@ -158,14 +158,14 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         
         // 1) have we hit the user's results-per-page limit?
         if (results.size() >= userResultsPerPage) {
-            log.info("Query [{}]: user requested max page size has been reached, aborting next call", queryId);
+            log.info("Query [{}]: user requested max page size [{}] has been reached, aborting next call", queryId, userResultsPerPage);
             
             finished = true;
         }
         
         // 2) have we hit the query logic's results-per-page limit?
         if (!finished && logicResultsPerPage > 0 && results.size() >= logicResultsPerPage) {
-            log.info("Query [{}]: query logic max page size has been reached, aborting next call", queryId);
+            log.info("Query [{}]: query logic max page size [{}] has been reached, aborting next call", queryId, logicResultsPerPage);
             
             finished = true;
         }
@@ -191,7 +191,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         }
         
         // 5) have we retrieved all of the results?
-        if (!finished && !getTaskStates().hasUnfinishedTasks()) {
+        if (!finished && !getTaskStates().isCreatingTasks() && !getTaskStates().hasUnfinishedTasks()) {
             // if all tasks have completed (or failed), start keeping track of the result count
             if (tasksFinished) {
                 // if we stop getting results, we are done

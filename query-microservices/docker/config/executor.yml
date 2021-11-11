@@ -1,10 +1,12 @@
 # This is where you set properties which are common to all executors
 logging:
   level:
-    root: DEBUG
+    root: INFO
     datawave.query: DEBUG
     datawave.microservice.query: DEBUG
     datawave.microservice.query.executor: DEBUG
+    org.apache.kafka: ERROR
+    datawave.microservice.query.storage: WARN
 
 warehouse:
   accumulo:

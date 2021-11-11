@@ -100,7 +100,6 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         QueryStatus queryStatus = new QueryStatus(checkpoint.getQueryKey());
         queryStatus.setQueryState(queryState);
         queryStatus.setQuery(query);
-        queryStatus.setOriginService(originService);
         queryStatus.setCalculatedAuthorizations(calculatedAuthorizations);
         queryStatus.setLastUsedMillis(System.currentTimeMillis());
         queryStatus.setLastUpdatedMillis(queryStatus.getLastUsedMillis());

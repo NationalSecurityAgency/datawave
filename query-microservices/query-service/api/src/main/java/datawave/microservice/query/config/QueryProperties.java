@@ -30,6 +30,8 @@ public class QueryProperties {
     @NotNull
     private TimeUnit lockLeaseTimeUnit = TimeUnit.MILLISECONDS;
     @NotEmpty
+    private String queryServiceName = "query";
+    @NotEmpty
     private String executorServiceName = "executor";
     // These are the only parameters that can be updated for a running query
     private List<String> updatableParams = Arrays.asList(QUERY_EXPIRATION, QUERY_PAGESIZE, QUERY_PAGETIMEOUT, QUERY_MAX_RESULTS_OVERRIDE);
@@ -88,6 +90,14 @@ public class QueryProperties {
     public QueryProperties setLockLeaseTimeUnit(TimeUnit lockLeaseTimeUnit) {
         this.lockLeaseTimeUnit = lockLeaseTimeUnit;
         return this;
+    }
+    
+    public String getQueryServiceName() {
+        return queryServiceName;
+    }
+    
+    public void setQueryServiceName(String queryServiceName) {
+        this.queryServiceName = queryServiceName;
     }
     
     public String getExecutorServiceName() {

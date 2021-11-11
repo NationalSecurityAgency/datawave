@@ -4,8 +4,10 @@ import datawave.microservice.query.executor.QueryExecutor;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.CachedQueryStatus;
 import datawave.microservice.query.storage.QueryStatus;
+import datawave.microservice.query.storage.QueryStorageLock;
 import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.TaskKey;
+import datawave.microservice.query.storage.TaskStates;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricClient;
 import datawave.microservice.querymetric.QueryMetricType;
@@ -21,8 +23,11 @@ import java.util.Date;
 public class CreateTask extends ExecutorTask {
     private static final Logger log = Logger.getLogger(CreateTask.class);
     
-    public CreateTask(QueryExecutor source, QueryTask task) {
+    private final String originService;
+    
+    public CreateTask(QueryExecutor source, QueryTask task, String originService) {
         super(source, task);
+        this.originService = originService;
     }
     
     @Override
@@ -66,14 +71,21 @@ public class CreateTask extends ExecutorTask {
             CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
             queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
             
-            notifyOriginOfCreation(queryId, queryStatus.getOriginService());
+            notifyOriginOfCreation(queryId);
             
             checkpoint(task.getTaskKey().getQueryKey(), cpQueryLogic);
+            
+            // update the task states to indicate that all tasks are created
+            taskCreationComplete(queryId);
+            
             taskComplete = true;
         } else {
             queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
             
-            notifyOriginOfCreation(queryId, queryStatus.getOriginService());
+            notifyOriginOfCreation(queryId);
+            
+            // update the task states to indicate that all tasks are created
+            taskCreationComplete(queryId);
             
             log.debug("Exhausting results for " + queryId);
             taskComplete = pullResults(task.getTaskKey(), queryLogic, queryStatus, true);
@@ -87,7 +99,7 @@ public class CreateTask extends ExecutorTask {
         return taskComplete;
     }
     
-    private void notifyOriginOfCreation(String queryId, String originService) {
+    private void notifyOriginOfCreation(String queryId) {
         if (originService != null) {
             log.debug("Publishing a create request to the originating service: " + originService);
             // @formatter:off
@@ -101,4 +113,16 @@ public class CreateTask extends ExecutorTask {
         }
     }
     
+    private void taskCreationComplete(String queryId) {
+        // update the task states to indicate that all tasks are created
+        QueryStorageLock lock = cache.getTaskStatesLock(queryId);
+        lock.lock();
+        try {
+            TaskStates taskStates = cache.getTaskStates(queryId);
+            taskStates.setCreatingTasks(false);
+            cache.updateTaskStates(taskStates);
+        } finally {
+            lock.unlock();
+        }
+    }
 }

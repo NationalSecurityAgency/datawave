@@ -438,9 +438,12 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // create a valid query
         String queryId = createQuery(authUser, createParams());
         
-        // remove the task states to make it appear that the executor has finished
+        // mark the task states as complete, and mark task creation as complete to make it appear that the executor has finished
         TaskStates taskStates = queryStorageCache.getTaskStates(queryId);
-        taskStates.getTaskStates().remove(TaskStates.TASK_STATE.READY);
+        for (int i = 0; i < taskStates.getNextTaskId(); i++) {
+            taskStates.setState(i, TaskStates.TASK_STATE.COMPLETED);
+        }
+        taskStates.setCreatingTasks(false);
         queryStorageCache.updateTaskStates(taskStates);
         
         // make the next call asynchronously

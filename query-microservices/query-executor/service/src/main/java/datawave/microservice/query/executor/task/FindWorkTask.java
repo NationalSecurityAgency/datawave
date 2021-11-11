@@ -19,10 +19,15 @@ public class FindWorkTask implements Callable<Void> {
     // a cache of the last N close cancel queries that we handled to avoid excessive executor executions and subsequent query cache hits
     protected final CloseCancelCache closeCancelCache;
     
-    public FindWorkTask(QueryStorageCache cache, QueryExecutor executor, CloseCancelCache closeCancelCache) {
+    private final String originService;
+    private final String destinationService;
+    
+    public FindWorkTask(QueryStorageCache cache, QueryExecutor executor, CloseCancelCache closeCancelCache, String originService, String destinationService) {
         this.cache = cache;
         this.executor = executor;
         this.closeCancelCache = closeCancelCache;
+        this.originService = originService;
+        this.destinationService = destinationService;
     }
     
     @Override
@@ -33,25 +38,23 @@ public class FindWorkTask implements Callable<Void> {
                 case CLOSED:
                     if (closeCancelCache.add(queryId)) {
                         log.debug("Closing " + queryId);
-                        executor.handleRequest(queryId, QueryRequest.Method.CLOSE, false);
+                        executor.handleRemoteRequest(QueryRequest.close(queryId), originService, destinationService);
                     }
                     break;
                 case CANCELED:
                     if (closeCancelCache.add(queryId)) {
                         log.debug("Cancelling " + queryId);
-                        executor.handleRequest(queryId, QueryRequest.Method.CANCEL, false);
+                        executor.handleRemoteRequest(QueryRequest.cancel(queryId), originService, destinationService);
                     }
-                    break;
-                case DEFINED:
-                    log.debug("Creating/Planning " + queryId);
-                    // even if the next task is to plan, this will take care of it
-                    executor.handleRequest(queryId, QueryRequest.Method.CREATE, false);
                     break;
                 case CREATED:
                     log.debug("Nexting " + queryId);
+                    // TODO: The monitor task lease is 100ms by default. Is that enough time to ensure that the handleRemoteRequest call will finish?
+                    // Should we create a new thread to handle the remote request instead so that we can return immediately?
                     // even if the next task is to plan, this will take care of it
-                    executor.handleRequest(queryId, QueryRequest.Method.NEXT, false);
+                    executor.handleRemoteRequest(QueryRequest.next(queryId), originService, destinationService);
                     break;
+                case DEFINED:
                 case FAILED:
                     // noop
                     break;

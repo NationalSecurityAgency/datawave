@@ -2304,11 +2304,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     }
     
     public boolean isCheckpointable() {
-        return config.isCheckpointable();
+        return getConfig().isCheckpointable();
     }
     
     public void setCheckpointable(boolean checkpointable) {
-        config.setCheckpointable(checkpointable);
+        getConfig().setCheckpointable(checkpointable);
     }
     
     /**

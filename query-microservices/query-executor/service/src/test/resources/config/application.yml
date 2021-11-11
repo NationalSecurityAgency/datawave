@@ -1,7 +1,7 @@
 spring:
 
   application:
-    name: query-executor-test
+    name: executor-TestPool
   autoconfigure:
     exclude: org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration
   security:
@@ -155,6 +155,8 @@ datawave:
       queryStatusExpirationMs: 60000
       lockWaitTimeMillis: 5000
       lockLeaseTimeMillis: 30000
+      monitor:
+        enabled: false
 
     logic:
       factory:

@@ -4,8 +4,8 @@ import com.zaxxer.sparsebits.SparseBitSet;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.executor.action.CreateTask;
 import datawave.microservice.query.executor.action.ExecutorTask;
-import datawave.microservice.query.executor.action.ResultsTask;
 import datawave.microservice.query.executor.action.PlanTask;
+import datawave.microservice.query.executor.action.ResultsTask;
 import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
@@ -121,18 +121,10 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
     
     @Override
     public void handleRemoteRequest(QueryRequest queryRequest, String originService, String destinationService) {
-        handleRemoteRequest(queryRequest, false);
-    }
-    
-    public void handleRemoteRequest(QueryRequest queryRequest, boolean wait) {
         final String queryId = queryRequest.getQueryId();
-        final QueryRequest.Method action = queryRequest.getMethod();
+        final QueryRequest.Method requestedAction = queryRequest.getMethod();
         log.info("Received request " + queryRequest);
         
-        handleRequest(queryId, action, wait);
-    }
-    
-    public void handleRequest(String queryId, QueryRequest.Method action, boolean wait) {
         final QueryStatus queryStatus = cache.getQueryStatus(queryId);
         
         // validate we actual have such a query
@@ -151,7 +143,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         }
         
         // A close request waits for the current page to finish
-        switch (action) {
+        switch (requestedAction) {
             case CLOSE:
                 removeFromWorkQueue(queryId);
                 break;
@@ -161,6 +153,8 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                 break;
             default: {
                 TaskKey taskKey = null;
+                QueryTask task = null;
+                
                 QueryStorageLock lock = cache.getTaskStatesLock(queryId);
                 lock.lock();
                 try {
@@ -175,11 +169,21 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                             int taskId = tasks.nextSetBit(0);
                             if (taskId != -1) {
                                 taskKey = new TaskKey(taskId, queryStatus.getQueryKey());
-                                log.debug("Found " + taskKey);
-                                if (!cache.updateTaskState(taskKey, TaskStates.TASK_STATE.RUNNING)) {
-                                    taskKey = null;
+                                task = cache.getTask(taskKey);
+                                
+                                // if we have such a task, and the task is for the action requested,
+                                // then prepare it for execution otherwise, ignore this task
+                                if (task != null && task.getAction() == requestedAction) {
+                                    log.debug("Found " + taskKey);
+                                    if (!cache.updateTaskState(taskKey, TaskStates.TASK_STATE.RUNNING)) {
+                                        taskKey = null;
+                                    } else {
+                                        log.debug("Got lock for task " + taskKey);
+                                    }
                                 } else {
-                                    log.debug("Got lock for task " + taskKey);
+                                    log.warn("Task " + taskKey + " is for " + task.getAction() + " but we were looking for " + requestedAction
+                                                    + ", ignoring task");
+                                    task = null;
                                 }
                             }
                         }
@@ -191,38 +195,25 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                     lock.unlock();
                 }
                 
-                if (taskKey != null) {
-                    QueryTask task = cache.getTask(taskKey);
-                    // if we have such a task, and the task is for the action requested, then execute it
-                    if (task != null) {
-                        if (task.getAction() != action) {
-                            log.warn("Task " + taskKey + " is for " + task.getAction() + " but we were looking for " + action + ", executing task anyway");
-                        }
-                        log.debug("Executing task " + taskKey + ": " + task.getQueryCheckpoint());
-                        ExecutorTask runnable = null;
-                        switch (task.getAction()) {
-                            case CREATE:
-                                runnable = new CreateTask(this, task);
-                                break;
-                            case NEXT:
-                                runnable = new ResultsTask(this, task);
-                                break;
-                            case PLAN:
-                                runnable = new PlanTask(this, task);
-                                break;
-                            default:
-                                throw new UnsupportedOperationException(task.getTaskKey().toString());
-                        }
-                        
-                        if (wait) {
-                            runnable.run();
-                        } else {
-                            threadPool.execute(runnable);
-                        }
-                    } else {
-                        log.error("Need to cleanup task states because we are referencing a task that no longer exists: " + taskKey);
-                        cache.updateTaskState(taskKey, TaskStates.TASK_STATE.FAILED);
+                // if we have a task, run it
+                if (task != null) {
+                    log.debug("Executing task " + taskKey + ": " + task.getQueryCheckpoint());
+                    ExecutorTask runnable = null;
+                    switch (task.getAction()) {
+                        case CREATE:
+                            runnable = new CreateTask(this, task, originService);
+                            break;
+                        case NEXT:
+                            runnable = new ResultsTask(this, task);
+                            break;
+                        case PLAN:
+                            runnable = new PlanTask(this, task);
+                            break;
+                        default:
+                            throw new UnsupportedOperationException(task.getTaskKey().toString());
                     }
+                    
+                    threadPool.execute(runnable);
                 }
             }
         }

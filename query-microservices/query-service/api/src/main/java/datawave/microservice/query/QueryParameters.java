@@ -4,8 +4,6 @@ import datawave.validation.ParameterValidator;
 import org.springframework.util.MultiValueMap;
 
 import java.util.Date;
-
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 

@@ -44,7 +44,8 @@ public class QueryStorageStateServiceController implements QueryStorageStateServ
             if (query.getQueryState() == QueryStatus.QUERY_STATE.CREATED || query.getQueryState() == QueryStatus.QUERY_STATE.DEFINED
                             || query.getQueryState() == QueryStatus.QUERY_STATE.CLOSED) {
                 TaskStates taskStates = taskStatesCache.getTaskStates(query.getQueryKey().getQueryId());
-                if (taskStates.hasRunningTasks() || (query.getQueryState() != QueryStatus.QUERY_STATE.CLOSED && taskStates.hasUnfinishedTasks())) {
+                if (taskStates.isCreatingTasks() || taskStates.hasRunningTasks()
+                                || (query.getQueryState() != QueryStatus.QUERY_STATE.CLOSED && taskStates.hasUnfinishedTasks())) {
                     queries.add(new QueryState(query, taskStates));
                 }
             }

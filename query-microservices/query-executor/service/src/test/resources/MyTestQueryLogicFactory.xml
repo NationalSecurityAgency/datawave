@@ -231,6 +231,11 @@
         <property name="logicDescription" value="Query the sharded event/document schema, leveraging the global index tables as needed" />
     </bean>
 
+    <bean id="LegacyEventQuery" scope="prototype"  parent="BaseEventQuery">
+        <property name="logicDescription" value="Query the sharded event/document schema, leveraging the global index tables as needed" />
+        <property name="checkpointable" value="false" />
+    </bean>
+
     <!-- begin original QueryLogicFactory.xml -->
 
     <!--    &lt;!&ndash;  part of what enforces any Required properties to be set on loading of the context &ndash;&gt;-->

@@ -162,24 +162,6 @@ public class CachedQueryStatus extends QueryStatus {
     }
     
     @Override
-    public String getOriginService() {
-        return get().getOriginService();
-    }
-    
-    @Override
-    public void setOriginService(String originService) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setOriginService(originService);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
-    }
-    
-    @Override
     public QUERY_STATE getQueryState() {
         return get().getQueryState();
     }

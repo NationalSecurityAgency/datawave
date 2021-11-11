@@ -6,7 +6,6 @@ import datawave.microservice.query.storage.QueryQueueListener;
 import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.Result;
 import datawave.microservice.query.storage.config.QueryStorageProperties;
-import org.apache.logging.log4j.core.util.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpIOException;
@@ -31,7 +30,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
