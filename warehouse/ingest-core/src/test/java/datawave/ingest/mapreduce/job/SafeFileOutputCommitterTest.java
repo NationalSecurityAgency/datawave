@@ -193,7 +193,9 @@ public class SafeFileOutputCommitterTest {
         FileUtil.fullyDelete(new File(outDir.toString()));
     }
     
-    private void failFirstAttemptPassSecond(int commitVersion, int recoveryVersion) throws Exception {
+    // failedAttemptWritesData - refers to whether the first attempt's files should be should contain data (true) or
+    // be left empty (false)
+    private void failFirstAttemptPassSecond(int commitVersion, int recoveryVersion, boolean failedAttemptWritesData) throws Exception {
         Job job = Job.getInstance(this.configuration);
         FileOutputFormat.setOutputPath(job, outDir);
         Configuration conf = job.getConfiguration();
@@ -215,14 +217,16 @@ public class SafeFileOutputCommitterTest {
         RecordWriter theRecordWriter = theOutputFormat.getRecordWriter(tContext1);
         
         // output file goes from empty to containing data:
-        writeOutput(theRecordWriter, tContext1);
+        if (failedAttemptWritesData) {
+            writeOutput(theRecordWriter, tContext1);
+        }
         
         // Do not call commitTask for attempt #1
         // committer.commitTask(tContext);
         
         // Verify task attempt #1 still has a temporary file in the attempt path
         Path jobTempDir1 = committer.getTaskAttemptPath(tContext1);
-        verifyNonEmptyFileInTemporaryDir(jobTempDir1.toUri().getPath());
+        verifyFileInTemporaryDir(jobTempDir1.toUri().getPath(), failedAttemptWritesData);
         
         // now run and commit a second app attempt
         Configuration conf2 = job.getConfiguration();
@@ -245,7 +249,7 @@ public class SafeFileOutputCommitterTest {
         // Just prior to commitJob, when the SafeFileOutputCommitter will look for files left behind, verify that the
         // attempt #1 file still exists in the temporary directory
         if (configuration.getBoolean(SafeFileOutputCommitter.LENIENT_MODE, false)) {
-            verifyNonEmptyFileInTemporaryDir(jobTempDir1.toUri().getPath());
+            verifyFileInTemporaryDir(jobTempDir1.toUri().getPath(), failedAttemptWritesData);
         }
         
         committer.commitJob(jContext);
@@ -260,44 +264,79 @@ public class SafeFileOutputCommitterTest {
         FileUtil.fullyDelete(new File(outDir.toString()));
     }
     
-    private void verifyNonEmptyFileInTemporaryDir(String attempt1Path) {
+    private void verifyFileInTemporaryDir(String attempt1Path, boolean assertContainsData) {
         File attemptOutputFile = new File(attempt1Path + "/" + partFile);
         assertTrue("Expected file to exist for attempt. " + attemptOutputFile, attemptOutputFile.exists());
         assertTrue("Expected file to be in temporary dir. " + attemptOutputFile, attempt1Path.contains("_temporary"));
-        assertTrue("Expected file to be non-empty. " + attemptOutputFile, attemptOutputFile.length() > 0);
+        if (assertContainsData) {
+            assertTrue("Expected file to be non-empty. " + attemptOutputFile, attemptOutputFile.length() > 0);
+        }
     }
     
     @Test(expected = FileExistsException.class)
     public void testFirstAttemptFailsV1BackwardsCompatible() throws Exception {
-        failFirstAttemptPassSecond(1, 1);
+        failFirstAttemptPassSecond(1, 1, true);
     }
     
     @Test
     public void testFirstAttemptFailsV1Permissive() throws Exception {
         configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
-        failFirstAttemptPassSecond(1, 1);
+        failFirstAttemptPassSecond(1, 1, true);
     }
     
     @Test(expected = FileExistsException.class)
     public void testFirstAttemptFailsV2BackwardsCompatible() throws Exception {
-        failFirstAttemptPassSecond(2, 2);
+        failFirstAttemptPassSecond(2, 2, true);
     }
     
     @Test
     public void testFirstAttemptFailsV2Permissive() throws Exception {
         configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
-        failFirstAttemptPassSecond(2, 2);
+        failFirstAttemptPassSecond(2, 2, true);
     }
     
     @Test(expected = FileExistsException.class)
     public void testFirstAttemptFailsV1_V2BackwardsCompatible() throws Exception {
-        failFirstAttemptPassSecond(1, 2);
+        failFirstAttemptPassSecond(1, 2, true);
     }
     
     @Test
     public void testFirstAttemptFailsV1_V2Permissive() throws Exception {
         configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
-        failFirstAttemptPassSecond(1, 2);
+        failFirstAttemptPassSecond(1, 2, true);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV1BackwardsCompatibleEmptyFiles() throws Exception {
+        failFirstAttemptPassSecond(1, 1, false);
+    }
+    
+    @Test
+    public void testFirstAttemptFailsV1PermissiveEmptyFiles() throws Exception {
+        configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
+        failFirstAttemptPassSecond(1, 1, false);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV2BackwardsCompatibleEmptyFiles() throws Exception {
+        failFirstAttemptPassSecond(2, 2, false);
+    }
+    
+    @Test
+    public void testFirstAttemptFailsV2PermissiveEmptyFiles() throws Exception {
+        configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
+        failFirstAttemptPassSecond(2, 2, false);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV1_V2BackwardsCompatibleEmptyFiles() throws Exception {
+        failFirstAttemptPassSecond(1, 2, false);
+    }
+    
+    @Test
+    public void testFirstAttemptFailsV1_V2PermissiveEmptyFiles() throws Exception {
+        configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
+        failFirstAttemptPassSecond(1, 2, false);
     }
     
     @Test
