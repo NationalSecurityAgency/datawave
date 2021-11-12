@@ -150,7 +150,52 @@ public class GlobalIndexUidAggregatorExpandedTest {
         
         testCombinations(expectation, value1, value2);
     }
-    
+
+    @Test
+    public void removeManyFullCompaction() {
+        agg = new GlobalIndexUidAggregator(2);
+
+        // @formatter:off
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2", "uid3", "uid4", "uid5") // exceeds the maximum limit
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids("uid100") // not in value1
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(0)
+                .build());
+        // @formatter:on
+
+        isFullCompactionOnlyTest = true;
+        testCombinations(expectation, value1, value2);
+    }
+
+    @Test
+    public void removeManyPartialCompaction() {
+        agg = new GlobalIndexUidAggregator(2);
+
+        // @formatter:off
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2", "uid3", "uid4", "uid5") // exceeds the maximum limit
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids("uid100") // not in value1
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(-4)
+                .build());
+        // @formatter:on
+
+        isPartialCompactionOnlyTest = true;
+        testCombinations(expectation, value1, value2);
+    }
     @Test
     public void removeAllAcrossValue() {
         // Do removals of all UIDs in another list work?

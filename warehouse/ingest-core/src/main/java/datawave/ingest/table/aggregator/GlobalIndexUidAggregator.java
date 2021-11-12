@@ -197,6 +197,14 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                         } else if (propogate && !uids.contains(uid)) {
                             uidsToRemove.add(uid);
                         }
+
+                        if (uidsToRemove.size() >= maxUids) {
+                            seenIgnore = true;
+                            count = prevCount;
+                            uids.clear();
+                            uidsToRemove.clear();
+                            break;
+                        }
                     }
                     
                     // Add UIDs from the UID list
