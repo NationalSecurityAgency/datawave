@@ -174,67 +174,9 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     // set because that will take care of de-duping any duplicate UIDs.
                     long prevCount = uids.size() - uidsToRemove.size();
                     
-                    // Remove any UIDs in the REMOVEDUID list.
-                    for (String uid : v.getREMOVEDUIDList()) {
-                        // Don't remove the UID if it's in the UID list since that means a newer key
-                        // (larger timestamp value) added the UID and we don't want to undo that add.
-                        // If timestampsIgnored is set, then we are presuming lots of collisions on
-                        // timestamp and the order of incoming values is non-deterministic. In that case
-                        // we give precedence to a removal over an add and mark this UID as removed even
-                        // if it was in the UID list.
-                        //
-                        // If we're not propagating changes then don't bother adding UIDs to the
-                        // REMOVEDUID list. This happens if either we're doing a scan or a full major
-                        // compaction. In those cases, we're guaranteed that we'll see all of the values
-                        // for a given key and therefore there's no need to include removed UIDs in the
-                        // output protocol buffer since the remove have already been applied.
-                        if (timestampsIgnored) {
-                            uids.remove(uid);
-                            // Even if propagate is false, the removal UID should persist until all PB lists
-                            // in the current iteration have been seen, in case a subsequent PB has the UID
-                            // marked for removal.
-                            uidsToRemove.add(uid);
-                        } else if (propogate && !uids.contains(uid)) {
-                            uidsToRemove.add(uid);
-                        }
-
-                        if (uidsToRemove.size() >= maxUids) {
-                            seenIgnore = true;
-                            count = prevCount;
-                            uids.clear();
-                            uidsToRemove.clear();
-                            break;
-                        }
-                    }
-                    
-                    // Add UIDs from the UID list
-                    for (String uid : v.getUIDList()) {
-                        // Don't add a uid that's been removed. This is the same whether or
-                        // not timestamps are ignored since if they are ignored, removals take
-                        // priority and if they are not ignored, then this add is happening
-                        // before a removal and therefore should not take place.
-                        if (!uidsToRemove.contains(uid)) {
-                            // Add the UID iff we are under our MAX. If we reach the max,
-                            // then treat it as though we've seen an ignore--don't try to
-                            // add any more UIDs to the list (or removals from the REMOVEDUIDs
-                            // list) since they won't be included when we aggregate anyway.
-                            if (uids.size() < maxUids) {
-                                uids.add(uid);
-                            } else if (!uids.contains(uid)) {
-                                // This UID will not push the PB over the max UID limit if it is
-                                // already in the list of UIDs.
-                                // If aggregating this PB pushed us over the max UID limit,
-                                // then ignore any work we've done integrating this PB so far
-                                // and instead treat it as though its ignore flag had been set.
-                                // Set the count to the number of collected UIDs before we went
-                                // over the max, and then we'll add this PB's count below.
-                                seenIgnore = true;
-                                count = prevCount;
-                                uids.clear();
-                                uidsToRemove.clear();
-                                break;
-                            }
-                        }
+                    boolean wasSuccessful = processRemovalUids(v) && processAddedUids(v);
+                    if (!wasSuccessful) {
+                        enterCountOnlyMode(prevCount);
                     }
                 }
                 
@@ -276,6 +218,89 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
             count = Math.max(0, count);
         }
         return aggregate();
+    }
+    
+    /**
+     * Remove any UIDs in the REMOVEDUID list.
+     * 
+     * @param value
+     *            the protobuf object to process
+     * @return true if the removals were processed without exceeding the max limit, false otherwise.
+     */
+    private boolean processRemovalUids(Uid.List value) {
+        for (String uid : value.getREMOVEDUIDList()) {
+            // Don't remove the UID if it's in the UID list since that means a newer key
+            // (larger timestamp value) added the UID and we don't want to undo that add.
+            // If timestampsIgnored is set, then we are presuming lots of collisions on
+            // timestamp and the order of incoming values is non-deterministic. In that case
+            // we give precedence to a removal over an add and mark this UID as removed even
+            // if it was in the UID list.
+            //
+            // If we're not propagating changes then don't bother adding UIDs to the
+            // REMOVEDUID list. This happens if either we're doing a scan or a full major
+            // compaction. In those cases, we're guaranteed that we'll see all of the values
+            // for a given key and therefore there's no need to include removed UIDs in the
+            // output protocol buffer since the remove have already been applied.
+            if (timestampsIgnored) {
+                uids.remove(uid);
+                // Even if propagate is false, the removal UID should persist until all PB lists
+                // in the current iteration have been seen, in case a subsequent PB has the UID
+                // marked for removal.
+                uidsToRemove.add(uid);
+            } else if (propogate && !uids.contains(uid)) {
+                uidsToRemove.add(uid);
+            }
+            // Avoid exceeding maxUids in the uidToRemove list, even when propogating.
+            // Check for this condition after adding each of the remove UID entries to uidsToRemove,
+            // which also de-duplicates uids in that Set.
+            if (uidsToRemove.size() >= maxUids) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * Add the UIDs in the UID list, ignoring those that have been marked for removal.
+     * 
+     * @param value
+     *            the protobuf object to process
+     * @return true if the additions were processed without exceeding the max limit, false otherwise.
+     */
+    private boolean processAddedUids(Uid.List value) {
+        // Add UIDs from the UID list
+        for (String uid : value.getUIDList()) {
+            // Don't add a uid that's been removed. This is the same whether or
+            // not timestamps are ignored since if they are ignored, removals take
+            // priority and if they are not ignored, then this add is happening
+            // before a removal and therefore should not take place.
+            if (!uidsToRemove.contains(uid)) {
+                // Add the UID iff we are under our MAX. If we reach the max,
+                // then treat it as though we've seen an ignore--don't try to
+                // add any more UIDs to the list (or removals from the REMOVEDUIDs
+                // list) since they won't be included when we aggregate anyway.
+                if (uids.size() < maxUids) {
+                    uids.add(uid);
+                } else if (!uids.contains(uid)) {
+                    // This UID will not push the PB over the max UID limit if it is
+                    // already in the list of UIDs.
+                    // If aggregating this PB pushed us over the max UID limit,
+                    // then ignore any work we've done integrating this PB so far
+                    // and instead treat it as though its ignore flag had been set.
+                    // Set the count to the number of collected UIDs before we went
+                    // over the max, and then we'll add this PB's count below.
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    private void enterCountOnlyMode(long count) {
+        this.seenIgnore = true;
+        this.count = count;
+        this.uids.clear();
+        this.uidsToRemove.clear();
     }
     
     public void reset() {

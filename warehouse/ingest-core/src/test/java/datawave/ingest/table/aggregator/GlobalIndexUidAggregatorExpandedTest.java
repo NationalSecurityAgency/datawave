@@ -150,11 +150,11 @@ public class GlobalIndexUidAggregatorExpandedTest {
         
         testCombinations(expectation, value1, value2);
     }
-
+    
     @Test
     public void removeManyFullCompaction() {
         agg = new GlobalIndexUidAggregator(2);
-
+        
         // @formatter:off
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids()
@@ -169,15 +169,15 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withCountOnly(0)
                 .build());
         // @formatter:on
-
+        
         isFullCompactionOnlyTest = true;
         testCombinations(expectation, value1, value2);
     }
-
+    
     @Test
     public void removeManyPartialCompaction() {
         agg = new GlobalIndexUidAggregator(2);
-
+        
         // @formatter:off
         Value value1 = UidTestBuilder.newBuilder()
                 .withUids()
@@ -192,10 +192,11 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withCountOnly(-4)
                 .build());
         // @formatter:on
-
+        
         isPartialCompactionOnlyTest = true;
         testCombinations(expectation, value1, value2);
     }
+    
     @Test
     public void removeAllAcrossValue() {
         // Do removals of all UIDs in another list work?
