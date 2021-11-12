@@ -152,52 +152,11 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                 interruptWork(queryId, queryStatus.getQuery().getUserDN());
                 break;
             default: {
-                TaskKey taskKey = null;
-                QueryTask task = null;
-                
-                QueryStorageLock lock = cache.getTaskStatesLock(queryId);
-                lock.lock();
-                try {
-                    // get the query states from the cache
-                    TaskStates taskStates = cache.getTaskStates(queryId);
-                    
-                    if (taskStates != null) {
-                        log.debug("Searching for a task ready to run for " + queryId);
-                        Map<TaskStates.TASK_STATE,SparseBitSet> taskStateMap = taskStates.getTaskStates();
-                        if (taskStateMap.containsKey(TaskStates.TASK_STATE.READY)) {
-                            SparseBitSet tasks = taskStateMap.get(TaskStates.TASK_STATE.READY);
-                            int taskId = tasks.nextSetBit(0);
-                            if (taskId != -1) {
-                                taskKey = new TaskKey(taskId, queryStatus.getQueryKey());
-                                task = cache.getTask(taskKey);
-                                
-                                // if we have such a task, and the task is for the action requested,
-                                // then prepare it for execution otherwise, ignore this task
-                                if (task != null && task.getAction() == requestedAction) {
-                                    log.debug("Found " + taskKey);
-                                    if (!cache.updateTaskState(taskKey, TaskStates.TASK_STATE.RUNNING)) {
-                                        taskKey = null;
-                                    } else {
-                                        log.debug("Got lock for task " + taskKey);
-                                    }
-                                } else {
-                                    log.warn("Task " + taskKey + " is for " + task.getAction() + " but we were looking for " + requestedAction
-                                                    + ", ignoring task");
-                                    task = null;
-                                }
-                            }
-                        }
-                    } else {
-                        log.error("Need to cleanup query because we have no task states: " + queryId);
-                        // TODO: cleanup the query because we are referencing a query that has no task states ??
-                    }
-                } finally {
-                    lock.unlock();
-                }
+                QueryTask task = findNextReadyTask(queryStatus, requestedAction);
                 
                 // if we have a task, run it
                 if (task != null) {
-                    log.debug("Executing task " + taskKey + ": " + task.getQueryCheckpoint());
+                    log.debug("Executing task " + task.getTaskKey() + ": " + task.getQueryCheckpoint());
                     ExecutorTask runnable = null;
                     switch (task.getAction()) {
                         case CREATE:
@@ -217,6 +176,51 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                 }
             }
         }
+    }
+    
+    private QueryTask findNextReadyTask(QueryStatus queryStatus, QueryRequest.Method requestedAction) {
+        String queryId = queryStatus.getQueryKey().getQueryId();
+        
+        QueryTask nextTask = null;
+        
+        QueryStorageLock lock = cache.getTaskStatesLock(queryId);
+        lock.lock();
+        try {
+            // get the query states from the cache
+            TaskStates taskStates = cache.getTaskStates(queryId);
+            
+            if (taskStates != null) {
+                log.debug("Searching for a task ready to run for " + queryId);
+                Map<TaskStates.TASK_STATE,SparseBitSet> taskStateMap = taskStates.getTaskStates();
+                if (taskStateMap.containsKey(TaskStates.TASK_STATE.READY)) {
+                    SparseBitSet tasks = taskStateMap.get(TaskStates.TASK_STATE.READY);
+                    int taskId = tasks.nextSetBit(0);
+                    if (taskId != -1) {
+                        TaskKey taskKey = new TaskKey(taskId, queryStatus.getQueryKey());
+                        QueryTask task = cache.getTask(taskKey);
+                        
+                        // if we have such a task, and the task is for the action requested,
+                        // then prepare it for execution otherwise, ignore this task
+                        if (task != null && task.getAction() == requestedAction) {
+                            log.debug("Found " + taskKey);
+                            if (cache.updateTaskState(taskKey, TaskStates.TASK_STATE.RUNNING)) {
+                                log.debug("Got lock for task " + taskKey);
+                                nextTask = task;
+                            }
+                        } else {
+                            log.warn("Task " + taskKey + " is for " + task.getAction() + " but we were looking for " + requestedAction + ", ignoring task");
+                        }
+                    }
+                }
+            } else {
+                log.error("Need to cleanup query because we have no task states: " + queryId);
+                // TODO: cleanup the query because we are referencing a query that has no task states ??
+            }
+        } finally {
+            lock.unlock();
+        }
+        
+        return nextTask;
     }
     
     public QueryStorageCache getCache() {

@@ -101,6 +101,9 @@ while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
     if [ -z "$CONTINUE" ]; then
         i=-1
     else
+        NUM_EVENTS=$(get_num_events < nextResponse_$i.txt)
+        echo "$(date): Page $i contained $NUM_EVENTS events"
+
         ((i++))
     fi
 

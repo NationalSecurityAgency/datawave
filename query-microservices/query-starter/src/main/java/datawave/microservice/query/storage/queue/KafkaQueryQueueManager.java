@@ -122,9 +122,13 @@ public class KafkaQueryQueueManager implements QueryQueueManager {
             log.debug("Publishing message to " + exchangeName);
         }
         try {
-            kafkaTemplate.send(exchangeName, new ObjectMapper().writeValueAsString(result));
+            kafkaTemplate.send(exchangeName, new ObjectMapper().writeValueAsString(result)).get();
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Unable to serialize result", e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Interrupted waiting for kafka send result", e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Execution excepton waiting for kafka send result", e);
         }
     }
     

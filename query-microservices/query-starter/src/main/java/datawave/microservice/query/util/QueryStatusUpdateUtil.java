@@ -1,4 +1,4 @@
-package datawave.microservice.query.status;
+package datawave.microservice.query.util;
 
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.storage.QueryQueueManager;
@@ -11,12 +11,12 @@ import datawave.webservice.query.exception.QueryException;
 
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATED;
 
-public class QueryStatusUpdateHelper {
+public class QueryStatusUpdateUtil {
     
     private final QueryProperties queryProperties;
     private final QueryStorageCache queryStorageCache;
     
-    public QueryStatusUpdateHelper(QueryProperties queryProperties, QueryStorageCache queryStorageCache) {
+    public QueryStatusUpdateUtil(QueryProperties queryProperties, QueryStorageCache queryStorageCache) {
         this.queryProperties = queryProperties;
         this.queryStorageCache = queryStorageCache;
     }
@@ -57,7 +57,7 @@ public class QueryStatusUpdateHelper {
         }
     }
     
-    public QueryStatus lockedUpdate(String queryUUID, StatusUpdater updater) throws QueryException, InterruptedException {
+    public QueryStatus lockedUpdate(String queryUUID, QueryStatusUpdater updater) throws QueryException, InterruptedException {
         QueryStatus queryStatus = null;
         QueryStorageLock statusLock = queryStorageCache.getQueryStatusLock(queryUUID);
         if (statusLock.tryLock(queryProperties.getLockWaitTimeMillis(), queryProperties.getLockLeaseTimeMillis())) {

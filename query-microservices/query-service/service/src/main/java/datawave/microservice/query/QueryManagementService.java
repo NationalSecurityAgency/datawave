@@ -10,11 +10,11 @@ import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
 import datawave.microservice.query.runner.NextCall;
-import datawave.microservice.query.status.QueryStatusUpdateHelper;
 import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.TaskKey;
+import datawave.microservice.query.util.QueryStatusUpdateUtil;
 import datawave.microservice.query.util.QueryUtil;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricClient;
@@ -110,7 +110,7 @@ public class QueryManagementService implements QueryRequestHandler {
     private final AuditClient auditClient;
     private final ThreadPoolTaskExecutor nextCallExecutor;
     
-    private final QueryStatusUpdateHelper queryStatusUpdateHelper;
+    private final QueryStatusUpdateUtil queryStatusUpdateUtil;
     private final MultiValueMap<String,NextCall> nextCallMap = new LinkedMultiValueMap<>();
     
     private final String selfDestination;
@@ -134,7 +134,7 @@ public class QueryManagementService implements QueryRequestHandler {
         this.queryQueueManager = queryQueueManager;
         this.auditClient = auditClient;
         this.nextCallExecutor = nextCallExecutor;
-        this.queryStatusUpdateHelper = new QueryStatusUpdateHelper(this.queryProperties, this.queryStorageCache);
+        this.queryStatusUpdateUtil = new QueryStatusUpdateUtil(this.queryProperties, this.queryStorageCache);
         this.selfDestination = getSelfDestination();
     }
     
@@ -625,7 +625,7 @@ public class QueryManagementService implements QueryRequestHandler {
     private BaseQueryResponse next(String queryId, Collection<String> userRoles) throws InterruptedException, QueryException {
         // before we spin up a separate thread, make sure we are allowed to call next
         boolean success = false;
-        QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryId, queryStatusUpdateHelper::claimNextCall);
+        QueryStatus queryStatus = queryStatusUpdateUtil.lockedUpdate(queryId, queryStatusUpdateUtil::claimNextCall);
         try {
             // publish a next event to the executor pool
             publishNextEvent(queryId, queryStatus.getQueryKey().getQueryPool());
@@ -664,8 +664,8 @@ public class QueryManagementService implements QueryRequestHandler {
                     BaseQueryResponse response = queryLogic.getTransformer(queryStatus.getQuery()).createResponse(resultsPage);
                     
                     // after all of our work is done, perform our final query status update for this next call
-                    queryStatus = queryStatusUpdateHelper.lockedUpdate(queryId, status -> {
-                        queryStatusUpdateHelper.releaseNextCall(status, queryQueueManager);
+                    queryStatus = queryStatusUpdateUtil.lockedUpdate(queryId, status -> {
+                        queryStatusUpdateUtil.releaseNextCall(status, queryQueueManager);
                         status.setLastPageNumber(status.getLastPageNumber() + 1);
                         status.setNumResultsReturned(status.getNumResultsReturned() + resultsPage.getResults().size());
                     });
@@ -678,10 +678,13 @@ public class QueryManagementService implements QueryRequestHandler {
                     return response;
                 } else {
                     if (nextCall.isCanceled()) {
+                        log.debug("Query [{}]: Canceled while handling next call", queryId);
                         throw new QueryCanceledQueryException(DatawaveErrorCode.QUERY_CANCELED, MessageFormat.format("{0} canceled;", queryId));
                     } else if (baseQueryMetric.getLifecycle() == BaseQueryMetric.Lifecycle.NEXTTIMEOUT) {
+                        log.debug("Query [{}]: Timed out during next call", queryId);
                         throw new TimeoutQueryException(DatawaveErrorCode.QUERY_TIMEOUT, MessageFormat.format("{0} timed out.", queryId));
                     } else {
+                        log.debug("Query [{}]: No results found for next call - closing query", queryId);
                         // if there are no results, and we didn't timeout, close the query
                         close(queryId);
                         throw new NoResultsQueryException(DatawaveErrorCode.NO_QUERY_RESULTS_FOUND, MessageFormat.format("{0}", queryId));
@@ -702,7 +705,7 @@ public class QueryManagementService implements QueryRequestHandler {
         } finally {
             // update query status if we failed
             if (!success) {
-                queryStatusUpdateHelper.lockedUpdate(queryId, status -> queryStatusUpdateHelper.releaseNextCall(status, queryQueueManager));
+                queryStatusUpdateUtil.lockedUpdate(queryId, status -> queryStatusUpdateUtil.releaseNextCall(status, queryQueueManager));
             }
         }
     }
@@ -889,7 +892,7 @@ public class QueryManagementService implements QueryRequestHandler {
         
         if (publishEvent) {
             // only the initial event publisher should update the status
-            QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryId, status -> {
+            QueryStatus queryStatus = queryStatusUpdateUtil.lockedUpdate(queryId, status -> {
                 // update query state to CANCELED
                 status.setQueryState(CANCELED);
             });
@@ -1090,7 +1093,7 @@ public class QueryManagementService implements QueryRequestHandler {
      *             if the cancel call is interrupted
      */
     public void close(String queryId) throws InterruptedException, QueryException {
-        QueryStatus queryStatus = queryStatusUpdateHelper.lockedUpdate(queryId, status -> {
+        QueryStatus queryStatus = queryStatusUpdateUtil.lockedUpdate(queryId, status -> {
             // update query state to CLOSED
             status.setQueryState(CLOSED);
         });
@@ -1420,7 +1423,7 @@ public class QueryManagementService implements QueryRequestHandler {
                             Query query = createQuery(queryLogicName, currentParams, userDn, currentUser.getDNs(), queryId);
                             
                             // save the new query object in the cache
-                            queryStatusUpdateHelper.lockedUpdate(queryId, status -> status.setQuery(query));
+                            queryStatusUpdateUtil.lockedUpdate(queryId, status -> status.setQuery(query));
                         }
                     } else {
                         throw new BadRequestQueryException("Cannot update the following parameters for a running query: " + String.join(", ", unsafeParams),

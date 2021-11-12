@@ -1,10 +1,10 @@
-package datawave.microservice.query.status;
+package datawave.microservice.query.util;
 
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
-public interface StatusUpdater {
+public interface QueryStatusUpdater {
     void apply(QueryStatus queryStatus) throws QueryException;
     
     default void onLockFailed() throws QueryException {
