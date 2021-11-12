@@ -19,6 +19,7 @@ import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
@@ -368,6 +369,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean enforceUniqueDisjunctionsWithinExpression = false;
     
+    // fields exempt from query model expansion
+    private Set<String> noExpansionFields = new HashSet<>();
+    
     /**
      * Default constructor
      */
@@ -530,6 +534,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setModelTableName(other.getModelTableName());
         this.setLimitTermExpansionToModel(other.isExpansionLimitedToModelContents());
         this.setQuery(null == other.getQuery() ? null : other.getQuery().duplicate(other.getQuery().getQueryName()));
+        this.setQueryTree(null == other.getQueryTree() ? null : (ASTJexlScript) RebuildingVisitor.copy(other.getQueryTree()));
         this.setCompressServerSideResults(other.isCompressServerSideResults());
         this.setIndexOnlyFilterFunctionsEnabled(other.isIndexOnlyFilterFunctionsEnabled());
         this.setCompositeFilterFunctionsEnabled(other.isCompositeFilterFunctionsEnabled());
@@ -548,6 +553,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setDisableWhindexFieldMappings(other.isDisableWhindexFieldMappings());
         this.setWhindexMappingFields(other.getWhindexMappingFields());
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
+        this.setNoExpansionFields(other.getNoExpansionFields());
     }
     
     /**
@@ -2202,5 +2208,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueDisjunctionsWithinExpression) {
         this.enforceUniqueDisjunctionsWithinExpression = enforceUniqueDisjunctionsWithinExpression;
+    }
+    
+    public Set<String> getNoExpansionFields() {
+        return this.noExpansionFields;
+    }
+    
+    public void setNoExpansionFields(Set<String> noExpansionFields) {
+        this.noExpansionFields = noExpansionFields;
     }
 }

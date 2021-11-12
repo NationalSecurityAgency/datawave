@@ -5,10 +5,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.data.type.Type;
 import datawave.query.attributes.ValueTuple;
-import datawave.query.exceptions.EmptySetComparisonException;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.query.collections.FunctionalSet;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.log4j.Logger;
 
@@ -19,20 +17,20 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
- * NOTE: The JexlFunctionArgumentDescriptorFactory is implemented by EvaluationPhaseFilterFunctionsDescriptor. This is kept as a separate class to reduce
- * accumulo dependencies on other jars.
- *
- * NOTE: You will see that most of these functions return a list of ValueTuple hits instead of a boolean. This is because these functions do not have index
- * queries (@see EvaluationPhaseFilterFunctionsDescriptor). Hence the "hits" cannot be determined by the index function. So instead, the HitListArithmetic takes
+ * NOTE: The {@link JexlFunctionArgumentDescriptorFactory} is implemented by {@link EvaluationPhaseFilterFunctionsDescriptor}. This is kept as a separate class
+ * to reduce accumulo dependencies on other jars.
+ * <p>
+ * NOTE: You will see that most of these functions return a {@link List} of {@link ValueTuple} hits instead of a boolean value. This is because these functions
+ * do not have index queries. Hence, the "hits" cannot be determined by the index function. So instead, the {@link datawave.query.jexl.HitListArithmetic} takes
  * the return values from the functions and adds them to the hit list.
  *
  **/
@@ -88,6 +86,15 @@ public class EvaluationPhaseFilterFunctions {
         return count;
     }
     
+    /**
+     * Returns the size of the given object. If the value is null or a non-iterable object, a value of 1 will be returned. If the value is an {@link Iterable},
+     * the result of {@link EvaluationPhaseFilterFunctions#getSizeOf(Iterable)} will be returned.
+     *
+     * @param fieldValue
+     *            the object to evaluate
+     * @return the evaluated size of the object
+     * @see EvaluationPhaseFilterFunctions#getSizeOf(Iterable) additional documentation on how the size is determined for an Iterable
+     */
     private static int getSizeOf(Object fieldValue) {
         if (fieldValue instanceof Iterable<?>) {
             return getSizeOf((Iterable<?>) fieldValue);
@@ -157,7 +164,17 @@ public class EvaluationPhaseFilterFunctions {
         throw new IllegalArgumentException("cannot use " + operatorString + " in this equation");
     }
     
-    public static Collection<ValueTuple> isNotNull(Object fieldValue) {
+    /**
+     * Returns a {@link FunctionalSet} of hit terms found for {@code fieldValue}. If {@code fieldValue} is a singular value tuple, a singleton
+     * {@link FunctionalSet} with the hit term from it will be returned. If {@code fieldValue} is a non-empty collection of value tuples, a
+     * {@link FunctionalSet} containing the hit terms from each value in the collection will be returned. Otherwise, an empty {@link FunctionalSet} will be
+     * returned.
+     *
+     * @param fieldValue
+     *            the field value to evaluate
+     * @return the {@link FunctionalSet} of hit terms found
+     */
+    public static FunctionalSet<ValueTuple> isNotNull(Object fieldValue) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null) {
             // fieldValue might be an empty collection.
@@ -177,28 +194,71 @@ public class EvaluationPhaseFilterFunctions {
         return matches;
     }
     
+    /**
+     * Returns whether {@code fieldValue} is considered an equivalently null field value.
+     *
+     * @param fieldValue
+     *            the fieldValue
+     * @return true if {@code fieldValue} is a null {@link Object} or an empty {@link Collection}, or false otherwise
+     */
     public static boolean isNull(Object fieldValue) {
         if (fieldValue instanceof Collection)
             return ((Collection) fieldValue).isEmpty();
         return fieldValue == null;
     }
     
-    // Evaluation does not perform any goofy rewriting of the JEXL query string into
-    // a JexlScript to handle multi-valued fields; therefore, we don't need to remove
-    // this functionality
-    // we do not want to return positive matches in the hit list, so return a boolean here
+    /**
+     * Return whether no match was found for the given regex against the value of the field value. If the regex string contains case-insensitive flags, e.g.
+     * {@code (?i).*(?-i)}, a search for a match will also be done against the normalized value of the field value.
+     * <p>
+     * Note: the regex will be compiled into a {@link Pattern} with case-insensitive and multiline matching.
+     *
+     * @param fieldValue
+     *            the field value to evaluate
+     * @param regex
+     *            the regex
+     * @return true if no match was found for the given regex, or false otherwise
+     */
     public static boolean excludeRegex(Object fieldValue, String regex) {
         return includeRegex(fieldValue, regex).isEmpty();
     }
     
-    // Evaluation does not perform any goofy rewriting of the JEXL query string into
-    // a JexlScript to handle multi-valued fields; therefore, we don't need to remove
-    // this functionality
-    // we do not want to return positive matches in the hit list, so return a boolean here
+    /**
+     * Returns whether no match was found for the given regex against the value of any field value provided in the given {@link Iterable}. If the regex string
+     * contains case-insensitive flags, e.g. {@code (?i).*(?-i)}, a search for a match will also be done against the normalized value of the field values.
+     * <p>
+     * Note: the regex will be compiled into a {@link Pattern} with case-insensitive and multiline matching. Additionally, a regex of {@code ".*"} still
+     * requires a value to be present. In other words, searching for {@code FIELD:'.*'} requires a value for {@code FIELD} to exist in the document to match.
+     *
+     * @param values
+     *            the values to evaluate
+     * @param regex
+     *            the regex
+     * @return true if no match was found for the given regex, or false otherwise
+     */
     public static boolean excludeRegex(Iterable<?> values, String regex) {
         return includeRegex(values, regex).isEmpty();
     }
     
+    /**
+     * Returns a {@link FunctionalSet} with {@link ValueTuple} of matches found in the {@code fieldValue} for each given regex, if the number of matches meets
+     * the minimum parsed from the given {@code minimumRequired}. If the minimum was not met, then an empty {@link FunctionalSet} will be returned.
+     * <p>
+     * NOTE: this method does not guarantee returning all possible matches, but does guarantee returning at least the minimum number of matches, or none. The
+     * expected args are:
+     *
+     * <pre>
+     * args[0] - the minimum number of required matches
+     * args[1] - the fieldValue object
+     * args[2...] - the regexes to match against the fieldValue
+     * </pre>
+     * <p>
+     * This function exists primarily exists for backwards compatibility.
+     *
+     * @param args
+     *            the arguments array
+     * @return the {@link FunctionalSet} of matches.
+     */
     public static FunctionalSet<ValueTuple> matchesAtLeastCountOf(Object... args) {
         FunctionalSet<ValueTuple> matches = new FunctionalSet<>();
         // first arg is the count
@@ -224,7 +284,18 @@ public class EvaluationPhaseFilterFunctions {
         return FunctionalSet.unmodifiableSet(matches);
     }
     
-    // Evaluate a regex. Note this is being done against the un-normalized value unless the regex is not case sensitive.
+    /**
+     * Returns a set that contains the hit term for the given field value if the regex matches against the value of the field value. If the regex string
+     * contains case-insensitive flags, e.g. {@code (?i).*(?-i)}, a search for a match will also be done against the normalized value of the field value.
+     * <p>
+     * Note: the regex will be compiled into a {@link Pattern} with case-insensitive and multiline matching.
+     *
+     * @param fieldValue
+     *            the field value to evaluate
+     * @param regex
+     *            the regex
+     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
+     */
     public static FunctionalSet<ValueTuple> includeRegex(Object fieldValue, String regex) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null
@@ -235,7 +306,19 @@ public class EvaluationPhaseFilterFunctions {
         return matches;
     }
     
-    // Evaluate a regex. Note this is being done against the un-normalized value unless the regex is not case sensitive.
+    /**
+     * Returns a set that contains the hit term for the first field value where the regex matches against the value of the field value. If the regex string
+     * contains case-insensitive flags, e.g. {@code (?i).*(?-i)}, a search for a match will also be done against the normalized value of the field value.
+     * <p>
+     * Note: the regex will be compiled into a {@link Pattern} with case-insensitive and multiline matching. Additionally, a regex of {@code ".*"} still
+     * requires a value to be present. In other words, searching for {@code FIELD:'.*'} requires a value for {@code FIELD} to exist in the document to match.
+     *
+     * @param values
+     *            the values to evaluate
+     * @param regex
+     *            the regex
+     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
+     */
     public static FunctionalSet<ValueTuple> includeRegex(Iterable<?> values, String regex) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         // Important to note that a regex of ".*" still requires
@@ -275,7 +358,17 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     /**
-     * This is a version of includeRegex that returns all matches instead of only what was used to evaluate the query
+     * Returns a set that contains the hit term for each field value where the regex matches against the value of the field value. If the regex string contains
+     * case-insensitive flags, e.g. {@code (?i).*(?-i)}, a search for a match will also be done against the normalized value of the field value.
+     * <p>
+     * Note: the regex will be compiled into a {@link Pattern} with case-insensitive and multiline matching. Additionally, a regex of {@code ".*"} still
+     * requires a value to be present. In other words, searching for {@code FIELD:'.*'} requires a value for {@code FIELD} to exist in the document to match.
+     *
+     * @param values
+     *            the values to evaluate
+     * @param regex
+     *            the regex
+     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
      */
     public static FunctionalSet<ValueTuple> getAllMatches(Iterable<?> values, String regex) {
         FunctionalSet<ValueTuple> matches = new FunctionalSet();
@@ -299,8 +392,6 @@ public class EvaluationPhaseFilterFunctions {
                 
                 if (m.matches()) {
                     matches.add(getHitTerm(value));
-                } else if (pattern.matcher(ValueTuple.getNormalizedStringValue(value)).matches()) {
-                    matches.add(getHitTerm(value));
                 }
                 
                 if (!caseSensitiveExpression) {
@@ -315,11 +406,24 @@ public class EvaluationPhaseFilterFunctions {
         return FunctionalSet.unmodifiableSet(matches);
     }
     
+    /**
+     * Functionally equivalent to {@link #includeRegex(Object, String)}.
+     *
+     * @see EvaluationPhaseFilterFunctions#includeRegex(Object, String) additional documentation on expected result
+     */
     public static FunctionalSet<ValueTuple> getAllMatches(Object fieldValue, String regex) {
         return includeRegex(fieldValue, regex);
     }
     
-    // Evaluate text. Note this is being done against the un-normalized value.
+    /**
+     * Returns a set that contains the hit term if the non-normalized value of the field value matches the given string.
+     *
+     * @param fieldValue
+     *            the field value to evaluate
+     * @param valueToMatch
+     *            the string to match
+     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
+     */
     public static FunctionalSet<ValueTuple> includeText(Object fieldValue, String valueToMatch) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null && ValueTuple.getStringValue(fieldValue).equals(valueToMatch)) {
@@ -328,7 +432,15 @@ public class EvaluationPhaseFilterFunctions {
         return matches;
     }
     
-    // Evaluate text. Note this is being done against the un-normalized value.
+    /**
+     * Returns a set that contains the hit term for the first field value where the non-normalized value matches the given string.
+     *
+     * @param values
+     *            the values to evaluate
+     * @param valueToMatch
+     *            the string to match
+     * @return a {@link FunctionalSet} with the matching hit term, or an empty set if no matches were found
+     */
     public static FunctionalSet<ValueTuple> includeText(Iterable<?> values, String valueToMatch) {
         FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (values != null) {
@@ -1328,11 +1440,12 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     /**
-     * Determine the granularity of the provided date format and return a Calendar constant suitable for the Calendar.add method. So for example is the
-     * granularity of the date format is to the minute, then Calendar.MINUTE is returned. NOTE: This was verified in Java 6.0: the granularity monotonically
-     * increases with the value of the Calendar constant. Hence a simple max works in this routine.
-     * 
+     * Determine the granularity of the provided date format and return a {@link Calendar} constant suitable for the {@link Calendar#add(int, int)} method. For
+     * example, if the granularity of the date format is to the minute, then {@link Calendar#MINUTE} is returned. NOTE: This was verified in Java 6.0: the
+     * granularity monotonically increases with the value of the {@link Calendar} constant. Hence, a simple max works in this routine.
+     *
      * @param dateFormat
+     *            the date format to determine the granularity from
      * @return the calendar granularity
      */
     protected static int getGranularity(String dateFormat) {
@@ -1477,7 +1590,7 @@ public class EvaluationPhaseFilterFunctions {
      *            The format to parse with
      * @return the time as ms since epoch
      * @throws ParseException
-     *             if the value failed to be parsed using the suppied format
+     *             if the value failed to be parsed using the supplied format
      */
     protected static long getTime(Object value, DateFormat format) throws ParseException {
         synchronized (format) {
@@ -1517,15 +1630,16 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     /**
-     * Get the time for a value
-     * 
+     * Return the time parsed for the given value in ms. If {@code nextTime} is true, the next unit of time will be returned based on the granularity of the
+     * given time, e.g. if the time given is to the day, then the next day will be returned.
+     *
      * @param value
-     *            The value to be parsed
+     *            the value to be parsed
      * @param nextTime
-     *            If true the next unit of time will be returned (e.g. next day if matching date format is only to the day)
-     * @return the time as ms since epoch
+     *            whether to increment to the next time
+     * @return the time in ms since epoch
      * @throws ParseException
-     *             if the value failed to be parsed using any of the known formats
+     *             if the value failed to be parsed by any of the known formats.
      */
     protected static long getTime(Object value, boolean nextTime) throws ParseException {
         // determine if a number first
@@ -1545,57 +1659,80 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     /**
-     * A basic between comparison
-     * 
-     * @param fieldValue
+     * Return whether the given value is inclusively between the given left and right of the range.
+     *
+     * @param value
+     *            the value to evaluate
      * @param left
+     *            the left (smaller) side of the range
      * @param right
-     * @return true if between (inclusively)
+     *            the right (larger) side of the range
+     * @return true if the value is inclusively between the range, or false otherwise
      */
-    static boolean betweenInclusive(long fieldValue, long left, long right) {
-        return (fieldValue >= left && fieldValue <= right);
+    static boolean betweenInclusive(long value, long left, long right) {
+        return (value >= left && value <= right);
     }
     
+    /**
+     * Return the given object as a {@link ValueTuple}.
+     *
+     * @param valueTuple
+     *            the value tuple to convert
+     * @return a {@link ValueTuple}
+     * @see ValueTuple#toValueTuple(Object) documentation on conversion details
+     */
     protected static ValueTuple getHitTerm(Object valueTuple) {
         return ValueTuple.toValueTuple(valueTuple);
     }
     
     /**
+     * Returns a string that is a substring of the given string. The substring starts at the index of the first '.', and extends to the index of the Nth
+     * occurrence of the character '.' from the left, where N is specified by {@code pos}.
+     *
      * <pre>
-     * for a field like:
-     * NAME.GGPARENT.GPARENT.PARENT.CHILD
-     * if the pos is 0, then GGPARENT.GPARENT.PARENT will be returned
-     * if the pos is 2, then GGPARENT will be returned
+     * Given the string "FIRST.SECOND.THIRD.FOURTH"
+     * - pos 0 will result in the substring 'SECOND.THIRD'
+     * - pos 1 will result in the substring 'SECOND'
+     * - pos 2 will result in an exception being thrown
      * </pre>
      *
      * @param input
+     *            the input string
      * @param pos
-     * @return
+     *            the Nth position of '.' to end the substring at
+     * @return the substring
      */
     public static String getMatchToLeftOfPeriod(String input, int pos) {
         // always peel off the fieldName before the first '.'
         input = input.substring(input.indexOf('.') + 1);
         int[] indices = indicesOf(input, '.');
         if (indices.length < pos + 1)
-            throw new RuntimeException("Input" + input + " does not have a '.' at position " + pos + " from the left.");
+            throw new RuntimeException("Input " + input + " does not have a '.' at position " + pos + " from the left.");
         return input.substring(0, indices[indices.length - pos - 1]);
     }
     
     /**
+     * Returns a string that is a substring of the given string. The substring starts at the index of the Nth occurrence of the character '.' from the left,
+     * where N is specified by {@code pos} and extends to the end of the string.
+     *
      * <pre>
-     *     for a field like NAME.NAME_1.5
-     *     if the pos is 0, then '5' will be returned
-     *     if the pos it 1, then NAME_1.5 will be returned
+     * Given the string "FIRST.SECOND.THIRD.FOURTH"
+     * - pos 0 will result in the substring 'FOURTH'
+     * - pos 1 will result in the substring 'THIRD.FOURTH'
+     * - pos 2 will result in the substring 'SECOND.THIRD.FOURTH'
+     * - pos 3 will result in an exception being thrown
      * </pre>
-     * 
+     *
      * @param input
+     *            the input string
      * @param pos
-     * @return
+     *            the Nth position of '.' to begin the substring at
+     * @return the substring
      */
     public static String getMatchToRightOfPeriod(String input, int pos) {
         int[] indices = indicesOf(input, '.');
         if (indices.length < pos + 1)
-            throw new RuntimeException("Input" + input + " does not have a '.' at position " + pos + " from the right.");
+            throw new RuntimeException("Input " + input + " does not have a '.' at position " + pos + " from the right.");
         return input.substring(indices[indices.length - pos - 1] + 1);
     }
     
@@ -1612,97 +1749,223 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     /**
-     * compare set of value(s) between two fields using the parameter/mode(all or any) that's passed into the function
+     * Compare the set of normalized values between two fields using the comparison strategy indicated by {@code operator}, taking into account
+     * {@code compareMode} to indicate if the comparison strategy may either match against any value or must match against all values.
+     * <p>
+     * Read below for expected results for different comparison strategies and compare mode:
+     * <ul>
+     * <li>Equals comparison: use operator = or ==
+     * <ul>
+     * <li>{@code compareMode} ANY: Return true if {@code field1} and {@code field2} are both either null or an empty collection, or if {@code field1} and
+     * {@code field2} have any normalized value in common. Return false otherwise.</li>
+     * <li>{@code compareMode} ALL: Return true if {@code field1} and {@code field2} are both either null or an empty collection, or if the set of normalized
+     * values in {@code field1} is equal to the set of normalized values in {@code field2}. Return false otherwise.</li>
+     * </ul>
+     * </li>
+     * <li>Not equals comparison: use operator !=
+     * <ul>
+     * <li>{@code compareMode} ANY: Return true if there is at least one normalized value that is found in either {@code field1} or {@code field2}, but not the
+     * other. Return false otherwise.</li>
+     * <li>{@code compareMode} ALL: Return true if {@code field1} and {@code field2} do not have any normalized value in common.</li>
+     * </ul>
+     * </li>
+     * <li>Less Than comparison: use operator &lt;
+     * <ul>
+     * <li>{@code compareMode} ANY: Return true if there is any normalized value in {@code field1} that is considered less than a normalized value in
+     * {@code field2}. Return false otherwise.</li>
+     * <li>{@code compareMode} ALL: Return true if all normalized values in {@code field1} are considered less than a normalized value in {@code field2}. Return
+     * false otherwise.</li>
+     * </ul>
+     * </li>
+     * <li>Less Than Equals comparison: use operator &lt;=
+     * <ul>
+     * <li>{@code compareMode} ANY: Return true if there is any normalized value in {@code field1} that is considered less than or equal to a normalized value
+     * in {@code field2}. Return false otherwise.</li>
+     * <li>{@code compareMode} ALL: Return true if all normalized values in {@code field1} are considered less than or equal to a normalized value in
+     * {@code field2}. Return false otherwise.</li>
+     * </ul>
+     * </li>
+     * <li>Greater Than comparison: use operator &gt;
+     * <ul>
+     * <li>{@code compareMode} ANY: Return true if there is any normalized value in {@code field1} that is considered greater than a normalized value in
+     * {@code field2}. Return false otherwise.</li>
+     * <li>{@code compareMode} ALL: Return true if all normalized values in {@code field1} are considered greater than a normalized value in {@code field2}.
+     * Return false otherwise.</li>
+     * </ul>
+     * </li>
+     * <li>Greater Than Equals comparison: use operator &gt;=
+     * <ul>
+     * <li>{@code compareMode} ANY: Return true if there is any normalized value in {@code field1} that is considered greater than or equal to a normalized
+     * value in {@code field2}. Return false otherwise.</li>
+     * <li>{@code compareMode} ALL: Return true if all normalized values in {@code field1} are considered greater than or equal to a normalized value in
+     * {@code field2}. Return false otherwise.</li>
+     * </ul>
+     * </li>
+     * </ul>
      *
-     * @param field
+     * @param field1
+     *            the first field
      * @param operator
+     *            the comparison operator, must be one of the following: =, ==, !=, &lt;, &lt;=, &gt;, &gt;=
      * @param compareMode
+     *            the comparison mode, must be {@code "ANY"} or {@code "ALL"}. "ANY" indicates that the comparison strategy may match against any value in
+     *            {@code field1}, "ALL" indicates that the comparison strategy must match against all values in {@code field1}
      * @param field2
-     * @return
+     *            the second field
+     * @return true if the specified comparison operation is satisfied, or false otherwise
      */
-    public static boolean compare(Object field, String operator, String compareMode, Object field2) {
-        FunctionalSet<ValueTuple> fields = new FunctionalSet<>();
-        if (field instanceof Iterable) {
-            for (Object i : (Iterable) field) {
-                fields.add(ValueTuple.toValueTuple(i));
-            }
-        } else {
-            if (field != null) {
-                fields.add(ValueTuple.toValueTuple(field));
-            }
-        }
-        
-        FunctionalSet<ValueTuple> fields2 = new FunctionalSet<>();
-        if (field2 instanceof Iterable) {
-            for (Object i : (Iterable) field2) {
-                fields2.add(ValueTuple.toValueTuple(i));
-            }
-        } else {
-            if (field2 != null) {
-                fields2.add(ValueTuple.toValueTuple(field2));
-            }
-        }
-        
-        return compareFields(fields, operator, CompareFunctionValidator.Mode.valueOf(compareMode) == CompareFunctionValidator.Mode.ANY, fields2);
+    public static boolean compare(Object field1, String operator, String compareMode, Object field2) {
+        FunctionalSet<ValueTuple> set1 = toFunctionalSet(field1);
+        FunctionalSet<ValueTuple> set2 = toFunctionalSet(field2);
+        boolean matchAny = CompareFunctionValidator.Mode.valueOf(compareMode.toUpperCase()).equals(CompareFunctionValidator.Mode.ANY);
+        return compareFields(set1, set2, operator, matchAny);
     }
     
-    private static boolean compareFields(FunctionalSet<ValueTuple> fields, String operator, boolean matchesAny, FunctionalSet<ValueTuple> fields2) {
-        try {
-            switch (CharMatcher.WHITESPACE.removeFrom(operator)) {
-                case "==":
-                    return compareFieldsEqualityHelper(fields, fields2, matchesAny);
-                case "=":
-                    return compareFieldsEqualityHelper(fields, fields2, matchesAny);
-                case "!=":
-                    return !compareFieldsEqualityHelper(fields, fields2, matchesAny);
-                case "<":
-                    // matchesAny: min(fields) < max(fields2)
-                    // matchesAll: min(fields2) > max(fields)
-                    return matchesAny ? compareFieldsHelperMinToMax(fields, fields2) < 0 : compareFieldsHelperMinToMax(fields2, fields) > 0;
-                case "<=":
-                    // matchesAny: min(fields) <= max(fields2)
-                    // matchesAll: min(fields2) >= max(fields)
-                    return matchesAny ? compareFieldsHelperMinToMax(fields, fields2) <= 0 : compareFieldsHelperMinToMax(fields2, fields) >= 0;
-                case ">":
-                    // matchesAny: min(fields2) < max(fields)
-                    // matchesAll: min(fields2) > max(fields)
-                    return matchesAny ? compareFieldsHelperMinToMax(fields2, fields) < 0 : compareFieldsHelperMinToMax(fields, fields2) > 0;
-                case ">=":
-                    // matchesAny: min(fields2) <= max(fields)
-                    // matchesAll: min(fields2) >= max(fields)
-                    return matchesAny ? compareFieldsHelperMinToMax(fields2, fields) <= 0 : compareFieldsHelperMinToMax(fields, fields2) >= 0;
+    /**
+     * Convert the given value as a {@link FunctionalSet}.
+     *
+     * @param value
+     *            the value to convert
+     * @return the set
+     */
+    private static FunctionalSet<ValueTuple> toFunctionalSet(Object value) {
+        FunctionalSet<ValueTuple> set = new FunctionalSet<>();
+        if (value instanceof Iterable) {
+            for (Object o : (Iterable<?>) value) {
+                set.add(ValueTuple.toValueTuple(o));
             }
-        } catch (EmptySetComparisonException e) {
-            // cannot compare empty sets
+        } else {
+            if (value != null) {
+                set.add(ValueTuple.toValueTuple(value));
+            }
+        }
+        return set;
+    }
+    
+    /**
+     * Compare the normalized values in {@code set1} to {@code set2}.
+     *
+     * @param set1
+     *            the first set
+     * @param set2
+     *            the second set
+     * @param operator
+     *            the comparison operator
+     * @param matchAny
+     *            if true, do not require all normalized values in {@code set1} to satisfy the comparison operation when compared against {@code set2}
+     * @return the comparison result
+     */
+    private static boolean compareFields(FunctionalSet<ValueTuple> set1, FunctionalSet<ValueTuple> set2, String operator, boolean matchAny) {
+        switch (CharMatcher.WHITESPACE.removeFrom(operator)) {
+            case "==":
+            case "=":
+                return areNormalizedValuesEqual(set1, set2, matchAny);
+            case "!=":
+                return areNormalizedValuesNonEqual(set1, set2, matchAny);
+            case "<":
+                if (!set1.isEmpty() && !set2.isEmpty()) {
+                    // matchesAny: min(set1) < max(set2)
+                    // matchesAll: min(set2) > max(set1)
+                    return matchAny ? compareMinToMaxNormalizedValue(set1, set2) < 0 : compareMinToMaxNormalizedValue(set2, set1) > 0;
+                }
+            case "<=":
+                if (!set1.isEmpty() && !set2.isEmpty()) {
+                    // matchesAny: min(set1) <= max(set2)
+                    // matchesAll: min(set2) >= max(set1)
+                    return matchAny ? compareMinToMaxNormalizedValue(set1, set2) <= 0 : compareMinToMaxNormalizedValue(set2, set1) >= 0;
+                }
+            case ">":
+                if (!set1.isEmpty() && !set2.isEmpty()) {
+                    // matchesAny: min(set1) <= max(set2)
+                    // matchesAll: min(set2) >= max(set1)
+                    return matchAny ? compareMinToMaxNormalizedValue(set2, set1) < 0 : compareMinToMaxNormalizedValue(set1, set2) > 0;
+                }
+            case ">=":
+                if (!set1.isEmpty() && !set2.isEmpty()) {
+                    // matchesAny: min(set1) <= max(set2)
+                    // matchesAll: min(set2) >= max(set1)
+                    return matchAny ? compareMinToMaxNormalizedValue(set2, set1) <= 0 : compareMinToMaxNormalizedValue(set1, set2) >= 0;
+                }
+            default:
+                return false;
+        }
+    }
+    
+    /**
+     * Return the result of comparing the normalized value of the minimum element in {@code set1} to the normalized value of the maximum element in {@code set2}
+     * .
+     *
+     * @param set1
+     *            the first set
+     * @param set2
+     *            the second set
+     * @return the comparison result
+     */
+    private static int compareMinToMaxNormalizedValue(FunctionalSet<ValueTuple> set1, FunctionalSet<ValueTuple> set2) {
+        ValueTuple min = (ValueTuple) set1.min();
+        ValueTuple max = (ValueTuple) set2.max();
+        // noinspection unchecked
+        return ((Comparable<Object>) min.getNormalizedValue()).compareTo(max.getNormalizedValue());
+    }
+    
+    /**
+     * Return whether the set of normalized values between {@code set1} and {@code set2} are considered equal.
+     *
+     * @param set1
+     *            the first set
+     * @param set2
+     *            the second set
+     * @param matchAny
+     *            if true, consider the sets equal if there is any normalized value in common, or otherwise only consider the sets equal if they are exactly
+     *            equivalent
+     * @return true if the sets are considered equal, or false otherwise
+     */
+    private static boolean areNormalizedValuesEqual(FunctionalSet<ValueTuple> set1, FunctionalSet<ValueTuple> set2, boolean matchAny) {
+        if (set1.isEmpty() && set2.isEmpty()) {
+            return true;
+        }
+        Set<Object> fields1Values = getNormalizedValues(set1);
+        Set<Object> fields2Values = getNormalizedValues(set2);
+        if (matchAny) {
+            return !SetUtils.intersection(fields1Values, fields2Values).isEmpty();
+        } else {
+            return SetUtils.isEqualSet(fields1Values, fields2Values);
+        }
+    }
+    
+    /**
+     * Return whether the set of normalized values between {@code set1} and {@code set2} are considered non-equal.
+     *
+     * @param set1
+     *            the first set
+     * @param set2
+     *            the second set
+     * @param matchAny
+     *            if true, consider the sets non-equal if there is any normalized value in one set that is not contained by the other, or otherwise only
+     *            consider the sets non-equal if they have no normalized value in common
+     * @return true if the sets are considered non-equal, or false otherwise
+     */
+    private static boolean areNormalizedValuesNonEqual(FunctionalSet<ValueTuple> set1, FunctionalSet<ValueTuple> set2, boolean matchAny) {
+        if (set1.isEmpty() && set2.isEmpty()) {
             return false;
         }
-        
-        // this is unexpected exception since the function is validated before it gets here
-        throw new IllegalArgumentException("cannot use " + operator + " in this equation with mode [" + (matchesAny ? "ANY" : "ALL") + "]");
-    }
-    
-    private static int compareFieldsHelperMinToMax(FunctionalSet<ValueTuple> fields, FunctionalSet<ValueTuple> fields2) throws EmptySetComparisonException {
-        if (SetUtils.emptyIfNull(fields).isEmpty() || SetUtils.emptyIfNull(fields2).isEmpty()) {
-            throw new EmptySetComparisonException();
-        }
-        
-        ValueTuple field1Min = ((ValueTuple) fields.min());
-        ValueTuple field2Max = ((ValueTuple) fields2.max());
-        
-        return ((Comparable) (field1Min.getNormalizedValue())).compareTo(field2Max.getNormalizedValue());
-    }
-    
-    private static boolean compareFieldsEqualityHelper(FunctionalSet<ValueTuple> fields, FunctionalSet<ValueTuple> fields2, boolean matchesAny) {
-        Set<Object> fieldValues = new HashSet<>();
-        fields.forEach(f -> fieldValues.add(f.getNormalizedValue()));
-        
-        Set<Object> field2Values = new HashSet<>();
-        fields2.forEach(f -> field2Values.add(f.getNormalizedValue()));
-        
-        if (matchesAny) {
-            return !SetUtils.intersection(fieldValues, field2Values).isEmpty() || CollectionUtils.isEqualCollection(fieldValues, field2Values);
+        Set<Object> fields1Values = getNormalizedValues(set1);
+        Set<Object> fields2Values = getNormalizedValues(set2);
+        if (matchAny) {
+            return fields1Values.size() != fields2Values.size() || !SetUtils.difference(fields1Values, fields2Values).isEmpty();
         } else {
-            return SetUtils.isEqualSet(fieldValues, field2Values);
+            return SetUtils.intersection(fields1Values, fields2Values).isEmpty();
         }
+    }
+    
+    /**
+     * Return a {@link Set} containing all normalized values in the given {@link FunctionalSet}.
+     *
+     * @param set
+     *            the set
+     * @return the normalized values
+     */
+    private static Set<Object> getNormalizedValues(FunctionalSet<ValueTuple> set) {
+        return set.stream().map((value) -> value.getNormalizedValue()).collect(Collectors.toSet());
     }
 }
