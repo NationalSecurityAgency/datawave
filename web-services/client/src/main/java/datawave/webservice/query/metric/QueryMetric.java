@@ -46,6 +46,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
     public QueryMetric() {
         this.createDate = DateUtils.truncate(new Date(), Calendar.SECOND);
         this.host = System.getProperty("jboss.host.name");
+        log.info("Initializing QueryMetric object, setting version...");
         String version = getVersionFromProperties();
         if (version.length() > 0) {
             this.version = version;
@@ -658,6 +659,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
     };
     
     private static String getVersionFromProperties() {
+        log.info("Initializing version using environment properties...");
         String returnStr = "";
         try {
             final Properties props = new Properties();
@@ -674,6 +676,7 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             log.error("Unable to find a version from resources properties file: ", e);
             returnStr = "";
         }
+        log.info("Returning version to metrics: " + returnStr);
         return returnStr;
     }
     
