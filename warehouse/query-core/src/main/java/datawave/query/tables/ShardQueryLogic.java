@@ -677,9 +677,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
         }
         
-        // if the TRANFORM_CONTENT_TO_UID is false, then unset the list of content field names preventing the DocumentTransformer from
+        // if the TRANSFORM_CONTENT_TO_UID is false, then unset the list of content field names preventing the DocumentTransformer from
         // transforming them.
-        String transformContentStr = settings.findParameter(QueryParameters.TRANFORM_CONTENT_TO_UID).getParameterValue().trim();
+        String transformContentStr = settings.findParameter(QueryParameters.TRANSFORM_CONTENT_TO_UID).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(transformContentStr)) {
             if (!Boolean.valueOf(transformContentStr)) {
                 setContentFieldNames(Collections.EMPTY_LIST);
@@ -856,6 +856,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (null != config.getModelName() && null == config.getModelTableName()) {
             throw new IllegalArgumentException(QueryParameters.PARAMETER_MODEL_NAME + " has been specified but " + QueryParameters.PARAMETER_MODEL_TABLE_NAME
                             + " is missing. Both are required to use a model");
+        }
+        
+        String noExpansion = settings.findParameter(QueryParameters.NO_EXPANSION).getParameterValue().trim();
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(noExpansion)) {
+            Set<String> noExpansionFields = new HashSet<>(Arrays.asList(org.apache.commons.lang3.StringUtils.split(noExpansion, ',')));
+            config.setNoExpansionFields(noExpansionFields);
+            setNoExpansionFields(noExpansionFields);
         }
         
         configureDocumentAggregation(settings);
@@ -1209,6 +1216,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setUniqueFields(UniqueFields uniqueFields) {
         getConfig().setUniqueFields(uniqueFields);
+    }
+    
+    public Set<String> getNoExpansionFields() {
+        return getConfig().getNoExpansionFields();
+    }
+    
+    public void setNoExpansionFields(Set<String> noExpansionFields) {
+        getConfig().setNoExpansionFields(noExpansionFields);
     }
     
     public String getBlacklistedFieldsString() {
@@ -1857,7 +1872,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(QueryParameters.INCLUDE_DATATYPE_AS_FIELD);
         optionalParams.add(QueryParameters.INCLUDE_GROUPING_CONTEXT);
         optionalParams.add(QueryParameters.RAW_DATA_ONLY);
-        optionalParams.add(QueryParameters.TRANFORM_CONTENT_TO_UID);
+        optionalParams.add(QueryParameters.TRANSFORM_CONTENT_TO_UID);
         optionalParams.add(QueryOptions.REDUCED_RESPONSE);
         optionalParams.add(QueryOptions.POSTPROCESSING_CLASSES);
         optionalParams.add(QueryOptions.COMPRESS_SERVER_SIDE_RESULTS);

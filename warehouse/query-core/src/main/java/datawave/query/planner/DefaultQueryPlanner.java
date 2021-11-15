@@ -1177,7 +1177,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     private ASTJexlScript extractNoExpansionFields(ASTJexlScript script, ShardQueryConfiguration config) {
         NoExpansionFunctionVisitor.VisitResult result = NoExpansionFunctionVisitor.findNoExpansionFields(script);
-        config.setNoExpansionFields(result.noExpansionFields);
+        
+        // merge parsed expansion fields into any existing no expansion fields
+        Set<String> existingFields = config.getNoExpansionFields();
+        existingFields.addAll(result.noExpansionFields);
+        config.setNoExpansionFields(existingFields);
+        
         return result.script;
     }
     
