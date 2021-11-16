@@ -38,6 +38,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+/**
+ *
+ */
 public class TableConfigurationUtil {
     
     protected static final Logger log = Logger.getLogger(TableConfigurationUtil.class.getName());
@@ -54,7 +57,8 @@ public class TableConfigurationUtil {
         accumuloHelper = new AccumuloHelper();
         accumuloHelper.setup(conf);
         this.conf = conf;
-        tableConfigCache = new TableConfigCache(conf);
+        tableConfigCache = TableConfigCache.getCurrentCache(conf);
+        
     }
     
     public String[] getTableNames() {
@@ -231,7 +235,7 @@ public class TableConfigurationUtil {
     private void configureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf, Logger log) throws AccumuloSecurityException,
                     AccumuloException, TableNotFoundException {
         
-        Map<String,TableConfigHelper> tableConfigs = getTableConfigs(log, conf, tableNames);
+        Map<String,TableConfigHelper> tableConfigs = getTableConfigsFromAccumulo(log, conf, tableNames);
         
         for (String table : tableNames) {
             TableConfigHelper tableHelper = tableConfigs.get(table);
@@ -254,7 +258,7 @@ public class TableConfigurationUtil {
      *            the names of the tables to configure
      * @return Map&lt;String,TableConfigHelper&gt; map from table names to their setup TableConfigHelper classes
      */
-    private Map<String,TableConfigHelper> getTableConfigs(Logger log, Configuration conf, String[] tableNames) {
+    private Map<String,TableConfigHelper> getTableConfigsFromAccumulo(Logger log, Configuration conf, String[] tableNames) {
         
         Map<String,TableConfigHelper> helperMap = new HashMap<>(tableNames.length);
         
@@ -336,46 +340,44 @@ public class TableConfigurationUtil {
     }
     
     /**
-     * Looks up aggregator configuration for all of the tables in {@code tableNames} and serializes the configuration into {@code conf}, so that it is available
-     * for retrieval and use in mappers or reducers. Currently, this is used in {@link AggregatingReducer} and its subclasses to aggregate output key/value
-     * pairs rather than making accumulo do it at scan or major compaction time on the resulting rfile.
      *
-     * @param accumuloHelper
-     *            for accessing tableOperations
      * @param conf
-     *            the Hadoop configuration into which serialized aggregator configuration is placed
-     * @param log
-     *            a logger for sending diagnostic information
-     * @throws AccumuloSecurityException
-     * @throws AccumuloException
-     * @throws TableNotFoundException
-     * @throws ClassNotFoundException
+     *            the Hadoop configuration
+     * @throws IOException
+     *
      */
-    void serializeConfiguration(AccumuloHelper accumuloHelper, Configuration conf, Logger log) throws AccumuloException, ClassNotFoundException,
-                    TableNotFoundException, AccumuloSecurityException {
+    void setupTableConfigurationsCache(Configuration conf) throws IOException {
         
-        if (conf.getBoolean(TableConfigCache.ACCUMULO_CONFIG_CACHE_ENABLE_PROPERTY, false)) {
+        if (conf.getBoolean(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, false)) {
             
             try {
-                tableConfigCache.read();
+                setTableConfigsFromCacheFile();
                 return;
             } catch (Exception e) {
                 log.error("Unable to read accumulo config cache at " + tableConfigCache.getCacheFilePath() + ". Proceeding to read directly from Accumulo.");
             }
         }
-        Map<String,Map<String,String>> configMap = getTableConfigs(accumuloHelper, log, tableNames);
-        for (Map.Entry entry : configMap.entrySet()) {
-            conf.set(entry.getKey().toString(), entry.getValue().toString());
+        try {
+            setTableConfigsFromAccumulo();
+        } catch (AccumuloException | TableNotFoundException | AccumuloSecurityException e) {
+            log.error("Unable to read desired table properties from accumulo.  Please verify your configuration. ");
+            throw new IOException(e);
         }
         
     }
     
-    public Map<String,Map<String,String>> getTableConfigs() throws AccumuloException, ClassNotFoundException, TableNotFoundException, AccumuloSecurityException {
-        return getTableConfigs(accumuloHelper, log, tableNames);
+    private void setTableConfigsFromCacheFile() throws IOException {
+        tableConfigCache.read();
+        
     }
     
-    private static Map<String,Map<String,String>> getTableConfigs(AccumuloHelper accumuloHelper, Logger log, String[] tableNames)
-                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException, ClassNotFoundException {
+    private void setTableConfigsFromAccumulo() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+        tableConfigCache.setTableConfigs(getTableConfigsFromAccumulo(accumuloHelper, log, tableNames));
+        
+    }
+    
+    private static Map<String,Map<String,String>> getTableConfigsFromAccumulo(AccumuloHelper accumuloHelper, Logger log, String[] tableNames)
+                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         
         Map<String,Map<String,String>> configMap = new HashMap<>();
         TableOperations tops = accumuloHelper.getConnector().tableOperations();
@@ -413,6 +415,9 @@ public class TableConfigurationUtil {
     }
     
     public void setTableItersPrioritiesAndOpts() throws IOException {
+        if (!tableConfigCache.isInitialized()) {
+            setupTableConfigurationsCache(conf);
+        }
         
         // We're arbitrarily choosing the scan scope for gathering aggregator information.
         // For the aggregators configured in this job, that's ok since they are added to all
@@ -516,7 +521,9 @@ public class TableConfigurationUtil {
     }
     
     public Map<String,String> getTableProperties(String tableName) throws IOException {
-        
+        if (!tableConfigCache.isInitialized()) {
+            setupTableConfigurationsCache(conf);
+        }
         return tableConfigCache.getTableProperties(tableName);
         
     }
@@ -528,7 +535,7 @@ public class TableConfigurationUtil {
         for (Map.Entry<String,String> entry : tableConfigCache.getTableProperties(tableName).entrySet()) {
             if (entry.getKey().startsWith(prefix)) {
                 
-                String group = entry.getValue().substring(prefix.length());
+                String group = entry.getKey().substring(prefix.length());
                 String[] parts = group.split("\\.");
                 String[] famStr = entry.getValue().split(",");
                 Set<Text> colFams = new HashSet<>();
@@ -545,4 +552,8 @@ public class TableConfigurationUtil {
         
     }
     
+    public void updateCacheFile() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+        setTableConfigsFromAccumulo();
+        this.tableConfigCache.update();
+    }
 }

@@ -1,1 +1,1 @@
-shard   prop    val
+shard	prop	val

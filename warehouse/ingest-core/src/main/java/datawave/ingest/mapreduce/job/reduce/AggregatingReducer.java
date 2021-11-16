@@ -83,7 +83,6 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
      * @param conf
      */
     public void setup(Configuration conf) throws IOException, InterruptedException {
-        // Get the list of tables that we are bulk ingesting into.
         
         /**
          * Grab the tables that do not require timestamp deduping, but require aggregating
