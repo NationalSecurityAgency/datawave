@@ -95,6 +95,7 @@ public class StatsHyperLogReducerTest {
         conf.set("test.handler.classes", "datawave.ingest.mapreduce.handler.shard.ShardStatsDataTypeHandler");
         URL url = StatsHyperLogReducerTest.class.getResource("/conf/accConfCache.txt");
         conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, url.getPath());
+        conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, true);
         conf.set(FileSystem.FS_DEFAULT_NAME_KEY, URI.create("file:///").toString());
         
         log.debug("=====  REDUCER INPUT  =====");
