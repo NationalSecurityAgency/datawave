@@ -1,7 +1,5 @@
 package datawave.ingest.config;
 
-import datawave.ingest.mapreduce.job.TableConfigurationUtil;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -19,31 +17,31 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
     
     public static final String ACCUMULO_CONFIG_CACHE_PATH_PROPERTY = "accumulo.config.cache.path";
     public static final String DEFAULT_ACCUMULO_CONFIG_CACHE_PATH = "/data/accumuloConfigCache/accConfCache.txt";
-    public static final String ACCUMULO_CONFIG_CACHE_ENABLE_PROPERTY = "accumulo.config.cache.enable";
+    public static final String ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY = "accumulo.config.cache.enable";
     
     protected static final String DELIMITER = "\t";
-    protected static Map<String,Map<String,String>> configMap = new HashMap<>();
+    private Map<String,Map<String,String>> configMap = new HashMap<>();
+    private static TableConfigCache cache;
     
     protected static final Logger log = Logger.getLogger("datawave.ingest");
     
-    public TableConfigCache(Configuration conf) {
+    private TableConfigCache(Configuration conf) {
         super(conf);
     }
     
-    @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
-    public void setTableConfigs(Configuration conf) {
-        try {
-            TableConfigurationUtil tableConfig = new TableConfigurationUtil(conf);
-            configMap = tableConfig.getTableConfigs();
-        } catch (Exception e) {
-            log.error("Unable to get table configurations " + e.getMessage());
+    public static TableConfigCache getCurrentCache(Configuration conf) {
+        if (null == cache) {
+            cache = new TableConfigCache(conf);
         }
+        return cache;
     }
     
-    @Override
-    public void update() {
-        setTableConfigs(this.conf);
-        super.update();
+    public void setTableConfigs(Map<String,Map<String,String>> confMap) {
+        configMap = confMap;
+    }
+    
+    public boolean isInitialized() {
+        return !configMap.isEmpty();
     }
     
     @Override
@@ -78,6 +76,8 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
                 propName = parts[1];
                 propVal = parts[2];
                 tempMap.put(propName, propVal);
+            } else {
+                throw new IOException("Invalid Table Config Cache at " + this.cacheFilePath + " . Please verify its contents.");
             }
         }
         in.close();
@@ -87,6 +87,15 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
     @Override
     public void setCacheFilePath(Configuration conf) {
         this.cacheFilePath = new Path(conf.get(ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, DEFAULT_ACCUMULO_CONFIG_CACHE_PATH));
+        
+    }
+    
+    public Map<String,Map<String,String>> getAllTableProperties() throws IOException {
+        if (this.configMap.isEmpty()) {
+            read();
+        }
+        
+        return this.configMap;
         
     }
     
