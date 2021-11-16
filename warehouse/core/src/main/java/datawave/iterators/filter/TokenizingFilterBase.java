@@ -96,11 +96,14 @@ public abstract class TokenizingFilterBase extends AppliedRule {
     @Override
     public boolean accept(AgeOffPeriod period, Key k, Value V) {
         Long calculatedTTL = scanTrie.scan(getKeyField(k, V));
+        // no match found
         if (calculatedTTL == null) {
             ruleApplied = false;
             return true;
         }
         long cutoffTimestamp = period.getCutOffMilliseconds();
+        
+        // if ttl exists, subtract it from the cut off timestamp
         if (calculatedTTL > 0) {
             cutoffTimestamp -= calculatedTTL - period.getTtl() * period.getTtlUnitsFactor();
         }
