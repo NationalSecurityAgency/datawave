@@ -1,9 +1,12 @@
 package datawave.mapreduce.shardStats;
 
+import datawave.ingest.config.TableConfigCache;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -11,6 +14,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -85,6 +90,17 @@ public class StatsHyperLogMapperTest {
         conf.set(StatsHyperLogMapper.STATS_MAPPER_OUTPUT_INTERVAL, "4");
         conf.set(StatsHyperLogMapper.STATS_MAPPER_UNIQUE_COUNT, "true");
         conf.set(StatsJob.STATS_VISIBILITY, "vis");
+        conf.set("accumulo.username", "user");
+        conf.set("accumulo.password", "user");
+        conf.set("accumulo.instance.name", "user");
+        conf.set("accumulo.zookeepers", "user");
+        conf.set(ShardedDataTypeHandler.SHARD_TNAME, "shard");
+        conf.set("ingest.data.types", "test");
+        conf.set("test.handler.classes", "datawave.ingest.mapreduce.handler.shard.ShardStatsDataTypeHandler");
+        URL url = StatsHyperLogReducerTest.class.getResource("/conf/accConfCache.txt");
+        conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, url.getPath());
+        conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, true);
+        conf.set(FileSystem.FS_DEFAULT_NAME_KEY, URI.create("file:///").toString());
         
         log.debug("=====  MAPPER INPUT  =====");
         // generate input and output entries
