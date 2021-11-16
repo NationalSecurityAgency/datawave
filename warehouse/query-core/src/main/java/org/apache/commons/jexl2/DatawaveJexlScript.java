@@ -15,7 +15,7 @@ public class DatawaveJexlScript implements Expression, Script {
     /** The engine for this expression. */
     protected JexlEngine jexl;
     /**
-     * Original expression stripped from leading & trailing spaces.
+     * Original expression stripped from leading &amp; trailing spaces.
      */
     protected String expression;
     /**
