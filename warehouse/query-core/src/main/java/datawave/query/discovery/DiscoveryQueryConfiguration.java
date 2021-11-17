@@ -18,10 +18,71 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
     private Boolean separateCountsByColVis = false;
     private Boolean showReferenceCount = false;
     
-    public DiscoveryQueryConfiguration(ShardIndexQueryTable logic, Query query) {
-        super(logic, query);
+    public DiscoveryQueryConfiguration() {
     }
-    
+
+    public DiscoveryQueryConfiguration(DiscoveryQueryConfiguration other) {
+        super(other);
+        setSeparateCountsByColVis(other.separateCountsByColVis);
+        setShowReferenceCount(other.showReferenceCount);
+        setLiterals(other.literals);
+        setPatterns(other.patterns);
+        setRanges(other.ranges);
+    }
+
+    public DiscoveryQueryConfiguration(DiscoveryLogic logic, Query query) {
+        this(logic.getConfig());
+        setQuery(query);
+    }
+
+    /**
+     * Factory method that instantiates a fresh DiscoveryQueryConfiguration
+     *
+     * @return - a clean DiscoveryQueryConfiguration
+     */
+    public static DiscoveryQueryConfiguration create() {
+        return new DiscoveryQueryConfiguration();
+    }
+
+    /**
+     * Factory method that returns a deep copy of the provided DiscoveryQueryConfiguration
+     *
+     * @param other
+     *            - another instance of a DiscoveryQueryConfiguration
+     * @return - copy of provided DiscoveryQueryConfiguration
+     */
+    public static DiscoveryQueryConfiguration create(DiscoveryQueryConfiguration other) {
+        return new DiscoveryQueryConfiguration(other);
+    }
+
+    /**
+     * Factory method that creates a DiscoveryQueryConfiguration deep copy from a DiscoveryQueryLogic
+     *
+     * @param shardQueryLogic
+     *            - a configured DiscoveryQueryLogic
+     * @return - a DiscoveryQueryConfiguration
+     */
+    public static DiscoveryQueryConfiguration create(DiscoveryLogic shardQueryLogic) {
+        DiscoveryQueryConfiguration config = create(shardQueryLogic.getConfig());
+        return config;
+    }
+
+    /**
+     * Factory method that creates a DiscoveryQueryConfiguration from a DiscoveryQueryLogic and a Query
+     *
+     * @param shardQueryLogic
+     *            - a configured DiscoveryQueryLogic
+     * @param query
+     *            - a configured Query object
+     * @return - a DiscoveryQueryConfiguration
+     */
+    public static DiscoveryQueryConfiguration create(DiscoveryLogic shardQueryLogic, Query query) {
+        DiscoveryQueryConfiguration config = create(shardQueryLogic);
+        config.setQuery(query);
+        return config;
+    }
+
+
     public Multimap<String,String> getLiterals() {
         return literals;
     }
@@ -62,7 +123,7 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
         this.showReferenceCount = showReferenceCount;
         
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o)

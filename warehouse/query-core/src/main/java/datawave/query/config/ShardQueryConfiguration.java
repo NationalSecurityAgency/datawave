@@ -26,8 +26,11 @@ import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
+import datawave.services.query.configuration.CheckpointableQueryConfiguration;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.configuration.QueryData;
+import datawave.services.query.logic.QueryCheckpoint;
+import datawave.services.query.logic.QueryKey;
 import datawave.util.TableName;
 import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
@@ -66,7 +69,7 @@ import java.util.stream.Collectors;
  * This class can be initialized with an instance of a ShardQueryLogic or ShardQueryTable which will grab the already configured parameters from the Accumulo
  * Webservice QueryTable and apply them to this configuration object
  */
-public class ShardQueryConfiguration extends GenericQueryConfiguration implements Serializable {
+public class ShardQueryConfiguration extends GenericQueryConfiguration implements Serializable, CheckpointableQueryConfiguration {
     
     public static final String PARAM_VALUE_SEP_STR = new String(new char[] {Constants.PARAM_VALUE_SEP});
     public static final String TABLE_NAME_SOURCE = "tableName";
@@ -616,7 +619,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setSortedUIDs(other.isSortedUIDs());
         this.setBloom(other.getBloom());
     }
-    
+
+    @Override
+    public QueryCheckpoint checkpoint(QueryKey queryKey, Collection<QueryData> ranges) {
+        // Create a new config that only contains what is needed to execute the specified ranges
+        return new ShardQueryConfiguration(this, ranges).checkpoint(queryKey);
+    }
+
+    @Override
+    public QueryCheckpoint checkpoint(QueryKey queryKey) {
+        return new QueryCheckpoint(queryKey, this);
+    }
+
     /**
      * Delegates deep copy work to appropriate constructor, sets additional values specific to the provided ShardQueryLogic
      *

@@ -2302,11 +2302,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         
         setupQuery(config);
     }
-    
+
+    @Override
     public boolean isCheckpointable() {
         return getConfig().isCheckpointable();
     }
-    
+
+    @Override
     public void setCheckpointable(boolean checkpointable) {
         getConfig().setCheckpointable(checkpointable);
     }
@@ -2331,17 +2333,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         }
         // otherwise we still need to plan or there are no results
         else {
-            return Lists.newArrayList(ShardQueryLogic.checkpoint(queryKey, this.config));
+            return Lists.newArrayList(this.config.checkpoint(queryKey));
         }
-    }
-    
-    public static QueryCheckpoint checkpoint(QueryKey queryKey, ShardQueryConfiguration config, Collection<QueryData> ranges) {
-        // Create a new config that only contains what is needed to execute the specified ranges
-        return checkpoint(queryKey, new ShardQueryConfiguration(config, ranges));
-    }
-    
-    public static QueryCheckpoint checkpoint(QueryKey queryKey, ShardQueryConfiguration config) {
-        return new QueryCheckpoint(queryKey, config);
     }
     
     public Set<String> getDisallowedRegexPatterns() {

@@ -11,6 +11,7 @@ import com.google.common.collect.Sets;
 import datawave.data.type.Type;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
+import datawave.query.config.ShardIndexQueryConfiguration;
 import datawave.query.discovery.FindLiteralsAndPatternsVisitor.QueryValues;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
@@ -72,9 +73,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     public static final String SEPARATE_COUNTS_BY_COLVIS = "separate.counts.by.colvis";
     public static final String SHOW_REFERENCE_COUNT = "show.reference.count";
     public static final String REVERSE_INDEX = "reverse.index";
-    
-    private Boolean separateCountsByColVis = false;
-    private Boolean showReferenceCount = false;
+    private DiscoveryQueryConfiguration config;
     private MetadataHelper metadataHelper;
     
     public DiscoveryLogic() {
@@ -84,7 +83,17 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     public DiscoveryLogic(ShardIndexQueryTable other) {
         super(other);
     }
-    
+
+
+    @Override
+    public DiscoveryQueryConfiguration getConfig() {
+        if (config == null) {
+            config = DiscoveryQueryConfiguration.create();
+        }
+
+        return config;
+    }
+
     @Override
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
         DiscoveryQueryConfiguration config = new DiscoveryQueryConfiguration(this, settings);
@@ -104,27 +113,26 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         // Check if the default modelName and modelTableNames have been overriden by custom parameters.
         if (null != settings.findParameter(QueryParameters.PARAMETER_MODEL_NAME)
                         && !settings.findParameter(QueryParameters.PARAMETER_MODEL_NAME).getParameterValue().trim().isEmpty()) {
-            modelName = settings.findParameter(QueryParameters.PARAMETER_MODEL_NAME).getParameterValue().trim();
+            setModelName(settings.findParameter(QueryParameters.PARAMETER_MODEL_NAME).getParameterValue().trim());
         }
         if (null != settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME)
                         && !settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME).getParameterValue().trim().isEmpty()) {
-            modelTableName = settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME).getParameterValue().trim();
+            setModelTableName(settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME).getParameterValue().trim());
         }
         
         // Check if user would like counts separated by column visibility
         if (null != settings.findParameter(SEPARATE_COUNTS_BY_COLVIS)
                         && !settings.findParameter(SEPARATE_COUNTS_BY_COLVIS).getParameterValue().trim().isEmpty()) {
-            separateCountsByColVis = Boolean.valueOf(settings.findParameter(SEPARATE_COUNTS_BY_COLVIS).getParameterValue().trim());
+            boolean separateCountsByColVis = Boolean.valueOf(settings.findParameter(SEPARATE_COUNTS_BY_COLVIS).getParameterValue().trim());
             config.setSeparateCountsByColVis(separateCountsByColVis);
         }
         
         // Check if user would like to show reference counts instead of term counts
         if (null != settings.findParameter(SHOW_REFERENCE_COUNT) && !settings.findParameter(SHOW_REFERENCE_COUNT).getParameterValue().trim().isEmpty()) {
-            showReferenceCount = Boolean.valueOf(settings.findParameter(SHOW_REFERENCE_COUNT).getParameterValue().trim());
+            boolean showReferenceCount = Boolean.valueOf(settings.findParameter(SHOW_REFERENCE_COUNT).getParameterValue().trim());
             config.setShowReferenceCount(showReferenceCount);
         }
-        
-        this.queryModel = metadataHelper.getQueryModel(modelTableName, modelName, null);
+        setQueryModel(metadataHelper.getQueryModel(getModelTableName(), getModelName(), null));
         
         // get the data type filter set if any
         if (null != settings.findParameter(QueryParameters.DATATYPE_FILTER_SET)
@@ -223,9 +231,6 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                             config.getLiterals(), config.getPatterns(), config.getRanges(), true);
             iterators.add(transformScanner(bs));
         }
-        
-        config.setSeparateCountsByColVis(separateCountsByColVis);
-        config.setShowReferenceCount(showReferenceCount);
         
         this.iterator = concat(iterators.iterator());
     }
@@ -499,19 +504,19 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     }
     
     public Boolean getSeparateCountsByColVis() {
-        return separateCountsByColVis;
+        return config.getSeparateCountsByColVis();
     }
     
     public void setSeparateCountsByColVis(Boolean separateCountsByColVis) {
-        this.separateCountsByColVis = separateCountsByColVis;
+        config.setSeparateCountsByColVis(separateCountsByColVis);
     }
     
     public Boolean getShowReferenceCount() {
-        return showReferenceCount;
+        return config.getShowReferenceCount();
     }
     
     public void setShowReferenceCount(Boolean showReferenceCount) {
-        this.showReferenceCount = showReferenceCount;
+        config.setShowReferenceCount(showReferenceCount);
     }
     
 }
