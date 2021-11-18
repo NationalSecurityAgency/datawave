@@ -2,6 +2,7 @@ package datawave.webservice.query.metric;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
@@ -659,15 +660,14 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
     };
     
     private static String getVersionFromProperties() {
-        log.info("Initializing version using environment properties...");
         String returnStr = "";
         try {
             final Properties props = new Properties();
-            URL inputPath = QueryMetric.class.getClassLoader().getResource("version.properties");
-            if (inputPath != null) {
-                String pathString = inputPath.getPath();
-                props.load(new FileInputStream(pathString));
+            InputStream in = QueryMetric.class.getClassLoader().getResourceAsStream("/version.properties");
+            if (in != null) {
+                props.load(in);
                 returnStr = props.getProperty("currentVersion");
+                in.close();
             } else {
                 log.warn("Null pointer encountered attempting to draw version.properties resource file.");
             }
