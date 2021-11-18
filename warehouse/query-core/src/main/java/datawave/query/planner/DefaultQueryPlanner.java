@@ -1179,9 +1179,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         NoExpansionFunctionVisitor.VisitResult result = NoExpansionFunctionVisitor.findNoExpansionFields(script);
         
         // merge parsed expansion fields into any existing no expansion fields
-        Set<String> existingFields = config.getNoExpansionFields();
-        existingFields.addAll(result.noExpansionFields);
-        config.setNoExpansionFields(existingFields);
+        config.setNoExpansionFields(Sets.union(config.getNoExpansionFields(), result.noExpansionFields));
         
         return result.script;
     }

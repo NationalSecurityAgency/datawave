@@ -605,21 +605,21 @@ public abstract class GroupingTestWithModel {
         runTestToComparePlans(queryString, expectedPlan, startDate, endDate, extraParameters, NEVER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
         
         // case where #NO_EXPANSION is specified via query parameters only
-        extraParameters.put(QueryParameters.NO_EXPANSION, "COLOR");
+        extraParameters.put(QueryParameters.NO_EXPANSION_FIELDS, "COLOR");
         queryString = "COLOR == 'blue'";
         expectedPlan = "COLOR == 'blue'";
         runTestToComparePlans(queryString, expectedPlan, startDate, endDate, extraParameters, NEVER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
         
         // case where #NO_EXPANSION is specified in both query parameters and the query string
         extraParameters.clear();
-        extraParameters.put(QueryParameters.NO_EXPANSION, "COLOR");
+        extraParameters.put(QueryParameters.NO_EXPANSION_FIELDS, "COLOR");
         queryString = "COLOR == 'blue' && filter:noExpansion(COLOR)";
         expectedPlan = "COLOR == 'blue'";
         runTestToComparePlans(queryString, expectedPlan, startDate, endDate, extraParameters, NEVER, RebuildingScannerTestHelper.INTERRUPT.NEVER);
         
         // case where #NO_EXPANSION in query params is the wrong field and query string function is the correct one
         extraParameters.clear();
-        extraParameters.put(QueryParameters.NO_EXPANSION, "HUE");
+        extraParameters.put(QueryParameters.NO_EXPANSION_FIELDS, "HUE");
         queryString = "COLOR == 'blue' && filter:noExpansion(COLOR)";
         expectedPlan = "COLOR == 'blue'";
         runTestToComparePlans(queryString, expectedPlan, startDate, endDate, extraParameters, NEVER, RebuildingScannerTestHelper.INTERRUPT.NEVER);

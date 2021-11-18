@@ -858,7 +858,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                             + " is missing. Both are required to use a model");
         }
         
-        String noExpansion = settings.findParameter(QueryParameters.NO_EXPANSION).getParameterValue().trim();
+        String noExpansion = settings.findParameter(QueryParameters.NO_EXPANSION_FIELDS).getParameterValue().trim();
         if (org.apache.commons.lang3.StringUtils.isNotBlank(noExpansion)) {
             Set<String> noExpansionFields = new HashSet<>(Arrays.asList(org.apache.commons.lang3.StringUtils.split(noExpansion, ',')));
             config.setNoExpansionFields(noExpansionFields);

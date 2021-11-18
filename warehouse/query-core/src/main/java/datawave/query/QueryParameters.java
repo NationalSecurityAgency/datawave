@@ -145,7 +145,7 @@ public class QueryParameters {
     /**
      * Used to specify fields which are excluded from QueryModel expansion
      */
-    public static final String NO_EXPANSION = "no.expansion";
+    public static final String NO_EXPANSION_FIELDS = "no.expansion.fields";
     
     /**
      * Used to cause Documents to contain a list of selectors that hit;
