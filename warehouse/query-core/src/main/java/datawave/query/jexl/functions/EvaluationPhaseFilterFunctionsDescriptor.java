@@ -38,7 +38,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
     public static final String MATCHES_AT_LEAST_COUNT_OF = "matchesAtLeastCountOf";
     public static final String TIME_FUNCTION = "timeFunction";
     public static final String INCLUDE_TEXT = "includeText";
-    private static final String COMPARE = "compare";
+    public static final String COMPARE = "compare";
     public static final String NO_EXPANSION = "noExpansion";
     
     /**

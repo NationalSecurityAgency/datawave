@@ -795,7 +795,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         if (!disableWhindexFieldMappings) {
             // apply the value-specific field mappings for GeoWave functions
-            timedApplyWhindexFieldMappings(timers, config.getQueryTree(), config, metadataHelper, settings);
+            config.setQueryTree(timedApplyWhindexFieldMappings(timers, config.getQueryTree(), config, metadataHelper, settings));
         }
         
         if (!disableExpandIndexFunction) {
