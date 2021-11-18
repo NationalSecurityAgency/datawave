@@ -77,7 +77,7 @@ VOLUME ["/opt/datawave/contrib/datawave-quickstart/accumulo/logs"]
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/wildfly/standalone/log"]
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/datawave-ingest/logs"]
 
-EXPOSE 8443 9995 50070 8088 9000 2181
+EXPOSE 8443 9995 9870 8088 9000 2181
 
 WORKDIR /opt/datawave/contrib/datawave-quickstart
 
