@@ -1,13 +1,11 @@
 package datawave.webservice.query.metric;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Properties;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -40,16 +38,10 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
     }
     
     private static final long serialVersionUID = 1L;
-    private static final Logger log = Logger.getLogger(QueryMetric.class);
     
     public QueryMetric() {
         this.createDate = DateUtils.truncate(new Date(), Calendar.SECOND);
         this.host = System.getProperty("jboss.host.name");
-        log.info("Initializing QueryMetric object, setting version...");
-        String version = getVersionFromProperties();
-        if (version.length() > 0) {
-            this.version = version;
-        }
     }
     
     public QueryMetric(QueryMetric other) {
@@ -656,27 +648,6 @@ public class QueryMetric extends BaseQueryMetric implements Serializable, Messag
             fieldMap.put("version", 37);
         }
     };
-    
-    private static String getVersionFromProperties() {
-        String returnStr = "";
-        try {
-            final Properties props = new Properties();
-            InputStream in = QueryMetric.class.getClassLoader().getResourceAsStream("/version.properties");
-            if (in != null) {
-                props.load(in);
-                returnStr = props.getProperty("currentVersion");
-                in.close();
-            } else {
-                log.warn("Null pointer encountered attempting to draw version.properties resource file.");
-            }
-            
-        } catch (IOException e) {
-            log.error("Unable to find a version from resources properties file: ", e);
-            returnStr = "";
-        }
-        log.info("Returning version to metrics: " + returnStr);
-        return returnStr;
-    }
     
     @JsonIgnore
     public Schema<? extends BaseQueryMetric> getSchemaInstance() {
