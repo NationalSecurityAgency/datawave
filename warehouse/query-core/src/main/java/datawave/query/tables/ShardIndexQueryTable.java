@@ -89,23 +89,23 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     protected ScannerFactory scannerFactory;
     private ShardIndexQueryConfiguration config;
     private MetadataHelperFactory metadataHelperFactory;
-
+    
     public ShardIndexQueryTable() {}
     
     public ShardIndexQueryTable(ShardIndexQueryTable other) {
         super(other);
         this.config = ShardIndexQueryConfiguration.create(other);
     }
-
+    
     @Override
     public ShardIndexQueryConfiguration getConfig() {
-        if (config == null) {
-            config = ShardIndexQueryConfiguration.create();
+        if (this.config == null) {
+            this.config = ShardIndexQueryConfiguration.create();
         }
-
-        return config;
+        
+        return this.config;
     }
-
+    
     @Override
     public ShardIndexQueryTable clone() {
         return new ShardIndexQueryTable(this);
@@ -152,6 +152,14 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         this.metadataHelperFactory = metadataHelperFactory;
     }
     
+    public void setMetadataTableName(String tableName) {
+        getConfig().setMetadataTableName(tableName);
+    }
+    
+    public String getMetadataTableName() {
+        return getConfig().getMetadataTableName();
+    }
+    
     public String getIndexTableName() {
         return getConfig().getIndexTableName();
     }
@@ -172,7 +180,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
         this.config = new ShardIndexQueryConfiguration(this, settings);
         this.scannerFactory = new ScannerFactory(connection);
-        MetadataHelper metadataHelper = initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
+        MetadataHelper metadataHelper = initializeMetadataHelper(connection, getConfig().getMetadataTableName(), auths);
         
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -184,40 +192,40 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         
         String tModelName = getTrimmedOrNull(settings, QueryParameters.PARAMETER_MODEL_NAME);
         if (tModelName != null) {
-            config.setModelName(tModelName);
+            getConfig().setModelName(tModelName);
         }
         
         String tModelTableName = getTrimmedOrNull(settings, QueryParameters.PARAMETER_MODEL_TABLE_NAME);
         if (tModelTableName != null) {
-            config.setModelTableName(tModelTableName);
+            getConfig().setModelTableName(tModelTableName);
         }
         
-        config.setQueryModel(metadataHelper.getQueryModel(config.getModelTableName(), config.getModelName(), null));
+        getConfig().setQueryModel(metadataHelper.getQueryModel(getConfig().getModelTableName(), getConfig().getModelName(), null));
         
         String datatypeFilterString = getTrimmedOrNull(settings, QueryParameters.DATATYPE_FILTER_SET);
         if (datatypeFilterString != null) {
-            config.setDatatypeFilter(new HashSet<>(Arrays.asList(datatypeFilterString.split(PARAM_VALUE_SEP_STR))));
+            getConfig().setDatatypeFilter(new HashSet<>(Arrays.asList(datatypeFilterString.split(PARAM_VALUE_SEP_STR))));
             if (log.isDebugEnabled()) {
-                log.debug("Data type filter set to " + config.getDatatypeFilterAsString());
+                log.debug("Data type filter set to " + getConfig().getDatatypeFilterAsString());
             }
         }
         
-        config.setConnector(connection);
-        config.setAuthorizations(auths);
+        getConfig().setConnector(connection);
+        getConfig().setAuthorizations(auths);
         
         if (settings.getBeginDate() != null) {
-            config.setBeginDate(settings.getBeginDate());
+            getConfig().setBeginDate(settings.getBeginDate());
         } else {
-            config.setBeginDate(new Date(0));
+            getConfig().setBeginDate(new Date(0));
             if (log.isDebugEnabled()) {
                 log.debug("No begin date supplied in settings.");
             }
         }
         
         if (settings.getEndDate() != null) {
-            config.setEndDate(settings.getEndDate());
+            getConfig().setEndDate(settings.getEndDate());
         } else {
-            config.setEndDate(new Date(Long.MAX_VALUE));
+            getConfig().setEndDate(new Date(Long.MAX_VALUE));
             if (log.isDebugEnabled()) {
                 log.debug("No end date supplied in settings.");
             }
@@ -228,45 +236,45 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         parser.setAllowLeadingWildCard(this.isAllowLeadingWildcard());
         QueryNode node = parser.parse(settings.getQuery().trim());
         // TODO: Validate that this is a simple list of terms type of query
-        config.setQueryString(node.getOriginalQuery());
+        getConfig().setQueryString(node.getOriginalQuery());
         if (log.isDebugEnabled()) {
             log.debug("Original Query = " + settings.getQuery().trim());
             log.debug("JEXL Query = " + node.getOriginalQuery());
         }
         
         // Parse & flatten the query.
-        ASTJexlScript origScript = JexlASTHelper.parseAndFlattenJexlQuery(config.getQueryString());
+        ASTJexlScript origScript = JexlASTHelper.parseAndFlattenJexlQuery(getConfig().getQueryString());
         
         ASTJexlScript script;
         try {
-            script = UnfieldedIndexExpansionVisitor.expandUnfielded(config, this.scannerFactory, metadataHelper, origScript);
+            script = UnfieldedIndexExpansionVisitor.expandUnfielded(getConfig(), this.scannerFactory, metadataHelper, origScript);
         } catch (EmptyUnfieldedTermExpansionException e) {
             Multimap<String,String> emptyMap = Multimaps.unmodifiableMultimap(HashMultimap.create());
-            config.setNormalizedTerms(emptyMap);
-            config.setNormalizedPatterns(emptyMap);
-            return config;
+            getConfig().setNormalizedTerms(emptyMap);
+            getConfig().setNormalizedPatterns(emptyMap);
+            return getConfig();
         }
         
-        Set<String> dataTypes = config.getDatatypeFilter();
+        Set<String> dataTypes = getConfig().getDatatypeFilter();
         Set<String> allFields = metadataHelper.getAllFields(dataTypes);
         
-        script = QueryModelVisitor.applyModel(script, config.getQueryModel(), allFields);
+        script = QueryModelVisitor.applyModel(script, getConfig().getQueryModel(), allFields);
         
         if (log.isTraceEnabled()) {
             log.trace("fetching dataTypes from FetchDataTypesVisitor");
         }
-        Multimap<String,Type<?>> fieldToDataTypeMap = FetchDataTypesVisitor.fetchDataTypes(metadataHelper, config.getDatatypeFilter(), script);
-        config.setDataTypes(fieldToDataTypeMap);
-        config.setQueryFieldsDatatypes(fieldToDataTypeMap);
+        Multimap<String,Type<?>> fieldToDataTypeMap = FetchDataTypesVisitor.fetchDataTypes(metadataHelper, getConfig().getDatatypeFilter(), script);
+        getConfig().setDataTypes(fieldToDataTypeMap);
+        getConfig().setQueryFieldsDatatypes(fieldToDataTypeMap);
         
         final Set<String> indexedFields = metadataHelper.getIndexedFields(dataTypes);
-        config.setIndexedFields(indexedFields);
+        getConfig().setIndexedFields(indexedFields);
         
         final Set<String> reverseIndexedFields = metadataHelper.getReverseIndexedFields(dataTypes);
-        config.setReverseIndexedFields(reverseIndexedFields);
+        getConfig().setReverseIndexedFields(reverseIndexedFields);
         
         final Multimap<String,Type<?>> normalizedFields = metadataHelper.getFieldsToDatatypes(dataTypes);
-        config.setNormalizedFieldsDatatypes(normalizedFields);
+        getConfig().setNormalizedFieldsDatatypes(normalizedFields);
         
         if (log.isTraceEnabled()) {
             log.trace("Normalizers:");
@@ -275,15 +283,15 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             }
         }
         
-        script = ExpandMultiNormalizedTerms.expandTerms(config, metadataHelper, script);
+        script = ExpandMultiNormalizedTerms.expandTerms(getConfig(), metadataHelper, script);
         
         Multimap<String,String> literals = LiteralNodeVisitor.getLiterals(script);
         Multimap<String,String> patterns = PatternNodeVisitor.getPatterns(script);
         Map<Entry<String,String>,Range> rangesForTerms = Maps.newHashMap();
         Map<Entry<String,String>,Entry<Range,Boolean>> rangesForPatterns = Maps.newHashMap();
         
-        config.setNormalizedTerms(literals);
-        config.setNormalizedPatterns(patterns);
+        getConfig().setNormalizedTerms(literals);
+        getConfig().setNormalizedPatterns(patterns);
         
         if (log.isDebugEnabled()) {
             log.debug("Normalized Literals = " + literals);
@@ -296,15 +304,15 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         }
         for (Entry<String,String> entry : patterns.entries()) {
             ShardIndexQueryTableStaticMethods.RefactoredRangeDescription r = ShardIndexQueryTableStaticMethods.getRegexRange(entry, isFullTableScanEnabled(),
-                            metadataHelper, config);
+                            metadataHelper, getConfig());
             
             rangesForPatterns.put(entry, Maps.immutableEntry(r.range, r.isForReverseIndex));
         }
         
-        config.setRangesForTerms(rangesForTerms);
-        config.setRangesForPatterns(rangesForPatterns);
+        getConfig().setRangesForTerms(rangesForTerms);
+        getConfig().setRangesForPatterns(rangesForPatterns);
         
-        return config;
+        return getConfig();
     }
     
     private String getTrimmedOrNull(Query settings, String value) {
@@ -330,22 +338,22 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         ShardIndexQueryConfiguration config = (ShardIndexQueryConfiguration) genericConfig;
         final List<Entry<BatchScanner,Boolean>> batchscanners = Lists.newLinkedList();
         
-        for (Entry<String,String> termEntry : config.getNormalizedTerms().entries()) {
+        for (Entry<String,String> termEntry : getConfig().getNormalizedTerms().entries()) {
             // scan the table
-            BatchScanner bs = configureBatchScannerForDiscovery(config, this.scannerFactory, TableName.SHARD_INDEX,
-                            Collections.singleton(config.getRangesForTerms().get(termEntry)), Collections.singleton(termEntry.getValue()),
-                            Collections.emptySet(), config.getTableName().equals(config.getReverseIndexTableName()), false,
+            BatchScanner bs = configureBatchScannerForDiscovery(getConfig(), this.scannerFactory, TableName.SHARD_INDEX,
+                            Collections.singleton(getConfig().getRangesForTerms().get(termEntry)), Collections.singleton(termEntry.getValue()),
+                            Collections.emptySet(), getConfig().getTableName().equals(getConfig().getReverseIndexTableName()), false,
                             Collections.singleton(termEntry.getKey()));
             
             batchscanners.add(Maps.immutableEntry(bs, false));
         }
         
-        for (Entry<String,String> patternEntry : config.getNormalizedPatterns().entries()) {
-            Entry<Range,Boolean> rangeEntry = config.getRangesForPatterns().get(patternEntry);
+        for (Entry<String,String> patternEntry : getConfig().getNormalizedPatterns().entries()) {
+            Entry<Range,Boolean> rangeEntry = getConfig().getRangesForPatterns().get(patternEntry);
             String tName = rangeEntry.getValue() ? TableName.SHARD_RINDEX : TableName.SHARD_INDEX;
             
             // scan the table
-            BatchScanner bs = configureBatchScannerForDiscovery(config, this.scannerFactory, tName, Collections.singleton(rangeEntry.getKey()),
+            BatchScanner bs = configureBatchScannerForDiscovery(getConfig(), this.scannerFactory, tName, Collections.singleton(rangeEntry.getKey()),
                             Collections.emptySet(), Collections.singleton(patternEntry.getValue()), rangeEntry.getValue(), false,
                             Collections.singleton(patternEntry.getKey()));
             
@@ -466,7 +474,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             
         };
     }
-
+    
     /**
      * Implementations use the configuration to setup execution of a portion of their query. getTransformIterator should be used to get the partial results if
      * any.
@@ -479,23 +487,23 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     @Override
     public void setupQuery(Connector connection, QueryCheckpoint checkpoint) throws Exception {
         ShardQueryConfiguration config = (ShardQueryConfiguration) checkpoint.getConfig();
-        config.setConnector(connection);
-
-        // TODO: setScannerFactory(new ScannerFactory(config));
-
-        setupQuery(config);
+        getConfig().setConnector(connection);
+        
+        // TODO: setScannerFactory(new ScannerFactory(getConfig()));
+        
+        setupQuery(getConfig());
     }
-
+    
     @Override
     public boolean isCheckpointable() {
         return getConfig().isCheckpointable();
     }
-
+    
     @Override
     public void setCheckpointable(boolean checkpointable) {
         getConfig().setCheckpointable(checkpointable);
     }
-
+    
     /**
      * This can be called at any point to get a checkpoint such that this query logic instance can be torn down to be rebuilt later. At a minimum this should be
      * called after the getTransformIterator is depleted of results.
@@ -509,7 +517,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         if (!isCheckpointable()) {
             throw new UnsupportedOperationException("Cannot checkpoint a query that is not checkpointable.  Try calling setCheckpointable(true) first.");
         }
-
+        
         // if we have started returning results, then capture the state of the query scheduler
         if (this.scanner != null) {
             // TODO: return
@@ -520,7 +528,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             return Lists.newArrayList(getConfig().checkpoint(queryKey));
         }
     }
-
+    
     /**
      * scan a global index (shardIndex or shardReverseIndex) for the specified ranges and create a set of fieldname/TermInformation values. The Key/Values
      * scanned are trimmed based on a set of terms to match, and a set of data types (found in the config)
@@ -602,19 +610,19 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     }
     
     public boolean isFullTableScanEnabled() {
-        return config.getFullTableScanEnabled();
+        return getConfig().getFullTableScanEnabled();
     }
     
     public void setFullTableScanEnabled(boolean fullTableScanEnabled) {
-        this.config.setFullTableScanEnabled(fullTableScanEnabled);
+        this.getConfig().setFullTableScanEnabled(fullTableScanEnabled);
     }
     
     public boolean isAllowLeadingWildcard() {
-        return config.isAllowLeadingWildcard();
+        return getConfig().isAllowLeadingWildcard();
     }
     
     public void setAllowLeadingWildcard(boolean allowLeadingWildcard) {
-        config.setAllowLeadingWildcard(allowLeadingWildcard);
+        getConfig().setAllowLeadingWildcard(allowLeadingWildcard);
     }
     
     @Override
@@ -624,7 +632,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new DiscoveryTransformer(this, settings, config.getQueryModel());
+        return new DiscoveryTransformer(this, settings, getConfig().getQueryModel());
     }
     
     /**
@@ -633,27 +641,27 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
      * @return
      */
     public String getModelName() {
-        return config.getModelName();
+        return getConfig().getModelName();
     }
     
     public void setModelName(String modelName) {
-        config.setModelName(modelName);
+        getConfig().setModelName(modelName);
     }
     
     public String getModelTableName() {
-        return config.getModelTableName();
+        return getConfig().getModelTableName();
     }
     
     public void setModelTableName(String modelTableName) {
-        config.setModelTableName(modelTableName);
+        getConfig().setModelTableName(modelTableName);
     }
     
     public QueryModel getQueryModel() {
-        return config.getQueryModel();
+        return getConfig().getQueryModel();
     }
     
     public void setQueryModel(QueryModel model) {
-        config.setQueryModel(model);
+        getConfig().setQueryModel(model);
     }
     
     public class CloseableIterator implements Iterator<Entry<Key,Value>> {
@@ -776,11 +784,11 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     }
     
     public List<String> getRealmSuffixExclusionPatterns() {
-        return config.getRealmSuffixExclusionPatterns();
+        return getConfig().getRealmSuffixExclusionPatterns();
     }
     
     public void setRealmSuffixExclusionPatterns(List<String> realmSuffixExclusionPatterns) {
-        config.setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
+        getConfig().setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
     }
-
+    
 }

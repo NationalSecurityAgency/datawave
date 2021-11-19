@@ -619,18 +619,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setSortedUIDs(other.isSortedUIDs());
         this.setBloom(other.getBloom());
     }
-
+    
     @Override
     public QueryCheckpoint checkpoint(QueryKey queryKey, Collection<QueryData> ranges) {
         // Create a new config that only contains what is needed to execute the specified ranges
         return new ShardQueryConfiguration(this, ranges).checkpoint(queryKey);
     }
-
+    
     @Override
     public QueryCheckpoint checkpoint(QueryKey queryKey) {
         return new QueryCheckpoint(queryKey, this);
     }
-
+    
     /**
      * Delegates deep copy work to appropriate constructor, sets additional values specific to the provided ShardQueryLogic
      *

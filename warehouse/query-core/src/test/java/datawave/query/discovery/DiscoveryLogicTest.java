@@ -91,6 +91,7 @@ public class DiscoveryLogicTest {
         logic.setIndexTableName(TableName.SHARD_INDEX);
         logic.setReverseIndexTableName(TableName.SHARD_RINDEX);
         logic.setModelTableName(QueryTestTableHelper.METADATA_TABLE_NAME);
+        logic.setMetadataTableName(QueryTestTableHelper.METADATA_TABLE_NAME);
         logic.setModelName("DATAWAVE");
         logic.setFullTableScanEnabled(false);
         logic.setMaxResults(-1);

@@ -2302,12 +2302,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         
         setupQuery(config);
     }
-
+    
     @Override
     public boolean isCheckpointable() {
         return getConfig().isCheckpointable();
     }
-
+    
     @Override
     public void setCheckpointable(boolean checkpointable) {
         getConfig().setCheckpointable(checkpointable);

@@ -18,9 +18,8 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
     private Boolean separateCountsByColVis = false;
     private Boolean showReferenceCount = false;
     
-    public DiscoveryQueryConfiguration() {
-    }
-
+    public DiscoveryQueryConfiguration() {}
+    
     public DiscoveryQueryConfiguration(DiscoveryQueryConfiguration other) {
         super(other);
         setSeparateCountsByColVis(other.separateCountsByColVis);
@@ -29,12 +28,12 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
         setPatterns(other.patterns);
         setRanges(other.ranges);
     }
-
+    
     public DiscoveryQueryConfiguration(DiscoveryLogic logic, Query query) {
         this(logic.getConfig());
         setQuery(query);
     }
-
+    
     /**
      * Factory method that instantiates a fresh DiscoveryQueryConfiguration
      *
@@ -43,7 +42,7 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
     public static DiscoveryQueryConfiguration create() {
         return new DiscoveryQueryConfiguration();
     }
-
+    
     /**
      * Factory method that returns a deep copy of the provided DiscoveryQueryConfiguration
      *
@@ -54,7 +53,7 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
     public static DiscoveryQueryConfiguration create(DiscoveryQueryConfiguration other) {
         return new DiscoveryQueryConfiguration(other);
     }
-
+    
     /**
      * Factory method that creates a DiscoveryQueryConfiguration deep copy from a DiscoveryQueryLogic
      *
@@ -66,7 +65,7 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
         DiscoveryQueryConfiguration config = create(shardQueryLogic.getConfig());
         return config;
     }
-
+    
     /**
      * Factory method that creates a DiscoveryQueryConfiguration from a DiscoveryQueryLogic and a Query
      *
@@ -81,8 +80,7 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
         config.setQuery(query);
         return config;
     }
-
-
+    
     public Multimap<String,String> getLiterals() {
         return literals;
     }
@@ -123,7 +121,7 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
         this.showReferenceCount = showReferenceCount;
         
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (this == o)
