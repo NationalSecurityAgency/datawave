@@ -29,6 +29,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.configuration.QueryData;
 import datawave.services.query.logic.BaseQueryLogic;
 import datawave.services.query.logic.CheckpointableQueryLogic;
 import datawave.services.query.logic.QueryCheckpoint;
@@ -312,7 +313,35 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         getConfig().setRangesForTerms(rangesForTerms);
         getConfig().setRangesForPatterns(rangesForPatterns);
         
+        getConfig().setQueries(createQueries(getConfig()));
+        
         return getConfig();
+    }
+    
+    public Collection<QueryData> createQueries(ShardIndexQueryConfiguration config) throws QueryException, TableNotFoundException, IOException,
+                    ExecutionException {
+        final List<QueryData> queries = Lists.newLinkedList();
+        
+        for (Entry<String,String> termEntry : getConfig().getNormalizedTerms().entries()) {
+            String query = termEntry.getKey();
+            Range range = getConfig().getRangesForTerms().get(termEntry);
+            List<IteratorSetting> settings = getIteratorSettingsForDiscovery(getConfig(), Collections.singleton(termEntry.getValue()), Collections.emptySet(),
+                            getConfig().getTableName().equals(getConfig().getReverseIndexTableName()), false);
+            List<String> cfs = ShardIndexQueryTableStaticMethods.getColumnFamilies(getConfig(), false, Collections.singleton(termEntry.getKey()));
+            queries.add(new QueryData(config.getIndexTableName(), query, Collections.singleton(range), settings, cfs));
+        }
+        
+        for (Entry<String,String> patternEntry : getConfig().getNormalizedPatterns().entries()) {
+            String query = patternEntry.getKey();
+            Entry<Range,Boolean> rangeEntry = getConfig().getRangesForPatterns().get(patternEntry);
+            String tName = rangeEntry.getValue() ? TableName.SHARD_RINDEX : TableName.SHARD_INDEX;
+            List<IteratorSetting> settings = getIteratorSettingsForDiscovery(getConfig(), Collections.emptySet(),
+                            Collections.singleton(patternEntry.getValue()), rangeEntry.getValue(), false);
+            List<String> cfs = ShardIndexQueryTableStaticMethods.getColumnFamilies(getConfig(), rangeEntry.getValue(),
+                            Collections.singleton(patternEntry.getKey()));
+            queries.add(new QueryData(tName, query, Collections.singleton(rangeEntry.getKey()), settings));
+        }
+        return queries;
     }
     
     private String getTrimmedOrNull(Query settings, String value) {
@@ -335,29 +364,19 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             throw new QueryException("Did not receive a ShardIndexQueryConfiguration instance!!");
         }
         
-        ShardIndexQueryConfiguration config = (ShardIndexQueryConfiguration) genericConfig;
+        this.config = (ShardIndexQueryConfiguration) genericConfig;
         final List<Entry<BatchScanner,Boolean>> batchscanners = Lists.newLinkedList();
         
-        for (Entry<String,String> termEntry : getConfig().getNormalizedTerms().entries()) {
+        for (QueryData qd : config.getQueries()) {
             // scan the table
-            BatchScanner bs = configureBatchScannerForDiscovery(getConfig(), this.scannerFactory, TableName.SHARD_INDEX,
-                            Collections.singleton(getConfig().getRangesForTerms().get(termEntry)), Collections.singleton(termEntry.getValue()),
-                            Collections.emptySet(), getConfig().getTableName().equals(getConfig().getReverseIndexTableName()), false,
-                            Collections.singleton(termEntry.getKey()));
+            BatchScanner bs = scannerFactory.newScanner(qd.getTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
             
-            batchscanners.add(Maps.immutableEntry(bs, false));
-        }
-        
-        for (Entry<String,String> patternEntry : getConfig().getNormalizedPatterns().entries()) {
-            Entry<Range,Boolean> rangeEntry = getConfig().getRangesForPatterns().get(patternEntry);
-            String tName = rangeEntry.getValue() ? TableName.SHARD_RINDEX : TableName.SHARD_INDEX;
+            bs.setRanges(qd.getRanges());
+            for (IteratorSetting setting : qd.getSettings()) {
+                bs.addScanIterator(setting);
+            }
             
-            // scan the table
-            BatchScanner bs = configureBatchScannerForDiscovery(getConfig(), this.scannerFactory, tName, Collections.singleton(rangeEntry.getKey()),
-                            Collections.emptySet(), Collections.singleton(patternEntry.getValue()), rangeEntry.getValue(), false,
-                            Collections.singleton(patternEntry.getKey()));
-            
-            batchscanners.add(Maps.immutableEntry(bs, rangeEntry.getValue()));
+            batchscanners.add(Maps.immutableEntry(bs, qd.getTableName().equals(config.getReverseIndexTableName())));
         }
         
         final Iterator<Entry<BatchScanner,Boolean>> batchScannerIterator = batchscanners.iterator();
@@ -489,7 +508,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         ShardQueryConfiguration config = (ShardQueryConfiguration) checkpoint.getConfig();
         getConfig().setConnector(connection);
         
-        // TODO: setScannerFactory(new ScannerFactory(getConfig()));
+        scannerFactory = new ScannerFactory(getConfig());
         
         setupQuery(getConfig());
     }
@@ -520,6 +539,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         
         // if we have started returning results, then capture the state of the query scheduler
         if (this.scanner != null) {
+            
             // TODO: return
             return null;
         }
@@ -529,37 +549,8 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         }
     }
     
-    /**
-     * scan a global index (shardIndex or shardReverseIndex) for the specified ranges and create a set of fieldname/TermInformation values. The Key/Values
-     * scanned are trimmed based on a set of terms to match, and a set of data types (found in the config)
-     *
-     * @param config
-     * @param scannerFactory
-     * @param tableName
-     * @param ranges
-     * @param literals
-     * @param patterns
-     * @param reverseIndex
-     * @param expansionFields
-     * @return the batch scanner
-     * @throws TableNotFoundException
-     */
-    public static BatchScanner configureBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName, Collection<Range> ranges,
-                    Collection<String> literals, Collection<String> patterns, boolean reverseIndex, Collection<String> expansionFields)
-                    throws TableNotFoundException {
-        
-        // if we have no ranges, then nothing to scan
-        if (ranges.isEmpty()) {
-            return null;
-        }
-        
-        if (log.isTraceEnabled()) {
-            log.trace("Scanning " + tableName + " against " + ranges + " with auths " + config.getAuthorizations());
-        }
-        
-        BatchScanner bs = scannerFactory.newScanner(tableName, config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
-        
-        bs.setRanges(ranges);
+    public static List<IteratorSetting> getIteratorSettingsForDiscovery(ShardQueryConfiguration config, Collection<String> literals,
+                    Collection<String> patterns, boolean reverseIndex, boolean uniqueTermsOnly) {
         
         // The begin date from the query may be down to the second, for doing lookups in the index we want to use the day because
         // the times in the index table have been truncated to the day.
@@ -569,44 +560,14 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         
         LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
         
-        ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
-        ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
+        List<IteratorSetting> settings = Lists.newLinkedList();
+        settings.add(ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, dateRange));
+        settings.add(ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter()));
         
-        ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, true, expansionFields);
+        settings.add(ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, uniqueTermsOnly));
         
-        return bs;
-    }
-    
-    public static BatchScanner configureBatchScannerForDiscovery(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
-                    Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean uniqueTermsOnly,
-                    Collection<String> expansionFields) throws TableNotFoundException {
-        
-        // if we have no ranges, then nothing to scan
-        if (ranges.isEmpty()) {
-            return null;
-        }
-        
-        BatchScanner bs = scannerFactory.newScanner(tableName, config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
-        
-        bs.setRanges(ranges);
-        
-        // The begin date from the query may be down to the second, for doing lookups in the index we want to use the day because
-        // the times in the index table have been truncated to the day.
-        Date begin = DateUtils.truncate(config.getBeginDate(), Calendar.DAY_OF_MONTH);
-        // we don't need to bump up the end date any more because it's not apart of the range set on the scanner
-        Date end = config.getEndDate();
-        
-        LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
-        
-        ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
-        ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
-        
-        ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, bs, literals, patterns, reverseIndex, uniqueTermsOnly,
-                        expansionFields);
-        
-        bs.addScanIterator(new IteratorSetting(config.getBaseIteratorPriority() + 50, DiscoveryIterator.class));
-        
-        return bs;
+        settings.add(new IteratorSetting(config.getBaseIteratorPriority() + 50, DiscoveryIterator.class));
+        return settings;
     }
     
     public boolean isFullTableScanEnabled() {

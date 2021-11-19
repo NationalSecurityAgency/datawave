@@ -2260,7 +2260,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.trace("Produced range is " + r);
         }
         
-        return new CloseableListIterable<>(Collections.singletonList(new QueryPlan(queryTree, r)));
+        return new CloseableListIterable<>(Collections.singletonList(new QueryPlan(config.getShardTableName(), queryTree, r)));
     }
     
     /**

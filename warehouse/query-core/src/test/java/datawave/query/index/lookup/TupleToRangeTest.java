@@ -5,6 +5,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.planner.QueryPlan;
 import datawave.query.util.Tuple2;
+import datawave.util.TableName;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
@@ -69,7 +70,7 @@ public class TupleToRangeTest {
         expectedRanges.add(makeTestRange(shard, "docId2"));
         
         // Create the ranges
-        Iterator<QueryPlan> ranges = TupleToRange.createDocumentRanges(queryNode, shard, indexInfo, config.isTldQuery());
+        Iterator<QueryPlan> ranges = TupleToRange.createDocumentRanges(TableName.SHARD, queryNode, shard, indexInfo, config.isTldQuery());
         
         // Assert ranges against expected ranges
         eval(expectedRanges, ranges);
@@ -90,7 +91,7 @@ public class TupleToRangeTest {
         
         // Create the ranges
         config.setTldQuery(true);
-        Iterator<QueryPlan> ranges = TupleToRange.createDocumentRanges(queryNode, shard, indexInfo, config.isTldQuery());
+        Iterator<QueryPlan> ranges = TupleToRange.createDocumentRanges(TableName.SHARD, queryNode, shard, indexInfo, config.isTldQuery());
         
         // Assert ranges against expected ranges
         eval(expectedRanges, ranges);
@@ -107,7 +108,7 @@ public class TupleToRangeTest {
         expectedRanges.add(makeShardedRange(shard));
         
         // Create the ranges
-        Iterator<QueryPlan> ranges = TupleToRange.createShardRange(queryNode, shard, indexInfo);
+        Iterator<QueryPlan> ranges = TupleToRange.createShardRange(TableName.SHARD, queryNode, shard, indexInfo);
         
         // Assert ranges against expected ranges
         eval(expectedRanges, ranges);
@@ -124,7 +125,7 @@ public class TupleToRangeTest {
         expectedRanges.add(makeDayRange(shard));
         
         // Create the ranges
-        Iterator<QueryPlan> ranges = TupleToRange.createDayRange(queryNode, shard, indexInfo);
+        Iterator<QueryPlan> ranges = TupleToRange.createDayRange(TableName.SHARD, queryNode, shard, indexInfo);
         
         // Assert ranges against expected ranges
         eval(expectedRanges, ranges);
@@ -145,7 +146,7 @@ public class TupleToRangeTest {
         expectedRanges.add(makeTestRange(shard, "docId2"));
         
         // Create the ranges
-        TupleToRange tupleToRange = new TupleToRange(queryNode, config);
+        TupleToRange tupleToRange = new TupleToRange(TableName.SHARD, queryNode, config);
         Iterator<QueryPlan> ranges = tupleToRange.apply(tuple);
         
         // Assert ranges against expected ranges
@@ -168,7 +169,7 @@ public class TupleToRangeTest {
         
         // Create the ranges
         config.setTldQuery(true);
-        TupleToRange tupleToRange = new TupleToRange(queryNode, config);
+        TupleToRange tupleToRange = new TupleToRange(TableName.SHARD, queryNode, config);
         Iterator<QueryPlan> ranges = tupleToRange.apply(tuple);
         
         // Assert ranges against expected ranges
@@ -187,7 +188,7 @@ public class TupleToRangeTest {
         expectedRanges.add(makeShardedRange(shard));
         
         // Create the ranges
-        TupleToRange tupleToRange = new TupleToRange(queryNode, config);
+        TupleToRange tupleToRange = new TupleToRange(TableName.SHARD, queryNode, config);
         Iterator<QueryPlan> ranges = tupleToRange.apply(tuple);
         
         // Assert ranges against expected ranges
@@ -206,7 +207,7 @@ public class TupleToRangeTest {
         expectedRanges.add(makeDayRange(shard));
         
         // Create the ranges
-        TupleToRange tupleToRange = new TupleToRange(queryNode, config);
+        TupleToRange tupleToRange = new TupleToRange(TableName.SHARD, queryNode, config);
         Iterator<QueryPlan> ranges = tupleToRange.apply(tuple);
         
         // Assert ranges against expected ranges

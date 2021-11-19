@@ -242,7 +242,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     }
                 }
                 
-                this.itr = filter(concat(transform(queryStream, new TupleToRange(queryStream.currentNode(), config))), new EmptyPlanPruner());
+                this.itr = filter(concat(transform(queryStream, new TupleToRange(config.getShardTableName(), queryStream.currentNode(), config))),
+                                new EmptyPlanPruner());
             }
         } finally {
             // shut down the executor as all threads have completed

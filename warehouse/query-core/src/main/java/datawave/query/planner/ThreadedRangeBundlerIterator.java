@@ -458,7 +458,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
             }
             settings.add(newSetting);
         }
-        return new QueryData(queryString, Lists.newArrayList(plan.getRanges()), settings, plan.getColumnFamilies());
+        return new QueryData(plan.getTableName(), queryString, Lists.newArrayList(plan.getRanges()), settings, plan.getColumnFamilies());
     }
     
     /*

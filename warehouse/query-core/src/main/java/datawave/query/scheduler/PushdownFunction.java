@@ -158,7 +158,9 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                     log.trace("Adding query tree " + JexlStringBuildingVisitor.buildQuery(currentPlan.getQueryTree()) + " " + currentPlan.getSettings().size()
                                     + " for " + server);
                 
-                serverPlan.put(server, new QueryPlan(currentPlan.getQueryTree(), rangeIter, currentPlan.getSettings(), currentPlan.getColumnFamilies()));
+                serverPlan.put(server,
+                                new QueryPlan(currentPlan.getTableName(), currentPlan.getQueryTree(), rangeIter, currentPlan.getSettings(), currentPlan
+                                                .getColumnFamilies()));
                 
             }
         }

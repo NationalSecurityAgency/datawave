@@ -22,6 +22,7 @@ import java.util.List;
  *
  */
 public class QueryData implements ResultContext, Externalizable {
+    String tableName;
     List<IteratorSetting> settings = Lists.newArrayList();
     String query;
     Collection<Range> ranges = Sets.newHashSet();
@@ -31,26 +32,28 @@ public class QueryData implements ResultContext, Externalizable {
     
     public QueryData() {}
     
-    public QueryData(String query, Collection<Range> ranges, List<IteratorSetting> settings) {
+    public QueryData(String tableName, String query, Collection<Range> ranges, List<IteratorSetting> settings) {
+        setTableName(tableName);
         setQuery(query);
         setRanges(ranges);
         setSettings(settings);
     }
     
     public QueryData(QueryData other) {
-        this(other.getQuery(), other.getRanges(), other.getSettings());
+        this(other.getTableName(), other.getQuery(), other.getRanges(), other.getSettings());
         this.lastResult = other.lastResult;
         this.finished = other.finished;
     }
     
     public QueryData(QueryData other, Collection<Range> ranges) {
+        setTableName(other.getTableName());
         setQuery(other.getQuery());
         setSettings(other.getSettings());
         setRanges(ranges);
     }
     
-    public QueryData(String queryString, ArrayList<Range> ranges, List<IteratorSetting> settings, Collection<String> columnFamilies) {
-        this(queryString, ranges, settings);
+    public QueryData(String tableName, String queryString, Collection<Range> ranges, List<IteratorSetting> settings, Collection<String> columnFamilies) {
+        this(tableName, queryString, ranges, settings);
         this.columnFamilies.addAll(columnFamilies);
     }
     
@@ -68,6 +71,14 @@ public class QueryData implements ResultContext, Externalizable {
     
     public void setQuery(String query) {
         this.query = query;
+    }
+    
+    public String getTableName() {
+        return tableName;
+    }
+    
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
     }
     
     public Collection<Range> getRanges() {

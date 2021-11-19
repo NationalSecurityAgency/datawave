@@ -26,6 +26,7 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ShardIndexQueryTable;
 import datawave.query.util.MetadataHelper;
 import datawave.services.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.configuration.QueryData;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -208,48 +209,64 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             log.debug("Normalized Literals = " + getConfig().getLiterals());
             log.debug("Normalized Patterns = " + getConfig().getPatterns());
         }
+        final List<QueryData> queries = Lists.newLinkedList();
+        
+        getConfig().setQueries(createQueries(getConfig()));
         
         return getConfig();
     }
     
-    @Override
-    public void setupQuery(GenericQueryConfiguration genericConfig) throws QueryException, TableNotFoundException, IOException, ExecutionException {
-        this.config = (DiscoveryQueryConfiguration) genericConfig;
-        List<Iterator<DiscoveredThing>> iterators = Lists.newArrayList();
-        Set<Text> familiesToSeek = Sets.newHashSet();
+    public Collection<QueryData> createQueries(DiscoveryQueryConfiguration config) throws QueryException, TableNotFoundException, IOException,
+                    ExecutionException {
+        final List<QueryData> queries = Lists.newLinkedList();
+        
+        Set<String> familiesToSeek = Sets.newHashSet();
         Pair<Set<Range>,Set<Range>> seekRanges = makeRanges(getConfig(), familiesToSeek, metadataHelper);
         Collection<Range> forward = seekRanges.getValue0();
+        
         if (!forward.isEmpty()) {
-            BatchScanner bs = configureBatchScannerForDiscovery(getConfig(), scannerFactory, getConfig().getIndexTableName(), forward, familiesToSeek,
-                            getConfig().getLiterals(), getConfig().getPatterns(), getConfig().getRanges(), false);
-            iterators.add(transformScanner(bs));
+            List<IteratorSetting> settings = getIteratorSettingsForDiscovery(getConfig(), getConfig().getLiterals(), getConfig().getPatterns(), getConfig()
+                            .getRanges(), false);
+            queries.add(new QueryData(config.getIndexTableName(), null, forward, settings, familiesToSeek));
         }
+        
         Collection<Range> reverse = seekRanges.getValue1();
         if (!reverse.isEmpty()) {
-            BatchScanner bs = configureBatchScannerForDiscovery(getConfig(), scannerFactory, getConfig().getReverseIndexTableName(), reverse, familiesToSeek,
-                            getConfig().getLiterals(), getConfig().getPatterns(), getConfig().getRanges(), true);
+            List<IteratorSetting> settings = getIteratorSettingsForDiscovery(getConfig(), getConfig().getLiterals(), getConfig().getPatterns(), getConfig()
+                            .getRanges(), true);
+            queries.add(new QueryData(config.getReverseIndexTableName(), null, reverse, settings, familiesToSeek));
+        }
+        
+        return queries;
+    }
+    
+    @Override
+    public void setupQuery(GenericQueryConfiguration genericConfig) throws QueryException, TableNotFoundException, IOException, ExecutionException {
+        if (!genericConfig.getClass().getName().equals(DiscoveryQueryConfiguration.class.getName())) {
+            throw new QueryException("Did not receive a DiscoveryQueryConfiguration instance!!");
+        }
+        this.config = (DiscoveryQueryConfiguration) genericConfig;
+        final List<Iterator<DiscoveredThing>> iterators = Lists.newArrayList();
+        
+        for (QueryData qd : config.getQueries()) {
+            // scan the table
+            BatchScanner bs = scannerFactory.newScanner(qd.getTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
+            
+            bs.setRanges(qd.getRanges());
+            for (IteratorSetting setting : qd.getSettings()) {
+                bs.addScanIterator(setting);
+            }
+            
             iterators.add(transformScanner(bs));
         }
         
         this.iterator = concat(iterators.iterator());
     }
     
-    public static BatchScanner configureBatchScannerForDiscovery(DiscoveryQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
-                    Collection<Range> seekRanges, Set<Text> columnFamilies, Multimap<String,String> literals, Multimap<String,String> patterns,
-                    Multimap<String,LiteralRange<String>> ranges, boolean reverseIndex) throws TableNotFoundException {
+    public static List<IteratorSetting> getIteratorSettingsForDiscovery(DiscoveryQueryConfiguration config, Multimap<String,String> literals,
+                    Multimap<String,String> patterns, Multimap<String,LiteralRange<String>> ranges, boolean reverseIndex) {
         
-        // if we have no ranges, then nothing to scan
-        if (seekRanges.isEmpty()) {
-            return null;
-        }
-        
-        BatchScanner bs = scannerFactory.newScanner(tableName, config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
-        bs.setRanges(seekRanges);
-        if (!columnFamilies.isEmpty()) {
-            for (Text family : columnFamilies) {
-                bs.fetchColumnFamily(family);
-            }
-        }
+        List<IteratorSetting> settings = Lists.newLinkedList();
         
         // The begin date from the query may be down to the second, for doing lookups in the index we want to use the day because
         // the times in the index table have been truncated to the day.
@@ -259,10 +276,13 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         
         LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
         
-        ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
-        ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
+        settings.add(ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, dateRange));
+        settings.add(ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter()));
         
-        configureIndexMatchingIterator(config, bs, literals, patterns, ranges, reverseIndex);
+        IteratorSetting matchingIterator = configureIndexMatchingIterator(config, literals, patterns, ranges, reverseIndex);
+        if (matchingIterator != null) {
+            settings.add(matchingIterator);
+        }
         
         IteratorSetting discoveryIteratorSetting = new IteratorSetting(config.getBaseIteratorPriority() + 50, DiscoveryIterator.class);
         discoveryIteratorSetting.addOption(REVERSE_INDEX, Boolean.toString(reverseIndex));
@@ -270,15 +290,15 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         if (config.getShowReferenceCount()) {
             discoveryIteratorSetting.addOption(SHOW_REFERENCE_COUNT, config.getShowReferenceCount().toString());
         }
-        bs.addScanIterator(discoveryIteratorSetting);
+        settings.add(discoveryIteratorSetting);
         
-        return bs;
+        return settings;
     }
     
-    public static final void configureIndexMatchingIterator(DiscoveryQueryConfiguration config, ScannerBase bs, Multimap<String,String> literals,
+    public static final IteratorSetting configureIndexMatchingIterator(DiscoveryQueryConfiguration config, Multimap<String,String> literals,
                     Multimap<String,String> patterns, Multimap<String,LiteralRange<String>> ranges, boolean reverseIndex) {
         if ((literals == null || literals.isEmpty()) && (patterns == null || patterns.isEmpty()) && (ranges == null || ranges.isEmpty())) {
-            return;
+            return null;
         }
         log.debug("Configuring IndexMatchingIterator with " + literals + " and " + patterns);
         
@@ -317,7 +337,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         
         cfg.addOption(IndexMatchingIterator.REVERSE_INDEX, Boolean.toString(reverseIndex));
         
-        bs.addScanIterator(cfg);
+        return cfg;
     }
     
     @Override
@@ -367,7 +387,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
      * @throws ExecutionException
      */
     @SuppressWarnings("unchecked")
-    public static Pair<Set<Range>,Set<Range>> makeRanges(DiscoveryQueryConfiguration config, Set<Text> familiesToSeek, MetadataHelper metadataHelper)
+    public static Pair<Set<Range>,Set<Range>> makeRanges(DiscoveryQueryConfiguration config, Set<String> familiesToSeek, MetadataHelper metadataHelper)
                     throws TableNotFoundException, ExecutionException {
         Set<Range> forwardRanges = new HashSet<>();
         for (Entry<String,String> literalAndField : config.getLiterals().entries()) {
@@ -375,7 +395,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             // if we're _ANYFIELD_, then use null when making the literal range
             field = Constants.ANY_FIELD.equals(field) ? null : field;
             if (field != null) {
-                familiesToSeek.add(new Text(field));
+                familiesToSeek.add(field);
             }
             forwardRanges.add(ShardIndexQueryTableStaticMethods.getLiteralRange(field, literal));
         }
@@ -385,7 +405,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             // if we're _ANYFIELD_, then use null when making the literal range
             field = Constants.ANY_FIELD.equals(field) ? null : field;
             if (field != null) {
-                familiesToSeek.add(new Text(field));
+                familiesToSeek.add(field);
             }
             try {
                 forwardRanges.add(ShardIndexQueryTableStaticMethods.getBoundedRangeRange(range));
@@ -402,7 +422,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             ShardIndexQueryTableStaticMethods.RefactoredRangeDescription description;
             try {
                 if (field != null) {
-                    familiesToSeek.add(new Text(field));
+                    familiesToSeek.add(field);
                 }
                 description = ShardIndexQueryTableStaticMethods.getRegexRange(field, pattern, false, metadataHelper, config);
             } catch (JavaRegexParseException e) {

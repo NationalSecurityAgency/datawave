@@ -38,6 +38,7 @@ public class QueryDataTest {
     @Test
     public void testCopyConstructor() {
         // Set expectations
+        expect(this.copy.getTableName()).andReturn("SHARD");
         expect(this.copy.getQuery()).andReturn("TEST");
         expect(this.copy.getRanges()).andReturn(Arrays.asList(this.range));
         expect(this.copy.getSettings()).andReturn(Arrays.asList(this.setting));
