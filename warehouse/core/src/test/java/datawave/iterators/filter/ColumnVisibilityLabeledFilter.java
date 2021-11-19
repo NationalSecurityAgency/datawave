@@ -103,7 +103,7 @@ public class ColumnVisibilityLabeledFilter extends AppliedRule {
                 if (timeToLive > 0) {
                     // deduct TTL for this key
                     cutOff -= timeToLive;
-                    // remove offset for default TTL 
+                    // remove offset for default TTL
                     cutOff += ageOffPeriod.getTtl() * ageOffPeriod.getTtlUnitsFactor();
                 }
                 this.filterRuleApplied = true;
