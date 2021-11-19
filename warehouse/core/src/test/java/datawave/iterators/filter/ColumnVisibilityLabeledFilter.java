@@ -101,8 +101,11 @@ public class ColumnVisibilityLabeledFilter extends AppliedRule {
                 long cutOff = ageOffPeriod.getCutOffMilliseconds();
                 // move cut-off back by the timeToLive
                 if (timeToLive > 0) {
-                    cutOff -= timeToLive;
+                    // remove offset for default TTL
                     cutOff += ageOffPeriod.getTtl() * ageOffPeriod.getTtlUnitsFactor();
+                    
+                    // deduct TTL for this key
+                    cutOff -= timeToLive;
                 }
                 this.filterRuleApplied = true;
                 return k.getTimestamp() > cutOff;
