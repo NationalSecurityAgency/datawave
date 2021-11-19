@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
-import datawave.microservice.query.storage.QueryQueueManager;
+import datawave.microservice.query.messaging.QueryResultsManager;
 import datawave.microservice.query.storage.QueryState;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles({"QueryStorageStateServiceTest", "sync-enabled", "no-notifications"})
+@ActiveProfiles({"QueryStorageStateServiceTest"})
 @EnableRabbit
 public class QueryStorageStateServiceTest {
     
@@ -70,7 +70,7 @@ public class QueryStorageStateServiceTest {
     private JWTRestTemplate jwtRestTemplate;
     
     @Autowired
-    private QueryQueueManager queueManager;
+    private QueryResultsManager queueManager;
     
     @Autowired
     private QueryStorageCache storageService;
@@ -105,7 +105,7 @@ public class QueryStorageStateServiceTest {
         String queryPool = TEST_POOL;
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
-        TaskKey key = storageService.createQuery(queryPool, query, "testStateStorageService", auths, 3);
+        TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
         assertNotNull(key);
         QueryTask storedTask = storageService.getTask(key);
         assertNotNull(storedTask);

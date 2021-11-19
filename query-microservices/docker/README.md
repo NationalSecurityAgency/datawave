@@ -2,13 +2,13 @@
 
 ## Components
 
-### Discovery (Consul)
+### Consul
 
 Consul v1.9.8 is a prepacked docker image used for discovery between the various services.
 
-### Messaging (RabbitMQ)
+### RabbitMQ
 
-RabbitMQ v3.7.7 is a prepacked docker image used for messaging between the various services.
+RabbitMQ v3.8.25 is a prepacked docker image used for messaging between the various services.
 
 ### Configuration
 
@@ -144,9 +144,13 @@ HOST_IP=<Your host IP Address>
 
 ### Start services
 
-Start the default services:
+Start the default services (with the Kafka as the backend):
 
 ```docker-compose up -d```
+
+Start the default services (with RabbitMQ as the backend):
+
+```BACKEND=rabbitmq docker-compose up -d```
 
 Start the default services, and the dictionary service:
 

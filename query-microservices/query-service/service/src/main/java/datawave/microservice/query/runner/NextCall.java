@@ -3,12 +3,13 @@ package datawave.microservice.query.runner;
 import datawave.microservice.query.config.NextCallProperties;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.query.config.QueryProperties;
-import datawave.microservice.query.storage.QueryQueueListener;
-import datawave.microservice.query.storage.QueryQueueManager;
+import datawave.microservice.query.messaging.QueryResultsListener;
+import datawave.microservice.query.messaging.QueryResultsManager;
+import datawave.microservice.query.messaging.Result;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
-import datawave.microservice.query.storage.Result;
 import datawave.microservice.query.storage.TaskStates;
+import datawave.microservice.query.util.QueryStatusUpdateUtil;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.services.query.cache.ResultsPage;
@@ -17,7 +18,6 @@ import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.QueryException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.messaging.Message;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -26,13 +26,16 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static datawave.microservice.query.messaging.AcknowledgementCallback.Status.ACK;
+
 public class NextCall implements Callable<ResultsPage<Object>> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
     private final NextCallProperties nextCallProperties;
-    private final QueryQueueManager queryQueueManager;
+    private final QueryResultsManager queryResultsManager;
     private final QueryStorageCache queryStorageCache;
     private final String queryId;
+    private final QueryStatusUpdateUtil queryStatusUpdateUtil;
     
     private volatile boolean canceled = false;
     private volatile Future<ResultsPage<Object>> future = null;
@@ -60,16 +63,18 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     private QueryStatus queryStatus;
     private long lastTaskStatesUpdateTime = 0L;
     private TaskStates taskStates;
-    private boolean tasksFinished = false;
-    private long prevResultCount = 0L;
+    private long numResultsConsumed = 0L;
+    
+    private long hitMaxResultsTimeMillis = 0L;
     
     private BaseQueryMetric.Lifecycle lifecycle;
     
     private NextCall(Builder builder) {
         this.nextCallProperties = builder.nextCallProperties;
-        this.queryQueueManager = builder.queryQueueManager;
+        this.queryResultsManager = builder.queryResultsManager;
         this.queryStorageCache = builder.queryStorageCache;
         this.queryId = builder.queryId;
+        this.queryStatusUpdateUtil = builder.queryStatusUpdateUtil;
         
         QueryStatus status = getQueryStatus();
         long pageTimeoutMillis = TimeUnit.MINUTES.toMillis(status.getQuery().getPageTimeout());
@@ -105,19 +110,22 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     public ResultsPage<Object> call() throws Exception {
         startTimeMillis = System.currentTimeMillis();
         
-        QueryQueueListener resultListener = queryQueueManager.createListener(UUID.randomUUID().toString(), queryId);
-        try {
+        try (QueryResultsListener resultListener = queryResultsManager.createListener(UUID.randomUUID().toString(), queryId)) {
             // keep waiting for results until we're finished
             // Note: isFinished should be checked once per result
             while (!isFinished(queryId)) {
-                Message<Result> message = resultListener.receive(nextCallProperties.getResultPollIntervalMillis());
-                if (message != null) {
-                    Object result = message.getPayload().getAndAcknowledgePayload();
-                    if (result != null) {
-                        results.add(result);
+                Result result = resultListener.receive(nextCallProperties.getResultPollInterval(), nextCallProperties.getResultPollTimeUnit());
+                if (result != null) {
+                    result.acknowledge(ACK);
+                    
+                    Object payload = result.getPayload();
+                    if (payload != null) {
+                        results.add(payload);
+                        
+                        numResultsConsumed++;
                         
                         if (logicBytesPerPage > 0) {
-                            pageSizeBytes += ObjectSizeOf.Sizer.getObjectSize(result);
+                            pageSizeBytes += ObjectSizeOf.Sizer.getObjectSize(payload);
                         }
                     } else {
                         log.debug("Null result encountered, no more results");
@@ -125,9 +133,6 @@ public class NextCall implements Callable<ResultsPage<Object>> {
                     }
                 }
             }
-        } finally {
-            // stop the result listener
-            resultListener.stop();
         }
         
         // update some values for metrics
@@ -135,6 +140,9 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         if (lifecycle == null && !results.isEmpty()) {
             lifecycle = BaseQueryMetric.Lifecycle.RESULTS;
         }
+        
+        // update num results consumed for query status
+        updateNumResultsConsumed();
         
         return new ResultsPage<>(results, status);
     }
@@ -147,7 +155,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     private boolean isFinished(String queryId) throws QueryException {
         boolean finished = false;
         long callTimeMillis = System.currentTimeMillis() - startTimeMillis;
-        final QueryStatus queryStatus = getQueryStatus();
+        QueryStatus queryStatus = getQueryStatus();
         
         // if the query state is FAILED, throw an exception up to the query management service with the failure message
         if (queryStatus.getQueryState() == QueryStatus.QUERY_STATE.FAILED) {
@@ -191,19 +199,53 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         }
         
         // 5) have we retrieved all of the results?
-        if (!finished && !getTaskStates().isCreatingTasks() && !getTaskStates().hasUnfinishedTasks()) {
-            // if all tasks have completed (or failed), start keeping track of the result count
-            if (tasksFinished) {
-                // if we stop getting results, we are done
-                if (prevResultCount == results.size()) {
+        if (!finished && !getTaskStates().isCreatingTasks() && !getTaskStates().hasUnfinishedTasks()
+                        && queryResultsManager.getNumResultsRemaining(queryId) == 0) {
+            // update the number of results consumed
+            queryStatus = updateNumResultsConsumed();
+            
+            // how many results do the query services think are left
+            long queryResultsRemaining = queryStatus.getNumResultsGenerated() - queryStatus.getNumResultsConsumed();
+            
+            // check to see if the number of results consumed is >= to the number of results generated
+            if (queryResultsRemaining < 0) {
+                // TODO: Consider this as a potential backend-agnostic exit condition, but be mindful of the possibility of a next call failing before the
+                // consumed results can be returned
+                log.warn("Query [{}]: The number of results consumed [{}] exceeds the number of results generated [{}]", queryId,
+                                queryStatus.getNumResultsConsumed(), queryStatus.getNumResultsGenerated());
+            }
+            
+            // how many results does the broker think are left
+            long brokerResultsRemaining = queryResultsManager.getNumResultsRemaining(queryId);
+            
+            // if the broker thinks there are not results left, we may be done
+            if (brokerResultsRemaining == 0) {
+                
+                // if the query service thinks there are no results left, we are done
+                // we can have negative results remaining if we consumed duplicate records
+                if (queryResultsRemaining <= 0) {
                     log.info("Query [{}]: all query tasks complete, and all results retrieved, aborting next call", queryId);
                     
                     status = ResultsPage.Status.PARTIAL;
                     
                     finished = true;
                 }
-            } else {
-                tasksFinished = true;
+                // if the query services think there are results left, we may need to wait
+                // this can happen if messages are in flux with the message broker due to nacking
+                else {
+                    // if we aren't in a max results waiting period, start waiting
+                    if (hitMaxResultsTimeMillis == 0) {
+                        hitMaxResultsTimeMillis = System.currentTimeMillis();
+                    }
+                    // if we are finished waiting, we are done
+                    else if (System.currentTimeMillis() >= (hitMaxResultsTimeMillis + nextCallProperties.getMaxResultsTimeoutMillis())) {
+                        log.info("Query [{}]: all query tasks complete, but timed out waiting for all results to be retrieved, aborting next call", queryId);
+                        
+                        status = ResultsPage.Status.PARTIAL;
+                        
+                        finished = true;
+                    }
+                }
             }
         }
         
@@ -265,10 +307,22 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             finished = true;
         }
         
-        // save the previous result count
-        prevResultCount = results.size();
-        
         return finished;
+    }
+    
+    private QueryStatus updateNumResultsConsumed() {
+        if (numResultsConsumed > 0) {
+            try {
+                queryStatus = queryStatusUpdateUtil.lockedUpdate(queryId, queryStatus1 -> {
+                    queryStatus1.incrementNumResultsConsumed(numResultsConsumed);
+                    numResultsConsumed = 0;
+                });
+                lastQueryStatusUpdateTime = System.currentTimeMillis();
+            } catch (Exception e) {
+                log.warn("Unable to update number of results consumed for query {}", queryId);
+            }
+        }
+        return queryStatus;
     }
     
     private boolean shortCircuitTimeout(long callTimeMillis) {
@@ -342,9 +396,10 @@ public class NextCall implements Callable<ResultsPage<Object>> {
     public static class Builder {
         private NextCallProperties nextCallProperties;
         private QueryExpirationProperties expirationProperties;
-        private QueryQueueManager queryQueueManager;
+        private QueryResultsManager queryResultsManager;
         private QueryStorageCache queryStorageCache;
         private String queryId;
+        private QueryStatusUpdateUtil queryStatusUpdateUtil;
         private QueryLogic<?> queryLogic;
         
         public Builder setQueryProperties(QueryProperties queryProperties) {
@@ -363,8 +418,8 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             return this;
         }
         
-        public Builder setQueryQueueManager(QueryQueueManager queryQueueManager) {
-            this.queryQueueManager = queryQueueManager;
+        public Builder setResultsQueueManager(QueryResultsManager queryResultsManager) {
+            this.queryResultsManager = queryResultsManager;
             return this;
         }
         
@@ -375,6 +430,11 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         
         public Builder setQueryId(String queryId) {
             this.queryId = queryId;
+            return this;
+        }
+        
+        public Builder setQueryStatusUpdateUtil(QueryStatusUpdateUtil queryStatusUpdateUtil) {
+            this.queryStatusUpdateUtil = queryStatusUpdateUtil;
             return this;
         }
         

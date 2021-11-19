@@ -225,48 +225,21 @@ audit-client:
 
 ---
 
-spring.config.activate.on-profile: sync-disabled
+spring.config.activate.on-profile: use-test
 
 query:
-  storage:
-    syncStorage:
-      false
-
----
-
-spring.config.activate.on-profile: sync-enabled
-
-query:
-  storage:
-    syncStorage:
-      true
-
----
-
-spring.config.activate.on-profile: send-notifications
-
-query:
-  storage:
-    sendNotifications:
-      true
-
----
-
-spring.config.activate.on-profile: no-notifications
-
-query:
-  storage:
-    sendNotifications:
-      false
+  messaging:
+    backend:
+      test
 
 ---
 
 spring.config.activate.on-profile: use-rabbit
 
 query:
-  storage:
+  messaging:
     backend:
-      rabbit
+      rabbitmq
 
 ---
 
@@ -277,10 +250,11 @@ spring:
     bootstrap-servers: localhost:9092
     consumer:
       group-id: KafkaQueryQueueManager
-      autoOffsetReset: latest
+      autoOffsetReset: earliest
+      enableAutoCommit: false
 
 query:
-  storage:
+  messaging:
     backend:
       kafka
 
@@ -293,9 +267,10 @@ spring:
     bootstrap-servers: "${spring.embedded.kafka.brokers}"
     consumer:
       group-id: KafkaQueryQueueManager
-      autoOffsetReset: latest
+      autoOffsetReset: earliest
+      enableAutoCommit: false
 query:
-  storage:
+  messaging:
     backend:
       kafka
 

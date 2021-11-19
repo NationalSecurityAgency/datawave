@@ -114,9 +114,6 @@ public class QueryServiceCreateTest extends AbstractQueryServiceTest {
         // verify that an audit message was sent and the the audit id matches the query id
         assertAuditSent(queryId);
         
-        // verify that the results queue was created
-        Assert.assertTrue(queryQueueManager.queueExists(queryId));
-        
         // verify that query tasks were created
         assertTasksCreated(queryId);
     }

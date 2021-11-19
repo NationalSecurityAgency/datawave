@@ -97,11 +97,6 @@ warehouse:
     ivaratorCacheScanTimeoutMinutes: 60
     modelName: 'DATAWAVE'
 
-query:
-  storage:
-    syncStorage: true
-    sendNotifications: true
-
 datawave:
   metadata:
     all-metadata-auths:

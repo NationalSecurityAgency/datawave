@@ -6,9 +6,10 @@ import com.hazelcast.core.HazelcastInstance;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.executor.config.ExecutorProperties;
+import datawave.microservice.query.messaging.QueryResultsListener;
+import datawave.microservice.query.messaging.QueryResultsManager;
+import datawave.microservice.query.messaging.Result;
 import datawave.microservice.query.remote.QueryRequest;
-import datawave.microservice.query.storage.QueryQueueListener;
-import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.TaskKey;
@@ -116,7 +117,7 @@ public abstract class QueryExecutorTest {
     private QueryStorageCache storageService;
     
     @Autowired
-    private QueryQueueManager queueManager;
+    private QueryResultsManager queueManager;
     
     @Autowired
     private LinkedList<RemoteQueryRequestEvent> queryRequestsEvents;
@@ -135,7 +136,7 @@ public abstract class QueryExecutorTest {
     
     public String TEST_POOL = "TestPool";
     
-    private Queue<QueryQueueListener> listeners = new LinkedList<>();
+    private Queue<QueryResultsListener> listeners = new LinkedList<>();
     private Queue<String> createdQueries = new LinkedList<>();
     
     static {
@@ -153,19 +154,19 @@ public abstract class QueryExecutorTest {
         }
     }
     
-    @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications"})
+    @ActiveProfiles({"QueryExecutorTest", "use-test"})
     public static class LocalQueryExecutorTest extends QueryExecutorTest {}
     
     @EmbeddedKafka
-    @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-embedded-kafka"})
+    @ActiveProfiles({"QueryExecutorTest", "use-embedded-kafka"})
     public static class EmbeddedKafkaQueryExecutorTest extends QueryExecutorTest {}
     
     @Disabled("Cannot run this test without an externally deployed RabbitMQ instance.")
-    @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-rabbit"})
+    @ActiveProfiles({"QueryExecutorTest", "use-rabbit"})
     public static class RabbitQueryExecutorTest extends QueryExecutorTest {}
     
     @Disabled("Cannot run this test without an externally deployed Kafka instance.")
-    @ActiveProfiles({"QueryExecutorTest", "sync-enabled", "send-notifications", "use-kafka"})
+    @ActiveProfiles({"QueryExecutorTest", "use-kafka"})
     public static class KafkaQueryExecutorTest extends QueryExecutorTest {}
     
     @BeforeAll
@@ -190,9 +191,9 @@ public abstract class QueryExecutorTest {
     }
     
     @AfterEach
-    public void cleanup() {
+    public void cleanup() throws Exception {
         while (!listeners.isEmpty()) {
-            listeners.remove().stop();
+            listeners.remove().close();
         }
         while (!createdQueries.isEmpty()) {
             try {
@@ -229,7 +230,7 @@ public abstract class QueryExecutorTest {
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.createQuery(queryPool, query, "testCheckpointQuery", Collections.singleton(CitiesDataType.getTestAuths()), 3);
+        TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
         createdQueries.add(key.getQueryId());
         
@@ -266,7 +267,7 @@ public abstract class QueryExecutorTest {
             Thread.sleep(250);
         }
         
-        QueryQueueListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId());
+        QueryResultsListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId());
         
         List<RemoteQueryRequestEvent> eventsToRemove = new ArrayList<>();
         
@@ -294,12 +295,13 @@ public abstract class QueryExecutorTest {
             Thread.sleep(250);
         }
         
-        // count the results
-        int count = 0;
-        while (listener.receive() != null) {
-            count++;
+        // get a result
+        startTime = System.currentTimeMillis();
+        Result result = null;
+        while (result == null && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(10)) {
+            result = listener.receive(100, TimeUnit.MILLISECONDS);
         }
-        assertTrue(count >= 1);
+        assertNotNull(result);
         assertFalse(requests.isEmpty());
     }
     
@@ -329,11 +331,11 @@ public abstract class QueryExecutorTest {
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.createQuery(queryPool, query, "testNonCheckpointableQuery", Collections.singleton(CitiesDataType.getTestAuths()), 3);
+        TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 20);
         createdQueries.add(key.getQueryId());
         assertNotNull(key);
         
-        QueryQueueListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId());
+        QueryResultsListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId());
         
         TaskStates states = storageService.getTaskStates(key.getQueryId());
         assertEquals(TaskStates.TASK_STATE.READY, states.getState(key.getTaskId()));
@@ -378,12 +380,13 @@ public abstract class QueryExecutorTest {
         queryStatus = storageService.getQueryStatus(key.getQueryId());
         assertEquals(QueryStatus.QUERY_STATE.CREATED, queryStatus.getQueryState());
         
-        // count the results
-        int count = 0;
-        while (listener.receive() != null) {
-            count++;
+        // get a result
+        startTime = System.currentTimeMillis();
+        Result result = null;
+        while (result == null && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(10)) {
+            result = listener.receive(100, TimeUnit.MILLISECONDS);
         }
-        assertTrue(count >= 1);
+        assertNotNull(result);
         assertFalse(requests.isEmpty());
     }
     

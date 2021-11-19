@@ -1,18 +1,12 @@
-package datawave.microservice.query.storage.queue;
+package datawave.microservice.query.messaging;
 
-import datawave.microservice.query.storage.QueryQueueListener;
-import datawave.microservice.query.storage.QueryQueueManager;
-import datawave.microservice.query.storage.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.integration.acks.SimpleAcknowledgment;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,25 +15,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static datawave.microservice.query.storage.queue.TestQueryQueueManager.TEST;
+import static datawave.microservice.query.messaging.TestQueryResultsManager.TEST;
 
 @Component
-@ConditionalOnProperty(name = "query.storage.backend", havingValue = TEST, matchIfMissing = true)
-@ConditionalOnMissingBean(type = "QueryQueueManager")
-public class TestQueryQueueManager implements QueryQueueManager {
+@ConditionalOnProperty(name = "query.messaging.backend", havingValue = TEST, matchIfMissing = true)
+public class TestQueryResultsManager implements QueryResultsManager {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
     public static final String TEST = "test";
     
-    public static final String MESSAGE_KEY = "messageKey";
-    public static final String MESSAGE_ID = "messageId";
-    
-    private Map<String,Queue<Message<byte[]>>> queues = Collections.synchronizedMap(new HashMap<>());
-    private Map<String,Set<String>> listenerToQueue = Collections.synchronizedMap(new HashMap<>());
-    private List<QueryQueueListener> listeners = new ArrayList<>();
+    private final Map<String,Queue<Result>> queues = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String,Set<String>> listenerToQueue = Collections.synchronizedMap(new HashMap<>());
+    private final List<QueryResultsListener> listeners = new ArrayList<>();
     
     /**
      * Create a listener
@@ -50,8 +40,8 @@ public class TestQueryQueueManager implements QueryQueueManager {
      *            The queue name
      * @return a test queue listener
      */
-    public QueryQueueListener createListener(String listenerId, String queueName) {
-        TestQueueListener listener = new TestQueueListener(listenerId);
+    public QueryResultsListener createListener(String listenerId, String queueName) {
+        TestListenerQuery listener = new TestListenerQuery(listenerId);
         synchronized (listenerToQueue) {
             listenerToQueue.put(listener.getListenerId(), Collections.synchronizedSet(new HashSet<>()));
             listenerToQueue.get(listenerId).add(queueName);
@@ -61,12 +51,11 @@ public class TestQueryQueueManager implements QueryQueueManager {
     }
     
     @Override
-    public void ensureQueueCreated(String name) {
-        synchronized (queues) {
-            if (!queues.containsKey(name)) {
-                queues.put(name, new ArrayBlockingQueue<>(1500));
-            }
-        }
+    public QueryResultsPublisher createPublisher(String queryId) {
+        return (result, interval, timeUnit) -> {
+            sendMessage(queryId, result);
+            return true;
+        };
     }
     
     public boolean queueExists(String name) {
@@ -74,7 +63,7 @@ public class TestQueryQueueManager implements QueryQueueManager {
     }
     
     @Override
-    public void deleteQueue(String name) {
+    public void deleteQuery(String name) {
         synchronized (listenerToQueue) {
             for (Set<String> queues : listenerToQueue.values()) {
                 queues.remove(name);
@@ -84,9 +73,9 @@ public class TestQueryQueueManager implements QueryQueueManager {
     }
     
     @Override
-    public void emptyQueue(String name) {
+    public void emptyQuery(String name) {
         synchronized (queues) {
-            Queue queue = queues.get(name);
+            Queue<Result> queue = queues.get(name);
             if (queue != null) {
                 queue.clear();
             }
@@ -94,24 +83,14 @@ public class TestQueryQueueManager implements QueryQueueManager {
     }
     
     @Override
-    public int getQueueSize(String name) {
+    public int getNumResultsRemaining(String name) {
         synchronized (queues) {
-            Queue queue = queues.get(name);
+            Queue<Result> queue = queues.get(name);
             if (queue != null) {
                 return queue.size();
             }
         }
         return 0;
-    }
-    
-    private void sendMessage(String name, Message<Result> message) {
-        ensureQueueCreated(name);
-        synchronized (queues) {
-            Queue queue = queues.get(name);
-            if (queue != null) {
-                queue.add(message);
-            }
-        }
     }
     
     /**
@@ -123,26 +102,26 @@ public class TestQueryQueueManager implements QueryQueueManager {
      * @param result
      *            the result to send
      */
-    @Override
-    public void sendMessage(String queryId, Result result) {
-        Message<Result> message = null;
-        MessageHeaderAccessor header = new MessageHeaderAccessor();
-        header.setHeader(MESSAGE_KEY, queryId);
-        message = MessageBuilder.createMessage(result, header.toMessageHeaders());
-        sendMessage(queryId.toString(), message);
+    private void sendMessage(String queryId, Result result) {
+        synchronized (queues) {
+            Queue<Result> queue = queues.get(queryId);
+            if (queue == null) {
+                queue = new LinkedBlockingQueue<>();
+                queues.put(queryId, queue);
+            }
+            queue.add(result);
+        }
     }
     
     /**
      * A listener for test queues
      */
-    public class TestQueueListener implements Runnable, QueryQueueListener {
-        private static final long WAIT_MS_DEFAULT = 100;
-        
-        private ArrayBlockingQueue<Message<Result>> messageQueue = new ArrayBlockingQueue<>(250);
+    public class TestListenerQuery implements Runnable, QueryResultsListener {
+        private final LinkedBlockingQueue<Result> resultQueue = new LinkedBlockingQueue<>();
         private final String listenerId;
         private Thread thread;
         
-        public TestQueueListener(String listenerId) {
+        public TestListenerQuery(String listenerId) {
             this.listenerId = listenerId;
             this.thread = new Thread(this);
             this.thread.start();
@@ -154,7 +133,7 @@ public class TestQueryQueueManager implements QueryQueueManager {
         }
         
         @Override
-        public void stop() {
+        public void close() {
             if (this.thread != null) {
                 Thread thread = this.thread;
                 this.thread = null;
@@ -175,9 +154,9 @@ public class TestQueryQueueManager implements QueryQueueManager {
                 if (listenerToQueue.containsKey(listenerId)) {
                     for (String queue : listenerToQueue.get(listenerId)) {
                         if (queues.containsKey(queue)) {
-                            Message message = queues.get(queue).poll();
-                            if (message != null) {
-                                message(message);
+                            Result result = queues.get(queue).poll();
+                            if (result != null) {
+                                message(result);
                             }
                         }
                     }
@@ -185,16 +164,11 @@ public class TestQueryQueueManager implements QueryQueueManager {
             }
         }
         
-        public void message(Message<Result> message) {
+        public void message(Result result) {
             try {
-                message.getPayload().setAcknowledgement(new SimpleAcknowledgment() {
-                    @Override
-                    public void acknowledge() {
-                        log.debug("result acknowledged");
-                    }
-                });
-                if (!messageQueue.offer(message, 10, TimeUnit.SECONDS)) {
-                    log.error("Messages are not being pulled off the queue in time.  " + message.getPayload().getResultId() + " is being dropped!");
+                result.setAcknowledgementCallback(status -> log.debug("result acknowledged"));
+                if (!resultQueue.offer(result, 10, TimeUnit.SECONDS)) {
+                    log.error("Messages are not being pulled off the queue in time.  " + result.getResultId() + " is being dropped!");
                 }
             } catch (InterruptedException e) {
                 throw new IllegalStateException(e);
@@ -203,19 +177,19 @@ public class TestQueryQueueManager implements QueryQueueManager {
         
         @Override
         public boolean hasResults() {
-            return !messageQueue.isEmpty();
+            return !resultQueue.isEmpty();
         }
         
         @Override
-        public Message<Result> receive() {
-            return receive(WAIT_MS_DEFAULT);
+        public Result receive() {
+            return receive(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         }
         
         @Override
-        public Message<Result> receive(long waitMs) {
-            Message<Result> result = null;
+        public Result receive(long interval, TimeUnit timeUnit) {
+            Result result = null;
             try {
-                result = messageQueue.poll(waitMs, TimeUnit.MILLISECONDS);
+                result = resultQueue.poll(interval, timeUnit);
             } catch (InterruptedException e) {
                 if (log.isTraceEnabled()) {
                     log.trace("Interrupted while waiting for query results");
@@ -225,10 +199,12 @@ public class TestQueryQueueManager implements QueryQueueManager {
         }
     }
     
-    public void clear() {
+    public void clear() throws IOException {
         queues.clear();
         listenerToQueue.clear();
-        listeners.forEach(QueryQueueListener::stop);
+        for (QueryResultsListener queryResultsListener : listeners) {
+            queryResultsListener.close();
+        }
         listeners.clear();
     }
 }

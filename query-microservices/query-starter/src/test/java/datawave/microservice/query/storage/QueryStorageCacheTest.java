@@ -1,5 +1,8 @@
 package datawave.microservice.query.storage;
 
+import datawave.microservice.query.messaging.QueryResultsListener;
+import datawave.microservice.query.messaging.QueryResultsManager;
+import datawave.microservice.query.messaging.Result;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.services.query.logic.QueryCheckpoint;
@@ -18,7 +21,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.springframework.messaging.Message;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -32,6 +34,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -45,21 +48,19 @@ import static org.junit.jupiter.api.Assertions.fail;
 public abstract class QueryStorageCacheTest {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
-    private final long FIVE_MIN = 5 * 60 * 1000L;
-    
-    @ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications"})
+    @ActiveProfiles({"QueryStorageCacheTest", "send-notifications", "use-test"})
     public static class LocalQueryStorageCacheTest extends QueryStorageCacheTest {}
     
     @EmbeddedKafka
-    @ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications", "use-embedded-kafka"})
+    @ActiveProfiles({"QueryStorageCacheTest", "send-notifications", "use-embedded-kafka"})
     public static class EmbeddedKafkaQueryStorageCacheTest extends QueryStorageCacheTest {}
     
     @Disabled("Cannot run this test without an externally deployed RabbitMQ instance.")
-    @ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications", "use-rabbit"})
+    @ActiveProfiles({"QueryStorageCacheTest", "send-notifications", "use-rabbit"})
     public static class RabbitQueryStorageCacheTest extends QueryStorageCacheTest {}
     
     @Disabled("Cannot run this test without an externally deployed Kafka instance.")
-    @ActiveProfiles({"QueryStorageCacheTest", "sync-enabled", "send-notifications", "use-kafka"})
+    @ActiveProfiles({"QueryStorageCacheTest", "send-notifications", "use-kafka"})
     public static class KafkaQueryStorageCacheTest extends QueryStorageCacheTest {}
     
     @SpringBootApplication(scanBasePackages = "datawave.microservice")
@@ -82,17 +83,17 @@ public abstract class QueryStorageCacheTest {
     private QueryStorageCache storageService;
     
     @Autowired
-    private QueryQueueManager queueManager;
+    private QueryResultsManager queueManager;
     
     public String TEST_POOL = "TestPool";
     
-    private Queue<QueryQueueListener> listeners = new LinkedList<>();
-    private Queue<String> createdQueries = new LinkedList<>();
+    private final Queue<QueryResultsListener> listeners = new LinkedList<>();
+    private final Queue<String> createdQueries = new LinkedList<>();
     
     @AfterEach
-    public void cleanup() {
+    public void cleanup() throws Exception {
         while (!listeners.isEmpty()) {
-            listeners.remove().stop();
+            listeners.remove().close();
         }
         while (!createdQueries.isEmpty()) {
             try {
@@ -105,12 +106,12 @@ public abstract class QueryStorageCacheTest {
     
     @DirtiesContext
     @Test
-    public void testLocking() throws ParseException, InterruptedException, IOException, TaskLockException {
+    public void testLocking() throws TaskLockException {
         String queryId = UUID.randomUUID().toString();
         QueryKey queryKey = new QueryKey("default", queryId, "EventQuery");
         queryStatusCache.updateQueryStatus(new QueryStatus(queryKey));
         taskStatesCache.updateTaskStates(new TaskStates(queryKey, 3));
-        QueryTask task = taskCache.addQueryTask(0, QueryRequest.Method.CREATE, new QueryCheckpoint(queryKey));
+        taskCache.addQueryTask(0, QueryRequest.Method.CREATE, new QueryCheckpoint(queryKey));
         QueryStorageLock qLock = queryStatusCache.getQueryStatusLock(queryId);
         QueryStorageLock sLock = taskStatesCache.getTaskStatesLock(queryId);
         assertFalse(qLock.isLocked());
@@ -131,7 +132,7 @@ public abstract class QueryStorageCacheTest {
     
     @DirtiesContext
     @Test
-    public void testCreateQuery() throws ParseException, InterruptedException, IOException, TaskLockException {
+    public void testCreateQuery() throws ParseException, IOException, TaskLockException {
         Query query = new QueryImpl();
         query.setQuery("foo == bar");
         query.setQueryLogicName("EventQuery");
@@ -140,7 +141,7 @@ public abstract class QueryStorageCacheTest {
         String queryPool = TEST_POOL;
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
-        TaskKey key = storageService.createQuery(queryPool, query, "testCreateQuery", auths, 3);
+        TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
         createdQueries.add(key.getQueryId());
         assertNotNull(key);
         
@@ -168,35 +169,9 @@ public abstract class QueryStorageCacheTest {
         assertQueryCreate(key.getQueryId(), queryPool, query, taskDescs.get(0), queryStatus);
     }
     
-    public static class QueryTaskHolder {
-        public QueryTask task;
-        public Exception throwable;
-    }
-    
-    private QueryTask getTaskOnSeparateThread(final TaskKey key, final long waitMs) throws Exception {
-        QueryTaskHolder taskHolder = new QueryTaskHolder();
-        Thread t = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    taskHolder.task = storageService.getTask(key);
-                } catch (Exception e) {
-                    taskHolder.throwable = e;
-                }
-            }
-        });
-        t.start();
-        while (t.isAlive()) {
-            Thread.sleep(1);
-        }
-        if (taskHolder.throwable != null) {
-            throw taskHolder.throwable;
-        }
-        return taskHolder.task;
-    }
-    
     @DirtiesContext
     @Test
-    public void testStoreTask() throws ParseException, InterruptedException, IOException, TaskLockException {
+    public void testStoreTask() throws ParseException, IOException, TaskLockException {
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
         query.setQuery("foo == bar");
@@ -229,7 +204,7 @@ public abstract class QueryStorageCacheTest {
     
     @DirtiesContext
     @Test
-    public void testCheckpointTask() throws InterruptedException, ParseException, IOException, TaskLockException {
+    public void testCheckpointTask() throws ParseException, IOException, TaskLockException {
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
         query.setQuery("foo == bar");
@@ -243,7 +218,6 @@ public abstract class QueryStorageCacheTest {
         QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
         QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, config);
         taskStatesCache.updateTaskStates(new TaskStates(queryKey, 10));
-        QueryRequest.Method action = QueryRequest.Method.CREATE;
         
         TaskKey key = new TaskKey(0, queryPool, UUID.randomUUID().toString(), query.getQueryLogicName());
         try {
@@ -281,7 +255,7 @@ public abstract class QueryStorageCacheTest {
     
     @DirtiesContext
     @Test
-    public void testGetAndDeleteTask() throws ParseException, InterruptedException, IOException, TaskLockException {
+    public void testGetAndDeleteTask() throws ParseException, IOException, TaskLockException {
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
         query.setQuery("foo == bar");
@@ -311,7 +285,7 @@ public abstract class QueryStorageCacheTest {
     
     @DirtiesContext
     @Test
-    public void testGetAndDeleteQueryTasks() throws ParseException, InterruptedException, IOException, TaskLockException {
+    public void testGetAndDeleteQueryTasks() throws ParseException, IOException, TaskLockException {
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
         query.setQuery("foo == bar");
@@ -346,7 +320,7 @@ public abstract class QueryStorageCacheTest {
     
     @DirtiesContext
     @Test
-    public void testGetAndDeleteTypeTasks() throws ParseException, InterruptedException, IOException, TaskLockException {
+    public void testGetAndDeleteTypeTasks() throws ParseException, IOException, TaskLockException {
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
         query.setQuery("foo == bar");
@@ -384,7 +358,7 @@ public abstract class QueryStorageCacheTest {
     
     @DirtiesContext
     @Test
-    public void testTaskStateUpdate() throws ParseException, InterruptedException, IOException, TaskLockException {
+    public void testTaskStateUpdate() throws ParseException, TaskLockException {
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
         query.setQuery("foo == bar");
@@ -396,9 +370,7 @@ public abstract class QueryStorageCacheTest {
         createdQueries.add(queryId);
         String queryPool = TEST_POOL;
         QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
-        QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, config);
         TaskStates states = new TaskStates(queryKey, 2);
-        QueryRequest.Method action = QueryRequest.Method.CREATE;
         TaskKey key = new TaskKey(0, queryKey);
         TaskKey key2 = new TaskKey(10, queryKey);
         TaskKey key3 = new TaskKey(20, queryKey);
@@ -420,7 +392,7 @@ public abstract class QueryStorageCacheTest {
     
     @DirtiesContext
     @Test
-    public void testQueryStateUpdate() throws ParseException, InterruptedException, IOException, TaskLockException {
+    public void testQueryStateUpdate() throws ParseException, IOException, TaskLockException {
         Query query = new QueryImpl();
         query.setQueryLogicName("EventQuery");
         query.setQuery("foo == bar");
@@ -429,7 +401,7 @@ public abstract class QueryStorageCacheTest {
         String queryPool = TEST_POOL;
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
-        TaskKey taskKey = storageService.createQuery(queryPool, query, "testQueryStateUpdate", auths, 2);
+        TaskKey taskKey = storageService.createQuery(queryPool, query, auths, 2);
         String queryId = taskKey.getQueryId();
         createdQueries.add(queryId);
         
@@ -449,23 +421,23 @@ public abstract class QueryStorageCacheTest {
         String queryPool = TEST_POOL;
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
-        TaskKey key = storageService.createQuery(queryPool, query, "testResultsQueue", auths, 3);
+        TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
         createdQueries.add(key.getQueryId());
         assertNotNull(key);
         
         // setup a listener for this query's result queue
-        QueryQueueListener listener = queueManager.createListener("TestListener", key.getQueryId().toString());
+        QueryResultsListener listener = queueManager.createListener("TestListener", key.getQueryId());
         listeners.add(listener);
         
         // send a result
         Result result = new Result("result1", "Some result");
-        queueManager.sendMessage(key.getQueryId(), result);
+        queueManager.createPublisher(key.getQueryId()).publish(result);
         
         // receive the message
-        Message<Result> msg = listener.receive();
+        Result msg = listener.receive(10000, TimeUnit.MILLISECONDS);
         
         assertNotNull(msg, "Got no result message");
-        assertEquals(result.getPayload(), msg.getPayload().getAndAcknowledgePayload());
+        assertEquals(result.getPayload(), msg.getPayload());
     }
     
     private void assertQueryCreate(String queryId, String queryPool, QueryStatus status) {
@@ -473,7 +445,7 @@ public abstract class QueryStorageCacheTest {
         assertEquals(queryPool, status.getQueryKey().getQueryPool());
     }
     
-    private void assertQueryCreate(String queryId, String queryPool, Query query, TaskDescription task, QueryStatus queryStatus) throws ParseException {
+    private void assertQueryCreate(String queryId, String queryPool, Query query, TaskDescription task, QueryStatus queryStatus) {
         assertNotNull(task.getTaskKey());
         assertEquals(queryId, task.getTaskKey().getQueryId());
         assertEquals(queryPool, task.getTaskKey().getQueryPool());
@@ -482,24 +454,24 @@ public abstract class QueryStorageCacheTest {
         assertEquals(query.getEndDate(), queryStatus.getQuery().getEndDate());
     }
     
-    private void assertCreateQueryTask(String queryId, QueryRequest.Method action, QueryTask task) throws ParseException {
+    private void assertCreateQueryTask(String queryId, QueryRequest.Method action, QueryTask task) {
         assertEquals(queryId, task.getTaskKey().getQueryId());
         assertEquals(action, task.getAction());
         assertEquals(task.getQueryCheckpoint().getQueryKey().getQueryId(), queryId);
     }
     
-    private void assertQueryTask(String queryId, QueryRequest.Method action, Query query, QueryTask task) throws ParseException {
+    private void assertQueryTask(String queryId, QueryRequest.Method action, Query query, QueryTask task) {
         assertEquals(queryId, task.getTaskKey().getQueryId());
         assertEquals(action, task.getAction());
         assertEquals(task.getQueryCheckpoint().getQueryKey().getQueryId(), queryId);
         assertEquals(query, task.getQueryCheckpoint().getConfig().getQuery());
     }
     
-    private void assertCreateQueryTask(TaskKey taskKey, QueryRequest.Method action, QueryTask task) throws ParseException {
+    private void assertCreateQueryTask(TaskKey taskKey, QueryRequest.Method action, QueryTask task) {
         assertCreateQueryTask(taskKey.getQueryId(), action, task);
     }
     
-    private void assertQueryTask(TaskKey taskKey, QueryRequest.Method action, Query query, QueryTask task) throws ParseException {
+    private void assertQueryTask(TaskKey taskKey, QueryRequest.Method action, Query query, QueryTask task) {
         assertQueryTask(taskKey.getQueryId(), action, query, task);
     }
     

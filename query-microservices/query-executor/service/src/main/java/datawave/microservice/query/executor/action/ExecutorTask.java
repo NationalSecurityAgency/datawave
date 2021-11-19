@@ -3,13 +3,14 @@ package datawave.microservice.query.executor.action;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.executor.QueryExecutor;
 import datawave.microservice.query.executor.config.ExecutorProperties;
+import datawave.microservice.query.messaging.QueryResultsManager;
+import datawave.microservice.query.messaging.QueryResultsPublisher;
+import datawave.microservice.query.messaging.Result;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.CachedQueryStatus;
-import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.QueryTask;
-import datawave.microservice.query.storage.Result;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskStates;
 import datawave.microservice.querymetric.BaseQueryMetric;
@@ -48,7 +49,7 @@ public abstract class ExecutorTask implements Runnable {
     protected final AccumuloConnectionRequestMap connectionMap;
     protected final AccumuloConnectionFactory connectionFactory;
     protected final QueryStorageCache cache;
-    protected final QueryQueueManager queues;
+    protected final QueryResultsManager resultsManager;
     protected final QueryLogicFactory queryLogicFactory;
     protected final BusProperties busProperties;
     protected final QueryProperties queryProperties;
@@ -66,15 +67,15 @@ public abstract class ExecutorTask implements Runnable {
     }
     
     public ExecutorTask(QueryExecutor source, ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties,
-                    AccumuloConnectionRequestMap connectionMap, AccumuloConnectionFactory connectionFactory, QueryStorageCache cache, QueryQueueManager queues,
-                    QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher, QueryMetricFactory metricFactory, QueryMetricClient metricClient,
-                    QueryTask task) {
+                    AccumuloConnectionRequestMap connectionMap, AccumuloConnectionFactory connectionFactory, QueryStorageCache cache,
+                    QueryResultsManager resultsManager, QueryLogicFactory queryLogicFactory, ApplicationEventPublisher publisher,
+                    QueryMetricFactory metricFactory, QueryMetricClient metricClient, QueryTask task) {
         this.source = source;
         this.executorProperties = executorProperties;
         this.queryProperties = queryProperties;
         this.busProperties = busProperties;
         this.cache = cache;
-        this.queues = queues;
+        this.resultsManager = resultsManager;
         this.connectionMap = connectionMap;
         this.connectionFactory = connectionFactory;
         this.queryLogicFactory = queryLogicFactory;
@@ -235,12 +236,7 @@ public abstract class ExecutorTask implements Runnable {
         }
         
         // get the queue size
-        long queueSize;
-        if (executorProperties.isPollQueueSize()) {
-            queueSize = queues.getQueueSize(taskKey.getQueryId());
-        } else {
-            queueSize = queryStatus.getNumResultsGenerated() - queryStatus.getNumResultsReturned();
-        }
+        long queueSize = resultsManager.getNumResultsRemaining(taskKey.getQueryId());
         
         // calculate a result buffer size (pagesize * multiplier) adjusting for concurrent next calls
         long bufferSize = (long) (maxPageSize * Math.max(1, concurrentNextCalls) * bufferMultiplier);
@@ -273,13 +269,14 @@ public abstract class ExecutorTask implements Runnable {
             if (queryLogic.getMaxPageSize() != 0) {
                 pageSize = Math.min(pageSize, queryLogic.getMaxPageSize());
             }
+            QueryResultsPublisher publisher = resultsManager.createPublisher(queryId);
             boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
             int count = 0;
             while (running && iter.hasNext()) {
                 count++;
                 Object result = iter.next();
                 log.trace("Generated result for " + taskKey + ": " + result);
-                queues.sendMessage(queryId, new Result(UUID.randomUUID().toString(), result));
+                publisher.publish(new Result(UUID.randomUUID().toString(), result));
                 queryStatus.incrementNumResultsGenerated(1);
                 updateMetrics(queryId, queryStatus, iter);
                 running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);

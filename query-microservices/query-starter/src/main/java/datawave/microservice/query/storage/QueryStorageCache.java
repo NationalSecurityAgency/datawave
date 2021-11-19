@@ -37,8 +37,6 @@ public interface QueryStorageCache {
      *            The query pool
      * @param query
      *            The query parameters
-     * @param originService
-     *            The origin service, used to get a response when the create call has completed
      * @param calculatedAuths
      *            The intersection of the user's auths with the requested auths
      * @param count
@@ -47,7 +45,7 @@ public interface QueryStorageCache {
      * @throws IOException
      *             underlying storage error
      */
-    TaskKey createQuery(String queryPool, Query query, String originService, Set<Authorizations> calculatedAuths, int count) throws IOException;
+    TaskKey createQuery(String queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
     
     /**
      * Get the current query state. This includes the query status and the task statuses
@@ -200,7 +198,7 @@ public interface QueryStorageCache {
      * @throws IOException
      *             underlying storage error
      */
-    public boolean deleteQuery(String queryId) throws IOException;
+    boolean deleteQuery(String queryId) throws IOException;
     
     /**
      * Clear the cache
@@ -208,7 +206,7 @@ public interface QueryStorageCache {
      * @throws IOException
      *             underlying storage error
      */
-    public void clear() throws IOException;
+    void clear() throws IOException;
     
     /**
      * Get the tasks that are stored for a specified query
@@ -219,7 +217,7 @@ public interface QueryStorageCache {
      * @throws IOException
      *             underlying storage error
      */
-    public List<TaskKey> getTasks(String queryId) throws IOException;
+    List<TaskKey> getTasks(String queryId) throws IOException;
     
     /************** Some convenience methods for query status locking ************/
     

@@ -142,9 +142,6 @@ public class QueryServiceCloseTest extends AbstractQueryServiceTest {
                 queryStatus);
         // @formatter:on
         
-        // verify that the result queue is still present
-        Assert.assertTrue(queryQueueManager.queueExists(queryId));
-        
         // send enough results to return a page
         // pump enough results into the queue to trigger a complete page
         int pageSize = queryStorageCache.getQueryStatus(queryId).getQuery().getPagesize();
@@ -493,9 +490,6 @@ public class QueryServiceCloseTest extends AbstractQueryServiceTest {
                     currentTimeMillis,
                     queryStatus);
             // @formatter:on
-            
-            // verify that the result queue is still present
-            Assert.assertTrue(queryQueueManager.queueExists(queryStatus.getQueryKey().getQueryId()));
             
             // verify that the query tasks are still present
             assertTasksCreated(queryStatus.getQueryKey().getQueryId());

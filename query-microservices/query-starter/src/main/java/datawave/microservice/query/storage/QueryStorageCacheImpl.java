@@ -1,16 +1,13 @@
 package datawave.microservice.query.storage;
 
-import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.query.messaging.QueryResultsManager;
 import datawave.microservice.query.remote.QueryRequest;
-import datawave.microservice.query.storage.config.QueryStorageProperties;
 import datawave.services.query.logic.QueryCheckpoint;
 import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.security.Authorizations;
-import org.springframework.cloud.bus.BusProperties;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -25,23 +22,13 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     private final QueryStatusCache queryStatusCache;
     private final TaskStatesCache taskStatesCache;
     private final TaskCache taskCache;
-    private final QueryQueueManager queue;
-    private final QueryStorageProperties properties;
+    private final QueryResultsManager queue;
     
-    private final QueryProperties queryProperties;
-    private final ApplicationEventPublisher publisher;
-    private final BusProperties busProperties;
-    
-    public QueryStorageCacheImpl(QueryStatusCache queryStatusCache, TaskStatesCache taskStatesCache, TaskCache taskCache, QueryQueueManager queue,
-                    QueryStorageProperties properties, QueryProperties queryProperties, ApplicationEventPublisher publisher, BusProperties busProperties) {
+    public QueryStorageCacheImpl(QueryStatusCache queryStatusCache, TaskStatesCache taskStatesCache, TaskCache taskCache, QueryResultsManager queue) {
         this.queryStatusCache = queryStatusCache;
         this.taskStatesCache = taskStatesCache;
         this.taskCache = taskCache;
         this.queue = queue;
-        this.properties = properties;
-        this.queryProperties = queryProperties;
-        this.publisher = publisher;
-        this.busProperties = busProperties;
     }
     
     /**
@@ -59,7 +46,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public TaskKey defineQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
-        return storeQuery(queryPool, query, null, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.DEFINED);
+        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.DEFINED);
     }
     
     /**
@@ -76,13 +63,11 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return The task key
      */
     @Override
-    public TaskKey createQuery(String queryPool, Query query, String originService, Set<Authorizations> calculatedAuthorizations, int count)
-                    throws IOException {
-        return storeQuery(queryPool, query, originService, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATED);
+    public TaskKey createQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
+        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATED);
     }
     
-    private TaskKey storeQuery(String queryPool, Query query, String originService, Set<Authorizations> calculatedAuthorizations, int count,
-                    QueryStatus.QUERY_STATE queryState) throws IOException {
+    private TaskKey storeQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count, QueryStatus.QUERY_STATE queryState) {
         UUID queryUuid = query.getId();
         if (queryUuid == null) {
             // create the query String
@@ -110,9 +95,6 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
             // store the initial tasks states
             TaskStates taskStates = new TaskStates(queryKey, count);
             taskStatesCache.updateTaskStates(taskStates);
-            
-            // create the results queue
-            queue.ensureQueueCreated(queryId);
             
             // create and store the initial create task with the checkpoint
             QueryTask task = createTask(QueryRequest.Method.CREATE, checkpoint);
@@ -146,7 +128,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     }
     
     /**
-     * Get all query propertis
+     * Get all query properties
      * 
      * @return the query properties
      */
@@ -298,7 +280,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public QueryTask createTask(QueryRequest.Method action, QueryCheckpoint checkpoint) {
-        QueryTask task = null;
+        QueryTask task;
         
         String queryId = checkpoint.getQueryKey().getQueryId();
         
@@ -380,7 +362,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
             queryStatusCache.deleteQueryStatus(queryId);
             taskStatesCache.deleteTaskStates(queryId);
             taskCache.deleteTasks(queryId);
-            queue.deleteQueue(queryId);
+            queue.deleteQuery(queryId);
             return existed;
         } finally {
             lock.unlock();
@@ -393,7 +375,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     @Override
     public void clear() {
         for (QueryStatus query : queryStatusCache.getQueryStatus()) {
-            queue.emptyQueue(query.getQueryKey().getQueryId());
+            queue.emptyQuery(query.getQueryKey().getQueryId());
         }
         queryStatusCache.clear();
         taskStatesCache.clear();

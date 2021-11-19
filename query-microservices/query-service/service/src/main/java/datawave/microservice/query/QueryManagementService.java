@@ -7,10 +7,10 @@ import datawave.microservice.audit.AuditClient;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.query.messaging.QueryResultsManager;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
 import datawave.microservice.query.runner.NextCall;
-import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.TaskKey;
@@ -106,7 +106,7 @@ public class QueryManagementService implements QueryRequestHandler {
     private final QueryMetricClient queryMetricClient;
     private final ResponseObjectFactory responseObjectFactory;
     private final QueryStorageCache queryStorageCache;
-    private final QueryQueueManager queryQueueManager;
+    private final QueryResultsManager queryResultsManager;
     private final AuditClient auditClient;
     private final ThreadPoolTaskExecutor nextCallExecutor;
     
@@ -120,7 +120,7 @@ public class QueryManagementService implements QueryRequestHandler {
     public QueryManagementService(QueryProperties queryProperties, ApplicationEventPublisher eventPublisher, BusProperties busProperties,
                     QueryParameters queryParameters, SecurityMarking securityMarking, BaseQueryMetric baseQueryMetric, QueryLogicFactory queryLogicFactory,
                     QueryMetricClient queryMetricClient, ResponseObjectFactory responseObjectFactory, QueryStorageCache queryStorageCache,
-                    QueryQueueManager queryQueueManager, AuditClient auditClient, ThreadPoolTaskExecutor nextCallExecutor) {
+                    QueryResultsManager queryResultsManager, AuditClient auditClient, ThreadPoolTaskExecutor nextCallExecutor) {
         this.queryProperties = queryProperties;
         this.eventPublisher = eventPublisher;
         this.busProperties = busProperties;
@@ -131,7 +131,7 @@ public class QueryManagementService implements QueryRequestHandler {
         this.queryMetricClient = queryMetricClient;
         this.responseObjectFactory = responseObjectFactory;
         this.queryStorageCache = queryStorageCache;
-        this.queryQueueManager = queryQueueManager;
+        this.queryResultsManager = queryResultsManager;
         this.auditClient = auditClient;
         this.nextCallExecutor = nextCallExecutor;
         this.queryStatusUpdateUtil = new QueryStatusUpdateUtil(this.queryProperties, this.queryStorageCache);
@@ -402,7 +402,6 @@ public class QueryManagementService implements QueryRequestHandler {
                 taskKey = queryStorageCache.createQuery(
                         getPoolName(),
                         query,
-                        busProperties.getId(),
                         downgradedAuthorizations,
                         getMaxConcurrentTasks(queryLogic));
                 // @formatter:on
@@ -641,8 +640,9 @@ public class QueryManagementService implements QueryRequestHandler {
             // @formatter:off
             final NextCall nextCall = new NextCall.Builder()
                     .setQueryProperties(queryProperties)
-                    .setQueryQueueManager(queryQueueManager)
+                    .setResultsQueueManager(queryResultsManager)
                     .setQueryStorageCache(queryStorageCache)
+                    .setQueryStatusUpdateUtil(queryStatusUpdateUtil)
                     .setQueryId(queryId)
                     .setQueryLogic(queryLogic)
                     .build();
@@ -665,7 +665,7 @@ public class QueryManagementService implements QueryRequestHandler {
                     
                     // after all of our work is done, perform our final query status update for this next call
                     queryStatus = queryStatusUpdateUtil.lockedUpdate(queryId, status -> {
-                        queryStatusUpdateUtil.releaseNextCall(status, queryQueueManager);
+                        queryStatusUpdateUtil.releaseNextCall(status, queryResultsManager);
                         status.setLastPageNumber(status.getLastPageNumber() + 1);
                         status.setNumResultsReturned(status.getNumResultsReturned() + resultsPage.getResults().size());
                     });
@@ -705,7 +705,7 @@ public class QueryManagementService implements QueryRequestHandler {
         } finally {
             // update query status if we failed
             if (!success) {
-                queryStatusUpdateUtil.lockedUpdate(queryId, status -> queryStatusUpdateUtil.releaseNextCall(status, queryQueueManager));
+                queryStatusUpdateUtil.lockedUpdate(queryId, status -> queryStatusUpdateUtil.releaseNextCall(status, queryResultsManager));
             }
         }
     }
@@ -898,7 +898,7 @@ public class QueryManagementService implements QueryRequestHandler {
             });
             
             // delete the results queue
-            queryQueueManager.deleteQueue(queryId);
+            queryResultsManager.deleteQuery(queryId);
             
             QueryRequest cancelRequest = QueryRequest.cancel(queryId);
             
@@ -1100,7 +1100,7 @@ public class QueryManagementService implements QueryRequestHandler {
         
         // if the query has no active next calls, delete the results queue
         if (queryStatus.getActiveNextCalls() == 0) {
-            queryQueueManager.deleteQueue(queryId);
+            queryResultsManager.deleteQuery(queryId);
         }
         
         // publish a close event to the executor pool

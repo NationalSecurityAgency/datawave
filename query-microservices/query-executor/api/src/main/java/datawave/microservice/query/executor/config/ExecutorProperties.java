@@ -11,8 +11,6 @@ public class ExecutorProperties {
     
     // What pool this executor is handling
     private String pool = "default";
-    // Should we use the query status to track the number of generated results or poll the underlying queue size
-    private boolean pollQueueSize = true;
     // A multiplier on the page size use to determine how but the pool of generated results should be.
     private float availableResultsPageMultiplier = 2.5f;
     // The maximum age of the query status object
@@ -46,14 +44,6 @@ public class ExecutorProperties {
     
     public void setPool(String pool) {
         this.pool = pool;
-    }
-    
-    public boolean isPollQueueSize() {
-        return pollQueueSize;
-    }
-    
-    public void setPollQueueSize(boolean pollQueueSize) {
-        this.pollQueueSize = pollQueueSize;
     }
     
     public int getMaxQueueSize() {

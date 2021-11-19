@@ -503,9 +503,6 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
                     queryStatus);
             // @formatter:on
             
-            // verify that the result queue is still present
-            Assert.assertTrue(queryQueueManager.queueExists(queryStatus.getQueryKey().getQueryId()));
-            
             // verify that the query tasks are still present
             assertTasksCreated(queryStatus.getQueryKey().getQueryId());
         }

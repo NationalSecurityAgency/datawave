@@ -2,11 +2,12 @@ package datawave.microservice.query.executor;
 
 import datawave.microservice.query.executor.action.ExecutorTask;
 import datawave.microservice.query.executor.config.ExecutorProperties;
+import datawave.microservice.query.messaging.QueryResultsListener;
+import datawave.microservice.query.messaging.QueryResultsManager;
+import datawave.microservice.query.messaging.QueryResultsPublisher;
+import datawave.microservice.query.messaging.Result;
 import datawave.microservice.query.storage.CachedQueryStatus;
-import datawave.microservice.query.storage.QueryQueueListener;
-import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
-import datawave.microservice.query.storage.Result;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.services.query.logic.QueryKey;
 import org.apache.accumulo.core.client.Connector;
@@ -23,7 +24,7 @@ public class ShouldGenerateResultsTest {
     public void testShouldGenerateResults() {
         ExecutorProperties props = new ExecutorProperties();
         props.setAvailableResultsPageMultiplier(2.0f);
-        TestQueryQueueManagerForSize queues = new TestQueryQueueManagerForSize();
+        TestQueryResultsManagerForSize queues = new TestQueryResultsManagerForSize();
         TestExecutorShouldGenerateResults action = new TestExecutorShouldGenerateResults(props, queues);
         TaskKey key = new TaskKey(1, new QueryKey("default", "queryid", "querylogic"));
         QueryStatus queryStatus = new QueryStatus();
@@ -74,7 +75,7 @@ public class ShouldGenerateResultsTest {
         assertTrue(action.shouldGenerateMoreResults(false, key, 10, 0, queryStatus));
     }
     
-    public class TestQueryQueueManagerForSize implements QueryQueueManager {
+    public class TestQueryResultsManagerForSize implements QueryResultsManager {
         private int queueSize = 0;
         
         public void setQueueSize(int size) {
@@ -82,30 +83,34 @@ public class ShouldGenerateResultsTest {
         }
         
         @Override
-        public QueryQueueListener createListener(String listenerId, String queueName) {
+        public QueryResultsListener createListener(String listenerId, String queueName) {
             return null;
         }
         
         @Override
-        public void ensureQueueCreated(String queryId) {}
-        
-        @Override
-        public void deleteQueue(String queryId) {}
-        
-        @Override
-        public void emptyQueue(String queryId) {}
-        
-        @Override
-        public int getQueueSize(String queryId) {
-            return queueSize;
+        public QueryResultsPublisher createPublisher(String queryId) {
+            return (result, interval, timeUnit) -> {
+                sendMessage(queryId, result);
+                return true;
+            };
         }
         
         @Override
-        public void sendMessage(String queryId, Result result) {}
+        public void deleteQuery(String queryId) {}
+        
+        @Override
+        public void emptyQuery(String queryId) {}
+        
+        @Override
+        public int getNumResultsRemaining(String queryId) {
+            return queueSize;
+        }
+        
+        private void sendMessage(String queryId, Result result) {}
     }
     
     public class TestExecutorShouldGenerateResults extends ExecutorTask {
-        public TestExecutorShouldGenerateResults(ExecutorProperties executorProperties, QueryQueueManager queues) {
+        public TestExecutorShouldGenerateResults(ExecutorProperties executorProperties, QueryResultsManager queues) {
             super(null, executorProperties, null, null, null, null, null, queues, null, null, null, null, null);
         }
         

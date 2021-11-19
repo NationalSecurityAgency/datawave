@@ -113,13 +113,6 @@ query:
         definedView: "LuceneUUIDEventQuery"
       - fieldName: "PAGE_TITLE"
         definedView: "LuceneUUIDEventQuery"
-  storage:
-    backend:
-      LOCAL
-    syncStorage:
-      true
-    sendNotifications:
-      true
   logic:
     factory:
       enabled: true

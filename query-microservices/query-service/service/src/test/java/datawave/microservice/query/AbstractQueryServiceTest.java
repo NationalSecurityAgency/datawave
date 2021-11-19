@@ -5,13 +5,13 @@ import datawave.microservice.audit.AuditClient;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.query.messaging.Result;
+import datawave.microservice.query.messaging.TestQueryResultsManager;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
-import datawave.microservice.query.storage.Result;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskStates;
-import datawave.microservice.query.storage.queue.TestQueryQueueManager;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.query.Query;
@@ -104,7 +104,7 @@ public abstract class AbstractQueryServiceTest {
     protected QueryStorageCache queryStorageCache;
     
     @Autowired
-    protected TestQueryQueueManager queryQueueManager;
+    protected TestQueryResultsManager queryQueueManager;
     
     @Autowired
     protected AuditClient auditClient;
@@ -149,7 +149,7 @@ public abstract class AbstractQueryServiceTest {
                 }
             }
             event.setFields(fields);
-            queryQueueManager.sendMessage(queryId, new Result(Integer.toString(resultId), event));
+            queryQueueManager.createPublisher(queryId).publish(new Result(Integer.toString(resultId), event));
         }
     }
     

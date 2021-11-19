@@ -246,42 +246,6 @@ audit-client:
 
 ---
 
-spring.config.activate.on-profile: sync-disabled
-
-query:
-  storage:
-    syncStorage:
-      false
-
----
-
-spring.config.activate.on-profile: sync-enabled
-
-query:
-  storage:
-    syncStorage:
-      true
-
----
-
-spring.config.activate.on-profile: send-notifications
-
-query:
-  storage:
-    sendNotifications:
-      true
-
----
-
-spring.config.activate.on-profile: no-notifications
-
-query:
-  storage:
-    sendNotifications:
-      false
-
----
-
 spring.config.activate.on-profile: use-rabbit
 
 query:

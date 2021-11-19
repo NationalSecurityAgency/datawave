@@ -1,6 +1,6 @@
 version: '2.2'
 services:
-  discovery:
+  consul:
     image: consul:1.9.8
     hostname: localhost
     environment:
@@ -16,8 +16,8 @@ services:
     networks:
       - demo
 
-  messaging:
-    image: rabbitmq:3.7.7-alpine
+  rabbitmq:
+    image: rabbitmq:3.8.25-alpine
     volumes:
       - ${RABBITMQ_CONFIG_DIR:-./rabbitmq-config}:/etc/rabbitmq
       - ./logs:/logs
@@ -29,7 +29,7 @@ services:
     networks:
       - demo
     depends_on:
-      discovery:
+      consul:
         condition: service_started
 
   zookeeper:
@@ -87,7 +87,7 @@ services:
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,native,open_actuator
-      - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.host=consul
       - --spring.cloud.config.server.native.searchLocations=file:///microservice-config
     environment:
       - 'KEYSTORE_LOCATION=file:///etc/pki/testServer.p12'
@@ -102,7 +102,7 @@ services:
     networks:
       - demo
     depends_on:
-      messaging:
+      rabbitmq:
         condition: service_started
 
   cache:
@@ -111,7 +111,7 @@ services:
     command:
       - --spring.profiles.active=consul,compose
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     ports:
       - "5701-5703"
@@ -133,7 +133,7 @@ services:
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,mock,compose
-      - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     ports:
       - "8080"
@@ -154,7 +154,7 @@ services:
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose
-      - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
@@ -178,12 +178,12 @@ services:
       authorization:
         condition: service_healthy
 
-  querymetric:
+  metrics:
     image: datawave/query-metric-service:1.5-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
-      - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
@@ -215,7 +215,7 @@ services:
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
-      - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
@@ -244,10 +244,11 @@ services:
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query
-      - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - AUDIT_SERVER_URL=http://audit:8080/audit
+      - "BACKEND=${BACKEND:-kafka}"
     ports:
       - "8080:8080"
       - "8443:8443"
@@ -263,7 +264,7 @@ services:
         condition: service_healthy
       authorization:
         condition: service_healthy
-      querymetric:
+      metrics:
         condition: service_healthy
       kafka:
         condition: service_started
@@ -277,10 +278,11 @@ services:
       - --spring.cloud.config.name=executor
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query,pool1
-      - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
+      - "BACKEND=${BACKEND:-kafka}"
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -299,11 +301,11 @@ services:
     healthcheck:
       test: curl -f http://localhost:8080/executor-pool1/mgmt/health
     depends_on:
-      messaging:
+      rabbitmq:
         condition: service_started
       authorization:
         condition: service_healthy
-      querymetric:
+      metrics:
         condition: service_healthy
       kafka:
         condition: service_started
@@ -318,10 +320,11 @@ services:
       - --spring.cloud.config.name=executor
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,storage,metricssource,query,pool2
-      - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
+      - "BACKEND=${BACKEND:-kafka}"
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -340,11 +343,11 @@ services:
     healthcheck:
       test: curl -f http://localhost:8080/executor-pool2/mgmt/health
     depends_on:
-      messaging:
+      rabbitmq:
         condition: service_started
       authorization:
         condition: service_healthy
-      querymetric:
+      metrics:
         condition: service_healthy
 
   querystorage:
@@ -355,7 +358,7 @@ services:
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,storage,query
-      - --spring.cloud.consul.host=discovery
+      - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
@@ -385,9 +388,9 @@ services:
   #  - Cluster Config: Enabled
   #  - Member Addresses: cache
   # Enter the following for the query metric service:
-  #  - Cluster Name: querymetric
+  #  - Cluster Name: metrics
   #  - Cluster Config: Enabled
-  #  - Member Addresses: querymetric
+  #  - Member Addresses: metrics
   # Use the console to view the cache contents
   #  - Select the 'cache' cluster
   #  - Select 'Console' under the 'CLUSTER' navigation entry

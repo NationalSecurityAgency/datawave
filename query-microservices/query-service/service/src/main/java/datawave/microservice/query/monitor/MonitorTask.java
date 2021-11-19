@@ -2,10 +2,10 @@ package datawave.microservice.query.monitor;
 
 import datawave.microservice.query.QueryManagementService;
 import datawave.microservice.query.config.QueryExpirationProperties;
+import datawave.microservice.query.messaging.QueryResultsManager;
 import datawave.microservice.query.monitor.cache.MonitorStatus;
 import datawave.microservice.query.monitor.cache.MonitorStatusCache;
 import datawave.microservice.query.monitor.config.MonitorProperties;
-import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.webservice.query.exception.QueryException;
@@ -22,11 +22,11 @@ public class MonitorTask implements Callable<Void> {
     private final QueryExpirationProperties expirationProperties;
     private final MonitorStatusCache monitorStatusCache;
     private final QueryStorageCache queryStorageCache;
-    private final QueryQueueManager queryQueueManager;
+    private final QueryResultsManager queryQueueManager;
     private final QueryManagementService queryManagementService;
     
     public MonitorTask(MonitorProperties monitorProperties, QueryExpirationProperties expirationProperties, MonitorStatusCache monitorStatusCache,
-                    QueryStorageCache queryStorageCache, QueryQueueManager queryQueueManager, QueryManagementService queryManagementService) {
+                    QueryStorageCache queryStorageCache, QueryResultsManager queryQueueManager, QueryManagementService queryManagementService) {
         this.monitorProperties = monitorProperties;
         this.expirationProperties = expirationProperties;
         this.monitorStatusCache = monitorStatusCache;
@@ -76,7 +76,7 @@ public class MonitorTask implements Callable<Void> {
                 // delete the results queue if it exists
                 else {
                     // TODO: add in a check to see if the queue exists first
-                    queryQueueManager.deleteQueue(queryId);
+                    queryQueueManager.deleteQuery(queryId);
                 }
             }
             // if the query is running

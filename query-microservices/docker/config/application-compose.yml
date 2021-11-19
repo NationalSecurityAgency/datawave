@@ -23,9 +23,8 @@ spring:
     bootstrap-servers: kafka:9092
     consumer:
       group-id: KafkaQueryQueueManager
-      autoOffsetReset: latest
-    listener:
-      enable-auto-commit: false
+      autoOffsetReset: earliest
+      enableAutoCommit: false
 
 # This is the accumulo configuration we use in services.  These don't map directly to a properties class, but 
 # they are here to be used as a reference for other properties.
@@ -36,9 +35,5 @@ accumulo:
   password: 'secret'
 
 # Configuration placeholder which determines what backend will be used for transmitting query results.
-executor:
-  backend: kafka
-datawave:
-  query:
-    executor:
-      pollQueueSize: false # cannot poll queue size when using kafka
+messaging:
+  backend: ${BACKEND:kafka}

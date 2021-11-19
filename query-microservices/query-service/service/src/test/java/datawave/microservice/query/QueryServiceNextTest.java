@@ -232,7 +232,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         Future<ResponseEntity<BaseResponse>> nextFuture = nextQuery(authUser, queryId);
         
         // make sure all events were consumed before canceling
-        while (queryQueueManager.getQueueSize(queryId) != 0) {
+        while (queryQueueManager.getNumResultsRemaining(queryId) != 0) {
             Thread.sleep(100);
         }
         

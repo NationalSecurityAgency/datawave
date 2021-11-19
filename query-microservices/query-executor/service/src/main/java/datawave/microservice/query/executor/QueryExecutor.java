@@ -7,9 +7,9 @@ import datawave.microservice.query.executor.action.ExecutorTask;
 import datawave.microservice.query.executor.action.PlanTask;
 import datawave.microservice.query.executor.action.ResultsTask;
 import datawave.microservice.query.executor.config.ExecutorProperties;
+import datawave.microservice.query.messaging.QueryResultsManager;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.remote.QueryRequestHandler;
-import datawave.microservice.query.storage.QueryQueueManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.QueryStorageLock;
@@ -49,7 +49,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
     protected final BlockingQueue<Runnable> workQueue;
     protected final Set<Runnable> working;
     protected final QueryStorageCache cache;
-    protected final QueryQueueManager queues;
+    protected final QueryResultsManager queues;
     protected final QueryLogicFactory queryLogicFactory;
     protected final ExecutorProperties executorProperties;
     protected final QueryProperties queryProperties;
@@ -63,7 +63,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
     protected final QueryMetricClient metricClient;
     
     public QueryExecutor(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, ApplicationContext appCtx,
-                    AccumuloConnectionFactory connectionFactory, QueryStorageCache cache, QueryQueueManager queues, QueryLogicFactory queryLogicFactory,
+                    AccumuloConnectionFactory connectionFactory, QueryStorageCache cache, QueryResultsManager queues, QueryLogicFactory queryLogicFactory,
                     ApplicationEventPublisher publisher, QueryMetricFactory metricFactory, QueryMetricClient metricClient) {
         this.executorProperties = executorProperties;
         this.queryProperties = queryProperties;
@@ -227,7 +227,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         return cache;
     }
     
-    public QueryQueueManager getQueues() {
+    public QueryResultsManager getQueues() {
         return queues;
     }
     

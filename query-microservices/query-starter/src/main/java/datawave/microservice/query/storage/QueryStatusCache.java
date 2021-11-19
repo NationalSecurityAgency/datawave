@@ -9,6 +9,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @CacheConfig(cacheNames = QueryStatusCache.CACHE_NAME)
 public class QueryStatusCache {
@@ -43,7 +44,6 @@ public class QueryStatusCache {
      */
     @CacheEvict(key = "T(datawave.services.query.logic.QueryKey).toUUIDKey(#queryId)")
     public void deleteQueryStatus(String queryId) {
-        String key = QueryKey.toUUIDKey(queryId);
         if (log.isDebugEnabled()) {
             log.debug("Deleted query status for " + queryId);
         }
@@ -68,7 +68,7 @@ public class QueryStatusCache {
      * @return A list of query status
      */
     public List<QueryStatus> getQueryStatus() {
-        return (List<QueryStatus>) cacheInspector.listAll(CACHE_NAME, QueryStatus.class);
+        return cacheInspector.listAll(CACHE_NAME, QueryStatus.class).stream().map(QueryStatus.class::cast).collect(Collectors.toList());
     }
     
     /**

@@ -1,7 +1,7 @@
 package datawave.microservice.query.util;
 
 import datawave.microservice.query.config.QueryProperties;
-import datawave.microservice.query.storage.QueryQueueManager;
+import datawave.microservice.query.messaging.QueryResultsManager;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.QueryStorageLock;
@@ -39,7 +39,7 @@ public class QueryStatusUpdateUtil {
         }
     }
     
-    public void releaseNextCall(QueryStatus queryStatus, QueryQueueManager queryQueueManager) throws QueryException {
+    public void releaseNextCall(QueryStatus queryStatus, QueryResultsManager queryResultsManager) throws QueryException {
         // decrement the concurrent next count
         if (queryStatus.getActiveNextCalls() > 0) {
             queryStatus.setActiveNextCalls(queryStatus.getActiveNextCalls() - 1);
@@ -50,7 +50,7 @@ public class QueryStatusUpdateUtil {
             // TODO: We should add a 'queueExists' call to determine whether this needs to be run
             // if by the end of the call the query is no longer running, delete the results queue
             if (!queryStatus.isRunning()) {
-                queryQueueManager.deleteQueue(queryStatus.getQueryKey().getQueryId());
+                queryResultsManager.deleteQuery(queryStatus.getQueryKey().getQueryId());
             }
         } else {
             throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR, "Concurrent next count can't be decremented: " + queryStatus.getActiveNextCalls());

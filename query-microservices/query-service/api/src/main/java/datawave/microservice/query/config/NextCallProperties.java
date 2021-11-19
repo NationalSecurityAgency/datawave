@@ -19,6 +19,10 @@ public class NextCallProperties {
     private long statusUpdateInterval = TimeUnit.SECONDS.toMillis(6);
     @NotNull
     private TimeUnit statusUpdateTimeUnit = TimeUnit.MILLISECONDS;
+    @PositiveOrZero
+    private long maxResultsTimeout = 5l;
+    @NotNull
+    private TimeUnit maxResultsTimeUnit = TimeUnit.SECONDS;
     
     private ThreadPoolTaskExecutorProperties executor = new ThreadPoolTaskExecutorProperties(10, 100, 100, "nextCall-");
     
@@ -68,6 +72,26 @@ public class NextCallProperties {
     
     public void setStatusUpdateTimeUnit(TimeUnit statusUpdateTimeUnit) {
         this.statusUpdateTimeUnit = statusUpdateTimeUnit;
+    }
+    
+    public long getMaxResultsTimeout() {
+        return maxResultsTimeout;
+    }
+    
+    public long getMaxResultsTimeoutMillis() {
+        return maxResultsTimeUnit.toMillis(maxResultsTimeout);
+    }
+    
+    public void setMaxResultsTimeout(long maxResultsTimeout) {
+        this.maxResultsTimeout = maxResultsTimeout;
+    }
+    
+    public TimeUnit getMaxResultsTimeUnit() {
+        return maxResultsTimeUnit;
+    }
+    
+    public void setMaxResultsTimeUnit(TimeUnit maxResultsTimeUnit) {
+        this.maxResultsTimeUnit = maxResultsTimeUnit;
     }
     
     public ThreadPoolTaskExecutorProperties getExecutor() {

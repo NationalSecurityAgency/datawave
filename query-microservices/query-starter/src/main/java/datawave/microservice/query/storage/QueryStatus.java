@@ -35,6 +35,7 @@ public class QueryStatus implements Serializable {
     private String plan;
     
     private long numResultsReturned = 0L;
+    private long numResultsConsumed = 0L;
     private long numResultsGenerated = 0L;
     private int activeNextCalls = 0;
     private long lastPageNumber = 0L;
@@ -183,6 +184,18 @@ public class QueryStatus implements Serializable {
     
     public void incrementNumResultsReturned(long increment) {
         this.numResultsReturned += increment;
+    }
+    
+    public long getNumResultsConsumed() {
+        return numResultsConsumed;
+    }
+    
+    public void setNumResultsConsumed(long numResultsConsumed) {
+        this.numResultsConsumed = numResultsConsumed;
+    }
+    
+    public void incrementNumResultsConsumed(long increment) {
+        this.numResultsConsumed += increment;
     }
     
     public long getNumResultsGenerated() {
