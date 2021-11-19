@@ -26,7 +26,6 @@ import io.protostuff.Output;
 import io.protostuff.Schema;
 
 import com.google.common.collect.Lists;
-import org.apache.log4j.Logger;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)
