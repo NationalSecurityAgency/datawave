@@ -266,7 +266,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         for (QueryData qd : config.getQueries()) {
             // scan the table
             BatchScanner bs = scannerFactory.newScanner(qd.getTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
-
+            
             bs.setRanges(qd.getRanges());
             for (IteratorSetting setting : qd.getSettings()) {
                 bs.addScanIterator(setting);
