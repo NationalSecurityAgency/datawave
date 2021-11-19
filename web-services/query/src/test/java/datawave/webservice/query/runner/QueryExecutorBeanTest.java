@@ -457,7 +457,8 @@ public class QueryExecutorBeanTest {
                                     .append(this.getNextCount(), other.getNextCount()).append(this.getSeekCount(), other.getSeekCount())
                                     .append(this.getYieldCount(), other.getYieldCount()).append(this.getDocRanges(), other.getDocRanges())
                                     .append(this.getFiRanges(), other.getFiRanges()).append(this.getPlan(), other.getPlan())
-                                    .append(this.getLoginTime(), other.getLoginTime()).append(this.getPredictions(), other.getPredictions()).isEquals();
+                                    .append(this.getVersion(), other.getVersion()).append(this.getLoginTime(), other.getLoginTime())
+                                    .append(this.getPredictions(), other.getPredictions()).isEquals();
                 } else {
                     return false;
                 }
