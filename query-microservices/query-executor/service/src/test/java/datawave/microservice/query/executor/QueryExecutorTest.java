@@ -17,6 +17,7 @@ import datawave.microservice.query.storage.TaskStates;
 import datawave.microservice.querymetric.QueryMetricClient;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.query.Constants;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -245,9 +246,12 @@ public abstract class QueryExecutorTest {
         
         // wait for the create task to finish
         long startTime = System.currentTimeMillis();
-        while (queryRequestsEvents.isEmpty() && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(5)) {
+        while (queryRequestsEvents.isEmpty() && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
             Thread.sleep(100);
+            checkFailed(key.getQueryId());
         }
+        
+        checkFailed(key.getQueryId());
         
         // the first event should be the create response from the executor to the query service
         RemoteQueryRequestEvent notification = queryRequestsEvents.removeFirst();
@@ -261,11 +265,17 @@ public abstract class QueryExecutorTest {
         assertEquals(QueryStatus.QUERY_STATE.CREATED, queryStatus.getQueryState());
         assertEquals(expectPlan, queryStatus.getPlan());
         
+        TaskStates taskStates = storageService.getTaskStates(key.getQueryId());
+        
         // now we will wait for all next tasks to be generated
         startTime = System.currentTimeMillis();
-        while (storageService.getTaskStates(key.getQueryId()).isCreatingTasks() && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(5)) {
+        while (taskStates.isCreatingTasks() && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
             Thread.sleep(250);
+            taskStates = storageService.getTaskStates(key.getQueryId());
+            checkFailed(key.getQueryId());
         }
+        
+        checkFailed(key.getQueryId());
         
         QueryResultsListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId());
         
@@ -285,21 +295,27 @@ public abstract class QueryExecutorTest {
             eventsToRemove.add(event);
         }
         
+        checkFailed(key.getQueryId());
+        
         queryRequestsEvents.removeAll(eventsToRemove);
         assertEquals(0, queryRequestsEvents.size());
         
         // wait for all next requests to be finished
         startTime = System.currentTimeMillis();
         while (storageService.getTaskStates(key.getQueryId()).hasUnfinishedTasks()
-                        && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(30)) {
+                        && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
             Thread.sleep(250);
+            checkFailed(key.getQueryId());
         }
+        
+        checkFailed(key.getQueryId());
         
         // get a result
         startTime = System.currentTimeMillis();
         Result result = null;
         while (result == null && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(10)) {
             result = listener.receive(100, TimeUnit.MILLISECONDS);
+            checkFailed(key.getQueryId());
         }
         assertNotNull(result);
         assertFalse(requests.isEmpty());
@@ -346,9 +362,12 @@ public abstract class QueryExecutorTest {
         
         // wait for the create task to finish
         long startTime = System.currentTimeMillis();
-        while (queryRequestsEvents.isEmpty() && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(5)) {
+        while (queryRequestsEvents.isEmpty() && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
             Thread.sleep(100);
+            checkFailed(key.getQueryId());
         }
+        
+        checkFailed(key.getQueryId());
         
         // the first event should be the create response from the executor to the query service
         RemoteQueryRequestEvent notification = queryRequestsEvents.removeFirst();
@@ -366,10 +385,13 @@ public abstract class QueryExecutorTest {
         
         // wait for the create task to finish
         startTime = System.currentTimeMillis();
-        while ((taskStates.hasUnfinishedTasks() || taskStates.isCreatingTasks()) && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(45)) {
+        while ((taskStates.hasUnfinishedTasks() || taskStates.isCreatingTasks()) && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
             Thread.sleep(250);
             taskStates = storageService.getTaskStates(key.getQueryId());
+            checkFailed(key.getQueryId());
         }
+        
+        checkFailed(key.getQueryId());
         
         notification = queryRequestsEvents.poll();
         assertNull(notification);
@@ -385,9 +407,128 @@ public abstract class QueryExecutorTest {
         Result result = null;
         while (result == null && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(10)) {
             result = listener.receive(100, TimeUnit.MILLISECONDS);
+            checkFailed(key.getQueryId());
         }
         assertNotNull(result);
         assertFalse(requests.isEmpty());
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testCheckpointableDiscoveryQuery() throws Exception {
+        // ensure the message queue is empty
+        assertTrue(queryRequestsEvents.isEmpty());
+        
+        String city = "rome";
+        String queryStr = city;
+        
+        String expectPlan = Constants.ANY_FIELD + " == '" + city + "'";
+        
+        Query query = new QueryImpl();
+        query.setQuery(queryStr);
+        query.setQueryLogicName("DiscoveryQuery");
+        query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20150101"));
+        query.setEndDate(new SimpleDateFormat("yyyyMMdd").parse("20160101"));
+        query.setQueryAuthorizations(CitiesDataType.getTestAuths().toString());
+        query.setQueryName("TestQuery");
+        query.setDnList(Collections.singletonList("test user"));
+        query.setUserDN("test user");
+        query.setPagesize(100);
+        query.addParameter("query.syntax", "LUCENE");
+        String queryPool = new String(TEST_POOL);
+        TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        assertNotNull(key);
+        createdQueries.add(key.getQueryId());
+        
+        QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
+        
+        TaskStates states = storageService.getTaskStates(key.getQueryId());
+        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key.getTaskId()));
+        
+        // pass a create request to the executor
+        QueryRequest request = QueryRequest.create(key.getQueryId());
+        queryExecutor.handleRemoteRequest(request, "query:**", "executor-" + TEST_POOL + ":**");
+        
+        // wait for the create task to finish
+        long startTime = System.currentTimeMillis();
+        while (queryRequestsEvents.isEmpty() && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
+            Thread.sleep(100);
+            checkFailed(key.getQueryId());
+        }
+        
+        checkFailed(key.getQueryId());
+        
+        // the first event should be the create response from the executor to the query service
+        RemoteQueryRequestEvent notification = queryRequestsEvents.removeFirst();
+        assertNotNull(notification);
+        assertEquals("query:**", notification.getDestinationService());
+        assertTrue(notification.getOriginService().startsWith("executor-" + TEST_POOL + ":"));
+        assertEquals(QueryRequest.Method.CREATE, notification.getRequest().getMethod());
+        assertEquals(key.getQueryId(), notification.getRequest().getQueryId());
+        
+        QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
+        assertEquals(QueryStatus.QUERY_STATE.CREATED, queryStatus.getQueryState());
+        assertEquals(expectPlan, queryStatus.getPlan());
+        
+        TaskStates taskStates = storageService.getTaskStates(key.getQueryId());
+        
+        // now we will wait for all next tasks to be generated
+        startTime = System.currentTimeMillis();
+        while (taskStates.isCreatingTasks() && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
+            Thread.sleep(250);
+            taskStates = storageService.getTaskStates(key.getQueryId());
+            checkFailed(key.getQueryId());
+        }
+        
+        checkFailed(key.getQueryId());
+        
+        QueryResultsListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId());
+        
+        List<RemoteQueryRequestEvent> eventsToRemove = new ArrayList<>();
+        
+        // process each of the next requests
+        for (RemoteQueryRequestEvent event : queryRequestsEvents) {
+            assertNotNull(event);
+            assertEquals("executor-" + TEST_POOL + ":**", event.getDestinationService());
+            assertTrue(event.getOriginService().startsWith("executor-" + TEST_POOL + ":"));
+            assertEquals(QueryRequest.Method.NEXT, event.getRequest().getMethod());
+            assertEquals(key.getQueryId(), event.getRequest().getQueryId());
+            
+            // process the next event, generating results
+            queryExecutor.handleRemoteRequest(event.getRequest(), event.getOriginService(), event.getDestinationService());
+            
+            eventsToRemove.add(event);
+        }
+        
+        queryRequestsEvents.removeAll(eventsToRemove);
+        assertEquals(0, queryRequestsEvents.size());
+        
+        // wait for all next requests to be finished
+        startTime = System.currentTimeMillis();
+        while (storageService.getTaskStates(key.getQueryId()).hasUnfinishedTasks()
+                        && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
+            Thread.sleep(250);
+            checkFailed(key.getQueryId());
+        }
+        
+        checkFailed(key.getQueryId());
+        
+        // get a result
+        startTime = System.currentTimeMillis();
+        Result result = null;
+        while (result == null && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(10000)) {
+            result = listener.receive(100, TimeUnit.MILLISECONDS);
+            checkFailed(key.getQueryId());
+        }
+        assertNotNull(result);
+        assertFalse(requests.isEmpty());
+    }
+    
+    private void checkFailed(String queryId) {
+        QueryStatus status = storageService.getQueryStatus(queryId);
+        if (status.getQueryState() == QueryStatus.QUERY_STATE.FAILED) {
+            throw new RuntimeException(status.getFailureMessage() + " : " + status.getStackTrace());
+        }
     }
     
     public static class TestAccumuloSetup extends AccumuloSetup {

@@ -3,19 +3,19 @@ package datawave.query.config;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
-import datawave.query.QueryParameters;
 import datawave.query.tables.ShardIndexQueryTable;
-import datawave.query.tables.ShardQueryLogic;
 import datawave.services.query.configuration.CheckpointableQueryConfiguration;
+import datawave.services.query.configuration.QueryData;
+import datawave.services.query.logic.QueryCheckpoint;
+import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.data.Range;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
 
 public class ShardIndexQueryConfiguration extends ShardQueryConfiguration implements Serializable, CheckpointableQueryConfiguration {
     private static final long serialVersionUID = 7616552164239289739L;
@@ -42,6 +42,15 @@ public class ShardIndexQueryConfiguration extends ShardQueryConfiguration implem
     public ShardIndexQueryConfiguration(ShardIndexQueryTable logic, Query query) {
         this(logic.getConfig());
         setQuery(query);
+    }
+    
+    public ShardIndexQueryConfiguration(ShardIndexQueryConfiguration other, Collection<QueryData> queries) {
+        super(other, queries);
+        setNormalizedPatterns(other.getNormalizedPatterns());
+        setNormalizedTerms(other.getNormalizedTerms());
+        setRangesForPatterns(other.getRangesForPatterns());
+        setRangesForTerms(other.getRangesForTerms());
+        setAllowLeadingWildcard(other.isAllowLeadingWildcard());
     }
     
     /**
@@ -129,6 +138,12 @@ public class ShardIndexQueryConfiguration extends ShardQueryConfiguration implem
     
     public void setAllowLeadingWildcard(boolean allowLeadingWildcard) {
         this.allowLeadingWildcard = allowLeadingWildcard;
+    }
+    
+    @Override
+    public QueryCheckpoint checkpoint(QueryKey queryKey, Collection<QueryData> ranges) {
+        // Create a new config that only contains what is needed to execute the specified ranges
+        return new ShardIndexQueryConfiguration(this, ranges).checkpoint(queryKey);
     }
     
     @Override

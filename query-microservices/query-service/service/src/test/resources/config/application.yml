@@ -142,6 +142,7 @@ datawave:
         pageByteTrigger: 0
       logics:
         BaseEventQuery:
+          checkpointable: true
           accumuloPassword: ${warehouse.accumulo.password}
           tableName: ${warehouse.tables.shard.name}
           dateIndexTableName: ${warehouse.tables.dateIndex.name}
@@ -229,6 +230,20 @@ datawave:
           maxConcurrentTasks: 10
           requiredRoles:
             - "AuthorizedUser"
+
+        DiscoveryQuery:
+          checkpointable: true
+          tableName: ${warehouse.tables.shard.name}
+          indexTableName: ${warehouse.tables.index.name}
+          reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
+          metadataTableName: ${warehouse.tables.metadata.name}
+          modelTableName: ${warehouse.tables.model.name}
+          modelName: ${warehouse.defaults.modelName}
+          fullTableScanEnabled: ${warehouse.defaults.fullTableScanEnabled}
+          allowLeadingWildcard: true
+          auditType: "NONE"
+          maxResults: -1
+
 
 audit-client:
   discovery:

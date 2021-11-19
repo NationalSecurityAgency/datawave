@@ -4,9 +4,13 @@ import com.google.common.collect.Multimap;
 import datawave.query.config.ShardIndexQueryConfiguration;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.tables.ShardIndexQueryTable;
+import datawave.services.query.configuration.QueryData;
+import datawave.services.query.logic.QueryCheckpoint;
+import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Objects;
 
 /**
@@ -32,6 +36,15 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
     public DiscoveryQueryConfiguration(DiscoveryLogic logic, Query query) {
         this(logic.getConfig());
         setQuery(query);
+    }
+    
+    public DiscoveryQueryConfiguration(DiscoveryQueryConfiguration other, Collection<QueryData> queries) {
+        super(other, queries);
+        setSeparateCountsByColVis(other.separateCountsByColVis);
+        setShowReferenceCount(other.showReferenceCount);
+        setLiterals(other.literals);
+        setPatterns(other.patterns);
+        setRanges(other.ranges);
     }
     
     /**
@@ -120,6 +133,12 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
     public void setShowReferenceCount(Boolean showReferenceCount) {
         this.showReferenceCount = showReferenceCount;
         
+    }
+    
+    @Override
+    public QueryCheckpoint checkpoint(QueryKey queryKey, Collection<QueryData> ranges) {
+        // Create a new config that only contains what is needed to execute the specified ranges
+        return new DiscoveryQueryConfiguration(this, ranges).checkpoint(queryKey);
     }
     
     @Override

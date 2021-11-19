@@ -236,6 +236,25 @@
         <property name="checkpointable" value="false" />
     </bean>
 
+    <!-- Query Logic that implements a discovery type query over the index -->
+    <bean id="DiscoveryQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.discovery.DiscoveryLogic">
+        <property name="checkpointable" value="true" />
+        <property name="tableName" value="${datawave.query.logic.logics.DiscoveryQuery.tableName}" />
+        <property name="indexTableName" value="${datawave.query.logic.logics.DiscoveryQuery.indexTableName}" />
+        <property name="reverseIndexTableName" value="${datawave.query.logic.logics.DiscoveryQuery.reverseIndexTableName}" />
+        <property name="maxResults" value="${datawave.query.logic.logics.DiscoveryQuery.maxResults}" />
+        <property name="maxWork" value="${datawave.query.logic.logics.DiscoveryQuery.maxWork}" />
+        <property name="metadataTableName" value="${datawave.query.logic.logics.DiscoveryQuery.metadataTableName}" />
+        <property name="modelTableName" value="${datawave.query.logic.logics.DiscoveryQuery.modelTableName}" />
+        <property name="modelName" value="${datawave.query.logic.logics.DiscoveryQuery.modelName}" />
+        <property name="metadataHelperFactory" ref="metadataHelperFactory" />
+        <property name="fullTableScanEnabled" value="${datawave.query.logic.logics.DiscoveryQuery.fullTableScanEnabled}" />
+        <property name="allowLeadingWildcard" value="${datawave.query.logic.logics.DiscoveryQuery.allowLeadingWildcard}" />
+        <property name="auditType" value="${datawave.query.logic.logics.DiscoveryQuery.auditType}" />
+        <property name="logicDescription" value="Discovery query that returns information from the index about the supplied term(s)" />
+        <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
+    </bean>
+
     <!-- begin original QueryLogicFactory.xml -->
 
     <!--    &lt;!&ndash;  part of what enforces any Required properties to be set on loading of the context &ndash;&gt;-->

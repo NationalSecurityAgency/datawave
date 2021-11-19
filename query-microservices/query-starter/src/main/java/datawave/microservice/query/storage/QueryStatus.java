@@ -171,6 +171,7 @@ public class QueryStatus implements Serializable {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintWriter writer = new PrintWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8));
         failure.printStackTrace(writer);
+        writer.close();
         setStackTrace(new String(outputStream.toByteArray(), StandardCharsets.UTF_8));
     }
     

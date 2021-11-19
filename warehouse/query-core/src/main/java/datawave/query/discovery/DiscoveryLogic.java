@@ -11,7 +11,7 @@ import com.google.common.collect.Sets;
 import datawave.data.type.Type;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
-import datawave.query.config.ShardIndexQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.discovery.FindLiteralsAndPatternsVisitor.QueryValues;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
@@ -27,12 +27,12 @@ import datawave.query.tables.ShardIndexQueryTable;
 import datawave.query.util.MetadataHelper;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.configuration.QueryData;
+import datawave.services.query.logic.QueryCheckpoint;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -44,7 +44,6 @@ import org.apache.commons.lang.math.LongRange;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DataInputBuffer;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 import org.javatuples.Pair;
@@ -101,7 +100,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         
         this.scannerFactory = new ScannerFactory(connection);
         
-        this.metadataHelper = initializeMetadataHelper(connection, getConfig().getMetadataTableName(), auths);
+        this.metadataHelper = initializeMetadataHelper(connection, config.getMetadataTableName(), auths);
         
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -151,14 +150,6 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         
         // Set the auths
         getConfig().setAuthorizations(auths);
-        
-        // set the table names
-        if (getIndexTableName() != null) {
-            getConfig().setIndexTableName(getIndexTableName());
-        }
-        if (getReverseIndexTableName() != null) {
-            getConfig().setReverseIndexTableName(getReverseIndexTableName());
-        }
         
         // Get the ranges
         getConfig().setBeginDate(settings.getBeginDate());
@@ -210,7 +201,6 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             log.debug("Normalized Literals = " + getConfig().getLiterals());
             log.debug("Normalized Patterns = " + getConfig().getPatterns());
         }
-        final List<QueryData> queries = Lists.newLinkedList();
         
         getConfig().setQueries(createQueries(getConfig()));
         
@@ -252,6 +242,10 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             }
         }
         
+        if (log.isDebugEnabled()) {
+            log.debug("Created ranges: " + queries);
+        }
+        
         return queries;
     }
     
@@ -264,6 +258,9 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         final List<Iterator<DiscoveredThing>> iterators = Lists.newArrayList();
         
         for (QueryData qd : config.getQueries()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Creating scanner for " + qd);
+            }
             // scan the table
             BatchScanner bs = scannerFactory.newScanner(qd.getTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
             

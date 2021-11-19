@@ -44,7 +44,6 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -74,7 +73,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import static com.google.common.collect.Iterators.concat;
 import static com.google.common.collect.Iterators.transform;
@@ -415,11 +413,13 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     @Override
     public void setupQuery(Connector connection, QueryCheckpoint checkpoint) throws Exception {
         ShardQueryConfiguration config = (ShardQueryConfiguration) checkpoint.getConfig();
-        getConfig().setConnector(connection);
+        config.setConnector(connection);
         
-        scannerFactory = new ScannerFactory(getConfig());
+        scannerFactory = new ScannerFactory(connection);
+        MetadataHelper metadataHelper = initializeMetadataHelper(connection, config.getMetadataTableName(), config.getAuthorizations());
+        config.setQueryModel(metadataHelper.getQueryModel(config.getModelTableName(), config.getModelName(), null));
         
-        setupQuery(getConfig());
+        setupQuery(config);
     }
     
     @Override

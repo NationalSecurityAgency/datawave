@@ -412,12 +412,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 config.setProjectFields(getCardinalityConfiguration().getRevisedProjectFields(queryModel, originalProjectFields));
             }
             
-            this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
+            setQueries(getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory()));
             
             config.setBlacklistedFields(originalBlacklistedFields);
             config.setProjectFields(originalProjectFields);
         } else {
-            this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
+            setQueries(getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory()));
         }
         
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
@@ -2331,9 +2331,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         if (this.scheduler != null) {
             return this.scheduler.checkpoint(queryKey);
         }
-        // otherwise we still need to plan or there are no results
+        // otherwise we create a checkpoint per query data
         else {
-            return Lists.newArrayList(this.config.checkpoint(queryKey));
+            Iterator<QueryData> queries = getConfig().getQueriesIter();
+            List<QueryCheckpoint> checkpoints = new ArrayList<>();
+            while (queries.hasNext()) {
+                checkpoints.add(config.checkpoint(queryKey, Collections.singleton(queries.next())));
+            }
+            return checkpoints;
         }
     }
     

@@ -63,9 +63,6 @@ public class CreateTask extends ExecutorTask {
             log.error("Error updating query metric", e);
         }
         
-        log.debug("Setup query logic for " + queryId);
-        queryLogic.setupQuery(config);
-        
         if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
             log.debug("Checkpointing " + queryId);
             CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
@@ -87,8 +84,12 @@ public class CreateTask extends ExecutorTask {
             // update the task states to indicate that all tasks are created
             taskCreationComplete(queryId);
             
+            log.debug("Setup query logic for " + queryId);
+            queryLogic.setupQuery(config);
+            
             log.debug("Exhausting results for " + queryId);
             taskComplete = pullResults(task.getTaskKey(), queryLogic, queryStatus, true);
+            
             if (!taskComplete) {
                 Exception e = new IllegalStateException("Expected to have exhausted results.  Something went wrong here");
                 cache.updateFailedQueryStatus(queryId, e);
