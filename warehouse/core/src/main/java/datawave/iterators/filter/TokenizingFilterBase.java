@@ -101,11 +101,16 @@ public abstract class TokenizingFilterBase extends AppliedRule {
             ruleApplied = false;
             return true;
         }
+        // cutoffTimestamp includes the default TTL
         long cutoffTimestamp = period.getCutOffMilliseconds();
         
-        // if ttl exists, subtract it from the cut off timestamp
+        // If there is a TTL for this key:
         if (calculatedTTL > 0) {
-            cutoffTimestamp -= calculatedTTL - period.getTtl() * period.getTtlUnitsFactor();
+            // cutoffTimestamp is currently offset by the default TTL. Start by undoing that default offset
+            cutoffTimestamp += period.getTtl() * period.getTtlUnitsFactor();
+            
+            // Subtract the key's TTL from the cut-off timestamp
+            cutoffTimestamp -= calculatedTTL;
         }
         ruleApplied = true;
         return k.getTimestamp() > cutoffTimestamp;
