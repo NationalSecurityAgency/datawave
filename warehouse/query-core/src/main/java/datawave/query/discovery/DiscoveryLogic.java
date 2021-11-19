@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -227,14 +228,28 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         if (!forward.isEmpty()) {
             List<IteratorSetting> settings = getIteratorSettingsForDiscovery(getConfig(), getConfig().getLiterals(), getConfig().getPatterns(), getConfig()
                             .getRanges(), false);
-            queries.add(new QueryData(config.getIndexTableName(), null, forward, settings, familiesToSeek));
+            if (isCheckpointable()) {
+                // if checkpointable, then only one range per query data so that the whole checkpointing thing works correctly
+                for (Range range : forward) {
+                    queries.add(new QueryData(config.getIndexTableName(), null, Collections.singleton(range), settings, familiesToSeek));
+                }
+            } else {
+                queries.add(new QueryData(config.getIndexTableName(), null, forward, settings, familiesToSeek));
+            }
         }
         
         Collection<Range> reverse = seekRanges.getValue1();
         if (!reverse.isEmpty()) {
             List<IteratorSetting> settings = getIteratorSettingsForDiscovery(getConfig(), getConfig().getLiterals(), getConfig().getPatterns(), getConfig()
                             .getRanges(), true);
-            queries.add(new QueryData(config.getReverseIndexTableName(), null, reverse, settings, familiesToSeek));
+            if (isCheckpointable()) {
+                // if checkpointable, then only one range per query data so that the whole checkpointing thing works correctly
+                for (Range range : reverse) {
+                    queries.add(new QueryData(config.getReverseIndexTableName(), null, Collections.singleton(range), settings, familiesToSeek));
+                }
+            } else {
+                queries.add(new QueryData(config.getReverseIndexTableName(), null, reverse, settings, familiesToSeek));
+            }
         }
         
         return queries;
@@ -251,13 +266,13 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         for (QueryData qd : config.getQueries()) {
             // scan the table
             BatchScanner bs = scannerFactory.newScanner(qd.getTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
-            
+
             bs.setRanges(qd.getRanges());
             for (IteratorSetting setting : qd.getSettings()) {
                 bs.addScanIterator(setting);
             }
             
-            iterators.add(transformScanner(bs));
+            iterators.add(transformScanner(bs, qd));
         }
         
         this.iterator = concat(iterators.iterator());
@@ -351,12 +366,13 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
      * @param scanner
      * @return
      */
-    public static Iterator<DiscoveredThing> transformScanner(final BatchScanner scanner) {
+    public static Iterator<DiscoveredThing> transformScanner(final BatchScanner scanner, final QueryData queryData) {
         return concat(transform(scanner.iterator(), new Function<Entry<Key,Value>,Iterator<DiscoveredThing>>() {
             DataInputBuffer in = new DataInputBuffer();
             
             @Override
             public Iterator<DiscoveredThing> apply(Entry<Key,Value> from) {
+                queryData.setLastResult(from.getKey());
                 Value value = from.getValue();
                 in.reset(value.get(), value.getSize());
                 ArrayWritable aw = new ArrayWritable(DiscoveredThing.class);

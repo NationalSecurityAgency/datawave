@@ -339,7 +339,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
                             Collections.singleton(patternEntry.getValue()), rangeEntry.getValue(), false);
             List<String> cfs = ShardIndexQueryTableStaticMethods.getColumnFamilies(getConfig(), rangeEntry.getValue(),
                             Collections.singleton(patternEntry.getKey()));
-            queries.add(new QueryData(tName, query, Collections.singleton(rangeEntry.getKey()), settings));
+            queries.add(new QueryData(tName, query, Collections.singleton(rangeEntry.getKey()), settings, cfs));
         }
         return queries;
     }
@@ -365,7 +365,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         }
         
         this.config = (ShardIndexQueryConfiguration) genericConfig;
-        final List<Entry<BatchScanner,Boolean>> batchscanners = Lists.newLinkedList();
+        final List<Entry<BatchScanner,QueryData>> batchscanners = Lists.newLinkedList();
         
         for (QueryData qd : config.getQueries()) {
             // scan the table
@@ -376,10 +376,10 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
                 bs.addScanIterator(setting);
             }
             
-            batchscanners.add(Maps.immutableEntry(bs, qd.getTableName().equals(config.getReverseIndexTableName())));
+            batchscanners.add(Maps.immutableEntry(bs, qd));
         }
         
-        final Iterator<Entry<BatchScanner,Boolean>> batchScannerIterator = batchscanners.iterator();
+        final Iterator<Entry<BatchScanner,QueryData>> batchScannerIterator = batchscanners.iterator();
         
         this.iterator = concat(transform(new CloseableIterator(batchScannerIterator), new Function<Entry<Key,Value>,Iterator<DiscoveredThing>>() {
             DataInputBuffer in = new DataInputBuffer();
@@ -401,97 +401,6 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
                 return thangs.iterator();
             }
         }));
-        
-        this.scanner = new ScannerBase() {
-            
-            @Override
-            public void addScanIterator(IteratorSetting cfg) {}
-            
-            @Override
-            public void clearColumns() {}
-            
-            @Override
-            public void clearScanIterators() {}
-            
-            @Override
-            public void close() {}
-            
-            @Override
-            public Authorizations getAuthorizations() {
-                return null;
-            }
-            
-            @Override
-            public void setSamplerConfiguration(SamplerConfiguration samplerConfiguration) {
-                
-            }
-            
-            @Override
-            public SamplerConfiguration getSamplerConfiguration() {
-                return null;
-            }
-            
-            @Override
-            public void clearSamplerConfiguration() {
-                
-            }
-            
-            @Override
-            public void setBatchTimeout(long l, TimeUnit timeUnit) {
-                
-            }
-            
-            @Override
-            public long getBatchTimeout(TimeUnit timeUnit) {
-                return 0;
-            }
-            
-            @Override
-            public void setClassLoaderContext(String s) {
-                
-            }
-            
-            @Override
-            public void clearClassLoaderContext() {
-                
-            }
-            
-            @Override
-            public String getClassLoaderContext() {
-                return null;
-            }
-            
-            @Override
-            public void fetchColumn(Text colFam, Text colQual) {}
-            
-            @Override
-            public void fetchColumn(IteratorSetting.Column column) {
-                
-            }
-            
-            @Override
-            public void fetchColumnFamily(Text col) {}
-            
-            @Override
-            public long getTimeout(TimeUnit timeUnit) {
-                return 0;
-            }
-            
-            @Override
-            public Iterator<Entry<Key,Value>> iterator() {
-                return null;
-            }
-            
-            @Override
-            public void removeScanIterator(String iteratorName) {}
-            
-            @Override
-            public void setTimeout(long timeOut, TimeUnit timeUnit) {}
-            
-            @Override
-            public void updateScanIteratorOption(String iteratorName, String key, String value) {}
-            
-        };
     }
     
     /**
@@ -537,11 +446,13 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             throw new UnsupportedOperationException("Cannot checkpoint a query that is not checkpointable.  Try calling setCheckpointable(true) first.");
         }
         
-        // if we have started returning results, then capture the state of the query scheduler
-        if (this.scanner != null) {
-            
-            // TODO: return
-            return null;
+        // if we have started returning results, then capture the state of the query data objects
+        if (this.iterator != null) {
+            List<QueryCheckpoint> checkpoints = Lists.newLinkedList();
+            for (QueryData qd : getConfig().getQueries()) {
+                checkpoints.add(getConfig().checkpoint(queryKey, Collections.singleton(qd)));
+            }
+            return checkpoints;
         }
         // otherwise we still need to plan or there are no results
         else {
@@ -627,16 +538,17 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     
     public class CloseableIterator implements Iterator<Entry<Key,Value>> {
         
-        private final Iterator<Entry<BatchScanner,Boolean>> batchScannerIterator;
+        private final Iterator<Entry<BatchScanner,QueryData>> batchScannerIterator;
         
         protected Boolean reverseIndex = false;
         protected Entry<Key,Value> currentEntry = null;
         protected BatchScanner currentBS = null;
         protected Iterator<Entry<Key,Value>> currentIter = null;
+        protected QueryData queryData = null;
         
         protected volatile boolean closed = false;
         
-        public CloseableIterator(Iterator<Entry<BatchScanner,Boolean>> batchScannerIterator) {
+        public CloseableIterator(Iterator<Entry<BatchScanner,QueryData>> batchScannerIterator) {
             this.batchScannerIterator = batchScannerIterator;
         }
         
@@ -664,9 +576,10 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             }
             
             if (batchScannerIterator.hasNext()) {
-                Entry<BatchScanner,Boolean> entry = batchScannerIterator.next();
+                Entry<BatchScanner,QueryData> entry = batchScannerIterator.next();
                 this.currentBS = entry.getKey();
-                this.reverseIndex = entry.getValue();
+                this.queryData = entry.getValue();
+                this.reverseIndex = entry.getValue().getTableName().equals(getConfig().getReverseIndexTableName());
                 this.currentIter = this.currentBS.iterator();
                 
                 return hasNext();
@@ -689,6 +602,8 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             if (hasNext()) {
                 Entry<Key,Value> cur = this.currentEntry;
                 this.currentEntry = null;
+                
+                queryData.setLastResult(cur.getKey());
                 
                 if (this.reverseIndex) {
                     Text term = new Text((new StringBuilder(cur.getKey().getRow().toString())).reverse().toString());

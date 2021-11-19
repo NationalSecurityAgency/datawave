@@ -5,12 +5,16 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import com.google.common.base.Objects;
+import datawave.services.query.configuration.QueryData;
+import datawave.services.query.configuration.Result;
+import datawave.services.query.configuration.ResultContext;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.WritableComparable;
 
 public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
+    private ResultContext context;
     private String term, field, type, date, columnVisibility;
     private final VLongWritable count;
     private final MapWritable countsByColumnVisibility;

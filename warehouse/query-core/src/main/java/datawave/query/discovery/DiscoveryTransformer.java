@@ -86,6 +86,7 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         metadata.setRow(thing.getTerm()); // duplicate
         metadata.setTable(logic.getTableName());
         event.setMetadata(metadata);
+        
         return event;
     }
     

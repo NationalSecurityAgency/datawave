@@ -136,6 +136,7 @@ public class QueryData implements ResultContext, Externalizable {
     
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
+        out.writeUTF(tableName);
         out.writeInt(settings.size());
         for (IteratorSetting setting : settings) {
             setting.write(out);
@@ -165,6 +166,7 @@ public class QueryData implements ResultContext, Externalizable {
     
     @Override
     public void readExternal(ObjectInput in) throws IOException {
+        tableName = in.readUTF();
         settings.clear();
         int count = in.readInt();
         for (int i = 0; i < count; i++) {
