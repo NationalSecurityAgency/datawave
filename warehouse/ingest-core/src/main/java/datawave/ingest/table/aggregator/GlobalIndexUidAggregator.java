@@ -174,8 +174,8 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     // set because that will take care of de-duping any duplicate UIDs.
                     long prevCount = uids.size() - uidsToRemove.size();
                     
-                    boolean wasSuccessful = processRemovalUids(v) && processAddedUids(v);
-                    if (!wasSuccessful) {
+                    boolean isUnderMaxThreshold = processRemovalUids(v) && processAddedUids(v);
+                    if (!isUnderMaxThreshold) {
                         enterCountOnlyMode(prevCount);
                     }
                 }
