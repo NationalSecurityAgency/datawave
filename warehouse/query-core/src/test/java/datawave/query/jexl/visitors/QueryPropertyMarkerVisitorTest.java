@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
 
+import static datawave.test.JexlNodeAssertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -126,7 +127,7 @@ public class QueryPropertyMarkerVisitorTest {
         
         givenNode("((_valid_ = true ) && FOO == 1)");
         assertType(HasValidLabel.class);
-        assertSource("FOO == 1");
+        assertSources("FOO == 1");
     }
     
     @Test
@@ -161,32 +162,40 @@ public class QueryPropertyMarkerVisitorTest {
     public void testUnwrappedMarkerAndUnwrappedSources() throws ParseException {
         givenNode("(_Delayed_ = true) && FOO == 1 && BAR == 2");
         assertType(ASTDelayedPredicate.class);
-        assertSource("(BAR == 2 && FOO == 1)");
+        assertSources("FOO == 1", "BAR == 2");
     }
     
     @Test
     public void testUnwrappedMarkerAndWrappedSources() throws ParseException {
         givenNode("(_Delayed_ = true) && (FOO == 1 && BAR == 2)");
         assertType(ASTDelayedPredicate.class);
-        assertSource("FOO == 1 && BAR == 2");
+        assertSources("FOO == 1 && BAR == 2");
     }
     
     @Test
     public void testWrappedMarkerAndUnwrappedSources() throws ParseException {
         givenNode("((_Delayed_ = true) && FOO == 1 && BAR == 2)");
         assertType(ASTDelayedPredicate.class);
-        assertSource("(BAR == 2 && FOO == 1)");
+        assertSources("FOO == 1", "BAR == 2");
+    }
+    
+    @Test
+    public void testUnwrappedNestedSources() throws ParseException {
+        givenNode("((_Delayed_ = true) && FOO == 1 && (BAR == 2 && BAT == 4))");
+        assertType(ASTDelayedPredicate.class);
+        assertSources("FOO == 1", "BAR == 2 && BAT == 4");
     }
     
     @Test
     public void testWrappedMarkerAndWrappedSources() throws ParseException {
         givenNode("((_Eval_ = true) && (FOO == 1 && BAR == 2))");
         assertType(ASTEvaluationOnly.class);
-        assertSource("FOO == 1 && BAR == 2");
+        assertSources("FOO == 1 && BAR == 2");
     }
     
     private void givenNode(String query) throws ParseException {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        PrintingVisitor.printQuery(node);
         instance = QueryPropertyMarkerVisitor.getInstance(node);
     }
     
@@ -202,7 +211,7 @@ public class QueryPropertyMarkerVisitorTest {
         assertNull(instance.getSource());
     }
     
-    private void assertSource(String source) {
-        assertEquals(source, JexlStringBuildingVisitor.buildQuery(instance.getSource()));
+    private void assertSources(String... sources) {
+        assertThat(instance.getSources()).asStrings().containsExactlyInAnyOrder(sources);
     }
 }

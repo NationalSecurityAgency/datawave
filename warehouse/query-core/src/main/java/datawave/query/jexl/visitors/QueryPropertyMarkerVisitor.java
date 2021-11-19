@@ -1,8 +1,8 @@
 package datawave.query.jexl.visitors;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
@@ -27,7 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
@@ -109,58 +108,14 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
      * @return an {@link Instance}
      */
     public static Instance getInstance(JexlNode node) {
-        return getInstance(node, false);
-    }
-    
-    /**
-     * This method differs from {@link #getInstance(JexlNode)} only in that if the specified node is a marker type, a safe copy of the node's source will be
-     * made before being returned in the {@link Instance}. This is necessary for the {@link TreeFlatteningRebuildingVisitor}.
-     *
-     * @param node
-     *            the node
-     * @return an {@link Instance}
-     */
-    public static Instance getCopiedInstance(JexlNode node) {
-        return getInstance(node, true);
-    }
-    
-    /**
-     * Examine the specified node to see if it represents a query property marker, and return an {@link Instance} with the marker's type and source node. If the
-     * specified node is not a marker type, an empty {@link Instance} will be returned. If specified, safe copies will be made of the node's source.
-     *
-     * @param node
-     *            the possible marker
-     * @param copySources
-     *            if true, make safe copies of the node's source
-     * @return an {@link Instance}
-     */
-    private static Instance getInstance(JexlNode node, boolean copySources) {
         if (node != null) {
             QueryPropertyMarkerVisitor visitor = new QueryPropertyMarkerVisitor();
             node.jjtAccept(visitor, null);
             if (visitor.markerFound()) {
-                JexlNode source = consolidate(visitor.sourceNodes, copySources);
-                return Instance.of(visitor.marker, source);
+                return Instance.of(visitor.marker, visitor.sourceNodes);
             }
         }
         return Instance.of();
-    }
-    
-    private static JexlNode consolidate(List<JexlNode> nodes, boolean copy) {
-        // @formatter:off
-        nodes = nodes.stream()
-                        .map((node) -> copy ? RebuildingVisitor.copy(node) : node) // Make a safe copy if necessary.
-                        .map(JexlASTHelper::dereference) // Unwrap each node.
-                        .collect(Collectors.toList());
-        // @formatter:on
-        
-        if (nodes.isEmpty()) {
-            return null;
-        } else if (nodes.size() == 1) {
-            return nodes.get(0);
-        } else {
-            return JexlNodeFactory.createUnwrappedAndNode(nodes);
-        }
     }
     
     private Class<? extends QueryPropertyMarker> marker;
@@ -208,7 +163,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
                     }
                 }
                 
-                siblings.add(child);
+                siblings.add(JexlASTHelper.dereference(child));
             }
             
             // If a marker was found, assign the source nodes.
@@ -240,11 +195,12 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
                 children.add(descendant);
             }
         }
-        return children;
+        // Ensure we return the children in their original order.
+        return children.size() == 1 ? children : Lists.reverse(children);
     }
     
     /**
-     * Return whether or not a {@link QueryPropertyMarker} has been found yet.
+     * Return whether a {@link QueryPropertyMarker} has been found yet.
      *
      * @return true if a marker has been found, or false otherwise
      */
