@@ -10,7 +10,6 @@ import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -45,7 +44,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return The task key
      */
     @Override
-    public TaskKey defineQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
+    public TaskKey defineQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) {
         return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.DEFINED);
     }
     
@@ -63,8 +62,40 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return The task key
      */
     @Override
-    public TaskKey createQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) throws IOException {
+    public TaskKey createQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) {
         return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATED);
+    }
+    
+    /**
+     * Store/cache a new query. This will create a query task containing the query with a PLAN query action.
+     *
+     * @param queryPool
+     *            The query pool
+     * @param query
+     *            The query parameters
+     * @param calculatedAuthorizations
+     *            The intersection of the user's auths with the requested auths
+     * @return The plan task key
+     */
+    @Override
+    public TaskKey planQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations) {
+        return storeQuery(queryPool, query, calculatedAuthorizations, 1, QueryStatus.QUERY_STATE.PLANNED);
+    }
+    
+    /**
+     * Store/cache a new query. This will create a query task containing the query with a PREDICT query action.
+     *
+     * @param queryPool
+     *            The query pool
+     * @param query
+     *            The query parameters
+     * @param calculatedAuthorizations
+     *            The intersection of the user's auths with the requested auths
+     * @return The predict task key
+     */
+    @Override
+    public TaskKey predictQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations) {
+        return storeQuery(queryPool, query, calculatedAuthorizations, 1, QueryStatus.QUERY_STATE.PREDICTED);
     }
     
     private TaskKey storeQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count, QueryStatus.QUERY_STATE queryState) {
@@ -91,18 +122,30 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         queryStatusCache.updateQueryStatus(queryStatus);
         
         // only create tasks if we are creating a query
-        if (queryState == QueryStatus.QUERY_STATE.CREATED) {
+        if (queryState == QueryStatus.QUERY_STATE.CREATED || queryState == QueryStatus.QUERY_STATE.PLANNED || queryState == QueryStatus.QUERY_STATE.PREDICTED) {
             // store the initial tasks states
             TaskStates taskStates = new TaskStates(queryKey, count);
             taskStatesCache.updateTaskStates(taskStates);
             
-            // create and store the initial create task with the checkpoint
-            QueryTask task = createTask(QueryRequest.Method.CREATE, checkpoint);
+            // create and store the initial task with the checkpoint
+            QueryTask task = createTask(stateToMethod(queryState), checkpoint);
             return task.getTaskKey();
         }
         
         // return the an empty task key
         return new TaskKey(-1, new QueryKey(queryPool, queryId, query.getQueryLogicName()));
+    }
+    
+    private QueryRequest.Method stateToMethod(QueryStatus.QUERY_STATE queryState) {
+        switch (queryState) {
+            case CREATED:
+                return QueryRequest.Method.CREATE;
+            case PLANNED:
+                return QueryRequest.Method.PLAN;
+            case PREDICTED:
+                return QueryRequest.Method.PREDICT;
+        }
+        return null;
     }
     
     /**

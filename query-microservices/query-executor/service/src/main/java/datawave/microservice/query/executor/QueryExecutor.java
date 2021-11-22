@@ -5,6 +5,7 @@ import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.executor.action.CreateTask;
 import datawave.microservice.query.executor.action.ExecutorTask;
 import datawave.microservice.query.executor.action.PlanTask;
+import datawave.microservice.query.executor.action.PredictTask;
 import datawave.microservice.query.executor.action.ResultsTask;
 import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.microservice.query.messaging.QueryResultsManager;
@@ -162,11 +163,14 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                         case CREATE:
                             runnable = new CreateTask(this, task, originService);
                             break;
+                        case PLAN:
+                            runnable = new PlanTask(this, task, originService);
+                            break;
+                        case PREDICT:
+                            runnable = new PredictTask(this, task, originService);
+                            break;
                         case NEXT:
                             runnable = new ResultsTask(this, task);
-                            break;
-                        case PLAN:
-                            runnable = new PlanTask(this, task);
                             break;
                         default:
                             throw new UnsupportedOperationException(task.getTaskKey().toString());

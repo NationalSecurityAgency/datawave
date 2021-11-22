@@ -80,6 +80,8 @@ import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CANCEL
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSED;
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATED;
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.DEFINED;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.PLANNED;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.PREDICTED;
 import static datawave.webservice.query.QueryImpl.DN_LIST;
 import static datawave.webservice.query.QueryImpl.QUERY_ID;
 import static datawave.webservice.query.QueryImpl.USER_DN;
@@ -115,7 +117,7 @@ public class QueryManagementService implements QueryRequestHandler {
     
     private final String selfDestination;
     
-    private final Map<String,CountDownLatch> createLatchMap = new ConcurrentHashMap<>();
+    private final Map<String,CountDownLatch> queryLatchMap = new ConcurrentHashMap<>();
     
     public QueryManagementService(QueryProperties queryProperties, ApplicationEventPublisher eventPublisher, BusProperties busProperties,
                     QueryParameters queryParameters, SecurityMarking securityMarking, BaseQueryMetric baseQueryMetric, QueryLogicFactory queryLogicFactory,
@@ -259,7 +261,7 @@ public class QueryManagementService implements QueryRequestHandler {
         }
         
         try {
-            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, false);
+            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, DEFINED);
             GenericResponse<String> response = new GenericResponse<>();
             response.setResult(taskKey.getQueryId());
             return response;
@@ -315,7 +317,7 @@ public class QueryManagementService implements QueryRequestHandler {
         }
         
         try {
-            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, true);
+            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, CREATED);
             GenericResponse<String> response = new GenericResponse<>();
             response.setResult(taskKey.getQueryId());
             response.setHasResults(true);
@@ -328,9 +330,126 @@ public class QueryManagementService implements QueryRequestHandler {
         }
     }
     
-    private TaskKey storeQuery(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser, boolean isCreateRequest)
+    /**
+     * Creates a query using the given query logic and parameters, but only for planning purposes.
+     * <p>
+     * Created queries will begin planning immediately. <br>
+     * Auditing is performed if we are expanding indices. <br>
+     * Query plan will be returned in the response.<br>
+     * Updates can be made to any parameter which doesn't affect the scope of the query using {@link #update}. <br>
+     * Stop a running query gracefully using {@link #close} or forcefully using {@link #cancel}. <br>
+     * Stop, and restart a running query using {@link #reset}. <br>
+     * Create a copy of a running query using {@link #duplicate}. <br>
+     * Aside from a limited set of admin actions, only the query owner can act on a running query.
+     *
+     * @param queryLogicName
+     *            the requested query logic, not null
+     * @param parameters
+     *            the query parameters, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a generic response containing the query plan
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
+     * @throws BadRequestQueryException
+     *             if auditing fails
+     * @throws QueryException
+     *             if query storage fails
+     * @throws QueryException
+     *             if there is an unknown error
+     */
+    public GenericResponse<String> plan(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
+        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        if (log.isDebugEnabled()) {
+            log.info("Request: {}/plan from {} with params: {}", queryLogicName, user, parameters);
+        } else {
+            log.info("Request: {}/plan from {}", queryLogicName, user);
+        }
+        
+        try {
+            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, PLANNED);
+            String queryPlan = queryStorageCache.getQueryStatus(taskKey.getQueryId()).getPlan();
+            queryStorageCache.deleteQuery(taskKey.getQueryId());
+            GenericResponse<String> response = new GenericResponse<>();
+            response.setResult(queryPlan);
+            response.setHasResults(true);
+            return response;
+        } catch (QueryException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unknown error planning query", e);
+            throw new QueryException(DatawaveErrorCode.QUERY_SETUP_ERROR, e, "Unknown error planning query.");
+        }
+    }
+    
+    /**
+     * Creates a query using the given query logic and parameters, but only for prediction purposes.
+     * <p>
+     * Created queries will begin predicting immediately. <br>
+     * Auditing is not performed. <br>
+     * Query prediction will be returned in the response.<br>
+     * Updates can be made to any parameter which doesn't affect the scope of the query using {@link #update}. <br>
+     * Stop a running query gracefully using {@link #close} or forcefully using {@link #cancel}. <br>
+     * Stop, and restart a running query using {@link #reset}. <br>
+     * Create a copy of a running query using {@link #duplicate}. <br>
+     * Aside from a limited set of admin actions, only the query owner can act on a running query.
+     *
+     * @param queryLogicName
+     *            the requested query logic, not null
+     * @param parameters
+     *            the query parameters, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a generic response containing the query prediction
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
+     * @throws BadRequestQueryException
+     *             if auditing fails
+     * @throws QueryException
+     *             if query storage fails
+     * @throws QueryException
+     *             if there is an unknown error
+     */
+    public GenericResponse<String> predict(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws QueryException {
-        return storeQuery(queryLogicName, parameters, currentUser, isCreateRequest, null);
+        String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        if (log.isDebugEnabled()) {
+            log.info("Request: {}/predict from {} with params: {}", queryLogicName, user, parameters);
+        } else {
+            log.info("Request: {}/predict from {}", queryLogicName, user);
+        }
+        
+        try {
+            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, PREDICTED);
+            String queryPrediction = "This endpoint has not been implemented yet";
+            queryStorageCache.deleteQuery(taskKey.getQueryId());
+            GenericResponse<String> response = new GenericResponse<>();
+            response.setResult(queryPrediction);
+            response.setHasResults(true);
+            return response;
+        } catch (QueryException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unknown error predicting query", e);
+            throw new QueryException(DatawaveErrorCode.QUERY_SETUP_ERROR, e, "Unknown error predicting query.");
+        }
+    }
+    
+    private TaskKey storeQuery(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser,
+                    QueryStatus.QUERY_STATE queryType) throws QueryException {
+        return storeQuery(queryLogicName, parameters, currentUser, queryType, null);
     }
     
     /**
@@ -346,8 +465,8 @@ public class QueryManagementService implements QueryRequestHandler {
      *            the query parameters, not null
      * @param currentUser
      *            the user who called this method, not null
-     * @param isCreateRequest
-     *            whether this is a create call <code>true</code>, or a define call <code>false</code>
+     * @param queryType
+     *            whether this is a define, create, or plan call
      * @param queryId
      *            the desired query id, may be null
      * @return the task key returned from query storage
@@ -366,8 +485,8 @@ public class QueryManagementService implements QueryRequestHandler {
      * @throws QueryException
      *             if there is an unknown error
      */
-    private TaskKey storeQuery(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser, boolean isCreateRequest,
-                    String queryId) throws BadRequestQueryException, QueryException {
+    private TaskKey storeQuery(String queryLogicName, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser,
+                    QueryStatus.QUERY_STATE queryType, String queryId) throws BadRequestQueryException, QueryException {
         // validate query and get a query logic
         QueryLogic<?> queryLogic = validateQuery(queryLogicName, parameters, currentUser);
         
@@ -389,15 +508,23 @@ public class QueryManagementService implements QueryRequestHandler {
             throw new BadRequestQueryException("Unable to downgrade authorizations", e, HttpStatus.SC_BAD_REQUEST + "-1");
         }
         
-        // if this is a create request, send an audit record to the auditor
-        if (isCreateRequest) {
+        // if this is a create request, or a plan request where we are expanding values, send an audit record to the auditor
+        if (queryType == CREATED || (queryType == PLANNED && queryParameters.isExpandValues())) {
             audit(query, queryLogic, parameters, currentUser);
         }
         
         try {
             // persist the query w/ query id in the query storage cache
-            TaskKey taskKey;
-            if (isCreateRequest) {
+            TaskKey taskKey = null;
+            if (queryType == DEFINED) {
+                // @formatter:off
+                taskKey = queryStorageCache.defineQuery(
+                        getPoolName(),
+                        query,
+                        downgradedAuthorizations,
+                        getMaxConcurrentTasks(queryLogic));
+                // @formatter:on
+            } else if (queryType == CREATED) {
                 // @formatter:off
                 taskKey = queryStorageCache.createQuery(
                         getPoolName(),
@@ -406,52 +533,73 @@ public class QueryManagementService implements QueryRequestHandler {
                         getMaxConcurrentTasks(queryLogic));
                 // @formatter:on
                 
-                if (queryProperties.isAwaitExecutorCreateResponse()) {
-                    // before publishing the message, create a latch based on the query ID
-                    createLatchMap.put(taskKey.getQueryId(), new CountDownLatch(1));
-                }
-                
-                // publish a create event to the executor pool
-                publishExecutorEvent(QueryRequest.create(taskKey.getQueryId()), getPoolName());
-                
-                if (queryProperties.isAwaitExecutorCreateResponse()) {
-                    log.info("Waiting on query create response from the executor.");
-                    // wait for the executor to finish creating the query
-                    try {
-                        // TODO: Should we incorporate the call start time into this check?
-                        if (!createLatchMap.get(taskKey.getQueryId()).await(queryProperties.getExpiration().getCallTimeout(),
-                                        queryProperties.getExpiration().getCallTimeUnit())) {
-                            throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Timed out waiting for query create to finish.");
-                        } else {
-                            log.info("Received query create response from the executor.");
-                        }
-                    } catch (InterruptedException e) {
-                        log.warn("Interrupted while waiting for query create latch for queryId {}", queryId);
-                        throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Interrupted while waiting for query create to finish.");
-                    } finally {
-                        createLatchMap.remove(taskKey.getQueryId());
-                    }
-                }
-            } else {
+                sendRequestAwaitResponse(QueryRequest.create(taskKey.getQueryId()), queryProperties.isAwaitExecutorCreateResponse());
+            } else if (queryType == PLANNED) {
                 // @formatter:off
-                taskKey = queryStorageCache.defineQuery(
+                taskKey = queryStorageCache.planQuery(
                         getPoolName(),
                         query,
-                        downgradedAuthorizations,
-                        getMaxConcurrentTasks(queryLogic));
+                        downgradedAuthorizations);
                 // @formatter:on
+                
+                sendRequestAwaitResponse(QueryRequest.plan(taskKey.getQueryId()), true);
+            } else if (queryType == PREDICTED) {
+                // @formatter:off
+                taskKey = queryStorageCache.predictQuery(
+                        getPoolName(),
+                        query,
+                        downgradedAuthorizations);
+                // @formatter:on
+                
+                sendRequestAwaitResponse(QueryRequest.predict(taskKey.getQueryId()), true);
+            }
+            
+            if (taskKey == null) {
+                log.error("Task Key not created for query");
+                throw new QueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR);
             }
             
             // update the query metric
-            baseQueryMetric.setQueryId(taskKey.getQueryId());
-            baseQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.DEFINED);
-            baseQueryMetric.populate(query);
-            baseQueryMetric.setProxyServers(currentUser.getProxyServers());
+            if (queryType == DEFINED || queryType == CREATED) {
+                baseQueryMetric.setQueryId(taskKey.getQueryId());
+                baseQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.DEFINED);
+                baseQueryMetric.populate(query);
+                baseQueryMetric.setProxyServers(currentUser.getProxyServers());
+            }
             
             return taskKey;
         } catch (Exception e) {
             log.error("Unknown error storing query", e);
             throw new QueryException(DatawaveErrorCode.RUNNING_QUERY_CACHE_ERROR, e);
+        }
+    }
+    
+    private void sendRequestAwaitResponse(QueryRequest request, boolean isAwaitResponse) throws QueryException {
+        if (isAwaitResponse) {
+            // before publishing the message, create a latch based on the query ID
+            queryLatchMap.put(request.getQueryId(), new CountDownLatch(1));
+        }
+        
+        // publish a plan event to the executor pool
+        publishExecutorEvent(request, getPoolName());
+        
+        if (isAwaitResponse) {
+            log.info("Waiting on query {} response from the executor.", request.getMethod().name());
+            // wait for the executor to finish creating the query
+            try {
+                // TODO: Should we incorporate the call start time into this check?
+                if (!queryLatchMap.get(request.getQueryId()).await(queryProperties.getExpiration().getCallTimeout(),
+                                queryProperties.getExpiration().getCallTimeUnit())) {
+                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Timed out waiting for query " + request.getMethod().name() + " to finish.");
+                } else {
+                    log.info("Received query {} response from the executor.", request.getMethod().name());
+                }
+            } catch (InterruptedException e) {
+                log.warn("Interrupted while waiting for query {} latch for queryId {}", request.getMethod().name(), request.getQueryId());
+                throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Interrupted while waiting for query " + request.getMethod().name() + " to finish.");
+            } finally {
+                queryLatchMap.remove(request.getQueryId());
+            }
         }
     }
     
@@ -1400,7 +1548,7 @@ public class QueryManagementService implements QueryRequestHandler {
                     
                     // redefine the query
                     if (updated) {
-                        storeQuery(currentParams.getFirst(QUERY_LOGIC_NAME), currentParams, currentUser, false, queryId);
+                        storeQuery(currentParams.getFirst(QUERY_LOGIC_NAME), currentParams, currentUser, DEFINED, queryId);
                     }
                 } else if (queryStatus.isRunning()) {
                     // if the query is created/running, update safe parameters only
@@ -1566,7 +1714,7 @@ public class QueryManagementService implements QueryRequestHandler {
         updateParameters(parameters, currentParams);
         
         // define a duplicate query
-        return storeQuery(currentParams.getFirst(QUERY_LOGIC_NAME), currentParams, currentUser, true);
+        return storeQuery(currentParams.getFirst(QUERY_LOGIC_NAME), currentParams, currentUser, CREATED);
     }
     
     private boolean updateParameters(MultiValueMap<String,String> newParameters, MultiValueMap<String,String> currentParams) throws BadRequestQueryException {
@@ -1750,12 +1898,13 @@ public class QueryManagementService implements QueryRequestHandler {
             if (queryRequest.getMethod() == QueryRequest.Method.CANCEL) {
                 log.trace("Received remote cancel request from {} for {}.", originService, destinationService);
                 cancel(queryRequest.getQueryId(), false);
-            } else if (queryRequest.getMethod() == QueryRequest.Method.CREATE) {
-                log.trace("Received remote create request from {} for {}.", originService, destinationService);
-                if (createLatchMap.containsKey(queryRequest.getQueryId())) {
-                    createLatchMap.get(queryRequest.getQueryId()).countDown();
+            } else if (queryRequest.getMethod() == QueryRequest.Method.CREATE || queryRequest.getMethod() == QueryRequest.Method.PLAN
+                            || queryRequest.getMethod() == QueryRequest.Method.PREDICT) {
+                log.trace("Received remote {} request from {} for {}.", queryRequest.getMethod().name(), originService, destinationService);
+                if (queryLatchMap.containsKey(queryRequest.getQueryId())) {
+                    queryLatchMap.get(queryRequest.getQueryId()).countDown();
                 } else {
-                    log.warn("Unable to decrement create latch for query {}", queryRequest.getQueryId());
+                    log.warn("Unable to decrement {} latch for query {}", queryRequest.getMethod().name(), queryRequest.getQueryId());
                 }
             } else {
                 log.debug("No handling specified for remote query request method: {} from {} for {}", queryRequest.getMethod(), originService,

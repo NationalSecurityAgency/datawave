@@ -29,6 +29,8 @@ public interface QueryParameters extends ParameterValidator {
     String QUERY_LOGIC_NAME = "logicName";
     String QUERY_POOL = "pool";
     String QUERY_MAX_CONCURRENT_TASKS = "maxConcurrentTasks";
+    String QUERY_PLAN_EXPAND_FIELDS = "expand.fields";
+    String QUERY_PLAN_EXPAND_VALUES = "expand.values";
     
     String getQuery();
     
@@ -93,6 +95,14 @@ public interface QueryParameters extends ParameterValidator {
     void setMaxConcurrentTasks(int maxConcurrentTasks);
     
     boolean isMaxConcurrentTasksOverridden();
+    
+    void setExpandFields(boolean expandFields);
+    
+    boolean isExpandFields();
+    
+    void setExpandValues(boolean expandVues);
+    
+    boolean isExpandValues();
     
     Map<String,List<String>> getRequestHeaders();
     

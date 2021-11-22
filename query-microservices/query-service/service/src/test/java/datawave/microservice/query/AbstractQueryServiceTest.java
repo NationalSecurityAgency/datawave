@@ -31,12 +31,14 @@ import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.cloud.bus.ServiceMatcher;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpMethod;
@@ -506,21 +508,34 @@ public abstract class AbstractQueryServiceTest {
         
         @Bean
         @Primary
-        public ApplicationEventPublisher eventPublisher(ApplicationEventPublisher eventPublisher) {
+        public ApplicationEventPublisher eventPublisher(@Lazy QueryManagementService queryManagementService, ServiceMatcher serviceMatcher) {
             return new ApplicationEventPublisher() {
                 @Override
                 public void publishEvent(ApplicationEvent event) {
                     saveEvent(event);
+                    processEvent(event);
                 }
                 
                 @Override
                 public void publishEvent(Object event) {
                     saveEvent(event);
+                    processEvent(event);
                 }
                 
                 private void saveEvent(Object event) {
                     if (event instanceof RemoteQueryRequestEvent) {
                         queryRequestEvents().push(((RemoteQueryRequestEvent) event));
+                    }
+                }
+                
+                private void processEvent(Object event) {
+                    if (event instanceof RemoteQueryRequestEvent) {
+                        RemoteQueryRequestEvent queryEvent = (RemoteQueryRequestEvent) event;
+                        boolean isSelfRequest = serviceMatcher.isFromSelf(queryEvent);
+                        if (!isSelfRequest) {
+                            queryManagementService.handleRemoteRequest(queryEvent.getRequest(), queryEvent.getOriginService(),
+                                            queryEvent.getDestinationService());
+                        }
                     }
                 }
             };

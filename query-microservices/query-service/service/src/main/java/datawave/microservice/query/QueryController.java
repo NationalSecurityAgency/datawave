@@ -54,6 +54,22 @@ public class QueryController {
         return queryManagementService.create(queryLogic, parameters, currentUser);
     }
     
+    @Timed(name = "dw.query.planQuery", absolute = true)
+    @RequestMapping(path = "{queryLogic}/plan", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+            "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public GenericResponse<String> plan(@PathVariable String queryLogic, @RequestParam MultiValueMap<String,String> parameters,
+                    @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
+        return queryManagementService.plan(queryLogic, parameters, currentUser);
+    }
+    
+    @Timed(name = "dw.query.predictQuery", absolute = true)
+    @RequestMapping(path = "{queryLogic}/predict", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+            "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public GenericResponse<String> predict(@PathVariable String queryLogic, @RequestParam MultiValueMap<String,String> parameters,
+                    @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
+        return queryManagementService.predict(queryLogic, parameters, currentUser);
+    }
+    
     @Timed(name = "dw.query.createAndNext", absolute = true)
     @EnrichQueryMetrics(methodType = EnrichQueryMetrics.MethodType.CREATE_AND_NEXT)
     @RequestMapping(path = "{queryLogic}/createAndNext", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",

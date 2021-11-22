@@ -54,6 +54,13 @@ public class FindWorkTask implements Callable<Void> {
                     // even if the next task is to plan, this will take care of it
                     executor.handleRemoteRequest(QueryRequest.next(queryId), originService, destinationService);
                     break;
+                case PLANNED:
+                    log.debug("Planning " + queryId);
+                    // TODO: The monitor task lease is 100ms by default. Is that enough time to ensure that the handleRemoteRequest call will finish?
+                    // Should we create a new thread to handle the remote request instead so that we can return immediately?
+                    // even if the next task is to plan, this will take care of it
+                    executor.handleRemoteRequest(QueryRequest.plan(queryId), originService, destinationService);
+                    break;
                 case DEFINED:
                 case FAILED:
                     // noop

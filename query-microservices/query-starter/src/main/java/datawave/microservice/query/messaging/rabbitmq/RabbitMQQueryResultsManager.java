@@ -110,7 +110,9 @@ public class RabbitMQQueryResultsManager implements QueryResultsManager {
     @Override
     public void deleteQuery(String queryId) {
         try {
-            rabbitAdmin.deleteQueue(QUERY_QUEUE_PREFIX + queryId);
+            if (rabbitAdmin.getQueueInfo(QUERY_QUEUE_PREFIX + queryId) != null) {
+                rabbitAdmin.deleteQueue(QUERY_QUEUE_PREFIX + queryId);
+            }
         } catch (AmqpIOException e) {
             log.error("Failed to delete queue " + queryId, e);
         }

@@ -15,12 +15,6 @@ import java.io.Serializable;
 public class QueryTask implements Serializable {
     private static final long serialVersionUID = 579211458890999398L;
     
-    /**
-     * Parameter names used when getting a plan prior to creating a query
-     */
-    public static final String EXPAND_VALUES = "expand.values";
-    public static final String EXPAND_FIELDS = "expand.fields";
-    
     private final int taskId;
     private final QueryRequest.Method action;
     private final QueryCheckpoint queryCheckpoint;

@@ -10,12 +10,19 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
+import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
+
+import static datawave.microservice.query.QueryParameters.QUERY_PLAN_EXPAND_FIELDS;
+import static datawave.microservice.query.QueryParameters.QUERY_PLAN_EXPAND_VALUES;
 
 public class PlanTask extends ExecutorTask {
     private static final Logger log = Logger.getLogger(PlanTask.class);
     
-    public PlanTask(QueryExecutor source, QueryTask task) {
+    private final String originService;
+    
+    public PlanTask(QueryExecutor source, QueryTask task, String originService) {
         super(source, task);
+        this.originService = originService;
     }
     
     @Override
@@ -31,16 +38,31 @@ public class PlanTask extends ExecutorTask {
         boolean expandValues = false;
         Query query = queryStatus.getQuery();
         for (QueryImpl.Parameter p : query.getParameters()) {
-            if (p.getParameterName().equals(QueryTask.EXPAND_FIELDS)) {
-                expandFields = Boolean.valueOf(p.getParameterValue());
-            } else if (p.getParameterName().equals(QueryTask.EXPAND_VALUES)) {
-                expandValues = Boolean.valueOf(p.getParameterValue());
+            if (p.getParameterName().equals(QUERY_PLAN_EXPAND_FIELDS)) {
+                expandFields = Boolean.parseBoolean(p.getParameterValue());
+            } else if (p.getParameterName().equals(QUERY_PLAN_EXPAND_VALUES)) {
+                expandValues = Boolean.parseBoolean(p.getParameterValue());
             }
         }
         String plan = queryLogic.getPlan(connector, queryStatus.getQuery(), queryStatus.getCalculatedAuthorizations(), expandFields, expandValues);
         queryStatus.setPlan(plan);
         
+        notifyOriginOfPlan(queryId);
+        
         return true;
     }
     
+    private void notifyOriginOfPlan(String queryId) {
+        if (originService != null) {
+            log.debug("Publishing a plan request to the originating service: " + originService);
+            // @formatter:off
+            publisher.publishEvent(
+                    new RemoteQueryRequestEvent(
+                            this,
+                            busProperties.getId(),
+                            originService,
+                            QueryRequest.plan(queryId)));
+            // @formatter:on
+        }
+    }
 }

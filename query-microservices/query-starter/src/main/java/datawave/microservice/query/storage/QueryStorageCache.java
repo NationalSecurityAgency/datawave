@@ -48,6 +48,36 @@ public interface QueryStorageCache {
     TaskKey createQuery(String queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
     
     /**
+     * Store/cache a new query. This will create a query task containing the query with a PLAN query action.
+     *
+     * @param queryPool
+     *            The query pool
+     * @param query
+     *            The query parameters
+     * @param calculatedAuths
+     *            The intersection of the user's auths with the requested auths
+     * @return The plan task key
+     * @throws IOException
+     *             underlying storage error
+     */
+    TaskKey planQuery(String queryPool, Query query, Set<Authorizations> calculatedAuths) throws IOException;
+    
+    /**
+     * Store/cache a new query. This will create a query task containing the query with a PREDICT query action.
+     *
+     * @param queryPool
+     *            The query pool
+     * @param query
+     *            The query parameters
+     * @param calculatedAuths
+     *            The intersection of the user's auths with the requested auths
+     * @return The predict task key
+     * @throws IOException
+     *             underlying storage error
+     */
+    TaskKey predictQuery(String queryPool, Query query, Set<Authorizations> calculatedAuths) throws IOException;
+    
+    /**
      * Get the current query state. This includes the query status and the task statuses
      * 
      * @param queryId

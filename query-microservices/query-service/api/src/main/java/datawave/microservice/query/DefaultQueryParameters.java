@@ -38,6 +38,8 @@ public class DefaultQueryParameters implements QueryParameters {
     protected String pool;
     protected boolean isMaxConcurrentTasksOverridden;
     protected int maxConcurrentTasks;
+    protected boolean expandFields;
+    protected boolean expandValues;
     protected Map<String,List<String>> requestHeaders;
     
     public DefaultQueryParameters() {
@@ -125,6 +127,10 @@ public class DefaultQueryParameters implements QueryParameters {
                 this.logicName = values.get(0);
             } else if (QUERY_POOL.equals(param)) {
                 this.pool = values.get(0);
+            } else if (QUERY_PLAN_EXPAND_FIELDS.equals(param)) {
+                this.expandFields = Boolean.parseBoolean(values.get(0));
+            } else if (QUERY_PLAN_EXPAND_VALUES.equals(param)) {
+                this.expandValues = Boolean.parseBoolean(values.get(0));
             } else {
                 throw new IllegalArgumentException("Unknown condition.");
             }
@@ -164,6 +170,10 @@ public class DefaultQueryParameters implements QueryParameters {
         if (isMaxConcurrentTasksOverridden != that.isMaxConcurrentTasksOverridden)
             return false;
         if (maxConcurrentTasks != that.maxConcurrentTasks)
+            return false;
+        if (expandFields != that.expandFields)
+            return false;
+        if (expandValues != that.expandValues)
             return false;
         if (trace != that.trace)
             return false;
@@ -205,6 +215,8 @@ public class DefaultQueryParameters implements QueryParameters {
         if (isMaxConcurrentTasksOverridden) {
             result = 31 * result + maxConcurrentTasks;
         }
+        result = 31 * result + Boolean.hashCode(expandFields);
+        result = 31 * result + Boolean.hashCode(expandValues);
         result = 31 * result + auths.hashCode();
         result = 31 * result + expirationDate.hashCode();
         result = 31 * result + (trace ? 1 : 0);
@@ -530,6 +542,26 @@ public class DefaultQueryParameters implements QueryParameters {
     }
     
     @Override
+    public boolean isExpandFields() {
+        return expandFields;
+    }
+    
+    @Override
+    public void setExpandFields(boolean expandFields) {
+        this.expandFields = expandFields;
+    }
+    
+    @Override
+    public boolean isExpandValues() {
+        return expandValues;
+    }
+    
+    @Override
+    public void setExpandValues(boolean expandValues) {
+        this.expandValues = expandValues;
+    }
+    
+    @Override
     public Map<String,List<String>> getRequestHeaders() {
         return requestHeaders;
     }
@@ -568,6 +600,8 @@ public class DefaultQueryParameters implements QueryParameters {
         this.pool = null;
         this.isMaxConcurrentTasksOverridden = false;
         this.maxConcurrentTasks = 0;
+        this.expandFields = true;
+        this.expandValues = false;
         this.requestHeaders = null;
     }
 }

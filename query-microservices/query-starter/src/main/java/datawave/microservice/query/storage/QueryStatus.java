@@ -23,7 +23,7 @@ import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATE
 
 public class QueryStatus implements Serializable {
     public enum QUERY_STATE {
-        DEFINED, CREATED, CLOSED, CANCELED, FAILED
+        DEFINED, CREATED, PLANNED, PREDICTED, CLOSED, CANCELED, FAILED
     }
     
     private QueryKey queryKey;

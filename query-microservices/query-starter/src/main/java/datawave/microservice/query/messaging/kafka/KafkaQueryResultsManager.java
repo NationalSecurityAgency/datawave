@@ -13,7 +13,6 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.KafkaAdmin;
@@ -87,13 +86,15 @@ public class KafkaQueryResultsManager implements QueryResultsManager {
     
     private void deleteTopic(String topic) {
         try {
-            // @formatter:off
-            adminClient
-                    .deleteTopics(Collections.singleton(topic))
-                    .values()
-                    .get(topic)
-                    .get();
-            // @formatter:on
+            if (adminClient.listTopics().names().get().contains("topic")) {
+                // @formatter:off
+                adminClient
+                        .deleteTopics(Collections.singleton(topic))
+                        .values()
+                        .get(topic)
+                        .get();
+                // @formatter:on
+            }
         } catch (InterruptedException | ExecutionException e) {
             log.error("Failed to delete topic " + topic, e);
         }
