@@ -76,6 +76,7 @@ import datawave.query.jexl.visitors.PushdownMissingIndexRangeNodesVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
+import datawave.query.jexl.visitors.QueryPropertyMarkerSourceConsolidator;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
 import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
@@ -717,6 +718,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         config.setQueryTree(timedFixNegativeNumbers(timers, config.getQueryTree()));
         
+        // Fix any query property markers that have multiple unwrapped sources.
+        config.setQueryTree(timedFixQueryPropertyMarkers(timers, config.getQueryTree()));
+        
         // Ensure that all ASTIdentifier nodes (field names) are upper-case to be consistent with what is enforced at ingest time
         config.setQueryTree(timedUpperCaseIdentifiers(timers, config.getQueryTree(), config, metadataHelper));
         
@@ -791,7 +795,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         if (!disableWhindexFieldMappings) {
             // apply the value-specific field mappings for GeoWave functions
-            timedApplyWhindexFieldMappings(timers, config.getQueryTree(), config, metadataHelper, settings);
+            config.setQueryTree(timedApplyWhindexFieldMappings(timers, config.getQueryTree(), config, metadataHelper, settings));
         }
         
         if (!disableExpandIndexFunction) {
@@ -1573,6 +1577,21 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setExpandAllTerms(expandAllTerms);
         stopwatch.stop();
         return config.getQueryTree();
+    }
+    
+    protected ASTJexlScript timedFixQueryPropertyMarkers(QueryStopwatch timers, ASTJexlScript script) throws DatawaveQueryException {
+        // Fix query property markers with multiple sources.
+        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - fix query property markers with multiple sources");
+        try {
+            script = QueryPropertyMarkerSourceConsolidator.consolidate(script);
+        } catch (Exception e) {
+            throw new DatawaveQueryException("Failed to fix query property markers with multiple sources", e);
+        }
+        if (log.isDebugEnabled()) {
+            logQuery(script, "Query after fixing query property markers with multiple sources");
+        }
+        stopwatch.stop();
+        return script;
     }
     
     /*

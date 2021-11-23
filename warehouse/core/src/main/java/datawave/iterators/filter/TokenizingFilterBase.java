@@ -96,13 +96,21 @@ public abstract class TokenizingFilterBase extends AppliedRule {
     @Override
     public boolean accept(AgeOffPeriod period, Key k, Value V) {
         Long calculatedTTL = scanTrie.scan(getKeyField(k, V));
+        // no match found
         if (calculatedTTL == null) {
             ruleApplied = false;
             return true;
         }
+        // cutoffTimestamp includes the default TTL
         long cutoffTimestamp = period.getCutOffMilliseconds();
+        
+        // If there is a TTL for this key:
         if (calculatedTTL > 0) {
-            cutoffTimestamp -= calculatedTTL - period.getTtl() * period.getTtlUnitsFactor();
+            // cutoffTimestamp is currently offset by the default TTL. Start by undoing that default offset
+            cutoffTimestamp += period.getTtl() * period.getTtlUnitsFactor();
+            
+            // Subtract the key's TTL from the cut-off timestamp
+            cutoffTimestamp -= calculatedTTL;
         }
         ruleApplied = true;
         return k.getTimestamp() > cutoffTimestamp;

@@ -91,7 +91,8 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
     }
     
     /**
-     * Ensure that for each of the pending files in the provided list there is also a successful file with a matching filename. If not, throw an exception.
+     * Ensure that for each of the non-empty pending files in the provided list there is also a successful file with a matching filename. If not, throw an
+     * exception.
      * 
      * @param fs
      *            FileSystem to use
@@ -103,7 +104,9 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
      */
     private void verifyRemainingTemporaryFilesByName(FileSystem fs, List<Path> pendingFileList) throws IOException {
         List<Path> allFilesInOutputPath = new ArrayList<>();
-        containsFiles(fs, super.getOutputPath(), allFilesInOutputPath);
+        
+        boolean shouldIgnoreEmptyFiles = true;
+        containsFiles(fs, super.getOutputPath(), allFilesInOutputPath, shouldIgnoreEmptyFiles);
         
         LOG.trace("Number of files in output path: {} and in pending: {}", allFilesInOutputPath.size(), pendingFileList.size());
         // Exclude the pending files so that allFilesInOutputPath only contains the successful files
@@ -128,7 +131,12 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
     }
     
     protected boolean containsFiles(final FileSystem fs, final Path path, final List<Path> list) throws FileNotFoundException, IOException {
-        RemoteIterator<Path> listing = listFiles(fs, path);
+        return containsFiles(fs, path, list, false);
+    }
+    
+    protected boolean containsFiles(final FileSystem fs, final Path path, final List<Path> list, boolean ignoreEmptyFiles) throws FileNotFoundException,
+                    IOException {
+        RemoteIterator<Path> listing = listFiles(fs, path, ignoreEmptyFiles);
         while (listing.hasNext()) {
             list.add(listing.next());
         }
@@ -144,6 +152,14 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
      * @return A remote iterator of paths for file only
      */
     protected RemoteIterator<Path> listFiles(final FileSystem fs, final Path path) {
+        return listFiles(fs, path, false);
+    }
+    
+    /**
+     * See SafeFileOutputCommitter.listFiles(FileSystem, Path). When ignoreEmptyFiles is true, listFiles's returned iterator will not return files that are
+     * empty.
+     */
+    protected RemoteIterator<Path> listFiles(final FileSystem fs, final Path path, boolean ignoreEmptyFiles) {
         return new RemoteIterator<Path>() {
             private ArrayDeque<FileStatus> files = new ArrayDeque<>();
             private Path curFile = null;
@@ -161,11 +177,13 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
                 initialize();
                 while (curFile == null && !files.isEmpty()) {
                     FileStatus file = files.removeLast();
-                    if (file.isFile()) {
-                        curFile = file.getPath();
-                    } else {
+                    if (!file.isFile()) {
                         FileStatus[] status = fs.listStatus(file.getPath());
                         Collections.addAll(files, status);
+                    } else if (!ignoreEmptyFiles || file.getLen() > 0) {
+                        // if ignoreEmptyFiles is true then include all files regardless of size
+                        // always include a path if it's a file that's not empty
+                        curFile = file.getPath();
                     }
                 }
                 return curFile != null;
