@@ -1,0 +1,76 @@
+# Data has the following characteristics
+# alice is in all events
+# bob is in the first five events
+# eve is in all even numbered events
+# oberon is in all odd numbered events
+# paul is in all prime numbered events
+# EVENT_ONLY fields are trigraphs, sliding window across the alphabet
+# MSG_SIZE is an integer to test ranges and number normalization
+# TOK is a tokenized field to test content fields
+# uid,field,value,normalizer
+uid0,EVENT_ONLY,abc,EventOnly
+uid0,FIRST_NAME,alice,LcNoDiacritics
+uid0,FIRST_NAME,bob,LcNoDiacritics
+uid0,FIRST_NAME,eve,LcNoDiacritics
+uid0,MSG_SIZE,6,Number
+uid0,TOK,alice sent a message to bob,TermFrequencyIndexOnly
+uid0,MSG,event only message,TermFrequencyEventOnly
+# uid,field,value,normalizer
+uid1,EVENT_ONLY,bcd,EventOnly
+uid1,FIRST_NAME,alice,LcNoDiacritics
+uid1,FIRST_NAME,bob,LcNoDiacritics
+uid1,FIRST_NAME,oberon,LcNoDiacritics
+uid1,MSG_SIZE,6,Number
+uid1,TOK,bob read the message from alice,TermFrequencyIndexOnly
+# uid,field,value,normalizer
+uid2,EVENT_ONLY,cde,EventOnly
+uid2,FIRST_NAME,alice,LcNoDiacritics
+uid2,FIRST_NAME,bob,LcNoDiacritics
+uid2,FIRST_NAME,eve,LcNoDiacritics
+uid2,FIRST_NAME,paul,LcNoDiacritics
+uid2,MSG_SIZE,8,Number
+uid2,TOK,eve decrypted the message from alice to bob,TermFrequencyIndexOnly
+# uid,field,value,normalizer
+uid3,EVENT_ONLY,def,EventOnly
+uid3,FIRST_NAME,alice,LcNoDiacritics
+uid3,FIRST_NAME,bob,LcNoDiacritics
+uid3,FIRST_NAME,oberon,LcNoDiacritics
+uid3,FIRST_NAME,paul,LcNoDiacritics
+uid3,MSG_SIZE,9,Number
+uid3,TOK,the message that alice sent to bob was encrypted,TermFrequencyIndexOnly
+# uid,field,value,normalizer
+uid4,EVENT_ONLY,efg,EventOnly
+uid4,FIRST_NAME,alice,LcNoDiacritics
+uid4,FIRST_NAME,bob,LcNoDiacritics
+uid4,FIRST_NAME,eve,LcNoDiacritics
+uid4,MSG_SIZE,8,Number
+uid4,TOK,eve brute forced the key owned by bob,TermFrequencyIndexOnly
+# uid,field,value,normalizer
+uid5,EVENT_ONLY,fgh,EventOnly
+uid5,FIRST_NAME,alice,LcNoDiacritics
+uid5,FIRST_NAME,oberon,LcNoDiacritics
+uid5,FIRST_NAME,paul,LcNoDiacritics
+# uid,field,value,normalizer
+uid6,EVENT_ONLY,ghi,EventOnly
+uid6,FIRST_NAME,alice,LcNoDiacritics
+uid6,FIRST_NAME,eve,LcNoDiacritics
+# uid,field,value,normalizer
+uid7,EVENT_ONLY,hij,EventOnly
+uid7,FIRST_NAME,alice,LcNoDiacritics
+uid7,FIRST_NAME,oberon,LcNoDiacritics
+uid7,FIRST_NAME,paul,LcNoDiacritics
+# uid,field,value,normalizer
+uid8,EVENT_ONLY,ijk,EventOnly
+uid8,FIRST_NAME,alice,LcNoDiacritics
+uid8,FIRST_NAME,eve,LcNoDiacritics
+# uid,field,value,normalizer
+uid9,EVENT_ONLY,jkl,EventOnly
+uid9,FIRST_NAME,alice,LcNoDiacritics
+uid9,FIRST_NAME,oberon,LcNoDiacritics
+# uid,field,value,normalizer
+uid10,FIRST_NAME,extra,LcNoDiacritics
+# uid,field,value,normalizer
+uid11,FIRST_NAME,extra,LcNoDiacritics
+uid11,FIRST_NAME,paul,LcNoDiacritics
+# uid,field,value,normalizer
+uid12,FIRST_NAME,extra,LcNoDiacritics

@@ -90,7 +90,12 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         }
 
         // now evaluate
-        Object o = script.execute(input.third());
+        Object o = null;
+        try {
+            o = script.execute(input.third());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         if (log.isTraceEnabled()) {
             log.trace("Evaluation of " + query + " against " + input.third() + " returned " + o);
         }

@@ -249,7 +249,7 @@ public class QueryOptionsTest {
     }
 
     private static class WrappedQueryOptions extends QueryOptions {
-        protected static String decompressOption(final String buffer, Charset characterSet) throws IOException {
+        public static String decompressOption(final String buffer, Charset characterSet) throws IOException {
             return QueryOptions.decompressOption(buffer, characterSet);
         }
     }

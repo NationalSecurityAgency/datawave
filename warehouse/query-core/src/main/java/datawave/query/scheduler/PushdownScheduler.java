@@ -146,23 +146,22 @@ public class PushdownScheduler extends Scheduler {
             }
 
             session.addVisitor(new VisitorFunction(config, metadataHelper));
+            session.setScanLimit(config.getMaxDocScanTimeout());
+
+            if (config.getBackoffEnabled()) {
+                session.setBackoffEnabled(true);
+            }
+
+            session.setChunkIter(chunkIter);
+
+            session.setTabletLocator(tl);
+
+            session.updateIdentifier(config.getQuery().getId().toString());
+            return session;
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-        session.setScanLimit(config.getMaxDocScanTimeout());
-
-        if (config.getBackoffEnabled()) {
-            session.setBackoffEnabled(true);
-        }
-
-        session.setChunkIter(chunkIter);
-
-        session.setTabletLocator(tl);
-
-        session.updateIdentifier(config.getQuery().getId().toString());
-
-        return session;
     }
 
     protected Iterator<QueryData> getQueryDataIterator() {

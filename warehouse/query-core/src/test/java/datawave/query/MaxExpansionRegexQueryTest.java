@@ -78,6 +78,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
 
         this.logic.setMaxValueExpansionThreshold(1);
+        this.logic.setCollapseUids(true);
         try {
             runTest(query, expect);
             Assert.fail("exception condition expected");

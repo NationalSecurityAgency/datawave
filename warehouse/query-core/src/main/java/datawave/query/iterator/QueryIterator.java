@@ -465,6 +465,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
             // apply the grouping iterator if requested and if the batch size is greater than zero
             // if the batch size is 0, then grouping is computed only on the web server
+            // TODO -- sounds like if the batch size is zero we shouldn't even serialize the option
             if (this.groupFieldsBatchSize > 0) {
                 GroupingIterator groupify = getGroupingIteratorInstance(pipelineDocuments);
                 if (groupify != null) {

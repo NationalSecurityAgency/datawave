@@ -23,7 +23,6 @@ import datawave.query.common.grouping.GroupFields;
 import datawave.query.common.grouping.GroupingUtils;
 import datawave.query.common.grouping.Groups;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
-import datawave.query.model.QueryModel;
 
 /**
  * GroupingTransform mimics GROUP BY with a COUNT in SQL. For the given fields, this transform will group into unique combinations of values and assign a count

@@ -69,6 +69,7 @@ import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.scheduler.PushdownScheduler;
+import datawave.query.scheduler.RemoteScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
 import datawave.query.tables.stats.ScanSessionStats;
@@ -551,11 +552,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
             stopwatch.stop();
 
-            log.info(getStopwatchHeader(config));
-            List<String> timings = timers.summarizeAsList();
-            for (String timing : timings) {
-                log.info(timing);
-            }
+            // log.info(getStopwatchHeader(config));
+            // List<String> timings = timers.summarizeAsList();
+            // for (String timing : timings) {
+            // log.info(timing);
+            // }
 
             return;
         }
@@ -572,11 +573,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
         stopwatch.stop();
 
-        log.info(getStopwatchHeader(config));
-        List<String> timings = timers.summarizeAsList();
-        for (String timing : timings) {
-            log.info(timing);
-        }
+        // log.info(getStopwatchHeader(config));
+        // List<String> timings = timers.summarizeAsList();
+        // for (String timing : timings) {
+        // log.info(timing);
+        // }
     }
 
     protected String getStopwatchHeader(ShardQueryConfiguration config) {
@@ -1132,9 +1133,43 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     protected Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
         if (config.getSequentialScheduler()) {
             return new SequentialScheduler(config, scannerFactory);
+        } else if (config.getUseRemoteScheduler() && canUseRemoteScheduler(config)) {
+            return new RemoteScheduler(config, metadataHelperFactory);
         } else {
             return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
         }
+    }
+
+    /**
+     * Quick and dirty method to limit the scope of queries using the remote scheduler
+     *
+     * @param config
+     *            a ShardQueryConfiguration
+     * @return true if the query can use the remote scheduler
+     */
+    private boolean canUseRemoteScheduler(ShardQueryConfiguration config) {
+
+        Set<Parameter> parameters = config.getQuery().getParameters();
+        for (Parameter parameter : parameters) {
+            switch (parameter.getParameterName()) {
+                case QueryParameters.QUERY_PROFILE:
+                    return false;
+            }
+        }
+
+        if (config.getFullTableScanEnabled()) {
+            return false; // remote scheduler does not support full table scans
+        }
+
+        if (config.getQueryString().contains("_Bounded_") || config.getQueryString().contains("_Value_") || config.getQueryString().contains("_Eval_")) {
+            return false; // nope right out of these
+        }
+
+        if (config.getQueryString().contains("GEO")) {
+            return false; // not yet
+        }
+
+        return true;
     }
 
     public EventQueryDataDecoratorTransformer getEventQueryDataDecoratorTransformer() {
@@ -2668,5 +2703,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public void setPruneQueryOptions(boolean pruneQueryOptions) {
         getConfig().setPruneQueryOptions(pruneQueryOptions);
+    }
+
+    public boolean getUseRemoteScheduler() {
+        return getConfig().getUseRemoteScheduler();
+    }
+
+    public void setUseRemoteScheduler(boolean useMicroservice) {
+        getConfig().setUseRemoteScheduler(useMicroservice);
     }
 }

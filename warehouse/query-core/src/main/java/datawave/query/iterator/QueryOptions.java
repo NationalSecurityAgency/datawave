@@ -1764,7 +1764,7 @@ public class QueryOptions implements OptionDescriber {
 
     }
 
-    protected static String decompressOption(final String buffer, Charset characterSet) throws IOException {
+    public static String decompressOption(final String buffer, Charset characterSet) throws IOException {
         final byte[] inBase64 = Base64.decodeBase64(buffer.getBytes());
 
         ByteArrayInputStream byteInputStream = new ByteArrayInputStream(inBase64);

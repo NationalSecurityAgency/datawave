@@ -254,6 +254,13 @@
         <property name="reduceTypeMetadataPerShard" value="false" />
         <!--    should the query prune fields by ingest type    -->
         <property name="pruneQueryByIngestTypes" value="false" />
+        <property name="useRemoteScheduler" value="true" />
+    </bean>
+
+    <bean id="DefaultQueryExecutorOptions" scope="prototype" class="datawave.experimental.executor.QueryExecutorOptions">
+        <property name="tfSequentialScan" value="false"/>
+        <property name="tfConfiguredScan" value="false"/>
+        <property name="tfSeekingConfiguredScan" value="false"/>
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">

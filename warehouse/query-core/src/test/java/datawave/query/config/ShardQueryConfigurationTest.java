@@ -446,6 +446,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("pruneQueryOptions", true);
         defaultValues.put("pruneQueryByIngestTypes", false);
         updatedValues.put("pruneQueryByIngestTypes", true);
+        defaultValues.put("useRemoteScheduler", false);
+        updatedValues.put("useRemoteScheduler", true);
         defaultValues.put("numIndexLookupThreads", 8);
         updatedValues.put("numIndexLookupThreads", 18);
         defaultValues.put("expansionLimitedToModelContents", false);

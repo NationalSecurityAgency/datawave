@@ -451,6 +451,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean pruneQueryOptions = false;
 
+    // should this query use the query iterator service
+    private boolean useRemoteScheduler = false;
+
     /**
      * Default constructor
      */
@@ -659,6 +662,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
         this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
         this.setPruneQueryOptions(other.getPruneQueryOptions());
+        this.setUseRemoteScheduler(other.getUseRemoteScheduler());
     }
 
     /**
@@ -2537,5 +2541,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setPruneQueryOptions(boolean pruneQueryOptions) {
         this.pruneQueryOptions = pruneQueryOptions;
+    }
+
+    public boolean getUseRemoteScheduler() {
+        return this.useRemoteScheduler;
+    }
+
+    public void setUseRemoteScheduler(boolean useRemoteScheduler) {
+        this.useRemoteScheduler = useRemoteScheduler;
     }
 }

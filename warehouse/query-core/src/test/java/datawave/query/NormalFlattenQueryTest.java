@@ -86,6 +86,10 @@ public class NormalFlattenQueryTest extends AbstractFunctionalQuery {
         String city = "'auStin'";
         String query = NormalField.CAPITAL_CITY.name() + EQ_OP + cap + AND_OP + NormalField.SMALL_CITY.name() + EQ_OP + city;
         runTest(query, query);
+        // CAPITAL_CITY == 'salem' && (SMALL_CITY == 'austin' || SMALL_CITY == 'auStin')
+        // SMALL_CITY = 2 attributes
+        // 1 NoOp (Austin, Austin)
+        // 2 LcNo (Austin, austin)
     }
 
     @Test
