@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.experimental.MicroserviceFacade;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -143,6 +144,21 @@ public class PushdownScheduler extends Scheduler {
         }
         Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(tl, config, settings, tableId));
         
+        if (tableName.equals("shard") && config.getUseMicroservice()) {
+            session = null;
+            return microserviceFacade(chunkIter);
+        } else {
+            session = createSession(tableName, auths, chunkIter, tl);
+        }
+        
+        return session;
+    }
+    
+    private Iterator<Entry<Key,Value>> microserviceFacade(Iterator<List<ScannerChunk>> chunkIter) {
+        return new MicroserviceFacade(config.getConnector(), chunkIter, metadataHelper, 75);
+    }
+    
+    protected BatchScannerSession createSession(String tableName, Set<Authorizations> auths, Iterator<List<ScannerChunk>> chunkIter, TabletLocator tl) {
         try {
             session = scannerFactory.newQueryScanner(tableName, auths, config.getQuery());
             
@@ -155,23 +171,22 @@ public class PushdownScheduler extends Scheduler {
             }
             
             session.addVisitor(new VisitorFunction(config, metadataHelper));
+            session.setScanLimit(config.getMaxDocScanTimeout());
+            
+            if (config.getBackoffEnabled()) {
+                session.setBackoffEnabled(true);
+            }
+            
+            session.setChunkIter(chunkIter);
+            
+            session.setTabletLocator(tl);
+            
+            session.updateIdentifier(config.getQuery().getId().toString());
+            return session;
+            
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        
-        session.setScanLimit(config.getMaxDocScanTimeout());
-        
-        if (config.getBackoffEnabled()) {
-            session.setBackoffEnabled(true);
-        }
-        
-        session.setChunkIter(chunkIter);
-        
-        session.setTabletLocator(tl);
-        
-        session.updateIdentifier(config.getQuery().getId().toString());
-        
-        return session;
     }
     
     protected Iterator<QueryData> getQueryDataIterator() {

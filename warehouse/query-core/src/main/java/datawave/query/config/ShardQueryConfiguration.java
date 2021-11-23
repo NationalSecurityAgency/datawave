@@ -372,6 +372,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // fields exempt from query model expansion
     private Set<String> noExpansionFields = new HashSet<>();
     
+    // should this query use the query iterator service
+    private boolean useMicroservice = true;
+    
     /**
      * Default constructor
      */
@@ -554,6 +557,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexMappingFields(other.getWhindexMappingFields());
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
+        this.setUseMicroservice(other.getUseMicroservice());
     }
     
     /**
@@ -2216,5 +2220,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setNoExpansionFields(Set<String> noExpansionFields) {
         this.noExpansionFields = noExpansionFields;
+    }
+    
+    public boolean getUseMicroservice() {
+        return this.useMicroservice;
+    }
+    
+    public void setUseMicroservice(boolean useMicroservice) {
+        this.useMicroservice = useMicroservice;
     }
 }

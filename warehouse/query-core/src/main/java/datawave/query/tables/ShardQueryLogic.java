@@ -34,6 +34,7 @@ import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.scheduler.PushdownScheduler;
+import datawave.query.scheduler.RemoteScanScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
 import datawave.query.tables.stats.ScanSessionStats;
@@ -995,6 +996,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     protected Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
         if (config.getSequentialScheduler()) {
             return new SequentialScheduler(config, scannerFactory);
+        } else if (config.getUseMicroservice()) {
+            return new RemoteScanScheduler(config);
         } else {
             return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
         }
@@ -2304,5 +2307,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
+    }
+    
+    public boolean getUseMicroservice() {
+        return getConfig().getUseMicroservice();
+    }
+    
+    public void setUseMicroservice(boolean useMicroservice) {
+        getConfig().setUseMicroservice(useMicroservice);
     }
 }

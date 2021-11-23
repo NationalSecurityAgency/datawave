@@ -72,11 +72,12 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         String expect = this.dataManager.convertAnyField(regPhrase);
         String query = Constants.ANY_FIELD + regPhrase;
         
-        this.logic.setMaxValueExpansionThreshold(10);
-        runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
+        // this.logic.setMaxValueExpansionThreshold(10);
+        // runTest(query, expect);
+        // parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
         
         this.logic.setMaxValueExpansionThreshold(1);
+        this.logic.setCollapseUids(true);
         try {
             runTest(query, expect);
             Assert.fail("exception condition expected");
