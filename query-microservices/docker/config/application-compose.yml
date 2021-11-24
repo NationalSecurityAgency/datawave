@@ -34,6 +34,8 @@ accumulo:
   username: 'root'
   password: 'secret'
 
-# Configuration placeholder which determines what backend will be used for transmitting query results.
+# Configuration placeholders which 1) determines what backend will be used for transmitting query results
+# and 2) determines the message size limit before claim checks are used with RabbitMQ messaging
 messaging:
   backend: ${BACKEND:kafka}
+  maxMessageSizeBytes: 536870912

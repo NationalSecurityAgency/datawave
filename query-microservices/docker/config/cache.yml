@@ -24,4 +24,7 @@ hazelcast:
                     <!-- Evict the least frequently used entries first if we run out of space and allow 2GB for each cluster node to store data -->
                     <eviction eviction-policy="LFU" max-size-policy="USED_HEAP_SIZE" size="2048"/>
                   </map>
+                  <split-brain-protection name="splitBrainDefault" enabled="false">
+                    <minimum-cluster-size>2</minimum-cluster-size>
+                  </split-brain-protection>
                 </hazelcast>

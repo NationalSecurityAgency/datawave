@@ -133,6 +133,9 @@ public class NextCall implements Callable<ResultsPage<Object>> {
                     }
                 }
             }
+        } catch (Exception e) {
+            log.error("Encountered an error while fetching results from the listener", e);
+            throw e;
         }
         
         // update some values for metrics

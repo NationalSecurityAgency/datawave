@@ -167,7 +167,7 @@ public class TestQueryResultsManager implements QueryResultsManager {
             try {
                 result.setAcknowledgementCallback(status -> log.debug("result acknowledged"));
                 if (!resultQueue.offer(result, 10, TimeUnit.SECONDS)) {
-                    log.error("Messages are not being pulled off the queue in time.  " + result.getResultId() + " is being dropped!");
+                    log.error("Messages are not being pulled off the queue in time.  " + result.getId() + " is being dropped!");
                 }
             } catch (InterruptedException e) {
                 throw new IllegalStateException(e);

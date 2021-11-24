@@ -8,10 +8,12 @@ import java.util.concurrent.TimeUnit;
  * A lock object for a query status
  */
 public class QueryStorageLockImpl implements QueryStorageLock {
+    private final String cacheName;
     private final String storageKey;
     private final LockableCacheInspector cacheInspector;
     
-    public QueryStorageLockImpl(String storageKey, LockableCacheInspector cacheInspector) {
+    public QueryStorageLockImpl(String cacheName, String storageKey, LockableCacheInspector cacheInspector) {
+        this.cacheName = cacheName;
         this.storageKey = storageKey;
         this.cacheInspector = cacheInspector;
     }
@@ -21,7 +23,7 @@ public class QueryStorageLockImpl implements QueryStorageLock {
      */
     @Override
     public void lock() {
-        cacheInspector.lock(QueryStatusCache.CACHE_NAME, storageKey);
+        cacheInspector.lock(cacheName, storageKey);
     }
     
     /**
@@ -32,7 +34,7 @@ public class QueryStorageLockImpl implements QueryStorageLock {
      */
     @Override
     public void lock(long leaseTimeMillis) {
-        cacheInspector.lock(QueryStatusCache.CACHE_NAME, storageKey, leaseTimeMillis, TimeUnit.MILLISECONDS);
+        cacheInspector.lock(cacheName, storageKey, leaseTimeMillis, TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -42,7 +44,7 @@ public class QueryStorageLockImpl implements QueryStorageLock {
      */
     @Override
     public boolean tryLock() {
-        boolean locked = cacheInspector.tryLock(QueryStatusCache.CACHE_NAME, storageKey);
+        boolean locked = cacheInspector.tryLock(cacheName, storageKey);
         return locked;
     }
     
@@ -53,7 +55,7 @@ public class QueryStorageLockImpl implements QueryStorageLock {
      */
     @Override
     public boolean isLocked() {
-        boolean locked = cacheInspector.isLocked(QueryStatusCache.CACHE_NAME, storageKey);
+        boolean locked = cacheInspector.isLocked(cacheName, storageKey);
         return locked;
     }
     
@@ -66,7 +68,7 @@ public class QueryStorageLockImpl implements QueryStorageLock {
      */
     @Override
     public boolean tryLock(long waitTimeMillis) throws InterruptedException {
-        boolean locked = cacheInspector.tryLock(QueryStatusCache.CACHE_NAME, storageKey, waitTimeMillis, TimeUnit.MILLISECONDS);
+        boolean locked = cacheInspector.tryLock(cacheName, storageKey, waitTimeMillis, TimeUnit.MILLISECONDS);
         return locked;
     }
     
@@ -81,8 +83,7 @@ public class QueryStorageLockImpl implements QueryStorageLock {
      */
     @Override
     public boolean tryLock(long waitTimeMillis, long leaseTimeMillis) throws InterruptedException {
-        boolean locked = cacheInspector.tryLock(QueryStatusCache.CACHE_NAME, storageKey, waitTimeMillis, TimeUnit.MILLISECONDS, leaseTimeMillis,
-                        TimeUnit.MILLISECONDS);
+        boolean locked = cacheInspector.tryLock(cacheName, storageKey, waitTimeMillis, TimeUnit.MILLISECONDS, leaseTimeMillis, TimeUnit.MILLISECONDS);
         return locked;
     }
     
@@ -91,7 +92,7 @@ public class QueryStorageLockImpl implements QueryStorageLock {
      */
     @Override
     public void unlock() {
-        cacheInspector.unlock(QueryStatusCache.CACHE_NAME, storageKey);
+        cacheInspector.unlock(cacheName, storageKey);
     }
     
     /**
@@ -100,6 +101,6 @@ public class QueryStorageLockImpl implements QueryStorageLock {
      */
     @Override
     public void forceUnlock() {
-        cacheInspector.forceUnlock(QueryStatusCache.CACHE_NAME, storageKey);
+        cacheInspector.forceUnlock(cacheName, storageKey);
     }
 }

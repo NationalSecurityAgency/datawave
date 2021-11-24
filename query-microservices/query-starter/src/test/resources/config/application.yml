@@ -233,6 +233,10 @@ datawave:
           maxResults: -1
           maxWork: -1
 
+query:
+  messaging:
+    claimCheck:
+      enabled: false
 
 audit-client:
   discovery:
@@ -273,6 +277,17 @@ query:
   messaging:
     backend:
       kafka
+
+---
+
+spring.config.activate.on-profile: use-hazelcast
+
+query:
+  messaging:
+    backend:
+      hazelcast
+    hazelcast:
+      splitBrainProtectionEnabled: false
 
 ---
 

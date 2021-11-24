@@ -115,7 +115,7 @@ public class QueryStatusCache {
      */
     public class QueryStatusLock extends QueryStorageLockImpl {
         public QueryStatusLock(String queryId) {
-            super(QueryKey.toUUIDKey(queryId), cacheInspector);
+            super(CACHE_NAME, QueryKey.toUUIDKey(queryId), cacheInspector);
         }
     }
     

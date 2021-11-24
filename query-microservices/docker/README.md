@@ -152,6 +152,10 @@ Start the default services (with RabbitMQ as the backend):
 
 ```BACKEND=rabbitmq docker-compose up -d```
 
+Start the default services (with Hazelcast as the backend):
+
+```BACKEND=hazelcast docker-compose up -d```
+
 Start the default services, and the dictionary service:
 
 ```docker-compose --profile dictionary up -d```

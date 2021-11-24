@@ -162,6 +162,9 @@ public abstract class QueryExecutorTest {
     @ActiveProfiles({"QueryExecutorTest", "use-embedded-kafka"})
     public static class EmbeddedKafkaQueryExecutorTest extends QueryExecutorTest {}
     
+    @ActiveProfiles({"QueryExecutorTest", "use-hazelcast"})
+    public static class HazelcastQueryExecutorTest extends QueryExecutorTest {}
+    
     @Disabled("Cannot run this test without an externally deployed RabbitMQ instance.")
     @ActiveProfiles({"QueryExecutorTest", "use-rabbit"})
     public static class RabbitQueryExecutorTest extends QueryExecutorTest {}

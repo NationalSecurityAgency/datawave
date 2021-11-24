@@ -103,7 +103,7 @@ public class TaskStatesCache {
      */
     public class TaskStatesLock extends QueryStorageLockImpl {
         public TaskStatesLock(String queryId) {
-            super(QueryKey.toUUIDKey(queryId), cacheInspector);
+            super(CACHE_NAME, QueryKey.toUUIDKey(queryId), cacheInspector);
         }
     }
     

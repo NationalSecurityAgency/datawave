@@ -306,10 +306,16 @@ query:
     backend:
       kafka
 
-datawave:
-  query:
-    executor:
-      pollQueueSize: false
+---
+
+spring.config.activate.on-profile: use-hazelcast
+
+query:
+  messaging:
+    backend:
+      hazelcast
+    hazelcast:
+      splitBrainProtectionEnabled: false
 
 ---
 

@@ -3,6 +3,7 @@ package datawave.microservice.query.messaging.rabbitmq;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import datawave.microservice.query.messaging.AcknowledgementCallback;
+import datawave.microservice.query.messaging.ClaimCheck;
 import datawave.microservice.query.messaging.QueryResultsListener;
 import datawave.microservice.query.messaging.Result;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
     private final RabbitListenerEndpointRegistry endpointRegistry;
+    private final ClaimCheck claimCheck;
     private final String listenerId;
     private final String queryId;
     
@@ -38,8 +40,9 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
     private boolean stopped = false;
     
     public RabbitMQQueryResultsListener(DirectRabbitListenerContainerFactory listenerContainerFactory, RabbitListenerEndpointRegistry endpointRegistry,
-                    String listenerId, String queryId) {
+                    ClaimCheck claimCheck, String listenerId, String queryId) {
         this.endpointRegistry = endpointRegistry;
+        this.claimCheck = claimCheck;
         this.listenerId = listenerId;
         this.queryId = queryId;
         
@@ -79,6 +82,11 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
         if (!stopped) {
             Result result = new ObjectMapper().readerFor(Result.class).readValue(message.getBody());
             
+            // if the payload is null, setup a claim check
+            if (result.getPayload() == null && claimCheck != null) {
+                result.setClaimCheckCallback(() -> claimCheck.claim(queryId));
+            }
+            
             final CountDownLatch latch = new CountDownLatch(1);
             final AtomicReference<AcknowledgementCallback.Status> ackStatus = new AtomicReference<>();
             result.setAcknowledgementCallback(status -> {
@@ -93,18 +101,18 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
                 if (ackStatus.get() == ACK) {
                     channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
                     if (log.isTraceEnabled()) {
-                        log.trace("Acking record {} from queue {}", result.getResultId(), queryId);
+                        log.trace("Acking record {} from queue {}", result.getId(), queryId);
                     }
                 } else if (ackStatus.get() == NACK) {
                     channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
                     if (log.isTraceEnabled()) {
-                        log.trace("Nacking record {} from queue {} because the record was rejected", result.getResultId(), queryId);
+                        log.trace("Nacking record {} from queue {} because the record was rejected", result.getId(), queryId);
                     }
                 }
             } catch (InterruptedException e) {
                 channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
                 if (log.isTraceEnabled()) {
-                    log.trace("Nacking record {} from queue {} because the latch was interrupted", result.getResultId(), queryId);
+                    log.trace("Nacking record {} from queue {} because the latch was interrupted", result.getId(), queryId);
                 }
             }
         } else {

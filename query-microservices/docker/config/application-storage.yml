@@ -4,3 +4,5 @@
 query:
   messaging:
     backend: ${messaging.backend}
+    rabbitmq:
+      maxMessageSizeBytes: ${messaging.maxMessageSizeBytes}

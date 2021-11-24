@@ -1,5 +1,7 @@
 package datawave.microservice.query.storage;
 
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import datawave.microservice.query.messaging.QueryResultsListener;
 import datawave.microservice.query.messaging.QueryResultsManager;
 import datawave.microservice.query.messaging.Result;
@@ -20,6 +22,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -48,23 +52,32 @@ import static org.junit.jupiter.api.Assertions.fail;
 public abstract class QueryStorageCacheTest {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
-    @ActiveProfiles({"QueryStorageCacheTest", "send-notifications", "use-test"})
+    @ActiveProfiles({"QueryStorageCacheTest", "use-test"})
     public static class LocalQueryStorageCacheTest extends QueryStorageCacheTest {}
     
     @EmbeddedKafka
-    @ActiveProfiles({"QueryStorageCacheTest", "send-notifications", "use-embedded-kafka"})
+    @ActiveProfiles({"QueryStorageCacheTest", "use-embedded-kafka"})
     public static class EmbeddedKafkaQueryStorageCacheTest extends QueryStorageCacheTest {}
     
+    @ActiveProfiles({"QueryStorageCacheTest", "use-hazelcast"})
+    public static class HazelcastQueryStorageCacheTest extends QueryStorageCacheTest {}
+    
     @Disabled("Cannot run this test without an externally deployed RabbitMQ instance.")
-    @ActiveProfiles({"QueryStorageCacheTest", "send-notifications", "use-rabbit"})
+    @ActiveProfiles({"QueryStorageCacheTest", "use-rabbit"})
     public static class RabbitQueryStorageCacheTest extends QueryStorageCacheTest {}
     
     @Disabled("Cannot run this test without an externally deployed Kafka instance.")
-    @ActiveProfiles({"QueryStorageCacheTest", "send-notifications", "use-kafka"})
+    @ActiveProfiles({"QueryStorageCacheTest", "use-kafka"})
     public static class KafkaQueryStorageCacheTest extends QueryStorageCacheTest {}
     
     @SpringBootApplication(scanBasePackages = "datawave.microservice")
     public static class TestApplication {
+        @Profile("use-hazelcast")
+        @Bean
+        public HazelcastInstance hazelcastInstance() {
+            return Hazelcast.newHazelcastInstance();
+        }
+        
         public static void main(String[] args) {
             SpringApplication.run(QueryStorageCacheTest.TestApplication.class, args);
         }
@@ -474,5 +487,4 @@ public abstract class QueryStorageCacheTest {
     private void assertQueryTask(TaskKey taskKey, QueryRequest.Method action, Query query, QueryTask task) {
         assertQueryTask(taskKey.getQueryId(), action, query, task);
     }
-    
 }

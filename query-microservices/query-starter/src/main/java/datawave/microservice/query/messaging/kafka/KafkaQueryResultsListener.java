@@ -124,7 +124,7 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
             String resultId;
             try {
                 result = objectMapper.readerFor(Result.class).readValue(data.value());
-                resultId = result.getResultId();
+                resultId = result.getId();
                 
                 if (log.isTraceEnabled()) {
                     log.trace("Received record {} from topic {} and partition {} at offset {}", resultId, data.topic(), data.partition(), data.offset());

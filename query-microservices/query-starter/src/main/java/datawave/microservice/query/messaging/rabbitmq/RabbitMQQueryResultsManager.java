@@ -1,5 +1,6 @@
 package datawave.microservice.query.messaging.rabbitmq;
 
+import datawave.microservice.query.messaging.ClaimCheck;
 import datawave.microservice.query.messaging.QueryResultsListener;
 import datawave.microservice.query.messaging.QueryResultsManager;
 import datawave.microservice.query.messaging.QueryResultsPublisher;
@@ -17,6 +18,7 @@ import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
@@ -32,23 +34,20 @@ public class RabbitMQQueryResultsManager implements QueryResultsManager {
     static final String QUERY_RESULTS_EXCHANGE = "queryResults";
     static final String QUERY_QUEUE_PREFIX = QUERY_RESULTS_EXCHANGE + ".";
     
-    private static final String MANAGEMENT_SCHEME = "http";
-    private static final int MANAGEMENT_PORT = 15672;
-    private static final String MANAGEMENT_PATH = "/api/";
-    private static final String DEFAULT_VHOST = "/";
-    
     private final MessagingProperties messagingProperties;
     private final RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry;
     private final CachingConnectionFactory connectionFactory;
+    private final ClaimCheck claimCheck;
     
     private final RabbitAdmin rabbitAdmin;
     private final DirectRabbitListenerContainerFactory listenerContainerFactory;
     
     public RabbitMQQueryResultsManager(MessagingProperties messagingProperties, RabbitListenerEndpointRegistry rabbitListenerEndpointRegistry,
-                    CachingConnectionFactory connectionFactory) {
+                    CachingConnectionFactory connectionFactory, @Autowired(required = false) ClaimCheck claimCheck) {
         this.messagingProperties = messagingProperties;
         this.rabbitListenerEndpointRegistry = rabbitListenerEndpointRegistry;
         this.connectionFactory = connectionFactory;
+        this.claimCheck = claimCheck;
         
         rabbitAdmin = new RabbitAdmin(connectionFactory);
         listenerContainerFactory = new DirectRabbitListenerContainerFactory();
@@ -68,7 +67,7 @@ public class RabbitMQQueryResultsManager implements QueryResultsManager {
     @Override
     public QueryResultsListener createListener(String listenerId, String queryId) {
         ensureQueueCreated(queryId);
-        return new RabbitMQQueryResultsListener(listenerContainerFactory, rabbitListenerEndpointRegistry, listenerId, queryId);
+        return new RabbitMQQueryResultsListener(listenerContainerFactory, rabbitListenerEndpointRegistry, claimCheck, listenerId, queryId);
     }
     
     /**
@@ -81,7 +80,7 @@ public class RabbitMQQueryResultsManager implements QueryResultsManager {
     @Override
     public QueryResultsPublisher createPublisher(String queryId) {
         ensureQueueCreated(queryId);
-        return new RabbitMQQueryResultsPublisher(new RabbitTemplate(connectionFactory), queryId);
+        return new RabbitMQQueryResultsPublisher(messagingProperties.getRabbitmq(), new RabbitTemplate(connectionFactory), claimCheck, queryId);
     }
     
     /**
@@ -116,6 +115,10 @@ public class RabbitMQQueryResultsManager implements QueryResultsManager {
         } catch (AmqpIOException e) {
             log.error("Failed to delete queue " + queryId, e);
         }
+        
+        if (claimCheck != null) {
+            claimCheck.delete(queryId);
+        }
     }
     
     @Override
@@ -125,6 +128,10 @@ public class RabbitMQQueryResultsManager implements QueryResultsManager {
         } catch (AmqpIOException e) {
             // log an continue
             log.error("Failed to empty queue " + queryId, e);
+        }
+        
+        if (claimCheck != null) {
+            claimCheck.empty(queryId);
         }
     }
     
