@@ -61,13 +61,15 @@ public class SafeFileOutputCommitterTest {
     
     private static final Log LOG = LogFactory.getLog(SafeFileOutputCommitterTest.class);
     
-    // A random task attempt id for testing.
-    private static final String attempt = "attempt_200707121733_0001_m_000000_0";
-    private static final String partFile = "part-m-00000";
-    private static final TaskAttemptID taskID = TaskAttemptID.forName(attempt);
+    private static final String ATTEMPT_0_ID = "attempt_200707121733_0001_m_000000_0";
+    private static final String ATTEMPT_1_ID = "attempt_200707121733_0001_m_000001_0";
     
-    private static final String attempt1 = "attempt_200707121733_0001_m_000001_0";
-    private static final TaskAttemptID taskID1 = TaskAttemptID.forName(attempt1);
+    private static final TaskAttemptID TASK_0_ID = TaskAttemptID.forName(ATTEMPT_0_ID);
+    private static final TaskAttemptID TASK_1_ID = TaskAttemptID.forName(ATTEMPT_1_ID);
+    
+    private static final String PART_FILE_NAME = "part-m-00000";
+    private static final String ALTERNATE_BASE_NAME = "segment"; // alternate prefix to "part"
+    private static final String ALTERNATE_FILE_NAME = ALTERNATE_BASE_NAME + "-m-00000";
     
     private Text key1 = new Text("key1");
     private Text key2 = new Text("key2");
@@ -136,11 +138,11 @@ public class SafeFileOutputCommitterTest {
         Job job = Job.getInstance();
         FileOutputFormat.setOutputPath(job, outDir);
         Configuration conf = job.getConfiguration();
-        conf.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
+        conf.set(MRJobConfig.TASK_ATTEMPT_ID, ATTEMPT_0_ID);
         conf.setInt(MRJobConfig.APPLICATION_ATTEMPT_ID, 1);
         conf.setInt(FILEOUTPUTCOMMITTER_ALGORITHM_VERSION, commitVersion);
-        JobContext jContext = new JobContextImpl(conf, taskID.getJobID());
-        TaskAttemptContext tContext = new TaskAttemptContextImpl(conf, taskID);
+        JobContext jContext = new JobContextImpl(conf, TASK_0_ID.getJobID());
+        TaskAttemptContext tContext = new TaskAttemptContextImpl(conf, TASK_0_ID);
         FileOutputCommitter committer = new SafeFileOutputCommitter(outDir, tContext);
         
         // setup
@@ -159,7 +161,7 @@ public class SafeFileOutputCommitterTest {
         File jtd = new File(jobTempDir1.toUri().getPath());
         if (commitVersion == 1 || !patched) {
             assertTrue("Version 1 commits to temporary dir " + jtd, jtd.exists());
-            validateContent(jtd);
+            validateContent(jtd, PART_FILE_NAME);
         } else {
             assertFalse("Version 2 commits to output dir " + jtd, jtd.exists());
         }
@@ -167,11 +169,11 @@ public class SafeFileOutputCommitterTest {
         // now while running the second app attempt,
         // recover the task output from first attempt
         Configuration conf2 = job.getConfiguration();
-        conf2.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
+        conf2.set(MRJobConfig.TASK_ATTEMPT_ID, ATTEMPT_0_ID);
         conf2.setInt(MRJobConfig.APPLICATION_ATTEMPT_ID, 2);
         conf2.setInt(FILEOUTPUTCOMMITTER_ALGORITHM_VERSION, recoveryVersion);
-        JobContext jContext2 = new JobContextImpl(conf2, taskID.getJobID());
-        TaskAttemptContext tContext2 = new TaskAttemptContextImpl(conf2, taskID);
+        JobContext jContext2 = new JobContextImpl(conf2, TASK_0_ID.getJobID());
+        TaskAttemptContext tContext2 = new TaskAttemptContextImpl(conf2, TASK_0_ID);
         FileOutputCommitter committer2 = new SafeFileOutputCommitter(outDir, tContext2);
         committer2.setupJob(tContext2);
         Path jobTempDir2 = committer2.getCommittedTaskPath(tContext2);
@@ -180,7 +182,7 @@ public class SafeFileOutputCommitterTest {
         committer2.recoverTask(tContext2);
         if (recoveryVersion == 1 || !patched) {
             assertTrue("Version 1 recovers to " + jtd2, jtd2.exists());
-            validateContent(jtd2);
+            validateContent(jtd2, PART_FILE_NAME);
         } else {
             assertFalse("Version 2 commits to output dir " + jtd2, jtd2.exists());
             if (commitVersion == 1 || !patched) {
@@ -195,15 +197,20 @@ public class SafeFileOutputCommitterTest {
     
     // failedAttemptWritesData - refers to whether the first attempt's files should be should contain data (true) or
     // be left empty (false)
-    private void failFirstAttemptPassSecond(int commitVersion, int recoveryVersion, boolean failedAttemptWritesData) throws Exception {
+    private void failFirstAttemptPassSecond(int commitVersion, int recoveryVersion, boolean failedAttemptWritesData, boolean useDifferentFileName)
+                    throws Exception {
         Job job = Job.getInstance(this.configuration);
         FileOutputFormat.setOutputPath(job, outDir);
         Configuration conf = job.getConfiguration();
-        conf.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
+        conf.set(MRJobConfig.TASK_ATTEMPT_ID, ATTEMPT_0_ID);
         conf.setInt(MRJobConfig.APPLICATION_ATTEMPT_ID, 1);
         conf.setInt(FILEOUTPUTCOMMITTER_ALGORITHM_VERSION, commitVersion);
-        JobContext jContext = new JobContextImpl(conf, taskID.getJobID());
-        TaskAttemptContext tContext1 = new TaskAttemptContextImpl(conf, taskID);
+        JobContext jContext = new JobContextImpl(conf, TASK_0_ID.getJobID());
+        Configuration confCopy = new Configuration(conf);
+        if (useDifferentFileName) {
+            confCopy.set("mapreduce.output.basename", ALTERNATE_BASE_NAME);
+        }
+        TaskAttemptContext tContext1 = new TaskAttemptContextImpl(confCopy, TASK_0_ID);
         FileOutputCommitter committer = new SafeFileOutputCommitter(outDir, tContext1);
         
         // setup
@@ -226,14 +233,14 @@ public class SafeFileOutputCommitterTest {
         
         // Verify task attempt #1 still has a temporary file in the attempt path
         Path jobTempDir1 = committer.getTaskAttemptPath(tContext1);
-        verifyFileInTemporaryDir(jobTempDir1.toUri().getPath(), failedAttemptWritesData);
+        verifyFileInTemporaryDir(jobTempDir1.toUri().getPath(), failedAttemptWritesData, useDifferentFileName ? ALTERNATE_FILE_NAME : PART_FILE_NAME);
         
         // now run and commit a second app attempt
         Configuration conf2 = job.getConfiguration();
-        conf2.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
+        conf2.set(MRJobConfig.TASK_ATTEMPT_ID, ATTEMPT_0_ID);
         conf2.setInt(MRJobConfig.APPLICATION_ATTEMPT_ID, 2);
         conf2.setInt(FILEOUTPUTCOMMITTER_ALGORITHM_VERSION, recoveryVersion);
-        TaskAttemptContext tContext2 = new TaskAttemptContextImpl(conf2, taskID);
+        TaskAttemptContext tContext2 = new TaskAttemptContextImpl(conf2, TASK_0_ID);
         
         // setup
         committer.setupTask(tContext2);
@@ -249,14 +256,14 @@ public class SafeFileOutputCommitterTest {
         // Just prior to commitJob, when the SafeFileOutputCommitter will look for files left behind, verify that the
         // attempt #1 file still exists in the temporary directory
         if (configuration.getBoolean(SafeFileOutputCommitter.LENIENT_MODE, false)) {
-            verifyFileInTemporaryDir(jobTempDir1.toUri().getPath(), failedAttemptWritesData);
+            verifyFileInTemporaryDir(jobTempDir1.toUri().getPath(), failedAttemptWritesData, useDifferentFileName ? ALTERNATE_FILE_NAME : PART_FILE_NAME);
         }
         
         committer.commitJob(jContext);
         
         // Just after commitJob, verify that the attempt #1 file does not still exist in the temporary directory
         if (configuration.getBoolean(SafeFileOutputCommitter.LENIENT_MODE, false)) {
-            File attempt1File = new File(jobTempDir1.toUri().getPath() + "/" + partFile);
+            File attempt1File = new File(jobTempDir1.toUri().getPath() + "/" + PART_FILE_NAME);
             assertFalse("Attempt 1 file should have been eliminated after jobCommit", attempt1File.exists());
         }
         
@@ -264,8 +271,8 @@ public class SafeFileOutputCommitterTest {
         FileUtil.fullyDelete(new File(outDir.toString()));
     }
     
-    private void verifyFileInTemporaryDir(String attempt1Path, boolean assertContainsData) {
-        File attemptOutputFile = new File(attempt1Path + "/" + partFile);
+    private void verifyFileInTemporaryDir(String attempt1Path, boolean assertContainsData, String fileName) {
+        File attemptOutputFile = new File(attempt1Path + "/" + fileName);
         assertTrue("Expected file to exist for attempt. " + attemptOutputFile, attemptOutputFile.exists());
         assertTrue("Expected file to be in temporary dir. " + attemptOutputFile, attempt1Path.contains("_temporary"));
         if (assertContainsData) {
@@ -275,68 +282,137 @@ public class SafeFileOutputCommitterTest {
     
     @Test(expected = FileExistsException.class)
     public void testFirstAttemptFailsV1BackwardsCompatible() throws Exception {
-        failFirstAttemptPassSecond(1, 1, true);
+        failFirstAttemptPassSecond(1, 1, true, false);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV1BackwardsCompatibleDifferentName() throws Exception {
+        failFirstAttemptPassSecond(1, 1, true, false);
     }
     
     @Test
     public void testFirstAttemptFailsV1Permissive() throws Exception {
         configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
-        failFirstAttemptPassSecond(1, 1, true);
+        failFirstAttemptPassSecond(1, 1, true, false);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV1PermissiveDifferentName() throws Exception {
+        // in this test, write data for attempt #1 using a different filename than attempt #2
+        configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
+        failFirstAttemptPassSecond(1, 1, true, true);
     }
     
     @Test(expected = FileExistsException.class)
     public void testFirstAttemptFailsV2BackwardsCompatible() throws Exception {
-        failFirstAttemptPassSecond(2, 2, true);
+        failFirstAttemptPassSecond(2, 2, true, false);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV2BackwardsCompatibleDifferentName() throws Exception {
+        failFirstAttemptPassSecond(2, 2, true, true);
     }
     
     @Test
     public void testFirstAttemptFailsV2Permissive() throws Exception {
         configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
-        failFirstAttemptPassSecond(2, 2, true);
+        failFirstAttemptPassSecond(2, 2, true, false);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV2PermissiveDifferentName() throws Exception {
+        // in this test, write data for attempt #1 using a different filename than attempt #2
+        configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
+        failFirstAttemptPassSecond(2, 2, true, true);
     }
     
     @Test(expected = FileExistsException.class)
     public void testFirstAttemptFailsV1_V2BackwardsCompatible() throws Exception {
-        failFirstAttemptPassSecond(1, 2, true);
+        failFirstAttemptPassSecond(1, 2, true, false);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV1_V2BackwardsCompatibleDifferentName() throws Exception {
+        failFirstAttemptPassSecond(1, 2, true, true);
     }
     
     @Test
     public void testFirstAttemptFailsV1_V2Permissive() throws Exception {
         configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
-        failFirstAttemptPassSecond(1, 2, true);
+        failFirstAttemptPassSecond(1, 2, true, false);
     }
     
     @Test(expected = FileExistsException.class)
-    public void testFirstAttemptFailsV1BackwardsCompatibleEmptyFiles() throws Exception {
-        failFirstAttemptPassSecond(1, 1, false);
-    }
-    
-    @Test
-    public void testFirstAttemptFailsV1PermissiveEmptyFiles() throws Exception {
+    public void testFirstAttemptFailsV1_V2PermissiveDifferentName() throws Exception {
+        // in this test, write data for attempt #1 using a different filename than attempt #2
         configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
-        failFirstAttemptPassSecond(1, 1, false);
+        failFirstAttemptPassSecond(1, 2, true, true);
     }
     
     @Test(expected = FileExistsException.class)
-    public void testFirstAttemptFailsV2BackwardsCompatibleEmptyFiles() throws Exception {
-        failFirstAttemptPassSecond(2, 2, false);
-    }
-    
-    @Test
-    public void testFirstAttemptFailsV2PermissiveEmptyFiles() throws Exception {
-        configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
-        failFirstAttemptPassSecond(2, 2, false);
+    public void testFirstAttemptFailsV1BackwardsCompatibleEmptyFile() throws Exception {
+        failFirstAttemptPassSecond(1, 1, false, true);
     }
     
     @Test(expected = FileExistsException.class)
-    public void testFirstAttemptFailsV1_V2BackwardsCompatibleEmptyFiles() throws Exception {
-        failFirstAttemptPassSecond(1, 2, false);
+    public void testFirstAttemptFailsV1BackwardsCompatibleEmptyAlternateName() throws Exception {
+        failFirstAttemptPassSecond(1, 1, false, true);
     }
     
     @Test
-    public void testFirstAttemptFailsV1_V2PermissiveEmptyFiles() throws Exception {
+    public void testFirstAttemptFailsV1PermissiveEmptyFile() throws Exception {
         configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
-        failFirstAttemptPassSecond(1, 2, false);
+        failFirstAttemptPassSecond(1, 1, false, true);
+    }
+    
+    @Test
+    public void testFirstAttemptFailsV1PermissiveEmptyAlternateName() throws Exception {
+        configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
+        failFirstAttemptPassSecond(1, 1, false, true);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV2BackwardsCompatibleEmptyFile() throws Exception {
+        failFirstAttemptPassSecond(2, 2, false, true);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV2BackwardsCompatibleEmptyAlternateName() throws Exception {
+        failFirstAttemptPassSecond(2, 2, false, true);
+    }
+    
+    @Test
+    public void testFirstAttemptFailsV2PermissiveEmptyFile() throws Exception {
+        configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
+        failFirstAttemptPassSecond(2, 2, false, true);
+    }
+    
+    @Test
+    public void testFirstAttemptFailsV2PermissiveEmptyAlternateName() throws Exception {
+        configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
+        failFirstAttemptPassSecond(2, 2, false, true);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV1_V2BackwardsCompatibleEmptyFile() throws Exception {
+        failFirstAttemptPassSecond(1, 2, false, false);
+    }
+    
+    @Test(expected = FileExistsException.class)
+    public void testFirstAttemptFailsV1_V2BackwardsCompatibleEmptyAlternateName() throws Exception {
+        failFirstAttemptPassSecond(1, 2, false, true);
+    }
+    
+    @Test
+    public void testFirstAttemptFailsV1_V2PermissiveEmptyFile() throws Exception {
+        configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
+        failFirstAttemptPassSecond(1, 2, false, true);
+    }
+    
+    @Test
+    public void testFirstAttemptFailsV1_V2PermissiveEmptyAlternateName() throws Exception {
+        configuration.setBoolean(SafeFileOutputCommitter.LENIENT_MODE, true);
+        failFirstAttemptPassSecond(1, 2, false, true);
     }
     
     @Test
@@ -355,11 +431,11 @@ public class SafeFileOutputCommitterTest {
     }
     
     private void validateContent(Path dir) throws IOException {
-        validateContent(new File(dir.toUri().getPath()));
+        validateContent(new File(dir.toUri().getPath()), PART_FILE_NAME);
     }
     
-    private void validateContent(File dir) throws IOException {
-        File expectedFile = new File(dir, partFile);
+    private void validateContent(File dir, String fileName) throws IOException {
+        File expectedFile = new File(dir, fileName);
         assertTrue("Could not find " + expectedFile, expectedFile.exists());
         StringBuffer expectedOutput = new StringBuffer();
         expectedOutput.append(key1).append('\t').append(val1).append("\n");
@@ -372,9 +448,9 @@ public class SafeFileOutputCommitterTest {
         assertEquals(output, expectedOutput.toString());
     }
     
-    private void validateMapFileOutputContent(FileSystem fs, Path dir) throws IOException {
+    private void validateMapFileOutputContent(FileSystem fs, Path dir, String fileName) throws IOException {
         // map output is a directory with index and data files
-        Path expectedMapDir = new Path(dir, partFile);
+        Path expectedMapDir = new Path(dir, fileName);
         assert (fs.getFileStatus(expectedMapDir).isDirectory());
         FileStatus[] files = fs.listStatus(expectedMapDir);
         int fileCount = 0;
@@ -398,10 +474,10 @@ public class SafeFileOutputCommitterTest {
         Job job = Job.getInstance();
         FileOutputFormat.setOutputPath(job, outDir);
         Configuration conf = job.getConfiguration();
-        conf.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
+        conf.set(MRJobConfig.TASK_ATTEMPT_ID, ATTEMPT_0_ID);
         conf.setInt(FILEOUTPUTCOMMITTER_ALGORITHM_VERSION, version);
-        JobContext jContext = new JobContextImpl(conf, taskID.getJobID());
-        TaskAttemptContext tContext = new TaskAttemptContextImpl(conf, taskID);
+        JobContext jContext = new JobContextImpl(conf, TASK_0_ID.getJobID());
+        TaskAttemptContext tContext = new TaskAttemptContextImpl(conf, TASK_0_ID);
         FileOutputCommitter committer = new SafeFileOutputCommitter(outDir, tContext);
         
         // setup
@@ -436,10 +512,10 @@ public class SafeFileOutputCommitterTest {
         Job job = Job.getInstance();
         FileOutputFormat.setOutputPath(job, outDir);
         Configuration conf = job.getConfiguration();
-        conf.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
+        conf.set(MRJobConfig.TASK_ATTEMPT_ID, ATTEMPT_0_ID);
         conf.setInt(FILEOUTPUTCOMMITTER_ALGORITHM_VERSION, version);
-        JobContext jContext = new JobContextImpl(conf, taskID.getJobID());
-        TaskAttemptContext tContext = new TaskAttemptContextImpl(conf, taskID);
+        JobContext jContext = new JobContextImpl(conf, TASK_0_ID.getJobID());
+        TaskAttemptContext tContext = new TaskAttemptContextImpl(conf, TASK_0_ID);
         FileOutputCommitter committer = new SafeFileOutputCommitter(outDir, tContext);
         
         // setup
@@ -456,7 +532,7 @@ public class SafeFileOutputCommitterTest {
         committer.commitJob(jContext);
         
         // validate output
-        validateMapFileOutputContent(FileSystem.get(job.getConfiguration()), outDir);
+        validateMapFileOutputContent(FileSystem.get(job.getConfiguration()), outDir, PART_FILE_NAME);
         FileUtil.fullyDelete(new File(outDir.toString()));
     }
     
@@ -474,10 +550,10 @@ public class SafeFileOutputCommitterTest {
         Job job = Job.getInstance();
         FileOutputFormat.setOutputPath(job, outDir);
         Configuration conf = job.getConfiguration();
-        conf.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
+        conf.set(MRJobConfig.TASK_ATTEMPT_ID, ATTEMPT_0_ID);
         conf.setInt(FILEOUTPUTCOMMITTER_ALGORITHM_VERSION, version);
-        JobContext jContext = new JobContextImpl(conf, taskID.getJobID());
-        TaskAttemptContext tContext = new TaskAttemptContextImpl(conf, taskID);
+        JobContext jContext = new JobContextImpl(conf, TASK_0_ID.getJobID());
+        TaskAttemptContext tContext = new TaskAttemptContextImpl(conf, TASK_0_ID);
         FileOutputCommitter committer = new SafeFileOutputCommitter(outDir, tContext);
         
         // do setup
@@ -491,7 +567,7 @@ public class SafeFileOutputCommitterTest {
         
         // do abort
         committer.abortTask(tContext);
-        File expectedFile = new File(new Path(committer.getWorkPath(), partFile).toString());
+        File expectedFile = new File(new Path(committer.getWorkPath(), PART_FILE_NAME).toString());
         assertFalse("task temp dir still exists", expectedFile.exists());
         
         committer.abortJob(jContext, JobStatus.State.FAILED);
@@ -528,12 +604,12 @@ public class SafeFileOutputCommitterTest {
         Configuration conf = job.getConfiguration();
         conf.set(FileSystem.FS_DEFAULT_NAME_KEY, "faildel:///");
         conf.setClass("fs.faildel.impl", FakeFileSystem.class, FileSystem.class);
-        conf.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
+        conf.set(MRJobConfig.TASK_ATTEMPT_ID, ATTEMPT_0_ID);
         conf.setInt(MRJobConfig.APPLICATION_ATTEMPT_ID, 1);
         conf.setInt(FILEOUTPUTCOMMITTER_ALGORITHM_VERSION, version);
         FileOutputFormat.setOutputPath(job, outDir);
-        JobContext jContext = new JobContextImpl(conf, taskID.getJobID());
-        TaskAttemptContext tContext = new TaskAttemptContextImpl(conf, taskID);
+        JobContext jContext = new JobContextImpl(conf, TASK_0_ID.getJobID());
+        TaskAttemptContext tContext = new TaskAttemptContextImpl(conf, TASK_0_ID);
         FileOutputCommitter committer = new SafeFileOutputCommitter(outDir, tContext);
         
         // do setup
@@ -559,7 +635,7 @@ public class SafeFileOutputCommitterTest {
         File jobTmpDir = new File(jtd.toUri().getPath());
         Path ttd = committer.getTaskAttemptPath(tContext);
         File taskTmpDir = new File(ttd.toUri().getPath());
-        File expectedFile = new File(taskTmpDir, partFile);
+        File expectedFile = new File(taskTmpDir, PART_FILE_NAME);
         assertTrue(expectedFile + " does not exists", expectedFile.exists());
         
         th = null;
@@ -604,19 +680,19 @@ public class SafeFileOutputCommitterTest {
         final Job job = Job.getInstance();
         FileOutputFormat.setOutputPath(job, outDir);
         final Configuration conf = job.getConfiguration();
-        conf.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
+        conf.set(MRJobConfig.TASK_ATTEMPT_ID, ATTEMPT_0_ID);
         conf.setInt(FILEOUTPUTCOMMITTER_ALGORITHM_VERSION, version);
         
         conf.setClass("fs.file.impl", RLFS.class, FileSystem.class);
         FileSystem.closeAll();
         
-        final JobContext jContext = new JobContextImpl(conf, taskID.getJobID());
+        final JobContext jContext = new JobContextImpl(conf, TASK_0_ID.getJobID());
         final FileOutputCommitter amCommitter = new SafeFileOutputCommitter(outDir, jContext);
         amCommitter.setupJob(jContext);
         
         final TaskAttemptContext[] taCtx = new TaskAttemptContextImpl[2];
-        taCtx[0] = new TaskAttemptContextImpl(conf, taskID);
-        taCtx[1] = new TaskAttemptContextImpl(conf, taskID1);
+        taCtx[0] = new TaskAttemptContextImpl(conf, TASK_0_ID);
+        taCtx[1] = new TaskAttemptContextImpl(conf, TASK_1_ID);
         
         final TextOutputFormat[] tof = new TextOutputFormat[2];
         for (int i = 0; i < tof.length; i++) {
@@ -673,11 +749,11 @@ public class SafeFileOutputCommitterTest {
         Job job = Job.getInstance();
         FileOutputFormat.setOutputPath(job, outDir);
         Configuration conf = job.getConfiguration();
-        conf.set(MRJobConfig.TASK_ATTEMPT_ID, attempt);
+        conf.set(MRJobConfig.TASK_ATTEMPT_ID, ATTEMPT_0_ID);
         conf.setInt(MRJobConfig.APPLICATION_ATTEMPT_ID, 1);
         conf.setInt(FILEOUTPUTCOMMITTER_ALGORITHM_VERSION, commitVersion);
-        JobContext jContext = new JobContextImpl(conf, taskID.getJobID());
-        TaskAttemptContext tContext = new TaskAttemptContextImpl(conf, taskID);
+        JobContext jContext = new JobContextImpl(conf, TASK_0_ID.getJobID());
+        TaskAttemptContext tContext = new TaskAttemptContextImpl(conf, TASK_0_ID);
         FileOutputCommitter committer = new SafeFileOutputCommitter(outDir, tContext);
         
         // setup

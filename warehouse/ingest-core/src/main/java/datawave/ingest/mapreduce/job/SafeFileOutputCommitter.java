@@ -79,7 +79,7 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
             FileSystem fs = pendingJobAttemptsPath.getFileSystem(context.getConfiguration());
             // now verify we do not have any files left in the temporary directory structure
             List<Path> fileList = new ArrayList<>();
-            boolean containsPendingFiles = containsFiles(fs, pendingJobAttemptsPath, fileList);
+            boolean containsPendingFiles = containsFiles(fs, pendingJobAttemptsPath, fileList, lenientMode);
             
             if (containsPendingFiles && lenientMode) {
                 verifyRemainingTemporaryFilesByName(fs, fileList);
