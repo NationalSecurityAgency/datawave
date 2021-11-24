@@ -56,117 +56,199 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
             return false;
         }
         
-        NavigableSet<EvaluateTermPosition> termPositions = new TreeSet<>();
-        int direction = FORWARD;
+        List<NavigableSet<EvaluateTermPosition>> termPositions = buildTermPositions(offsets);
         
-        // This is a little hokey, but because when the travers fails it falls back to looking for the first node
-        // A short "first" or "last" list should make it fast.
-        if (offsets.get(0).size() > offsets.get(offsets.size() - 1).size()) {
-            direction = REVERSE;
+        // apply a trim
+        termPositions = trim(termPositions);
+        
+        // if a trim resulted in no more term positions we are done
+        if (termPositions == null) {
+            return false;
         }
         
-        int[] maxSkips = new int[terms.length];
-        for (int i = 0; i < terms.length; i++) {
-            int maxSkip = 0;
-            for (TermWeightPosition twp : offsets.get(i)) {
-                if (twp.getPrevSkips() > maxSkip) {
-                    maxSkip = twp.getPrevSkips();
-                }
-                
+        while (!isConverged(termPositions, distance)) {
+            // look for alternatives that also satisfy convergence within each term before rolling forward. Move at most one term one position until there are
+            // no alternatives that satisfy the distance left
+            List<NavigableSet<EvaluateTermPosition>> alternativeTermPositions = trimAlternatives(termPositions, distance);
+            boolean alternativeConverged = false;
+            while (alternativeTermPositions != null && !(alternativeConverged = isConverged(alternativeTermPositions, distance))) {
+                alternativeTermPositions = trimAlternatives(alternativeTermPositions, distance);
+            }
+            
+            // found a valid alternative
+            if (alternativeConverged) {
+                return true;
+            }
+            
+            // if no alternatives, move to the next first term and start again
+            termPositions.get(0).pollFirst();
+            
+            // ensure that wasn't the last one
+            if (termPositions.get(0).isEmpty()) {
+                return false;
+            }
+            
+            // trim whatever is left
+            termPositions = trim(termPositions);
+            
+            // if term positions are null a trim resulted in an impossible match
+            if (termPositions == null) {
+                return false;
+            }
+        }
+        
+        // converged on the phrase
+        return true;
+    }
+    
+    /**
+     * Convert a List of offsets into a NavigableSet of EvaluateTermPositions
+     * 
+     * @param offsets
+     * @return null if a phrase match is not possible, or the term positions
+     */
+    private List<NavigableSet<EvaluateTermPosition>> buildTermPositions(List<List<TermWeightPosition>> offsets) {
+        // build sorted sets for each term
+        int index = 0;
+        List<NavigableSet<EvaluateTermPosition>> termPositions = new ArrayList<>(terms.length);
+        for (List<TermWeightPosition> termOffsets : offsets) {
+            termPositions.add(new TreeSet<>());
+            for (TermWeightPosition twp : termOffsets) {
                 // Skip terms greater then the max score if it score is set
                 if (twp.getScore() > maxScore) {
                     if (log.isTraceEnabled()) {
-                        log.trace("[" + terms[i] + "] Skip score => " + twp);
+                        log.trace("[" + terms[index] + "] Skip score => " + twp);
                     }
                     continue;
                 }
                 
-                EvaluateTermPosition etp = new EvaluateTermPosition(terms[i], i, twp);
-                termPositions.add(etp);
+                EvaluateTermPosition etp = new EvaluateTermPosition(terms[index], index, twp);
+                termPositions.get(index).add(etp);
             }
-            maxSkips[i] = maxSkip;
+            
+            // if any term positions were never populated a match is not possible
+            if (termPositions.get(index).isEmpty()) {
+                return null;
+            }
+            
+            // increment the index
+            index++;
         }
         
-        // Low/High now needs to consider the distance of the skips
-        EvaluateTermPosition[] lowHigh = getLowHigh(offsets, maxSkips);
-        if (null == lowHigh) {
-            return false;
-        }
-        termPositions = termPositions.subSet(lowHigh[0], true, lowHigh[1], true);
-        
-        if (log.isTraceEnabled()) {
-            log.trace("Term Positions: " + termPositions);
-        }
-        
-        // Number of matched terms
-        termPositions = (direction == FORWARD) ? termPositions : termPositions.descendingSet();
-        List<EvaluateTermPosition> found = traverse(termPositions, direction);
-        
-        if (null != found && found.size() == terms.length) {
-            // to return offset => result.add(found.get(0).termWeightPosition.getOffset());
-            return true;
-        }
-        
-        // fail
-        return false;
+        return termPositions;
     }
     
     /**
-     * Prune the lists by the maximum first offset and the min last offset
-     *
+     * Trim impossible offsets from the arrays by removing any terms which are less than the first term walking through the term lists
+     * 
      * @param offsets
+     * @return null if a terms offsets are empty, otherwise the trimmed list
      */
-    private EvaluateTermPosition[] getLowHigh(List<List<TermWeightPosition>> offsets, int[] maxSkips) {
-        
-        // first find the max offset of the initial offset in each list and the min offset of the last offset in each list (O(n))
-        List<TermWeightPosition> list = offsets.get(0);
-        int maxFirstTermIndex = 0;
-        TermWeightPosition maxFirstOffset = list.get(0);
-        int minLastTermIndex = 0;
-        TermWeightPosition minLastOffset = list.get(list.size() - 1);
-        
-        for (int i = 1; i < offsets.size(); i++) {
-            list = offsets.get(i);
-            TermWeightPosition first = list.get(0);
-            
-            if (first.compareTo(maxFirstOffset) > 0) {
-                maxFirstTermIndex = i;
-                maxFirstOffset = first;
-            }
-            
-            TermWeightPosition last = list.get(list.size() - 1);
-            if (last.compareTo(minLastOffset) <= 0) {
-                minLastTermIndex = i;
-                minLastOffset = last;
-            }
-        }
-        
-        int maxFirstTWP = maxFirstOffset.getLowOffset() - (maxFirstTermIndex * distance);
-        for (int i = maxFirstTermIndex; i >= 0; i--) {
-            maxFirstTWP -= maxSkips[i];
-        }
-        
-        int minLastTWP = minLastOffset.getOffset() + (terms.length - minLastTermIndex - 1) * distance;
-        for (int i = minLastTermIndex; i < maxSkips.length; i++) {
-            minLastTWP += maxSkips[i];
-        }
-        
-        // min/max have already been adjusted for distance,
-        // if the first is larger the last they are out of order and no match is possible
-        if ((maxFirstTWP - minLastTWP) > 0) {
+    private List<NavigableSet<EvaluateTermPosition>> trim(List<NavigableSet<EvaluateTermPosition>> offsets) {
+        // sanity check
+        if (offsets == null) {
             return null;
         }
         
-        // Construct low/high term positions
-        TermWeightPosition.Builder twpBuilder = new TermWeightPosition.Builder();
-        TermWeightPosition lowTWP = twpBuilder.setOffset(maxFirstTWP).build();
-        TermWeightPosition highTWP = twpBuilder.setOffset(minLastTWP).build();
+        // advance each first/second pair so that second is always >= first
+        for (int i = 0; i + 1 < offsets.size(); i++) {
+            NavigableSet<EvaluateTermPosition> first = offsets.get(i);
+            NavigableSet<EvaluateTermPosition> second = offsets.get(i + 1);
+            
+            int termCompare = first.first().termWeightPosition.compareTo(second.first().termWeightPosition);
+            
+            // advance second until less than first or while they are the same term and position
+            while (termCompare > 0 || (termCompare == 0 && first.first().isSameTerm(second.first()))) {
+                // advance second
+                second.pollFirst();
+                
+                // test for end condition
+                if (second.isEmpty()) {
+                    return null;
+                }
+                
+                // update compare
+                termCompare = first.first().termWeightPosition.compareTo(second.first().termWeightPosition);
+            }
+        }
         
-        // Because sort is termPosition declining put low as the highest term position and hte high as the lowest
-        EvaluateTermPosition low = new EvaluateTermPosition(terms[terms.length - 1], terms.length - 1, lowTWP);
-        EvaluateTermPosition high = new EvaluateTermPosition(terms[0], 0, highTWP);
+        return offsets;
+    }
+    
+    /**
+     * Taking an existing set of offsets, look for alternatives starting with the second term that also satisfy the distance requirement. Move at most one term
+     * one position. Do not modify offsets, but return a copy
+     * 
+     * @param offsets
+     *            original offsets
+     * @param distance
+     *            distance to accept for alternatives
+     * @return alternatives or null if no alternatives exist
+     */
+    private List<NavigableSet<EvaluateTermPosition>> trimAlternatives(List<NavigableSet<EvaluateTermPosition>> offsets, int distance) {
+        List<NavigableSet<EvaluateTermPosition>> alternatives = new ArrayList<>(offsets.size());
         
-        return new EvaluateTermPosition[] {low, high};
+        alternatives.add(offsets.get(0));
+        
+        for (int i = 1; i < offsets.size(); i++) {
+            // strip the first offset for this term and make a copy
+            NavigableSet<EvaluateTermPosition> candidateSet = offsets.get(i).tailSet(offsets.get(i).first(), false);
+            
+            // if the candidate set has something in it, and it is within the constraints of the distance this is a valid alternative
+            if (!candidateSet.isEmpty()
+                            && (alternatives.get(i - 1).first().isWithIn(candidateSet.first(), distance) && !alternatives.get(i - 1).first()
+                                            .isSameTerm(candidateSet.first()))) {
+                alternatives.add(candidateSet);
+                
+                // once there is a new alternative, leave all other terms alone to test it fully
+                for (int j = i + 1; j < offsets.size(); j++) {
+                    alternatives.add(offsets.get(j));
+                }
+                
+                // send these back for evaluation
+                return alternatives;
+            } else {
+                // nothing to change for this term, add it as-is
+                alternatives.add(offsets.get(i));
+            }
+        }
+        
+        // no good candidate exists, there are no alternatives
+        return null;
+    }
+    
+    /**
+     * Test if a set of offsets satisfy a distance requirement
+     * 
+     * @param offsets
+     * @param distance
+     * @return true if satisfied, false otherwise
+     */
+    private boolean isConverged(List<NavigableSet<EvaluateTermPosition>> offsets, int distance) {
+        if (offsets.size() == 1) {
+            return true;
+        }
+        
+        int secondIndex = 1;
+        NavigableSet<EvaluateTermPosition> first = offsets.get(0);
+        NavigableSet<EvaluateTermPosition> second = offsets.get(secondIndex);
+        
+        // test that these terms are within distance
+        while (first.first().isWithIn(second.first(), distance)) {
+            // are there more terms?
+            if (secondIndex + 1 < offsets.size()) {
+                // advance and test the next pair
+                secondIndex++;
+                first = second;
+                second = offsets.get(secondIndex);
+            } else {
+                // nope
+                return true;
+            }
+        }
+        
+        // terms not within distance
+        return false;
     }
     
     /**
