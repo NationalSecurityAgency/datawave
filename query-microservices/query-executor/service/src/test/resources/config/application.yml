@@ -266,6 +266,10 @@ datawave:
           maxResults: -1
           maxWork: -1
 
+query:
+  messaging:
+    claimCheck:
+      enabled: false
 
 audit-client:
   discovery:
@@ -288,7 +292,7 @@ spring.config.activate.on-profile: use-rabbit
 query:
   storage:
     backend:
-      rabbit
+      rabbitmq
 
 ---
 
