@@ -69,7 +69,8 @@ public abstract class QueryStorageCacheTest {
     @Disabled("Cannot run this test without an externally deployed Kafka instance.")
     @ActiveProfiles({"QueryStorageCacheTest", "use-kafka"})
     public static class KafkaQueryStorageCacheTest extends QueryStorageCacheTest {}
-    
+
+    @Profile("QueryStorageCacheTest")
     @SpringBootApplication(scanBasePackages = "datawave.microservice")
     public static class TestApplication {
         @Profile("use-hazelcast")
