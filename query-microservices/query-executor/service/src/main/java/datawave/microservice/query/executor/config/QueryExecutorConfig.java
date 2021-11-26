@@ -10,6 +10,8 @@ import datawave.services.common.cache.AccumuloTableCacheImpl;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.common.connection.AccumuloConnectionFactoryImpl;
 import datawave.services.common.result.ConnectionPoolsProperties;
+import datawave.services.query.predict.NoOpQueryPredictor;
+import datawave.services.query.predict.QueryPredictor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -64,6 +66,12 @@ public class QueryExecutorConfig {
     @ConditionalOnMissingBean(type = "QueryMetricFactory")
     public QueryMetricFactory queryMetricFactory() {
         return new QueryMetricFactoryImpl();
+    }
+    
+    @Bean
+    @ConditionalOnMissingBean(QueryPredictor.class)
+    public QueryPredictor queryPredictor() {
+        return new NoOpQueryPredictor();
     }
     
     /**

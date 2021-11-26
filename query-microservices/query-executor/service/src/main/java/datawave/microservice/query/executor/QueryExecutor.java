@@ -21,6 +21,7 @@ import datawave.microservice.querymetric.QueryMetricClient;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.query.logic.QueryLogicFactory;
+import datawave.services.query.predict.QueryPredictor;
 import datawave.services.query.runner.AccumuloConnectionRequestMap;
 import org.apache.log4j.Logger;
 import org.springframework.cloud.bus.BusProperties;
@@ -52,6 +53,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
     protected final QueryStorageCache cache;
     protected final QueryResultsManager queues;
     protected final QueryLogicFactory queryLogicFactory;
+    protected final QueryPredictor predictor;
     protected final ExecutorProperties executorProperties;
     protected final QueryProperties queryProperties;
     protected final BusProperties busProperties;
@@ -65,13 +67,14 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
     
     public QueryExecutor(ExecutorProperties executorProperties, QueryProperties queryProperties, BusProperties busProperties, ApplicationContext appCtx,
                     AccumuloConnectionFactory connectionFactory, QueryStorageCache cache, QueryResultsManager queues, QueryLogicFactory queryLogicFactory,
-                    ApplicationEventPublisher publisher, QueryMetricFactory metricFactory, QueryMetricClient metricClient) {
+                    QueryPredictor predictor, ApplicationEventPublisher publisher, QueryMetricFactory metricFactory, QueryMetricClient metricClient) {
         this.executorProperties = executorProperties;
         this.queryProperties = queryProperties;
         this.busProperties = busProperties;
         this.cache = cache;
         this.queues = queues;
         this.queryLogicFactory = queryLogicFactory;
+        this.predictor = predictor;
         this.appCtx = appCtx;
         this.connectionFactory = connectionFactory;
         this.publisher = publisher;
@@ -237,6 +240,10 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
     
     public QueryLogicFactory getQueryLogicFactory() {
         return queryLogicFactory;
+    }
+    
+    public QueryPredictor getPredictor() {
+        return predictor;
     }
     
     public ExecutorProperties getExecutorProperties() {

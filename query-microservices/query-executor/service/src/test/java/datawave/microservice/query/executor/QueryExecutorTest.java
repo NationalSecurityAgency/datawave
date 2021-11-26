@@ -1,6 +1,7 @@
 package datawave.microservice.query.executor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.collect.Sets;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
@@ -14,6 +15,7 @@ import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskStates;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricClient;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -28,6 +30,7 @@ import datawave.security.util.DnUtils;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.common.result.ConnectionPool;
 import datawave.services.query.logic.QueryLogicFactory;
+import datawave.services.query.predict.QueryPredictor;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.client.Connector;
@@ -67,10 +70,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -137,6 +142,9 @@ public abstract class QueryExecutorTest {
     
     protected Queue<QueryResultsListener> listeners = new LinkedList<>();
     protected Queue<String> createdQueries = new LinkedList<>();
+    
+    public static HashSet<BaseQueryMetric.Prediction> predictions = Sets.newHashSet(new BaseQueryMetric.Prediction("Success", 0.5d),
+                    new BaseQueryMetric.Prediction("Elephants", 0.0d));
     
     static {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -530,6 +538,129 @@ public abstract class QueryExecutorTest {
         assertFalse(requests.isEmpty());
     }
     
+    @DirtiesContext
+    @Test
+    public void testPlan() throws Exception {
+        // ensure the message queue is empty
+        assertTrue(queryRequestsEvents.isEmpty());
+        
+        String city = "rome";
+        String country = "italy";
+        String queryStr = CitiesDataType.CityField.CITY.name() + ":\"" + city + "\"" + AND_OP + "#EVALUATION_ONLY('" + CitiesDataType.CityField.COUNTRY.name()
+                        + ":\"" + country + "\"')";
+        
+        String expectPlan = CitiesDataType.CityField.CITY.name() + EQ_OP + "'" + city + "'" + JEXL_AND_OP + "((_Eval_ = true) && "
+                        + CitiesDataType.CityField.COUNTRY.name() + EQ_OP + "'" + country + "')";
+        
+        Query query = new QueryImpl();
+        query.setQuery(queryStr);
+        query.setQueryLogicName("EventQuery");
+        query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20150101"));
+        query.setEndDate(new SimpleDateFormat("yyyyMMdd").parse("20160101"));
+        query.setQueryAuthorizations(CitiesDataType.getTestAuths().toString());
+        query.setQueryName("TestQuery");
+        query.setDnList(Collections.singletonList("test user"));
+        query.setUserDN("test user");
+        query.setPagesize(100);
+        query.addParameter("query.syntax", "LUCENE");
+        String queryPool = new String(TEST_POOL);
+        TaskKey key = storageService.planQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()));
+        assertNotNull(key);
+        createdQueries.add(key.getQueryId());
+        
+        QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
+        
+        TaskStates states = storageService.getTaskStates(key.getQueryId());
+        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key.getTaskId()));
+        
+        // pass a plan request to the executor
+        QueryRequest request = QueryRequest.plan(key.getQueryId());
+        queryExecutor.handleRemoteRequest(request, "query:**", "executor-" + TEST_POOL + ":**");
+        
+        // wait for the plan task to finish
+        long startTime = System.currentTimeMillis();
+        while (queryRequestsEvents.isEmpty() && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
+            Thread.sleep(100);
+            checkFailed(key.getQueryId());
+        }
+        
+        checkFailed(key.getQueryId());
+        
+        // the first event should be the create response from the executor to the query service
+        RemoteQueryRequestEvent notification = queryRequestsEvents.removeFirst();
+        assertNotNull(notification);
+        assertEquals("query:**", notification.getDestinationService());
+        assertTrue(notification.getOriginService().startsWith("executor-" + TEST_POOL + ":"));
+        assertEquals(QueryRequest.Method.PLAN, notification.getRequest().getMethod());
+        assertEquals(key.getQueryId(), notification.getRequest().getQueryId());
+        
+        QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
+        assertEquals(QueryStatus.QUERY_STATE.PLANNED, queryStatus.getQueryState());
+        assertEquals(expectPlan, queryStatus.getPlan());
+    }
+    
+    @DirtiesContext
+    @Test
+    public void testPredict() throws Exception {
+        // ensure the message queue is empty
+        assertTrue(queryRequestsEvents.isEmpty());
+        
+        String city = "rome";
+        String country = "italy";
+        String queryStr = CitiesDataType.CityField.CITY.name() + ":\"" + city + "\"" + AND_OP + "#EVALUATION_ONLY('" + CitiesDataType.CityField.COUNTRY.name()
+                        + ":\"" + country + "\"')";
+        
+        String expectPlan = CitiesDataType.CityField.CITY.name() + EQ_OP + "'" + city + "'" + JEXL_AND_OP + "((_Eval_ = true) && "
+                        + CitiesDataType.CityField.COUNTRY.name() + EQ_OP + "'" + country + "')";
+        
+        Query query = new QueryImpl();
+        query.setQuery(queryStr);
+        query.setQueryLogicName("EventQuery");
+        query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20150101"));
+        query.setEndDate(new SimpleDateFormat("yyyyMMdd").parse("20160101"));
+        query.setQueryAuthorizations(CitiesDataType.getTestAuths().toString());
+        query.setQueryName("TestQuery");
+        query.setDnList(Collections.singletonList("test user"));
+        query.setUserDN("test user");
+        query.setPagesize(100);
+        query.addParameter("query.syntax", "LUCENE");
+        String queryPool = new String(TEST_POOL);
+        TaskKey key = storageService.predictQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()));
+        assertNotNull(key);
+        createdQueries.add(key.getQueryId());
+        
+        QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
+        
+        TaskStates states = storageService.getTaskStates(key.getQueryId());
+        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key.getTaskId()));
+        
+        // pass a plan request to the executor
+        QueryRequest request = QueryRequest.predict(key.getQueryId());
+        queryExecutor.handleRemoteRequest(request, "query:**", "executor-" + TEST_POOL + ":**");
+        
+        // wait for the plan task to finish
+        long startTime = System.currentTimeMillis();
+        while (queryRequestsEvents.isEmpty() && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
+            Thread.sleep(100);
+            checkFailed(key.getQueryId());
+        }
+        
+        checkFailed(key.getQueryId());
+        
+        // the first event should be the create response from the executor to the query service
+        RemoteQueryRequestEvent notification = queryRequestsEvents.removeFirst();
+        assertNotNull(notification);
+        assertEquals("query:**", notification.getDestinationService());
+        assertTrue(notification.getOriginService().startsWith("executor-" + TEST_POOL + ":"));
+        assertEquals(QueryRequest.Method.PREDICT, notification.getRequest().getMethod());
+        assertEquals(key.getQueryId(), notification.getRequest().getQueryId());
+        
+        QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
+        assertEquals(QueryStatus.QUERY_STATE.PREDICTED, queryStatus.getQueryState());
+        
+        assertEquals(predictions, queryStatus.getPredictions());
+    }
+    
     private void checkFailed(String queryId) {
         QueryStatus status = storageService.getQueryStatus(queryId);
         if (status.getQueryState() == QueryStatus.QUERY_STATE.FAILED) {
@@ -593,6 +724,17 @@ public abstract class QueryExecutorTest {
         @Bean
         public LinkedList<RemoteQueryRequestEvent> testQueryRequestEvents() {
             return new LinkedList<>();
+        }
+        
+        @Bean
+        @Primary
+        public QueryPredictor testQueryPredictor() {
+            return new QueryPredictor() {
+                @Override
+                public Set<BaseQueryMetric.Prediction> predict(BaseQueryMetric query) throws PredictionException {
+                    return predictions;
+                }
+            };
         }
         
         @Bean

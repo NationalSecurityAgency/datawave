@@ -5,7 +5,10 @@ import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.CachedQueryStatus;
 import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.TaskKey;
+import datawave.microservice.querymetric.QueryMetric;
 import datawave.services.query.logic.QueryLogic;
+import datawave.services.query.predict.QueryPredictor;
+import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
@@ -14,9 +17,11 @@ public class PredictTask extends ExecutorTask {
     private static final Logger log = Logger.getLogger(PredictTask.class);
     
     private final String originService;
+    private final QueryPredictor predictor;
     
     public PredictTask(QueryExecutor source, QueryTask task, String originService) {
         super(source, task);
+        this.predictor = source.getPredictor();
         this.originService = originService;
     }
     
@@ -27,9 +32,10 @@ public class PredictTask extends ExecutorTask {
         
         TaskKey taskKey = task.getTaskKey();
         String queryId = taskKey.getQueryId();
-        QueryLogic<?> queryLogic = getQueryLogic(queryStatus.getQuery());
         
-        // TODO: Implement the prediction logic
+        QueryMetric metric = new QueryMetric();
+        metric.populate(queryStatus.getQuery());
+        queryStatus.setPredictions(predictor.predict(metric));
         
         notifyOriginOfPrediction(queryId);
         

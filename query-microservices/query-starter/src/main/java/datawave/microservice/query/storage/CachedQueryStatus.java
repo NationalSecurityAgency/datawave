@@ -1,6 +1,7 @@
 package datawave.microservice.query.storage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -198,6 +199,24 @@ public class CachedQueryStatus extends QueryStatus {
     }
     
     @Override
+    public Set<BaseQueryMetric.Prediction> getPredictions() {
+        return get().getPredictions();
+    }
+    
+    @Override
+    public void setPredictions(Set<BaseQueryMetric.Prediction> predictions) {
+        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
+        lock.lock();
+        try {
+            forceCacheUpdateInsideSetter();
+            queryStatus.setPredictions(predictions);
+            cache.updateQueryStatus(queryStatus);
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    @Override
     public Query getQuery() {
         return get().getQuery();
     }
@@ -348,6 +367,37 @@ public class CachedQueryStatus extends QueryStatus {
     }
     
     @Override
+    public long getNumResultsConsumed() {
+        return get().getNumResultsConsumed();
+    }
+    
+    @Override
+    public void setNumResultsConsumed(long numResultsConsumed) {
+        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
+        lock.lock();
+        try {
+            forceCacheUpdateInsideSetter();
+            queryStatus.setNumResultsGenerated(numResultsConsumed);
+            cache.updateQueryStatus(queryStatus);
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    @Override
+    public void incrementNumResultsConsumed(long increment) {
+        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
+        lock.lock();
+        try {
+            forceCacheUpdateInsideSetter();
+            queryStatus.incrementNumResultsConsumed(increment);
+            cache.updateQueryStatus(queryStatus);
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    @Override
     public int getActiveNextCalls() {
         return get().getActiveNextCalls();
     }
@@ -359,6 +409,24 @@ public class CachedQueryStatus extends QueryStatus {
         try {
             forceCacheUpdateInsideSetter();
             queryStatus.setActiveNextCalls(activeNextCalls);
+            cache.updateQueryStatus(queryStatus);
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    @Override
+    public DatawaveErrorCode getErrorCode() {
+        return get().getErrorCode();
+    }
+    
+    @Override
+    public void setErrorCode(DatawaveErrorCode errorCode) {
+        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
+        lock.lock();
+        try {
+            forceCacheUpdateInsideSetter();
+            queryStatus.setErrorCode(errorCode);
             cache.updateQueryStatus(queryStatus);
         } finally {
             lock.unlock();
