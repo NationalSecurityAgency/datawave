@@ -1,6 +1,7 @@
 package datawave.microservice.query.storage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -33,6 +34,7 @@ public class QueryStatus implements Serializable {
     @JsonIgnore
     private Set<Authorizations> calculatedAuthorizations;
     private String plan;
+    private Set<Prediction> predictions;
     
     private long numResultsReturned = 0L;
     private long numResultsConsumed = 0L;
@@ -102,6 +104,14 @@ public class QueryStatus implements Serializable {
     
     public void setPlan(String plan) {
         this.plan = plan;
+    }
+    
+    public Set<Prediction> getPredictions() {
+        return predictions;
+    }
+    
+    public void setPredictions(Set<Prediction> predictions) {
+        this.predictions = predictions;
     }
     
     public Query getQuery() {

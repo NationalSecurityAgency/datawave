@@ -1839,6 +1839,86 @@ public class QueryManagementService implements QueryRequestHandler {
         }
     }
     
+    /**
+     * Gets the plan for the given query for the calling user.
+     *
+     * @param queryId
+     *            the query id, may be null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return the query plan for the matching query
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't own the query
+     * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws QueryException
+     *             if query storage fails
+     * @throws QueryException
+     *             if there is an unknown error
+     */
+    public GenericResponse<String> plan(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        log.info("Request: plan from {} for queryId: {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId);
+        
+        try {
+            // make sure the query is valid, and the user can act on it
+            QueryStatus queryStatus = validateRequest(queryId, currentUser);
+            
+            GenericResponse<String> response = new GenericResponse<>();
+            if (queryStatus.getPlan() != null) {
+                response.setResult(queryStatus.getPlan());
+                response.setHasResults(true);
+            }
+            return response;
+        } catch (QueryException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unknown error getting plan for query {}", queryId, e);
+            throw new QueryException(DatawaveErrorCode.QUERY_PLAN_ERROR, e, "Unknown error getting plan for query " + queryId);
+        }
+    }
+    
+    /**
+     * Gets the predictions for the given query for the calling user.
+     *
+     * @param queryId
+     *            the query id, may be null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return the query predictions for the matching query
+     * @throws NotFoundQueryException
+     *             if the query cannot be found
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't own the query
+     * @throws QueryException
+     *             if query lock acquisition fails
+     * @throws QueryException
+     *             if query storage fails
+     * @throws QueryException
+     *             if there is an unknown error
+     */
+    public GenericResponse<String> predictions(String queryId, ProxiedUserDetails currentUser) throws QueryException {
+        log.info("Request: predictions from {} for queryId: {}", ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName()), queryId);
+        
+        try {
+            // make sure the query is valid, and the user can act on it
+            QueryStatus queryStatus = validateRequest(queryId, currentUser);
+            
+            GenericResponse<String> response = new GenericResponse<>();
+            if (queryStatus.getPredictions() != null && !queryStatus.getPredictions().isEmpty()) {
+                response.setResult(queryStatus.getPredictions().toString());
+                response.setHasResults(true);
+            }
+            return response;
+        } catch (QueryException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unknown error getting predictions for query {}", queryId, e);
+            throw new QueryException(DatawaveErrorCode.QUERY_PLAN_ERROR, e, "Unknown error getting predictions for query " + queryId);
+        }
+    }
+    
     private QueryStatus validateRequest(String queryId, ProxiedUserDetails currentUser) throws QueryException {
         return validateRequest(queryId, currentUser, false);
     }

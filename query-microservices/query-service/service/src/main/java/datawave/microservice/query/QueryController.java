@@ -179,6 +179,20 @@ public class QueryController {
         return queryManagementService.list(queryId, null, currentUser);
     }
     
+    @Timed(name = "dw.query.plan", absolute = true)
+    @RequestMapping(path = "{queryId}/plan", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+            "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public GenericResponse<String> plan(@PathVariable String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
+        return queryManagementService.plan(queryId, currentUser);
+    }
+    
+    @Timed(name = "dw.query.predictions", absolute = true)
+    @RequestMapping(path = "{queryId}/predictions", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+            "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public GenericResponse<String> predictions(@PathVariable String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
+        return queryManagementService.predictions(queryId, currentUser);
+    }
+    
     @Timed(name = "dw.query.adminCancelAll", absolute = true)
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "adminCancelAll", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
