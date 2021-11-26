@@ -521,7 +521,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             throw new QueryException("Did not receive a ShardQueryConfiguration instance!!");
         }
         
-        ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
+        config = (ShardQueryConfiguration) genericConfig;
         
         final QueryStopwatch timers = config.getTimers();
         TraceStopwatch stopwatch = timers.newStartedStopwatch("ShardQueryLogic - Setup Query");

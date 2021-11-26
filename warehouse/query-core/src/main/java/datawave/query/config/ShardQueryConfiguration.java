@@ -588,6 +588,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setModelName(other.getModelName());
         this.setMetadataTableName(other.getMetadataTableName());
         
+        this.setAccumuloPassword(other.getAccumuloPassword());
+        this.setBypassAccumulo(other.getBypassAccumulo());
+        
         this.setQuery(other.getQuery());
         this.setCheckpointable(other.isCheckpointable());
         this.setSpeculativeScanning(other.getSpeculativeScanning());
