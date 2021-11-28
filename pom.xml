@@ -709,6 +709,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.apache.hadoop.thirdparty</groupId>
+                <artifactId>hadoop-shaded-guava</artifactId>
+                <version>1.1.1</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.htrace</groupId>
                 <artifactId>htrace-core4</artifactId>
                 <version>${version.htrace}</version>
