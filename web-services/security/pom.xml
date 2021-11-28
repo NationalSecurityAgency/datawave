@@ -77,6 +77,10 @@
             <artifactId>deltaspike-core-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.hadoop.thirdparty</groupId>
+            <artifactId>hadoop-shaded-guava</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.htrace</groupId>
             <artifactId>htrace-core4</artifactId>
         </dependency>
