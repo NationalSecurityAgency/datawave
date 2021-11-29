@@ -233,6 +233,9 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             fields.put("YIELD_COUNT", Long.toString(updatedQueryMetric.getYieldCount()));
             fields.put("DOC_RANGES", Long.toString(updatedQueryMetric.getDocRanges()));
             fields.put("FI_RANGES", Long.toString(updatedQueryMetric.getFiRanges()));
+            if (updatedQueryMetric.getVersion() != null) {
+                fields.put("VERSION", updatedQueryMetric.getVersion());
+            }
             Set<Prediction> predictions = updatedQueryMetric.getPredictions();
             if (predictions != null && !predictions.isEmpty()) {
                 for (Prediction prediction : predictions) {

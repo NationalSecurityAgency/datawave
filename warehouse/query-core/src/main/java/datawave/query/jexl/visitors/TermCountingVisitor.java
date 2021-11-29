@@ -34,7 +34,7 @@ public class TermCountingVisitor extends BaseVisitor {
     public Object visit(ASTAndNode node, Object data) {
         
         // Get safely
-        QueryPropertyMarker.Instance instance = QueryPropertyMarkerVisitor.getCopiedInstance(node);
+        QueryPropertyMarker.Instance instance = QueryPropertyMarkerVisitor.getInstance(node);
         if (instance.isType(BoundedRange.class)) {
             // count each bounded range as 1
             ((MutableInt) data).increment();

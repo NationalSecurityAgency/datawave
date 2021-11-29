@@ -128,7 +128,9 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
             throw new IllegalStateException("Query string is empty after initial processing, no ranges or filters can be generated to execute.");
         }
         
-        addIterators(qData, getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, dateFilterSkipLimit, dateFilterType));
+        addIterators(qData,
+                        getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, dateFilterSkipLimit, dateFilterScanLimit,
+                                        dateFilterType));
         
         if (!normalizedQuery.equals("")) {
             if (log.isTraceEnabled()) {

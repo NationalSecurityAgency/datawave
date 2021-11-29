@@ -791,6 +791,10 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 
                 else if (fieldName.equals("FI_RANGES")) {
                     m.setFiRanges(Long.parseLong(fieldValue));
+                }
+                
+                else if (fieldName.equals("VERSION")) {
+                    m.setVersion(fieldValue);
                 } else {
                     log.error("encountered unanticipated field name: " + fieldName);
                 }

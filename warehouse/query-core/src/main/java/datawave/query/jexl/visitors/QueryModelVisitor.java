@@ -38,6 +38,7 @@ import org.apache.log4j.Logger;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -53,6 +54,9 @@ public class QueryModelVisitor extends RebuildingVisitor {
     private final HashSet<ASTAndNode> expandedNodes;
     private final Set<String> validFields;
     private final SimpleQueryModelVisitor simpleQueryModelVisitor;
+    
+    // set of fields that are excluded from model expansion
+    private Set<String> noExpansionFields;
     
     public QueryModelVisitor(QueryModel queryModel, Set<String> validFields) {
         this.queryModel = queryModel;
@@ -74,7 +78,15 @@ public class QueryModelVisitor extends RebuildingVisitor {
     }
     
     public static ASTJexlScript applyModel(ASTJexlScript script, QueryModel queryModel, Set<String> validFields) {
+        return applyModel(script, queryModel, validFields, Collections.emptySet());
+    }
+    
+    public static ASTJexlScript applyModel(ASTJexlScript script, QueryModel queryModel, Set<String> validFields, Set<String> noExpansionFields) {
         QueryModelVisitor visitor = new QueryModelVisitor(queryModel, validFields);
+        
+        if (!noExpansionFields.isEmpty()) {
+            visitor.setNoExpansionFields(noExpansionFields);
+        }
         
         script = TreeFlatteningRebuildingVisitor.flatten(script);
         return (ASTJexlScript) script.jjtAccept(visitor, null);
@@ -161,6 +173,10 @@ public class QueryModelVisitor extends RebuildingVisitor {
     
     public Object expandRangeNodeFromModel(LiteralRange range, ASTAndNode node, Object data) {
         
+        if (isFieldExcluded(range.getFieldName())) {
+            return node;
+        }
+        
         // this is the set of fields that have an upper and a lower bound operand
         // make a copy of the intersection, as I will be modifying lowererBounds and upperBounds below
         List<JexlNode> aliasedBounds = Lists.newArrayList();
@@ -199,6 +215,11 @@ public class QueryModelVisitor extends RebuildingVisitor {
      * @return
      */
     protected JexlNode expandBinaryNodeFromModel(JexlNode node, Object data) {
+        
+        String field = JexlASTHelper.getIdentifier(node);
+        if (isFieldExcluded(field)) {
+            return node;
+        }
         
         // Count the immediate children:
         int childCount = node.jjtGetNumChildren();
@@ -359,6 +380,21 @@ public class QueryModelVisitor extends RebuildingVisitor {
         if (log.isTraceEnabled())
             log.trace("just returning the original:" + PrintingVisitor.formattedQueryString(node));
         return node;
+    }
+    
+    /**
+     * Is this field excluded from query model expansion
+     * 
+     * @param field
+     *            the field to be expanded
+     * @return true if the field is excluded
+     */
+    private boolean isFieldExcluded(String field) {
+        return noExpansionFields != null && noExpansionFields.contains(field);
+    }
+    
+    public void setNoExpansionFields(Set<String> noExpansionFields) {
+        this.noExpansionFields = noExpansionFields;
     }
     
     /**

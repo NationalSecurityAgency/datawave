@@ -39,7 +39,7 @@ public class ColumnQualifierRangeIterator extends ColumnRangeIterator {
             if (getColumnRange().beforeStartKey(topColumnQual)) { // top key's CQ is before the desired range starts, need to skip some CQs...
             
                 if (count < limit) {
-                    getSource().next();
+                    advanceSource();
                     ++count;
                 } else {
                     Text row = getSource().getTopKey().getRow();
@@ -52,7 +52,7 @@ public class ColumnQualifierRangeIterator extends ColumnRangeIterator {
                 }
             } else if (getColumnRange().afterEndKey(topColumnQual)) { // reached the end of the desired CQ range, need to go to the next CF or row
                 if (count < limit) {
-                    getSource().next();
+                    advanceSource();
                     ++count;
                 } else {
                     Text row = getSource().getTopKey().getRow();

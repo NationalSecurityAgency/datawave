@@ -66,6 +66,7 @@ import datawave.query.jexl.visitors.GeoWavePruningVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.NoExpansionFunctionVisitor;
 import datawave.query.jexl.visitors.NodeTypeCountVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
@@ -75,6 +76,7 @@ import datawave.query.jexl.visitors.PushdownMissingIndexRangeNodesVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
+import datawave.query.jexl.visitors.QueryPropertyMarkerSourceConsolidator;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
 import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
@@ -704,6 +706,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
         }
         
+        // extract #NO_EXPANSION function, if it exists
+        config.setQueryTree(parseNoExpansionFields(timers, config.getQueryTree(), config));
+        
         // flatten the tree
         config.setQueryTree(timedFlatten(timers, config.getQueryTree()));
         
@@ -712,6 +717,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setQueryTree(timedApplyRules(timers, config.getQueryTree(), config, metadataHelper, scannerFactory));
         
         config.setQueryTree(timedFixNegativeNumbers(timers, config.getQueryTree()));
+        
+        // Fix any query property markers that have multiple unwrapped sources.
+        config.setQueryTree(timedFixQueryPropertyMarkers(timers, config.getQueryTree()));
         
         // Ensure that all ASTIdentifier nodes (field names) are upper-case to be consistent with what is enforced at ingest time
         config.setQueryTree(timedUpperCaseIdentifiers(timers, config.getQueryTree(), config, metadataHelper));
@@ -787,7 +795,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         if (!disableWhindexFieldMappings) {
             // apply the value-specific field mappings for GeoWave functions
-            timedApplyWhindexFieldMappings(timers, config.getQueryTree(), config, metadataHelper, settings);
+            config.setQueryTree(timedApplyWhindexFieldMappings(timers, config.getQueryTree(), config, metadataHelper, settings));
         }
         
         if (!disableExpandIndexFunction) {
@@ -1167,7 +1175,17 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return visitorManager.timedVisit(timers, "Add SHARDS_AND_DAYS From Options", () -> (AddShardsAndDaysVisitor.update(script, shardsAndDays)));
     }
     
-    protected ASTJexlScript timedApplyRules(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config, MetadataHelper metadataHelper,
+    protected ASTJexlScript parseNoExpansionFields(QueryStopwatch timers, ASTJexlScript script, ShardQueryConfiguration config) throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, "Parse #NO_EXPANSION From Query", () -> (extractNoExpansionFields(script, config)));
+    }
+    
+    private ASTJexlScript extractNoExpansionFields(ASTJexlScript script, ShardQueryConfiguration config) {
+        NoExpansionFunctionVisitor.VisitResult result = NoExpansionFunctionVisitor.findNoExpansionFields(script);
+        config.setNoExpansionFields(result.noExpansionFields);
+        return result.script;
+    }
+    
+    protected ASTJexlScript timedApplyRules(QueryStopwatch timers, ASTJexlScript script, ShardQueryConfiguration config, MetadataHelper metadataHelper,
                     ScannerFactory scannerFactory) throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, "Apply Pushdown Rules", () -> (applyRules(script, scannerFactory, metadataHelper, config)));
     }
@@ -1558,6 +1576,21 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return config.getQueryTree();
     }
     
+    protected ASTJexlScript timedFixQueryPropertyMarkers(QueryStopwatch timers, ASTJexlScript script) throws DatawaveQueryException {
+        // Fix query property markers with multiple sources.
+        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - fix query property markers with multiple sources");
+        try {
+            script = QueryPropertyMarkerSourceConsolidator.consolidate(script);
+        } catch (Exception e) {
+            throw new DatawaveQueryException("Failed to fix query property markers with multiple sources", e);
+        }
+        if (log.isDebugEnabled()) {
+            logQuery(script, "Query after fixing query property markers with multiple sources");
+        }
+        stopwatch.stop();
+        return script;
+    }
+    
     /*
      * End methods that operate on the query tree
      */
@@ -1699,7 +1732,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException(qe);
         }
         
-        config.setQueryTree(QueryModelVisitor.applyModel(config.getQueryTree(), queryModel, allFields));
+        if (!config.getNoExpansionFields().isEmpty()) {
+            config.setQueryTree(QueryModelVisitor.applyModel(config.getQueryTree(), queryModel, allFields, config.getNoExpansionFields()));
+        } else {
+            config.setQueryTree(QueryModelVisitor.applyModel(config.getQueryTree(), queryModel, allFields));
+        }
+        
         if (log.isTraceEnabled())
             log.trace("queryTree:" + PrintingVisitor.formattedQueryString(config.getQueryTree()));
         return config.getQueryTree();

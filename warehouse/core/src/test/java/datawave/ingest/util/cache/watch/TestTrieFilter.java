@@ -8,7 +8,7 @@ import datawave.iterators.filter.ageoff.FilterOptions;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 
 /**
- * Class to assist in the testing of TokeninzingFilters
+ * Class to assist in the testing of TokenizingFilters
  */
 public class TestTrieFilter extends TokenizingFilterBase {
     private static final byte[] DELIM_BYTES = "/".getBytes();
