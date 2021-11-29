@@ -139,6 +139,16 @@ public abstract class ColumnRangeIterator extends SkippingIterator implements In
         return fba;
     }
     
+    @Override
+    protected final void consume() throws IOException {
+        // execute the consume implementation
+        consumeImpl();
+        // now reset the scan count back to 0 for the next round.
+        scanCount = 0;
+    }
+    
+    protected abstract void consumeImpl() throws IOException;
+    
     protected void advanceSource() throws IOException {
         if (scanCount >= scanLimit) {
             throw new ScanLimitReached(getSource().getTopKey(), "Reached scan limit of " + scanLimit);
