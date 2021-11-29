@@ -15,7 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This class is intended to simplify the (\s|.) with just a . since we have added the DOTALL flag to
+ * This class is use to replace expressions within regex strings within a query tree.
  */
 public class RegexReplacementTransformRule implements NodeTransformRule {
     private final Pattern pattern;
