@@ -30,7 +30,7 @@ public class ColumnFamilyRangeIterator extends ColumnRangeIterator {
     }
     
     @Override
-    protected void consume() throws IOException {
+    protected void consumeImpl() throws IOException {
         
         int count = 0;
         int limit = getSkipLimit();
