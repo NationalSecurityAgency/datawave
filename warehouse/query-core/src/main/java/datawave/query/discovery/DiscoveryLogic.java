@@ -42,6 +42,7 @@ import org.apache.commons.lang.math.LongRange;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.DataInputBuffer;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 import org.javatuples.Pair;
@@ -265,6 +266,9 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             bs.setRanges(qd.getRanges());
             for (IteratorSetting setting : qd.getSettings()) {
                 bs.addScanIterator(setting);
+            }
+            for (String cf : qd.getColumnFamilies()) {
+                bs.fetchColumnFamily(new Text(cf));
             }
             
             iterators.add(transformScanner(bs, qd));

@@ -58,6 +58,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -374,6 +375,10 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
                 bs.addScanIterator(setting);
             }
             
+            for (String cf : qd.getColumnFamilies()) {
+                bs.fetchColumnFamily(new Text(cf));
+            }
+            
             batchscanners.add(Maps.immutableEntry(bs, qd));
         }
         
@@ -536,7 +541,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         getConfig().setQueryModel(model);
     }
     
-    public class CloseableIterator implements Iterator<Entry<Key,Value>> {
+    public class CloseableIterator implements Iterator<Entry<Key,Value>>, Closeable {
         
         private final Iterator<Entry<BatchScanner,QueryData>> batchScannerIterator;
         
@@ -627,6 +632,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             throw new UnsupportedOperationException();
         }
         
+        @Override
         public void close() {
             if (!closed) {
                 closed = true;

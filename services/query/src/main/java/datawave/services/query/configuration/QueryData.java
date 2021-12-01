@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
+import org.apache.hadoop.io.Text;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -102,9 +103,26 @@ public class QueryData implements ResultContext, Externalizable {
         return columnFamilies;
     }
     
+    public void setColumnFamilies(Collection<String> columnFamilies) {
+        this.columnFamilies.clear();
+        if (columnFamilies != null) {
+            this.columnFamilies.addAll(columnFamilies);
+        }
+    }
+    
+    public void addColumnFamily(String cf) {
+        this.columnFamilies.add(cf);
+    }
+    
+    public void addColumnFamily(Text cf) {
+        this.columnFamilies.add(cf.toString());
+    }
+    
     public void setRanges(Collection<Range> ranges) {
-        if (null != ranges)
+        this.ranges.clear();
+        if (null != ranges) {
             this.ranges.addAll(ranges);
+        }
     }
     
     public void addIterator(IteratorSetting cfg) {

@@ -35,12 +35,16 @@ public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration imp
     private boolean overRideInput = false;
     private boolean overRideOutput = false;
     
+    public EdgeExtendedSummaryConfiguration() {
+        
+    }
+    
     public EdgeExtendedSummaryConfiguration(EdgeQueryLogic configuredLogic, Query query) {
         super(configuredLogic, query);
     }
     
     @Override
-    public EdgeQueryConfiguration parseParameters(Query settings) {
+    public EdgeExtendedSummaryConfiguration parseParameters(Query settings) {
         super.parseParameters(settings);
         if (settings.getParameters() != null) {
             

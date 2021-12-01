@@ -16,6 +16,8 @@ import java.util.Objects;
  */
 public class EdgeQueryConfiguration extends GenericQueryConfiguration implements Serializable {
     private static final long serialVersionUID = -2795330785878662313L;
+    public static final int DEFAULT_SKIP_LIMIT = 10;
+    public static final long DEFAULT_SCAN_LIMIT = Long.MAX_VALUE;
     
     // We originally had the two choices:
     // EVENT => apply date range to edges generated using event date
@@ -43,6 +45,7 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
     private EdgeQueryModel edgeQueryModel = null;
     
     private List<? extends Type<?>> dataTypes;
+    private List<? extends Type<?>> regexDataTypes = null;
     private int numQueryThreads;
     private boolean protobufEdgeFormat = true;
     
@@ -56,6 +59,16 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
     
     // Use to aggregate results will be false by default
     private boolean aggregateResults = false;
+    
+    protected int queryThreads = 8;
+    
+    protected int dateFilterSkipLimit = DEFAULT_SKIP_LIMIT;
+    
+    protected long dateFilterScanLimit = DEFAULT_SCAN_LIMIT;
+    
+    public EdgeQueryConfiguration() {
+        
+    }
     
     public EdgeQueryConfiguration(EdgeQueryLogic configuredLogic, Query query) {
         super(configuredLogic);
@@ -92,10 +105,6 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
         this.protobufEdgeFormat = protobufEdgeFormat;
     }
     
-    public boolean includeStats() {
-        return includeStats;
-    }
-    
     public dateType getDateRangeType() {
         return dateRangeType;
     }
@@ -108,6 +117,7 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
      * Fluent interface for parsing the parameters out of the Parameter set provided by the Query.
      */
     public EdgeQueryConfiguration parseParameters(Query settings) {
+        setQuery(settings);
         if (settings.getParameters() != null) {
             QueryImpl.Parameter p = settings.findParameter(INCLUDE_STATS);
             if (p != null && !p.getParameterValue().isEmpty()) {
@@ -194,6 +204,46 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
     
     public void setModelTableName(String modelTableName) {
         this.modelTableName = modelTableName;
+    }
+    
+    public List<? extends Type<?>> getRegexDataTypes() {
+        return regexDataTypes;
+    }
+    
+    public void setRegexDataTypes(List<? extends Type<?>> regexDataTypes) {
+        this.regexDataTypes = regexDataTypes;
+    }
+    
+    public int getQueryThreads() {
+        return queryThreads;
+    }
+    
+    public void setQueryThreads(int queryThreads) {
+        this.queryThreads = queryThreads;
+    }
+    
+    public boolean includeStats() {
+        return includeStats;
+    }
+    
+    public void setIncludeStats(boolean includeStats) {
+        this.includeStats = includeStats;
+    }
+    
+    public int getDateFilterSkipLimit() {
+        return dateFilterSkipLimit;
+    }
+    
+    public void setDateFilterSkipLimit(int dateFilterSkipLimit) {
+        this.dateFilterSkipLimit = dateFilterSkipLimit;
+    }
+    
+    public long getDateFilterScanLimit() {
+        return dateFilterScanLimit;
+    }
+    
+    public void setDateFilterScanLimit(long dateFilterScanLimit) {
+        this.dateFilterScanLimit = dateFilterScanLimit;
     }
     
     @Override
