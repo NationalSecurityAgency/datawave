@@ -3,18 +3,23 @@ package datawave.query.config;
 import datawave.data.type.Type;
 import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.edge.EdgeQueryLogic;
+import datawave.services.query.configuration.CheckpointableQueryConfiguration;
 import datawave.services.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.configuration.QueryData;
+import datawave.services.query.logic.QueryCheckpoint;
+import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
 /**
  * Created with IntelliJ IDEA. To change this template use File | Settings | File Templates.
  */
-public class EdgeQueryConfiguration extends GenericQueryConfiguration implements Serializable {
+public class EdgeQueryConfiguration extends GenericQueryConfiguration implements Serializable, CheckpointableQueryConfiguration {
     private static final long serialVersionUID = -2795330785878662313L;
     public static final int DEFAULT_SKIP_LIMIT = 10;
     public static final long DEFAULT_SCAN_LIMIT = Long.MAX_VALUE;
@@ -47,7 +52,6 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
     private List<? extends Type<?>> dataTypes;
     private List<? extends Type<?>> regexDataTypes = null;
     private int numQueryThreads;
-    private boolean protobufEdgeFormat = true;
     
     // to be backwards compatible, by default we want to return
     protected boolean includeStats = true;
@@ -66,19 +70,129 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
     
     protected long dateFilterScanLimit = DEFAULT_SCAN_LIMIT;
     
+    /**
+     * Default constructor
+     */
     public EdgeQueryConfiguration() {
-        
+        super();
     }
     
-    public EdgeQueryConfiguration(EdgeQueryLogic configuredLogic, Query query) {
-        super(configuredLogic);
-        setDataTypes(configuredLogic.getDataTypes());
-        setNumQueryThreads(configuredLogic.getQueryThreads());
-        setQuery(query);
-        setProtobufEdgeFormat(configuredLogic.isProtobufEdgeFormat());
-        setModelName(configuredLogic.getModelName());
-        setModelTableName(configuredLogic.getModelTableName());
-        setEdgeQueryModel(configuredLogic.getEdgeQueryModel());
+    /**
+     * Performs a deep copy of the provided EdgeQueryConfiguration into a new instance
+     *
+     * @param other
+     *            - another EdgeQueryConfiguration instance
+     */
+    public EdgeQueryConfiguration(EdgeQueryConfiguration other) {
+        
+        // GenericQueryConfiguration copy first
+        super(other);
+        
+        // EdgeQueryConfiguration copy
+        setModelName(other.getModelName());
+        setModelTableName(other.getModelTableName());
+        setEdgeQueryModel(other.getEdgeQueryModel());
+        setDataTypes(other.getDataTypes());
+        setRegexDataTypes(other.getRegexDataTypes());
+        setNumQueryThreads(other.getNumQueryThreads());
+        setIncludeStats(other.includeStats());
+        setMaxQueryTerms(other.getMaxQueryTerms());
+        setMaxPrefilterValues(other.getMaxPrefilterValues());
+        setDateRangeType(other.getDateRangeType());
+        setAggregateResults(other.isAggregateResults());
+        setQueryThreads(other.getQueryThreads());
+        setDateFilterScanLimit(other.getDateFilterScanLimit());
+        setDateFilterSkipLimit(other.getDateFilterSkipLimit());
+    }
+    
+    /**
+     * This constructor is used when we are creating a checkpoint for a set of ranges (i.e. QueryData objects). All configuration required for post planning
+     * needs to be copied over here.
+     *
+     * @param other
+     * @param queries
+     */
+    public EdgeQueryConfiguration(EdgeQueryConfiguration other, Collection<QueryData> queries) {
+        this(other);
+        
+        this.setQueries(queries);
+        
+        // do not preserve the original queries iter. getQueriesIter will create a new
+        // iterator based off of the queries collection if queriesIter is null
+        this.setQueriesIter(null);
+    }
+    
+    @Override
+    public QueryCheckpoint checkpoint(QueryKey queryKey, Collection<QueryData> ranges) {
+        // Create a new config that only contains what is needed to execute the specified ranges
+        return new EdgeQueryConfiguration(this, ranges).checkpoint(queryKey);
+    }
+    
+    @Override
+    public QueryCheckpoint checkpoint(QueryKey queryKey) {
+        return new QueryCheckpoint(queryKey, this);
+    }
+    
+    /**
+     * Delegates deep copy work to appropriate constructor, sets additional values specific to the provided ShardQueryLogic
+     *
+     * @param logic
+     *            - a EdgeQueryLogic instance or subclass
+     */
+    public EdgeQueryConfiguration(EdgeQueryLogic logic) {
+        this(logic.getConfig());
+    }
+    
+    /**
+     * Factory method that instantiates an fresh EdgeQueryConfiguration
+     *
+     * @return - a clean EdgeQueryConfiguration
+     */
+    public static EdgeQueryConfiguration create() {
+        return new EdgeQueryConfiguration();
+    }
+    
+    /**
+     * Factory method that returns a deep copy of the provided EdgeQueryConfiguration
+     *
+     * @param other
+     *            - another instance of a EdgeQueryConfiguration
+     * @return - copy of provided EdgeQueryConfiguration
+     */
+    public static EdgeQueryConfiguration create(EdgeQueryConfiguration other) {
+        return new EdgeQueryConfiguration(other);
+    }
+    
+    /**
+     * Factory method that creates a EdgeQueryConfiguration deep copy from a EdgeQueryLogic
+     *
+     * @param logic
+     *            - a configured EdgeQueryLogic
+     * @return - a EdgeQueryConfiguration
+     */
+    public static EdgeQueryConfiguration create(EdgeQueryLogic logic) {
+        
+        EdgeQueryConfiguration config = create(logic.getConfig());
+        
+        // Lastly, honor overrides passed in via query parameters
+        config.parseParameters(config.getQuery());
+        
+        return config;
+    }
+    
+    /**
+     * Factory method that creates a EdgeQueryConfiguration from a EdgeQueryLogic and a Query
+     *
+     * @param logic
+     *            - a configured EdgeQueryLogic
+     * @param query
+     *            - a configured Query object
+     * @return - a EdgeQueryConfiguration
+     */
+    public static EdgeQueryConfiguration create(EdgeQueryLogic logic, Query query) {
+        EdgeQueryConfiguration config = create(logic);
+        config.setQuery(query);
+        return config;
     }
     
     public List<? extends Type<?>> getDataTypes() {
@@ -95,14 +209,6 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
     
     public void setNumQueryThreads(int numQueryThreads) {
         this.numQueryThreads = numQueryThreads;
-    }
-    
-    public boolean isProtobufEdgeFormat() {
-        return protobufEdgeFormat;
-    }
-    
-    public void setProtobufEdgeFormat(boolean protobufEdgeFormat) {
-        this.protobufEdgeFormat = protobufEdgeFormat;
     }
     
     public dateType getDateRangeType() {
@@ -255,16 +361,17 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
         if (!super.equals(o))
             return false;
         EdgeQueryConfiguration that = (EdgeQueryConfiguration) o;
-        return numQueryThreads == that.numQueryThreads && protobufEdgeFormat == that.protobufEdgeFormat && includeStats == that.includeStats
-                        && maxQueryTerms == that.maxQueryTerms && maxPrefilterValues == that.maxPrefilterValues && aggregateResults == that.aggregateResults
+        return numQueryThreads == that.numQueryThreads && includeStats == that.includeStats && maxQueryTerms == that.maxQueryTerms
+                        && maxPrefilterValues == that.maxPrefilterValues && aggregateResults == that.aggregateResults
                         && Objects.equals(modelName, that.modelName) && Objects.equals(modelTableName, that.modelTableName)
                         && Objects.equals(edgeQueryModel, that.edgeQueryModel) && Objects.equals(dataTypes, that.dataTypes)
-                        && dateRangeType == that.dateRangeType;
+                        && dateRangeType == that.dateRangeType && dateFilterScanLimit == that.dateFilterScanLimit
+                        && dateFilterSkipLimit == that.dateFilterSkipLimit;
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), modelName, modelTableName, edgeQueryModel, dataTypes, numQueryThreads, protobufEdgeFormat, includeStats,
-                        maxQueryTerms, maxPrefilterValues, dateRangeType, aggregateResults);
+        return Objects.hash(super.hashCode(), modelName, modelTableName, edgeQueryModel, dataTypes, numQueryThreads, includeStats, maxQueryTerms,
+                        maxPrefilterValues, dateRangeType, aggregateResults, dateFilterScanLimit, dateFilterSkipLimit);
     }
 }

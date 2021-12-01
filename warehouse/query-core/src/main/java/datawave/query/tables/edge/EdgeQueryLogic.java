@@ -9,6 +9,7 @@ import datawave.data.type.Type;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.EdgeQueryConfiguration;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.filter.DateTypeFilter;
 import datawave.query.iterator.filter.EdgeFilterIterator;
@@ -57,14 +58,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.StringReader;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
@@ -77,25 +75,13 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     public static final String PRE_FILTER_DISABLE_KEYWORD = "__DISABLE_PREFILTER__";
     private static final Logger log = Logger.getLogger(EdgeQueryLogic.class);
     
-    protected boolean protobufEdgeFormat = true;
     protected EdgeQueryConfiguration config;
     
-    protected Map<Integer,IteratorSetting> iteratorDiscriptors = new HashMap<>();
     protected int currentIteratorPriority;
     
     protected ScannerFactory scannerFactory;
     
-    private Collection<Range> ranges;
-    
     protected HashMultimap<String,String> prefilterValues = null;
-    
-    private long maxQueryTerms = 10000;
-    private long maxPrefilterValues = 100000;
-    
-    private String modelName = null;
-    private String modelTableName = null;
-    
-    private EdgeQueryModel edgeQueryModel = null;
     
     private VisitationContext visitationContext;
     
@@ -107,13 +93,12 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     
     public EdgeQueryLogic(EdgeQueryLogic other) {
         super(other);
-        setDataTypes(other.getDataTypes());
-        setRegexDataTypes(other.getRegexDataTypes());
-        setQueryThreads(other.getQueryThreads());
-        setProtobufEdgeFormat(other.isProtobufEdgeFormat());
-        setEdgeQueryModel(other.getEdgeQueryModel());
-        setModelName(other.getModelName());
-        setModelTableName(other.getModelTableName());
+        if (log.isTraceEnabled())
+            log.trace("Creating Cloned ShardQueryLogic: " + System.identityHashCode(this) + " from " + System.identityHashCode(other));
+        
+        // Set EdgeQueryConfiguration variables
+        this.config = EdgeQueryConfiguration.create(other);
+        
         setMetadataHelperFactory(other.getMetadataHelperFactory());
         visitationContext = other.visitationContext;
     }
@@ -273,24 +258,6 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     }
     
     /**
-     * Are we querying the protobuf edge format
-     * 
-     * @return true if querying the protobuf edge format
-     */
-    public boolean isProtobufEdgeFormat() {
-        return protobufEdgeFormat;
-    }
-    
-    /**
-     * Set whether we are querying the protobuf edge format. Default is true.
-     * 
-     * @param protobufedge
-     */
-    public void setProtobufEdgeFormat(boolean protobufedge) {
-        this.protobufEdgeFormat = protobufedge;
-    }
-    
-    /**
      * Parses JEXL in query string to create ranges and column family filters
      *
      * @param queryString
@@ -390,7 +357,6 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     }
     
     protected void addIterator(QueryData qData, IteratorSetting iter) {
-        iteratorDiscriptors.put(currentIteratorPriority, iter);
         qData.addIterator(iter);
         currentIteratorPriority++;
     }
@@ -643,13 +609,32 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     
     @Override
     public void setupQuery(Connector connection, QueryCheckpoint checkpoint) throws Exception {
-        // TODO
+        ShardQueryConfiguration config = (ShardQueryConfiguration) checkpoint.getConfig();
+        config.setConnector(connection);
+        
+        scannerFactory = new ScannerFactory(connection);
+        
+        setupQuery(config);
     }
     
     @Override
     public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
-        // TODO
-        return null;
+        if (!isCheckpointable()) {
+            throw new UnsupportedOperationException("Cannot checkpoint a query that is not checkpointable.  Try calling setCheckpointable(true) first.");
+        }
+        
+        // if we have started returning results, then capture the state of the query data objects
+        if (this.iterator != null) {
+            List<QueryCheckpoint> checkpoints = Lists.newLinkedList();
+            for (QueryData qd : getConfig().getQueries()) {
+                checkpoints.add(getConfig().checkpoint(queryKey, Collections.singleton(qd)));
+            }
+            return checkpoints;
+        }
+        // otherwise we still need to plan or there are no results
+        else {
+            return Lists.newArrayList(getConfig().checkpoint(queryKey));
+        }
     }
     
     protected BatchScanner createBatchScanner(GenericQueryConfiguration config) {
@@ -733,28 +718,20 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         return optionalParams;
     }
     
-    public Collection<Range> getRanges() {
-        return ranges;
-    }
-    
-    public void setRanges(Collection<Range> ranges) {
-        this.ranges = ranges;
-    }
-    
     public long getMaxQueryTerms() {
-        return maxQueryTerms;
+        return getConfig().getMaxQueryTerms();
     }
     
     public void setMaxQueryTerms(long maxQueryTerms) {
-        this.maxQueryTerms = maxQueryTerms;
+        getConfig().setMaxQueryTerms(maxQueryTerms);
     }
     
     public long getMaxPrefilterValues() {
-        return maxPrefilterValues;
+        return getConfig().getMaxPrefilterValues();
     }
     
     public void setMaxPrefilterValues(long maxPrefilterValues) {
-        this.maxPrefilterValues = maxPrefilterValues;
+        getConfig().setMaxPrefilterValues(maxPrefilterValues);
     }
     
     @Override
@@ -774,27 +751,27 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     }
     
     public EdgeQueryModel getEdgeQueryModel() {
-        return this.edgeQueryModel;
+        return getConfig().getEdgeQueryModel();
     }
     
     public void setEdgeQueryModel(EdgeQueryModel model) {
-        this.edgeQueryModel = model;
+        getConfig().setEdgeQueryModel(model);
     }
     
     public String getModelName() {
-        return this.modelName;
+        return getConfig().getModelName();
     }
     
     public void setModelName(String modelName) {
-        this.modelName = modelName;
+        getConfig().setModelName(modelName);
     }
     
     public String getModelTableName() {
-        return this.modelTableName;
+        return getConfig().getModelTableName();
     }
     
     public void setModelTableName(String modelTableName) {
-        this.modelTableName = modelTableName;
+        getConfig().setModelTableName(modelTableName);
     }
     
     public MetadataHelperFactory getMetadataHelperFactory() {

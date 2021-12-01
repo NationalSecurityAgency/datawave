@@ -5,6 +5,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.edge.util.EdgeKeyUtil;
 import datawave.query.config.EdgeExtendedSummaryConfiguration;
+import datawave.query.config.EdgeQueryConfiguration;
 import datawave.query.iterator.filter.EdgeFilterIterator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.edge.EdgeQueryLogic;
@@ -49,9 +50,14 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
     
     public DefaultExtendedEdgeQueryLogic(DefaultExtendedEdgeQueryLogic logic) {
         super(logic);
+        
+        // Set EdgeQueryConfiguration variables
+        this.config = EdgeExtendedSummaryConfiguration.create(logic);
+        
         summaryInputType = logic.isSummaryInputType();
         summaryOutputType = logic.isSummaryOutputType();
         allowOverrideIO = logic.isAllowOverrideIO();
+        listSelectorExtractor = logic.listSelectorExtractor;
     }
     
     @Override
