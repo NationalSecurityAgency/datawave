@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.job.TableSplitsCache;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Assert;
@@ -29,6 +30,10 @@ public class TabletLocationHashPartitionerTest {
     @Before
     public void setUp() {
         conf = new Configuration();
+        conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
+        
+        TableSplitsCache.getCurrentCache(conf).clear();
+        
         partitioner = new TabletLocationHashPartitioner();
         partitioner.setConf(conf);
     }

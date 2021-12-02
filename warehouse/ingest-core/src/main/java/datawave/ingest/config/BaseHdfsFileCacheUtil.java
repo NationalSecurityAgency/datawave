@@ -18,7 +18,7 @@ public abstract class BaseHdfsFileCacheUtil {
     protected final Configuration conf;
     protected AccumuloHelper accumuloHelper;
     private static String delimiter = "\t";
-    
+    private static final int MAX_RETRIES = 3;
     private static final Logger log = Logger.getLogger(BaseHdfsFileCacheUtil.class);
     
     public BaseHdfsFileCacheUtil(Configuration conf) {
@@ -34,15 +34,22 @@ public abstract class BaseHdfsFileCacheUtil {
     public abstract void setCacheFilePath(Configuration conf);
     
     public void read() throws IOException {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(this.cacheFilePath.toUri(), conf).open(this.cacheFilePath)))) {
-            readCache(in, delimiter);
-        } catch (IOException ex) {
-            if (shouldRefreshCache(this.conf)) {
-                update();
-            } else {
-                throw new IOException("Unable to read cache file at " + this.cacheFilePath, ex);
-            }
+        int attempts = 0;
+        boolean retry = true;
+        while (retry && attempts <= MAX_RETRIES) {
+            attempts++;
             
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(FileSystem.get(this.cacheFilePath.toUri(), conf).open(this.cacheFilePath)))) {
+                readCache(in, delimiter);
+                retry = false;
+            } catch (IOException ex) {
+                // Only try to update once. If the first write is able to succeed but the read keeps failing don't add more flux by rewriting it each time
+                if (shouldRefreshCache(this.conf) && attempts == 1) {
+                    update();
+                } else if (attempts == MAX_RETRIES) {
+                    throw new IOException("Unable to read cache file at " + this.cacheFilePath, ex);
+                }
+            }
         }
         
     }

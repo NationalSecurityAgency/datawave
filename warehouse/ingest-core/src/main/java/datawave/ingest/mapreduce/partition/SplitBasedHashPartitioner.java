@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -57,9 +58,9 @@ public class SplitBasedHashPartitioner extends MultiTableRangePartitioner implem
         // will wrap indexes
         return super.calculateIndex(index, numPartitions, tableName, cutPointArrayLength) % numPartitions;
     }
-    
-    @Override
-    protected boolean isTrimmed() {
-        return false;
-    }
+    //
+    // @Override
+    // protected SplitsFileType getSplitsFileType() {
+    // return SplitsFileType.UNTRIMMED;
+    // }
 }
