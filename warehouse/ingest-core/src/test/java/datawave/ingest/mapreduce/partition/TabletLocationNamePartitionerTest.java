@@ -1,7 +1,7 @@
 package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import datawave.ingest.mapreduce.job.TableSplitsCache;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -25,6 +25,7 @@ public class TabletLocationNamePartitionerTest {
     @Before
     public void setUp() {
         conf = new Configuration();
+        conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
         partitioner = new TabletLocationNamePartitioner();
         partitioner.setConf(conf);
     }
@@ -43,10 +44,10 @@ public class TabletLocationNamePartitionerTest {
         URL file = getClass().getResource("/datawave/ingest/mapreduce/partition/_shards.lst");
         shardedTableMapFiles.put("shard", new Path(file.toURI().toString()));
         
-        ShardedTableMapFile.addToConf(conf, shardedTableMapFiles);
-        
         // now read in a list of shards and display the distribution
         file = getClass().getResource("/datawave/ingest/mapreduce/partition/shards.list");
+        conf.set(TableSplitsCache.SPLITS_CACHE_DIR, file.getPath().substring(0, file.getPath().lastIndexOf('/')));
+        conf.set(TableSplitsCache.SPLITS_CACHE_FILE, "shards_n_locs.list");
         BufferedReader reader = new BufferedReader(new InputStreamReader(file.openStream()));
         String line = reader.readLine();
         int[] partitions = new int[912];

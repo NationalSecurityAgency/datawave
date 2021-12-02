@@ -2,8 +2,10 @@ package datawave.ingest.mapreduce.partition;
 
 import com.google.common.collect.Maps;
 import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+
+import datawave.ingest.mapreduce.job.SplitsFile;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.time.DateUtils;
@@ -37,7 +39,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private static final String today = formatDay(0);
     private Configuration conf;
     private Map<String,Map<Text,Integer>> shardPartitionsByTable;
-    private Map<String,TreeMap<Text,String>> shardIdToLocations = Maps.newHashMap();
+    private Map<String,Map<Text,String>> shardIdToLocations = Maps.newHashMap();
     private Map<Text,Integer> offsetsFactorByTable;
     int missingShardIdCount = 0;
     
@@ -52,6 +54,9 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
             int partition = getAssignedPartition(key.getTableName().toString(), key.getKey().getRow());
             
             // the offsets should help send today's shard data to a different set of reducers than today's error shard data
+            if (null == offsetsFactorByTable.get(key.getTableName())) {
+                log.error("We have received a key for a table we are not configured for.  Please verify your sharded table configurations.");
+            }
             int offsetForTable = shardIdFactory.getNumShards(key.getKey().getTimestamp()) * offsetsFactorByTable.get(key.getTableName());
             
             return (partition + offsetForTable) % numReduceTasks;
@@ -118,9 +123,9 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         if (log.isDebugEnabled())
             log.debug("Loading splits data for " + tableName);
         
-        TreeMap<Text,String> shardIdToLocation = shardIdToLocations.get(tableName);
+        Map<Text,String> shardIdToLocation = shardIdToLocations.get(tableName);
         if (null == shardIdToLocation) {
-            shardIdToLocation = ShardedTableMapFile.getShardIdToLocations(conf, tableName);
+            shardIdToLocation = SplitsFile.getShardIdToLocations(conf, tableName);
             shardIdToLocations.put(tableName, shardIdToLocation);
         }
         if (log.isDebugEnabled())
@@ -143,7 +148,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
      * @param shardIdToLocations
      * @return shardId to
      */
-    private HashMap<Text,Integer> assignPartitionsForEachShard(TreeMap<Text,String> shardIdToLocations) {
+    private HashMap<Text,Integer> assignPartitionsForEachShard(Map<Text,String> shardIdToLocations) {
         int totalNumUniqueTServers = calculateNumberOfUniqueTservers(shardIdToLocations);
         
         TreeMap<Text,String> sortedShardIdsToTservers = reverseSortByShardIds(shardIdToLocations);
@@ -156,14 +161,16 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         return partitionsByShardId;
     }
     
-    private int calculateNumberOfUniqueTservers(TreeMap<Text,String> shardIdToLocations) {
+    private int calculateNumberOfUniqueTservers(Map<Text,String> shardIdToLocations) {
         int totalNumUniqueTServers = new HashSet(shardIdToLocations.values()).size();
         if (log.isDebugEnabled())
             log.debug("Total TServers involved: " + totalNumUniqueTServers);
         return totalNumUniqueTServers;
     }
     
-    private TreeMap<Text,String> reverseSortByShardIds(TreeMap<Text,String> shardIdToLocations) {
+    private TreeMap<Text,String> reverseSortByShardIds(Map<Text,String> shardIdToLocations) {
+        //if we need it sorted in reverse order, should we just do this as we're writing the cache file instead of having every partitioner do it every job?
+
         // drop the dates after today's date
         TreeMap<Text,String> shardIdsToTservers = Maps.newTreeMap((o1, o2) -> o2.compareTo(o1));
         shardIdsToTservers.putAll(shardIdToLocations);
@@ -238,7 +245,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     private void defineOffsetsForTables(Configuration conf) {
         offsetsFactorByTable = new HashMap<>();
         int offsetFactor = 0;
-        for (String tableName : conf.getStrings(ShardedTableMapFile.CONFIGURED_SHARDED_TABLE_NAMES)) {
+        for (String tableName : conf.getStrings(ShardedDataTypeHandler.SHARDED_TNAMES)) {
             offsetsFactorByTable.put(new Text(tableName), offsetFactor++);
         }
     }

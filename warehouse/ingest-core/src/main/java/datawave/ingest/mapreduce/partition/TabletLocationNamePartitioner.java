@@ -1,7 +1,7 @@
 package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import datawave.ingest.mapreduce.job.SplitsFile;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -83,7 +83,7 @@ public class TabletLocationNamePartitioner extends Partitioner<BulkIngestKey,Val
         }
         
         if (null == this.shardLocations.get(tableName)) {
-            Map<Text,String> shards = ShardedTableMapFile.getShardIdToLocations(conf, tableName);
+            Map<Text,String> shards = SplitsFile.getShardIdToLocations(conf, tableName);
             
             // now sort the locations
             SortedSet<String> locations = new TreeSet<>();

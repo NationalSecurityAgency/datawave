@@ -1,16 +1,19 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import datawave.ingest.mapreduce.job.TableSplitsCache;
 import datawave.util.time.DateHelper;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
@@ -39,16 +42,42 @@ public class TestShardGenerator {
         registerSomeTServers();
         Map<Text,String> locations = simulateTabletAssignments(tableNames);
         String tmpDirectory = tmpDir + "/";
-        writeSplits(locations, tmpDirectory, BALANCEDISH_SHARDS_LST);
-        registerSplitsFileForShardTable(tmpDirectory, BALANCEDISH_SHARDS_LST, tableNames);
+        Path splitsPath = new Path(tmpDir.getAbsolutePath() + "/all-splits.txt");
+        
+        FileSystem fs = new Path(tmpDir.getAbsolutePath()).getFileSystem(conf);
+        // constructor that takes a created list of locations
+        try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(splitsPath)))) {
+            
+            for (String table : tableNames) {
+                
+                for (Map.Entry<Text,String> entry : locations.entrySet()) {
+                    out.println(table + "\t" + new String(Base64.encodeBase64(entry.getKey().toString().getBytes())).trim() + "\t" + entry.getValue());
+                }
+            }
+        }
+        conf.set(TableSplitsCache.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());
+        
+        // writeSplits(locations, tmpDirectory, BALANCEDISH_SHARDS_LST);
     }
     
     public TestShardGenerator(Configuration conf, File tmpDir, Map<Text,String> locations, String... tableNames) throws IOException {
         this.conf = conf;
+        FileSystem fs = new Path(tmpDir.getAbsolutePath()).getFileSystem(conf);
         // constructor that takes a created list of locations
         String tmpDirectory = tmpDir + "/";
-        writeSplits(locations, tmpDirectory, BALANCEDISH_SHARDS_LST);
-        registerSplitsFileForShardTable(tmpDirectory, BALANCEDISH_SHARDS_LST, tableNames);
+        Path splitsPath = new Path(tmpDir.getAbsolutePath() + "/all-splits.txt");
+        
+        try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(splitsPath)))) {
+            for (String table : tableNames) {
+                
+                for (Map.Entry<Text,String> entry : locations.entrySet()) {
+                    out.println(table + "\t" + new String(Base64.encodeBase64(entry.getKey().toString().getBytes())) + "\t" + entry.getValue());
+                }
+            }
+        }
+        conf.set(TableSplitsCache.SPLITS_CACHE_DIR, tmpDir.getAbsolutePath());
+        
+        // writeSplits(locations, tmpDirectory, BALANCEDISH_SHARDS_LST);
     }
     
     // create splits for all the shards from today back NUM_DAYS,
@@ -74,24 +103,11 @@ public class TestShardGenerator {
                 }
                 alreadyUsed.add(tserver);
                 for (String tableName : tableNames) {
-                    locations.put(new Text(today + "_" + currShard), tserver);
+                    locations.put(new Text((today + "_" + currShard).trim()), tserver);
                 }
             }
         }
         return locations;
-    }
-    
-    private void writeSplits(Map<Text,String> locations, String directory, String fileName) throws IOException {
-        Path shardedMapFile = new Path(directory, fileName);
-        ShardedTableMapFile.writeSplitsFileLegacy(locations, shardedMapFile, conf);
-    }
-    
-    private void registerSplitsFileForShardTable(String directory, String fileName, String... tableNames) {
-        Map<String,Path> shardedTableMapFiles = new HashMap<>();
-        for (String tableName : tableNames) {
-            shardedTableMapFiles.put(tableName, new Path(directory + fileName));
-        }
-        ShardedTableMapFile.addToConf(conf, shardedTableMapFiles);
     }
     
     private String getAnotherRandomTserver() {
