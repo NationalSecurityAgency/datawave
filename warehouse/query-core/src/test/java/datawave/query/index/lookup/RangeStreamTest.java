@@ -477,6 +477,72 @@ public class RangeStreamTest {
         assertTrue("Expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
     }
     
+    public void testShardAndDaysHints(String originalQuery) throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
+        
+        config.setBeginDate(new Date(0));
+        config.setEndDate(new Date(System.currentTimeMillis()));
+        
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
+        dataTypes.putAll("NUM", Sets.newHashSet(new NumberType()));
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        config.setIndexedFields(dataTypes);
+        
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.setIndexedFields(dataTypes.keySet());
+        
+        Set<Range> expectedRanges = Sets.newHashSet();
+        for (String shard : Lists.newArrayList("20190314_0", "20190314_1", "20190314_9")) {
+            expectedRanges.add(makeTestRange(shard, "datatype1\u0000345"));
+            expectedRanges.add(makeTestRange(shard, "datatype1\u0000456"));
+            expectedRanges.add(makeTestRange(shard, "datatype1\u0000567"));
+        }
+        for (String shard : Lists.newArrayList("20190314_10", "20190314_100")) {
+            expectedRanges.add(makeTestRange(shard, "datatype2\u0000345"));
+            expectedRanges.add(makeTestRange(shard, "datatype2\u0000456"));
+            expectedRanges.add(makeTestRange(shard, "datatype2\u0000567"));
+        }
+        for (QueryPlan queryPlan : new RangeStream(config, new ScannerFactory(config.getConnector()), helper).streamPlans(script)) {
+            for (Range range : queryPlan.getRanges()) {
+                assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges.toString(),
+                                expectedRanges.remove(range));
+            }
+        }
+        assertTrue(expectedRanges.size() + " expected ranges not found in query plan: " + expectedRanges.toString(), expectedRanges.isEmpty());
+    }
+    
+    @Test
+    public void testShardAndDaysHints1() throws Exception {
+        String originalQuery = "(FOO == 'bardy') && (SHARDS_AND_DAYS = '20190311,20190313,20190314')";
+        testShardAndDaysHints(originalQuery);
+    }
+    
+    @Test
+    public void testShardAndDaysHints2() throws Exception {
+        String originalQuery = "(FOO == 'bardy') && ((SHARDS_AND_DAYS = '20190311,20190313,20190314') || (SHARDS_AND_DAYS = '20190311,20190313,20190314'))";
+        testShardAndDaysHints(originalQuery);
+    }
+    
+    @Test
+    public void testShardAndDaysHints3() throws Exception {
+        String originalQuery = "(FOO == 'bardy') && ( (filter:include(FOO, 'bardy') && (SHARDS_AND_DAYS = '20190311,20190313,20190314')) )";
+        testShardAndDaysHints(originalQuery);
+    }
+    
+    @Test
+    public void testShardAndDaysHints4() throws Exception {
+        String originalQuery = "(FOO == 'bardy') && ( (filter:include(FOO, 'bardy') && (SHARDS_AND_DAYS = '20190313,20190314')) || (filter:include(FOO, 'bardy') && (SHARDS_AND_DAYS = '20190313,20190314')) )";
+        testShardAndDaysHints(originalQuery);
+    }
+    
+    @Test
+    public void testShardAndDaysHints5() throws Exception {
+        String originalQuery = "(FOO == 'bardy') && ( (filter:include(FOO, 'bardy') && (SHARDS_AND_DAYS = '20190312,20190313,20190314')) || (filter:include(FOO, 'bardy') && (SHARDS_AND_DAYS = '20190312,20190313,20190314')) )";
+        testShardAndDaysHints(originalQuery);
+    }
+    
     @Test
     public void testOrBothIndexed() throws Exception {
         String originalQuery = "(FOO == 'bag' || FOO == 'ba')";
