@@ -328,7 +328,8 @@ public class EventMetadata implements RawRecordMetadata {
                 if (h.isReverseContentIndexField(field) || h.isReverseIndexListField(field)) {
                     updateForReverseIndexedField(helper, event, fields, countDelta, loadDate, fieldTokenDesignator, field);
                 }
-                
+
+                //Update the T record for tokens in addition to the base fields. 
                 if (h.isContentIndexField(field)) {
                     update(helper.getDataTypes(field), event, fields.get(field), fieldTokenDesignator, 0, null, this.dataTypeFieldsInfo, null);
                 }
