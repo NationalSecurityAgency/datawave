@@ -215,7 +215,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             givenFieldValue(null);
             givenOperator("~=");
             
-            assertThatIllegalArgumentException().isThrownBy(() -> resultForOperator(0)).withMessage("cannot use ~= in this equation");
+            assertThatIllegalArgumentException().isThrownBy(() -> resultForOperator(0)).withMessage("Cannot use ~= in this equation");
         }
         
         // Verify that the default operator is ==.
@@ -392,7 +392,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             givenFieldValue(null);
             givenOperator("~=");
             
-            assertThatIllegalArgumentException().isThrownBy(() -> resultForOperator(0)).withMessage("cannot use ~= in this equation");
+            assertThatIllegalArgumentException().isThrownBy(() -> resultForOperator(0)).withMessage("Cannot use ~= in this equation");
         }
         
         // Verify that the default operator is ==.
@@ -1148,7 +1148,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testInvalidPosition() {
             givenPosition(2);
             
-            assertThatExceptionOfType(RuntimeException.class).isThrownBy(() -> assertResult("doesn't matter")).withMessage(
+            assertThatIllegalArgumentException().isThrownBy(() -> assertResult("doesn't matter")).withMessage(
                             "Input second.third.fourth does not have a '.' at position " + position + " from the left.");
         }
         
@@ -1187,7 +1187,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testInvalidPosition() {
             givenPosition(3);
             
-            assertThatExceptionOfType(RuntimeException.class).isThrownBy(() -> assertResult("doesn't matter")).withMessage(
+            assertThatIllegalArgumentException().isThrownBy(() -> assertResult("doesn't matter")).withMessage(
                             "Input " + input + " does not have a '.' at position " + position + " from the right.");
         }
         
