@@ -1485,41 +1485,45 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     public static FunctionalSet<ValueTuple> timeFunction(Object time1, Object time2, String operatorString, String equalityString, long goal) {
-        FunctionalSet<ValueTuple> matches = new FunctionalSet();
-        try {
-            boolean truth = evaluate(getMaxTime(time1), getMinTime(time2), operatorString, equalityString, goal);
-            if (truth) {
-                matches.addAll(Sets.newHashSet(getHitTerm(getMaxValue(time1)), getHitTerm(getMinValue(time2))));
+        FunctionalSet<ValueTuple> matches = new FunctionalSet<>();
+        if (time1 != null && time2 != null) {
+            try {
+                boolean truth = evaluate(getMaxTime(time1), getMinTime(time2), operatorString, equalityString, goal);
+                if (truth) {
+                    matches.addAll(Sets.newHashSet(getHitTerm(getMaxValue(time1)), getHitTerm(getMinValue(time2))));
+                }
+            } catch (ParseException e) {
+                log.warn("could not evaluate:" + time1 + " " + operatorString + " " + time2 + " " + equalityString + " " + goal);
             }
-        } catch (ParseException e) {
-            log.warn("could not evaluate:" + time1 + " " + operatorString + " " + time2 + " " + equalityString + " " + goal);
         }
         return FunctionalSet.unmodifiableSet(matches);
     }
     
-    public static long getMaxTime(Object dates) throws ParseException {
+    private static long getMaxTime(Object dates) throws ParseException {
         if (dates instanceof Iterable<?>)
             return getMaxTime((Iterable<?>) dates);
         else
             return getTime(dates);
     }
     
-    public static long getMaxTime(Iterable<?> dates) throws ParseException {
+    private static long getMaxTime(Iterable<?> dates) throws ParseException {
         long max = Long.MIN_VALUE;
-        for (Object date : dates) {
-            max = Math.max(max, getTime(date));
+        if (dates != null) {
+            for (Object date : dates) {
+                max = Math.max(max, getTime(date));
+            }
         }
         return max;
     }
     
-    public static long getMinTime(Object dates) throws ParseException {
+    private static long getMinTime(Object dates) throws ParseException {
         if (dates instanceof Iterable<?>)
             return getMinTime((Iterable<?>) dates);
         else
             return getTime(dates);
     }
     
-    public static long getMinTime(Iterable<?> dates) throws ParseException {
+    private static long getMinTime(Iterable<?> dates) throws ParseException {
         long min = Long.MAX_VALUE;
         for (Object date : dates) {
             min = Math.min(min, getTime(date));
@@ -1527,14 +1531,14 @@ public class EvaluationPhaseFilterFunctions {
         return min;
     }
     
-    public static Object getMaxValue(Object dates) throws ParseException {
+    private static Object getMaxValue(Object dates) throws ParseException {
         if (dates instanceof Iterable<?>)
             return getMaxValue((Iterable<?>) dates);
         else
             return dates;
     }
     
-    public static Object getMaxValue(Iterable<?> dates) throws ParseException {
+    private static Object getMaxValue(Iterable<?> dates) throws ParseException {
         long max = Long.MIN_VALUE;
         Object value = null;
         for (Object date : dates) {
@@ -1547,14 +1551,14 @@ public class EvaluationPhaseFilterFunctions {
         return value;
     }
     
-    public static Object getMinValue(Object dates) throws ParseException {
+    private static Object getMinValue(Object dates) throws ParseException {
         if (dates instanceof Iterable<?>)
             return getMinValue((Iterable<?>) dates);
         else
             return dates;
     }
     
-    public static Object getMinValue(Iterable<?> dates) throws ParseException {
+    private static Object getMinValue(Iterable<?> dates) throws ParseException {
         long min = Long.MAX_VALUE;
         Object value = null;
         for (Object date : dates) {
@@ -1592,7 +1596,7 @@ public class EvaluationPhaseFilterFunctions {
      * @throws ParseException
      *             if the value failed to be parsed using the supplied format
      */
-    protected static long getTime(Object value, DateFormat format) throws ParseException {
+    static long getTime(Object value, DateFormat format) throws ParseException {
         synchronized (format) {
             return format.parse(ValueTuple.getStringValue(value)).getTime();
         }
@@ -1625,7 +1629,7 @@ public class EvaluationPhaseFilterFunctions {
      * @throws ParseException
      *             if the value failed to be parsed using any of the known formats
      */
-    protected static long getTime(Object value) throws ParseException {
+    static long getTime(Object value) throws ParseException {
         return getTime(value, false);
     }
     
@@ -1641,7 +1645,7 @@ public class EvaluationPhaseFilterFunctions {
      * @throws ParseException
      *             if the value failed to be parsed by any of the known formats.
      */
-    protected static long getTime(Object value, boolean nextTime) throws ParseException {
+    static long getTime(Object value, boolean nextTime) throws ParseException {
         // determine if a number first
         for (int i = 0; i < dateFormatList.size(); i++) {
             DateFormat format = dateFormatList.get(i);
@@ -1681,7 +1685,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return a {@link ValueTuple}
      * @see ValueTuple#toValueTuple(Object) documentation on conversion details
      */
-    protected static ValueTuple getHitTerm(Object valueTuple) {
+    static ValueTuple getHitTerm(Object valueTuple) {
         return ValueTuple.toValueTuple(valueTuple);
     }
     
