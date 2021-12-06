@@ -334,7 +334,7 @@ public class EventMetadata implements RawRecordMetadata {
                     update(helper.getDataTypes(field), event, fields.get(field), fieldTokenDesignator, 0, null, this.dataTypeFieldsInfo, null);
                 }
                 
-                // Add T record only for and indexed list field, as well as its token. Tokenized fields are always text and is not normalized in the handler
+                // Add T record indexed list field, as well as its token. Tokenized fields are always text and are not normalized in the handler
                 if (h.isIndexListField(field)) {
                     log.debug("{} as a data type", field);
                     // write a dataType entry
