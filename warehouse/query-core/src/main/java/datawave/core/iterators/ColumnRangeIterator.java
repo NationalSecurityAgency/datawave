@@ -28,12 +28,15 @@ public abstract class ColumnRangeIterator extends SkippingIterator implements In
     
     public static final String RANGE_NAME = "RANGE_NAME";
     public static final String SKIP_LIMIT_NAME = "SKIP_LIMIT";
+    public static final String SCAN_LIMIT_NAME = "SCAN_LIMIT";
     
     protected Range columnRange = null;
     protected Range range = null;
     private Collection<ByteSequence> columnFamilies;
     private boolean inclusive;
     protected int skipLimit = 10;
+    protected long scanLimit = Long.MAX_VALUE;
+    protected long scanCount = 0;
     
     public ColumnRangeIterator() {
         super();
@@ -64,6 +67,13 @@ public abstract class ColumnRangeIterator extends SkippingIterator implements In
         } else {
             skipLimit = 10;
         }
+        
+        num = options.get(SCAN_LIMIT_NAME);
+        if (num != null) {
+            scanLimit = Long.parseLong(num);
+        } else {
+            scanLimit = Long.MAX_VALUE;
+        }
     }
     
     protected void setColumnRange(Range columnRange) {
@@ -80,6 +90,14 @@ public abstract class ColumnRangeIterator extends SkippingIterator implements In
     
     protected void setSkipLimit(int skipLimit) {
         this.skipLimit = skipLimit;
+    }
+    
+    public long getScanLimit() {
+        return scanLimit;
+    }
+    
+    public void setScanLimit(long scanLimit) {
+        this.scanLimit = scanLimit;
     }
     
     public static String encodeRange(Range range) throws IOException {
@@ -121,7 +139,30 @@ public abstract class ColumnRangeIterator extends SkippingIterator implements In
         return fba;
     }
     
+    @Override
+    protected final void consume() throws IOException {
+        // execute the consume implementation
+        consumeImpl();
+        // now reset the scan count back to 0 for the next round.
+        scanCount = 0;
+    }
+    
+    protected abstract void consumeImpl() throws IOException;
+    
+    protected void advanceSource() throws IOException {
+        if (scanCount >= scanLimit) {
+            throw new ScanLimitReached(getSource().getTopKey(), "Reached scan limit of " + scanLimit);
+        }
+        ++scanCount;
+        getSource().next();
+    }
+    
     protected void reseek(Key key) throws IOException {
+        if (scanCount >= scanLimit) {
+            throw new ScanLimitReached(getSource().getTopKey(), "Reached scan limit of " + scanLimit);
+        }
+        ++scanCount;
+        
         if (range.afterEndKey(key)) {
             range = new Range(range.getEndKey(), true, range.getEndKey(), range.isEndKeyInclusive());
         } else {
@@ -150,5 +191,18 @@ public abstract class ColumnRangeIterator extends SkippingIterator implements In
             return new Text("");
         else
             return getColumnRange().getStartKey().getRow();
+    }
+    
+    public static class ScanLimitReached extends RuntimeException {
+        private final Key lastKey;
+        
+        public ScanLimitReached(Key key, String message) {
+            super(message);
+            lastKey = key;
+        }
+        
+        public Key getLastKey() {
+            return lastKey;
+        }
     }
 }

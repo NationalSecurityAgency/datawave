@@ -166,6 +166,49 @@ public class IntersectionTest {
     }
     
     /**
+     * Following a seek of a day_shard against day only tuples calling next would result in the last returned day being returned again rather than the next one
+     */
+    @Test
+    public void testIntersectionAfterSeek() {
+        // Build a peeking iterator for a left side term
+        List<IndexMatch> leftMatches = buildIndexMatches("FIELD", "VALUE", "doc1", "doc2", "doc3");
+        IndexInfo left = new IndexInfo(leftMatches);
+        left.setNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        
+        List<Tuple2<String,IndexInfo>> tupleList = new ArrayList();
+        tupleList.add(Tuples.tuple("20190314", left));
+        tupleList.add(Tuples.tuple("20190315", left));
+        tupleList.add(Tuples.tuple("20190316", left));
+        
+        PeekingIterator<Tuple2<String,IndexInfo>> leftIter = Iterators.peekingIterator(tupleList.iterator());
+        
+        // Build a peeking iterator for a right side term.
+        List<IndexMatch> rightMatches = buildIndexMatches("FIELD", "VALUE", "doc2", "doc3", "doc4");
+        IndexInfo right = new IndexInfo(rightMatches);
+        right.setNode(JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        
+        tupleList = new ArrayList();
+        tupleList.add(Tuples.tuple("20190314", right));
+        tupleList.add(Tuples.tuple("20190315", right));
+        tupleList.add(Tuples.tuple("20190316", right));
+        
+        PeekingIterator<Tuple2<String,IndexInfo>> rightIter = Iterators.peekingIterator(tupleList.iterator());
+        
+        // Build the Intersection.
+        IndexStream leftStream = ScannerStream.withData(leftIter, JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        IndexStream rightStream = ScannerStream.withData(rightIter, JexlNodeFactory.buildEQNode("FIELD", "VALUE"));
+        List<IndexStream> indexStreams = Lists.newArrayList(leftStream, rightStream);
+        
+        Intersection intersection = new Intersection(indexStreams, new IndexInfo());
+        assertTrue(intersection.hasNext());
+        assertEquals("20190314", intersection.peek().first());
+        assertEquals("20190315_11", intersection.seek("20190315_11"));
+        assertTrue(intersection.hasNext());
+        intersection.next();
+        assertEquals("20190316", intersection.peek().first());
+    }
+    
+    /**
      * Intersection of day range with a shard range within the day range is possible.
      */
     @Test

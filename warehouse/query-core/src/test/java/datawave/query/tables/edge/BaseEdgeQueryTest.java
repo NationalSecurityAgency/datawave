@@ -90,46 +90,46 @@ public abstract class BaseEdgeQueryTest {
                         timestamp);
     }
     
-    public static List<TestEdge> createEdges() {
+    public static List<TestEdge> createEdges(String yyyyMMdd) {
         Date date = new Date();
         long timestamp = date.getTime();
         ArrayList<TestEdge> retVal = new ArrayList<>();
-        retVal.add(createEdge("SUN", "MERCURY", "20150713", "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
-        retVal.add(createEdge("EARTH", "MOON", "20150713", "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
-        retVal.add(createEdge("CERES", "JUPITER", "20150713", "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
-        retVal.add(createEdge("ASTEROID_BELT", "CERES", "20150713", "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
-        retVal.add(createEdge("ASTEROID_BELT", "JUPITER", "20150713", "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
-        retVal.add(createEdge("ASTEROID_BELT", "MARS", "20150713", "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
-        retVal.add(createEdge("MARS", "CERES", "20150713", "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
-        retVal.add(createEdge("HAUMEA", "NAMAKA", "20150713", "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
-        retVal.add(createEdge("PLUTO", "CHARON", "20150713", "AdjacentCelestialBodies", "FROM", "TO", "NEW_HORIZONS", "NEW_HORIZONS", "C", timestamp));
-        retVal.add(createEdge("ERIS", "DYSNOMIA", "20150713", "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("SUN", "MERCURY", yyyyMMdd, "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
+        retVal.add(createEdge("EARTH", "MOON", yyyyMMdd, "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
+        retVal.add(createEdge("CERES", "JUPITER", yyyyMMdd, "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
+        retVal.add(createEdge("ASTEROID_BELT", "CERES", yyyyMMdd, "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
+        retVal.add(createEdge("ASTEROID_BELT", "JUPITER", yyyyMMdd, "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
+        retVal.add(createEdge("ASTEROID_BELT", "MARS", yyyyMMdd, "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
+        retVal.add(createEdge("MARS", "CERES", yyyyMMdd, "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("HAUMEA", "NAMAKA", yyyyMMdd, "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("PLUTO", "CHARON", yyyyMMdd, "AdjacentCelestialBodies", "FROM", "TO", "NEW_HORIZONS", "NEW_HORIZONS", "C", timestamp));
+        retVal.add(createEdge("ERIS", "DYSNOMIA", yyyyMMdd, "AdjacentCelestialBodies", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
         
-        retVal.add(createEdge("MERCURY", "VENUS", "20150713", "AdjacentPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
-        retVal.add(createEdge("VENUS", "EARTH", "20150713", "AdjacentPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
-        retVal.add(createEdge("EARTH", "MARS", "20150713", "AdjacentPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
-        retVal.add(createEdge("MARS", "JUPITER", "20150713", "AdjacentPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
-        retVal.add(createEdge("JUPITER", "SATURN", "20150713", "AdjacentPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
-        retVal.add(createEdge("SATURN", "NEPTUNE", "20150713", "AdjacentPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
-        retVal.add(createEdge("NEPTUNE", "PLUTO", "20150713", "AdjacentPlanets", "FROM", "TO", "NEW_HORIZONS", "NEW_HORIZONS", "C", timestamp));
+        retVal.add(createEdge("MERCURY", "VENUS", yyyyMMdd, "AdjacentPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
+        retVal.add(createEdge("VENUS", "EARTH", yyyyMMdd, "AdjacentPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
+        retVal.add(createEdge("EARTH", "MARS", yyyyMMdd, "AdjacentPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
+        retVal.add(createEdge("MARS", "JUPITER", yyyyMMdd, "AdjacentPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
+        retVal.add(createEdge("JUPITER", "SATURN", yyyyMMdd, "AdjacentPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("SATURN", "NEPTUNE", yyyyMMdd, "AdjacentPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("NEPTUNE", "PLUTO", yyyyMMdd, "AdjacentPlanets", "FROM", "TO", "NEW_HORIZONS", "NEW_HORIZONS", "C", timestamp));
         
-        retVal.add(createEdge("PLUTO", "NEPTUNE", "20150713", "AdjacentDwarfPlanets", "FROM", "TO", "NEW_HORIZONS", "NEW_HORIZONS", "C", timestamp));
-        retVal.add(createEdge("CERES", "MARS", "20150713", "AdjacentDwarfPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
-        retVal.add(createEdge("CERES", "JUPITER", "20150713", "AdjacentDwarfPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("PLUTO", "NEPTUNE", yyyyMMdd, "AdjacentDwarfPlanets", "FROM", "TO", "NEW_HORIZONS", "NEW_HORIZONS", "C", timestamp));
+        retVal.add(createEdge("CERES", "MARS", yyyyMMdd, "AdjacentDwarfPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("CERES", "JUPITER", yyyyMMdd, "AdjacentDwarfPlanets", "FROM", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
         
         // Stats edges
-        retVal.add(createEdge("SUN", "20150713", "ACTIVITY", "Stars", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
-        retVal.add(createEdge("MERCURY", "20150713", "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
-        retVal.add(createEdge("VENUS", "20150713", "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
-        retVal.add(createEdge("EARTH", "20150713", "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
-        retVal.add(createEdge("MARS", "20150713", "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
-        retVal.add(createEdge("JUPITER", "20150713", "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
-        retVal.add(createEdge("SATURN", "20150713", "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
-        retVal.add(createEdge("URANUS", "20150713", "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
-        retVal.add(createEdge("NEPTUNE", "20150713", "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
-        retVal.add(createEdge("PLUTO", "20150713", "ACTIVITY", "DwarfPlanets", "TO", "NEW_HORIZONS", "NEW_HORIZONS", "D", timestamp));
-        retVal.add(createEdge("CERES", "20150713", "ACTIVITY", "DwarfPlanets", "TO", "COSMOS_DATA", "COSMOS_DATA", "D", timestamp));
-        retVal.add(createEdge("ERIS", "20150713", "ACTIVITY", "DwarfPlanets", "TO", "COSMOS_DATA", "COSMOS_DATA", "D", timestamp));
+        retVal.add(createEdge("SUN", yyyyMMdd, "ACTIVITY", "Stars", "TO", "COSMOS_DATA", "COSMOS_DATA", "A", timestamp));
+        retVal.add(createEdge("MERCURY", yyyyMMdd, "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("VENUS", yyyyMMdd, "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("EARTH", yyyyMMdd, "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("MARS", yyyyMMdd, "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("JUPITER", yyyyMMdd, "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("SATURN", yyyyMMdd, "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("URANUS", yyyyMMdd, "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("NEPTUNE", yyyyMMdd, "ACTIVITY", "Planets", "TO", "COSMOS_DATA", "COSMOS_DATA", "B", timestamp));
+        retVal.add(createEdge("PLUTO", yyyyMMdd, "ACTIVITY", "DwarfPlanets", "TO", "NEW_HORIZONS", "NEW_HORIZONS", "D", timestamp));
+        retVal.add(createEdge("CERES", yyyyMMdd, "ACTIVITY", "DwarfPlanets", "TO", "COSMOS_DATA", "COSMOS_DATA", "D", timestamp));
+        retVal.add(createEdge("ERIS", yyyyMMdd, "ACTIVITY", "DwarfPlanets", "TO", "COSMOS_DATA", "COSMOS_DATA", "D", timestamp));
         
         return retVal;
     }
@@ -154,7 +154,10 @@ public abstract class BaseEdgeQueryTest {
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, id);
         
         Text edgeTableName = new Text(EDGE_TABLE_NAME);
-        List<TestEdge> edges = createEdges();
+        List<TestEdge> edges = new ArrayList<>();
+        edges.addAll(createEdges("20150713"));
+        edges.addAll(createEdges("20170713"));
+        edges.addAll(createEdges("20190713"));
         for (TestEdge edge : edges) {
             List<Mutation> mutants = edge.getMutations(protobufEdgeFormat);
             for (Mutation mut : mutants) {

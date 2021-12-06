@@ -30,6 +30,16 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
+    public static final String EXCLUDE_REGEX = "excludeRegex";
+    public static final String INCLUDE_REGEX = "includeRegex";
+    public static final String IS_NULL = "isNull";
+    public static final String BETWEEN_DATES = "betweenDates";
+    public static final String BETWEEN_LOAD_DATES = "betweenLoadDates";
+    public static final String MATCHES_AT_LEAST_COUNT_OF = "matchesAtLeastCountOf";
+    public static final String TIME_FUNCTION = "timeFunction";
+    public static final String INCLUDE_TEXT = "includeText";
+    public static final String COMPARE = "compare";
+    public static final String NO_EXPANSION = "noExpansion";
     
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
@@ -40,12 +50,12 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
     public static class EvaluationPhaseFilterJexlArgumentDescriptor implements JexlArgumentDescriptor {
         private static final Logger log = Logger.getLogger(EvaluationPhaseFilterJexlArgumentDescriptor.class);
         
-        private static final ImmutableSet<String> regexFunctions = ImmutableSet.of("excludeRegex", "includeRegex");
-        private static final ImmutableSet<String> andExpansionFunctions = ImmutableSet.of("isNull");
-        private static final ImmutableSet<String> dateBetweenFunctions = ImmutableSet.of("betweenDates", "betweenLoadDates");
-        private static final String MATCHCOUNTOF = "matchesAtLeastCountOf";
-        private static final String TIMEFUNCTION = "timeFunction";
-        private static final String TEXT = "includeText";
+        public static final ImmutableSet<String> regexFunctions = ImmutableSet.of(EXCLUDE_REGEX, INCLUDE_REGEX);
+        public static final ImmutableSet<String> andExpansionFunctions = ImmutableSet.of(IS_NULL);
+        public static final ImmutableSet<String> dateBetweenFunctions = ImmutableSet.of(BETWEEN_DATES, BETWEEN_LOAD_DATES);
+        public static final String MATCHCOUNTOF = MATCHES_AT_LEAST_COUNT_OF;
+        public static final String TIMEFUNCTION = TIME_FUNCTION;
+        public static final String TEXT = INCLUDE_TEXT;
         private final ASTFunctionNode node;
         
         public EvaluationPhaseFilterJexlArgumentDescriptor(ASTFunctionNode node) {
@@ -231,6 +241,9 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
             } else if (TIMEFUNCTION.equals(functionMetadata.name())) {
                 fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
                 fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(1)));
+            } else if (COMPARE.equals(functionMetadata.name())) {
+                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
+                fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(3)));
             } else {
                 fields.addAll(JexlASTHelper.getIdentifierNames(arguments.get(0)));
             }
@@ -247,6 +260,8 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
                 return JexlArgumentDescriptor.Fields.product(arguments.get(1));
             } else if (TIMEFUNCTION.equals(functionMetadata.name())) {
                 return JexlArgumentDescriptor.Fields.product(arguments.get(0), arguments.get(1));
+            } else if (COMPARE.equals(functionMetadata.name())) {
+                return JexlArgumentDescriptor.Fields.product(arguments.get(0), arguments.get(3));
             } else {
                 return JexlArgumentDescriptor.Fields.product(arguments.get(0));
             }
@@ -279,10 +294,20 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
             if (!EvaluationPhaseFilterFunctions.class.equals(clazz)) {
                 throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
             }
+            FunctionJexlNodeVisitor fvis = new FunctionJexlNodeVisitor();
+            fvis.visit(node, null);
+            
+            verify(fvis);
+            
             return new EvaluationPhaseFilterJexlArgumentDescriptor(node);
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException(e);
         }
     }
     
+    private void verify(FunctionJexlNodeVisitor fvis) {
+        if (COMPARE.equalsIgnoreCase(fvis.name())) {
+            CompareFunctionValidator.validate(fvis.name(), fvis.args());
+        }
+    }
 }

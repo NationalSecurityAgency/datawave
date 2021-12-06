@@ -4,6 +4,7 @@ import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
+import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
@@ -59,6 +60,15 @@ public class DateIndexCleanupVisitor extends RebuildingVisitor {
     }
     
     @Override
+    public Object visit(ASTNotNode node, Object data) {
+        JexlNode retnode = (JexlNode) (super.visit(node, data));
+        if (retnode.jjtGetNumChildren() == 0) {
+            retnode = null;
+        }
+        return retnode;
+    }
+    
+    @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         JexlNode retnode = (JexlNode) (super.visit(node, data));
         if (retnode.jjtGetNumChildren() == 0) {
@@ -84,5 +94,4 @@ public class DateIndexCleanupVisitor extends RebuildingVisitor {
         }
         return node;
     }
-    
 }

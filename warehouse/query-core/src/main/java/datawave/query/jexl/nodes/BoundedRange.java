@@ -3,6 +3,8 @@ package datawave.query.jexl.nodes;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 
+import java.util.function.Function;
+
 /**
  * This is a node that can wrap an expression to mark that the source expression is a bounded range. A bounded range is a range that can be applied to only one
  * value out of a multi-valued field.
@@ -11,71 +13,53 @@ public class BoundedRange extends QueryPropertyMarker {
     
     private static final String LABEL = "_Bounded_";
     
+    /**
+     * Return the label this marker type: {@value #LABEL}. Overrides {@link QueryPropertyMarker#label()}.
+     * 
+     * @return the label
+     */
     public static String label() {
         return LABEL;
     }
     
-    public BoundedRange(int id) {
-        super(id);
+    /**
+     * Create and return a new {@link BoundedRange} with the given source.
+     * 
+     * @param node
+     *            the source node
+     * @return the new marker node
+     * @see QueryPropertyMarker#create(JexlNode, Function)
+     */
+    public static BoundedRange create(JexlNode node) {
+        return create(node, BoundedRange::new);
     }
     
     public BoundedRange() {
         super();
     }
     
+    public BoundedRange(int id) {
+        super(id);
+    }
+    
     /**
-     * This will create a structure as follows around the specified node: Reference (this node) Reference Expression AND Reference Reference Expression
-     * Assignment Reference Identifier:BR True node (the one specified
-     *
-     * Hence the resulting expression will be ((BR = True) AND (range)))
-     *
+     * Returns a new query property marker with the expression <code>(({@value #LABEL} = true) &amp;&amp; ({source}))</code>.
+     * 
      * @param node
+     *            the source node
+     * @see QueryPropertyMarker#QueryPropertyMarker(JexlNode) the super constructor for additional information on the tree structure
      */
     public BoundedRange(JexlNode node) {
         super(node);
     }
     
+    /**
+     * Returns {@value #LABEL}.
+     * 
+     * @return the label
+     */
     @Override
     public String getLabel() {
         return LABEL;
     }
-    
-    /**
-     * @param node
-     * @return
-     */
-    public static BoundedRange create(JexlNode node) {
-        
-        JexlNode parent = node.jjtGetParent();
-        
-        BoundedRange expr = new BoundedRange(node);
-        
-        if (parent != null) {
-            JexlNodes.replaceChild(parent, node, expr);
-        }
-        
-        return expr;
-    }
-    
-    /**
-     * A routine to determine whether an and node is actually an singe value evaluation marker. The reason for this routine is that if the query is serialized
-     * and deserialized, then only the underlying assignment will persist.
-     * 
-     * @param node
-     * @return true if this and node is a bounded range marker
-     */
-    public static boolean instanceOf(JexlNode node) {
-        return instanceOf(node, BoundedRange.class);
-    }
-    
-    /**
-     * A routine to determine get the node which is the source of the single value evaluation (i.e. the underlying range)
-     * 
-     * @param node
-     * @return the source node or null if not a bounded range marker
-     */
-    public static JexlNode getBoundedRangeSource(JexlNode node) {
-        return getQueryPropertySource(node, BoundedRange.class);
-    }
-    
 }

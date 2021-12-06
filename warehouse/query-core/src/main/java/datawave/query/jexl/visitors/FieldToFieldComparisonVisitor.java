@@ -34,7 +34,7 @@ public class FieldToFieldComparisonVisitor extends RebuildingVisitor {
      * @param node
      * @return
      */
-    protected JexlNode evaluationOnlyForFieldToFieldComparison(JexlNode node) {
+    private JexlNode evaluationOnlyForFieldToFieldComparison(JexlNode node) {
         int identifierNodes = 0;
         
         // check both sides of nodes and count the nodes with identifier(s)
@@ -44,10 +44,11 @@ public class FieldToFieldComparisonVisitor extends RebuildingVisitor {
             }
         }
         
+        JexlNode copy = copy(node);
         if (identifierNodes > 1) {
-            return ASTEvaluationOnly.create(node);
+            return ASTEvaluationOnly.create(copy);
         }
-        return node;
+        return copy;
     }
     
     @Override
