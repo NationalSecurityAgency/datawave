@@ -30,6 +30,7 @@ public class NodeTransformVisitorTest {
     private static final Logger log = Logger.getLogger(NodeTransformVisitorTest.class);
     private static final RegexPushdownTransformRule regexPushdownRule = new RegexPushdownTransformRule();
     private static final RegexSimplifierTransformRule regexSimplifier = new RegexSimplifierTransformRule();
+    private static final RegexDotallTransformRule regexDotall = new RegexDotallTransformRule();
     private static final NodeTransformRule reverseAndRule = new NodeTransformRule() {
         @Override
         public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
@@ -65,6 +66,10 @@ public class NodeTransformVisitorTest {
     
     private void testSimplify(String query, String expected) throws Exception {
         testPushdown(query, expected, Collections.singletonList(regexSimplifier));
+    }
+    
+    private void testDotall(String query, String expected) throws Exception {
+        testPushdown(query, expected, Collections.singletonList(regexDotall));
     }
     
     private void testPushdown(String original, String expected, List<NodeTransformRule> rules) throws Exception {
@@ -144,16 +149,37 @@ public class NodeTransformVisitorTest {
         // @formatter:off
         String query = "BLA == '.*?.*?x' && " +
                 "BLA =~ 'ab.*.*' && " +
-                "BLA =~ 'a.*.*.*.*?.*?' && " +
+                "BLA !~ 'a.*.*.*.*?.*?' && " +
                 "BLA =~ '.*?.*?.*bla.*?.*?blabla' && " +
-                "_ANYFIELD_ =~ '.*.*?.*?<bla>'";
+                "_ANYFIELD_ =~ '.*.*?.*?<bla>' && " +
+                "filter:excludeRegex(BLA, '.*?.*?.*bla.*?.*?blabla') && " +
+                "filter:includeRegex(BLA, '.*?.*?.*bla.*?.*?blabla')";
         String expected = "BLA == '.*?.*?x' && " +
                 "BLA =~ 'ab.*?' && " +
-                "BLA =~ 'a.*?' && " +
+                "BLA !~ 'a.*?' && " +
                 "BLA =~ '.*?bla.*?blabla' && " +
-                "_ANYFIELD_ =~ '.*?<bla>'";
+                "_ANYFIELD_ =~ '.*?<bla>' && " +
+                "filter:excludeRegex(BLA, '.*?bla.*?blabla') && " +
+                "filter:includeRegex(BLA, '.*?bla.*?blabla')";
         // @formatter:on
         testSimplify(query, expected);
+    }
+    
+    @Test
+    public void regexDotAllTransformRuleTest() throws Exception {
+        // @formatter:off
+        String query = "BLA == '(\\s|.)*' && " +
+                "BLA !~ '(.|\\s)*' && " +
+                "BLA =~ '(\\s|.)*word(.|\\s)*' &&" +
+                "filter:excludeRegex(BLA, '(\\s|.)*word(.|\\s)*') && " +
+                "filter:includeRegex(BLA, '(\\s|.)*word(.|\\s)*')";
+        String expected = "BLA == '(\\s|.)*' && " +
+                "BLA !~ '.*' && " +
+                "BLA =~ '.*word.*' &&" +
+                "filter:excludeRegex(BLA, '.*word.*') && " +
+                "filter:includeRegex(BLA, '.*word.*')";
+        // @formatter:on
+        testDotall(query, expected);
     }
     
     @Test
