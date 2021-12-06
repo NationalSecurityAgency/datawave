@@ -77,7 +77,6 @@ import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.RANDOM_SANS_CO
 
 /**
  * Applies grouping to queries
- * 
  */
 public abstract class GroupingTest {
     
@@ -108,6 +107,7 @@ public abstract class GroupingTest {
         protected BaseQueryResponse runTestQueryWithGrouping(Map<String,Integer> expected, String querystr, Date startDate, Date endDate,
                         Map<String,String> extraParms, RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt)
                         throws Exception {
+            System.out.println("runTestQueryWithGrouping teardown/interrupt: " + teardown.name() + "/" + interrupt.name());
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.getName(), log, teardown, interrupt);
             Connector connector = qtth.connector;
             VisibilityWiseGuysIngest.writeItAll(connector, VisibilityWiseGuysIngest.WhatKindaRange.SHARD);
@@ -233,11 +233,15 @@ public abstract class GroupingTest {
                     case "GENDER":
                     case "GEN":
                     case "BIRTHDAY":
+                    case "TYPE":
+                    case "MOTIVE":
+                    case "MEASURE_HEIGHT":
                         firstKey = fieldBase.getValueString();
                         break;
                     case "AGE":
                     case "AG":
                     case "RECORD":
+                    case "DEPENDENTS":
                         secondKey = fieldBase.getValueString();
                         break;
                 }
@@ -252,7 +256,7 @@ public abstract class GroupingTest {
             } else {
                 key = secondKey;
             }
-            Assert.assertEquals(expected.get(key), value);
+            Assert.assertEquals("key = " + key, expected.get(key), value);
         }
         return response;
     }
@@ -445,7 +449,7 @@ public abstract class GroupingTest {
     }
     
     @Test
-    public void testGroupingMixedEntriesWithAndWithNoContext() throws Exception {
+    public void testGroupingMixedWithAndWithNoContext() throws Exception {
         // Testing multivalued entries with no grouping context in combination with a grouping context entries
         Map<String,String> extraParameters = new HashMap<>();
         
@@ -465,6 +469,112 @@ public abstract class GroupingTest {
         
         extraParameters.put("group.fields", "GENDER,RECORD");
         // extraParameters.put("group.fields.batch.size", "12");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+    
+    @Test
+    public void testGroupingWithFieldWithSparseGroupingEntries() throws Exception {
+        // Testing multivalued atoms where not all atoms have every field populated.
+        // This results in entries where the grouping context is sparse;
+        // that is, not all of the grouping contexts have data for a field.
+        // Look at VisibilityWiseGuysIngest and the DEPENDENTS fields in the data
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        // @formatter:off
+        // The expected counts correspond to the listed UIDs and contexts
+        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+                .put("FEMALE-2", 1) // female w/2 dependents: sopranoUID 1
+                .put("MALE-2", 4) // male w/2 dependents: corleoneUID 1, 5, caponeUID 1, 3
+                .put("MALE-3", 2) // male w/3 dependents: corleoneUID 2, caponeUID 2
+                .put("MALE-4", 3) // male w/4 dependents: corleoneUID 4, sopranoUID 0, caponeUID 0
+                .build();
+        // @formatter:on
+        
+        extraParameters.put("group.fields", "GENDER,DEPENDENTS");
+        // extraParameters.put("group.fields.batch.size", "12");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+    
+    @Test
+    public void testGroupingEntriesWithSameContextSingle() throws Exception {
+        // Testing multivalued entries with no grouping context
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        Map<String,Integer> expectedMap = ImmutableMap.of("FEAR", 2, "MONEY", 1);
+        // Map<String,Integer> expectedMap = ImmutableMap.of("WISEGUY", 3);
+        
+        extraParameters.put("group.fields", "MOTIVE");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+    
+    @Test
+    public void testGroupingEntriesWithSameContextAll() throws Exception {
+        // Testing multivalued entries with no grouping context
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID == 'CORLEONE'";
+        
+        Map<String,Integer> expectedMap = ImmutableMap.of("FEAR", 1, "MONEY", 1);
+        // Map<String,Integer> expectedMap = ImmutableMap.of("WISEGUY", 3);
+        
+        extraParameters.put("group.fields", "MOTIVE");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+    
+    @Test
+    public void testGroupingEntriesWithFieldDesc() throws Exception {
+        // Testing multivalued entries with no grouping context
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        // @formatter:off
+        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+                .put("5-10", 4)
+                .put("5-9", 3)
+                .put("6-1", 2)
+                .put("5-3", 1)
+                .put("5-7", 1)
+                .build();
+        // @formatter:on
+        
+        extraParameters.put("group.fields", "MEASURE_HEIGHT");
         
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
