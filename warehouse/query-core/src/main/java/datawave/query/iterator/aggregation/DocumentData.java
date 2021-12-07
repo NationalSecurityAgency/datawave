@@ -21,11 +21,14 @@ public class DocumentData implements Comparable<DocumentData> {
     private Set<Key> docKeys;
     // the attributes
     private List<Entry<Key,Value>> data;
+    // whether the data originated from the index
+    private boolean fromIndex;
     
-    public DocumentData(Key key, Set<Key> docKeys, List<Entry<Key,Value>> data) {
+    public DocumentData(Key key, Set<Key> docKeys, List<Entry<Key,Value>> data, boolean fromIndex) {
         this.setKey(key);
         this.setDocKeys(docKeys);
         this.setData(data);
+        this.fromIndex = fromIndex;
     }
     
     public Key getKey() {
@@ -50,6 +53,14 @@ public class DocumentData implements Comparable<DocumentData> {
     
     public void setData(List<Entry<Key,Value>> data) {
         this.data = data;
+    }
+    
+    public boolean isFromIndex() {
+        return fromIndex;
+    }
+    
+    public void setFromIndex(boolean fromIndex) {
+        this.fromIndex = fromIndex;
     }
     
     @Override

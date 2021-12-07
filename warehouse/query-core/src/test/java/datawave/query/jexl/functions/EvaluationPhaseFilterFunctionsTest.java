@@ -3,7 +3,6 @@ package datawave.query.jexl.functions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
@@ -11,16 +10,15 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import org.apache.accumulo.core.data.Key;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -44,8 +42,7 @@ public class EvaluationPhaseFilterFunctionsTest {
      */
     public static class OccurrenceSingularValueTests {
         
-        private static final Object singularFieldValue = new Object();
-        private static final List<Object> listOfThreeValues = Lists.newArrayList(new Object(), new Object(), new Object());
+        private static final Object singularFieldValue = toValueTuple("FOO.1,BAR,bar");
         
         private Object fieldValue;
         private String operator;
@@ -64,10 +61,6 @@ public class EvaluationPhaseFilterFunctionsTest {
             givenFieldValue(singularFieldValue);
             assertFalse(resultForOperator(1));
             assertTrue(resultForOperator(2));
-            
-            givenFieldValue(listOfThreeValues);
-            assertFalse(resultForOperator(3));
-            assertTrue(resultForOperator(4));
         }
         
         // Verify comparison for operator <=.
@@ -87,11 +80,6 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertTrue(resultForOperator(1));
             assertTrue(resultForOperator(2));
             
-            // Results in count of 3.
-            givenFieldValue(listOfThreeValues);
-            assertFalse(resultForOperator(2));
-            assertTrue(resultForOperator(3));
-            assertTrue(resultForOperator(4));
         }
         
         // Verify comparison for operator ==.
@@ -111,11 +99,6 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertTrue(resultForOperator(1));
             assertFalse(resultForOperator(2));
             
-            // Results in count of 3.
-            givenFieldValue(listOfThreeValues);
-            assertFalse(resultForOperator(2));
-            assertTrue(resultForOperator(3));
-            assertFalse(resultForOperator(4));
         }
         
         // Verify comparison for operator =.
@@ -135,11 +118,6 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertTrue(resultForOperator(1));
             assertFalse(resultForOperator(2));
             
-            // Results in count of 3.
-            givenFieldValue(listOfThreeValues);
-            assertFalse(resultForOperator(2));
-            assertTrue(resultForOperator(3));
-            assertFalse(resultForOperator(4));
         }
         
         // Verify comparison for operator >=.
@@ -158,12 +136,6 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertTrue(resultForOperator(0));
             assertTrue(resultForOperator(1));
             assertFalse(resultForOperator(2));
-            
-            // Results in count of 3.
-            givenFieldValue(listOfThreeValues);
-            assertTrue(resultForOperator(2));
-            assertTrue(resultForOperator(3));
-            assertFalse(resultForOperator(4));
         }
         
         // Verify comparison for operator >.
@@ -180,10 +152,6 @@ public class EvaluationPhaseFilterFunctionsTest {
             givenFieldValue(singularFieldValue);
             assertTrue(resultForOperator(0));
             assertFalse(resultForOperator(1));
-            
-            givenFieldValue(listOfThreeValues);
-            assertTrue(resultForOperator(2));
-            assertFalse(resultForOperator(3));
         }
         
         // Verify comparison for operator >.
@@ -202,11 +170,6 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertTrue(resultForOperator(0));
             assertFalse(resultForOperator(1));
             assertTrue(resultForOperator(2));
-            
-            givenFieldValue(listOfThreeValues);
-            assertTrue(resultForOperator(2));
-            assertFalse(resultForOperator(3));
-            assertTrue(resultForOperator(4));
         }
         
         // Verify an exception is thrown when an invalid operator is given.
@@ -232,12 +195,6 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertFalse(resultForDefaultOperator(0));
             assertTrue(resultForDefaultOperator(1));
             assertFalse(resultForDefaultOperator(2));
-            
-            // Results in count of 3.
-            givenFieldValue(listOfThreeValues);
-            assertFalse(resultForDefaultOperator(2));
-            assertTrue(resultForDefaultOperator(3));
-            assertFalse(resultForDefaultOperator(4));
         }
         
         private void givenFieldValue(Object fieldValue) {
@@ -262,10 +219,17 @@ public class EvaluationPhaseFilterFunctionsTest {
      */
     public static class OccurrenceIterableValueTests {
         
-        private static final List<Object> listOfThreeValues = Lists.newArrayList(new Object(), new Object(), new Object());
+        private static final ValueTuple indexFieldValue = toValueTuple("FOO.1,INDEX,index");
+        private static final ValueTuple eventFieldValue = toValueTuple("FOO.1,EVENT,event");
         
         private Iterable<?> fieldValue;
         private String operator;
+        
+        @BeforeClass
+        public static void setup() {
+            indexFieldValue.getSource().setFromIndex(true);
+            eventFieldValue.getSource().setFromIndex(false);
+        }
         
         // Verify comparison for operator <.
         @Test
@@ -274,12 +238,18 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertFalse(resultForOperator(1));
-            assertTrue(resultForOperator(2));
+            assertThat(resultForOperator(1)).isFalse();
+            assertThat(resultForOperator(2)).isTrue();
             
-            givenFieldValue(listOfThreeValues);
-            assertFalse(resultForOperator(3));
-            assertTrue(resultForOperator(4));
+            // Results in total count of 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            assertThat(resultForOperator(3)).isFalse();
+            assertThat(resultForOperator(4)).isTrue();
+            
+            // Results in total count of 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            assertThat(resultForOperator(2)).isFalse();
+            assertThat(resultForOperator(3)).isTrue();
         }
         
         // Verify comparison for operator <=.
@@ -289,15 +259,19 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertFalse(resultForOperator(0));
-            assertTrue(resultForOperator(1));
-            assertTrue(resultForOperator(2));
+            assertThat(resultForOperator(0)).isFalse();
+            assertThat(resultForOperator(1)).isTrue();
+            assertThat(resultForOperator(2)).isTrue();
             
-            // Results in count of 3.
-            givenFieldValue(listOfThreeValues);
-            assertFalse(resultForOperator(2));
-            assertTrue(resultForOperator(3));
-            assertTrue(resultForOperator(4));
+            // Results in total count of 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            assertThat(resultForOperator(2)).isFalse();
+            assertThat(resultForOperator(3)).isTrue();
+            
+            // Results in total count of 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            assertThat(resultForOperator(1)).isFalse();
+            assertThat(resultForOperator(2)).isTrue();
         }
         
         // Verify comparison for operator ==.
@@ -307,15 +281,19 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertFalse(resultForOperator(0));
-            assertTrue(resultForOperator(1));
-            assertFalse(resultForOperator(2));
+            assertThat(resultForOperator(0)).isFalse();
+            assertThat(resultForOperator(1)).isTrue();
+            assertThat(resultForOperator(2)).isFalse();
             
-            // Results in count of 3.
-            givenFieldValue(listOfThreeValues);
-            assertFalse(resultForOperator(2));
-            assertTrue(resultForOperator(3));
-            assertFalse(resultForOperator(4));
+            // Results in total count of 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            assertThat(resultForOperator(2)).isFalse();
+            assertThat(resultForOperator(3)).isTrue();
+            
+            // Results in total count of 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            assertThat(resultForOperator(1)).isFalse();
+            assertThat(resultForOperator(2)).isTrue();
         }
         
         // Verify comparison for operator =.
@@ -325,15 +303,19 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertFalse(resultForOperator(0));
-            assertTrue(resultForOperator(1));
-            assertFalse(resultForOperator(2));
+            assertThat(resultForOperator(0)).isFalse();
+            assertThat(resultForOperator(1)).isTrue();
+            assertThat(resultForOperator(2)).isFalse();
             
-            // Results in count of 3.
-            givenFieldValue(listOfThreeValues);
-            assertFalse(resultForOperator(2));
-            assertTrue(resultForOperator(3));
-            assertFalse(resultForOperator(4));
+            // Results in total count of 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            assertThat(resultForOperator(2)).isFalse();
+            assertThat(resultForOperator(3)).isTrue();
+            
+            // Results in total count of 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            assertThat(resultForOperator(1)).isFalse();
+            assertThat(resultForOperator(2)).isTrue();
         }
         
         // Verify comparison for operator >=.
@@ -343,15 +325,17 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertTrue(resultForOperator(0));
-            assertTrue(resultForOperator(1));
-            assertFalse(resultForOperator(2));
+            assertThat(resultForOperator(0)).isTrue();
             
-            // Results in count of 3.
-            givenFieldValue(listOfThreeValues);
-            assertTrue(resultForOperator(2));
-            assertTrue(resultForOperator(3));
-            assertFalse(resultForOperator(4));
+            // Results in total count of 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            assertThat(resultForOperator(2)).isTrue();
+            assertThat(resultForOperator(4)).isFalse();
+            
+            // Results in total count of 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            assertThat(resultForOperator(2)).isTrue();
+            assertThat(resultForOperator(3)).isFalse();
         }
         
         // Verify comparison for operator >.
@@ -361,12 +345,18 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertTrue(resultForOperator(0));
-            assertFalse(resultForOperator(1));
+            assertThat(resultForOperator(0)).isTrue();
+            assertThat(resultForOperator(1)).isFalse();
             
-            givenFieldValue(listOfThreeValues);
-            assertTrue(resultForOperator(2));
-            assertFalse(resultForOperator(3));
+            // Results in total count of 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            assertThat(resultForOperator(2)).isTrue();
+            assertThat(resultForOperator(3)).isFalse();
+            
+            // Results in total count of 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            assertThat(resultForOperator(1)).isTrue();
+            assertThat(resultForOperator(2)).isFalse();
         }
         
         // Verify comparison for operator >.
@@ -376,14 +366,19 @@ public class EvaluationPhaseFilterFunctionsTest {
             
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertTrue(resultForOperator(0));
-            assertFalse(resultForOperator(1));
-            assertTrue(resultForOperator(2));
+            assertThat(resultForOperator(0)).isTrue();
+            assertThat(resultForOperator(1)).isFalse();
+            assertThat(resultForOperator(2)).isTrue();
             
-            givenFieldValue(listOfThreeValues);
-            assertTrue(resultForOperator(2));
-            assertFalse(resultForOperator(3));
-            assertTrue(resultForOperator(4));
+            // Results in total count of 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            assertThat(resultForOperator(3)).isFalse();
+            assertThat(resultForOperator(4)).isTrue();
+            
+            // Results in total count of 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            assertThat(resultForOperator(2)).isFalse();
+            assertThat(resultForOperator(3)).isTrue();
         }
         
         // Verify an exception is thrown when an invalid operator is given.
@@ -400,61 +395,27 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testDefaultOperator() {
             // Defaults to a count of 1.
             givenFieldValue(null);
-            assertFalse(resultForDefaultOperator(0));
-            assertTrue(resultForDefaultOperator(1));
-            assertFalse(resultForDefaultOperator(2));
+            assertThat(resultForDefaultOperator(0)).isFalse();
+            assertThat(resultForDefaultOperator(1)).isTrue();
+            assertThat(resultForDefaultOperator(2)).isFalse();
             
-            // Results in count of 3.
-            givenFieldValue(listOfThreeValues);
-            assertFalse(resultForDefaultOperator(2));
-            assertTrue(resultForDefaultOperator(3));
-            assertFalse(resultForDefaultOperator(4));
-        }
-        
-        // These tests show examples of odd behavior that is not clearly documented, and is intended to be reviewed in order to determine what the correct
-        // behavior should be.
-        @Test
-        public void testsToShowOddBehavior() {
-            givenOperator("==");
-            List<Object> values = new ArrayList<>();
-            givenFieldValue(values);
+            // Results in total count of 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            assertThat(resultForDefaultOperator(2)).isFalse();
+            assertThat(resultForDefaultOperator(3)).isTrue();
             
-            // If the list contains a mixture of objects and ValueTuples with a Type as its second, the count of the last type will be returned, and will not
-            // include the count for objects seen before it.
-            values.add(new Object());
-            values.add(new Object());
-            values.add(new Object());
-            values.add(toValueTuple("FOO.1,BAR,bar", NoOpType::new));
-            values.add(toValueTuple("FOO.1,BAR,bar", NoOpType::new));
-            values.add(toValueTuple("FOO.1,BAR,bar", LcNoDiacriticsType::new));
-            assertTrue(resultForOperator(1)); // The total number of LcNoDiacriticsType instances seen (1).
-            
-            // Similar to the case above, but this time there are objects in the list after the last type seen. The count for these objects will be added to the
-            // count of the last type seen.
-            values.clear();
-            values.add(toValueTuple("FOO.1,BAR,bar", LcNoDiacriticsType::new));
-            values.add(toValueTuple("FOO.1,BAR,bar", NoOpType::new));
-            values.add(toValueTuple("FOO.1,BAR,bar", NoOpType::new));
-            values.add(new Object());
-            values.add(new Object());
-            values.add(new Object());
-            assertTrue(resultForOperator(5)); // The count of the last type, NoOpType, seen (2) plus the number of non-typed objects seen after that (3).
-            
-            // Given a list with no ValueTuples with a Type as its second, the count will be equivalent to the list size.
-            values.clear();
-            values.add(new Object());
-            values.add(new Object());
-            values.add(toNonTypedValueTuple("Foo.1,BAR,bar"));
-            values.add(toNonTypedValueTuple("Foo.2,BAT,bat"));
-            values.add(toNonTypedValueTuple("Foo.3,FOO,foo"));
-            values.add(toNonTypedValueTuple("Foo.4,GRUMP,grump"));
-            values.add(new Object());
-            values.add(new Object());
-            assertTrue(resultForOperator(8)); // Returns the total number of objects seen (8).
+            // Results in total count of 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            assertThat(resultForDefaultOperator(1)).isFalse();
+            assertThat(resultForDefaultOperator(2)).isTrue();
         }
         
         private void givenFieldValue(Iterable<?> fieldValue) {
             this.fieldValue = fieldValue;
+        }
+        
+        private void givenFieldValues(Object... fieldValues) {
+            givenFieldValue(Lists.newArrayList(fieldValues));
         }
         
         private void givenOperator(String operator) {

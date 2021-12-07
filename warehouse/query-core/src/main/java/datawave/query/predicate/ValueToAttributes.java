@@ -52,7 +52,11 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     
     private EventDataQueryFilter attrFilter;
     
-    public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter, MarkingFunctions markingFunctions) {
+    // Whether the value is from the index
+    private boolean fromIndex;
+    
+    public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter,
+                    MarkingFunctions markingFunctions, boolean fromIndex) {
         this.attrFactory = new AttributeFactory(typeMetadata);
         this.markingFunctions = markingFunctions;
         this.attrFilter = attrFilter;
@@ -60,6 +64,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
             this.compositeToFieldMap = compositeMetadata.getCompositeFieldMapByType();
             this.compositeFieldSeparatorsByType = compositeMetadata.getCompositeFieldSeparatorsByType();
         }
+        this.fromIndex = fromIndex;
     }
     
     @Override
@@ -166,6 +171,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
             if (attrFilter != null) {
                 attr.setToKeep(attrFilter.keep(k));
             }
+            attr.setFromIndex(fromIndex);
             
             if (log.isTraceEnabled()) {
                 log.trace("Created " + attr.getClass().getName() + " for " + fieldName);

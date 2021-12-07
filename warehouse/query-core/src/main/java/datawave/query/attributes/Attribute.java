@@ -15,6 +15,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
+import org.w3c.dom.Attr;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 public abstract class Attribute<T extends Comparable<T>> implements WritableComparable<T>, KryoSerializable {
+    
     private static final Logger log = Logger.getLogger(Attribute.class);
     private static final Text EMPTY_TEXT = new Text();
     
@@ -31,6 +33,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
      */
     protected Key metadata = null;
     protected boolean toKeep = true; // a flag denoting whether this attribute is to be kept in the returned results (transient or not)
+    protected boolean fromIndex; // Assume attributes are from the index unless specified otherwise.
     
     public Attribute() {}
     
@@ -228,6 +231,14 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
         } else {
             return 0;
         }
+    }
+    
+    public void setFromIndex(boolean fromIndex) {
+        this.fromIndex = fromIndex;
+    }
+    
+    public boolean isFromIndex() {
+        return fromIndex;
     }
     
     public int hashCode() {
