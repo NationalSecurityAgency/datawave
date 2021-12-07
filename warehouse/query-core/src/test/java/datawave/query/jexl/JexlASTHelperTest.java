@@ -667,6 +667,7 @@ public class JexlASTHelperTest {
     public void validateJunctionChildrenWithValidTree() throws ParseException {
         String query = "FOO == 'bar' && FOO == 'baz'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        assertTrue(JexlASTHelper.validateJunctionChildren(node));
         assertTrue(JexlASTHelper.validateJunctionChildren(node, false));
     }
     
@@ -675,6 +676,7 @@ public class JexlASTHelperTest {
     public void validateJunctionChildrenWithInvalidTree() {
         ASTEQNode eqNode = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "bar");
         ASTAndNode conjunction = (ASTAndNode) JexlNodeFactory.createAndNode(Collections.singletonList(eqNode));
+        assertFalse(JexlASTHelper.validateJunctionChildren(conjunction));
         assertFalse(JexlASTHelper.validateJunctionChildren(conjunction, false));
     }
     

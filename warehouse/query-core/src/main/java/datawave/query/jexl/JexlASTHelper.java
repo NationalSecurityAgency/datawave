@@ -1614,6 +1614,17 @@ public class JexlASTHelper {
     
     /**
      * Checks to see if the tree contains any AND/OR nodes with less than 2 children.
+     *
+     * @param node
+     *            the tree to validate
+     * @return true if valid, or false otherwise
+     */
+    public static boolean validateJunctionChildren(JexlNode node) {
+        return validateJunctionChildren(node, false);
+    }
+    
+    /**
+     * Checks to see if the tree contains any AND/OR nodes with less than 2 children.
      * 
      * @param node
      *            the tree to validate
