@@ -125,7 +125,7 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
         
         Map<Text,String> shardIdToLocation = shardIdToLocations.get(tableName);
         if (null == shardIdToLocation) {
-            shardIdToLocation = SplitsFile.getShardIdToLocations(conf, tableName);
+            shardIdToLocation = SplitsFile.getSplitsAndLocations(conf, tableName);
             shardIdToLocations.put(tableName, shardIdToLocation);
         }
         if (log.isDebugEnabled())
@@ -169,8 +169,8 @@ public class BalancedShardPartitioner extends Partitioner<BulkIngestKey,Value> i
     }
     
     private TreeMap<Text,String> reverseSortByShardIds(Map<Text,String> shardIdToLocations) {
-        //if we need it sorted in reverse order, should we just do this as we're writing the cache file instead of having every partitioner do it every job?
-
+        // if we need it sorted in reverse order, should we just do this as we're writing the cache file instead of having every partitioner do it every job?
+        
         // drop the dates after today's date
         TreeMap<Text,String> shardIdsToTservers = Maps.newTreeMap((o1, o2) -> o2.compareTo(o1));
         shardIdsToTservers.putAll(shardIdToLocations);

@@ -58,9 +58,5 @@ public class SplitBasedHashPartitioner extends MultiTableRangePartitioner implem
         // will wrap indexes
         return super.calculateIndex(index, numPartitions, tableName, cutPointArrayLength) % numPartitions;
     }
-    //
-    // @Override
-    // protected SplitsFileType getSplitsFileType() {
-    // return SplitsFileType.UNTRIMMED;
-    // }
+    
 }

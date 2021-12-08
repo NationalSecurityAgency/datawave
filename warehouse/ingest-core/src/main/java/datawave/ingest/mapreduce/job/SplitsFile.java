@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SplitsFile {
@@ -172,7 +173,12 @@ public class SplitsFile {
         return dateIsBalanced;
     }
     
-    public static Map<Text,String> getShardIdToLocations(Configuration conf, String tableName) throws IOException {
+    public static Map<String,List<Text>> getSplits(Configuration conf) throws IOException {
+        return TableSplitsCache.getCurrentCache(conf).getSplits();
+        
+    }
+    
+    public static Map<Text,String> getSplitsAndLocations(Configuration conf, String tableName) throws IOException {
         return TableSplitsCache.getCurrentCache(conf).getSplitsAndLocationByTable(tableName);
     }
 }

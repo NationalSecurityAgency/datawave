@@ -645,7 +645,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         }
         
         if (null == this.tableShardLocations.get(tableName)) {
-            this.tableShardLocations.put(tableName, SplitsFile.getShardIdToLocations(conf, tableName));
+            this.tableShardLocations.put(tableName, SplitsFile.getSplitsAndLocations(conf, tableName));
         }
         
         return tableShardLocations.get(tableName);

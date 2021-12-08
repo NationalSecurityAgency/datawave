@@ -6,8 +6,6 @@ import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -110,7 +108,7 @@ public class SplitsFileTest {
         
         String[] tableNames = new String[] {TABLE_NAME};
         SplitsFile.setupFile(conf);
-        SplitsFile.getShardIdToLocations(conf, TABLE_NAME);
+        SplitsFile.getSplitsAndLocations(conf, TABLE_NAME);
     }
     
     @Test
@@ -118,7 +116,7 @@ public class SplitsFileTest {
         String tableName = "validSplits";
         SortedMap<Text,String> splits = createDistributedLocations(tableName);
         createSplitsFile(splits, conf, splits.size(), tableName);
-        Map<Text,String> locations = SplitsFile.getShardIdToLocations(conf, tableName);
+        Map<Text,String> locations = SplitsFile.getSplitsAndLocations(conf, tableName);
         // three days of splits, all should be good, none of these should error
         SplitsFile.validateShardIdLocations(conf, tableName, 0, locations);
         SplitsFile.validateShardIdLocations(conf, tableName, 1, locations);
@@ -130,7 +128,7 @@ public class SplitsFileTest {
         String tableName = "missingTodaysSplits";
         SortedMap<Text,String> splits = simulateMissingSplitsForDay(0, tableName);
         createSplitsFile(splits, conf, splits.size(), tableName);
-        Map<Text,String> locations = SplitsFile.getShardIdToLocations(conf, tableName);
+        Map<Text,String> locations = SplitsFile.getSplitsAndLocations(conf, tableName);
         // three days of splits, today should be invalid, which makes the rest bad too
         SplitsFile.validateShardIdLocations(conf, tableName, 0, locations);
         // shouldn't make it here
@@ -142,7 +140,7 @@ public class SplitsFileTest {
         String tableName = "unbalancedTodaysSplits";
         SortedMap<Text,String> splits = simulateUnbalancedSplitsForDay(0, tableName);
         createSplitsFile(splits, conf, splits.size(), tableName);
-        Map<Text,String> locations = SplitsFile.getShardIdToLocations(conf, tableName);
+        Map<Text,String> locations = SplitsFile.getSplitsAndLocations(conf, tableName);
         // three days of splits, today should be invalid, which makes the rest bad too
         SplitsFile.validateShardIdLocations(conf, tableName, 0, locations);
     }
@@ -152,7 +150,7 @@ public class SplitsFileTest {
         String tableName = "missingYesterdaysSplits";
         SortedMap<Text,String> splits = simulateMissingSplitsForDay(1, tableName);
         createSplitsFile(splits, conf, splits.size(), tableName);
-        Map<Text,String> locations = SplitsFile.getShardIdToLocations(conf, tableName);
+        Map<Text,String> locations = SplitsFile.getSplitsAndLocations(conf, tableName);
         assertThat(splits.size(), is(equalTo(locations.size())));
         // three days of splits, today should be valid
         // yesterday and all other days invalid
@@ -166,7 +164,7 @@ public class SplitsFileTest {
         String tableName = "unbalancedYesterdaysSplits";
         SortedMap<Text,String> splits = simulateUnbalancedSplitsForDay(1, tableName);
         createSplitsFile(splits, conf, splits.size(), tableName);
-        Map<Text,String> locations = SplitsFile.getShardIdToLocations(conf, tableName);
+        Map<Text,String> locations = SplitsFile.getSplitsAndLocations(conf, tableName);
         // three days of splits, today should be valid
         // yesterday and all other days invalid
         SplitsFile.validateShardIdLocations(conf, tableName, 0, locations);
@@ -181,7 +179,7 @@ public class SplitsFileTest {
         conf.setInt(SplitsFile.MAX_SHARDS_PER_TSERVER, 2);
         
         createSplitsFile(splits, conf, splits.size(), tableName);
-        Map<Text,String> locations = SplitsFile.getShardIdToLocations(conf, tableName);
+        Map<Text,String> locations = SplitsFile.getSplitsAndLocations(conf, tableName);
         // this should cause the exception
         SplitsFile.validateShardIdLocations(conf, tableName, 0, locations);
     }
@@ -193,7 +191,7 @@ public class SplitsFileTest {
         conf.setInt(SplitsFile.MAX_SHARDS_PER_TSERVER, 3);
         
         createSplitsFile(splits, conf, splits.size(), tableName);
-        Map<Text,String> locations = SplitsFile.getShardIdToLocations(conf, tableName);
+        Map<Text,String> locations = SplitsFile.getSplitsAndLocations(conf, tableName);
         // this should NOT cause an exception
         SplitsFile.validateShardIdLocations(conf, tableName, 0, locations);
     }
