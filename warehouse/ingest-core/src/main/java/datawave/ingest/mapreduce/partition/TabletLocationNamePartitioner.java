@@ -83,7 +83,7 @@ public class TabletLocationNamePartitioner extends Partitioner<BulkIngestKey,Val
         }
         
         if (null == this.shardLocations.get(tableName)) {
-            Map<Text,String> shards = SplitsFile.getShardIdToLocations(conf, tableName);
+            Map<Text,String> shards = SplitsFile.getSplitsAndLocations(conf, tableName);
             
             // now sort the locations
             SortedSet<String> locations = new TreeSet<>();

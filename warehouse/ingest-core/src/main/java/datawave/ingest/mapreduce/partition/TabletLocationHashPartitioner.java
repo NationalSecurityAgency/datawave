@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.SplitsFile;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
@@ -74,7 +75,7 @@ public class TabletLocationHashPartitioner extends Partitioner<BulkIngestKey,Val
         if (null == this.shardHashes.get(tableName)) {
             Map<Text,Integer> hashedForTable = new HashMap<>();
             
-            for (Map.Entry<Text,String> entry : TableSplitsCache.getCurrentCache(conf).getSplitsAndLocationByTable(tableName).entrySet()) {
+            for (Map.Entry<Text,String> entry : SplitsFile.getSplitsAndLocations(conf, tableName).entrySet()) {
                 hashedForTable.put(entry.getKey(), entry.getValue().toString().hashCode());
             }
             

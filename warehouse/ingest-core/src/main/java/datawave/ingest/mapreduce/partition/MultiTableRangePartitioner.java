@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.SplitsFile;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 
 import org.apache.accumulo.core.data.Value;
@@ -65,8 +66,8 @@ public class MultiTableRangePartitioner extends Partitioner<BulkIngestKey,Value>
             }
             
             try {
-
-                splitsByTable.get().putAll(TableSplitsCache.getCurrentCache(conf).getSplits());
+                
+                splitsByTable.set(SplitsFile.getSplits(conf));
                 if (splitsByTable.get().isEmpty()) {
                     log.error("Non-sharded splits by table cannot be empty.  If this is a development system, please create at least one split in one of the non-sharded tables (see bin/ingest/seed_index_splits.sh).");
                     throw new IOException("splits by table cannot be empty");
