@@ -478,43 +478,40 @@ public class TableConfigurationUtil {
                         log.warn("Unrecognizable option: " + entry.getKey());
                     }
                 }
-                
-                // Now go through all of the iterators, and for those that are aggregators, store
-                try {
-                    for (IteratorSetting iter : iters) {
-                        
-                        Class<?> klass = Class.forName(iter.getIteratorClass());
-                        if (PropogatingIterator.class.isAssignableFrom(klass)) {
-                            Map<String,String> options = allOptions.get(iter.getName());
-                            if (null != options) {
-                                aggregatorMap.put(iter.getPriority(), options);
-                            } else
-                                log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
-                            
-                        } else {
-                            log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't appear to be a combiner.");
-                        }
-                    }
+            }
+            
+            // Now go through all of the iterators, and for those that are aggregators, store
+            try {
+                for (IteratorSetting iter : iters) {
                     
-                    for (IteratorSetting iter : iters) {
-                        Class<?> klass = Class.forName(iter.getIteratorClass());
-                        if (Combiner.class.isAssignableFrom(klass)) {
-                            Map<String,String> options = allOptions.get(iter.getName());
-                            if (null != options) {
-                                options.put(ITERATOR_CLASS_MARKER, iter.getIteratorClass());
-                                combinerMap.put(iter.getPriority(), options);
-                            }
+                    Class<?> klass = Class.forName(iter.getIteratorClass());
+                    if (PropogatingIterator.class.isAssignableFrom(klass)) {
+                        Map<String,String> options = allOptions.get(iter.getName());
+                        if (null != options) {
+                            aggregatorMap.put(iter.getPriority(), options);
                         } else
                             log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
                         
                     }
-                    
-                    setTableAggregators(table, aggregatorMap);
-                    setTableCombiners(table, combinerMap);
-                    
-                } catch (ClassNotFoundException e) {
-                    throw new IOException("Unable to configure iterators for " + table, e);
+                    if (Combiner.class.isAssignableFrom(klass)) {
+                        Map<String,String> options = allOptions.get(iter.getName());
+                        if (null != options) {
+                            options.put(ITERATOR_CLASS_MARKER, iter.getIteratorClass());
+                            combinerMap.put(iter.getPriority(), options);
+                        } else {
+                            log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
+                        }
+                    } else {
+                        log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't appear to be a combiner.");
+                        
+                    }
                 }
+                
+                setTableAggregators(table, aggregatorMap);
+                setTableCombiners(table, combinerMap);
+                
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Unable to configure iterators for " + table, e);
             }
         }
         

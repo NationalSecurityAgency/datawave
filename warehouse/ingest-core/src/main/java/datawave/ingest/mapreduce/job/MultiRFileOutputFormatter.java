@@ -385,6 +385,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             ConfigurationCopy tableConfig = new ConfigurationCopy(tcu.getTableProperties(tableName));
             tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(), (compressionTableBlackList.contains(tableName) ? Compression.COMPRESSION_NONE
                             : compressionType));
+            
+            // the locality groups feature is broken and will be removed in a future MR
             if (Iterables.contains(localityGroupTables, tableName)) {
                 Map<String,Set<Text>> localityGroups = tcu.getLocalityGroups(tableName);
                 // pull the locality groups for this table.
