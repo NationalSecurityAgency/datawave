@@ -240,6 +240,7 @@ services:
         condition: service_healthy
 
   query:
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005","-jar","app.jar"]
     image: datawave/query-service:1.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
@@ -252,6 +253,7 @@ services:
     ports:
       - "8080:8080"
       - "8443:8443"
+      - "5005:5005"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
@@ -272,7 +274,7 @@ services:
         condition: service_started
 
   executor-pool1:
-    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005","-jar","app.jar"]
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5006","-jar","app.jar"]
     image: datawave/query-executor-service:1.0-SNAPSHOT
     command:
       - --spring.application.name=executor-pool1
@@ -293,7 +295,7 @@ services:
     ports:
       - "8380:8080"
       - "8743:8443"
-      - "5005:5005"
+      - "5006:5006"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs/pool1:/logs

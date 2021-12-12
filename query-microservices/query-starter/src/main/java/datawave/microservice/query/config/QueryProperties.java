@@ -1,5 +1,6 @@
 package datawave.microservice.query.config;
 
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotEmpty;
@@ -16,6 +17,7 @@ import static datawave.microservice.query.QueryParameters.QUERY_PAGESIZE;
 import static datawave.microservice.query.QueryParameters.QUERY_PAGETIMEOUT;
 
 @Validated
+@ConfigurationProperties(prefix = "datawave.query")
 public class QueryProperties {
     @NotEmpty
     private String privilegedRole = "PrivilegedUser";
@@ -66,9 +68,8 @@ public class QueryProperties {
         return lockWaitTimeUnit;
     }
     
-    public QueryProperties setLockWaitTimeUnit(TimeUnit lockWaitTimeUnit) {
+    public void setLockWaitTimeUnit(TimeUnit lockWaitTimeUnit) {
         this.lockWaitTimeUnit = lockWaitTimeUnit;
-        return this;
     }
     
     public long getLockLeaseTime() {
@@ -87,9 +88,8 @@ public class QueryProperties {
         return lockLeaseTimeUnit;
     }
     
-    public QueryProperties setLockLeaseTimeUnit(TimeUnit lockLeaseTimeUnit) {
+    public void setLockLeaseTimeUnit(TimeUnit lockLeaseTimeUnit) {
         this.lockLeaseTimeUnit = lockLeaseTimeUnit;
-        return this;
     }
     
     public String getQueryServiceName() {

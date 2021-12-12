@@ -75,4 +75,7 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
 QUERY_PLAN=$(get_query_plan < planResponse.txt)
 
 echo "$(date): Received query plan"
+echo "$(date): Received query plan" >> querySummary.txt
+
 echo "$QUERY_PLAN"
+echo "$QUERY_PLAN" >> querySummary.txt

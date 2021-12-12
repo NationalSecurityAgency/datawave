@@ -46,7 +46,7 @@ read_dom () {
 
 get_query_id () {
     while read_dom; do
-        if [[ $ENTITY =~ 'Result' ]] && [[ ! $ENTITY =~ 'HasResults'  ]]; then
+        if [[ $ENTITY =~ 'QueryId' ]]; then
             echo $CONTENT
             break
         fi
@@ -62,71 +62,39 @@ get_num_events () {
     done
 }
 
-FOLDER="query_$(date +%Y%m%d_%I%M%S.%3N)"
+FOLDER="lookup_$(date +%Y%m%d_%I%M%S.%3N)"
 
 mkdir $FOLDER
 cd $FOLDER
 
 SYSTEM_FROM=$(hostname)
 
-echo "$(date): Creating query"
-echo "$(date): Creating query" > querySummary.txt
-curl -s -D headers_0.txt -k -E ${TMP_PEM} \
+echo "$(date): Running LookupUUID query"
+echo "$(date): Running LookupUUID query" > querySummary.txt
+curl -s -D headers_0.txt -X GET -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
     --data-urlencode "begin=19660908 000000.000" \
     --data-urlencode "end=20161002 235959.999" \
     --data-urlencode "columnVisibility=PUBLIC" \
-    --data-urlencode "query=GENRES:[Action to Western]" \
-    --data-urlencode "query.syntax=LUCENE" \
     --data-urlencode "auths=PUBLIC,PRIVATE,BAR,FOO" \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
-    --data-urlencode "queryName=Developer Test Query" \
-    --data-urlencode "pageSize=100" \
+    --data-urlencode "queryName=Developer Test Lookup UUID Query" \
     --data-urlencode "pool=$POOL" \
-    ${DATAWAVE_ENDPOINT}/EventQuery/create -o createResponse.xml
+    ${DATAWAVE_ENDPOINT}/lookupUUID/PAGE_TITLE/anarchism -o lookupResponse.xml
 
-i=1
+QUERY_ID=$(get_query_id < lookupResponse.xml)
 
-QUERY_ID=$(get_query_id < createResponse.xml)
-
-while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
-    echo "$(date): Requesting page $i for $QUERY_ID"
-    echo "$(date): Requesting page $i for $QUERY_ID" >> querySummary.txt
-    curl -s -D headers_$i.txt -q -k -E ${TMP_PEM} \
-        -H "Accept: application/xml" \
-        ${DATAWAVE_ENDPOINT}/$QUERY_ID/next -o nextResponse_$i.xml
-
-    CONTINUE=`grep 'HTTP/1.1 200 OK' headers_$i.txt`
-
-    if [ -z "$CONTINUE" ]; then
-        i=-1
-    else
-        NUM_EVENTS=$(get_num_events < nextResponse_$i.xml)
-        echo "$(date): Page $i contained $NUM_EVENTS events"
-
-        ((i++))
-    fi
-
-    if [ "$PAUSE" == "true" ]; then
-        echo "press any key to continue"
-        read -n 1
-    fi
-done
-
-echo "$(date): Closing $QUERY_ID"
-# close the query
-curl -s -q -k -X POST -E ${TMP_PEM} \
-    -H "Accept: application/xml" \
-    ${DATAWAVE_ENDPOINT}/$QUERY_ID/close -o closeResponse.xml
+echo "$(date): Finished running $QUERY_ID"
+echo "$(date): Finished running $QUERY_ID" >> querySummary.txt
 
 cd ../
 
 if [ ! -z "$QUERY_ID" ]; then
-    mv $FOLDER query_$QUERY_ID
+    mv $FOLDER lookup_$QUERY_ID
 
     echo "$(date): Getting metrics for $QUERY_ID"
-    echo "$(date): Getting metrics for $QUERY_ID" >> query_$QUERY_ID/querySummary.txt
+    echo "$(date): Getting metrics for $QUERY_ID" >> lookup_$QUERY_ID/querySummary.txt
 
     echo "$(date): Metrics available at: ${METRICS_ENDPOINT}/id/$QUERY_ID"
-    echo "$(date): Metrics available at: ${METRICS_ENDPOINT}/id/$QUERY_ID" >> query_$QUERY_ID/querySummary.txt
+    echo "$(date): Metrics available at: ${METRICS_ENDPOINT}/id/$QUERY_ID" >> lookup_$QUERY_ID/querySummary.txt
 fi

@@ -1,4 +1,4 @@
-package datawave.webservice.query.logic.composite;
+package datawave.services.query.logic.composite;
 
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;

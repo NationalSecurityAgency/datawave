@@ -35,7 +35,7 @@ import static datawave.microservice.query.QueryParameters.QUERY_NAME;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles({"QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
+@ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 public class QueryServiceListTest extends AbstractQueryServiceTest {
     @Before
     public void setup() {
@@ -419,10 +419,14 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         
         QueryLogicResponse qlResponse = response.getBody();
         
-        Assert.assertEquals(2, qlResponse.getQueryLogicList().size());
+        String[] expectedQueryLogics = new String[] {"AltEventQuery", "EventQuery", "LuceneUUIDEventQuery", "DiscoveryQuery"};
+        
+        Assert.assertEquals(expectedQueryLogics.length, qlResponse.getQueryLogicList().size());
         
         List<String> qlNames = qlResponse.getQueryLogicList().stream().map(QueryLogicDescription::getName).sorted().collect(Collectors.toList());
         
-        Assert.assertEquals(Arrays.asList("AltEventQuery", "EventQuery"), qlNames);
+        qlNames.removeAll(Arrays.asList(expectedQueryLogics));
+        
+        Assert.assertTrue(qlNames.isEmpty());
     }
 }

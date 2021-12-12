@@ -53,26 +53,26 @@ import static org.junit.jupiter.api.Assertions.fail;
 public abstract class QueryStorageCacheTest {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
-    @ActiveProfiles({"QueryStorageCacheTest", "use-test"})
+    @ActiveProfiles({"QueryStarterDefaults", "QueryStorageCacheTest", "use-test"})
     @ContextConfiguration(classes = QueryStorageCacheTestConfiguration.class)
     public static class LocalQueryStorageCacheTest extends QueryStorageCacheTest {}
     
     @EmbeddedKafka
-    @ActiveProfiles({"QueryStorageCacheTest", "use-embedded-kafka"})
+    @ActiveProfiles({"QueryStarterDefaults", "QueryStorageCacheTest", "use-embedded-kafka"})
     @ContextConfiguration(classes = QueryStorageCacheTestConfiguration.class)
     public static class EmbeddedKafkaQueryStorageCacheTest extends QueryStorageCacheTest {}
     
-    @ActiveProfiles({"QueryStorageCacheTest", "use-hazelcast"})
+    @ActiveProfiles({"QueryStarterDefaults", "QueryStorageCacheTest", "use-hazelcast"})
     @ContextConfiguration(classes = QueryStorageCacheTestConfiguration.class)
     public static class HazelcastQueryStorageCacheTest extends QueryStorageCacheTest {}
     
     @Disabled("Cannot run this test without an externally deployed RabbitMQ instance.")
-    @ActiveProfiles({"QueryStorageCacheTest", "use-rabbit"})
+    @ActiveProfiles({"QueryStarterDefaults", "QueryStorageCacheTest", "use-rabbit"})
     @ContextConfiguration(classes = QueryStorageCacheTestConfiguration.class)
     public static class RabbitQueryStorageCacheTest extends QueryStorageCacheTest {}
     
     @Disabled("Cannot run this test without an externally deployed Kafka instance.")
-    @ActiveProfiles({"QueryStorageCacheTest", "use-kafka"})
+    @ActiveProfiles({"QueryStarterDefaults", "QueryStorageCacheTest", "use-kafka"})
     @ContextConfiguration(classes = QueryStorageCacheTestConfiguration.class)
     public static class KafkaQueryStorageCacheTest extends QueryStorageCacheTest {}
     

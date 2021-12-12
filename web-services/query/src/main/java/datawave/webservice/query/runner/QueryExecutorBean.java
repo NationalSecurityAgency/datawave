@@ -1472,7 +1472,7 @@ public class QueryExecutorBean implements QueryExecutor {
             // required for the content lookup
             final UUIDType matchingType = this.lookupUUIDUtil.getUUIDType(uuidType.toUpperCase());
             final GetUUIDCriteria criteria;
-            final String view = (null != matchingType) ? matchingType.getDefinedView() : null;
+            final String view = (null != matchingType) ? matchingType.getQueryLogic() : null;
             if ((LookupUUIDUtil.UID_QUERY.equals(view) || LookupUUIDUtil.LOOKUP_UID_QUERY.equals(view))) {
                 criteria = new UIDQueryCriteria(uuid, uuidType, MapUtils.toMultiValueMap(queryParameters));
             } else {
@@ -1602,7 +1602,7 @@ public class QueryExecutorBean implements QueryExecutor {
         try {
             // Construct the criteria used to perform the query
             final GetUUIDCriteria criteria;
-            final String view = (null != matchingType) ? matchingType.getDefinedView() : null;
+            final String view = (null != matchingType) ? matchingType.getQueryLogic() : null;
             if ((LookupUUIDUtil.UID_QUERY.equals(view) || LookupUUIDUtil.LOOKUP_UID_QUERY.equals(view))) {
                 criteria = new UIDQueryCriteria(uuid, uuidType, MapUtils.toMultiValueMap(queryParameters));
             } else {

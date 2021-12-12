@@ -3291,7 +3291,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<>());
         expect(lookupUUIDUtil.getUUIDType("uuidType")).andReturn(uuidType);
-        expect(uuidType.getDefinedView()).andReturn("abc");
+        expect(uuidType.getQueryLogic()).andReturn("abc");
         expect(lookupUUIDUtil.createUUIDQueryAndNext(isA(GetUUIDCriteria.class))).andReturn(response);
         expect(response.getQueryId()).andReturn("11111");
         expect(context.getCallerPrincipal()).andReturn(principal);
@@ -3325,7 +3325,7 @@ public class ExtendedQueryExecutorBeanTest {
         
         expect(uriInfo.getQueryParameters()).andReturn(new MultivaluedHashMap<>());
         expect(lookupUUIDUtil.getUUIDType("uuidType")).andReturn(uuidType);
-        expect(uuidType.getDefinedView()).andReturn("abc");
+        expect(uuidType.getQueryLogic()).andReturn("abc");
         expect(lookupUUIDUtil.createUUIDQueryAndNext(isA(GetUUIDCriteria.class))).andReturn(response);
         expect(response.getQueryId()).andReturn("11111");
         expect(context.getCallerPrincipal()).andReturn(principal);

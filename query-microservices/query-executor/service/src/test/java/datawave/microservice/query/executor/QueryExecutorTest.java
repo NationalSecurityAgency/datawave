@@ -161,26 +161,26 @@ public abstract class QueryExecutorTest {
         }
     }
     
-    @ActiveProfiles({"QueryExecutorTest", "use-test"})
+    @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryExecutorTest", "use-test"})
     @ContextConfiguration(classes = QueryExecutorTestConfiguration.class)
     public static class LocalQueryExecutorTest extends QueryExecutorTest {}
     
     @EmbeddedKafka
-    @ActiveProfiles({"QueryExecutorTest", "use-embedded-kafka"})
+    @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryExecutorTest", "use-embedded-kafka"})
     @ContextConfiguration(classes = QueryExecutorTestConfiguration.class)
     public static class EmbeddedKafkaQueryExecutorTest extends QueryExecutorTest {}
     
-    @ActiveProfiles({"QueryExecutorTest", "use-hazelcast"})
+    @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryExecutorTest", "use-hazelcast"})
     @ContextConfiguration(classes = QueryExecutorTestConfiguration.class)
     public static class HazelcastQueryExecutorTest extends QueryExecutorTest {}
     
     @Disabled("Cannot run this test without an externally deployed RabbitMQ instance.")
-    @ActiveProfiles({"QueryExecutorTest", "use-rabbit"})
+    @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryExecutorTest", "use-rabbit"})
     @ContextConfiguration(classes = QueryExecutorTestConfiguration.class)
     public static class RabbitQueryExecutorTest extends QueryExecutorTest {}
     
     @Disabled("Cannot run this test without an externally deployed Kafka instance.")
-    @ActiveProfiles({"QueryExecutorTest", "use-kafka"})
+    @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryExecutorTest", "use-kafka"})
     @ContextConfiguration(classes = QueryExecutorTestConfiguration.class)
     public static class KafkaQueryExecutorTest extends QueryExecutorTest {}
     

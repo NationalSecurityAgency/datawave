@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles({"QueryStorageStateServiceTest"})
+@ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryStorageStateServiceTest"})
 @EnableRabbit
 public class QueryStorageStateServiceTest {
     

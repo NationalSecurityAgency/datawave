@@ -3,7 +3,7 @@ package datawave.query.data;
 public class UUIDType {
     
     private String fieldName = null;
-    private String definedView = null;
+    private String queryLogic = null;
     private Integer allowWildcardAfter = null;
     
     public UUIDType() {}
@@ -11,7 +11,7 @@ public class UUIDType {
     public UUIDType(String field, String view, Integer allowWildcardAfter) {
         
         this.fieldName = field;
-        this.definedView = view;
+        this.queryLogic = view;
         this.allowWildcardAfter = allowWildcardAfter;
     }
     
@@ -31,11 +31,11 @@ public class UUIDType {
         this.fieldName = fieldName;
     }
     
-    public String getDefinedView() {
-        return definedView;
+    public String getQueryLogic() {
+        return queryLogic;
     }
     
-    public void setDefinedView(String definedView) {
-        this.definedView = definedView;
+    public void setQueryLogic(String queryLogic) {
+        this.queryLogic = queryLogic;
     }
 }

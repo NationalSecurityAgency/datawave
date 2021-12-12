@@ -1,4 +1,4 @@
-package datawave.webservice.query.logic.composite;
+package datawave.services.query.logic.composite;
 
 import datawave.services.query.cache.ResultsPage;
 import datawave.services.query.cachedresults.CacheableLogic;

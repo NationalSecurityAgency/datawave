@@ -1,3 +1,5 @@
 **/scripts/query_*
 **/scripts/plan_*
 **/scripts/prediction_*
+**/scripts/lookup_*
+**/scripts/batchLookup_*

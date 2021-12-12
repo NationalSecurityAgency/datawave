@@ -1,6 +1,5 @@
 package datawave.microservice.query.executor.config;
 
-import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.executor.task.FindWorkTask;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -27,13 +26,6 @@ public class QueryExecutorConfig {
     @ConfigurationProperties("datawave.query.executor")
     public ExecutorProperties executorProperties() {
         return new ExecutorProperties();
-    }
-    
-    @Bean
-    @ConditionalOnMissingBean(QueryProperties.class)
-    @ConfigurationProperties("datawave.query")
-    public QueryProperties queryProperties() {
-        return new QueryProperties();
     }
     
     @Bean

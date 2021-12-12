@@ -300,6 +300,24 @@
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
+                        <id>unpack-test-resources</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>gov.nsa.datawave.microservice</groupId>
+                                    <artifactId>spring-boot-starter-datawave-query</artifactId>
+                                    <type>test-jar</type>
+                                    <includes>**/application-*.yml</includes>
+                                    <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>unpack</id>
                         <phase>package</phase>
                         <goals>

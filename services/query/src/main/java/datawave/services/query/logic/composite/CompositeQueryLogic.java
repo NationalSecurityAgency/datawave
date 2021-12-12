@@ -1,4 +1,4 @@
-package datawave.webservice.query.logic.composite;
+package datawave.services.query.logic.composite;
 
 import datawave.services.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.services.query.cache.ResultsPage;

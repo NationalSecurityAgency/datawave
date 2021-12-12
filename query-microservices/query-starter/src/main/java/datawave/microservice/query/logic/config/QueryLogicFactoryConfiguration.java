@@ -1,5 +1,6 @@
 package datawave.microservice.query.logic.config;
 
+import datawave.microservice.query.uuid.LookupUUIDProperties;
 import datawave.query.data.UUIDType;
 import datawave.services.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -22,7 +23,7 @@ import static org.springframework.beans.factory.config.ConfigurableBeanFactory.S
 
 @Configuration
 @ConditionalOnProperty(name = "datawave.query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
-@EnableConfigurationProperties({QueryLogicFactoryProperties.class, QueryParserProperties.class})
+@EnableConfigurationProperties({QueryLogicFactoryProperties.class, QueryParserProperties.class, LookupUUIDProperties.class})
 @ImportResource("${datawave.query.logic.factory.xmlBeansPath:classpath:QueryLogicFactory.xml}")
 public class QueryLogicFactoryConfiguration {
     
@@ -56,10 +57,10 @@ public class QueryLogicFactoryConfiguration {
     
     @Bean
     @Scope(SCOPE_PROTOTYPE)
-    public List<UUIDType> uuidTypes(QueryParserProperties queryParserProperties) {
+    public List<UUIDType> uuidTypes(LookupUUIDProperties lookupUUIDProperties) {
         List<UUIDType> uuidTypes = new ArrayList<>();
-        if (queryParserProperties.getUuidTypes() != null) {
-            uuidTypes.addAll(queryParserProperties.getUuidTypes());
+        if (lookupUUIDProperties.getTypes() != null) {
+            uuidTypes.addAll(lookupUUIDProperties.getTypes().values());
         }
         return uuidTypes;
     }

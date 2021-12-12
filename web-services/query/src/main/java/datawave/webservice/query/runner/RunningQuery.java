@@ -1,5 +1,6 @@
 package datawave.webservice.query.runner;
 
+import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.query.cache.ResultsPage;

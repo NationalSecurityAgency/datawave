@@ -74,4 +74,7 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
 QUERY_PREDICTION=$(get_query_prediction < predictResponse.txt)
 
 echo "$(date): Received query prediction"
+echo "$(date): Received query prediction" >> querySummary.txt
+
 echo "$QUERY_PREDICTION"
+echo "$QUERY_PREDICTION" >> querySummary.txt

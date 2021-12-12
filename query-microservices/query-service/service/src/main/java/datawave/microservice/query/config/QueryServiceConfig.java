@@ -8,7 +8,6 @@ import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,13 +40,6 @@ public class QueryServiceConfig {
     @RequestScope
     public BaseQueryMetric baseQueryMetric() {
         return queryMetricFactory().createMetric();
-    }
-    
-    @Bean
-    @ConditionalOnMissingBean(QueryProperties.class)
-    @ConfigurationProperties("datawave.query")
-    public QueryProperties queryProperties() {
-        return new QueryProperties();
     }
     
     @Bean

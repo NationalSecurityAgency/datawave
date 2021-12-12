@@ -1,7 +1,7 @@
 package datawave.webservice.query.util;
 
-import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.query.data.UUIDType;
 import datawave.security.util.AuthorizationsUtil;
@@ -796,7 +796,7 @@ public class LookupUUIDUtil {
                 if (null != uuidType) {
                     // Assign the query logic name if undefined
                     if (null == logicName) {
-                        logicName = uuidType.getDefinedView();
+                        logicName = uuidType.getQueryLogic();
                     }
                     
                     // Increment the UUID type/value count
@@ -912,8 +912,8 @@ public class LookupUUIDUtil {
                 throw new DatawaveWebApplicationException(new IllegalArgumentException(message), errorReponse);
             }
             // Reject conflicting logic name
-            else if ((null != logicName) && !logicName.equals(matchingUuidType.getDefinedView())) {
-                final String message = "Multiple UUID types '" + logicName + "' and '" + matchingUuidType.getDefinedView() + "' not "
+            else if ((null != logicName) && !logicName.equals(matchingUuidType.getQueryLogic())) {
+                final String message = "Multiple UUID types '" + logicName + "' and '" + matchingUuidType.getQueryLogic() + "' not "
                                 + " supported within the same lookup request";
                 final GenericResponse<String> errorReponse = new GenericResponse<>();
                 errorReponse.addMessage(message);

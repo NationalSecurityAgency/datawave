@@ -2,6 +2,7 @@ package datawave.microservice.query;
 
 import com.codahale.metrics.annotation.Timed;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
+import datawave.microservice.query.uuid.LookupUUIDService;
 import datawave.microservice.query.web.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.BaseQueryResponse;
@@ -24,9 +25,11 @@ import javax.annotation.security.RolesAllowed;
 @RequestMapping(path = "/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class QueryController {
     private final QueryManagementService queryManagementService;
+    private final LookupUUIDService lookupUUIDService;
     
-    public QueryController(QueryManagementService queryManagementService) {
+    public QueryController(QueryManagementService queryManagementService, LookupUUIDService lookupUUIDService) {
         this.queryManagementService = queryManagementService;
+        this.lookupUUIDService = lookupUUIDService;
     }
     
     @Timed(name = "dw.query.listQueryLogic", absolute = true)
@@ -68,6 +71,38 @@ public class QueryController {
     public GenericResponse<String> predict(@PathVariable String queryLogic, @RequestParam MultiValueMap<String,String> parameters,
                     @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
         return queryManagementService.predict(queryLogic, parameters, currentUser);
+    }
+    
+    @Timed(name = "dw.query.lookupUUID", absolute = true)
+    @RequestMapping(path = "lookupUUID/{uuidType}/{uuid}", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json",
+            "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public BaseQueryResponse lookupUUID(@PathVariable(required = false) String uuidType, @PathVariable(required = false) String uuid,
+                    @RequestParam MultiValueMap<String,String> parameters, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
+        return lookupUUIDService.lookupUUID(uuidType, uuid, parameters, currentUser);
+    }
+    
+    @Timed(name = "dw.query.lookupUUIDBatch", absolute = true)
+    @RequestMapping(path = "lookupUUID", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+            "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public BaseQueryResponse lookupUUIDBatch(@PathVariable(required = false) String uuidType, @PathVariable(required = false) String uuid,
+                    @RequestParam MultiValueMap<String,String> parameters, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
+        return lookupUUIDService.lookupUUID(parameters, currentUser);
+    }
+    
+    @Timed(name = "dw.query.lookupContentUUID", absolute = true)
+    @RequestMapping(path = "lookupContentUUID/{uuidType}/{uuid}", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json",
+            "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public BaseQueryResponse lookupContentUUID(@PathVariable(required = false) String uuidType, @PathVariable(required = false) String uuid,
+                    @RequestParam MultiValueMap<String,String> parameters, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
+        return lookupUUIDService.lookupContentUUID(uuidType, uuid, parameters, currentUser);
+    }
+    
+    @Timed(name = "dw.query.lookupContentUUIDBatch", absolute = true)
+    @RequestMapping(path = "lookupContentUUID", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+            "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public BaseQueryResponse lookupContentUUIDBatch(@PathVariable(required = false) String uuidType, @PathVariable(required = false) String uuid,
+                    @RequestParam MultiValueMap<String,String> parameters, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
+        return lookupUUIDService.lookupContentUUID(parameters, currentUser);
     }
     
     @Timed(name = "dw.query.createAndNext", absolute = true)

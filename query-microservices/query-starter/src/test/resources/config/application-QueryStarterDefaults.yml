@@ -1,42 +1,47 @@
-# This profile should be included by any service which depends on the query starter.  This
-# file contains all of the configuration required to use the QueryLogicFactory.
+# This serves as a set of sensible defaults to use for query microservice test configuration.  The
+# goal here is to avoid creating multiple copies of this file across the various query microservices.
+#
+# If configured correctly, your microservice will automatically include this profile and it's properties
+# as a test resource.  Use the properties contained herein by activatin the QueryStarterDefaults profile.
+# If you want to override some of the values present here, create an additional profile and add your
+# overrides there.  Make sure your override profile is listed after the QueryStarterDefaults profile.
+
 warehouse:
   accumulo:
-    zookeepers: '${accumulo.zookeepers}'
-    instanceName: '${accumulo.instanceName}'
-    username: '${accumulo.username}'
-    password: '${accumulo.password}'
+    zookeepers: 'localhost:2181'
+    instanceName: 'my-instance-01'
+    username: 'root'
+    password: 'password'
   statsd:
     host: localhost
     port: 8125
   tables:
     shard:
-      name: 'datawave.shard'
+      name: 'shard'
     index:
-      name: 'datawave.shardIndex'
+      name: 'shardIndex'
     reverseIndex:
-      name: 'datawave.shardReverseIndex'
+      name: 'shardReverseIndex'
     dateIndex:
-      name: 'datawave.dateIndex'
+      name: 'dateIndex'
     metadata:
-      name: 'datawave.metadata'
+      name: 'DatawaveMetadata'
     model:
-      name: 'datawave.metadata'
+      name: 'DatawaveMetadata'
   errorTables:
     shard:
-      name: "datawave.error_s"
+      name: "error_s"
     index:
-      name: "datawave.error_i"
+      name: "error_i"
     reverseIndex:
-      name: "datawave.error_r"
+      name: "error_r"
     dateIndex:
       name: ""
     metadata:
-      name: "datawave.error_m"
+      name: "error_m"
     model:
       name: ""
   defaults:
-    checkpointable: true
     queryThreads: 100
     indexLookupThreads: 100
     dateIndexThreads: 20
@@ -57,7 +62,7 @@ warehouse:
     maxEvaluationPipelines: 16
     maxPipelineCachedResults: 16
     hdfsSiteConfigURLs: 'file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml'
-    ivaratorFstHdfsBaseURIs: 'hdfs:///data'
+    ivaratorFstHdfsBaseURIs: 'hdfs:///IvaratorCache'
     ivaratorCacheBufferSize: 10000
     ivaratorMaxOpenFiles: 100
     ivaratorCacheScanPersistThreshold: 100000
@@ -81,7 +86,7 @@ datawave:
       factory:
         enabled: true
         # Uncomment the following line to override the query logic beans to load
-        # xmlBeansPath: "classpath:MyTestQueryLogicFactory.xml"
+        # xmlBeansPath: "classpath:TestQueryLogicFactory.xml"
 
         # The max page size that a user can request.  0 turns off this feature
         maxPageSize: 10000
@@ -90,7 +95,7 @@ datawave:
         pageByteTrigger: 0
       logics:
         BaseEventQuery:
-          checkpointable: ${warehouse.defaults.checkpointable}
+          checkpointable: true
           accumuloPassword: ${warehouse.accumulo.password}
           tableName: ${warehouse.tables.shard.name}
           dateIndexTableName: ${warehouse.tables.dateIndex.name}
@@ -98,7 +103,7 @@ datawave:
           metadataTableName: ${warehouse.tables.metadata.name}
           indexTableName: ${warehouse.tables.index.name}
           reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
-          maxResults: 369
+          maxResults: -1
           queryThreads: ${warehouse.defaults.queryThreads}
           indexLookupThreads: ${warehouse.defaults.indexLookupThreads}
           dateIndexThreads: ${warehouse.defaults.dateIndexThreads}
@@ -126,7 +131,7 @@ datawave:
             - 'foo.bar'
           filterOptions:
             'bar': "foo"
-          auditType: "ACTIVE"
+          auditType: "NONE"
           logicDescription: "Retrieve sharded events/documents, leveraging the global index tables as needed"
           eventPerDayThreshold: ${warehouse.defaults.eventPerDayThreshold}
           shardsPerDayThreshold: ${warehouse.defaults.shardsPerDayThreshold}
@@ -144,7 +149,7 @@ datawave:
           hdfsSiteConfigURLs: ${warehouse.defaults.hdfsSiteConfigURLs}
           zookeeperConfig: ${warehouse.accumulo.zookeepers}
           ivaratorCacheDirConfigs:
-            - basePathURI: "hdfs:///data"
+            - basePathURI: "hdfs:///IvaratorCache"
           ivaratorFstHdfsBaseURIs: ${warehouse.defaults.ivaratorFstHdfsBaseURIs}
           ivaratorCacheBufferSize: ${warehouse.defaults.ivaratorCacheBufferSize}
           ivaratorMaxOpenFiles: ${warehouse.defaults.ivaratorMaxOpenFiles}
@@ -171,7 +176,7 @@ datawave:
             TOKENIZED-LUCENE: "TokenizedLuceneToJexlQueryParser"
           sendTimingToStatsd: false
           collectQueryMetrics: true
-          logTimingDetails: true
+          logTimingDetails: false
           statsdHost: ${warehouse.statsd.host}
           statsdPort: ${warehouse.statsd.port}
           evaluationOnlyFields: ""
@@ -180,7 +185,7 @@ datawave:
             - "AuthorizedUser"
 
         DiscoveryQuery:
-          checkpointable: ${warehouse.defaults.checkpointable}
+          checkpointable: true
           tableName: ${warehouse.tables.shard.name}
           indexTableName: ${warehouse.tables.index.name}
           reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
@@ -192,7 +197,7 @@ datawave:
           auditType: "NONE"
           maxResults: -1
           maxWork: -1
-        
+
         LuceneUUIDEventQuery:
           logicDescription: "Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml"
           auditType: "NONE"
@@ -232,3 +237,13 @@ datawave:
         'PAGE_TITLE':
           fieldName: 'PAGE_TITLE'
           queryLogic: 'LuceneUUIDEventQuery'
+
+query:
+  messaging:
+    claimCheck:
+      enabled: false
+
+audit-client:
+  discovery:
+    enabled: false
+  uri: '${AUDIT_SERVER_URL:http://localhost:11111/audit}'
