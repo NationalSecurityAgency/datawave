@@ -176,6 +176,37 @@ MAP_LOADER_HDFS_NAME_NODES="${MAP_LOADER_HDFS_NAME_NODES:-$WAREHOUSE_HDFS_NAME_N
 NUM_MAP_LOADERS="${NUM_MAP_LOADERS}"
 NUM_MAP_LOADERS="${NUM_MAP_LOADERS:-1}"
 
+MAP_LOADER_HDFS_NAME_NODES_CONFIG="${MAP_LOADER_HDFS_NAME_NODES_CONFIG}"
+
+# If replacement property MAP_LOADER_HDFS_NAME_NODES_CONFIG is non-empty, override legacy properties:
+# MAP_LOADER_HDFS_NAME_NODES and NUM_MAP_LOADERS
+if [[ ! -z ${MAP_LOADER_HDFS_NAME_NODES_CONFIG} ]]; then
+  IFS=";"MAP_LOADER_HDFS_NAME_NODES=($MAP_LOADER_HDFS_NAME_NODES_CONFIG)
+  MAP_LOADER_HDFS_DIRS=($MAP_LOADER_HDFS_NAME_NODES_CONFIG)
+  INDEX=0
+
+  for MAP_LOADER_HDFS_NAME in ${MAP_LOADER_HDFS_NAME_NODES[@]}; do
+    NUM_MAP_LOADERS[$INDEX]=`echo $MAP_LOADER_HDFS_NAME_NODE |cut -d \, -f 2`
+    MAP_LOADER_HDFS_NAME_NODES[$INDEX]='echo $MAP_LOADER_HDFS_NAME_NODE |cut -d \, -f 1|cut -d \,-f 1  | cut -d /-f 1-3'
+    #for viewfs, add the last / back on
+    case $MAP_LOADER_HDFS_NAME_NODES[$INDEX] IN viewfs:*)
+      MAP_LOADER_HDFS_NAME_NODES[$INDEX]="${MAP_LOADER_HDFS_NAME_NODES[$INDEX]}/"
+    esac
+    MAP_LOADER_HDFS_DIRS[$INDEX]='echo $MAP_LOADER_HDFS_NAME_NODE |cut -d \, -f 1 |cut -d / -f 4- | sed's/^/\//''
+    if[[ " $MAP_LOADER_HDFS_DIRS[$INDEX]}" == "/" ]]; then
+      MAP_LOADER_HDFS_DIRS[$INDEX]=${BASE_WORK_DIR}
+    fi
+    if ! [[ ${NUM_MAP_LOADERS[INDEX]} = ~ '^[0-9]+$' ]]; then
+      echo "Invalid format for MAP_LOADER_HDFS_NAME_NODES_CONFIG. eg. MAP_LOADER_HDFS_NAME_NODES_CONFIG=hdfs://namenode-1:1;hdfs://namenode-2:3;"
+      echo "exiting..."
+      exit -1
+    fi
+
+    INDEX=$((INDEX+1))
+  done
+fi
+
+
 ZOOKEEPER_HOME="${ZOOKEEPER_HOME}"
 
 JAVA_HOME="${JAVA_HOME}"
