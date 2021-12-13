@@ -186,14 +186,14 @@ if [[ ! -z ${MAP_LOADER_HDFS_NAME_NODES_CONFIG} ]]; then
   INDEX=0
 
   for MAP_LOADER_HDFS_NAME in ${MAP_LOADER_HDFS_NAME_NODES[@]}; do
-    NUM_MAP_LOADERS[$INDEX]=`echo $MAP_LOADER_HDFS_NAME_NODE |cut -d \, -f 2`
-    MAP_LOADER_HDFS_NAME_NODES[$INDEX]='echo $MAP_LOADER_HDFS_NAME_NODE |cut -d \, -f 1|cut -d \,-f 1  | cut -d /-f 1-3'
+    NUM_MAP_LOADERS[$INDEX]=$(echo $MAP_LOADER_HDFS_NAME_NODE |cut -d \, -f 2)
+    MAP_LOADER_HDFS_NAME_NODES[$INDEX]=$(echo $MAP_LOADER_HDFS_NAME_NODE |cut -d \, -f 1|cut -d \,-f 1  | cut -d /-f 1-3)
     #for viewfs, add the last / back on
     case $MAP_LOADER_HDFS_NAME_NODES[$INDEX] IN viewfs:*)
       MAP_LOADER_HDFS_NAME_NODES[$INDEX]="${MAP_LOADER_HDFS_NAME_NODES[$INDEX]}/"
     esac
-    MAP_LOADER_HDFS_DIRS[$INDEX]='echo $MAP_LOADER_HDFS_NAME_NODE |cut -d \, -f 1 |cut -d / -f 4- | sed's/^/\//''
-    if[[ " $MAP_LOADER_HDFS_DIRS[$INDEX]}" == "/" ]]; then
+    MAP_LOADER_HDFS_DIRS[$INDEX]=$(echo $MAP_LOADER_HDFS_NAME_NODE |cut -d \, -f 1 |cut -d / -f 4- | sed's/^/\//')
+    if[[ "${MAP_LOADER_HDFS_DIRS[$INDEX]}" == "/" ]]; then
       MAP_LOADER_HDFS_DIRS[$INDEX]=${BASE_WORK_DIR}
     fi
     if ! [[ ${NUM_MAP_LOADERS[INDEX]} = ~ '^[0-9]+$' ]]; then

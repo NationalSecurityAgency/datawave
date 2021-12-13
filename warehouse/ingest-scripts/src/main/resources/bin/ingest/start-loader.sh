@@ -29,18 +29,19 @@ fi
 
 
 MAPFILE_LOADER_CMD=$THIS_DIR/map-file-bulk-loader.sh
-PIDS=`$MAPFILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader"`
+PIDS=$($MAPFILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader")
 COUNT=0
 for PID in $PIDS; do
 	COUNT=$((COUNT + 1))
 done
+
 if [[ COUNT -eq 0 ]]; then
   for (( LOADER=0; LOADER < ${#MAP_LOADER_HDFS_NAME_NODES[@]}; LOADER=$((LOADER + 1)) )); do
-    FILES_STUCK_LOADING=`$INGEST_HADOOP_HOME/bin/hadoop fs -ls "${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}$BASE_WORK_DIR/*/job.loading" | awk '{print $NF}'`
+    FILES_STUCK_LOADING=$($INGEST_HADOOP_HOME/bin/hadoop fs -ls "${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}$BASE_WORK_DIR/*/job.loading" | awk '{print $NF}')
     if [[ ! -z $FILES_STUCK_LOADING ]]; then
       for stuckFile in $FILES_STUCK_LOADING; do
         echo "Resetting ${stuckFile}"
-        moving_result=`$INGEST_HADOOP_HOME/bin/hadoop fs -mv $stuckFile ${stuckFile%.loading}.complete 2>&1`
+        moving_result=$($INGEST_HADOOP_HOME/bin/hadoop fs -mv $stuckFile ${stuckFile%.loading}.complete 2>&1)
         if [[ ! -z $moving_result ]]; then
           echo "Error resetting file: $moving_result . Manually check for orphans."
         fi
