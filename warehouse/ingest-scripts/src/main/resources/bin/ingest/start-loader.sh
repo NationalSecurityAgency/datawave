@@ -27,7 +27,6 @@ if [ -e ${LOCK_FILE_DIR}/LOADER_STARTUP.LCK ]; then
   exit -1
 fi
 
-
 MAPFILE_LOADER_CMD=$THIS_DIR/map-file-bulk-loader.sh
 PIDS=$($MAPFILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader")
 COUNT=0
@@ -49,21 +48,21 @@ if [[ COUNT -eq 0 ]]; then
     fi
 
     COUNT=${NUM_MAP_LOADERS[$LOADER]}
-    MAP_LOADER_HDFS_NAME_NODE={MAP_LOADER_HDFS_NAME_NODES[$LOADER]}
+    MAP_LOADER_HDFS_NAME_NODE=${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}
     export MAP_LOADER_WORKDIR=${MAP_LOADER_HDFS_DIRS[$LOADER]}
     echo "starting $COUNT map file loaders for ${MAP_LOADER_WORKDIR} on ${MAP_LOADER_HDFS_NAME_NODE} ..."
-    for (( ; $COUNT; COUNT -$((COUNT-1)) )); do
-      $MAPFILE_LOADER_CMD -scrHDFS ${MAP_LOADER_HDFS_NAME_NODE} -destHDFS ${MAP_LOADER_HDFS_NAME_NODE} -shutdownPort "241$LOADER$COUNT" >> $LOG_DIR/
+    for (( ; $COUNT; COUNT = $((COUNT-1)) )); do
+      $MAPFILE_LOADER_CMD -srcHDFS ${MAP_LOADER_HDFS_NAME_NODE} -destHDFS ${MAP_LOADER_HDFS_NAME_NODE} -shutdownPort "241$LOADER$COUNT" >> $LOG_DIR/
     done
 
   done
   #Comments about run extra map loader
 
-  if [[ -z${EXTRA_MAP_LOADER} ]]; then
+  if [[ -z ${EXTRA_MAP_LOADER} ]]; then
     echo "No extra map file loader configured."
   else
 
-  #set loader to usethe number after the previous loader
+  # Set loader to use the number after the previous loader
 
     LOADER=${#MAP_LOADER_HDFS_NAME_NODES[@]}
     COUNT=0
