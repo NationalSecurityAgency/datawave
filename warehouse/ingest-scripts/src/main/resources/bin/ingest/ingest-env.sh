@@ -181,14 +181,15 @@ MAP_LOADER_HDFS_NAME_NODES_CONFIG="${MAP_LOADER_HDFS_NAME_NODES_CONFIG}"
 # If replacement property MAP_LOADER_HDFS_NAME_NODES_CONFIG is non-empty, override legacy properties:
 # MAP_LOADER_HDFS_NAME_NODES and NUM_MAP_LOADERS
 if [[ ! -z ${MAP_LOADER_HDFS_NAME_NODES_CONFIG} ]]; then
+  OLD_IFS="${IFS}"
   IFS=";" MAP_LOADER_HDFS_NAME_NODES=($MAP_LOADER_HDFS_NAME_NODES_CONFIG)
   MAP_LOADER_HDFS_DIRS=($MAP_LOADER_HDFS_NAME_NODES_CONFIG)
   INDEX=0
 
-  for MAP_LOADER_HDFS_NAME in ${MAP_LOADER_HDFS_NAME_NODES[@]}; do
-
+  for MAP_LOADER_HDFS_NAME_NODE in ${MAP_LOADER_HDFS_NAME_NODES[@]}; do
+    echo INDEX: $INDEX
     # Number of loaders for current entry
-    NUM_MAP_LOADERS[$INDEX]=$(echo $MAP_LOADER_HDFS_NAME_NODE |cut -d, -f2)
+    NUM_MAP_LOADERS[$INDEX]=$(echo $MAP_LOADER_HDFS_NAME_NODE | cut -d, -f2)
 
     # Namenode (without directory) for current entry
     MAP_LOADER_HDFS_NAME_NODES[$INDEX]=$(echo $MAP_LOADER_HDFS_NAME_NODE | cut -d, -f1 | cut -d/ -f1-3)
@@ -207,7 +208,7 @@ if [[ ! -z ${MAP_LOADER_HDFS_NAME_NODES_CONFIG} ]]; then
     # Insist on numerical format for NUM_MAP_LOADERS entries
     if ! [[ ${NUM_MAP_LOADERS[INDEX]} =~ '^[0-9]+$' ]]; then
       echo "Invalid format for MAP_LOADER_HDFS_NAME_NODES_CONFIG."
-      echo "Example configuration: MAP_LOADER_HDFS_NAME_NODES_CONFIG=hdfs://namenode-1:1;hdfs://namenode-2:3;"
+      echo "Example configuration: MAP_LOADER_HDFS_NAME_NODES_CONFIG=hdfs://namenode-1,1;hdfs://namenode-2,3;"
       echo "Exiting..."
       exit -1
     fi
@@ -215,8 +216,15 @@ if [[ ! -z ${MAP_LOADER_HDFS_NAME_NODES_CONFIG} ]]; then
     INDEX=$((INDEX+1))
   done
 
-  export NUM_MAP_LOADERS
-  export MAP_LOADER_HDFS_NAME_NODES
+#  export MAP_LOADER_HDFS_NAME_NODES
+#  export MAP_LOADER_HDFS_DIRS
+#  export NUM_MAP_LOADERS
+  IFS="${OLD_IFS}"
+else
+  OLD_IFS="${IFS}"
+  MAP_LOADER_HDFS_NAME_NODES=( $MAP_LOADER_HDFS_NAME_NODES )
+  NUM_MAP_LOADERS=( $NUM_MAP_LOADERS )
+  IFS="${OLD_IFS}"
 fi
 
 ZOOKEEPER_HOME="${ZOOKEEPER_HOME}"
@@ -267,8 +275,6 @@ IFS=","
 FLAG_MAKER_CONFIG=( $FLAG_MAKER_CONFIG )
 CONFIG_DATA_TYPES=( $CONFIG_DATA_TYPES )
 CONFIG_FILES=( $CONFIG_FILES )
-MAP_LOADER_HDFS_NAME_NODES=( $MAP_LOADER_HDFS_NAME_NODES )
-NUM_MAP_LOADERS=( $NUM_MAP_LOADERS )
 IFS="$OLD_IFS"
 
 # Export the variables as needed (required by some python scripts and some java code)

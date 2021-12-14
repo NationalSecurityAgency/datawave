@@ -78,7 +78,7 @@ if [[ COUNT -eq 0 ]]; then
     COUNT=0
     export MAP_LOADER_WORKDIR=${BASE_WORK_DIR}
     echo "start 1 map file loader for ${MAP_LOADER_WORKDIR} on ${EXTRA_MAP_LOADER}..."
-    $MAPFILE_LOADER_CMD -srcHdfs ${EXTRA_MAP_LOADER} -destHdfs ${EXTRA_MAP_LOADER} -shutdownPort "231$LOADER$COUNT" >> $LOD_DIR/map-file-loader.$LOADDER$COUNT.log 2>&1 &
+    $MAPFILE_LOADER_CMD -srcHdfs ${EXTRA_MAP_LOADER} -destHdfs ${EXTRA_MAP_LOADER} -shutdownPort "231$LOADER$COUNT" >> $LOG_DIR/map-file-loader.$LOADDER$COUNT.log 2>&1 &
   fi
 
   if [[ ! -z ${MAP_LOADER_CUSTOM} ]]; then
@@ -95,13 +95,15 @@ elif [[ COUNT -ne EXPECTED_COUNT ]]; then
     echo "Comparing map file loaders to configuration..."
     for (( LOADER=0; LOADER < ${#MAP_LOADER_HDFS_NAME_NODES[@]}; LOADER=$((LOADER + 1)) )); do
       COUNT=${NUM_MAP_LOADERS[$LOADER]}
-      NUM_RUNNING_FOR_THIS_NAME_NODE=$($MAPFILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader.*${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}" -c)
+      NUM_RUNNING_FOR_THIS_NAME_NODE=$($MAPFILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader.* [sS][rR][cC][hH][dD][fF][sS] .* [sS][rR][cC][hH][dD][fF][sS] ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]} " -c)
 
       echo "${NUM_RUNNING_FOR_THIS_NAME_NODE} of ${COUNT} map file loaders running for ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}."
 
       if [[ $NUM_RUNNING_FOR_THIS_NAME_NODE -eq 0 ]]; then
         resetJobLoadingFile ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]} ${MAP_LOADER_WORKDIR[$LOADER]}
-      elif  [[ $NUM_RUNNING_FOR_THIS_NAME_NODE -lt $COUNT ]]; then
+      fi
+
+      if  [[ $NUM_RUNNING_FOR_THIS_NAME_NODE -lt $COUNT ]]; then
         echo "Attempting to start missing map file loaders..."
         for (( ; $COUNT; COUNT=$((COUNT-1)) )) ; do
           SHUTDOWN_PORT="241${LOADER}${COUNT}"
