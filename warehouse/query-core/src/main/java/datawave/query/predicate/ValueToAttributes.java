@@ -53,7 +53,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
     private EventDataQueryFilter attrFilter;
     
     // Whether the value is from the index
-    private boolean fromIndex;
+    private final boolean fromIndex;
     
     public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter,
                     MarkingFunctions markingFunctions, boolean fromIndex) {
