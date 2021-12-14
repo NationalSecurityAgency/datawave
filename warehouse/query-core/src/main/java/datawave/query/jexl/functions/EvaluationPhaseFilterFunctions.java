@@ -1499,14 +1499,14 @@ public class EvaluationPhaseFilterFunctions {
         return FunctionalSet.unmodifiableSet(matches);
     }
     
-    private static long getMaxTime(Object dates) throws ParseException {
+    public static long getMaxTime(Object dates) throws ParseException {
         if (dates instanceof Iterable<?>)
             return getMaxTime((Iterable<?>) dates);
         else
             return getTime(dates);
     }
     
-    private static long getMaxTime(Iterable<?> dates) throws ParseException {
+    public static long getMaxTime(Iterable<?> dates) throws ParseException {
         long max = Long.MIN_VALUE;
         if (dates != null) {
             for (Object date : dates) {
@@ -1516,14 +1516,14 @@ public class EvaluationPhaseFilterFunctions {
         return max;
     }
     
-    private static long getMinTime(Object dates) throws ParseException {
+    public static long getMinTime(Object dates) throws ParseException {
         if (dates instanceof Iterable<?>)
             return getMinTime((Iterable<?>) dates);
         else
             return getTime(dates);
     }
     
-    private static long getMinTime(Iterable<?> dates) throws ParseException {
+    public static long getMinTime(Iterable<?> dates) throws ParseException {
         long min = Long.MAX_VALUE;
         for (Object date : dates) {
             min = Math.min(min, getTime(date));
@@ -1531,14 +1531,14 @@ public class EvaluationPhaseFilterFunctions {
         return min;
     }
     
-    private static Object getMaxValue(Object dates) throws ParseException {
+    public static Object getMaxValue(Object dates) throws ParseException {
         if (dates instanceof Iterable<?>)
             return getMaxValue((Iterable<?>) dates);
         else
             return dates;
     }
     
-    private static Object getMaxValue(Iterable<?> dates) throws ParseException {
+    public static Object getMaxValue(Iterable<?> dates) throws ParseException {
         long max = Long.MIN_VALUE;
         Object value = null;
         for (Object date : dates) {
@@ -1551,14 +1551,14 @@ public class EvaluationPhaseFilterFunctions {
         return value;
     }
     
-    private static Object getMinValue(Object dates) throws ParseException {
+    public static Object getMinValue(Object dates) throws ParseException {
         if (dates instanceof Iterable<?>)
             return getMinValue((Iterable<?>) dates);
         else
             return dates;
     }
     
-    private static Object getMinValue(Iterable<?> dates) throws ParseException {
+    public static Object getMinValue(Iterable<?> dates) throws ParseException {
         long min = Long.MAX_VALUE;
         Object value = null;
         for (Object date : dates) {
