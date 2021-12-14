@@ -33,7 +33,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
      */
     protected Key metadata = null;
     protected boolean toKeep = true; // a flag denoting whether this attribute is to be kept in the returned results (transient or not)
-    protected boolean fromIndex; // Assume attributes are from the index unless specified otherwise.
+    protected boolean fromIndex = true; // Assume attributes are from the index unless specified otherwise.
     
     public Attribute() {}
     
