@@ -194,7 +194,7 @@ if [[ ! -z ${MAP_LOADER_HDFS_NAME_NODES_CONFIG} ]]; then
     MAP_LOADER_HDFS_NAME_NODES[$INDEX]=$(echo $MAP_LOADER_HDFS_NAME_NODE | cut -d, -f1 | cut -d/ -f1-3)
 
     # For viewfs, add the last / back on
-    case $MAP_LOADER_HDFS_NAME_NODES[$INDEX] IN viewfs:*)
+    case $MAP_LOADER_HDFS_NAME_NODES[$INDEX] in viewfs:*)
       MAP_LOADER_HDFS_NAME_NODES[$INDEX]="${MAP_LOADER_HDFS_NAME_NODES[$INDEX]}/"
     esac
 
@@ -205,7 +205,7 @@ if [[ ! -z ${MAP_LOADER_HDFS_NAME_NODES_CONFIG} ]]; then
     fi
 
     # Insist on numerical format for NUM_MAP_LOADERS entries
-    if ! [[ ${NUM_MAP_LOADERS[INDEX]} = ~ '^[0-9]+$' ]]; then
+    if ! [[ ${NUM_MAP_LOADERS[INDEX]} =~ '^[0-9]+$' ]]; then
       echo "Invalid format for MAP_LOADER_HDFS_NAME_NODES_CONFIG."
       echo "Example configuration: MAP_LOADER_HDFS_NAME_NODES_CONFIG=hdfs://namenode-1:1;hdfs://namenode-2:3;"
       echo "Exiting..."

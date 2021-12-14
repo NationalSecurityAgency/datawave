@@ -39,13 +39,15 @@ done
 function resetJobLoadingFile () {
   NAME_NODE=$1
   WORK_DIR=$2
-  FILES_STUCK_LOADING=$($INGEST_HADOOP_HOME/bin/hadoop fs -ls "${NAME_NODE}${WORK_DIR}/*/job.loading" | awk '{print $NF}')
+  echo "Checking for job.loading in ${NAME_NODE}/${WORK_DIR}"
+  FILES_STUCK_LOADING=$(${INGEST_HADOOP_HOME}/bin/hadoop fs -ls "${NAME_NODE}${WORK_DIR}/*/job.loading" | awk '{print $NF}')
+  echo Result: ${FILES_STUCK_LOADING}
   if [[ ! -z $FILES_STUCK_LOADING ]]; then
-    for stuckFile in $FILES_STUCK_LOADING; do
-      echo "Resetting ${stuckFile}"
-      moving_result=$($INGEST_HADOOP_HOME/bin/hadoop fs -mv $stuckFile ${stuckFile%.loading}.complete 2>&1)
-      if [[ ! -z $moving_result ]]; then
-        echo "Error resetting file: $moving_result . Manually check for orphans."
+    for STUCK_FILE in $FILES_STUCK_LOADING; do
+      echo "Resetting ${STUCK_FILE}"
+      MOVE_RESULT=$(${INGEST_HADOOP_HOME}/bin/hadoop fs -mv ${STUCK_FILE} ${STUCK_FILE%.loading}.complete 2>&1)
+      if [[ ! -z ${MOVE_RESULT} ]]; then
+        echo "Error resetting file: ${MOVE_RESULT}. Manually check for orphans."
       fi
     done
   fi
@@ -79,7 +81,7 @@ if [[ COUNT -eq 0 ]]; then
     $MAPFILE_LOADER_CMD -srcHdfs ${EXTRA_MAP_LOADER} -destHdfs ${EXTRA_MAP_LOADER} -shutdownPort "231$LOADER$COUNT" >> $LOD_DIR/map-file-loader.$LOADDER$COUNT.log 2>&1 &
   fi
 
-  if [[! -z $MAP_LOADER_CUSTOM ]]; then
+  if [[ ! -z ${MAP_LOADER_CUSTOM} ]]; then
     for ((CUSTOM_LOADER=0; CUSTOM_LOADER < ${#MAP_LOADER_CUSTOM[@]}; CUSTOM_LOADER=$((CUSTOM_LOADER +1)) )); do
       echo "starting additional map file loader: ${MAP_LOADER_CUSTOM[$CUSTOM_LOADER]}"
       ${MAP_LOADER_CUSTOM[$CUSTOM_LOADER]} -shutdownPort "2510$CUSTOM_LOADER" >> $LOG_DIR/map-file-loader-custom.$CUSTOM_LOADER.log 2>&1 &
@@ -115,6 +117,7 @@ elif [[ COUNT -ne EXPECTED_COUNT ]]; then
         done
       fi
     done
+  fi
 else
   echo "$COUNT map file loaders already running"
 fi
