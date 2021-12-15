@@ -40,6 +40,10 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
         configMap = confMap;
     }
     
+    public void clear() {
+        configMap = new HashMap();
+    }
+    
     public boolean isInitialized() {
         return !configMap.isEmpty();
     }

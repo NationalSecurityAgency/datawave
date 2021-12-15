@@ -91,7 +91,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected String extension;
     protected Configuration conf;
     protected Map<String,ConfigurationCopy> tableConfigs;
-    protected String[] tableIds = null;
+    protected Set<String> tableIds = null;
     protected long maxRFileSize = 0;
     protected int maxRFileEntries = 0;
     protected boolean generateMapFileRowKeys = false;
@@ -480,7 +480,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     shardedTablesConfigured.add(table);
                 }
                 
-                if (!Arrays.asList(tableIds).contains(table)) {
+                if (!tableIds.contains(table)) {
                     throw new IOException("Unable to determine id for table " + table);
                 }
                 Path tableDir = new Path(workDir, table);
