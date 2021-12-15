@@ -894,11 +894,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     config.setQueryTree(timedExpandRanges(timers, "Expand Ranges", config.getQueryTree(), config, metadataHelper, scannerFactory));
                 }
                 
+                // NOTE: GeoWavePruningVisitor should run before QueryPruningVisitor. If it runs after, there is a chance
+                // that GeoWavePruningVisitor will prune all of the remaining indexed terms, which would leave a GeoWave
+                // function without any indexed terms or ranges, which should evaluate to false. That case won't be handled
+                // properly if we run GeoWavePruningVisitor after QueryPruningVisitor.
+                config.setQueryTree(timedPruneGeoWaveTerms(timers, config.getQueryTree(), metadataHelper));
+                
                 if (reduceQuery) {
                     config.setQueryTree(timedReduce(timers, "Reduce Query After Range Expansion", config.getQueryTree()));
                 }
-                
-                config.setQueryTree(timedPruneGeoWaveTerms(timers, config.getQueryTree(), metadataHelper));
                 
                 // Check if there are functions that can be pushed into exceeded value ranges.
                 if (nodeCount.hasAll(ASTFunctionNode.class, ExceededValueThresholdMarkerJexlNode.class)) {

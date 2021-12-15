@@ -24,7 +24,7 @@ public class JexlPatternCache {
             return pattern;
         }
         
-        pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+        pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE | Pattern.MULTILINE | Pattern.DOTALL);
         PATTERN_CACHE.put(regex, pattern);
         
         return pattern;

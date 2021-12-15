@@ -100,6 +100,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         this.config = EdgeQueryConfiguration.create(other);
         
         setMetadataHelperFactory(other.getMetadataHelperFactory());
+        setDateFilterScanLimit(other.getDateFilterScanLimit());
+        setDateFilterSkipLimit(other.getDateFilterSkipLimit());
         visitationContext = other.visitationContext;
     }
     
