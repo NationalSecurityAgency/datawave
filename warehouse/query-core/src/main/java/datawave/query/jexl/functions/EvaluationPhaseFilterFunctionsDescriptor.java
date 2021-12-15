@@ -50,12 +50,12 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
     public static class EvaluationPhaseFilterJexlArgumentDescriptor implements JexlArgumentDescriptor {
         private static final Logger log = Logger.getLogger(EvaluationPhaseFilterJexlArgumentDescriptor.class);
         
-        private static final ImmutableSet<String> regexFunctions = ImmutableSet.of(EXCLUDE_REGEX, INCLUDE_REGEX);
-        private static final ImmutableSet<String> andExpansionFunctions = ImmutableSet.of(IS_NULL);
-        private static final ImmutableSet<String> dateBetweenFunctions = ImmutableSet.of(BETWEEN_DATES, BETWEEN_LOAD_DATES);
-        private static final String MATCHCOUNTOF = MATCHES_AT_LEAST_COUNT_OF;
-        private static final String TIMEFUNCTION = TIME_FUNCTION;
-        private static final String TEXT = INCLUDE_TEXT;
+        public static final ImmutableSet<String> regexFunctions = ImmutableSet.of(EXCLUDE_REGEX, INCLUDE_REGEX);
+        public static final ImmutableSet<String> andExpansionFunctions = ImmutableSet.of(IS_NULL);
+        public static final ImmutableSet<String> dateBetweenFunctions = ImmutableSet.of(BETWEEN_DATES, BETWEEN_LOAD_DATES);
+        public static final String MATCHCOUNTOF = MATCHES_AT_LEAST_COUNT_OF;
+        public static final String TIMEFUNCTION = TIME_FUNCTION;
+        public static final String TEXT = INCLUDE_TEXT;
         private final ASTFunctionNode node;
         
         public EvaluationPhaseFilterJexlArgumentDescriptor(ASTFunctionNode node) {
