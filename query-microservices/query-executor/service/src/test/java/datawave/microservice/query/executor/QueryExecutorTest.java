@@ -230,8 +230,8 @@ public abstract class QueryExecutorTest {
         String queryStr = CitiesDataType.CityField.CITY.name() + ":\"" + city + "\"" + AND_OP + "#EVALUATION_ONLY('" + CitiesDataType.CityField.COUNTRY.name()
                         + ":\"" + country + "\"')";
         
-        String expectPlan = CitiesDataType.CityField.CITY.name() + EQ_OP + "'" + city + "'" + JEXL_AND_OP + "((_Eval_ = true) && "
-                        + CitiesDataType.CityField.COUNTRY.name() + EQ_OP + "'" + country + "')";
+        String expectPlan = CitiesDataType.CityField.CITY.name() + EQ_OP + "'" + city + "'" + JEXL_AND_OP + "((_Eval_ = true) && ("
+                        + CitiesDataType.CityField.COUNTRY.name() + EQ_OP + "'" + country + "'))";
         
         Query query = new QueryImpl();
         query.setQuery(queryStr);
@@ -346,8 +346,8 @@ public abstract class QueryExecutorTest {
         String queryStr = CitiesDataType.CityField.CITY.name() + ":\"" + city + "\"" + AND_OP + "#EVALUATION_ONLY('" + CitiesDataType.CityField.COUNTRY.name()
                         + ":\"" + country + "\"')";
         
-        String expectPlan = CitiesDataType.CityField.CITY.name() + EQ_OP + "'" + city + "'" + JEXL_AND_OP + "((_Eval_ = true) && "
-                        + CitiesDataType.CityField.COUNTRY.name() + EQ_OP + "'" + country + "')";
+        String expectPlan = CitiesDataType.CityField.CITY.name() + EQ_OP + "'" + city + "'" + JEXL_AND_OP + "((_Eval_ = true) && ("
+                        + CitiesDataType.CityField.COUNTRY.name() + EQ_OP + "'" + country + "'))";
         
         Query query = new QueryImpl();
         query.setQuery(queryStr);
@@ -549,8 +549,8 @@ public abstract class QueryExecutorTest {
         String queryStr = CitiesDataType.CityField.CITY.name() + ":\"" + city + "\"" + AND_OP + "#EVALUATION_ONLY('" + CitiesDataType.CityField.COUNTRY.name()
                         + ":\"" + country + "\"')";
         
-        String expectPlan = CitiesDataType.CityField.CITY.name() + EQ_OP + "'" + city + "'" + JEXL_AND_OP + "((_Eval_ = true) && "
-                        + CitiesDataType.CityField.COUNTRY.name() + EQ_OP + "'" + country + "')";
+        String expectPlan = CitiesDataType.CityField.CITY.name() + EQ_OP + "'" + city + "'" + JEXL_AND_OP + "((_Eval_ = true) && ("
+                        + CitiesDataType.CityField.COUNTRY.name() + EQ_OP + "'" + country + "'))";
         
         Query query = new QueryImpl();
         query.setQuery(queryStr);
@@ -610,8 +610,8 @@ public abstract class QueryExecutorTest {
         String queryStr = CitiesDataType.CityField.CITY.name() + ":\"" + city + "\"" + AND_OP + "#EVALUATION_ONLY('" + CitiesDataType.CityField.COUNTRY.name()
                         + ":\"" + country + "\"')";
         
-        String expectPlan = CitiesDataType.CityField.CITY.name() + EQ_OP + "'" + city + "'" + JEXL_AND_OP + "((_Eval_ = true) && "
-                        + CitiesDataType.CityField.COUNTRY.name() + EQ_OP + "'" + country + "')";
+        String expectPlan = CitiesDataType.CityField.CITY.name() + EQ_OP + "'" + city + "'" + JEXL_AND_OP + "((_Eval_ = true) && ("
+                        + CitiesDataType.CityField.COUNTRY.name() + EQ_OP + "'" + country + "'))";
         
         Query query = new QueryImpl();
         query.setQuery(queryStr);

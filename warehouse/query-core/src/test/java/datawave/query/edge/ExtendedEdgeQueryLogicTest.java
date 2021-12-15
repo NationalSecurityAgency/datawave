@@ -31,8 +31,8 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
     }
     
     public DefaultExtendedEdgeQueryLogic runLogic(QueryImpl q, Set<Authorizations> auths, long scanLimit) throws Exception {
-        GenericQueryConfiguration config = logic.initialize(connector, q, auths);
         logic.setDateFilterScanLimit(scanLimit);
+        GenericQueryConfiguration config = logic.initialize(connector, q, auths);
         logic.setupQuery(config);
         return logic;
     }

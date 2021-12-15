@@ -10,7 +10,7 @@
     <artifactId>query-storage-api</artifactId>
     <version>1.0-SNAPSHOT</version>
     <properties>
-        <version.datawave>3.9.0-SNAPSHOT</version.datawave>
+        <version.datawave>3.10.0-SNAPSHOT</version.datawave>
         <version.lang3>3.3.2</version.lang3>
         <version.microservice.query.starter>1.0-SNAPSHOT</version.microservice.query.starter>
         <version.spring.messaging>5.3.5</version.spring.messaging>
