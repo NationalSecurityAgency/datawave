@@ -45,7 +45,7 @@ public class TableConfigurationUtil {
     
     protected static final Logger log = Logger.getLogger(TableConfigurationUtil.class.getName());
     public static final String ITERATOR_CLASS_MARKER = "iterClass";
-    private String[] tableNames;
+    private Set<String> tableNames = new HashSet<>();
     private AccumuloHelper accumuloHelper;
     private TreeMap<String,Map<Integer,Map<String,String>>> combiners = new TreeMap<>();
     private TreeMap<String,Map<Integer,Map<String,String>>> aggregators = new TreeMap<>();
@@ -61,7 +61,7 @@ public class TableConfigurationUtil {
         
     }
     
-    public String[] getTableNames() {
+    public Set<String> getTableNames() {
         return tableNames;
     }
     
@@ -77,7 +77,7 @@ public class TableConfigurationUtil {
             log.error("Configured tables for configured data types is empty");
             return false;
         }
-        tableNames = tables.toArray(new String[tables.size()]);
+        tableNames = tables;
         conf.set("job.table.names", org.apache.hadoop.util.StringUtils.join(",", tableNames));
         return true;
     }
@@ -181,8 +181,8 @@ public class TableConfigurationUtil {
      * @throws AccumuloException
      * @throws TableNotFoundException
      */
-    protected void createAndConfigureTablesIfNecessary(String[] tableNames, TableOperations tops, NamespaceOperations namespaceOperations, Configuration conf,
-                    Logger log, boolean enableBloomFilters) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+    protected void createAndConfigureTablesIfNecessary(Set<String> tableNames, TableOperations tops, NamespaceOperations namespaceOperations,
+                    Configuration conf, Logger log, boolean enableBloomFilters) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         for (String table : tableNames) {
             createNamespaceIfNecessary(namespaceOperations, table);
             // If the tables don't exist, then create them.
@@ -232,7 +232,7 @@ public class TableConfigurationUtil {
      * @throws AccumuloException
      * @throws TableNotFoundException
      */
-    private void configureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf, Logger log) throws AccumuloSecurityException,
+    private void configureTablesIfNecessary(Set<String> tableNames, TableOperations tops, Configuration conf, Logger log) throws AccumuloSecurityException,
                     AccumuloException, TableNotFoundException {
         
         Map<String,TableConfigHelper> tableConfigs = getTableConfigsFromAccumulo(log, conf, tableNames);
@@ -258,9 +258,9 @@ public class TableConfigurationUtil {
      *            the names of the tables to configure
      * @return Map&lt;String,TableConfigHelper&gt; map from table names to their setup TableConfigHelper classes
      */
-    private Map<String,TableConfigHelper> getTableConfigsFromAccumulo(Logger log, Configuration conf, String[] tableNames) {
+    private Map<String,TableConfigHelper> getTableConfigsFromAccumulo(Logger log, Configuration conf, Set<String> tableNames) {
         
-        Map<String,TableConfigHelper> helperMap = new HashMap<>(tableNames.length);
+        Map<String,TableConfigHelper> helperMap = new HashMap<>(tableNames.size());
         
         for (String table : tableNames) {
             helperMap.put(table, TableConfigHelperFactory.create(table, conf, log));
@@ -376,7 +376,7 @@ public class TableConfigurationUtil {
         
     }
     
-    private static Map<String,Map<String,String>> getTableConfigsFromAccumulo(AccumuloHelper accumuloHelper, Logger log, String[] tableNames)
+    private static Map<String,Map<String,String>> getTableConfigsFromAccumulo(AccumuloHelper accumuloHelper, Logger log, Set<String> tableNames)
                     throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         
         Map<String,Map<String,String>> configMap = new HashMap<>();
@@ -395,6 +395,7 @@ public class TableConfigurationUtil {
             }
             configMap.put(table, tempmap);
         }
+        
         return configMap;
     }
     

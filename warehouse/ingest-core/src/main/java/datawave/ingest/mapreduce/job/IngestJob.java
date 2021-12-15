@@ -142,7 +142,7 @@ public class IngestJob implements Tool {
     protected String idFilterFsts = null;
     
     protected String workDir = null;
-    protected String[] tableNames = null;
+    protected Set<String> tableNames = null;
     protected String flagFile = null;
     protected String flagFileDir = null;
     protected String flagFilePattern = null;
@@ -352,7 +352,7 @@ public class IngestJob implements Tool {
         
         // Log configuration
         log.info("Types: " + TypeRegistry.getTypeNames());
-        log.info("Tables: " + Arrays.toString(tableNames));
+        log.info("Tables: " + tableNames);
         log.info("InputFormat: " + job.getInputFormatClass().getName());
         log.info("Mapper: " + job.getMapperClass().getName());
         log.info("Reduce tasks: " + (useMapOnly ? 0 : reduceTasks));
@@ -789,8 +789,8 @@ public class IngestJob implements Tool {
         
         conf.setInt(MultiRFileOutputFormatter.EVENT_PARTITION_COUNT, this.reduceTasks * 2);
         configureMultiRFileOutputFormatter(conf, compressionType, compressionTableBlackList, maxRFileEntries, maxRFileSize, generateMapFileRowKeys);
-        
-        DelegatingPartitioner.configurePartitioner(job, conf, tableNames); // sets the partitioner
+        String[] tables = tableNames.toArray(new String[tableNames.size()]);
+        DelegatingPartitioner.configurePartitioner(job, conf, tables); // sets the partitioner
     }
     
     protected void configureInputFormat(Job job, AccumuloHelper cbHelper, Configuration conf) throws Exception {
