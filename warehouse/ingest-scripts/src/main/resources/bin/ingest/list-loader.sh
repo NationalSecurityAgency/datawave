@@ -12,7 +12,7 @@ FORCE=true
 . ../ingest/ingest-env.sh
 
 
-host=`hostname -s`
-for pid in `$MAPFILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader"`; do
+host=$(hostname -s)
+for pid in $($MAPFILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader"); do
    echo "$host: $pid: Map File Loader"
 done
