@@ -433,7 +433,7 @@ public class QueryManagementService implements QueryRequestHandler {
         
         try {
             TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, PREDICTED);
-            String queryPrediction = "This endpoint has not been implemented yet";
+            String queryPrediction = queryStorageCache.getQueryStatus(taskKey.getQueryId()).getPredictions().toString();
             queryStorageCache.deleteQuery(taskKey.getQueryId());
             GenericResponse<String> response = new GenericResponse<>();
             response.setResult(queryPrediction);
