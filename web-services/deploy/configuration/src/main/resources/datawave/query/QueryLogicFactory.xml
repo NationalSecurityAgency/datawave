@@ -312,7 +312,7 @@
     </bean>
     
     <!-- Query Logic that returns document content -->
-    <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryTable">
+    <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryLogic">
         <property name="tableName" value="${shard.table.name}" />
         <property name="maxResults" value="-1" />
         <property name="maxWork" value="-1" />
@@ -358,7 +358,7 @@
         <property name="includeHierarchyFields" value="false" />
     </bean>
 
-    <bean id="LuceneUUIDEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.webservice.query.logic.composite.CompositeQueryLogic">
+    <bean id="LuceneUUIDEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.services.query.logic.composite.CompositeQueryLogic">
       <property name="logicDescription" value="Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml" />
       <property name="auditType" value="NONE" />
       <property name="queryLogics">

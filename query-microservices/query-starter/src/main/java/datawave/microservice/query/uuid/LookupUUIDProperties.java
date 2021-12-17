@@ -18,6 +18,8 @@ public class LookupUUIDProperties {
     protected String beginDate;
     @NotNull
     protected String columnVisibility;
+    @NotEmpty
+    protected String contentQueryLogicName = "ContentQuery";
     
     public Map<String,UUIDType> getTypes() {
         return types;
@@ -49,5 +51,13 @@ public class LookupUUIDProperties {
     
     public void setColumnVisibility(String columnVisibility) {
         this.columnVisibility = columnVisibility;
+    }
+    
+    public String getContentQueryLogicName() {
+        return contentQueryLogicName;
+    }
+    
+    public void setContentQueryLogicName(String contentQueryLogicName) {
+        this.contentQueryLogicName = contentQueryLogicName;
     }
 }

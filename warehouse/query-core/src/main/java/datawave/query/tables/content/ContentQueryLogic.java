@@ -47,9 +47,9 @@ import java.util.TreeSet;
  * The optional parameter content.view.name can be used to retrieve an alternate view of the document, assuming one is stored with that name. The optional
  * parameter content.view.all can be used to retrieve all documents for the parent and children Both optional parameters can be used together
  */
-public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
+public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
-    private static final Logger log = Logger.getLogger(ContentQueryTable.class);
+    private static final Logger log = Logger.getLogger(ContentQueryLogic.class);
     
     private static final String PARENT_ONLY = "\1";
     private static final String ALL = "\u10FFFF";
@@ -58,12 +58,12 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
     private ScannerFactory scannerFactory;
     private String viewName = null;
     
-    public ContentQueryTable() {
+    public ContentQueryLogic() {
         super();
     }
     
-    public ContentQueryTable(final ContentQueryTable contentQueryTable) {
-        super(contentQueryTable);
+    public ContentQueryLogic(final ContentQueryLogic contentQueryLogic) {
+        super(contentQueryLogic);
     }
     
     /**
@@ -236,7 +236,7 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
     
     @Override
     public Object clone() throws CloneNotSupportedException {
-        return new ContentQueryTable(this);
+        return new ContentQueryLogic(this);
     }
     
     public int getQueryThreads() {

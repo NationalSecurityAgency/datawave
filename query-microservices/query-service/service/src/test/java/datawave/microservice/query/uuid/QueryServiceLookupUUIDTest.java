@@ -22,7 +22,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
 
 import static datawave.microservice.query.QueryParameters.QUERY_MAX_CONCURRENT_TASKS;
-import static datawave.microservice.query.uuid.LookupUUIDService.LOOKUP_UUID_PAIRS;
+import static datawave.microservice.query.uuid.LookupService.LOOKUP_UUID_PAIRS;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

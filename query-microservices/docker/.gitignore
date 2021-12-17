@@ -3,3 +3,5 @@
 **/scripts/prediction_*
 **/scripts/lookup_*
 **/scripts/batchLookup_*
+**/scripts/lookupContent_*
+**/scripts/batchLookupContent_*

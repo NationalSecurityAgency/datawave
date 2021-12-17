@@ -1,5 +1,6 @@
 package datawave.query.config;
 
+import datawave.query.tables.content.ContentQueryLogic;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.BaseQueryLogic;
 import datawave.webservice.query.Query;
@@ -12,7 +13,7 @@ import java.util.Objects;
 import java.util.TreeSet;
 
 /**
- * Thin wrapper around GenericQueryConfiguration for use by the {@link datawave.query.tables.content.ContentQueryTable}
+ * Thin wrapper around GenericQueryConfiguration for use by the {@link ContentQueryLogic}
  * 
  */
 public class ContentQueryConfiguration extends GenericQueryConfiguration implements Serializable {
