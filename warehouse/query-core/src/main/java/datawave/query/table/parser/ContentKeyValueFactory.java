@@ -88,7 +88,7 @@ public class ContentKeyValueFactory {
      * Decodes the given 'document', which should be gzip'd and base64 encoded
      */
     private static byte[] decode(String doc) throws Exception {
-        byte[] bytes = Base64.getDecoder().decode(doc);
+        byte[] bytes = Base64.getMimeDecoder().decode(doc);
         if (isGzip(bytes)) {
             bytes = gunzip(bytes);
         }
