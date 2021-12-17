@@ -304,7 +304,7 @@ public class UniqueTransformTest {
         givenInputDocument(MARKER_STRING).withKeyValue(LogTiming.TIMING_METADATA, timingMetadata.toString()).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR0", randomValues.get(0)).isExpectedToBeUnique();
         givenInputDocument().withKeyValue("ATTR1", randomValues.get(1)).isExpectedToBeUnique();
-        givenInputDocument().withKeyValue("ATTR2", randomValues.get(1));
+        givenInputDocument().withKeyValue("ATTR1", randomValues.get(2));
         
         givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0");
         
