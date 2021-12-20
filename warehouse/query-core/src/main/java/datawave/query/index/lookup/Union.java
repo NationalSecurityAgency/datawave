@@ -213,7 +213,6 @@ public class Union extends BaseIndexStream {
             if (itr.hasNext()) {
                 // add this to the processed list so other iterators have a chance to be first even if this one comes back earlier in the stack
                 processedChildren.add(itr);
-                // children.add(itr);
             } else {
                 if (log.isTraceEnabled()) {
                     log.trace("IndexStream exhausted for " + itr.getContextDebug());
