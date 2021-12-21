@@ -15,7 +15,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
-import org.w3c.dom.Attr;
 
 import java.io.DataInput;
 import java.io.DataOutput;
