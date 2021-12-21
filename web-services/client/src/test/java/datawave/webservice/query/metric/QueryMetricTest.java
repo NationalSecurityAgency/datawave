@@ -42,18 +42,18 @@ public class QueryMetricTest {
     @BeforeClass
     public static void setup() {
         queryMetric = new QueryMetric();
-        markings = new HashMap<String,String>();
+        markings = new HashMap<>();
         markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, "PUBLIC");
         queryMetric.setMarkings(markings);
-        negativeSelectors = new ArrayList<String>();
+        negativeSelectors = new ArrayList<>();
         negativeSelectors.add("negativeSelector1");
-        positiveSelectors = new ArrayList<String>();
+        positiveSelectors = new ArrayList<>();
         positiveSelectors.add("positiveSelector1");
-        pageTimes = new ArrayList<PageMetric>();
+        pageTimes = new ArrayList<>();
         PageMetric pageMetric = new PageMetric();
         pageMetric.setCallTime(0);
         pageTimes.add(pageMetric);
-        proxyServers = new ArrayList<String>();
+        proxyServers = new ArrayList<>();
         proxyServers.add("proxyServer1");
     }
     
@@ -116,7 +116,7 @@ public class QueryMetricTest {
         assertEquals(Lifecycle.INITIALIZED, queryMetric.getLifecycle());
         assertEquals("PUBLIC", queryMetric.getMarkings().get(MarkingFunctions.Default.COLUMN_VISIBILITY));
         assertEquals("negativeSelector1", queryMetric.getNegativeSelectors().get(0));
-        assertEquals(0, queryMetric.getNumPages());
+        assertEquals(1, queryMetric.getNumPages());
         assertEquals(0, queryMetric.getNumResults());
         assertEquals(0, queryMetric.getNumUpdates());
         assertEquals(0, queryMetric.getPageTimes().get(0).getCallTime());

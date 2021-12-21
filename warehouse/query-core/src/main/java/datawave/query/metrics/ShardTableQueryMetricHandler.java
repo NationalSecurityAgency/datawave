@@ -588,7 +588,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 String fieldName = f.getName();
                 String fieldValue = f.getValueString();
                 if (!excludedFields.contains(fieldName)) {
-                    
                     if (fieldName.equals("USER")) {
                         m.setUser(fieldValue);
                     } else if (fieldName.equals("USER_DN")) {
@@ -648,26 +647,12 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         if (-1 == index) {
                             log.error("Could not parse field name to extract repetition count: " + fieldName);
                         } else {
-                            Long repetition = Long.parseLong(fieldName.substring(index + 1));
-                            
-                            String[] parts = StringUtils.split(fieldValue, "/");
-                            PageMetric pageMetric = null;
-                            if (parts.length == 8) {
-                                pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]),
-                                                Long.parseLong(parts[3]), Long.parseLong(parts[4]), Long.parseLong(parts[5]), Long.parseLong(parts[6]),
-                                                Long.parseLong(parts[7]));
-                            } else if (parts.length == 7) {
-                                pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]),
-                                                Long.parseLong(parts[3]), Long.parseLong(parts[4]), Long.parseLong(parts[5]), Long.parseLong(parts[6]));
-                            } else if (parts.length == 5) {
-                                pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]),
-                                                Long.parseLong(parts[3]), Long.parseLong(parts[4]), 0l, 0l);
-                            } else if (parts.length == 2) {
-                                pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), 0l, 0l);
+                            Long pageNum = Long.parseLong(fieldName.substring(index + 1));
+                            PageMetric pageMetric = PageMetric.parse(fieldValue);
+                            if (pageMetric != null) {
+                                pageMetric.setPageNumber(pageNum);
+                                pageMetrics.put(pageNum, pageMetric);
                             }
-                            
-                            if (pageMetric != null)
-                                pageMetrics.put(repetition, pageMetric);
                         }
                     } else if (fieldName.equals("POSITIVE_SELECTORS")) {
                         List<String> positiveSelectors = m.getPositiveSelectors();
@@ -723,8 +708,12 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         m.setFiRanges(Long.parseLong(fieldValue));
                     } else if (fieldName.equals("VERSION")) {
                         m.setVersion(fieldValue);
+                    } else if (fieldName.equals("YIELD_COUNT")) {
+                        m.setYieldCount(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("LOGIN_TIME")) {
+                        m.setLoginTime(Long.parseLong(fieldValue));
                     } else {
-                        log.error("encountered unanticipated field name: " + fieldName);
+                        log.debug("encountered unanticipated field name: " + fieldName);
                     }
                 }
             }
@@ -737,9 +726,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     
                 }
             }
-            for (final Entry<Long,PageMetric> entry : pageMetrics.entrySet()) {
-                m.addPageMetric(entry.getValue());
-            }
+            m.setPageTimes(new ArrayList<>(pageMetrics.values()));
             return m;
         } catch (Exception e) {
             log.warn("Unexpected error creating query metric. Returning null", e);
