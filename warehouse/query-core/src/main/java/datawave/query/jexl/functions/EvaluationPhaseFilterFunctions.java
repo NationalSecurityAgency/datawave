@@ -1578,7 +1578,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param granularity
      * @return next date/time in milliseconds
      */
-    static long getNextTime(long time, int granularity) {
+    public static long getNextTime(long time, int granularity) {
         Calendar c = Calendar.getInstance();
         c.setTimeInMillis(time);
         c.add(granularity, 1);
@@ -1596,7 +1596,7 @@ public class EvaluationPhaseFilterFunctions {
      * @throws ParseException
      *             if the value failed to be parsed using the supplied format
      */
-    static long getTime(Object value, DateFormat format) throws ParseException {
+    public static long getTime(Object value, DateFormat format) throws ParseException {
         synchronized (format) {
             return format.parse(ValueTuple.getStringValue(value)).getTime();
         }
@@ -1616,7 +1616,7 @@ public class EvaluationPhaseFilterFunctions {
      * @throws ParseException
      *             if the value failed to be parsed using the suppied format
      */
-    static long getNextTime(Object value, DateFormat format, int granularity) throws ParseException {
+    public static long getNextTime(Object value, DateFormat format, int granularity) throws ParseException {
         return getNextTime(getTime(value, format), granularity);
     }
     
@@ -1629,7 +1629,7 @@ public class EvaluationPhaseFilterFunctions {
      * @throws ParseException
      *             if the value failed to be parsed using any of the known formats
      */
-    static long getTime(Object value) throws ParseException {
+    public static long getTime(Object value) throws ParseException {
         return getTime(value, false);
     }
     
@@ -1645,7 +1645,7 @@ public class EvaluationPhaseFilterFunctions {
      * @throws ParseException
      *             if the value failed to be parsed by any of the known formats.
      */
-    static long getTime(Object value, boolean nextTime) throws ParseException {
+    public static long getTime(Object value, boolean nextTime) throws ParseException {
         // determine if a number first
         for (int i = 0; i < dateFormatList.size(); i++) {
             DateFormat format = dateFormatList.get(i);
