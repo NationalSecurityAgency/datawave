@@ -59,8 +59,9 @@ public class EvaluationPhaseFilterFunctions {
         if (iterable != null) {
             int sourcedFromEvent = 0;
             int sourcedFromIndex = 0;
+            int nonValueTuples = 0;
             for (Object o : iterable) {
-                if (o instanceof ValueTuple) { // Ignore non-ValueTuple types.
+                if (o instanceof ValueTuple) {
                     ValueTuple valueTuple = (ValueTuple) o;
                     Attribute<?> attribute = valueTuple.getSource();
                     // Count which fields were found from the events vs. the index.
@@ -69,14 +70,19 @@ public class EvaluationPhaseFilterFunctions {
                     } else {
                         sourcedFromEvent++;
                     }
+                } else {
+                    nonValueTuples++;
                 }
             }
             // If any of the fields were found in the events, only return the number of fields found in the events.
             if (sourcedFromEvent > 0) {
                 return sourcedFromEvent;
-            } else {
+            } else if (sourcedFromIndex > 0) {
                 // If the field was index-only, return the number of fields found in the index.
                 return sourcedFromIndex;
+            } else {
+                // If we found no value tuples, return the number of objects we saw.
+                return nonValueTuples;
             }
         }
         return 0;

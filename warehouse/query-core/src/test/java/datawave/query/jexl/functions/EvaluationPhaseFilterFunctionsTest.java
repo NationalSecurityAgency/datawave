@@ -221,6 +221,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         
         private static final ValueTuple indexFieldValue = toValueTuple("FOO.1,INDEX,index");
         private static final ValueTuple eventFieldValue = toValueTuple("FOO.1,EVENT,event");
+        private static final Object object = new Object();
         
         private Iterable<?> fieldValue;
         private String operator;
@@ -241,13 +242,18 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertThat(resultForOperator(1)).isFalse();
             assertThat(resultForOperator(2)).isTrue();
             
-            // Results in total count of 3.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            // Results in total count of indexed fields: 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
             assertThat(resultForOperator(3)).isFalse();
             assertThat(resultForOperator(4)).isTrue();
             
-            // Results in total count of 2.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            // Results in total count of event fields: 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
+            assertThat(resultForOperator(2)).isFalse();
+            assertThat(resultForOperator(3)).isTrue();
+            
+            // Results in total count of objects: 2.
+            givenFieldValues(object, object);
             assertThat(resultForOperator(2)).isFalse();
             assertThat(resultForOperator(3)).isTrue();
         }
@@ -263,13 +269,18 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertThat(resultForOperator(1)).isTrue();
             assertThat(resultForOperator(2)).isTrue();
             
-            // Results in total count of 3.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            // Results in total count of indexed fields: 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
             assertThat(resultForOperator(2)).isFalse();
             assertThat(resultForOperator(3)).isTrue();
             
-            // Results in total count of 2.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            // Results in total count of event fields: 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
+            assertThat(resultForOperator(1)).isFalse();
+            assertThat(resultForOperator(2)).isTrue();
+            
+            // Results in total count of objects: 2.
+            givenFieldValues(object, object);
             assertThat(resultForOperator(1)).isFalse();
             assertThat(resultForOperator(2)).isTrue();
         }
@@ -285,13 +296,18 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertThat(resultForOperator(1)).isTrue();
             assertThat(resultForOperator(2)).isFalse();
             
-            // Results in total count of 3.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            // Results in total count of indexed fields: 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
             assertThat(resultForOperator(2)).isFalse();
             assertThat(resultForOperator(3)).isTrue();
             
-            // Results in total count of 2.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            // Results in total count of event fields: 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
+            assertThat(resultForOperator(1)).isFalse();
+            assertThat(resultForOperator(2)).isTrue();
+            
+            // Results in total count of objects: 2.
+            givenFieldValues(object, object);
             assertThat(resultForOperator(1)).isFalse();
             assertThat(resultForOperator(2)).isTrue();
         }
@@ -307,13 +323,18 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertThat(resultForOperator(1)).isTrue();
             assertThat(resultForOperator(2)).isFalse();
             
-            // Results in total count of 3.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            // Results in total count of indexed fields: 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
             assertThat(resultForOperator(2)).isFalse();
             assertThat(resultForOperator(3)).isTrue();
             
-            // Results in total count of 2.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            // Results in total count of event fields: 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
+            assertThat(resultForOperator(1)).isFalse();
+            assertThat(resultForOperator(2)).isTrue();
+            
+            // Results in total count of objects: 2.
+            givenFieldValues(object, object);
             assertThat(resultForOperator(1)).isFalse();
             assertThat(resultForOperator(2)).isTrue();
         }
@@ -327,13 +348,18 @@ public class EvaluationPhaseFilterFunctionsTest {
             givenFieldValue(null);
             assertThat(resultForOperator(0)).isTrue();
             
-            // Results in total count of 3.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            // Results in total count of indexed fields: 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
             assertThat(resultForOperator(2)).isTrue();
             assertThat(resultForOperator(4)).isFalse();
             
-            // Results in total count of 2.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            // Results in total count of event fields: 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
+            assertThat(resultForOperator(2)).isTrue();
+            assertThat(resultForOperator(3)).isFalse();
+            
+            // Results in total count of objects: 2.
+            givenFieldValues(object, object);
             assertThat(resultForOperator(2)).isTrue();
             assertThat(resultForOperator(3)).isFalse();
         }
@@ -348,13 +374,18 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertThat(resultForOperator(0)).isTrue();
             assertThat(resultForOperator(1)).isFalse();
             
-            // Results in total count of 3.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            // Results in total count of indexed fields: 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
             assertThat(resultForOperator(2)).isTrue();
             assertThat(resultForOperator(3)).isFalse();
             
-            // Results in total count of 2.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            // Results in total count of event fields: 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
+            assertThat(resultForOperator(1)).isTrue();
+            assertThat(resultForOperator(2)).isFalse();
+            
+            // Results in total count of objects: 2.
+            givenFieldValues(object, object);
             assertThat(resultForOperator(1)).isTrue();
             assertThat(resultForOperator(2)).isFalse();
         }
@@ -370,13 +401,18 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertThat(resultForOperator(1)).isFalse();
             assertThat(resultForOperator(2)).isTrue();
             
-            // Results in total count of 3.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            // Results in total count of indexed fields: 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
             assertThat(resultForOperator(3)).isFalse();
             assertThat(resultForOperator(4)).isTrue();
             
-            // Results in total count of 2.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            // Results in total count of event fields: 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
+            assertThat(resultForOperator(2)).isFalse();
+            assertThat(resultForOperator(3)).isTrue();
+            
+            // Results in total count of objects: 2.
+            givenFieldValues(object, object);
             assertThat(resultForOperator(2)).isFalse();
             assertThat(resultForOperator(3)).isTrue();
         }
@@ -399,13 +435,18 @@ public class EvaluationPhaseFilterFunctionsTest {
             assertThat(resultForDefaultOperator(1)).isTrue();
             assertThat(resultForDefaultOperator(2)).isFalse();
             
-            // Results in total count of 3.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue);
+            // Results in total count of indexed fields: 3.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, object);
             assertThat(resultForDefaultOperator(2)).isFalse();
             assertThat(resultForDefaultOperator(3)).isTrue();
             
-            // Results in total count of 2.
-            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue);
+            // Results in total count of event fields: 2.
+            givenFieldValues(indexFieldValue, indexFieldValue, indexFieldValue, eventFieldValue, eventFieldValue, object);
+            assertThat(resultForDefaultOperator(1)).isFalse();
+            assertThat(resultForDefaultOperator(2)).isTrue();
+            
+            // Results in total count of objects: 2.
+            givenFieldValues(object, object);
             assertThat(resultForDefaultOperator(1)).isFalse();
             assertThat(resultForDefaultOperator(2)).isTrue();
         }
