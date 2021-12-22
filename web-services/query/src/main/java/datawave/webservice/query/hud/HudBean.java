@@ -120,7 +120,7 @@ public class HudBean {
     @Path("/summaryall")
     @GET
     public String getSummaryQueryStats() throws Exception {
-        QueryMetricsSummaryResponse summaryResp = queryMetrics.getQueryMetricsSummary(null, null);
+        QueryMetricsSummaryResponse summaryResp = queryMetrics.getTotalQueriesSummary(null, null);
         QueryMetricSummary hour1 = summaryResp.getHour1();
         QueryMetricSummary hour6 = summaryResp.getHour6();
         QueryMetricSummary hour12 = summaryResp.getHour12();

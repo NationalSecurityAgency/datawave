@@ -40,6 +40,7 @@ import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
+import org.apache.accumulo.core.clientImpl.ClientConfConverter;
 import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.clientImpl.ClientInfo;
 import org.apache.accumulo.core.clientImpl.Tables;
@@ -57,12 +58,13 @@ import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
-import org.apache.accumulo.core.master.state.tables.TableState;
+import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.TablePermission;
 import datawave.common.util.ArgumentChecker;
+import org.apache.accumulo.core.singletons.SingletonReservation;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.util.TextUtil;
 import org.apache.accumulo.fate.util.UtilWaitThread;
@@ -960,7 +962,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 else
                     startRow = new Text();
                 
-                Range metadataRange = new Range(new KeyExtent(TableId.of(tableId), startRow, null).getMetadataEntry(), true, null, false);
+                Range metadataRange = new Range(new KeyExtent(TableId.of(tableId), startRow, null).toMetaRow(), true, null, false);
                 Scanner scanner = client.createScanner(MetadataTable.NAME, Authorizations.EMPTY);
                 MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
                 scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
@@ -992,15 +994,14 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         }
                         
                         if (MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.hasColumns(key)) {
-                            extent = new KeyExtent(key.getRow(), entry.getValue());
+                            extent = KeyExtent.fromMetaPrevRow(entry);
                         }
-                        
                     }
                     
                     if (location != null)
                         return null;
                     
-                    if (!extent.getTableId().canonical().equals(tableId)) {
+                    if (!extent.tableId().canonical().equals(tableId)) {
                         throw new AccumuloException("Saw unexpected table Id " + tableId + " " + extent);
                     }
                     
@@ -1022,7 +1023,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     
                     rangeList.add(range);
                     
-                    if (extent.getEndRow() == null || range.afterEndKey(new Key(extent.getEndRow()).followingKey(PartialKey.ROW))) {
+                    if (extent.endRow() == null || range.afterEndKey(new Key(extent.endRow()).followingKey(PartialKey.ROW))) {
                         break;
                     }
                     
@@ -1075,7 +1076,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         String tableName = getTablename(conf);
         Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
                         .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
-        ClientContext context = new ClientContext(ClientInfo.from(props));
+        ClientInfo info = ClientInfo.from(props);
+        ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()));
         return TabletLocator.getLocator(context, Tables.getTableId(context, tableName));
     }
     
@@ -1116,7 +1118,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     tl = getTabletLocator(job.getConfiguration());
                     // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
                     tl.invalidateCache();
-                    ClientContext context = new ClientContext(cbHelper.newClientProperties());
+                    ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
+                    ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()));
                     while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             if (tableId == null)

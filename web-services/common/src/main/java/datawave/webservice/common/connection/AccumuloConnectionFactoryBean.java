@@ -14,14 +14,15 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.admin.SecurityOperations;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.util.Pair;
-import org.apache.accumulo.tracer.AsyncSpanReceiver;
-import org.apache.accumulo.tracer.ZooTraceClient;
+// TODO: Fix tracing for Accumulo 2.1-compatibility
+//import org.apache.accumulo.tracer.AsyncSpanReceiver;
+//import org.apache.accumulo.tracer.ZooTraceClient;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
-import org.apache.htrace.HTraceConfiguration;
-import org.apache.htrace.Trace;
+//import org.apache.htrace.HTraceConfiguration;
+//import org.apache.htrace.Trace;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
@@ -132,6 +133,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
             } catch (SecurityException e) {
                 log.warn("Unable to retrieve system property \"app\": " + e.getMessage());
             }
+            /*
             try {
                 Map<String,String> confMap = new HashMap<>();
                 confMap.put(TRACER_ZK_HOST, entry.getValue().getZookeepers());
@@ -144,6 +146,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
             } catch (IOException e) {
                 log.error("Unable to initialize distributed tracing system: " + e.getMessage(), e);
             }
+             */
         }
         
         cache.setConnectionFactory(this);

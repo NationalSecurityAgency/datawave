@@ -10,9 +10,10 @@ import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.htrace.Trace;
-import org.apache.htrace.TraceInfo;
-import org.apache.htrace.TraceScope;
+// TODO: Fix tracing for Accumulo 2.1-compatibility
+//import org.apache.htrace.Trace;
+//import org.apache.htrace.TraceInfo;
+//import org.apache.htrace.TraceScope;
 import org.apache.log4j.Logger;
 
 import javax.annotation.PostConstruct;
@@ -145,7 +146,7 @@ public class QueryExpirationBean {
                 if (log.isDebugEnabled()) {
                     log.debug("Entry evicted, connection returned.");
                 }
-                
+/*
                 TraceInfo traceInfo = query.getTraceInfo();
                 if (traceInfo != null) {
                     try (TraceScope scope = Trace.startSpan("query:expiration", traceInfo)) {
@@ -161,6 +162,7 @@ public class QueryExpirationBean {
                         }
                     }
                 }
+ */
             }
         }
         if (count > 0 && log.isDebugEnabled()) {

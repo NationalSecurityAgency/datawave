@@ -15,7 +15,7 @@ DW_ACCUMULO_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Zookeeper config
 
 # You may override DW_ZOOKEEPER_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://archive.apache.org/dist/zookeeper/zookeeper-3.4.14/zookeeper-3.4.14.tar.gz}"
+DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://archive.apache.org/dist/zookeeper/zookeeper-3.5.9/apache-zookeeper-3.5.9-bin.tar.gz}"
 # shellcheck disable=SC2154
 # shellcheck disable=SC2034
 DW_ZOOKEEPER_DIST="$( downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
@@ -29,7 +29,9 @@ tickTime=2000
 syncLimit=5
 clientPort=2181
 dataDir=${DW_CLOUD_DATA}/zookeeper
-maxClientCnxns=100"
+maxClientCnxns=100
+admin.serverPort=8089
+admin.enableServer=true"
 
 # Accumulo config
 
@@ -64,7 +66,7 @@ instance.zookeeper.host=localhost:2181
 instance.secret=${DW_ACCUMULO_PASSWORD}
 
 ## Set to false if 'accumulo-util build-native' fails
-tserver.memory.maps.native.enabled=false
+tserver.memory.maps.native.enabled=true
 tserver.memory.maps.max=385M
 tserver.cache.data.size=64M
 tserver.cache.index.size=64M
@@ -93,7 +95,7 @@ auth.token=${DW_ACCUMULO_PASSWORD}"
 DW_ACCUMULO_JVM_HEAPDUMP_DIR="${DW_CLOUD_DATA}/heapdumps"
 
 # shellcheck disable=SC2034
-DW_ACCUMULO_TSERVER_OPTS="\${POLICY} -Xmx768m -Xms768m -XX:-HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${DW_ACCUMULO_JVM_HEAPDUMP_DIR} -XX:+UseCompressedOops "
+export ACCUMULO_JAVA_OPTS="${ACCUMULO_JAVA_OPTS:-"-Dmasked.value.filter.classname=datawave.query.function.MaskedValueFilterInterface\$NoOp"}"
 
 export ZOOKEEPER_HOME="${DW_CLOUD_HOME}/${DW_ZOOKEEPER_SYMLINK}"
 export ACCUMULO_HOME="${DW_CLOUD_HOME}/${DW_ACCUMULO_SYMLINK}"
@@ -103,11 +105,11 @@ export PATH=${ACCUMULO_HOME}/bin:${ZOOKEEPER_HOME}/bin:$PATH
 
 DW_ZOOKEEPER_CMD_START="( cd ${ZOOKEEPER_HOME}/bin && ./zkServer.sh start )"
 DW_ZOOKEEPER_CMD_STOP="( cd ${ZOOKEEPER_HOME}/bin && ./zkServer.sh stop )"
-DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'zookeeper.server.quorum.QuorumPeerMain'"
+DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="ps -ef | grep 'zookeeper.server.quorum.QuorumPeerMain' | grep -v grep | awk '{ print \$2 }'"
 
 DW_ACCUMULO_CMD_START="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster start )"
 DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster stop )"
-DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'o.start.Main master|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
+DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'o.start.Main manager|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
 
 function accumuloIsRunning() {
     DW_ACCUMULO_PID_LIST="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS}")"
@@ -141,7 +143,7 @@ function accumuloStop() {
 function accumuloStatus() {
     # define vars for accumulo processes
     local _gc
-    local _master
+    local _manager
     local _monitor
     local _tracer
     local _tserver
@@ -166,7 +168,7 @@ function accumuloStatus() {
                     local _none
                     case "${_arg}" in
                         gc) _gc=${_pid};;
-                        master) _master=${_pid};;
+                        manager) _manager=${_pid};;
                         monitor) _monitor=${_pid};;
                         tracer) _tracer=${_pid};;
                         tserver) _tserver=${_pid};;
@@ -182,7 +184,7 @@ function accumuloStatus() {
     }
 
     test -z "${_gc}" && warn "gc is not running"
-    test -z "${_master}" && warn "master is not running"
+    test -z "${_manager}" && warn "manager is not running"
     test -z "${_monitor}" && info "monitor is not running"
     test -z "${_tracer}" && info "tracer is not running"
     test -z "${_tserver}" && warn "tserver is not running"

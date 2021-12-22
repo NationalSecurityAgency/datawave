@@ -17,7 +17,7 @@ public class TableCreator {
         try {
             tableConfigUtil.configureTables(conf);
         } catch (Exception e) {
-            log.error("Unable to create tables");
+            log.error("Unable to create tables", e);
         }
     }
     

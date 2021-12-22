@@ -576,6 +576,14 @@
                                             <artifactId>hadoop-common</artifactId>
                                         </artifactItem>
                                         <artifactItem>
+                                            <groupId>org.apache.hadoop.thirdparty</groupId>
+                                            <artifactId>hadoop-shaded-guava</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.apache.hadoop.thirdparty</groupId>
+                                            <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
                                             <groupId>org.apache.htrace</groupId>
                                             <artifactId>htrace-core4</artifactId>
                                             <version>4.0.1-incubating</version>

@@ -11,8 +11,10 @@ import org.apache.accumulo.core.data.Value;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
-import org.apache.htrace.Trace;
-import org.apache.htrace.TraceScope;
+
+// TODO: Fix tracing for Accumulo 2.1-compatibility
+//import org.apache.htrace.Trace;
+//import org.apache.htrace.TraceScope;
 
 public abstract class DocumentSerializer implements Function<Entry<Key,Document>,Entry<Key,Value>> {
     protected boolean reducedResponse;
@@ -43,26 +45,28 @@ public abstract class DocumentSerializer implements Function<Entry<Key,Document>
     
     @Override
     public Entry<Key,Value> apply(Entry<Key,Document> from) {
-        try (TraceScope s = Trace.startSpan("Document Serialization")) {
-            if (s.getSpan() != null) {
-                s.getSpan().addKVAnnotation("Serialization type", this.concreteName);
-            }
+//        try (TraceScope s = Trace.startSpan("Document Serialization")) {
+//            if (s.getSpan() != null) {
+//                s.getSpan().addKVAnnotation("Serialization type", this.concreteName);
+//            }
             
             byte[] bytes = serialize(from.getValue());
             
-            if (s.getSpan() != null) {
-                s.getSpan().addKVAnnotation("Raw size", Integer.toString(bytes.length));
-            }
+//            if (s.getSpan() != null) {
+//                s.getSpan().addKVAnnotation("Raw size", Integer.toString(bytes.length));
+//            }
             
-            Value v = getValue(bytes, s);
-            
+//            Value v = getValue(bytes, s);
+            Value v = getValue(bytes);
+
             return Maps.immutableEntry(from.getKey(), v);
-        }
+//        }
     }
     
     public abstract byte[] serialize(Document d);
     
-    protected Value getValue(byte[] document, TraceScope span) {
+//    protected Value getValue(byte[] document, TraceScope span) {
+    protected Value getValue(byte[] document) {
         byte[] header;
         byte[] dataToWrite;
         
@@ -70,9 +74,9 @@ public abstract class DocumentSerializer implements Function<Entry<Key,Document>
         if (DocumentSerialization.NONE != this.compression && document.length > minCompressionSize) {
             header = DocumentSerialization.getHeader(compression);
             dataToWrite = DocumentSerialization.writeBody(document, this.compression);
-            if (span.getSpan() != null) {
-                span.getSpan().addKVAnnotation("Compressed size", Integer.toString(dataToWrite.length));
-            }
+//            if (span.getSpan() != null) {
+//                span.getSpan().addKVAnnotation("Compressed size", Integer.toString(dataToWrite.length));
+//            }
         } else {
             header = DocumentSerialization.getHeader();
             dataToWrite = document;

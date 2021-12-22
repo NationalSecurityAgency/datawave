@@ -44,9 +44,9 @@ import org.apache.accumulo.core.file.rfile.RFileOperations;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iterators.system.DeletingIterator;
-import org.apache.accumulo.core.iterators.system.MultiIterator;
-import org.apache.accumulo.core.iterators.system.VisibilityFilter;
+import org.apache.accumulo.core.iteratorsImpl.system.DeletingIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.MultiIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.VisibilityFilter;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.spi.crypto.CryptoService;
@@ -87,7 +87,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
         if (System.getProperty("accumulo.properties") == null) {
             System.setProperty("accumulo.properties", "accumulo-default.properties");
         }
-        CRYPTO_SERVICE = CryptoServiceFactory.newInstance(new SiteConfiguration(), ClassloaderType.ACCUMULO);
+        CRYPTO_SERVICE = CryptoServiceFactory.newInstance(SiteConfiguration.fromEnv().build(), ClassloaderType.ACCUMULO);
     }
     
     protected TabletSplitSplit fileSplit;
@@ -466,9 +466,9 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
                 
                 //@formatter:off
                 CachableBlockFile.CachableBuilder builder = new CachableBlockFile.CachableBuilder()
+                        .input(closeable.getInputStream(), CachableBlockFile.pathToCacheId(path))
                         .cryptoService(CRYPTO_SERVICE)
                         .fsPath(fs, path)
-                        .input(closeable.getInputStream())
                         .length(length)
                         .conf(conf);
                 //@formatter:on

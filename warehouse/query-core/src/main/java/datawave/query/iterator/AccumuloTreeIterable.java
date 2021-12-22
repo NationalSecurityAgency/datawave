@@ -14,8 +14,10 @@ import org.apache.accumulo.core.data.Range;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
-import org.apache.htrace.Trace;
-import org.apache.htrace.TraceScope;
+
+// TODO: Fix tracing for Accumulo 2.1-compatibility
+//import org.apache.htrace.Trace;
+//import org.apache.htrace.TraceScope;
 
 /**
  * An iterable interface for wrapping a tree of iterators. This class provides a convenience mechanism for holding on to a tree, allowing clients to use Java's
@@ -41,9 +43,9 @@ public class AccumuloTreeIterable<S,T extends Comparable<T>> implements Iterable
     public Iterator<Entry<T,Document>> iterator() {
         if (seenSeek) {
             
-            try (TraceScope ignored = Trace.startSpan("Field Index Initialize Boolean Tree")) {
+//            try (TraceScope ignored = Trace.startSpan("Field Index Initialize Boolean Tree")) {
                 tree.initialize();
-            }
+//            }
             
             Iterator<Entry<S,Document>> wrapper = TraceIterators.transform(tree, from -> {
                 return Maps.immutableEntry(from, tree.document());
@@ -56,7 +58,7 @@ public class AccumuloTreeIterable<S,T extends Comparable<T>> implements Iterable
     }
     
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        try (TraceScope ignored = Trace.startSpan("Field Index Seek Sources")) {
+//        try (TraceScope ignored = Trace.startSpan("Field Index Seek Sources")) {
             Iterable<? extends NestedIterator<?>> leaves = tree.leaves();
             for (NestedIterator<?> leaf : leaves) {
                 if (leaf instanceof SeekableIterator) {
@@ -64,6 +66,6 @@ public class AccumuloTreeIterable<S,T extends Comparable<T>> implements Iterable
                 }
             }
             seenSeek = true;
-        }
+//        }
     }
 }

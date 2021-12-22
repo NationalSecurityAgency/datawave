@@ -25,7 +25,8 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.htrace.TraceInfo;
+// TODO: Fix tracing for Accumulo 2.1-compatibility
+//import org.apache.htrace.TraceInfo;
 import org.apache.log4j.Logger;
 import org.jboss.logging.NDC;
 
@@ -61,7 +62,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private Set<Authorizations> calculatedAuths = null;
     private boolean finished = false;
     private volatile boolean canceled = false;
-    private TraceInfo traceInfo = null;
+//    private TraceInfo traceInfo = null;
     private transient QueryMetricsBean queryMetrics = null;
     private RunningQueryTiming timing = null;
     private ExecutorService executor = null;
@@ -473,26 +474,15 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         .append((this.getTimeOfCurrentCall() == 0) ? 0 : System.currentTimeMillis() - this.getTimeOfCurrentCall()).toString();
         
     }
-    
-    /**
-     * Sets {@link TraceInfo} for this query as an indication that the query is being traced. This trace scope is also used to continue a trace across different
-     * thread boundaries.
-     */
-    public void setTraceInfo(TraceInfo traceInfo) {
-        this.traceInfo = traceInfo;
-    }
-    
-    /**
-     * Gets the {@link TraceInfo} associated with this query, if any. If the query is not being traced, then {@code null} is returned. Callers can continue a
-     * trace on a different thread by calling {@link org.apache.htrace.Trace#startSpan(String, TraceInfo)} with the info returned here, and then interacting
-     * with the returned {@link org.apache.htrace.Span}.
-     * 
-     * @return the {@link TInfo} associated with this query, if any
-     */
-    public TraceInfo getTraceInfo() {
-        return traceInfo;
-    }
-    
+
+//    public void setTraceInfo(TraceInfo traceInfo) {
+//        this.traceInfo = traceInfo;
+//    }
+
+//    public TraceInfo getTraceInfo() {
+//        return traceInfo;
+//    }
+
     public QueryMetricsBean getQueryMetrics() {
         return queryMetrics;
     }

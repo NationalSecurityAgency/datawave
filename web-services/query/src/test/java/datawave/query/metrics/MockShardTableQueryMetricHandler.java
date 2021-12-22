@@ -8,6 +8,7 @@ import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricHandler;
 import datawave.webservice.query.metric.QueryMetricListResponse;
+import datawave.webservice.query.metric.QueryMetricsSummaryHtmlResponse;
 import datawave.webservice.query.metric.QueryMetricsSummaryResponse;
 
 import javax.inject.Singleton;
@@ -39,6 +40,16 @@ public class MockShardTableQueryMetricHandler implements QueryMetricHandler<Quer
     }
     
     @Override
+    public QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return this.mockHandler.getTotalQueriesSummaryCounts(begin, end, datawavePrincipal);
+    }
+    
+    @Override
+    public QueryMetricsSummaryHtmlResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return this.mockHandler.getTotalQueriesSummary(begin, end, datawavePrincipal);
+    }
+    
+    @Override
     public void flush() throws Exception {
         this.mockHandler.flush();
     }
@@ -49,7 +60,7 @@ public class MockShardTableQueryMetricHandler implements QueryMetricHandler<Quer
     }
     
     @Override
-    public QueryMetricsSummaryResponse getQueryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser, DatawavePrincipal datawavePrincipal) {
-        return this.mockHandler.getQueryMetricsSummary(begin, end, false, datawavePrincipal);
+    public QueryMetricsSummaryHtmlResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return this.mockHandler.getTotalQueriesSummary(begin, end, datawavePrincipal);
     }
 }

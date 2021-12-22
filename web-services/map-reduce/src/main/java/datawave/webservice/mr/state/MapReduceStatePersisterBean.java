@@ -61,7 +61,8 @@ import java.util.concurrent.TimeUnit;
  * Maintains information in a table about the state of a MapReduce job <br>
  *
  * MapReduce Table
- * <table summary="">
+ * <table>
+ * <caption></caption>
  * <tr>
  * <th>Row</th>
  * <th>ColF</th>
@@ -113,7 +114,8 @@ import java.util.concurrent.TimeUnit;
  * </table>
  *
  * MapReduce Index
- * <table summary="">
+ * <table>
+ * <caption></caption>
  * <tr>
  * <th>Row</th>
  * <th>ColF</th>

@@ -137,7 +137,7 @@ public class IngestJob implements Tool {
     
     protected boolean eventProcessingError = false;
     protected Logger log = Logger.getLogger("datawave.ingest");
-    private ConsoleAppender ca = new ConsoleAppender(new PatternLayout("%p [%c{1}] %m%n"));
+    private ConsoleAppender ca = new ConsoleAppender();
     
     protected ArrayList<String[]> confOverrides = new ArrayList<>();
     protected int reduceTasks = 0;
@@ -256,7 +256,8 @@ public class IngestJob implements Tool {
     public int run(String[] args) throws Exception {
         
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
-        
+
+        ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
         ca.setThreshold(Level.INFO);
         log.addAppender(ca);
         log.setLevel(Level.INFO);

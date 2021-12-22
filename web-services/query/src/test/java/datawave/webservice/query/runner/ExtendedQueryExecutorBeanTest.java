@@ -62,10 +62,11 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.htrace.Span;
-import org.apache.htrace.Trace;
-import org.apache.htrace.TraceInfo;
-import org.apache.htrace.TraceScope;
+// TODO: Fix tracing for Accumulo 2.1-compatibility
+//import org.apache.htrace.Span;
+//import org.apache.htrace.Trace;
+//import org.apache.htrace.TraceInfo;
+//import org.apache.htrace.TraceScope;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
@@ -126,7 +127,7 @@ import static org.powermock.reflect.Whitebox.setInternalState;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.security.auth.Subject")
-@PrepareForTest({Trace.class})
+//@PrepareForTest({Trace.class})
 public class ExtendedQueryExecutorBeanTest {
     private static final Throwable ILLEGAL_STATE_EXCEPTION = new IllegalStateException("INTENTIONALLY THROWN TEST EXCEPTION");
     @Mock
@@ -197,23 +198,23 @@ public class ExtendedQueryExecutorBeanTest {
     @Mock
     RunningQuery runningQuery;
     
-    @Mock
-    TraceScope traceScope;
+//    @Mock
+//    TraceScope traceScope;
     
-    @Mock
-    Span span;
+//   @Mock
+//    Span span;
     
     @Mock
     QueryTraceCache traceCache;
     
-    @Mock
-    TraceInfo traceInfo;
+//    @Mock
+//    TraceInfo traceInfo;
     
     @Mock
     Multimap<String,PatternWrapper> traceInfos;
     
-    @Mock
-    Trace tracer;
+//    @Mock
+//    Trace tracer;
     
     @Mock
     QueryLogicTransformer transformer;
@@ -332,16 +333,14 @@ public class ExtendedQueryExecutorBeanTest {
         this.runningQuery.closeConnection(this.connectionFactory);
         expect(this.query.getId()).andReturn(queryId);
         cache.remove(queryId.toString());
+        /*
         expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
         PowerMock.mockStaticPartial(Trace.class, "startSpan");
         expect(Trace.startSpan("query:close", this.traceInfo)).andReturn(this.traceScope);
         expect(traceScope.getSpan()).andReturn(span).times(2);
         this.span.addKVAnnotation(eq("closedAt"), isA(String.class));
         this.traceScope.close();
-        // TODO: 1.8.1: no longer done
-        // PowerMock.mockStaticPartial(Tracer.class, "getInstance");
-        // expect(Tracer.getInstance()).andReturn(this.tracer);
-        // this.tracer.flush();
+         */
         
         // Run the test
         PowerMock.replayAll();
@@ -590,16 +589,14 @@ public class ExtendedQueryExecutorBeanTest {
         this.runningQuery.closeConnection(this.connectionFactory);
         expect(this.query.getId()).andReturn(queryId);
         cache.remove(queryId.toString());
+        /*
         expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
         PowerMock.mockStaticPartial(Trace.class, "startSpan");
         expect(Trace.startSpan("query:close", this.traceInfo)).andReturn(this.traceScope);
         expect(traceScope.getSpan()).andReturn(span).times(2);
         this.span.addKVAnnotation(eq("closedAt"), isA(String.class));
         this.traceScope.close();
-        // TODO: 1.8.1: no longer done
-        // PowerMock.mockStaticPartial(Tracer.class, "getInstance");
-        // expect(Tracer.getInstance()).andReturn(this.tracer);
-        // this.tracer.flush();
+        */
         
         // Run the test
         PowerMock.replayAll();
@@ -822,7 +819,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.runningQuery.setActiveCall(true);
         expectLastCall();
         
-        expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
+        //expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
         expect(this.runningQuery.next()).andReturn(this.resultsPage);
         expect(this.runningQuery.getLastPageNumber()).andReturn(pageNumber);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1).times(2);
@@ -1001,7 +998,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.runningQuery.setActiveCall(true);
         expectLastCall();
         
-        expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
+        //expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
         expect(this.runningQuery.next()).andReturn(this.resultsPage);
         expect(this.runningQuery.getLastPageNumber()).andReturn(pageNumber);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1).times(2);
@@ -1288,7 +1285,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.connectionRequestBean.requestEnd(queryId.toString());
         this.runningQuery.setActiveCall(true);
         expectLastCall();
-        expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
+        //expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
         expect(this.runningQuery.next()).andReturn(this.resultsPage);
         expect(this.runningQuery.getLastPageNumber()).andReturn(pageNumber);
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1).times(2);
@@ -1328,7 +1325,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.cache.remove(queryId.toString());
         this.closedCache.add(queryId.toString());
         this.closedCache.remove(queryId.toString());
-        expect(this.runningQuery.getTraceInfo()).andReturn(null);
+        //expect(this.runningQuery.getTraceInfo()).andReturn(null);
         expect(this.responseObjectFactory.getEventQueryResponse()).andReturn(new DefaultEventQueryResponse());
         
         // Run the test
@@ -1706,13 +1703,13 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getMaxPageSize()).andReturn(100).times(2);
         expect(this.traceInfos.get(userSid)).andReturn(new ArrayList<>(0));
         expect(this.traceInfos.get(null)).andReturn(Arrays.asList(PatternWrapper.wrap(query)));
-        PowerMock.mockStaticPartial(Trace.class, "start");
-        expect(Trace.startSpan("query:define")).andReturn(this.traceScope);
+        //PowerMock.mockStaticPartial(Trace.class, "start");
+        //expect(Trace.startSpan("query:define")).andReturn(this.traceScope);
         expect(this.queryLogic1.getConnectionPriority()).andThrow(ILLEGAL_STATE_EXCEPTION);
         // TODO: 1.8.1: no longer done
         // expect(this.span.parent()).andReturn(this.span);
         // expect(this.span.parent()).andReturn(this.span);
-        this.traceScope.close();
+        //this.traceScope.close();
         
         // Run the test
         PowerMock.replayAll();
@@ -2899,7 +2896,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.cache.get(queryName)).andReturn(this.runningQuery);
         expect(this.runningQuery.getSettings()).andReturn(this.query);
         expect(this.query.getOwner()).andReturn(userSid);
-        expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
+        //expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
         expect(this.cache.lock(queryName)).andReturn(true);
         expect(this.runningQuery.getClient()).andReturn(this.client);
         this.runningQuery.closeConnection(this.connectionFactory);
@@ -2954,7 +2951,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.cache.get(queryName)).andReturn(this.runningQuery);
         expect(this.runningQuery.getSettings()).andReturn(this.query);
         expect(this.query.getOwner()).andReturn(userSid);
-        expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
+        //expect(this.runningQuery.getTraceInfo()).andReturn(this.traceInfo);
         expect(this.cache.lock(queryName)).andReturn(false);
         expect(this.transaction.getStatus()).andReturn(Status.STATUS_NO_TRANSACTION).anyTimes();
         this.connectionFactory.returnClient(null); // These 2 lines prevent the bean's exception-handling logic (in combination

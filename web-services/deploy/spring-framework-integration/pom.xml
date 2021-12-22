@@ -187,6 +187,7 @@
                         <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         <jboss.home.dir>/tmp</jboss.home.dir>
                     </systemPropertyVariables>
+                    <argline>--add-opens java.xml/jdk.xml.internal=ALL-UNNAMED</argline>
                 </configuration>
             </plugin>
         </plugins>

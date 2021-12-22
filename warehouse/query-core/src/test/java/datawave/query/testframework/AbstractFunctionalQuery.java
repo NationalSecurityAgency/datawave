@@ -117,7 +117,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     private boolean useRunningQuery = false;
     private QueryMetricFactory metricFactory;
-    
+
     /**
      * Contains a list of cities that are specified in the test data. Additional cities can be added to the test data and do not specifically need to be added
      * here. The purpose is to provide a location where the city names are specified without having to hard code these entries throughout the test cases.
@@ -648,7 +648,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected void useRunningQuery() {
         this.useRunningQuery = true;
     }
-    
+
     /**
      * When provided, the QueryMetric object will be used for running the query and so can be later inspected. Also see #useRunningQuery()
      *
