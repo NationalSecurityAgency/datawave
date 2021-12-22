@@ -214,6 +214,8 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                                 log.debug("Got lock for task " + taskKey);
                                 nextTask = task;
                             }
+                        } else if (task == null) {
+                            log.warn("Task " + taskKey + " is for a non-existent task, ignoring task");
                         } else {
                             log.warn("Task " + taskKey + " is for " + task.getAction() + " but we were looking for " + requestedAction + ", ignoring task");
                         }

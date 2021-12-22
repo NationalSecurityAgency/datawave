@@ -8,6 +8,7 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,6 +18,8 @@ import java.util.UUID;
 
 @Service
 public class QueryStorageCacheImpl implements QueryStorageCache {
+    
+    private static final Logger log = Logger.getLogger(QueryStorageCacheImpl.class);
     
     private final QueryStatusCache queryStatusCache;
     private final TaskStatesCache taskStatesCache;
@@ -341,6 +344,9 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
             states.setState(taskId, TaskStates.TASK_STATE.READY);
             
             taskStatesCache.updateTaskStates(states);
+        } catch (Exception e) {
+            log.error("Failed to add query task", e);
+            throw new RuntimeException("Failed to add query task", e);
         } finally {
             lock.unlock();
         }
