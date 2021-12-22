@@ -1685,7 +1685,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return a {@link ValueTuple}
      * @see ValueTuple#toValueTuple(Object) documentation on conversion details
      */
-    static ValueTuple getHitTerm(Object valueTuple) {
+    public static ValueTuple getHitTerm(Object valueTuple) {
         return ValueTuple.toValueTuple(valueTuple);
     }
     
