@@ -4,7 +4,9 @@ import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.edge.model.EdgeModelAware;
+import datawave.edge.model.DefaultEdgeModelFieldsFactory;
+import datawave.edge.model.EdgeModelFields;
+import datawave.edge.model.EdgeModelFieldsFactory;
 import datawave.query.model.QueryModel;
 import datawave.query.model.util.LoadModelFromXml;
 
@@ -16,7 +18,7 @@ import datawave.query.model.util.LoadModelFromXml;
  * <br>
  * (1) Unlike event-based query models, edge field names don't exist on disk in the way that internal event attributes do. The edge data model is relatively
  * simple and static with respect to the set of all possible field names. And because we're not constrained by the physical representation of field names on
- * disk, we have the flexibility to choose an internal naming scheme to suit the targeted deployment environment. See {@link EdgeModelAware}. For example, with
+ * disk, we have the flexibility to choose an internal naming scheme to suit the targeted deployment environment. See {@link EdgeModelFields}. For example, with
  * respect to the superclass method {@code addTermToModel(String alias, String nameOnDisk)}, 'nameOnDisk' can be whatever we want and can be managed with
  * configuration as needed. <br>
  * <br>
@@ -27,24 +29,27 @@ import datawave.query.model.util.LoadModelFromXml;
  * <br>
  * (3) Additionally, index-only/unevaluated fields are ignored, as this concept is not applicable to edges.
  */
-public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
+public class EdgeQueryModel extends QueryModel {
+    
+    private final EdgeModelFields fields;
     
     /**
      * This constructor allows the class to be used in conjunction with existing QueryModel loaders.
      * 
      * @throws InvalidModelException
      */
-    public EdgeQueryModel(QueryModel other) throws InvalidModelException {
+    public EdgeQueryModel(QueryModel other, EdgeModelFields fields) throws InvalidModelException {
         super(other);
+        this.fields = fields;
         if (null != this.unevalFields && !this.unevalFields.isEmpty()) {
             this.unevalFields.clear();
         }
         validateModel(this);
     }
     
-    /** This constructor should never be used */
-    @SuppressWarnings("unused")
-    private EdgeQueryModel() {}
+    public EdgeModelFields getFields() {
+        return fields;
+    }
     
     @Override
     public void setUnevaluatedFields(Set<String> uneval) {
@@ -66,8 +71,26 @@ public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
      * 
      * @return EdgeQueryModel instance
      */
+    public static EdgeQueryModel loadModel(String queryModelXml, EdgeModelFields fields) throws Exception {
+        return new EdgeQueryModel(LoadModelFromXml.loadModel(queryModelXml), fields);
+    }
+    
+    /**
+     * Simple factory method to load a query model from the specified classpath resource.
+     *
+     * @return EdgeQueryModel instance
+     */
+    public static EdgeQueryModel loadModel(String queryModelXml, EdgeModelFieldsFactory fieldsFactory) throws Exception {
+        return loadModel(queryModelXml, fieldsFactory.createFields());
+    }
+    
+    /**
+     * Simple factory method to load a query model from the specified classpath resource.
+     *
+     * @return EdgeQueryModel instance
+     */
     public static EdgeQueryModel loadModel(String queryModelXml) throws Exception {
-        return new EdgeQueryModel(LoadModelFromXml.loadModel(queryModelXml));
+        return loadModel(queryModelXml, new DefaultEdgeModelFieldsFactory());
     }
     
     /**
@@ -126,6 +149,6 @@ public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
     }
     
     public Collection<String> getAllInternalFieldNames() {
-        return Fields.getInstance().getBaseFieldNames();
+        return fields.getBaseFieldNames();
     }
 }

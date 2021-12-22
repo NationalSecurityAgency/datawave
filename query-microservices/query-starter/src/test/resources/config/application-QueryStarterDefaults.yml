@@ -68,6 +68,7 @@ warehouse:
     ivaratorCacheScanPersistThreshold: 100000
     ivaratorCacheScanTimeoutMinutes: 60
     modelName: 'DATAWAVE'
+    edgeModelName: 'DATAWAVE_EDGE'
 
 datawave:
   metadata:
@@ -224,6 +225,17 @@ datawave:
           auditType: "NONE"
           logicDescription: "Query that returns a document given the document identifier"
 
+        EdgeQuery:
+          checkpointable: true
+          tableName: ${warehouse.tables.shard.name}
+          metadataTableName: ${warehouse.tables.metadata.name}
+          modelTableName: ${warehouse.tables.model.name}
+          modelName: ${warehouse.defaults.edgeModelName}
+          queryThreads: 16
+          auditType: "NONE"
+          maxResults: 25000
+          maxWork: -1
+
     uuid:
       columnVisibility: ""
       beginDate: "20100101 000000.000"
@@ -244,6 +256,28 @@ datawave:
         'PAGE_TITLE':
           fieldName: 'PAGE_TITLE'
           queryLogic: 'LuceneUUIDEventQuery'
+
+    edge:
+      model:
+        baseFieldMap:
+          EDGE_SOURCE: 'SOURCE'
+          EDGE_SINK: 'SINK'
+          EDGE_TYPE: 'TYPE'
+          EDGE_RELATIONSHIP: 'RELATION'
+          EDGE_ATTRIBUTE1: 'ATTRIBUTE1'
+          EDGE_ATTRIBUTE2: 'ATTRIBUTE2'
+          EDGE_ATTRIBUTE3: 'ATTRIBUTE3'
+          DATE: 'DATE'
+          STATS_EDGE: 'STATS_TYPE'
+        keyUtilFieldMap:
+          ENRICHMENT_TYPE: 'ENRICHMENT_TYPE'
+          FACT_TYPE: 'FACT_TYPE'
+          GROUPED_FIELDS: 'GROUPED_FIELDS'
+        transformFieldMap:
+          COUNT: 'COUNT'
+          COUNTS: 'COUNTS'
+          LOAD_DATE: 'LOADDATE'
+          ACTIVITY_DATE: 'ACTIVITY_DATE'
 
 query:
   messaging:

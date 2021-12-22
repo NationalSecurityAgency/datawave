@@ -1,5 +1,8 @@
 package datawave.query.tables.edge;
 
+import datawave.edge.model.DefaultEdgeModelFieldsFactory;
+import datawave.edge.model.EdgeModelFields;
+import datawave.edge.model.EdgeModelFieldsFactory;
 import datawave.query.QueryParameters;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -36,6 +39,10 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     
     protected EdgeDictionaryProvider edgeDictionaryProvider;
     
+    protected EdgeModelFieldsFactory edgeModelFieldsFactory = new DefaultEdgeModelFieldsFactory();
+    
+    protected EdgeModelFields edgeFields;
+    
     public DefaultEdgeEventQueryLogic() {}
     
     // Required for clone method. Clone is called by the Logic Factory. If you don't override
@@ -59,7 +66,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     }
     
     protected DefaultEventQueryBuilder getEventQueryBuilder() {
-        return new DefaultEventQueryBuilder(dict);
+        return new DefaultEventQueryBuilder(dict, getEdgeFields());
     }
     
     @Override
@@ -92,7 +99,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
         if (null == getEdgeQueryModel() && (!model.isEmpty() && !modelTable.isEmpty())) {
             try {
                 setEdgeQueryModel(new EdgeQueryModel(getMetadataHelperFactory().createMetadataHelper(connector, getConfig().getMetadataTableName(), auths)
-                                .getQueryModel(getConfig().getModelTableName(), getConfig().getModelName())));
+                                .getQueryModel(getConfig().getModelTableName(), getConfig().getModelName()), getEdgeFields()));
             } catch (Throwable t) {
                 log.error("Unable to load edgeQueryModel from metadata table", t);
             }
@@ -151,5 +158,24 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     
     public void setEdgeDictionaryProvider(EdgeDictionaryProvider edgeDictionaryProvider) {
         this.edgeDictionaryProvider = edgeDictionaryProvider;
+    }
+    
+    public EdgeModelFieldsFactory getEdgeModelFieldsFactory() {
+        return edgeModelFieldsFactory;
+    }
+    
+    public void setEdgeModelFieldsFactory(EdgeModelFieldsFactory edgeModelFieldsFactory) {
+        this.edgeModelFieldsFactory = edgeModelFieldsFactory;
+    }
+    
+    public EdgeModelFields getEdgeFields() {
+        if (edgeFields == null && edgeModelFieldsFactory != null) {
+            setEdgeFields(edgeModelFieldsFactory.createFields());
+        }
+        return edgeFields;
+    }
+    
+    public void setEdgeFields(EdgeModelFields edgeFields) {
+        this.edgeFields = edgeFields;
     }
 }

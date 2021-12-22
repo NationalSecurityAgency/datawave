@@ -1,5 +1,6 @@
 package datawave.microservice.query.logic.config;
 
+import datawave.microservice.query.edge.EdgeModelProperties;
 import datawave.microservice.query.uuid.LookupUUIDProperties;
 import datawave.query.data.UUIDType;
 import datawave.services.query.result.event.DefaultResponseObjectFactory;
@@ -15,16 +16,19 @@ import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.annotation.Scope;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 
 @Configuration
 @ConditionalOnProperty(name = "datawave.query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
-@EnableConfigurationProperties({QueryLogicFactoryProperties.class, QueryParserProperties.class, LookupUUIDProperties.class})
-@ImportResource("${datawave.query.logic.factory.xmlBeansPath:classpath:QueryLogicFactory.xml}")
+@EnableConfigurationProperties({QueryLogicFactoryProperties.class, QueryParserProperties.class, LookupUUIDProperties.class, EdgeModelProperties.class})
+@ImportResource(locations = {"${datawave.query.logic.factory.xmlBeansPath:classpath:QueryLogicFactory.xml}",
+        "${datawave.query.logic.factory.xmlBeansPath:classpath:EdgeQueryLogicFactory.xml}"})
 public class QueryLogicFactoryConfiguration {
     
     private final Logger log = LoggerFactory.getLogger(this.getClass());
@@ -64,4 +68,35 @@ public class QueryLogicFactoryConfiguration {
         }
         return uuidTypes;
     }
+    
+    @Bean
+    @Scope(SCOPE_PROTOTYPE)
+    public Map<String,String> edgeModelBaseFieldMap(EdgeModelProperties edgeProperties) {
+        Map<String,String> fieldMap = new HashMap<>();
+        if (edgeProperties.getBaseFieldMap() != null) {
+            fieldMap.putAll(edgeProperties.getBaseFieldMap());
+        }
+        return fieldMap;
+    }
+    
+    @Bean
+    @Scope(SCOPE_PROTOTYPE)
+    public Map<String,String> edgeModelKeyUtilFieldMap(EdgeModelProperties edgeProperties) {
+        Map<String,String> fieldMap = new HashMap<>();
+        if (edgeProperties.getKeyUtilFieldMap() != null) {
+            fieldMap.putAll(edgeProperties.getKeyUtilFieldMap());
+        }
+        return fieldMap;
+    }
+    
+    @Bean
+    @Scope(SCOPE_PROTOTYPE)
+    public Map<String,String> edgeModelTransformFieldMap(EdgeModelProperties edgeProperties) {
+        Map<String,String> fieldMap = new HashMap<>();
+        if (edgeProperties.getTransformFieldMap() != null) {
+            fieldMap.putAll(edgeProperties.getTransformFieldMap());
+        }
+        return fieldMap;
+    }
+    
 }

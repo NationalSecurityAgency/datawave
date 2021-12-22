@@ -11,23 +11,44 @@ import datawave.microservice.query.storage.TaskStates;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricClient;
 import datawave.microservice.querymetric.QueryMetricType;
+import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.CheckpointableQueryLogic;
 import datawave.services.query.logic.QueryLogic;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
 
+import java.io.IOException;
 import java.util.Date;
 
 public class CreateTask extends ExecutorTask {
     private static final Logger log = Logger.getLogger(CreateTask.class);
     
     private final String originService;
+    private volatile boolean originNotified = false;
+    private volatile boolean taskCreationComplete = false;
     
     public CreateTask(QueryExecutor source, QueryTask task, String originService) {
         super(source, task);
         this.originService = originService;
+    }
+    
+    /**
+     * It is presumed that a lock for this task has already been obtained by the QueryExecutor
+     */
+    @Override
+    public void run() {
+        try {
+            super.run();
+        } finally {
+            // in the case of the create, don't leave em hanging in case we failed somewhere.
+            TaskKey taskKey = task.getTaskKey();
+            String queryId = taskKey.getQueryId();
+            taskCreationComplete(queryId);
+            notifyOriginOfCreation(queryId);
+        }
     }
     
     @Override
@@ -35,6 +56,7 @@ public class CreateTask extends ExecutorTask {
         assert (QueryRequest.Method.CREATE.equals(task.getAction()));
         
         boolean taskComplete = false;
+        
         TaskKey taskKey = task.getTaskKey();
         String queryId = taskKey.getQueryId();
         
@@ -79,10 +101,11 @@ public class CreateTask extends ExecutorTask {
         } else {
             queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
             
-            notifyOriginOfCreation(queryId);
-            
             // update the task states to indicate that all tasks are created
             taskCreationComplete(queryId);
+            
+            // notify the origin that the creation is complete
+            notifyOriginOfCreation(queryId);
             
             log.debug("Setup query logic for " + queryId);
             queryLogic.setupQuery(config);
@@ -101,7 +124,7 @@ public class CreateTask extends ExecutorTask {
     }
     
     private void notifyOriginOfCreation(String queryId) {
-        if (originService != null) {
+        if (originService != null && !originNotified) {
             log.debug("Publishing a create request to the originating service: " + originService);
             // @formatter:off
             publisher.publishEvent(
@@ -111,19 +134,23 @@ public class CreateTask extends ExecutorTask {
                             originService,
                             QueryRequest.create(queryId)));
             // @formatter:on
+            originNotified = true;
         }
     }
     
     private void taskCreationComplete(String queryId) {
-        // update the task states to indicate that all tasks are created
-        QueryStorageLock lock = cache.getTaskStatesLock(queryId);
-        lock.lock();
-        try {
-            TaskStates taskStates = cache.getTaskStates(queryId);
-            taskStates.setCreatingTasks(false);
-            cache.updateTaskStates(taskStates);
-        } finally {
-            lock.unlock();
+        if (!taskCreationComplete) {
+            // update the task states to indicate that all tasks are created
+            QueryStorageLock lock = cache.getTaskStatesLock(queryId);
+            lock.lock();
+            try {
+                TaskStates taskStates = cache.getTaskStates(queryId);
+                taskStates.setCreatingTasks(false);
+                cache.updateTaskStates(taskStates);
+            } finally {
+                lock.unlock();
+            }
+            taskCreationComplete = true;
         }
     }
 }

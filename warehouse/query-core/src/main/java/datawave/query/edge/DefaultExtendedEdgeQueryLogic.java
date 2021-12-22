@@ -5,7 +5,6 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.edge.util.EdgeKeyUtil;
 import datawave.query.config.EdgeExtendedSummaryConfiguration;
-import datawave.query.config.EdgeQueryConfiguration;
 import datawave.query.iterator.filter.EdgeFilterIterator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.edge.EdgeQueryLogic;
@@ -108,7 +107,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
         
         boolean includeStats = config.includeStats();
         
-        MetadataHelper metadataHelper = super.prepareMetadataHelper(config.getConnector(), config.getModelTableName(), config.getAuthorizations());
+        MetadataHelper metadataHelper = super.prepareMetadataHelper(config.getConnector(), config.getMetadataTableName(), config.getAuthorizations());
         
         loadQueryModel(metadataHelper, config);
         
@@ -245,7 +244,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
     
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new EdgeQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
+        return new EdgeQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory, this.getEdgeFields());
     }
     
     @Override
@@ -304,4 +303,5 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
     public void setListSelectorExtractor(SelectorExtractor listSelectorExtractor) {
         this.listSelectorExtractor = listSelectorExtractor;
     }
+    
 }

@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import datawave.edge.model.DefaultEdgeModelFieldsFactory;
 import datawave.query.QueryParameters;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
@@ -30,7 +31,8 @@ public class DefaultEdgeEventQueryLogicTest {
     
     @Before
     public void setUp() throws Exception {
-        logic.setEdgeQueryModel(EdgeQueryModel.loadModel("/DATAWAVE_EDGE.xml"));
+        logic.setEdgeModelFieldsFactory(new DefaultEdgeModelFieldsFactory());
+        logic.setEdgeQueryModel(EdgeQueryModel.loadModel("/DATAWAVE_EDGE.xml", logic.getEdgeFields()));
         
         // Create the results of the DatawaveMetadata table scan for edge data
         metadata = new LinkedList<>();

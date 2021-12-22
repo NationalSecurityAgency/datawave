@@ -1,8 +1,8 @@
 package datawave.edge.util;
 
-import datawave.edge.model.EdgeModelAware.Fields.FieldKey;
-
 import datawave.data.type.Type;
+import datawave.edge.model.EdgeModelFields;
+import datawave.edge.model.EdgeModelFields.FieldKey;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;

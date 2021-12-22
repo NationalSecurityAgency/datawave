@@ -106,7 +106,7 @@ public abstract class ExecutorTask implements Runnable {
     }
     
     /**
-     * It is presumsed that a lock for this task has already been obtained by the QueryExecutor
+     * It is presumed that a lock for this task has already been obtained by the QueryExecutor
      */
     @Override
     public void run() {

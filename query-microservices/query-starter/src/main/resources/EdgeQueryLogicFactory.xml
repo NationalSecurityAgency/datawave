@@ -1,0 +1,70 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+    http://www.springframework.org/schema/util
+    http://www.springframework.org/schema/util/spring-util-4.1.xsd">
+
+    <!--
+        An edge model fields factory.  see QueryLogicFactoryConfiguration for property references.
+    -->
+    <bean id="edgeModelFieldsFactory" class="datawave.microservice.query.edge.EdgeModelFieldsFactoryImpl">
+        <property name="baseFieldMap" ref="edgeModelBaseFieldMap"/>
+        <property name="keyUtilFieldMap" ref="edgeModelKeyUtilFieldMap"/>
+        <property name="transformFieldMap" ref="edgeModelTransformFieldMap"/>
+    </bean>
+
+     <!--
+        Factory method config for creating a default edge query model.  Can be used when we don't want to rely
+        on an edge model in the datawave metadata table.
+    -->
+    <bean id="edgeQueryModel" class="datawave.query.model.edge.EdgeQueryModel" factory-method="loadModel">
+        <constructor-arg value="/DATAWAVE_EDGE.xml" />
+        <constructor-arg ref="edgeModelFieldsFactory" />
+    </bean> 
+    
+    <bean id="EdgeQuery" scope="prototype" parent="baseQueryLogic" class="datawave.query.edge.DefaultExtendedEdgeQueryLogic">
+        <property name="checkpointable" value="${datawave.query.logic.logics.EdgeQuery.checkpointable}" />
+        <property name="tableName" value="${datawave.query.logic.logics.EdgeQuery.tableName}" />
+        <property name="edgeQueryModel" ref="edgeQueryModel" />
+        <property name="edgeModelFieldsFactory" ref="edgeModelFieldsFactory" />
+        <property name="metadataTableName" value="${datawave.query.logic.logics.EdgeQuery.metadataTableName}" />
+        <property name="modelTableName" value="${datawave.query.logic.logics.EdgeQuery.modelTableName}" />
+        <property name="modelName" value="${datawave.query.logic.logics.EdgeQuery.modelName}" />
+        <property name="maxResults" value="${datawave.query.logic.logics.EdgeQuery.maxResults}" />
+        <property name="maxWork" value="${datawave.query.logic.logics.EdgeQuery.maxWork}" />
+        <property name="queryThreads" value="${datawave.query.logic.logics.EdgeQuery.queryThreads}" />
+        <property name="auditType" value="${datawave.query.logic.logics.EdgeQuery.auditType}" />
+        <property name="dataTypes">
+            <list value-type="datawave.data.type.Type">
+                <bean class="datawave.data.type.GeoLatType" />
+                <bean class="datawave.data.type.GeoLonType" />
+                <bean class="datawave.data.type.GeoType" />
+                <bean class="datawave.data.type.NumberType" />
+                <bean class="datawave.data.type.LcNoDiacriticsType" />
+            </list>
+        </property>
+        <property name="regexDataTypes">
+            <list value-type="datawave.data.type.Type">
+                <bean class="datawave.data.type.GeoLatType" />
+                <bean class="datawave.data.type.GeoLonType" />
+                <bean class="datawave.data.type.GeoType" />
+                <bean class="datawave.data.type.NumberType" />
+                <bean class="datawave.data.type.LcNoDiacriticsType" />
+            </list>
+        </property>
+        <property name="logicDescription" value="Retrieve graph edges matching the search term(s)" />
+        <property name="metadataHelperFactory" ref="metadataHelperFactory" />
+        <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
+        <property name="listSelectorExtractor" ref="SplitSelectorExtractorParamDefaultNull" />
+    </bean>
+
+    <bean id="SplitSelectorExtractorParamDefaultNull" scope="prototype" class="datawave.audit.SplitSelectorExtractor">
+        <property name="separatorCharacter">
+            <value type="char">\u0000</value>
+        </property>
+        <property name="separatorParameter" value="delimiter" />
+    </bean>
+    
+</beans>

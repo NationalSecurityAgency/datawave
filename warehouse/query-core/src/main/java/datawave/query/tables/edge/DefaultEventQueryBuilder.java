@@ -1,7 +1,7 @@
 package datawave.query.tables.edge;
 
-import datawave.edge.model.EdgeModelAware;
-import datawave.edge.model.EdgeModelAware.Fields.FieldKey;
+import datawave.edge.model.EdgeModelFields;
+import datawave.edge.model.EdgeModelFields.FieldKey;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
@@ -36,10 +36,13 @@ public class DefaultEventQueryBuilder {
     protected Set<String> attribute2;
     protected Set<String> attribute3;
     
+    protected final EdgeModelFields fields;
+    
     protected EdgeDictionaryBase<?,? extends MetadataBase<?>> dict;
     
-    public DefaultEventQueryBuilder(EdgeDictionaryBase<?,? extends MetadataBase<?>> dict) {
+    public DefaultEventQueryBuilder(EdgeDictionaryBase<?,? extends MetadataBase<?>> dict, EdgeModelFields fields) {
         this.dict = dict;
+        this.fields = fields;
     }
     
     public String getEventQuery(String jexlQueryString) throws Exception {
@@ -239,7 +242,7 @@ public class DefaultEventQueryBuilder {
     }
     
     protected DefaultEventQueryBuilder parseAndAdd(String fieldName, String fieldValue) {
-        FieldKey fieldKey = FieldKey.parse(fieldName);
+        FieldKey fieldKey = fields.parse(fieldName);
         if (null != fieldKey) {
             switch (fieldKey) {
                 case EDGE_SOURCE:
@@ -273,7 +276,7 @@ public class DefaultEventQueryBuilder {
      * event, fields used when searching for the definition should not be or'ed together
      */
     public boolean orAbleField(String fieldName) {
-        FieldKey fieldKey = FieldKey.parse(fieldName);
+        FieldKey fieldKey = fields.parse(fieldName);
         if (null != fieldKey) {
             
             // attributes 2 and 3 on the edge should be field names in the event
@@ -322,14 +325,13 @@ public class DefaultEventQueryBuilder {
     protected void checkMandatoryFieldsSet() {
         String helpfullMsg = "If you believe this field has been set ensure proper placement of parenthesis to make sure the query is being evaluated in the order you would expect.";
         if (StringUtils.isBlank(this.sink)) {
-            throw new IllegalArgumentException("Mandatory Field not set: " + EdgeModelAware.Fields.getInstance().getSinkFieldName() + ". " + helpfullMsg);
+            throw new IllegalArgumentException("Mandatory Field not set: " + fields.getSinkFieldName() + ". " + helpfullMsg);
         } else if (StringUtils.isBlank(this.source)) {
-            throw new IllegalArgumentException("Mandatory Field not set: " + EdgeModelAware.Fields.getInstance().getSourceFieldName() + ". " + helpfullMsg);
+            throw new IllegalArgumentException("Mandatory Field not set: " + fields.getSourceFieldName() + ". " + helpfullMsg);
         } else if (StringUtils.isBlank(this.edgeType)) {
-            throw new IllegalArgumentException("Mandatory Field not set: " + EdgeModelAware.Fields.getInstance().getTypeFieldName() + ". " + helpfullMsg);
+            throw new IllegalArgumentException("Mandatory Field not set: " + fields.getTypeFieldName() + ". " + helpfullMsg);
         } else if (StringUtils.isBlank(this.relationship)) {
-            throw new IllegalArgumentException("Mandatory Field not set: " + EdgeModelAware.Fields.getInstance().getRelationshipFieldName() + ". "
-                            + helpfullMsg);
+            throw new IllegalArgumentException("Mandatory Field not set: " + fields.getRelationshipFieldName() + ". " + helpfullMsg);
         }
     }
     

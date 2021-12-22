@@ -47,6 +47,7 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
     // Query model defaults...
     private String modelName = "DATAWAVE_EDGE";
     private String modelTableName = "DatawaveMetadata";
+    private String metadataTableName = "DatawaveMetadata";
     private EdgeQueryModel edgeQueryModel = null;
     
     private List<? extends Type<?>> dataTypes;
@@ -91,6 +92,7 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
         // EdgeQueryConfiguration copy
         setModelName(other.getModelName());
         setModelTableName(other.getModelTableName());
+        setMetadataTableName(other.getMetadataTableName());
         setEdgeQueryModel(other.getEdgeQueryModel());
         setDataTypes(other.getDataTypes());
         setRegexDataTypes(other.getRegexDataTypes());
@@ -310,6 +312,14 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
     
     public void setModelTableName(String modelTableName) {
         this.modelTableName = modelTableName;
+    }
+    
+    public String getMetadataTableName() {
+        return metadataTableName;
+    }
+    
+    public void setMetadataTableName(String metadataTableName) {
+        this.metadataTableName = metadataTableName;
     }
     
     public List<? extends Type<?>> getRegexDataTypes() {

@@ -68,6 +68,7 @@
         <property name="logicDescription" value="Edge query" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
+        <property name="edgeModelFieldsFactory" ref="edgeModelFieldsFactory" />
     </bean>
     
     <!-- 
@@ -75,16 +76,19 @@
         Provides a fall-back model in the event that the named query model 'modelName'
         isn't defined in Accumulo for whatever reason...
     -->
+    <bean id="edgeModelFieldsFactory" class="datawave.edge.model.DefaultEdgeModelFieldsFactory" scope="singleton"/>
     <bean id="edgeQueryModel" class="datawave.query.model.edge.EdgeQueryModel" factory-method="loadModel" scope="singleton">
         <constructor-arg value="/DATAWAVE_EDGE.xml" />
-    </bean> 
-    
+        <constructor-arg ref="edgeModelFieldsFactory" />
+    </bean>
+
     <bean id="EdgeEventQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.edge.DefaultEdgeEventQueryLogic">
         <property name="logicDescription" value="Use results of an EdgeQuery to obtain events that created the edge." />
         <property name="edgeQueryModel" ref="edgeQueryModel" />
         <property name="edgeModelName" value="DATAWAVE_EDGE" />
         <property name="modelTableName" value="DatawaveMetadata" />
         <property name="edgeDictionaryProvider" ref="edgeDictionaryProvider" />
+        <property name="edgeModelFieldsFactory" ref="edgeModelFieldsFactory" />
     </bean>
 
     <bean id="edgeDictionaryProvider" scope="prototype" class="datawave.webservice.edgedictionary.RemoteEdgeDictionary" />

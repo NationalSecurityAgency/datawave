@@ -7,7 +7,7 @@ import java.util.Map;
 
 @ConfigurationProperties(prefix = "datawave.query.logic.factory")
 public class QueryLogicFactoryProperties {
-    private String xmlBeansPath = "classpath:QueryLogicFactory.xml";
+    private String xmlBeansPath = "classpath:QueryLogicFactory.xml,EdgeQueryLogicFactory.xml";
     private int maxPageSize = 10000;
     private long pageByteTrigger = 0;
     

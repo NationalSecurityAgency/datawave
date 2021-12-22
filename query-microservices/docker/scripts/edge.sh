@@ -62,7 +62,7 @@ get_num_events () {
     done
 }
 
-FOLDER="query_$(date +%Y%m%d_%I%M%S.%3N)"
+FOLDER="edge_$(date +%Y%m%d_%I%M%S.%3N)"
 
 mkdir $FOLDER
 cd $FOLDER
@@ -76,32 +76,31 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "begin=19660908 000000.000" \
     --data-urlencode "end=20161002 235959.999" \
     --data-urlencode "columnVisibility=PUBLIC" \
-    --data-urlencode "query=Western" \
-    --data-urlencode "query.syntax=LUCENE" \
+    --data-urlencode "query=SOURCE == 'Jerry Seinfeld'" \
     --data-urlencode "auths=PUBLIC,PRIVATE,BAR,FOO" \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
-    --data-urlencode "queryName=Developer Test Query" \
+    --data-urlencode "queryName=Developer Test Edge Query" \
     --data-urlencode "pagesize=100" \
     --data-urlencode "pool=$POOL" \
-    ${DATAWAVE_ENDPOINT}/DiscoveryQuery/create -o createResponse.txt
+    ${DATAWAVE_ENDPOINT}/EdgeQuery/create -o createResponse.xml
 
 i=1
 
-QUERY_ID=$(get_query_id < createResponse.txt)
+QUERY_ID=$(get_query_id < createResponse.xml)
 
 while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
     echo "$(date): Requesting page $i for $QUERY_ID"
     echo "$(date): Requesting page $i for $QUERY_ID" >> querySummary.txt
     curl -s -D headers_$i.txt -q -k -E ${TMP_PEM} \
         -H "Accept: application/xml" \
-        ${DATAWAVE_ENDPOINT}/$QUERY_ID/next -o nextResponse_$i.txt
+        ${DATAWAVE_ENDPOINT}/$QUERY_ID/next -o nextResponse_$i.xml
 
     CONTINUE=`grep 'HTTP/1.1 200 OK' headers_$i.txt`
 
     if [ -z "$CONTINUE" ]; then
         i=-1
     else
-        NUM_EVENTS=$(get_num_events < nextResponse_$i.txt)
+        NUM_EVENTS=$(get_num_events < nextResponse_$i.xml)
         echo "$(date): Page $i contained $NUM_EVENTS events"
 
         ((i++))
@@ -117,14 +116,16 @@ echo "$(date): Closing $QUERY_ID"
 # close the query
 curl -s -q -k -X POST -E ${TMP_PEM} \
     -H "Accept: application/xml" \
-    ${DATAWAVE_ENDPOINT}/$QUERY_ID/close -o closeResponse.txt
+    ${DATAWAVE_ENDPOINT}/$QUERY_ID/close -o closeResponse.xml
 
 cd ../
 
 if [ ! -z "$QUERY_ID" ]; then
-    mv $FOLDER query_$QUERY_ID
+    mv $FOLDER edge_$QUERY_ID
+
+    echo "$(date): Getting metrics for $QUERY_ID"
+    echo "$(date): Getting metrics for $QUERY_ID" >> edge_$QUERY_ID/querySummary.txt
+
+    echo "$(date): Metrics available at: ${METRICS_ENDPOINT}/id/$QUERY_ID"
+    echo "$(date): Metrics available at: ${METRICS_ENDPOINT}/id/$QUERY_ID" >> edge_$QUERY_ID/querySummary.txt
 fi
-
-echo "$(date): Getting metrics for $QUERY_ID"
-
-echo "$(date): Metrics available at: ${METRICS_ENDPOINT}/id/$QUERY_ID"

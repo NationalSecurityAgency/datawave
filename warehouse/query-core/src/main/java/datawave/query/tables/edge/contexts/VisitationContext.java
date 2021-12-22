@@ -1,19 +1,17 @@
 package datawave.query.tables.edge.contexts;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import datawave.edge.model.EdgeModelAware;
+import com.google.common.collect.HashMultimap;
+import datawave.edge.model.EdgeModelFields;
 import datawave.edge.util.EdgeKeyUtil;
 import datawave.query.parser.JavaRegexAnalyzer;
-
 import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.collect.HashMultimap;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * This class is used to store and build 3 things for an edge query. 1) The normalized edge relationship query 2) The normalized stats edge query 3) The
@@ -26,7 +24,7 @@ import com.google.common.collect.HashMultimap;
  * Further more the original query must be run through a set of normalizers so that the query can correctly get results from the table without having to worry
  * about capitalization or other formatting details.
  */
-public class VisitationContext implements EdgeModelAware, EdgeContext {
+public class VisitationContext implements EdgeContext {
     private static final Logger log = Logger.getLogger(VisitationContext.class);
     
     StringBuilder normalizedQuery;
@@ -35,27 +33,25 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
     protected List<Text> columnFamilies;
     protected boolean hasAllCompleteColumnFamilies = false;
     
-    private HashMultimap<String,String> preFilterValues = HashMultimap.create();
+    private HashMultimap<EdgeModelFields.FieldKey,String> preFilterValues = HashMultimap.create();
     long termCount = 0;
     
     protected boolean includeStats;
+    private final EdgeModelFields fields;
     
     private static final String OR = " || ";
     private static final String AND = " && ";
     
-    public VisitationContext() {
-        normalizedQuery = new StringBuilder();
-        normalizedStatsQuery = new StringBuilder();
-        ranges = new HashSet<>();
-        
-        this.includeStats = true;
+    public VisitationContext(EdgeModelFields fields) {
+        this(fields, true);
     }
     
-    public VisitationContext(boolean includeStats) {
+    public VisitationContext(EdgeModelFields fields, boolean includeStats) {
         
         normalizedQuery = new StringBuilder();
         normalizedStatsQuery = new StringBuilder();
         ranges = new HashSet<>();
+        this.fields = fields;
         
         this.includeStats = includeStats;
         
@@ -90,7 +86,7 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
         }
         
         qContext.buildStrings(trimmedQuery, trimmedStatsQuery, includeStats, includeSources, includeSinks, preFilterValues, includColumnFamilyTerms,
-                        updateWhitelist);
+                        updateWhitelist, fields);
         trimmedQuery.append(")");
         if (includeStats) {
             trimmedStatsQuery.append(")");
@@ -124,7 +120,7 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
         }
         for (IdentityContext source : sources) {
             if (source.isEquivalence()) {
-                if (sinks != null && !source.getOperation().equals(EQUALS_REGEX)) {
+                if (sinks != null && !source.getOperation().equals(EdgeModelFields.EQUALS_REGEX)) {
                     for (IdentityContext sink : sinks) {
                         if (sink.isEquivalence()) {
                             ranges.addAll(buildRange(source, sink));
@@ -156,7 +152,7 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
     private Range buildRange(IdentityContext source) {
         String rowID = getLeadingLiteral(source, false);
         
-        boolean isRegexRange = source.getOperation().equals(EQUALS_REGEX);
+        boolean isRegexRange = source.getOperation().equals(EdgeModelFields.EQUALS_REGEX);
         return EdgeKeyUtil.createEscapedRange(rowID, isRegexRange, includeStats, true);
         
     }
@@ -175,7 +171,7 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
             rangeSet.add(EdgeKeyUtil.createEscapedRange(rowSource, false, includeStats, false));
         }
         
-        boolean isSinkRegex = sink.getOperation().equals(EQUALS_REGEX);
+        boolean isSinkRegex = sink.getOperation().equals(EdgeModelFields.EQUALS_REGEX);
         rangeSet.add(EdgeKeyUtil.createEscapedRange(rowSource, rowSink, isSinkRegex));
         
         return rangeSet;
@@ -194,7 +190,7 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
      */
     private String getLeadingLiteral(IdentityContext term, boolean leadingWildCardAllowed) {
         String leadingLiteral = "";
-        if (term.getOperation().equals(EQUALS_REGEX)) {
+        if (term.getOperation().equals(EdgeModelFields.EQUALS_REGEX)) {
             try {
                 JavaRegexAnalyzer regexAnalyzer = new JavaRegexAnalyzer(term.getLiteral());
                 
@@ -295,7 +291,7 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
         return ranges;
     }
     
-    public HashMultimap<String,String> getPreFilterValues() {
+    public HashMultimap<EdgeModelFields.FieldKey,String> getPreFilterValues() {
         return preFilterValues;
     }
     

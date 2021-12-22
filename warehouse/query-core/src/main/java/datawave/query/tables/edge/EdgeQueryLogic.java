@@ -6,6 +6,9 @@ import com.google.common.collect.Lists;
 import datawave.core.iterators.ColumnQualifierRangeIterator;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.data.type.Type;
+import datawave.edge.model.DefaultEdgeModelFieldsFactory;
+import datawave.edge.model.EdgeModelFields;
+import datawave.edge.model.EdgeModelFieldsFactory;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.EdgeQueryConfiguration;
@@ -81,11 +84,15 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     
     protected ScannerFactory scannerFactory;
     
-    protected HashMultimap<String,String> prefilterValues = null;
+    protected HashMultimap<EdgeModelFields.FieldKey,String> prefilterValues = null;
     
     private VisitationContext visitationContext;
     
     protected MetadataHelperFactory metadataHelperFactory = null;
+    
+    protected EdgeModelFieldsFactory edgeModelFieldsFactory = new DefaultEdgeModelFieldsFactory();
+    
+    protected EdgeModelFields edgeFields;
     
     public EdgeQueryLogic() {
         super();
@@ -140,6 +147,10 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         log.debug("Performing edge table query: " + config.getQueryString());
         
         boolean includeStats = config.includeStats();
+        
+        MetadataHelper metadataHelper = prepareMetadataHelper(config.getConnector(), config.getMetadataTableName(), config.getAuthorizations());
+        
+        loadQueryModel(metadataHelper, config);
         
         String normalizedQuery = null;
         String statsNormalizedQuery = null;
@@ -216,9 +227,9 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         String modelTable = config.getModelTableName() == null ? "" : config.getModelTableName();
         if (null == getEdgeQueryModel() && (!model.isEmpty() && !modelTable.isEmpty())) {
             try {
-                setEdgeQueryModel(new EdgeQueryModel(helper.getQueryModel(config.getModelTableName(), config.getModelName())));
+                setEdgeQueryModel(new EdgeQueryModel(helper.getQueryModel(config.getModelTableName(), config.getModelName()), getEdgeFields()));
             } catch (Throwable t) {
-                log.error("Unable to load edgeQueryModel from metadata table", t);
+                log.error("Unable to load edgeQueryModel from model table", t);
             }
         }
     }
@@ -278,7 +289,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         script = TreeFlatteningRebuildingVisitor.flatten(script);
         
         EdgeTableRangeBuildingVisitor visitor = new EdgeTableRangeBuildingVisitor(getConfig().includeStats(), getConfig().getDataTypes(), getConfig()
-                        .getMaxQueryTerms(), getConfig().getRegexDataTypes());
+                        .getMaxQueryTerms(), getConfig().getRegexDataTypes(), getEdgeFields());
         
         visitationContext = (VisitationContext) script.jjtAccept(visitor, null);
         
@@ -332,10 +343,10 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         
     }
     
-    void pruneAndSetPreFilterValues(HashMultimap<String,String> prefilters) {
-        HashMultimap<String,String> newMap = HashMultimap.create();
+    void pruneAndSetPreFilterValues(HashMultimap<EdgeModelFields.FieldKey,String> prefilters) {
+        HashMultimap<EdgeModelFields.FieldKey,String> newMap = HashMultimap.create();
         long count = 0;
-        for (String field : prefilters.keySet()) {
+        for (EdgeModelFields.FieldKey field : prefilters.keySet()) {
             Set<String> values = prefilters.get(field);
             if (values == null) {
                 continue;
@@ -682,7 +693,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new EdgeQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
+        return new EdgeQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory, this.getEdgeFields());
     }
     
     public List<? extends Type<?>> getDataTypes() {
@@ -776,6 +787,14 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         getConfig().setModelTableName(modelTableName);
     }
     
+    public String getMetadataTableName() {
+        return getConfig().getMetadataTableName();
+    }
+    
+    public void setMetadataTableName(String metadataTableName) {
+        getConfig().setMetadataTableName(metadataTableName);
+    }
+    
     public MetadataHelperFactory getMetadataHelperFactory() {
         return metadataHelperFactory;
     }
@@ -809,6 +828,25 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     
     public void setDateFilterScanLimit(long dateFilterScanLimit) {
         getConfig().setDateFilterScanLimit(dateFilterScanLimit);
+    }
+    
+    public EdgeModelFieldsFactory getEdgeModelFieldsFactory() {
+        return edgeModelFieldsFactory;
+    }
+    
+    public void setEdgeModelFieldsFactory(EdgeModelFieldsFactory edgeModelFieldsFactory) {
+        this.edgeModelFieldsFactory = edgeModelFieldsFactory;
+    }
+    
+    public void setEdgeFields(EdgeModelFields edgeFields) {
+        this.edgeFields = edgeFields;
+    }
+    
+    public EdgeModelFields getEdgeFields() {
+        if (edgeFields == null && edgeModelFieldsFactory != null) {
+            setEdgeFields(edgeModelFieldsFactory.createFields());
+        }
+        return edgeFields;
     }
     
     @Override

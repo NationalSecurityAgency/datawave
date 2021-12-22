@@ -1,5 +1,6 @@
 #!/bin/sh
 rm -r -f query_*
+rm -r -f edge_*
 rm -r -f lookup_*
 rm -r -f batchLookup_*
 rm -r -f plan_*
