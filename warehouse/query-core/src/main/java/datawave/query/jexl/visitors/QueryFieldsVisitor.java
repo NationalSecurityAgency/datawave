@@ -4,6 +4,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
@@ -161,7 +162,7 @@ public class QueryFieldsVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         // Special handling for node with json-encoded params
-        if (ExceededOrThresholdMarkerJexlNode.instanceOf(node, ExceededOrThresholdMarkerJexlNode.class)) {
+        if (QueryPropertyMarker.findInstance(node).isType(ExceededOrThresholdMarkerJexlNode.class)) {
             String field = ExceededOrThresholdMarkerJexlNode.getField(node);
             if (field != null) {
                 ((Set<String>) data).add(field);

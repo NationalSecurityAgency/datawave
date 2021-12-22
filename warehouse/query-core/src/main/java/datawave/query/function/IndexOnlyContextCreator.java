@@ -4,13 +4,13 @@ import com.google.common.base.Function;
 import com.google.common.collect.Multimap;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
+import datawave.query.collections.FunctionalSet;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.iterator.IndexOnlyFunctionIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DelayedNonEventIndexContext;
 import datawave.query.jexl.IndexOnlyJexlContext;
-import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -125,6 +125,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         final Tuple3<Key,Document,DatawaveJexlContext> tuple;
         if (null != from) {
             tuple = super.apply(from);
+            verifyContext(tuple.third());
         } else {
             tuple = null;
         }
@@ -197,6 +198,22 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         }
         
         return newContext;
+    }
+    
+    /**
+     * Ensures that downstream expectations are met with regard to the state of the given context
+     * 
+     * @param context
+     *            jexl context to verify, assumed to be non-null
+     */
+    private void verifyContext(DatawaveJexlContext context) {
+        // Make sure that index-only fields being queried are represented in the context, in
+        // order to avoid potential downstream eval misfire (see #1204)
+        for (String var : this.variables) {
+            if (this.indexOnlyFields.contains(var) && !context.has(var)) {
+                context.set(var, FunctionalSet.empty());
+            }
+        }
     }
     
     /*

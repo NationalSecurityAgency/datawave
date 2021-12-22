@@ -15,6 +15,7 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTNumberLiteral;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -210,6 +211,49 @@ public class JexlASTHelperTest {
         ASTJexlScript two = JexlNodeFactory.createScript(and);
         
         Assert.assertTrue(JexlASTHelper.equals(one, two));
+    }
+    
+    @Test
+    public void testDereferenceIntersection() throws ParseException {
+        String query = "(FOO == 'a' && FOO == 'b')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        JexlNode child = script.jjtGetChild(0);
+        
+        JexlNode test = JexlASTHelper.dereference(child);
+        Assert.assertEquals("FOO == 'a' && FOO == 'b'", JexlStringBuildingVisitor.buildQueryWithoutParse(test));
+    }
+    
+    @Test
+    public void testDereferenceUnion() throws ParseException {
+        String query = "(FOO == 'a' || FOO == 'b')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        JexlNode child = script.jjtGetChild(0);
+        
+        JexlNode test = JexlASTHelper.dereference(child);
+        Assert.assertEquals("FOO == 'a' || FOO == 'b'", JexlStringBuildingVisitor.buildQueryWithoutParse(test));
+    }
+    
+    @Test
+    public void testDereferenceMarkerNode() throws ParseException {
+        String query = "(((((_Value_ = true) && (FOO =~ 'a.*')))))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        JexlNode child = script.jjtGetChild(0);
+        
+        JexlNode test = JexlASTHelper.dereference(child);
+        Assert.assertEquals("(_Value_ = true) && (FOO =~ 'a.*')", JexlStringBuildingVisitor.buildQueryWithoutParse(test));
+        // Note: this is bad. In a larger intersection with other terms, we have now effectively lost which term is marked
+        // Example: (_Value_ = true) && (FOO =~ 'a.*') && FOO2 == 'bar' && FOO3 == 'baz'
+    }
+    
+    // dereference marked node while preserving the final wrapper layer
+    @Test
+    public void testDereferenceMarkerNodeSafely() throws ParseException {
+        String query = "(((((_Value_ = true) && (FOO =~ 'a.*')))))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        JexlNode child = script.jjtGetChild(0);
+        
+        JexlNode test = JexlASTHelper.dereferenceSafely(child);
+        Assert.assertEquals("((_Value_ = true) && (FOO =~ 'a.*'))", JexlStringBuildingVisitor.buildQueryWithoutParse(test));
     }
     
     @Test

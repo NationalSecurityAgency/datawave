@@ -4,7 +4,7 @@ on:
   push:
     paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
     branches:
-    - 'master'
+    - 'integration'
     - 'release/version*'
     - 'feature/accumulo-2.0'
     - 'feature/hadoop3'

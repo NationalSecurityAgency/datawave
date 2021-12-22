@@ -3,7 +3,7 @@ package datawave.query;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
-import datawave.query.jexl.visitors.ParallelIndexExpansion;
+import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -107,7 +107,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
     public void testMissingReverseIndexPlus() throws Exception {
         log.info("------  testMissingReverseIndex  ------");
         Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
-        Logger.getLogger(ParallelIndexExpansion.class).setLevel(Level.DEBUG);
+        Logger.getLogger(RegexIndexExpansionVisitor.class).setLevel(Level.DEBUG);
         Logger.getLogger(ShardIndexQueryTableStaticMethods.class).setLevel(Level.DEBUG);
         Logger.getLogger(AllFieldMetadataHelper.class).setLevel(Level.DEBUG);
         // should at least match usa, fra, and ita

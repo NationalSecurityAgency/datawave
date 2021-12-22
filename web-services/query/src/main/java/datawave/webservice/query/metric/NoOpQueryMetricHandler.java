@@ -29,18 +29,8 @@ public class NoOpQueryMetricHandler implements QueryMetricHandler {
     }
     
     @Override
-    public QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+    public QueryMetricsSummaryResponse getQueryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser, DatawavePrincipal datawavePrincipal) {
         return new QueryMetricsSummaryResponse();
-    }
-    
-    @Override
-    public QueryMetricsSummaryHtmlResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
-        return new QueryMetricsSummaryHtmlResponse();
-    }
-    
-    @Override
-    public QueryMetricsSummaryHtmlResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
-        return new QueryMetricsSummaryHtmlResponse();
     }
     
     @Override

@@ -1,6 +1,7 @@
 package datawave.query.jexl.functions;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -68,11 +69,12 @@ import org.apache.log4j.Logger;
 public class ContentFunctions {
     private static final Logger log = Logger.getLogger(ContentFunctions.class);
     
+    public static final String TERM_OFFSET_MAP_JEXL_VARIABLE_NAME = "termOffsetMap";
     public static final String CONTENT_FUNCTION_NAMESPACE = "content";
-    
     public static final String CONTENT_WITHIN_FUNCTION_NAME = "within";
     public static final String CONTENT_ADJACENT_FUNCTION_NAME = "adjacent";
     public static final String CONTENT_PHRASE_FUNCTION_NAME = "phrase";
+    public static final String CONTENT_SCORED_PHRASE_FUNCTION_NAME = "scoredPhrase";
     
     /**
      * Determine if the given offset lists have any permutation of across each offset list that is within the distance given.
@@ -83,10 +85,9 @@ public class ContentFunctions {
      *            A map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @return A list of integers representing offsets of the first term, if one or more permutations of the terms exists where all terms are within
-     *         {@code distance} of each other, null otherwise
+     * @return a collection of fields that satisfy the content function
      */
-    public static boolean within(int distance, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> within(int distance, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
         return new ContentUnorderedEvaluator(Collections.EMPTY_SET, distance, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
     }
     
@@ -101,11 +102,10 @@ public class ContentFunctions {
      *            A map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @return A list of integers representing offsets of the first term, if one or more permutations of the terms exists where all terms are within
-     *         {@code distance} of each other, null otherwise
+     * @return a collection of fields that satisfy the content function
      * @see #within(int, Map, String...)
      */
-    public static boolean within(Object zone, int distance, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> within(Object zone, int distance, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
         return new ContentUnorderedEvaluator(getFields(zone), distance, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
     }
     
@@ -120,11 +120,10 @@ public class ContentFunctions {
      *            A map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @return A list of integers representing offsets of the first term, if one or more permutations of the terms exists where all terms are within
-     *         {@code distance} of each other, null otherwise
+     * @return a collection of fields that satisfy the content function
      * @see #within(int, Map, String...)
      */
-    public static boolean within(Iterable<?> zones, int distance, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> within(Iterable<?> zones, int distance, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
         return new ContentUnorderedEvaluator(getFields(zones), distance, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
     }
     
@@ -136,10 +135,9 @@ public class ContentFunctions {
      *            A map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @return A list of integers representing offsets of the first term, if one or more permutations of the terms exists where all terms are within
-     *         {@code distance} of each other, null otherwise
+     * @return a collection of fields that satisfy the content function
      */
-    public static boolean adjacent(Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> adjacent(Map<String,TermFrequencyList> termOffsetMap, String... terms) {
         return within(terms.length - 1, termOffsetMap, terms);
     }
     
@@ -152,10 +150,9 @@ public class ContentFunctions {
      *            A map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @return A list of integers representing offsets of the first term, if one or more permutations of the terms exists where all terms are within
-     *         {@code distance} of each other, null otherwise
+     * @return a collection of fields that satisfy the content function
      */
-    public static boolean adjacent(Object zone, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> adjacent(Object zone, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
         return within(getFields(zone), terms.length - 1, termOffsetMap, terms);
     }
     
@@ -168,10 +165,9 @@ public class ContentFunctions {
      *            A map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @return A list of integers representing offsets of the first term, if one or more permutations of the terms exists where all terms are within
-     *         {@code distance} of each other, null otherwise
+     * @return a collection of fields that satisfy the content function
      */
-    public static boolean adjacent(Iterable<?> zone, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> adjacent(Iterable<?> zone, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
         return within(getFields(zone), terms.length - 1, termOffsetMap, terms);
     }
     
@@ -182,10 +178,9 @@ public class ContentFunctions {
      *            A map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @return A list of integers representing offsets of the first term, if one or more permutations of the terms exists where all terms are within
-     *         {@code distance} of each other, null otherwise
+     * @return a collection of fields that satisfy the content function
      */
-    public static boolean phrase(Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> phrase(Map<String,TermFrequencyList> termOffsetMap, String... terms) {
         return new ContentOrderedEvaluator(Collections.EMPTY_SET, 1, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
     }
     
@@ -198,19 +193,29 @@ public class ContentFunctions {
      *            A map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @return A list of integers representing offsets of the first term, if one or more permutations of the terms exists where all terms are within
-     *         {@code distance} of each other, null otherwise
+     * @return a collection of fields that satisfy the content function
      */
-    public static boolean phrase(Object zone, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> phrase(Object zone, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
         return new ContentOrderedEvaluator(getFields(zone), 1, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
     }
     
-    public static boolean phrase(Float minScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    /**
+     * Determine if we have a phrase for any zone under the specified score.
+     * 
+     * @param minScore
+     *            The lowest score allowed for a term
+     * @param termOffsetMap
+     *            A map of terms and their offset lists
+     * @param terms
+     *            The array of terms
+     * @return a collection of fields that satisfy the content function
+     */
+    public static Collection<String> scoredPhrase(Float minScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
         return new ContentOrderedEvaluator(Collections.EMPTY_SET, 1, minScore, termOffsetMap, terms).evaluate();
     }
     
     /**
-     * Wrapper around {@link #phrase} in which a zone is provided
+     * Wrapper around {@link #scoredPhrase} in which a zone is provided
      *
      * @param zone
      *            The zone the phrase must occure in
@@ -220,10 +225,9 @@ public class ContentFunctions {
      *            A map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @return A list of integers representing offsets of the first term, if one or more permutations of the terms exists where all terms are within
-     *         {@code distance} of each other, null otherwise
+     * @return a collection of fields that satisfy the content function
      */
-    public static boolean phrase(Object zone, Float minScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> scoredPhrase(Object zone, Float minScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
         return new ContentOrderedEvaluator(getFields(zone), 1, minScore, termOffsetMap, terms).evaluate();
     }
     
@@ -236,10 +240,9 @@ public class ContentFunctions {
      *            A map of terms and their offset lists
      * @param terms
      *            The array of terms
-     * @return A list of integers representing offsets of the first term, if one or more permutations of the terms exists where all terms are within
-     *         {@code distance} of each other, null otherwise
+     * @return a collection of fields that satisfy the content function
      */
-    public static boolean phrase(Iterable<?> zone, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> phrase(Iterable<?> zone, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
         return new ContentOrderedEvaluator(getFields(zone), 1, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
     }
     

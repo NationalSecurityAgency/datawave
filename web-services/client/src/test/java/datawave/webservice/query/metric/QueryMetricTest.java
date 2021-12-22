@@ -4,11 +4,13 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
@@ -40,18 +42,18 @@ public class QueryMetricTest {
     @BeforeClass
     public static void setup() {
         queryMetric = new QueryMetric();
-        markings = new HashMap<String,String>();
+        markings = new HashMap<>();
         markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, "PUBLIC");
         queryMetric.setMarkings(markings);
-        negativeSelectors = new ArrayList<String>();
+        negativeSelectors = new ArrayList<>();
         negativeSelectors.add("negativeSelector1");
-        positiveSelectors = new ArrayList<String>();
+        positiveSelectors = new ArrayList<>();
         positiveSelectors.add("positiveSelector1");
-        pageTimes = new ArrayList<PageMetric>();
+        pageTimes = new ArrayList<>();
         PageMetric pageMetric = new PageMetric();
         pageMetric.setCallTime(0);
         pageTimes.add(pageMetric);
-        proxyServers = new ArrayList<String>();
+        proxyServers = new ArrayList<>();
         proxyServers.add("proxyServer1");
     }
     
@@ -114,7 +116,7 @@ public class QueryMetricTest {
         assertEquals(Lifecycle.INITIALIZED, queryMetric.getLifecycle());
         assertEquals("PUBLIC", queryMetric.getMarkings().get(MarkingFunctions.Default.COLUMN_VISIBILITY));
         assertEquals("negativeSelector1", queryMetric.getNegativeSelectors().get(0));
-        assertEquals(0, queryMetric.getNumPages());
+        assertEquals(1, queryMetric.getNumPages());
         assertEquals(0, queryMetric.getNumResults());
         assertEquals(0, queryMetric.getNumUpdates());
         assertEquals(0, queryMetric.getPageTimes().get(0).getCallTime());
@@ -158,5 +160,47 @@ public class QueryMetricTest {
         QueryMetric deserializedMetric = schema.newMessage();
         ProtostuffIOUtil.mergeFrom(baos.toByteArray(), deserializedMetric, schema);
         assertEquals(queryMetric, deserializedMetric);
+    }
+    
+    @Test
+    public void testVersionSerialization() throws Exception {
+        QueryMetric qm = new QueryMetric();
+        Date d = new Date();
+        qm.setBeginDate(d);
+        qm.setCreateCallTime(0);
+        qm.setCreateDate(d);
+        qm.setEndDate(d);
+        qm.setErrorCode("error");
+        qm.setErrorMessage("errorMessage");
+        qm.setHost("host");
+        qm.setLastUpdated(d);
+        qm.setLastWrittenHash(0);
+        qm.setLifecycle(Lifecycle.INITIALIZED);
+        qm.setMarkings(markings);
+        qm.setNegativeSelectors(negativeSelectors);
+        qm.setNumUpdates(0);
+        qm.setPageTimes(pageTimes);
+        qm.setPositiveSelectors(positiveSelectors);
+        qm.setProxyServers(proxyServers);
+        qm.setQuery("query");
+        qm.setQueryAuthorizations("auths");
+        qm.setQueryId("queryId");
+        qm.setQueryLogic("queryLogic");
+        qm.setQueryType(this.getClass());
+        qm.setQueryType("queryType");
+        qm.setSetupTime(0);
+        qm.setUser("user");
+        qm.setUserDN("userDN");
+        
+        // The version is added to queryMetric objects by default through injection, so we can verify
+        // the object on creation.
+        assertEquals("3.5.1-TEST", qm.getVersion());
+        
+        Schema<QueryMetric> schema = (Schema<QueryMetric>) qm.getSchemaInstance();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ProtostuffIOUtil.writeTo(baos, qm, schema, LinkedBuffer.allocate());
+        QueryMetric deserializedMetric = schema.newMessage();
+        ProtostuffIOUtil.mergeFrom(baos.toByteArray(), deserializedMetric, schema);
+        assertEquals(qm, deserializedMetric);
     }
 }

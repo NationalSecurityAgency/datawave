@@ -312,5 +312,4 @@ public class TestLuceneQueryParser {
         Assert.assertEquals("FIELD:  TEST", luceneParser.parse("FIELD:\\ \\ TEST").getContents());
         Assert.assertEquals("FIELD:TEST  ", luceneParser.parse("FIELD:TEST\\ \\ ").getContents());
     }
-    
 }

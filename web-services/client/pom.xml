@@ -171,6 +171,7 @@
                 <includes>
                     <include>**/META-INF/beans.xml</include>
                     <include>**/META-INF/services/*</include>
+                    <include>version.properties</include>
                 </includes>
             </resource>
             <resource>

@@ -1,32 +1,9 @@
 package datawave.webservice.query.factory;
 
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.Resource;
-import javax.annotation.security.DeclareRoles;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.EJBContext;
-import javax.ejb.EJBException;
-import javax.ejb.LocalBean;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
-
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
-
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.marking.SecurityMarking;
 import datawave.query.iterator.QueriesTableAgeOffIterator;
@@ -61,6 +38,27 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import javax.annotation.Resource;
+import javax.annotation.security.DeclareRoles;
+import javax.annotation.security.RolesAllowed;
+import javax.ejb.EJBContext;
+import javax.ejb.EJBException;
+import javax.ejb.LocalBean;
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+import javax.ws.rs.core.MultivaluedMap;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Object that creates and updates QueryImpl objects using a table structure:

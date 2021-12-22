@@ -18,15 +18,20 @@ import datawave.query.QueryParameters;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.RebuildingVisitor;
+import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.TableName;
 import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -213,6 +218,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Map<String,Date> compositeTransitionDates = new HashMap<>();
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
     private Set<String> evaluationOnlyFields = new HashSet<>(0);
+    private Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
+    
+    /**
+     * Disables Whindex (value-specific) field mappings for GeoWave functions.
+     * 
+     * @see WhindexVisitor
+     */
+    private boolean disableWhindexFieldMappings = false;
+    private Set<String> whindexMappingFields = new HashSet<>();
+    private Map<String,Map<String,String>> whindexFieldMappings = new HashMap<>();
     
     private boolean sortedUIDs = true;
     // The fields in the the query that are tf fields
@@ -319,6 +334,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // model. drop others
     private boolean shouldLimitTermExpansionToModel = false;
     private Query query = null;
+    @JsonIgnore
+    private transient ASTJexlScript queryTree = null;
     private boolean compressServerSideResults = false;
     private boolean indexOnlyFilterFunctionsEnabled = false;
     private boolean compositeFilterFunctionsEnabled = false;
@@ -326,7 +343,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int groupFieldsBatchSize;
     private boolean accrueStats = false;
     private Set<String> groupFields = new HashSet<>(0);
-    private Set<String> uniqueFields = new HashSet<>(0);
+    private UniqueFields uniqueFields = new UniqueFields();
     private boolean cacheModel = false;
     /**
      * should the sizes of documents be tracked for this query
@@ -351,6 +368,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Remove redundant OR'd terms within ANDs. False by default.
      */
     private boolean enforceUniqueDisjunctionsWithinExpression = false;
+    
+    // fields exempt from query model expansion
+    private Set<String> noExpansionFields = new HashSet<>();
     
     /**
      * Default constructor
@@ -514,21 +534,26 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setModelTableName(other.getModelTableName());
         this.setLimitTermExpansionToModel(other.isExpansionLimitedToModelContents());
         this.setQuery(null == other.getQuery() ? null : other.getQuery().duplicate(other.getQuery().getQueryName()));
+        this.setQueryTree(null == other.getQueryTree() ? null : (ASTJexlScript) RebuildingVisitor.copy(other.getQueryTree()));
         this.setCompressServerSideResults(other.isCompressServerSideResults());
         this.setIndexOnlyFilterFunctionsEnabled(other.isIndexOnlyFilterFunctionsEnabled());
         this.setCompositeFilterFunctionsEnabled(other.isCompositeFilterFunctionsEnabled());
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
         this.setGroupFields(null == other.getGroupFields() ? null : Sets.newHashSet(other.getGroupFields()));
-        this.setUniqueFields(null == other.getUniqueFields() ? null : Sets.newHashSet(other.getUniqueFields()));
+        this.setUniqueFields(UniqueFields.copyOf(other.getUniqueFields()));
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
         this.setEvaluationOnlyFields(other.getEvaluationOnlyFields());
+        this.setDisallowedRegexPatterns(null == other.getEvaluationOnlyFields() ? null : Sets.newHashSet(other.getDisallowedRegexPatterns()));
         this.setActiveQueryLogNameSource(other.getActiveQueryLogNameSource());
         this.setEnforceUniqueConjunctionsWithinExpression(other.getEnforceUniqueConjunctionsWithinExpression());
         this.setEnforceUniqueDisjunctionsWithinExpression(other.getEnforceUniqueDisjunctionsWithinExpression());
-        
+        this.setDisableWhindexFieldMappings(other.isDisableWhindexFieldMappings());
+        this.setWhindexMappingFields(other.getWhindexMappingFields());
+        this.setWhindexFieldMappings(other.getWhindexFieldMappings());
+        this.setNoExpansionFields(other.getNoExpansionFields());
     }
     
     /**
@@ -1530,16 +1555,16 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return "" + groupFieldsBatchSize;
     }
     
-    public Set<String> getUniqueFields() {
+    public UniqueFields getUniqueFields() {
         return uniqueFields;
     }
     
-    public void setUniqueFields(Set<String> uniqueFields) {
-        this.uniqueFields = deconstruct(uniqueFields);
-    }
-    
-    public String getUniqueFieldsAsString() {
-        return StringUtils.join(this.getUniqueFields(), Constants.PARAM_VALUE_SEP);
+    public void setUniqueFields(UniqueFields uniqueFields) {
+        this.uniqueFields = uniqueFields;
+        // If unique fields are present, make sure they are deconstructed by this point.
+        if (uniqueFields != null) {
+            uniqueFields.deconstructIdentifierFields();
+        }
     }
     
     public boolean isHitList() {
@@ -1764,6 +1789,29 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setQuery(Query query) {
         this.query = query;
+    }
+    
+    public ASTJexlScript getQueryTree() {
+        return queryTree;
+    }
+    
+    public void setQueryTree(ASTJexlScript queryTree) {
+        this.queryTree = queryTree;
+        // invalidate the prior queryString, forcing lazily reinitialization of queryString with provided queryTree
+        super.setQueryString(null);
+    }
+    
+    @Override
+    public String getQueryString() {
+        // lazy initialization if null
+        if (null == super.getQueryString()) {
+            if (this.queryTree == null) {
+                return null;
+            }
+            super.setQueryString(JexlStringBuildingVisitor.buildQuery(this.queryTree));
+        }
+        
+        return super.getQueryString();
     }
     
     public boolean isCompressServerSideResults() {
@@ -2073,6 +2121,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return this.evaluationOnlyFields;
     }
     
+    public Set<String> getDisallowedRegexPatterns() {
+        return disallowedRegexPatterns;
+    }
+    
+    public void setDisallowedRegexPatterns(Set<String> disallowedRegexPatterns) {
+        this.disallowedRegexPatterns = disallowedRegexPatterns;
+    }
+    
     public String getActiveQueryLogNameSource() {
         return activeQueryLogNameSource;
     }
@@ -2106,6 +2162,30 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
     
+    public boolean isDisableWhindexFieldMappings() {
+        return disableWhindexFieldMappings;
+    }
+    
+    public void setDisableWhindexFieldMappings(boolean disableWhindexFieldMappings) {
+        this.disableWhindexFieldMappings = disableWhindexFieldMappings;
+    }
+    
+    public Set<String> getWhindexMappingFields() {
+        return whindexMappingFields;
+    }
+    
+    public void setWhindexMappingFields(Set<String> whindexMappingFields) {
+        this.whindexMappingFields = whindexMappingFields;
+    }
+    
+    public Map<String,Map<String,String>> getWhindexFieldMappings() {
+        return whindexFieldMappings;
+    }
+    
+    public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
+        this.whindexFieldMappings = whindexFieldMappings;
+    }
+    
     public boolean isGeneratePlanOnly() {
         return generatePlanOnly;
     }
@@ -2128,5 +2208,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueDisjunctionsWithinExpression) {
         this.enforceUniqueDisjunctionsWithinExpression = enforceUniqueDisjunctionsWithinExpression;
+    }
+    
+    public Set<String> getNoExpansionFields() {
+        return this.noExpansionFields;
+    }
+    
+    public void setNoExpansionFields(Set<String> noExpansionFields) {
+        this.noExpansionFields = noExpansionFields;
     }
 }

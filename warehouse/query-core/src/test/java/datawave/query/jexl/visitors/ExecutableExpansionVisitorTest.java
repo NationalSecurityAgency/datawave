@@ -416,7 +416,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
         MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
         
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("UUID");
         indexedFields.add("QUOTE");
         
@@ -429,8 +429,8 @@ public abstract class ExecutableExpansionVisitorTest {
         EasyMock.verify(config, helper);
         
         Assert.assertFalse(JexlStringBuildingVisitor.buildQuery(queryTree).equals(JexlStringBuildingVisitor.buildQuery(newTree)));
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree).equals(
-                        "((QUOTE == 'kind') && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')"));
+        String expected = "(QUOTE == 'kind' && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')";
+        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(newTree));
     }
     
     @Test
@@ -440,7 +440,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
         MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
         
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("UUID");
         indexedFields.add("QUOTE");
         
@@ -464,7 +464,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
         MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
         
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("UUID");
         indexedFields.add("QUOTE");
         
@@ -479,8 +479,8 @@ public abstract class ExecutableExpansionVisitorTest {
         
         EasyMock.verify(config, helper);
         
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(rebuilt).equals(
-                        "((QUOTE == 'kind') && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')"));
+        String expected = "(QUOTE == 'kind' && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')";
+        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(rebuilt));
     }
     
     @Test
@@ -490,7 +490,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
         MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
         
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("UUID");
         indexedFields.add("QUOTE");
         
@@ -506,10 +506,8 @@ public abstract class ExecutableExpansionVisitorTest {
         EasyMock.verify(config, helper);
         
         Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(rebuilt, config, helper));
-        Assert.assertTrue(JexlStringBuildingVisitor
-                        .buildQuery(rebuilt)
-                        .equals("((QUOTE == 'kind') && UUID == 'A') || (((BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE == '555'))) && UUID == 'A') || ((BIRTH_DATE == '234') && UUID == 'A')"));
-        
+        String expected = "(QUOTE == 'kind' && UUID == 'A') || (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE == '555') && UUID == 'A') || (BIRTH_DATE == '234' && UUID == 'A')";
+        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(rebuilt));
     }
     
     @Test
@@ -527,7 +525,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
         MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
         
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("UUID");
         indexedFields.add("QUOTE");
         
@@ -551,9 +549,9 @@ public abstract class ExecutableExpansionVisitorTest {
         // what came out is executable
         Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
         // it looks like what we'd expect
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree), JexlStringBuildingVisitor.buildQuery(newTree).equals(
-                        "((QUOTE == 'kind') && ((_Value_ = true) && (UUID == 'capone'))) || "
-                                        + "((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && ((_Value_ = true) && (UUID == 'capone')))"));
+        String expected = "(QUOTE == 'kind' && ((_Value_ = true) && (UUID == 'capone'))) || "
+                        + "((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && ((_Value_ = true) && (UUID == 'capone')))";
+        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
     }
     
     @Test
@@ -571,7 +569,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
         MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
         
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("UUID");
         indexedFields.add("QUOTE");
         
@@ -592,9 +590,9 @@ public abstract class ExecutableExpansionVisitorTest {
         // what came out is executable
         Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
         // it looks like what we'd expect
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree), JexlStringBuildingVisitor.buildQuery(newTree).equals(
-                        "((QUOTE == 'kind') && UUID == 'capone') || " + "((((_Value_ = true) && (BIRTH_DATE == '123'))) && UUID == 'capone') || "
-                                        + "((filter:includeRegex(QUOTE, '.*kind.*')) && UUID == 'capone')"));
+        String expected = "(QUOTE == 'kind' && UUID == 'capone') || " + "(((_Value_ = true) && (BIRTH_DATE == '123')) && UUID == 'capone') || "
+                        + "(filter:includeRegex(QUOTE, '.*kind.*') && UUID == 'capone')";
+        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
     }
     
     @Test
@@ -616,7 +614,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
         MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
         
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("UUID");
         indexedFields.add("QUOTE");
         
@@ -647,11 +645,11 @@ public abstract class ExecutableExpansionVisitorTest {
         id = queryString.substring(queryString.indexOf("id = '") + 6, queryString.indexOf("') && (field"));
         
         // it looks like what we'd expect
-        Assert.assertTrue(
-                        queryString,
-                        queryString.equals("((QUOTE == 'kind') && UUID == 'capone') || " + "((((_List_ = true) && ((id = '" + id
-                                        + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}')))) && UUID == 'capone') || "
-                                        + "((filter:includeRegex(QUOTE, '.*kind.*')) && UUID == 'capone')"));
+        
+        String expected = "(QUOTE == 'kind' && UUID == 'capone') || " + "(((_List_ = true) && ((id = '" + id
+                        + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}'))) && UUID == 'capone') || "
+                        + "(filter:includeRegex(QUOTE, '.*kind.*') && UUID == 'capone')";
+        Assert.assertEquals(expected, queryString);
     }
     
     @Test
@@ -662,7 +660,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
         MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
         
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("UUID");
         indexedFields.add("QUOTE");
         
@@ -697,7 +695,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
         MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
         
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("UUID");
         indexedFields.add("QUOTE");
         
@@ -723,10 +721,8 @@ public abstract class ExecutableExpansionVisitorTest {
         // what came out is executable
         Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
         // the visitor changed nothing
-        Assert.assertTrue(
-                        JexlStringBuildingVisitor.buildQuery(newTree),
-                        JexlStringBuildingVisitor.buildQuery(newTree).equals(
-                                        "((QUOTE == 'kind') && UUID == 'capone') || ((((_Delayed_ = true) && BIRTH_DATE == '123')) && UUID == 'capone')"));
+        String expected = "(QUOTE == 'kind' && UUID == 'capone') || (((_Delayed_ = true) && BIRTH_DATE == '123') && UUID == 'capone')";
+        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
     }
     
     @Test
@@ -737,7 +733,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
         MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
         
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("UUID");
         indexedFields.add("QUOTE");
         
@@ -785,7 +781,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
         MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
         
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("UUID");
         indexedFields.add("QUOTE");
         
@@ -823,7 +819,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
         MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
         
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("UUID");
         indexedFields.add("QUOTE");
         
@@ -855,7 +851,7 @@ public abstract class ExecutableExpansionVisitorTest {
         ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
         MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
         
-        HashSet indexedFields = new HashSet();
+        HashSet<String> indexedFields = new HashSet<>();
         indexedFields.add("UUID");
         indexedFields.add("QUOTE");
         

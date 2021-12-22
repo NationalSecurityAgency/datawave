@@ -32,7 +32,8 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
 
-@SuppressWarnings("deprecation")
+import static org.junit.Assert.assertTrue;
+
 public class PropogatingIteratorTest {
     private static final String SHARD = "20121002_1";
     private static final String FIELD_TO_AGGREGATE = "UUID";
@@ -43,7 +44,7 @@ public class PropogatingIteratorTest {
         
         Assert.assertEquals(uids.length, v.getCOUNT());
         for (String uid : uids) {
-            v.getUIDList().contains(uid);
+            assertTrue(v.getUIDList().contains(uid));
         }
     }
     
@@ -52,7 +53,7 @@ public class PropogatingIteratorTest {
         
         Assert.assertEquals(-uids.length, v.getCOUNT());
         for (String uid : uids) {
-            v.getREMOVEDUIDList().contains(uid);
+            assertTrue(v.getREMOVEDUIDList().contains(uid));
         }
     }
     
@@ -74,9 +75,9 @@ public class PropogatingIteratorTest {
         return builder;
     }
     
-    public class MockIteratorEnvironment implements IteratorEnvironment {
+    public static class MockIteratorEnvironment implements IteratorEnvironment {
         AccumuloConfiguration conf;
-        private boolean major;
+        private final boolean major;
         
         public MockIteratorEnvironment(boolean major) {
             this.conf = DefaultConfiguration.getInstance();
@@ -127,7 +128,7 @@ public class PropogatingIteratorTest {
         }
         
         @Override
-        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String arg0) throws IOException {
+        public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String arg0) {
             return null;
         }
     }
@@ -165,7 +166,7 @@ public class PropogatingIteratorTest {
         
         iter.seek(new Range(), Collections.emptyList(), false);
         
-        Assert.assertTrue(iter.hasTop());
+        assertTrue(iter.hasTop());
         
         Key topKey = iter.getTopKey();
         
@@ -201,7 +202,7 @@ public class PropogatingIteratorTest {
         
         iter.seek(new Range(), Collections.emptyList(), false);
         
-        Assert.assertTrue(iter.hasTop());
+        assertTrue(iter.hasTop());
         
         Key topKey = iter.getTopKey();
         
@@ -218,9 +219,6 @@ public class PropogatingIteratorTest {
     public void testNullOptions() throws IOException {
         
         PropogatingIterator iter = new PropogatingIterator();
-        Map<String,String> options = Maps.newHashMap();
-        
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
         
         IteratorEnvironment env = new MockIteratorEnvironment(false);
         
@@ -250,8 +248,6 @@ public class PropogatingIteratorTest {
         
         options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
         
-        IteratorEnvironment env = new MockIteratorEnvironment(false);
-        
         iter.init(createSourceWithTestData(), options, null);
         
         iter.seek(new Range(), Collections.emptyList(), false);
@@ -279,11 +275,9 @@ public class PropogatingIteratorTest {
         
         iter.seek(new Range(), Collections.emptyList(), false);
         
-        Assert.assertTrue(iter.hasTop());
+        assertTrue(iter.hasTop());
         
         Key topKey = iter.getTopKey();
-        
-        topKey = iter.getTopKey();
         Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         
     }
@@ -308,7 +302,7 @@ public class PropogatingIteratorTest {
         
         iter.seek(new Range(), Collections.emptyList(), false);
         
-        Assert.assertTrue(iter.hasTop());
+        assertTrue(iter.hasTop());
         
         Key topKey = iter.getTopKey();
         
@@ -338,7 +332,7 @@ public class PropogatingIteratorTest {
         
         iter.seek(new Range(), Collections.emptyList(), false);
         
-        Assert.assertTrue(iter.hasTop());
+        assertTrue(iter.hasTop());
         
         Key topKey = iter.getTopKey();
         
@@ -364,7 +358,7 @@ public class PropogatingIteratorTest {
         
         iter.seek(new Range(), Collections.emptyList(), false);
         
-        Assert.assertTrue(iter.hasTop());
+        assertTrue(iter.hasTop());
         
         Key topKey = iter.getTopKey();
         
@@ -406,7 +400,7 @@ public class PropogatingIteratorTest {
         
         iter.seek(new Range(), Collections.emptyList(), false);
         
-        Assert.assertTrue(iter.hasTop());
+        assertTrue(iter.hasTop());
         
         Key topKey = iter.getTopKey();
         
@@ -443,7 +437,7 @@ public class PropogatingIteratorTest {
         
         iter.seek(new Range(), Collections.emptyList(), false);
         
-        Assert.assertTrue(iter.hasTop());
+        assertTrue(iter.hasTop());
         
         Key topKey = iter.getTopKey();
         
@@ -458,8 +452,6 @@ public class PropogatingIteratorTest {
     
     @Test(expected = NullPointerException.class)
     public void testNullOptionsWithInit() throws IOException {
-        Map<String,String> options = Maps.newHashMap();
-        options.put(PropogatingIterator.AGGREGATOR_DEFAULT, GlobalIndexUidAggregator.class.getCanonicalName());
         IteratorEnvironment env = new MockIteratorEnvironment(false);
         new PropogatingIterator().init(createSourceWithTestData(), null, env);
     }
@@ -494,11 +486,9 @@ public class PropogatingIteratorTest {
         
         iter.seek(new Range(), Collections.emptyList(), false);
         
-        Assert.assertTrue(iter.hasTop());
+        assertTrue(iter.hasTop());
         
         Key topKey = iter.getTopKey();
-        
-        topKey = iter.getTopKey();
         Assert.assertEquals(newKey(SHARD, FIELD_TO_AGGREGATE, "abd"), topKey);
         
     }
@@ -524,7 +514,7 @@ public class PropogatingIteratorTest {
         
         iter.seek(new Range(), Collections.emptyList(), false);
         
-        Assert.assertTrue(iter.hasTop());
+        assertTrue(iter.hasTop());
         
         Key topKey = iter.getTopKey();
         
@@ -553,7 +543,7 @@ public class PropogatingIteratorTest {
         
         iter.seek(new Range(), Collections.emptyList(), false);
         
-        Assert.assertTrue(iter.hasTop());
+        assertTrue(iter.hasTop());
         
         Key topKey = iter.getTopKey();
         
@@ -579,7 +569,7 @@ public class PropogatingIteratorTest {
         
         iter.seek(new Range(), Collections.emptyList(), false);
         
-        Assert.assertTrue(iter.hasTop());
+        assertTrue(iter.hasTop());
         
         Key topKey = iter.getTopKey();
         
@@ -616,7 +606,7 @@ public class PropogatingIteratorTest {
                 
                 List<Entry<Key,Value>> resultList = Lists.newArrayList();
                 
-                Assert.assertTrue(myitr.hasTop());
+                assertTrue(myitr.hasTop());
                 
                 Key topKey = myitr.getTopKey();
                 resultList.add(Maps.immutableEntry(topKey, myitr.getTopValue()));
@@ -645,7 +635,7 @@ public class PropogatingIteratorTest {
     
     @Test
     public void testDeepCopyOnDefaultConstructor() throws IOException {
-        SortedKeyValueIterator source = createSourceWithTestData();
+        SortedKeyValueIterator<Key,Value> source = createSourceWithTestData();
         HashMap<String,String> emptyOptions = new HashMap<>();
         MockIteratorEnvironment env = new MockIteratorEnvironment(true);
         
@@ -657,7 +647,7 @@ public class PropogatingIteratorTest {
     
     @Test
     public void testDeepCopyOnConstructor() throws IOException {
-        SortedKeyValueIterator source = createSourceWithTestData();
+        SortedKeyValueIterator<Key,Value> source = createSourceWithTestData();
         HashMap<String,String> emptyOptions = new HashMap<>();
         MockIteratorEnvironment env = new MockIteratorEnvironment(true);
         

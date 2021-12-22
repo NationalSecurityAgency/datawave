@@ -3,12 +3,15 @@ package datawave.query.planner.rules;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.PrintingVisitor;
+import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,23 +22,22 @@ import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class NodeTransformVisitorTest {
     
-    private static final List<String> PATTERNS = Arrays.asList(new String[] {".\\.\\*", "\\.\\*.", "\\.\\*<[^<>]+>"});
+    private static final Logger log = Logger.getLogger(NodeTransformVisitorTest.class);
     private static final RegexPushdownTransformRule regexPushdownRule = new RegexPushdownTransformRule();
     private static final RegexSimplifierTransformRule regexSimplifier = new RegexSimplifierTransformRule();
+    private static final RegexDotallTransformRule regexDotall = new RegexDotallTransformRule();
     private static final NodeTransformRule reverseAndRule = new NodeTransformRule() {
         @Override
         public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
             if (node instanceof ASTAndNode) {
                 // reverse the children
                 ArrayList<JexlNode> children = newArrayList();
-                for (JexlNode child : children(node)) {
-                    children.add(child);
-                }
+                children.addAll(Arrays.asList(children(node)));
                 Collections.reverse(children);
                 return children(node, children.toArray(new JexlNode[0]));
             }
@@ -45,8 +47,9 @@ public class NodeTransformVisitorTest {
     private static final NodeTransformRule pullUpRule = new NodeTransformRule() {
         @Override
         public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
-            if (QueryPropertyMarker.instanceOf(node, null)) {
-                return QueryPropertyMarker.getQueryPropertySource(node, null);
+            QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+            if (instance.isAnyType()) {
+                return instance.getSource();
             }
             return node;
         }
@@ -54,7 +57,7 @@ public class NodeTransformVisitorTest {
     
     @Before
     public void beforeTest() {
-        regexPushdownRule.setRegexPatterns(Arrays.asList(new String[] {".\\.\\*", "\\.\\*.", "\\.\\*<[^<>]+>"}));
+        regexPushdownRule.setRegexPatterns(Arrays.asList(".\\.\\*", "\\.\\*.", "\\.\\*<[^<>]+>"));
     }
     
     private void testPushdown(String query, String expected) throws Exception {
@@ -65,18 +68,41 @@ public class NodeTransformVisitorTest {
         testPushdown(query, expected, Collections.singletonList(regexSimplifier));
     }
     
-    private void testPushdown(String query, String expected, List<NodeTransformRule> rules) throws Exception {
+    private void testDotall(String query, String expected) throws Exception {
+        testPushdown(query, expected, Collections.singletonList(regexDotall));
+    }
+    
+    private void testPushdown(String original, String expected, List<NodeTransformRule> rules) throws Exception {
         // create a query tree
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
         
         MockMetadataHelper helper = new MockMetadataHelper();
         
         // apply the visitor
-        script = NodeTransformVisitor.transform(script, rules, new ShardQueryConfiguration(), helper);
+        ASTJexlScript resultScript = NodeTransformVisitor.transform(originalScript, rules, new ShardQueryConfiguration(), helper);
         
-        // test the query tree
-        String result = JexlStringBuildingVisitor.buildQuery(script);
-        assertEquals("Unexpected transform", expected, result);
+        // Verify the script is as expected, and has a valid lineage.
+        assertScriptEquality(resultScript, expected);
+        assertLineage(resultScript);
+        
+        // Verify the original script was not modified, and still has a valid lineage.
+        assertScriptEquality(originalScript, original);
+        assertLineage(originalScript);
+        
+    }
+    
+    private void assertScriptEquality(ASTJexlScript actualScript, String expected) throws ParseException {
+        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
+        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedScript, actualScript);
+        if (!comparison.isEqual()) {
+            log.error("Expected " + PrintingVisitor.formattedQueryString(expectedScript));
+            log.error("Actual " + PrintingVisitor.formattedQueryString(actualScript));
+        }
+        assertTrue(comparison.getReason(), comparison.isEqual());
+    }
+    
+    private void assertLineage(JexlNode node) {
+        assertTrue(JexlASTHelper.validateLineage(node, true));
     }
     
     @Test
@@ -97,7 +123,7 @@ public class NodeTransformVisitorTest {
     }
     
     @Test
-    public void regexPushdownAnyfieldTransformRuleTest() throws Exception {
+    public void regexPushdownAnyfieldTransformRuleTest() {
         // @formatter:off
         String query = "BLA == 'x' && " +
                 "BLA =~ 'ab.*' && " +
@@ -123,16 +149,37 @@ public class NodeTransformVisitorTest {
         // @formatter:off
         String query = "BLA == '.*?.*?x' && " +
                 "BLA =~ 'ab.*.*' && " +
-                "BLA =~ 'a.*.*.*.*?.*?' && " +
+                "BLA !~ 'a.*.*.*.*?.*?' && " +
                 "BLA =~ '.*?.*?.*bla.*?.*?blabla' && " +
-                "_ANYFIELD_ =~ '.*.*?.*?<bla>'";
+                "_ANYFIELD_ =~ '.*.*?.*?<bla>' && " +
+                "filter:excludeRegex(BLA, '.*?.*?.*bla.*?.*?blabla') && " +
+                "filter:includeRegex(BLA, '.*?.*?.*bla.*?.*?blabla')";
         String expected = "BLA == '.*?.*?x' && " +
                 "BLA =~ 'ab.*?' && " +
-                "BLA =~ 'a.*?' && " +
+                "BLA !~ 'a.*?' && " +
                 "BLA =~ '.*?bla.*?blabla' && " +
-                "_ANYFIELD_ =~ '.*?<bla>'";
+                "_ANYFIELD_ =~ '.*?<bla>' && " +
+                "filter:excludeRegex(BLA, '.*?bla.*?blabla') && " +
+                "filter:includeRegex(BLA, '.*?bla.*?blabla')";
         // @formatter:on
         testSimplify(query, expected);
+    }
+    
+    @Test
+    public void regexDotAllTransformRuleTest() throws Exception {
+        // @formatter:off
+        String query = "BLA == '(\\s|.)*' && " +
+                "BLA !~ '(.|\\s)*' && " +
+                "BLA =~ '(\\s|.)*word(.|\\s)*' &&" +
+                "filter:excludeRegex(BLA, '(\\s|.)*word(.|\\s)*') && " +
+                "filter:includeRegex(BLA, '(\\s|.)*word(.|\\s)*')";
+        String expected = "BLA == '(\\s|.)*' && " +
+                "BLA !~ '.*' && " +
+                "BLA =~ '.*word.*' &&" +
+                "filter:excludeRegex(BLA, '.*word.*') && " +
+                "filter:includeRegex(BLA, '.*word.*')";
+        // @formatter:on
+        testDotall(query, expected);
     }
     
     @Test

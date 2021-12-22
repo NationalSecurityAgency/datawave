@@ -465,7 +465,9 @@ public final class BulkIngestMapFileLoader implements Runnable {
                             if (takeOwnershipJobDirectory(srcJobDirectory)) {
                                 processedDirectories.add(srcJobDirectory);
                                 Path mapFilesDir = new Path(srcJobDirectory, "mapFiles");
-                                reporter.getCounter("MapFileLoader.StartTimes", srcJobDirectory.getName()).increment(System.currentTimeMillis());
+                                if (INGEST_METRICS) {
+                                    reporter.getCounter("MapFileLoader.StartTimes", srcJobDirectory.getName()).increment(System.currentTimeMillis());
+                                }
                                 Path dstJobDirectory = srcJobDirectory;
                                 URI workingHdfs = srcHdfs;
                                 

@@ -6,6 +6,7 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TermCountingVisitorTest {
     
@@ -100,9 +101,16 @@ public class TermCountingVisitorTest {
         testCounts(query, 0);
     }
     
+    @Test
+    public void testFailure() throws ParseException {
+        String query = "(((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) || ((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) || ((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) || (((_Bounded_ = true) && GEO >= '0500aa' && GEO <= '050355')) || ((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= 0 && WKT_BYTE_LENGTH < 80))";
+        testCounts(query, 6);
+    }
+    
     private void testCounts(String query, int expectedCount) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         int count = TermCountingVisitor.countTerms(script);
         assertEquals(expectedCount, count);
+        assertTrue(JexlASTHelper.validateLineage(script, false));
     }
 }
