@@ -599,7 +599,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         try {
                             Date d = sdf_date_time2.parse(fieldValue);
                             m.setCreateDate(d);
-                            createDateSet = true;
                         } catch (Exception e) {
                             log.error(e.getMessage());
                         }
