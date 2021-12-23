@@ -32,7 +32,7 @@ public class Pipeline implements Runnable {
     
     private QuerySpanCollector querySpanCollector = null;
     
-    public Pipeline(QuerySpanCollector querySpanCollector, SortedKeyValueIterator<Key,Value> sourceForDeepCopy) {
+    public Pipeline(QuerySpanCollector querySpanCollector) {
         this.querySpanCollector = querySpanCollector;
         this.iterator = null;
     }

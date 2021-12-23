@@ -168,7 +168,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     protected CloseableIterable<QueryData> queries = null;
     protected QueryModel queryModel = null;
     protected ScannerFactory scannerFactory = null;
-    protected Scheduler scheduler = null;
+    protected Scheduler<Entry<Key,Value>> scheduler = null;
     protected EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer = null;
     private ShardQueryConfiguration config;
     protected MetadataHelperFactory metadataHelperFactory = null;
@@ -237,12 +237,15 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public static BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
         final BatchScanner bs = scannerFactory.newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(),
-                        config.getQuery());
+                        config.getQuery(),false,config.getCustomBatchScanner());
         
         if (log.isTraceEnabled()) {
             log.trace("Running with " + config.getAuthorizations() + " and " + config.getNumQueryThreads() + " threads: " + qd);
         }
-        
+
+        if (log.isTraceEnabled()) {
+            log.trace("Running with " + config.getAuthorizations() + " and " + config.getNumQueryThreads() + " threads: " + qd.getRanges().size());
+        }
         bs.setRanges(qd.getRanges());
         
         for (IteratorSetting cfg : qd.getSettings()) {
@@ -251,6 +254,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         return bs;
     }
+
     
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
@@ -992,7 +996,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
     }
     
-    protected Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
+    protected Scheduler<Entry<Key,Value>> getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
         if (config.getSequentialScheduler()) {
             return new SequentialScheduler(config, scannerFactory);
         } else {
@@ -1037,7 +1041,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 
                 nClosed = 0;
                 
-                for (ScannerSession bs : Lists.newArrayList(scannerFactory.currentSessions())) {
+                for (BaseScannerSession<?> bs : Lists.newArrayList(scannerFactory.currentSessions())) {
                     scannerFactory.close(bs);
                     ++nClosed;
                 }
@@ -1787,7 +1791,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.scannerFactory = scannerFactory;
     }
     
-    public Scheduler getScheduler() {
+    public Scheduler<Entry<Key,Value>> getScheduler() {
         return scheduler;
     }
     

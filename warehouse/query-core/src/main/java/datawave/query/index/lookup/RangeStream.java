@@ -197,7 +197,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             this.itr = null;
         }
         if (log.isDebugEnabled()) {
-            log.debug("Query returned a stream with a context of " + this.context);
+            log.debug("Query returned a stream context of " + this.context);
             if (queryStream != null) {
                 for (String line : StringUtils.split(queryStream.getContextDebug(), '\n')) {
                     log.debug(line);
@@ -226,6 +226,9 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                     todo.add(new ConcurrentScannerInitializer(queryStream));
                     Collection<BaseIndexStream> streams = ConcurrentScannerInitializer.initializeScannerStreams(todo, executor);
                     if (streams.size() == 1) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("A single stream");
+                        }
                         queryStream = streams.iterator().next();
                     }
                 }

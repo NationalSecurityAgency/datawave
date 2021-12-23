@@ -20,15 +20,19 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ScannerSession;
 import datawave.query.tables.SessionOptions;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
+import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -395,6 +399,66 @@ public class ShardIndexQueryTableStaticMethods {
         
         return bs;
     }
+
+    public static BatchScanner configureLimitedDiscoveryV2(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
+                                                           Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
+            throws Exception {
+
+        // if we have no ranges, then nothing to scan
+        if (ranges.isEmpty()) {
+            return null;
+        }
+
+
+        // if we have no ranges, then nothing to scan
+        if (ranges.isEmpty()) {
+            return null;
+        }
+
+        //ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery());
+        Query qry = new QueryImpl();
+        qry.setQuery("1==1");
+        qry.setId(UUID.randomUUID());
+        qry.setQueryLogicName("logic");
+        qry.setUserDN("DN");
+        //scannerFactory.cre
+        String begin = formatter.format(config.getBeginDate());
+        String end = formatter.format(config.getEndDate());
+        BatchScanner scanner = scannerFactory.newScanner(tableName,config.getAuthorizations(),qry);
+        int i =config.getBaseIteratorPriority()+33;
+        for(String pattern : patterns) {
+            IteratorSetting iter =
+                    new IteratorSetting(++i, "aquery", RegExFilter.class);
+            String rowRegex = pattern;
+            String colfRegex = null;
+            String colqRegex = common_digits(begin, end);
+            String valueRegex = null;
+            boolean orFields = false;
+            System.out.println("creating row pattern for " + rowRegex + " and colqregex for " + colqRegex);
+            RegExFilter.setRegexs(iter, rowRegex, colfRegex,
+                    colqRegex, valueRegex, orFields);
+            scanner.addScanIterator(iter);
+
+        }
+        for(Range rng : ranges){
+            System.out.println("Adding range " + rng);
+        }
+        scanner.setRanges(ranges);
+        /*
+
+        queryId = testAndSetOption(query.getId());
+        queryLogicName = testAndSetOption(query.getQueryLogicName());
+        queryName = testAndSetOption(query.getQueryName());
+        if (null == queryStr)
+            queryString = testAndSetOption(query.getQuery());
+        else
+            queryString = testAndSetOption(queryStr);
+        queryUser = testAndSetOption(query.getOwner());
+         */
+
+
+        return scanner;
+    }
     
     public static ScannerSession configureLimitedDiscovery(ShardQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> ranges, Collection<String> literals, Collection<String> patterns, boolean reverseIndex, boolean limitToUniqueTerms)
@@ -406,9 +470,9 @@ public class ShardIndexQueryTableStaticMethods {
         }
         
         ScannerSession bs = scannerFactory.newLimitedScanner(AnyFieldScanner.class, tableName, config.getAuthorizations(), config.getQuery());
-        
+
         bs.setRanges(ranges);
-        
+
         SessionOptions options = new SessionOptions();
         options.addScanIterator(configureDateRangeIterator(config));
         IteratorSetting setting = configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter());
@@ -419,7 +483,7 @@ public class ShardIndexQueryTableStaticMethods {
         if (setting != null) {
             options.addScanIterator(setting);
         }
-        
+
         bs.setOptions(options);
         
         return bs;
@@ -445,7 +509,28 @@ public class ShardIndexQueryTableStaticMethods {
         cfg.addOption(Constants.END_DATE, Long.toString(dateRange.getMaximumLong()));
         return cfg;
     }
-    
+
+
+    /*
+     *  Simple minded little function to create a simple regex to cull the
+     *  number of rows returned from shardIndex to a particular date range.
+     *  There are more comprehensive ways to do this using numeric range
+     *  regexs but for now we're following the K.I.S.S. principle.
+     */
+    static String common_digits(String a, String b) {
+        int i, len = Math.min(a.length(),b.length());
+
+        if(len == 0)
+            return null;
+
+        for(i=0; i < len; i++) {
+            if(a.charAt(i) != b.charAt(i))
+                break;
+        }
+        return "^" + a.substring(0,i) + ".*";
+    }
+
+
     public static final IteratorSetting configureDateRangeIterator(ShardQueryConfiguration config) throws IOException {
         // Setup the GlobalIndexDateRangeFilter
         if (log.isTraceEnabled()) {

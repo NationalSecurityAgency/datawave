@@ -40,7 +40,7 @@ public class SerialIterator extends PipelineIterator {
         }
         
         if (null == result) {
-            long start = System.currentTimeMillis();
+            long start = yieldThresholdMs < Long.MAX_VALUE ? System.currentTimeMillis() : 0;
             while (this.docSource.hasNext()) {
                 Key docKey = this.docSource.next();
                 Document doc = this.docSource.document();
@@ -49,7 +49,7 @@ public class SerialIterator extends PipelineIterator {
                 result = currentPipeline.getResult();
                 if (null != result)
                     break;
-                if (yield != null && ((System.currentTimeMillis() - start) > yieldThresholdMs)) {
+                if (yield != null && yieldThresholdMs != Long.MAX_VALUE && ((System.currentTimeMillis() - start) > yieldThresholdMs)) {
                     yield.yield(docKey);
                     if (log.isDebugEnabled()) {
                         log.debug("Yielding at " + docKey);

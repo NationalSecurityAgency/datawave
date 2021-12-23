@@ -139,10 +139,14 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
                     // amount of time to wait has elapsed OR we have processed all of our ranges before continuing
                     while (this.rangeQueue.size() < numRangesToBuffer && this.rangeQueue.remainingCapacity() > 0
                                     && (startTimeMillis + rangeBufferTimeoutMillis) > System.currentTimeMillis() && !rangeConsumer.isStopped()) {
+                        if (log.isTraceEnabled())
+                            log.trace(" sleeping " + rangeBufferPollMillis + " ms ");
                         Thread.sleep(rangeBufferPollMillis);
                     }
                     
                     QueryPlan plan = this.rangeQueue.poll(this.maxWaitValue, this.maxWaitUnit);
+                    if (log.isTraceEnabled())
+                        log.trace(" obtained plan , may have waited " + maxWaitValue);
                     if (null == plan) {
                         if (!rangeConsumer.isStopped()) {
                             if (log.isTraceEnabled())

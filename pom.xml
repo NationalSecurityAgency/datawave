@@ -53,7 +53,7 @@
         <version.geoserver>2.14.2</version.geoserver>
         <version.geotools>20.1</version.geotools>
         <version.geowave>1.1.0</version.geowave>
-        <version.google-guava>31.1-jre</version.google-guava>
+        <version.google-gson>2.8.9</version.google-gson>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <version.hadoop>3.3.1</version.hadoop>
@@ -169,6 +169,12 @@
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>annotations</artifactId>
                 <version>${version.googlecode-findbugs}</version>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
+            <dependency>
+                <groupId>com.google.code.gson</groupId>
+                <artifactId>gson</artifactId>
+                <version>${version.google-gson}</version>
             </dependency>
             <dependency>
                 <!-- this is a runtime dependency of guava, no longer included with guava as of 27.1 -->
