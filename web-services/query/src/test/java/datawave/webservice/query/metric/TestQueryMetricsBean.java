@@ -1,6 +1,5 @@
 package datawave.webservice.query.metric;
 
-import static org.easymock.EasyMock.anyBoolean;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertNotNull;
@@ -22,13 +21,15 @@ import org.junit.runner.RunWith;
 @RunWith(EasyMockRunner.class)
 public class TestQueryMetricsBean extends EasyMockSupport {
     @TestSubject
-    QueryMetricsBean queryMetricsBean = new QueryMetricsBean();
+    QueryMetricsBean subject = new QueryMetricsBean();
     @Mock
     DatawavePrincipal callerPrincipal;
     @Mock
     EJBContext ejbContext;
     @Mock
     QueryMetricListResponse listResponse;
+    @Mock
+    QueryMetricsDetailListResponse listDetailResponse;
     
     @Mock
     QueryMetricHandler queryMetricHandler;
@@ -45,12 +46,12 @@ public class TestQueryMetricsBean extends EasyMockSupport {
         
         // Set expectations
         expect(this.ejbContext.getCallerPrincipal()).andReturn(this.callerPrincipal);
-        expect(this.queryMetricHandler.getQueryMetricsSummary(isA(Date.class), isA(Date.class), anyBoolean(), isA(DatawavePrincipal.class))).andReturn(
+        expect(this.queryMetricHandler.getTotalQueriesSummaryCounts(isA(Date.class), isA(Date.class), isA(DatawavePrincipal.class))).andReturn(
                         this.summaryResponse);
         
         // Run the test
         replayAll();
-        QueryMetricsSummaryResponse result1 = queryMetricsBean.getQueryMetricsSummary(beginDate, endDate);
+        QueryMetricsSummaryResponse result1 = subject.getTotalQueriesSummaryCounts(beginDate, endDate);
         verifyAll();
         
         // Verify results
@@ -71,7 +72,7 @@ public class TestQueryMetricsBean extends EasyMockSupport {
         
         // Run the test
         replayAll();
-        BaseQueryMetricListResponse result1 = queryMetricsBean.query(queryId);
+        BaseQueryMetricListResponse result1 = subject.query(queryId);
         verifyAll();
         
         // Verify results
