@@ -1,4 +1,5 @@
 **/scripts/query_*
+**/scripts/edge_*
 **/scripts/plan_*
 **/scripts/prediction_*
 **/scripts/lookup_*
