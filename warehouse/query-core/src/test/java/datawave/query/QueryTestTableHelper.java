@@ -8,6 +8,7 @@ import datawave.ingest.table.config.MetadataTableConfigHelper;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.ShardedBaseQueryLogic;
 import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -68,6 +69,17 @@ public final class QueryTestTableHelper {
         // create mock instance and connector
         InMemoryInstance i = new InMemoryInstance(instanceName);
         this.client = new InMemoryAccumuloClient("root", i);
+        this.log = log;
+        
+        createTables();
+    }
+    
+    public QueryTestTableHelper(AccumuloClient client, Logger log, RebuildingScannerTestHelper.TEARDOWN teardown,
+                    RebuildingScannerTestHelper.INTERRUPT interrupt) throws AccumuloSecurityException, AccumuloException, TableExistsException,
+                    TableNotFoundException {
+        // create mock instance and connector
+        
+        this.client = client;
         this.log = log;
         
         createTables();
@@ -179,7 +191,7 @@ public final class QueryTestTableHelper {
         }
     }
     
-    public static void configureLogicToScanTables(ShardQueryLogic logic) {
+    public static void configureLogicToScanTables(ShardedBaseQueryLogic logic) {
         logic.setMetadataTableName(METADATA_TABLE_NAME);
         logic.setDateIndexTableName(TableName.DATE_INDEX);
         logic.setTableName(TableName.SHARD);

@@ -32,7 +32,18 @@ public class CityDataManager extends AbstractDataManager {
     
     @Override
     public void addTestData(final URI file, final String datatype, final Set<String> indexes) throws IOException {
-        Assert.assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
+        addTestData(file,datatype,indexes,false);
+    }
+    public void addTestData(final URI file, final String datatype, final Set<String> indexes, boolean failOnDataExists) throws IOException {
+        // if running tests in succession we would have to modify tests to be stateful and not attempt to add
+        // their test data or in this case simply return
+        if (!failOnDataExists) {
+            if (this.rawData.containsKey(datatype)) {
+                return;
+            }
+        }else {
+            Assert.assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
+        }
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader, ',', '\"', '\0')) {
             String[] data;
             int count = 0;

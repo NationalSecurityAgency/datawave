@@ -166,14 +166,26 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         }
         
         if (options.containsKey(INDEX_ONLY_FIELDS)) {
-            this.indexOnlyFields = buildFieldSetFromString(options.get(INDEX_ONLY_FIELDS));
+            try {
+                this.indexOnlyFields = buildFieldSetFromString(options.get(INDEX_ONLY_FIELDS), this.setTypeString);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
         } else if (!this.fullTableScanOnly) {
             log.error("A list of index only fields must be provided when running an optimized query");
             return false;
         }
         
         if (options.containsKey(INDEXED_FIELDS)) {
-            this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS));
+            try {
+                this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS), this.setTypeString);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
         }
         
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {

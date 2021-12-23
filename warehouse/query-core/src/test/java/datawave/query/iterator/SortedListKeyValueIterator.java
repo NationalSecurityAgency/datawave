@@ -15,11 +15,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
+import java.util.Stack;
 
 /**
  * Iterator that can be used to back a source with a List of Key/Value entries. Useful for small data test sets
  */
-public class SortedListKeyValueIterator implements SortedKeyValueIterator {
+public class SortedListKeyValueIterator implements SortedKeyValueIterator, SourceFactory<Key,Value>{
     private List<Map.Entry<Key,Value>> sourceList;
     private int currentIndex;
     private Collection columnFamilies;
@@ -27,8 +28,15 @@ public class SortedListKeyValueIterator implements SortedKeyValueIterator {
     private boolean inclusive;
     
     private boolean initiated = false;
+
+    protected static long nextCalls=0;
+    protected static Stack<String> operations = new Stack<>();
+    protected static long seekCalls=0;
+   // protected static Stack<String> seeks = new Stack<>();
+    protected static long creations=0;
     
     public SortedListKeyValueIterator(Iterator<Map.Entry<Key,Value>> sourceIterator) {
+        creations++;
         this.sourceList = new ArrayList<>();
         while (sourceIterator.hasNext()) {
             sourceList.add(sourceIterator.next());
@@ -44,12 +52,14 @@ public class SortedListKeyValueIterator implements SortedKeyValueIterator {
      */
     public SortedListKeyValueIterator(List<Map.Entry<Key,Value>> sourceList) {
         // defensive copy
+        creations++;
         this.sourceList = new ArrayList<>(sourceList);
         this.sourceList.sort(Map.Entry.comparingByKey());
         currentIndex = 0;
     }
     
     public SortedListKeyValueIterator(SortedMap<Key,Value> map) {
+        creations++;
         this.sourceList = new ArrayList<>(map.entrySet().size());
         currentIndex = 0;
         for (Map.Entry<Key,Value> entry : map.entrySet()) {
@@ -58,6 +68,7 @@ public class SortedListKeyValueIterator implements SortedKeyValueIterator {
     }
     
     public SortedListKeyValueIterator(SortedListKeyValueIterator source) {
+        creations++;
         this.sourceList = source.sourceList;
         this.currentIndex = source.currentIndex;
     }
@@ -84,6 +95,8 @@ public class SortedListKeyValueIterator implements SortedKeyValueIterator {
         if (initiated) {
             currentIndex++;
             while (hasTop() && !acceptColumnFamily(currentIndex)) {
+                operations.push("nexta " + getTopKey().toString());
+                nextCalls++;
                 currentIndex++;
             }
         } else {
@@ -116,6 +129,8 @@ public class SortedListKeyValueIterator implements SortedKeyValueIterator {
     
     @Override
     public void seek(Range range, Collection columnFamilies, boolean inclusive) throws IOException {
+        seekCalls++;
+        operations.push("seek "  + range.toString());
         this.columnFamilies = columnFamilies;
         this.inclusive = inclusive;
         this.range = range;
@@ -123,12 +138,24 @@ public class SortedListKeyValueIterator implements SortedKeyValueIterator {
         
         int newIndex = 0;
         while (sourceList.size() > newIndex && (!acceptColumnFamily(newIndex) || !acceptRange(newIndex))) {
+            if (initiated && hasTop() ) {
+                nextCalls++;
+                boolean blah = hasTop();
+                operations.push("next " + getTopKey().toString());
+            }
             newIndex++;
         }
         
         currentIndex = newIndex;
     }
-    
+
+    public void printValues(){
+        System.out.println("next " + nextCalls);
+        operations.forEach(System.out::println);
+        System.out.println("seek " + seekCalls);
+        System.out.println("init " + creations);
+
+    }
     private boolean acceptColumnFamily(int index) {
         return columnFamilies.isEmpty() || (inclusive && columnFamilies.contains(sourceList.get(index).getKey().getColumnFamilyData()))
                         || (!inclusive && !columnFamilies.contains(sourceList.get(index).getKey().getColumnFamilyData()));
@@ -136,5 +163,10 @@ public class SortedListKeyValueIterator implements SortedKeyValueIterator {
     
     private boolean acceptRange(int index) {
         return range.contains(sourceList.get(index).getKey());
+    }
+
+    @Override
+    public SortedKeyValueIterator<Key, Value> getSourceDeepCopy() {
+        return new SortedListKeyValueIterator(this);
     }
 }

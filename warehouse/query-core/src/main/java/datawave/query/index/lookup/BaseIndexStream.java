@@ -18,7 +18,6 @@ import java.util.Iterator;
  * implementation.
  */
 public abstract class BaseIndexStream implements IndexStream {
-    
     protected RangeStreamScanner rangeStreamScanner;
     
     protected EntryParser entryParser;
@@ -33,7 +32,6 @@ public abstract class BaseIndexStream implements IndexStream {
     protected Iterator<Tuple2<String,IndexInfo>> backingIter;
     protected Tuple2<String,IndexInfo> peekedElement;
     protected boolean hasPeeked = false;
-    
     /**
      * This constructor is used by BaseIndexStreams that have a backing range stream scanner. I.e., this will actually scan the global index
      *

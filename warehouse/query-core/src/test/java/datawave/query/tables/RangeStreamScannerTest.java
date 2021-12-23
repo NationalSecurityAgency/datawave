@@ -63,12 +63,12 @@ import static org.junit.Assert.assertTrue;
  * Integration test for the {@link RangeStreamScanner}
  */
 public class RangeStreamScannerTest {
+
+    protected static AccumuloClient client;
+
+    protected static ScannerFactory scannerFactory;
     
-    private static AccumuloClient client;
-    
-    private static ScannerFactory scannerFactory;
-    
-    private static ShardQueryConfiguration config;
+    protected static ShardQueryConfiguration config;
     
     // Helper method that builds an accumulo mutation for an index entry.
     // Format: bar FOO:20190314\u0000datatype1:doc1,doc2,doc3
@@ -187,7 +187,7 @@ public class RangeStreamScannerTest {
      *            - field value, like "bar" in "FOO == 'bar'"
      * @return a configured RangeStreamScanner
      */
-    private RangeStreamScanner buildRangeStreamScanner(String fieldName, String fieldValue) throws Exception {
+    RangeStreamScanner buildRangeStreamScanner(String fieldName, String fieldValue) throws Exception {
         
         String queryString = fieldName + "=='" + fieldValue + "'";
         Range range = rangeForTerm(fieldValue, fieldName, config);
@@ -200,8 +200,7 @@ public class RangeStreamScannerTest {
         
         int priority = 50; // Iterator priority
         
-        RangeStreamScanner scanSession = scannerFactory.newRangeScanner(config.getIndexTableName(), config.getAuthorizations(), config.getQuery(),
-                        config.getShardsPerDayThreshold());
+        RangeStreamScanner scanSession = scannerFactory.newRangeScanner(config.getIndexTableName(),config);
         
         scanSession.setMaxResults(config.getMaxIndexBatchSize());
         scanSession.setExecutor(streamExecutor);

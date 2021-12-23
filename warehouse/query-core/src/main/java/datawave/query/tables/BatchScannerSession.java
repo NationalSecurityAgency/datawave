@@ -370,7 +370,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
                 
                 chunk.setQueryId(settings.getId().toString());
                 
-                scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, listenerService);
+                scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, (Class<? extends AccumuloResource>)delegatedResourceInitializer, resultQueue, listenerService);
                 
                 scan.setVisitors(visitorFunctions);
                 
@@ -381,7 +381,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
                 
                 ((SpeculativeScan) scan).addScan(childScan);
                 
-                childScan = new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, delegatedResourceInitializer,
+                childScan = new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, (Class<? extends AccumuloResource>)delegatedResourceInitializer,
                                 ((SpeculativeScan) scan).getQueue(), listenerService);
                 
                 childScan.setVisitors(visitorFunctions);
@@ -389,7 +389,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
                 ((SpeculativeScan) scan).addScan(childScan);
                 
             } else {
-                scan = new Scan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, listenerService);
+                scan = new Scan(localTableName, localAuths, chunk, delegatorReference, (Class<? extends AccumuloResource>)delegatedResourceInitializer, resultQueue, listenerService);
             }
             
             if (backoffEnabled) {
@@ -430,16 +430,16 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
                 if (log.isTraceEnabled()) {
                     log.trace("Using speculative execution");
                 }
-                scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, listenerService);
+                scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, (Class<? extends AccumuloResource>)delegatedResourceInitializer, resultQueue, listenerService);
                 
                 ((SpeculativeScan) scan).addScan(new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, BatchResource.class,
                                 ((SpeculativeScan) scan).getQueue(), listenerService));
                 
                 ((SpeculativeScan) scan).addScan(new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference,
-                                delegatedResourceInitializer, ((SpeculativeScan) scan).getQueue(), listenerService));
+                        (Class<? extends AccumuloResource>)delegatedResourceInitializer, ((SpeculativeScan) scan).getQueue(), listenerService));
                 
             } else {
-                scan = new Scan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, listenerService);
+                scan = new Scan(localTableName, localAuths, chunk, delegatorReference, (Class<? extends AccumuloResource>)delegatedResourceInitializer, resultQueue, listenerService);
             }
             
             if (backoffEnabled) {

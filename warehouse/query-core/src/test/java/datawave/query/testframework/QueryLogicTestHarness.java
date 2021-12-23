@@ -7,8 +7,13 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.TypeAttribute;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.ShardedBaseQueryLogic;
+import datawave.query.tables.document.batch.DocumentLogic;
+import datawave.query.tables.serialization.SerializedDocumentIfc;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -67,7 +72,7 @@ public class QueryLogicTestHarness {
      * @param checkers
      *            list of additional validation methods
      */
-    public void assertLogicResults(BaseQueryLogic<Map.Entry<Key,Value>> logic, Collection<String> expected, List<DocumentChecker> checkers) {
+    public void assertLogicResults(ShardQueryLogic logic, Collection<String> expected, List<DocumentChecker> checkers) {
         Set<String> actualResults = new HashSet<>();
         
         if (log.isDebugEnabled()) {
@@ -145,6 +150,89 @@ public class QueryLogicTestHarness {
             }
         }
         
+        Assert.assertEquals("results do not match expected", expected.size(), actualResults.size());
+        Assert.assertTrue("expected and actual values do not match", expected.containsAll(actualResults));
+        Assert.assertTrue("expected and actual values do not match", actualResults.containsAll(expected));
+    }
+
+    public void assertLogicResults(DocumentLogic logic, Collection<String> expected, List<DocumentChecker> checkers) {
+        Set<String> actualResults = new HashSet<>();
+
+        if (log.isDebugEnabled()) {
+            log.debug("    ======  expected id(s)  ======");
+            for (String e : expected) {
+                log.debug("id(" + e + ")");
+            }
+        }
+
+        for (SerializedDocumentIfc entry : logic) {
+            if (FinalDocumentTrackingIterator.isFinalDocumentKey(entry.computeKey())) {
+                continue;
+            }
+
+            final Document document = entry.getAsDocument();
+
+            // check all of the types to ensure that all are keepers as defined in the
+            // AttributeFactory class
+            int count = 0;
+            for (Attribute<? extends Comparable<?>> attribute : document.getAttributes()) {
+                if (attribute instanceof TimingMetadata) {
+                    // ignore
+                } else if (attribute instanceof Attributes) {
+                    Attributes attrs = (Attributes) attribute;
+                    Collection<Class<?>> types = new HashSet<>();
+                    for (Attribute<? extends Comparable<?>> attr : attrs.getAttributes()) {
+                        count++;
+                        if (attr instanceof TypeAttribute) {
+                            Type<? extends Comparable<?>> type = ((TypeAttribute<?>) attr).getType();
+                            if (Objects.nonNull(type)) {
+                                types.add(type.getClass());
+                            }
+                        }
+                    }
+                    Assert.assertEquals(AttributeFactory.getKeepers(types), types);
+                } else {
+                    count++;
+                }
+            }
+
+            // ignore empty documents (possible when only passing FinalDocument back)
+            if (count == 0) {
+                continue;
+            }
+
+            // parse the document
+            String extractedResult = this.parser.parse(entry.computeKey(), document);
+            log.debug("result(" + extractedResult + ") key(" + entry.computeKey() + ") document(" + document + ")");
+
+            // verify expected results
+            Assert.assertNotNull("extracted result", extractedResult);
+            Assert.assertFalse("duplicate result(" + extractedResult + ") key(" + entry.computeKey() + ")", actualResults.contains(extractedResult));
+            actualResults.add(extractedResult);
+
+            // perform any custom assert checks on document
+            for (final DocumentChecker check : checkers) {
+                check.assertValid(document);
+            }
+        }
+
+        log.info("total records found(" + actualResults.size() + ") expected(" + expected.size() + ")");
+
+        // ensure that the complete expected result set exists
+        if (expected.size() > actualResults.size()) {
+            final Set<String> notFound = new HashSet<>(expected);
+            notFound.removeAll(actualResults);
+            for (final String m : notFound) {
+                log.error("missing result(" + m + ")");
+            }
+        } else if (expected.size() < actualResults.size()) {
+            final Set<String> extra = new HashSet<>(actualResults);
+            extra.removeAll(expected);
+            for (final String r : extra) {
+                log.error("unexpected result(" + r + ")");
+            }
+        }
+
         Assert.assertEquals("results do not match expected", expected.size(), actualResults.size());
         Assert.assertTrue("expected and actual values do not match", expected.containsAll(actualResults));
         Assert.assertTrue("expected and actual values do not match", actualResults.containsAll(expected));

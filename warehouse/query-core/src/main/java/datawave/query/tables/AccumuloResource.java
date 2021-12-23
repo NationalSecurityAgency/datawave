@@ -17,6 +17,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 
 import com.google.common.base.Preconditions;
+import org.apache.commons.pool.PoolableObjectFactory;
+import org.apache.log4j.Logger;
 
 /**
  * Purpose: Basic Iterable resource. Contains the connector from which we will create the scanners.
@@ -29,61 +31,16 @@ import com.google.common.base.Preconditions;
  * this isn't entirely necessary, it does allow us to better inject test code.
  * 
  */
-public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
-    
-    /**
-     * Our connector.
-     */
-    private AccumuloClient client;
-    
+public class AccumuloResource extends Resource<Entry<Key,Value>> {
+
+    private static final Logger log = Logger.getLogger(AccumuloResource.class);
     public AccumuloResource(final AccumuloClient client) {
-        Preconditions.checkNotNull(client);
-        
-        this.client = client;
+        super(client);
     }
-    
+
+
     public AccumuloResource(final AccumuloResource other) {
-        // deep copy
-    }
-    
-    protected AccumuloClient getClient() {
-        return client;
-    }
-    
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.io.Closeable#close()
-     */
-    @Override
-    public void close() throws IOException {
-        // nothing to close.
-    }
-    
-    protected void init(final String tableName, final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {
-        // do nothing.
-    }
-    
-    /**
-     * Sets the option on this currently running resource.
-     * 
-     * @param options
-     *            options to set
-     * @return the resource
-     */
-    public AccumuloResource setOptions(SessionOptions options) {
-        
-        return this;
-    }
-    
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.lang.Iterable#iterator()
-     */
-    @Override
-    public Iterator<Entry<Key,Value>> iterator() {
-        return Collections.emptyIterator();
+        super(other.client);
     }
     
     public static final class ResourceFactory {
@@ -127,6 +84,44 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
             return newResource;
         }
         
+    }
+
+    public static final class AccumuloResourceFactory implements PoolableObjectFactory<AccumuloResource> {
+
+        private final AccumuloClient client;
+
+        AccumuloResourceFactory(AccumuloClient client) {
+            this.client = client;
+        }
+
+        @Override
+        public void activateObject(AccumuloResource object) {
+            /* no-op */
+        }
+
+        @Override
+        public void destroyObject(AccumuloResource object) {
+            if (log.isTraceEnabled())
+                log.trace("Removing " + object.hashCode());
+        }
+
+        @Override
+        public AccumuloResource makeObject() {
+            AccumuloResource scannerResource = new AccumuloResource(client);
+            if (log.isTraceEnabled())
+                log.trace("Returning " + scannerResource.hashCode());
+            return scannerResource;
+        }
+
+        @Override
+        public void passivateObject(AccumuloResource object) throws Exception {
+            destroyObject(object);
+        }
+
+        @Override
+        public boolean validateObject(AccumuloResource object) {
+            return true;
+        }
     }
     
 }

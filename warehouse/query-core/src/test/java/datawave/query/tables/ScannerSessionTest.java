@@ -110,7 +110,7 @@ public class ScannerSessionTest {
     
     @Before
     public void setup() throws Exception {
-        resourceQueue = new ResourceQueue(100, client);
+        resourceQueue = new ResourceQueue(100, client, new AccumuloResource.AccumuloResourceFactory(client));
     }
     
     @Test

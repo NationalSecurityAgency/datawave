@@ -63,7 +63,7 @@ public class BatchResource extends RunningResource {
         // let's pre-compute the hashcode.
         hashCode += new HashCodeBuilder().append(tableName).append(auths).append(ranges).toHashCode();
         
-        baseScanner = ScannerHelper.createBatchScanner(getClient(), tableName, auths, 2);
+        baseScanner = ScannerHelper.createBatchScanner(getClient(), tableName, auths, 12);
         
         if (baseScanner != null) {
             ((BatchScanner) baseScanner).setRanges(currentRange);

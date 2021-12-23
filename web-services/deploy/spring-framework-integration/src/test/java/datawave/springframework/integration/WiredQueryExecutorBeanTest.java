@@ -6,6 +6,8 @@ import java.util.Properties;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
+import datawave.query.tables.ShardedBaseQueryLogic;
+import datawave.query.tables.document.batch.DocumentLogic;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.metrics.QueryMetricQueryLogic;
@@ -73,7 +75,7 @@ public class WiredQueryExecutorBeanTest {
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.data.type", "datawave.query.language.parser.jexl",
                                         "datawave.query.language.functions.jexl", "datawave.webservice.query.configuration", "datawave.configuration")
                         .addClasses(DefaultResponseObjectFactory.class, QueryExpirationConfiguration.class, FacetedQueryPlanner.class, FacetedQueryLogic.class,
-                                        DefaultQueryPlanner.class, BooleanChunkingQueryPlanner.class, ShardQueryLogic.class, CountingShardQueryLogic.class,
+                                        DefaultQueryPlanner.class, BooleanChunkingQueryPlanner.class, ShardQueryLogic.class, DocumentLogic.class, ShardedBaseQueryLogic.class, CountingShardQueryLogic.class,
                                         EventQueryDataDecoratorTransformer.class, FieldIndexCountQueryLogic.class, CompositeQueryLogic.class,
                                         QueryMetricQueryLogic.class, TLDQueryLogic.class, ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class,
                                         QueryLogicFactoryImpl.class, DatawaveRoleManager.class, EasyRoleManager.class, CachedResultsConfiguration.class,
@@ -96,7 +98,7 @@ public class WiredQueryExecutorBeanTest {
                 log.error("role manager is null for " + name + " and " + ql + " named " + ql.getLogicName() + " and " + ql.getClass());
             }
             Assert.assertNotNull(ql.getRoleManager());
-            log.debug("got " + ql);
+            log.info("for name "+name+", got " + ql);
         }
     }
     

@@ -2,6 +2,7 @@ package datawave.query;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
@@ -11,11 +12,14 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
 import datawave.query.function.deserializer.DocumentDeserializer;
+import datawave.query.function.deserializer.DocumentJsonDeserializer;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.function.deserializer.StringDeserializer;
+import datawave.query.function.deserializer.WritableDocumentDeserializer;
+import datawave.query.function.serializer.JsonDocumentSerializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.exceptions.InvalidDocumentHeader;
 import datawave.query.exceptions.NoSuchDeserializerException;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.function.deserializer.WritableDocumentDeserializer;
 import datawave.query.function.serializer.DocumentSerializer;
 import datawave.query.function.serializer.WritableDocumentSerializer;
 import datawave.webservice.query.Query;
@@ -31,7 +35,7 @@ import datawave.webservice.query.exception.QueryException;
 public class DocumentSerialization {
     
     public enum ReturnType {
-        writable, kryo, tostring, noop
+        writable, json, jsondocument, kryo, tostring, noop
     }
     
     public static final ReturnType DEFAULT_RETURN_TYPE = ReturnType.kryo;
@@ -66,8 +70,12 @@ public class DocumentSerialization {
     public static DocumentDeserializer getDocumentDeserializer(ReturnType rt) throws NoSuchDeserializerException {
         if (ReturnType.kryo.equals(rt)) {
             return new KryoDocumentDeserializer();
+        } else if (ReturnType.json.equals(rt)) {
+            return new DocumentJsonDeserializer();
         } else if (ReturnType.writable.equals(rt)) {
             return new WritableDocumentDeserializer();
+        } else if (ReturnType.tostring.equals(rt)) {
+            return new StringDeserializer();
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.DESERIALIZER_CREATE_ERROR);
             throw new NoSuchDeserializerException(qe);
@@ -81,6 +89,8 @@ public class DocumentSerialization {
     public static DocumentSerializer getDocumentSerializer(ReturnType rt) throws NoSuchDeserializerException {
         if (ReturnType.kryo.equals(rt)) {
             return new KryoDocumentSerializer();
+        } else if (ReturnType.json.equals(rt)) {
+            return new JsonDocumentSerializer(false);
         } else if (ReturnType.writable.equals(rt)) {
             return new WritableDocumentSerializer(false);
         } else {
@@ -99,7 +109,29 @@ public class DocumentSerialization {
                 (byte) (DOC_MAGIC >> 8), // Magic number (short)
                 (byte) compression};
     }
-    
+
+    private static int toLittleEndian(int value){
+        return ((value >> 8) & 0xff) | ((value & 0xff) << 8);
+    }
+
+    public static byte[]  writeBodyWithHeader(byte [] data, int compression) throws IOException {
+        return writeBodyWithHeader(data,compression,false);
+    }
+
+
+    public static byte[]  writeBodyWithHeader(byte [] data, int compression, boolean writeIdentifier) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        DataOutputStream dataOutputStream = new DataOutputStream(outputStream);
+        dataOutputStream.writeShort(toLittleEndian(DOC_MAGIC));
+        dataOutputStream.writeByte(compression);
+        if (writeIdentifier)
+        dataOutputStream.writeInt(data.length);
+        dataOutputStream.write(writeBody(data,compression));
+        if (writeIdentifier)
+        dataOutputStream.writeChars("identifier");
+        return outputStream.toByteArray();
+    }
+
     public static byte[] writeBody(byte[] data, int compression) throws InvalidDocumentHeader {
         if (NONE == compression) {
             return data;
@@ -116,6 +148,33 @@ public class DocumentSerialization {
                 QueryException qe = new QueryException(DatawaveErrorCode.GZIP_STREAM_WRITE_ERROR, e);
                 throw new InvalidDocumentHeader(qe);
             }
+        } else {
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNKNOWN_COMPRESSION_SCHEME, MessageFormat.format("{0}", compression));
+            throw new InvalidDocumentHeader(qe);
+        }
+    }
+    public static InputStream consumeHeader(byte[] data, int offset, int length) throws InvalidDocumentHeader {
+        if (null == data || 3 > length) {
+            QueryException qe = new QueryException(DatawaveErrorCode.DATA_INVALID_ERROR, MessageFormat.format("Length: {0}",
+                    (null != data ? data.length : null)));
+            throw new InvalidDocumentHeader(qe);
+        }
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(data, offset, length);
+        int magic = readUShort(bais);
+
+        if (DOC_MAGIC != magic) {
+            NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.EXPECTED_HEADER_NOT_FOUND);
+            throw new InvalidDocumentHeader(qe);
+        }
+
+        int compression = readUByte(bais);
+
+        if (NONE == compression) {
+            return new ByteArrayInputStream(data, offset+3, length - 3);
+        } else if (GZIP == compression) {
+            ByteArrayInputStream bytes = new ByteArrayInputStream(data, offset+3, length - 3);
+            return new InflaterInputStream(bytes, new Inflater(), 1024);
         } else {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.UNKNOWN_COMPRESSION_SCHEME, MessageFormat.format("{0}", compression));
             throw new InvalidDocumentHeader(qe);
@@ -151,7 +210,7 @@ public class DocumentSerialization {
     }
     
     /*
-     * Reads unsigned short in Intel byte order.
+     * Reads unsigned short in little endian ( aka Intel ) byte order.
      */
     private static int readUShort(InputStream in) throws InvalidDocumentHeader {
         int b = readUByte(in);

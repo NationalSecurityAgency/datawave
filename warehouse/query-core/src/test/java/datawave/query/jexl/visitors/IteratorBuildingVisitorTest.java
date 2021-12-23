@@ -149,7 +149,7 @@ public class IteratorBuildingVisitorTest {
         Assert.assertTrue(range.getUpper().equals("bar" + Constants.MAX_UNICODE_STRING));
         Assert.assertTrue(range.isUpperInclusive());
     }
-    
+
     @Test
     public void buildLiteralRange_phraseTest() throws ParseException {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO =~ 'barbaz'");

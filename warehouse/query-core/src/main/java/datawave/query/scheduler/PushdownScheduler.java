@@ -47,7 +47,7 @@ import datawave.webservice.query.configuration.QueryData;
  * Purpose: Pushes down individual queries to the Tservers. Is aware that each server may have a different query, thus bins ranges per tserver and keeps the
  * plan that corresponds with those queries
  */
-public class PushdownScheduler extends Scheduler {
+public class PushdownScheduler extends Scheduler<Entry<Key,Value>> {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(PushdownScheduler.class);
     
