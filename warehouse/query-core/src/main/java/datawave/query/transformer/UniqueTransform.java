@@ -10,10 +10,7 @@ import com.google.common.hash.PrimitiveSink;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.TimingMetadata;
-import datawave.query.function.LogTiming;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
@@ -46,7 +43,7 @@ import java.util.stream.Collectors;
  */
 public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform {
     
-    private static final Logger log = Logger.getLogger(GroupingTransform.class);
+    private static final Logger log = Logger.getLogger(UniqueTransform.class);
     
     private final BloomFilter<byte[]> bloom;
     private UniqueFields uniqueFields;
@@ -100,6 +97,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         if (keyDocumentEntry != null) {
+            log.info("UniqueTransform.apply " + keyDocumentEntry.getKey() + " " + keyDocumentEntry.getValue().get("UUID.0"));
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
                 log.info("Found Final Doc " + keyDocumentEntry.getValue().get("UUID.0"));
                 return keyDocumentEntry;
