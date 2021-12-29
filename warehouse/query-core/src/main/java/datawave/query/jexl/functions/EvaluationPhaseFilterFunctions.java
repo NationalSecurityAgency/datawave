@@ -1817,7 +1817,7 @@ public class EvaluationPhaseFilterFunctions {
     public static boolean compare(Object field1, String operator, String compareMode, Object field2) {
         FunctionalSet<ValueTuple> set1 = toFunctionalSet(field1);
         FunctionalSet<ValueTuple> set2 = toFunctionalSet(field2);
-        boolean matchAny = CompareFunctionValidator.Mode.valueOf(compareMode) == CompareFunctionValidator.Mode.ANY;
+        boolean matchAny = CompareFunctionValidator.Mode.valueOf(compareMode.toUpperCase()).equals(CompareFunctionValidator.Mode.ANY);
         return compareFields(set1, set2, operator, matchAny);
     }
     

@@ -9,6 +9,7 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import datawave.configuration.spring.SpringBean;
+import datawave.core.iterators.ColumnRangeIterator;
 import datawave.query.tables.edge.EdgeQueryFunctionalTest;
 import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.webservice.query.QueryImpl;
@@ -28,7 +29,12 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
     
     @Override
     public DefaultExtendedEdgeQueryLogic runLogic(QueryImpl q, Set<Authorizations> auths) throws Exception {
+        return runLogic(q, auths, Long.MAX_VALUE);
+    }
+    
+    public DefaultExtendedEdgeQueryLogic runLogic(QueryImpl q, Set<Authorizations> auths, long scanLimit) throws Exception {
         GenericQueryConfiguration config = logic.initialize(connector, q, auths);
+        logic.setDateFilterScanLimit(scanLimit);
         logic.setupQuery(config);
         return logic;
     }
@@ -169,4 +175,28 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         
         Assert.assertTrue(sources.containsAll(expected));
     }
+    
+    @Test
+    public void testEdgeQueryWithScanLimit() throws Exception {
+        QueryImpl q = configQuery("(SOURCE =~ 'M.*') && (SINK == 'JUPITER') && (RELATION == 'FROM-TO' || RELATION == 'TO-FROM')", auths);
+        q.addParameter("stats", "true");
+        DefaultExtendedEdgeQueryLogic logic = runLogic(q, auths, 2);
+        
+        List<String> expected = new ArrayList<>();
+        
+        expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
+        expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
+        expected.add("mercury STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
+        
+        compareResults(logic, expected);
+        
+        try {
+            logic = runLogic(q, auths, 1);
+            compareResults(logic, expected);
+            Assert.fail("Expected to fail because the scan limit was reached");
+        } catch (ColumnRangeIterator.ScanLimitReached e) {
+            // expected
+        }
+    }
+    
 }
