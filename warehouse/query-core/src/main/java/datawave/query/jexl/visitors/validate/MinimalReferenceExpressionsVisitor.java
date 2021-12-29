@@ -4,6 +4,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
@@ -126,7 +127,8 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
         if (!isValid)
             return data;
         
-        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+        QueryPropertyMarker.Instance instance = QueryPropertyMarkerVisitor.getInstance(node);
+        
         if (instance.isAnyType()) {
             // descend into the marker's source node
             JexlNode source = instance.getSource();
@@ -169,11 +171,11 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
     
     private boolean isWrappedSingleTerm(JexlNode node) {
         if (isParen(node)) {
-            boolean isMarkerNode = QueryPropertyMarker.findInstance(node).isAnyType();
+            boolean isMarkerNode = QueryPropertyMarkerVisitor.getInstance(node).isAnyType();
             if (!isMarkerNode) {
                 JexlNode unwrapped = JexlASTHelper.dereference(node);
                 
-                return !(unwrapped instanceof ASTAndNode || unwrapped instanceof ASTOrNode);
+                return !(unwrapped instanceof ASTAndNode || unwrapped instanceof ASTOrNode || unwrapped instanceof ASTAssignment);
             }
         }
         return false;
