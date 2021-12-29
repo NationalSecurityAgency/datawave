@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static datawave.microservice.query.QueryParameters.QUERY_EXPIRATION;
 import static datawave.microservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE;
 import static datawave.microservice.query.QueryParameters.QUERY_PAGESIZE;
 import static datawave.microservice.query.QueryParameters.QUERY_PAGETIMEOUT;
@@ -36,7 +35,7 @@ public class QueryProperties {
     @NotEmpty
     private String executorServiceName = "executor";
     // These are the only parameters that can be updated for a running query
-    private List<String> updatableParams = Arrays.asList(QUERY_EXPIRATION, QUERY_PAGESIZE, QUERY_PAGETIMEOUT, QUERY_MAX_RESULTS_OVERRIDE);
+    private List<String> updatableParams = Arrays.asList(QUERY_PAGESIZE, QUERY_PAGETIMEOUT, QUERY_MAX_RESULTS_OVERRIDE);
     // Whether or not to wait for an executor create response before returning to the caller
     private boolean awaitExecutorCreateResponse = true;
     

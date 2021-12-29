@@ -1,4 +1,4 @@
-package datawave.microservice.query.uuid;
+package datawave.microservice.query.lookup;
 
 import com.google.common.collect.Iterables;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
@@ -15,10 +15,13 @@ import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NoResultsQueryException;
 import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.exception.TimeoutQueryException;
+import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.result.event.Metadata;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -51,17 +54,54 @@ public class LookupService {
     private static final String CONTENT_QUERY_TERM_SEPARATOR = " ";
     private static final String DOCUMENT_FIELD_PREFIX = "DOCUMENT" + CONTENT_QUERY_TERM_DELIMITER;
     
-    private final LookupUUIDProperties uuidProperties;
+    private final LookupProperties lookupProperties;
     
     private final QueryLogicFactory queryLogicFactory;
     private final QueryManagementService queryManagementService;
     
-    public LookupService(LookupUUIDProperties uuidProperties, QueryLogicFactory queryLogicFactory, QueryManagementService queryManagementService) {
-        this.uuidProperties = uuidProperties;
+    public LookupService(LookupProperties lookupProperties, QueryLogicFactory queryLogicFactory, QueryManagementService queryManagementService) {
+        this.lookupProperties = lookupProperties;
         this.queryLogicFactory = queryLogicFactory;
         this.queryManagementService = queryManagementService;
     }
     
+    /**
+     * Creates an event lookup query using the query logic associated with the given uuid type and parameters, and returns the first page of results.
+     * <p>
+     * Lookup queries will start running immediately. <br>
+     * Auditing is performed before the query is started. <br>
+     * After the first page is returned, the query will be closed.
+     *
+     * @param uuidType
+     *            the uuid type, not null
+     * @param uuid
+     *            the uuid, not null
+     * @param parameters
+     *            the query parameters, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a base query response containing the first page of results
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
+     * @throws BadRequestQueryException
+     *             if auditing fails
+     * @throws QueryException
+     *             if query storage fails
+     * @throws TimeoutQueryException
+     *             if the next call times out
+     * @throws NoResultsQueryException
+     *             if no query results are found
+     * @throws QueryException
+     *             if this next task is rejected by the executor
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     public BaseQueryResponse lookupUUID(String uuidType, String uuid, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws QueryException {
         String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
@@ -83,6 +123,40 @@ public class LookupService {
         }
     }
     
+    /**
+     * Creates a batch event lookup query using the query logic associated with the given uuid type(s) and parameters, and returns the first page of results.
+     * <p>
+     * Lookup queries will start running immediately. <br>
+     * Auditing is performed before the query is started. <br>
+     * Each of the uuid pairs must map to the same query logic. <br>
+     * After the first page is returned, the query will be closed.
+     *
+     * @param parameters
+     *            the query parameters, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a base query response containing the first page of results
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
+     * @throws BadRequestQueryException
+     *             if auditing fails
+     * @throws QueryException
+     *             if query storage fails
+     * @throws TimeoutQueryException
+     *             if the next call times out
+     * @throws NoResultsQueryException
+     *             if no query results are found
+     * @throws QueryException
+     *             if this next task is rejected by the executor
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     public BaseQueryResponse lookupUUID(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
         String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
@@ -101,6 +175,43 @@ public class LookupService {
         }
     }
     
+    /**
+     * Creates a content lookup query using the query logic associated with the given uuid type and parameters, and returns the first page of results.
+     * <p>
+     * Lookup queries will start running immediately. <br>
+     * Auditing is performed before the query is started. <br>
+     * After the first page is returned, the query will be closed.
+     *
+     * @param uuidType
+     *            the uuid type, not null
+     * @param uuid
+     *            the uuid, not null
+     * @param parameters
+     *            the query parameters, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a base query response containing the first page of results
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
+     * @throws BadRequestQueryException
+     *             if auditing fails
+     * @throws QueryException
+     *             if query storage fails
+     * @throws TimeoutQueryException
+     *             if the next call times out
+     * @throws NoResultsQueryException
+     *             if no query results are found
+     * @throws QueryException
+     *             if this next task is rejected by the executor
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     public BaseQueryResponse lookupContentUUID(String uuidType, String uuid, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
                     throws QueryException {
         String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
@@ -123,6 +234,40 @@ public class LookupService {
         }
     }
     
+    /**
+     * Creates a batch content lookup query using the query logic associated with the given uuid type(s) and parameters, and returns the first page of results.
+     * <p>
+     * Lookup queries will start running immediately. <br>
+     * Auditing is performed before the query is started. <br>
+     * Each of the uuid pairs must map to the same query logic. <br>
+     * After the first page is returned, the query will be closed.
+     *
+     * @param parameters
+     *            the query parameters, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @return a base query response containing the first page of results
+     * @throws BadRequestQueryException
+     *             if parameter validation fails
+     * @throws BadRequestQueryException
+     *             if query logic parameter validation fails
+     * @throws UnauthorizedQueryException
+     *             if the user doesn't have access to the requested query logic
+     * @throws BadRequestQueryException
+     *             if security marking validation fails
+     * @throws BadRequestQueryException
+     *             if auditing fails
+     * @throws QueryException
+     *             if query storage fails
+     * @throws TimeoutQueryException
+     *             if the next call times out
+     * @throws NoResultsQueryException
+     *             if no query results are found
+     * @throws QueryException
+     *             if this next task is rejected by the executor
+     * @throws QueryException
+     *             if there is an unknown error
+     */
     public BaseQueryResponse lookupContentUUID(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
         String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
@@ -187,7 +332,7 @@ public class LookupService {
             parameters.put(QUERY_STRING, Collections.singletonList(lookupQueryLogic.createQueryFromLookupTerms(lookupTermMap)));
             
             // update the parameters for query
-            updateParametersForEventQuery(parameters, currentUser);
+            setEventQueryParameters(parameters, currentUser);
             
             // run the query
             BaseQueryResponse nextResponse = queryManagementService.createAndNext(parameters.getFirst(QUERY_LOGIC_NAME), parameters, currentUser);
@@ -208,7 +353,7 @@ public class LookupService {
         String queryLogicName = null;
         
         // make sure there aren't too many terms to lookup
-        if (uuidProperties.getBatchLookupLimit() > 0 && lookupUUIDPairs.size() <= uuidProperties.getBatchLookupLimit()) {
+        if (lookupProperties.getBatchLookupLimit() > 0 && lookupUUIDPairs.size() <= lookupProperties.getBatchLookupLimit()) {
             
             // validate each of the uuid pairs
             for (String uuidPair : lookupUUIDPairs) {
@@ -223,37 +368,50 @@ public class LookupService {
                     if (!field.isEmpty() && !value.isEmpty()) {
                         
                         // is this a supported uuid type/field?
-                        UUIDType uuidType = uuidProperties.getTypes().get(field.toUpperCase());
+                        UUIDType uuidType = lookupProperties.getTypes().get(field.toUpperCase());
                         if (uuidType != null) {
                             if (queryLogicName == null) {
                                 queryLogicName = uuidType.getQueryLogic();
                             }
                             // if we are mixing and matching query logics
                             else if (!queryLogicName.equals(uuidType.getQueryLogic())) {
-                                // TODO: This is a deal breaker
+                                String message = "Multiple UUID types '" + queryLogicName + "' and '" + uuidType.getQueryLogic()
+                                                + "' not supported within the same lookup request";
+                                log.error(message);
+                                throw new BadRequestQueryException(new IllegalArgumentException(message), HttpStatus.SC_BAD_REQUEST + "-1");
                             }
                         }
                         // if uuid type is null
                         else {
-                            // TODO: This is a deal breaker
+                            String message = "Invalid type '" + field.toUpperCase() + "' for UUID " + value
+                                            + " not supported with the LuceneToJexlUUIDQueryParser";
+                            log.error(message);
+                            throw new BadRequestQueryException(new IllegalArgumentException(message), HttpStatus.SC_BAD_REQUEST + "-1");
                         }
                         
                         lookupUUIDMap.add(field, value);
                     }
                     // if the field or value is empty
                     else {
-                        // TODO: This is a deal breaker
+                        String message = "Empty UUID type or value extracted from uuidPair " + uuidPair;
+                        log.error(message);
+                        throw new BadRequestQueryException(new IllegalArgumentException(message), HttpStatus.SC_BAD_REQUEST + "-1");
                     }
                 }
                 // if there isn't a field AND a value
                 else {
-                    // TODO: This is a deal breaker
+                    String message = "Unable to determine UUID type and value from uuidPair " + uuidPair;
+                    log.error(message);
+                    throw new BadRequestQueryException(new IllegalArgumentException(message), HttpStatus.SC_BAD_REQUEST + "-1");
                 }
             }
         }
         // too many terms to lookup
         else {
-            // TODO: This is a deal breaker
+            String message = "The " + lookupUUIDPairs.size() + " specified UUIDs exceed the maximum number of " + lookupProperties.getBatchLookupLimit()
+                            + " allowed for a given lookup request";
+            log.error(message);
+            throw new BadRequestQueryException(new IllegalArgumentException(message), HttpStatus.SC_BAD_REQUEST + "-1");
         }
         
         try {
@@ -270,12 +428,11 @@ public class LookupService {
         }
     }
     
-    protected void updateParametersForEventQuery(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) {
+    @SuppressWarnings("ConstantConditions")
+    protected void setEventQueryParameters(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) {
         String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
         
-        if (uuidProperties.getColumnVisibility() != null) {
-            parameters.set(QueryParameters.QUERY_VISIBILITY, uuidProperties.getColumnVisibility());
-        }
+        setOptionalQueryParameters(parameters);
         
         parameters.set(QUERY_SYNTAX, LUCENE_UUID_SYNTAX);
         
@@ -291,7 +448,7 @@ public class LookupService {
         final String queryName = user + "-" + UUID.randomUUID();
         parameters.set(QueryParameters.QUERY_NAME, queryName);
         
-        parameters.set(QueryParameters.QUERY_BEGIN, uuidProperties.getBeginDate());
+        parameters.set(QueryParameters.QUERY_BEGIN, lookupProperties.getBeginDate());
         
         final Date endDate = DateUtils.addDays(new Date(), 2);
         try {
@@ -299,13 +456,11 @@ public class LookupService {
         } catch (ParseException e) {
             throw new RuntimeException("Unable to format new query end date: " + endDate);
         }
-        
-        // TODO: This may not be needed?
-        final Date expireDate = new Date(endDate.getTime() + 1000 * 60 * 60);
-        try {
-            parameters.set(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expireDate));
-        } catch (ParseException e) {
-            throw new RuntimeException("Unable to format new query expr date: " + expireDate);
+    }
+    
+    protected void setOptionalQueryParameters(MultiValueMap<String,String> parameters) {
+        if (lookupProperties.getColumnVisibility() != null) {
+            parameters.set(QueryParameters.QUERY_VISIBILITY, lookupProperties.getColumnVisibility());
         }
     }
     
@@ -324,8 +479,7 @@ public class LookupService {
                         + String.join(CONTENT_QUERY_VALUE_DELIMITER, eventMetadata.getRow(), eventMetadata.getDataType(), eventMetadata.getInternalId());
     }
     
-    private BaseQueryResponse lookupContent(Set<String> contentLookupTerms, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
-                    throws QueryException {
+    private BaseQueryResponse lookupContent(Set<String> contentLookupTerms, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) {
         // create queries from the content lookup terms
         List<String> contentQueries = createContentQueries(contentLookupTerms);
         
@@ -335,7 +489,7 @@ public class LookupService {
             parameters.put(QUERY_STRING, Collections.singletonList(contentQuery));
             
             // update parameters for the query
-            updateParametersForContentQuery(parameters, currentUser);
+            setContentQueryParameters(parameters, currentUser);
             
             // run the query
             EventQueryResponseBase contentQueryResponse = runContentQuery(parameters, currentUser);
@@ -355,21 +509,23 @@ public class LookupService {
     private List<String> createContentQueries(Set<String> contentLookupTerms) {
         List<String> contentQueries = new ArrayList<>();
         
-        Iterables.partition(contentLookupTerms, uuidProperties.getBatchLookupLimit())
+        Iterables.partition(contentLookupTerms, lookupProperties.getBatchLookupLimit())
                         .forEach(termBatch -> contentQueries.add(String.join(CONTENT_QUERY_TERM_SEPARATOR, termBatch)));
         
         return contentQueries;
     }
     
-    protected void updateParametersForContentQuery(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) {
+    protected void setContentQueryParameters(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) {
         String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
         
+        setOptionalQueryParameters(parameters);
+        
         // all content queries use the same query logic
-        parameters.put(QUERY_LOGIC_NAME, Collections.singletonList(uuidProperties.getContentQueryLogicName()));
+        parameters.put(QUERY_LOGIC_NAME, Collections.singletonList(lookupProperties.getContentQueryLogicName()));
         
         parameters.set(QueryParameters.QUERY_NAME, user + '-' + UUID.randomUUID());
         
-        parameters.set(QueryParameters.QUERY_BEGIN, uuidProperties.getBeginDate());
+        parameters.set(QueryParameters.QUERY_BEGIN, lookupProperties.getBeginDate());
         
         final Date endDate = new Date();
         try {
@@ -380,16 +536,9 @@ public class LookupService {
         
         final String userAuths = AuthorizationsUtil.buildUserAuthorizationString(currentUser);
         parameters.set(QueryParameters.QUERY_AUTHORIZATIONS, userAuths);
-        
-        final Date expireDate = new Date(endDate.getTime() + 1000 * 60 * 60);
-        try {
-            parameters.set(QueryParameters.QUERY_EXPIRATION, DefaultQueryParameters.formatDate(expireDate));
-        } catch (ParseException e1) {
-            throw new RuntimeException("Error formatting expr date: " + expireDate);
-        }
     }
     
-    protected EventQueryResponseBase runContentQuery(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
+    protected EventQueryResponseBase runContentQuery(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) {
         EventQueryResponseBase mergedResponse = null;
         String queryId = null;
         boolean isQueryFinished = false;
@@ -404,7 +553,7 @@ public class LookupService {
                     nextResponse = queryManagementService.next(queryId, currentUser);
                 }
             } catch (NoResultsQueryException e) {
-                log.info("No results found for content query '{}'", parameters.getFirst(QUERY_STRING));
+                log.debug("No results found for content query '{}'", parameters.getFirst(QUERY_STRING));
             } catch (QueryException e) {
                 log.info("Encountered error while getting results for content query '{}'", parameters.getFirst(QUERY_STRING));
             }

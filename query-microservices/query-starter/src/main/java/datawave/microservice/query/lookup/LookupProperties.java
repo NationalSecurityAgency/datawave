@@ -1,4 +1,4 @@
-package datawave.microservice.query.uuid;
+package datawave.microservice.query.lookup;
 
 import datawave.query.data.UUIDType;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -10,8 +10,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Validated
-@ConfigurationProperties(prefix = "datawave.query.uuid")
-public class LookupUUIDProperties {
+@ConfigurationProperties(prefix = "datawave.query.lookup")
+public class LookupProperties {
     private Map<String,UUIDType> types = new HashMap<>();
     protected int batchLookupLimit = 100;
     @NotEmpty

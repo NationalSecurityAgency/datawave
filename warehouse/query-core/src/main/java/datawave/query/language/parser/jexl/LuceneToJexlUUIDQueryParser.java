@@ -12,7 +12,6 @@ import datawave.query.search.FieldedTerm;
 import datawave.query.search.RangeFieldedTerm;
 import datawave.query.search.WildcardFieldedTerm;
 
-@Deprecated
 public class LuceneToJexlUUIDQueryParser extends LuceneToJexlQueryParser {
     private List<UUIDType> uuidTypes = new ArrayList<>();
     private LuceneQueryParser luceneParser = new LuceneQueryParser();

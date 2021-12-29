@@ -2,7 +2,7 @@ package datawave.microservice.query;
 
 import com.codahale.metrics.annotation.Timed;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
-import datawave.microservice.query.uuid.LookupService;
+import datawave.microservice.query.lookup.LookupService;
 import datawave.microservice.query.web.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.BaseQueryResponse;
