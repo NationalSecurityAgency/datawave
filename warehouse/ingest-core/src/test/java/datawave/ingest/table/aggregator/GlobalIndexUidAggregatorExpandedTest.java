@@ -66,11 +66,11 @@ public class GlobalIndexUidAggregatorExpandedTest {
                 .withUids("uid1", "uid2", "uid3")
                 .withRemovals("uid4") // uid4 in other value's list
                 .build();
-        
+
         Value value2 = UidTestBuilder.newBuilder()
                 .withUids("uid4", "uid5", "uid6")
                 .build();
-        
+
         Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
                 .withUids("uid1", "uid2", "uid3", "uid5", "uid6")
                 .withRemovals("uid4")
@@ -1056,6 +1056,177 @@ public class GlobalIndexUidAggregatorExpandedTest {
         // @formatter:on
         
         testCombinations(expectation, value1, value2);
+    }
+    
+    @Test
+    public void maxRemovalsCauseCountOnlyPartialCompact() {
+        // Test with a single Uid.List with maximum removals
+        agg = new GlobalIndexUidAggregator(2);
+        
+        // @formatter:off
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2") // exceeds the maximum limit
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(-2)
+                .build());
+        // @formatter:on
+        
+        isPartialCompactionOnlyTest = true;
+        testCombinations(expectation, value1);
+    }
+    
+    @Test
+    public void maxRemovalsCauseCountOnlyFullCompact() {
+        // Test with a single Uid.List with maximum removals
+        agg = new GlobalIndexUidAggregator(2);
+        
+        // @formatter:off
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2") // exceeds the maximum limit
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(0)
+                .build());
+        // @formatter:on
+        
+        isFullCompactionOnlyTest = true;
+        testCombinations(expectation, value1);
+    }
+    
+    @Test
+    public void combineMaxRemovalsWithAdditionPartialCompact() {
+        agg = new GlobalIndexUidAggregator(2);
+        
+        // @formatter:off
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2", "uid3", "uid4", "uid5") // exceeds the maximum limit
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids("uid100") // not in value1
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(-4)
+                .build());
+        // @formatter:on
+        
+        isPartialCompactionOnlyTest = true;
+        testCombinations(expectation, value1, value2);
+    }
+    
+    @Test
+    public void combineMaxRemovalsWithAdditionFullCompact() {
+        agg = new GlobalIndexUidAggregator(2);
+        
+        // @formatter:off
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2", "uid3", "uid4", "uid5") // exceeds the maximum limit
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids("uid100") // not in value1
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(0)
+                .build());
+        // @formatter:on
+        
+        isFullCompactionOnlyTest = true;
+        testCombinations(expectation, value1, value2);
+    }
+    
+    @Test
+    public void twoRemovalsExceedMaximum() {
+        agg = new GlobalIndexUidAggregator(2);
+        
+        // @formatter:off
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1")
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid2")
+                .build();
+
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(-2)
+                .build());
+        // @formatter:on
+        
+        isPartialCompactionOnlyTest = true;
+        testCombinations(expectation, value1, value2);
+    }
+    
+    @Test
+    public void netNegativeOneRemains() {
+        agg = new GlobalIndexUidAggregator(2);
+        
+        // @formatter:off
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2") // exceeds the maximum limit
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids("uid1") // offsets one of the removals
+                .build();
+
+        Value value3 = UidTestBuilder.newBuilder()
+                .withUids("uid1") // the same uid as value2
+                .build();
+
+        // The removal maximum causes a count-only of -2.  Any UIDs that are added after
+        // the aggregator is in count-only mode offset this count, regardless of value.
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(0)
+                .build());
+        // @formatter:on
+        
+        this.isForwardOnlyTest = true;
+        testCombinations(expectation, value1, value2, value3);
+    }
+    
+    @Test
+    public void netNegativeOneRemainsReverse() {
+        agg = new GlobalIndexUidAggregator(2);
+        
+        // @formatter:off
+        Value value1 = UidTestBuilder.newBuilder()
+                .withUids("uid1") // offsets one of the forthcoming removals
+                .build();
+
+        Value value2 = UidTestBuilder.newBuilder()
+                .withUids("uid1") // the same uid as value1
+                .build();
+
+        Value value3 = UidTestBuilder.newBuilder()
+                .withUids()
+                .withRemovals("uid1", "uid2") // exceeds the maximum limit, matches an addition
+                .build();
+
+        // The additions of uid1 in both value1 and value2 are de-duplicated.
+        // The two removals force the aggregator into count-only mode, resulting in the previous count
+        // of 1 plus the size of the value3 uids (0) minus the size of value3's removals (-2),
+        // equaling -1.
+        Uid.List expectation = UidTestBuilder.valueToUidList(UidTestBuilder.newBuilder()
+                .withCountOnly(-1)
+                .build());
+        // @formatter:on
+        
+        this.isForwardOnlyTest = true;
+        this.isPartialCompactionOnlyTest = true;
+        testCombinations(expectation, value1, value2, value3);
     }
     
     // For Forward, Partial, and Full see the comments by the boolean field declarations

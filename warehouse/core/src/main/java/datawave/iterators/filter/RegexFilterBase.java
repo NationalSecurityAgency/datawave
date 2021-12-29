@@ -45,7 +45,7 @@ public abstract class RegexFilterBase extends AppliedRule {
      * indicates that the {@code (Key, Value)} pair should not be passed on.
      * 
      * <p>
-     * If the value provided in the paramter {@code k} does not match the REGEX pattern specified in this filter's configuration options, then a value of
+     * If the value provided in the parameter {@code k} does not match the REGEX pattern specified in this filter's configuration options, then a value of
      * {@code true} is returned.
      * 
      * @param k

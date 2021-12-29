@@ -104,13 +104,14 @@ public class DatawaveInterpreter extends Interpreter {
         
         result = super.visit(node, data);
         
+        boolean isPhraseFunc = (nodeString.startsWith("content:phrase") || nodeString.startsWith("content:scoredPhrase"));
         // special handling for phrase functions and HIT_TERMs
-        if (nodeString.startsWith("content:phrase")) {
+        if (isPhraseFunc) {
             addHitsForFunction(result, node);
         }
         
         // If a content:phrase returned a collection translate that to a true or a false
-        if (nodeString.startsWith("content:phrase") && result instanceof Collection) {
+        if (isPhraseFunc && result instanceof Collection) {
             Collection<String> hitFields = (Collection<String>) result;
             result = hitFields.isEmpty() ? Boolean.FALSE : Boolean.TRUE;
         }

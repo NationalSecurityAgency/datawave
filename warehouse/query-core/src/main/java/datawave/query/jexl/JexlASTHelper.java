@@ -22,6 +22,7 @@ import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.jexl.visitors.validate.JunctionValidatingVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.FunctionReferenceVisitor;
 import datawave.query.util.MetadataHelper;
@@ -84,6 +85,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static org.apache.commons.jexl2.parser.JexlNodes.makeRef;
+import static org.apache.commons.jexl2.parser.JexlNodes.wrap;
 
 /**
  *
@@ -481,11 +484,36 @@ public class JexlASTHelper {
         }
     }
     
+    /**
+     * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode
+     * 
+     * @param node
+     *            a JexlNode
+     * @return an unwrapped JexlNode
+     */
     public static JexlNode dereference(JexlNode node) {
         while (node.jjtGetNumChildren() == 1 && (node instanceof ASTReference || node instanceof ASTReferenceExpression)) {
             node = node.jjtGetChild(0);
         }
         return node;
+    }
+    
+    /**
+     * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode. If the final node is a MarkerNode, wrap it
+     * 
+     * @param node
+     *            a JexlNode
+     * @return an unwrapped JexlNode
+     */
+    public static JexlNode dereferenceSafely(JexlNode node) {
+        JexlNode unwrapped = dereference(node);
+        
+        if (QueryPropertyMarker.findInstance(unwrapped).isAnyType()) {
+            // ensure we create a proper ref -> refExpr chain
+            unwrapped = makeRef(wrap(unwrapped));
+        }
+        
+        return unwrapped;
     }
     
     /**
@@ -1582,6 +1610,34 @@ public class JexlASTHelper {
                 return sb.toString();
             }
         }
+    }
+    
+    /**
+     * Checks to see if the tree contains any AND/OR nodes with less than 2 children.
+     *
+     * @param node
+     *            the tree to validate
+     * @return true if valid, or false otherwise
+     */
+    public static boolean validateJunctionChildren(JexlNode node) {
+        return validateJunctionChildren(node, false);
+    }
+    
+    /**
+     * Checks to see if the tree contains any AND/OR nodes with less than 2 children.
+     * 
+     * @param node
+     *            the tree to validate
+     * @param failHard
+     *            if true, throw a {@link RuntimeException} if a violation was found
+     * @return true if valid, or false otherwise
+     */
+    public static boolean validateJunctionChildren(JexlNode node, boolean failHard) {
+        boolean valid = JunctionValidatingVisitor.validate(node);
+        if (!valid && failHard) {
+            throw new RuntimeException("Instance of AND/OR node found with less than 2 children");
+        }
+        return valid;
     }
     
     private JexlASTHelper() {}

@@ -69,7 +69,9 @@ public class GetAllMatches extends JexlQueryFunction {
         StringBuilder sb = new StringBuilder();
         String operation = (this.type.equals(WildcardFieldedFilter.BooleanType.AND)) ? " && " : " || ";
         
-        sb.append("(");
+        if (parameterList.size() > 2) // do not wrap single terms
+            sb.append("(");
+        
         int x = 0;
         while (x < parameterList.size()) {
             if (x >= 2) {
@@ -79,7 +81,10 @@ public class GetAllMatches extends JexlQueryFunction {
             String regex = parameterList.get(x++);
             sb.append("filter:getAllMatches(").append(field).append(", ").append(escapeString(regex)).append(")");
         }
-        sb.append(")");
+        
+        if (parameterList.size() > 2)
+            sb.append(")");
+        
         return sb.toString();
     }
     

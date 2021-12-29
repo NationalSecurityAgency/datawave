@@ -7,6 +7,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.language.functions.jexl.NoExpansion;
 import datawave.query.model.QueryModel;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
@@ -14,6 +15,8 @@ import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,8 +27,11 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class QueryModelVisitorTest {
+    
+    private final Logger log = org.apache.log4j.Logger.getLogger(QueryModelVisitorTest.class);
     
     private QueryModel model;
     private Set<String> allFields;
@@ -335,6 +341,95 @@ public class QueryModelVisitorTest {
         assertEquals(types.size(), 4);
         
         assertTrue(types.values().stream().allMatch((o) -> o instanceof LcNoDiacriticsType || o instanceof NoOpType));
+    }
+    
+    @Test
+    public void testModelExpansionWithNoExpansionFunction() {
+        // model contains expansions for both FIELD_A and FIELD_B, presence of filter:noExpansion(FIELD_B) prevents
+        // that portion of the model expansion.
+        QueryModel model = new QueryModel();
+        model.addTermToModel("FIELD_A", "FIELD_AA");
+        model.addTermToModel("FIELD_A", "FIELD_AB");
+        model.addTermToModel("FIELD_B", "FIELD_BB");
+        model.addTermToModel("FIELD_B", "FIELD_BC");
+        
+        // base case, both original fields are expanded
+        String query = "FIELD_A == 'bar' && FIELD_B == 'baz'";
+        String expected = "(FIELD_AA == 'bar' || FIELD_AB == 'bar') && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
+        testNoExpansion(query, expected, model, Collections.emptySet());
+        
+        // only FIELD_B is expanded
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_A)";
+        expected = "FIELD_A == 'bar' && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
+        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A"));
+        
+        // only FIELD_A is expanded
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_B)";
+        expected = "(FIELD_AB == 'bar' || FIELD_AA == 'bar') && FIELD_B == 'baz'";
+        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_B"));
+        
+        // neither field is expanded
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_A,FIELD_B)";
+        expected = "FIELD_A == 'bar' && FIELD_B == 'baz'";
+        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_B"));
+        
+        // both fields are expanded, NoExpansion function specified a field that does not exist in the query
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_X,FIELD_Y)";
+        expected = "(FIELD_AA == 'bar' || FIELD_AB == 'bar') && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
+        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_X", "FIELD_Y"));
+        
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_X,FIELD_Y,FIELD_A)";
+        expected = "FIELD_A == 'bar' && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
+        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_X", "FIELD_Y"));
+        
+        query = "FIELD_A == 'bar' && FIELD_B == 'baz' && filter:noExpansion(FIELD_A,FIELD_X,FIELD_Y)";
+        expected = "FIELD_A == 'bar' && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
+        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_X", "FIELD_Y"));
+    }
+    
+    // NoExpansion only excludes fields in the original query. A query can still expand into an excluded field
+    @Test
+    public void testStillExpandIntoExcludedField() {
+        QueryModel model = new QueryModel();
+        model.addTermToModel("FIELD_A", "FIELD_B");
+        model.addTermToModel("FIELD_A", "FIELD_C");
+        
+        String query = "FIELD_A == 'bar' && filter:noExpansion(FIELD_C)";
+        String expected = "(FIELD_B == 'bar' || FIELD_C == 'bar')";
+        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_C"));
+    }
+    
+    private void testNoExpansion(String query, String expected, QueryModel model, Set<String> expectedFields) {
+        try {
+            Set<String> allFields = new HashSet<>();
+            allFields.addAll(model.getForwardQueryMapping().keySet());
+            allFields.addAll(model.getForwardQueryMapping().values());
+            
+            ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+            
+            NoExpansionFunctionVisitor.VisitResult result = NoExpansionFunctionVisitor.findNoExpansionFields(script);
+            
+            JexlNodeAssert.assertThat(script).isNotEqualTo(result.script);
+            Assert.assertEquals(expectedFields, result.noExpansionFields);
+            
+            ASTJexlScript applied;
+            if (result.noExpansionFields.size() > 0) {
+                applied = QueryModelVisitor.applyModel(result.script, model, allFields, result.noExpansionFields);
+            } else {
+                applied = QueryModelVisitor.applyModel(result.script, model, allFields);
+            }
+            
+            if (log.isTraceEnabled()) {
+                log.trace("expected: " + expected);
+                log.trace("actual  : " + JexlStringBuildingVisitor.buildQueryWithoutParse(applied));
+            }
+            
+            ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
+            assertTrue(TreeEqualityVisitor.checkEquality(expectedScript, applied).isEqual());
+            
+        } catch (ParseException e) {
+            fail("Error testing query: " + query);
+        }
     }
     
     private ASTJexlScript assertResult(String original, String expected) throws ParseException {
