@@ -28,7 +28,7 @@ import static org.springframework.beans.factory.config.ConfigurableBeanFactory.S
 @ConditionalOnProperty(name = "datawave.query.logic.factory.enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties({QueryLogicFactoryProperties.class, QueryParserProperties.class, LookupProperties.class, EdgeModelProperties.class})
 @ImportResource(locations = {"${datawave.query.logic.factory.xmlBeansPath:classpath:QueryLogicFactory.xml}",
-        "${datawave.query.logic.factory.xmlBeansPath:classpath:EdgeQueryLogicFactory.xml}"})
+        "${datawave.query.edge.xmlBeansPath:classpath:EdgeQueryLogicFactory.xml}"})
 public class QueryLogicFactoryConfiguration {
     
     private final Logger log = LoggerFactory.getLogger(this.getClass());

@@ -253,6 +253,8 @@ datawave:
           queryLogic: 'LuceneUUIDEventQuery'
 
     edge:
+      # Uncomment the following line to override the edge beans to load
+      # xmlBeansPath: "classpath:EdgeBeans.xml"
       model:
         baseFieldMap:
           EDGE_SOURCE: 'SOURCE'
