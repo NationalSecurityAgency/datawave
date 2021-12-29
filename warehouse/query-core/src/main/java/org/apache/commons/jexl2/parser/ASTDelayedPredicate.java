@@ -97,14 +97,15 @@ public class ASTDelayedPredicate extends QueryPropertyMarker {
      * @return the source node, or the original node if this node is not delayed
      */
     public static JexlNode unwrapFully(JexlNode node) {
-        if (QueryPropertyMarker.findInstance(node).isType(ASTDelayedPredicate.class)) {
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+        if (instance.isType(ASTDelayedPredicate.class)) {
             
-            QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
             JexlNode source = instance.getSource();
+            instance = QueryPropertyMarker.findInstance(source);
             
-            while (QueryPropertyMarker.findInstance(source).isType(ASTDelayedPredicate.class)) {
-                instance = QueryPropertyMarker.findInstance(source);
+            while (instance.isType(ASTDelayedPredicate.class)) {
                 source = instance.getSource();
+                instance = QueryPropertyMarker.findInstance(source);
             }
             
             return source;
