@@ -119,6 +119,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         setModelName(other.getModelName());
         setModelTableName(other.getModelTableName());
         setMetadataHelperFactory(other.getMetadataHelperFactory());
+        setDateFilterScanLimit(other.getDateFilterScanLimit());
+        setDateFilterSkipLimit(other.getDateFilterSkipLimit());
         visitationContext = other.visitationContext;
     }
     
