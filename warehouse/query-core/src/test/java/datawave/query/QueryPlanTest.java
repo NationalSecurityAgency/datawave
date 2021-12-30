@@ -1,7 +1,6 @@
 package datawave.query;
 
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.CannotExpandUnfieldedTermFatalException;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
@@ -123,7 +122,7 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @Test
     public void planInMetricsAfterFTSDException() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
-        String expectedPlan = "(((!(_ANYFIELD_ == 'london') && !(CITY == 'london') && !(STATE == 'london'))))";
+        String expectedPlan = "((!(_ANYFIELD_ == 'london') && !(CITY == 'london') && !(STATE == 'london')))";
         try {
             runTest(query, query);
             fail("Expected FullTableScanDisallowedException.");
