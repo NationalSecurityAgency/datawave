@@ -203,7 +203,7 @@ public class OperationEvaluator {
     /**
      * Return the result of the comparison of the provided integers using the provided logical operator. Supported operators:
      * <ul>
-     * <li>= and == returns whether the left and right are equal</li>
+     * <li>=and == returns whether the left and right are equal</li>
      * <li>!= returns whether the left and right are not equal</li>
      * <li>&lt; returns whether the left is less than the right</li>
      * <li>&lt;= returns whether the left is less or equal to the right</li>
@@ -244,7 +244,7 @@ public class OperationEvaluator {
     /**
      * Return the result of the comparison of the provided longs using the provided logical operator. Supported operators:
      * <ul>
-     * <li>= and == returns whether the left and right are equal</li>
+     * <li>=and == returns whether the left and right are equal</li>
      * <li>!= returns whether the left and right are not equal</li>
      * <li>&lt; returns whether the left is less than the right</li>
      * <li>&lt;= returns whether the left is less or equal to the right</li>
@@ -285,7 +285,7 @@ public class OperationEvaluator {
     /**
      * Return the result of the comparison of the provided floats using the provided logical operator. Supported operators:
      * <ul>
-     * <li>= and == returns whether the left and right are equal</li>
+     * <li>=and == returns whether the left and right are equal</li>
      * <li>!= returns whether the left and right are not equal</li>
      * <li>&lt; returns whether the left is less than the right</li>
      * <li>&lt;= returns whether the left is less or equal to the right</li>
@@ -326,7 +326,7 @@ public class OperationEvaluator {
     /**
      * Return the result of the comparison of the provided doubles using the provided logical operator. Supported operators:
      * <ul>
-     * <li>= and == returns whether the left and right are equal</li>
+     * <li>=and == returns whether the left and right are equal</li>
      * <li>!= returns whether the left and right are not equal</li>
      * <li>&lt; returns whether the left is less than the right</li>
      * <li>&lt;= returns whether the left is less or equal to the right</li>
@@ -367,7 +367,7 @@ public class OperationEvaluator {
     /**
      * Return the result of the comparison of the time in milliseconds of the provided dates using the provided logical operator. Supported operators:
      * <ul>
-     * <li>= and == returns whether the left and right are equal</li>
+     * <li>=and == returns whether the left and right are equal</li>
      * <li>!= returns whether the left and right are not equal</li>
      * <li>&lt; returns whether the left is less than the right</li>
      * <li>&lt;= returns whether the left is less or equal to the right</li>
@@ -392,7 +392,7 @@ public class OperationEvaluator {
     /**
      * Return the result of the comparison of the provided comparables using the provided logical operator. Supported operators:
      * <ul>
-     * <li>= and == returns whether the left and right are equal</li>
+     * <li>=and == returns whether the left and right are equal</li>
      * <li>!= returns whether the left and right are not equal</li>
      * <li>&lt; returns whether the left is less than the right</li>
      * <li>&lt;= returns whether the left is less or equal to the right</li>
@@ -433,7 +433,7 @@ public class OperationEvaluator {
     /**
      * Return the result of the comparison of the provided objects using the provided logical operator and comparator. Supported operators:
      * <ul>
-     * <li>= and == returns whether the left and right are equal</li>
+     * <li>=and == returns whether the left and right are equal</li>
      * <li>!= returns whether the left and right are not equal</li>
      * <li>&lt; returns whether the left is less than the right</li>
      * <li>&lt;= returns whether the left is less or equal to the right</li>
