@@ -31,11 +31,11 @@ public class OperationEvaluator {
     /**
      * Return the result of the calculation for the provided integers using the provided calculation operator. Supported operators:
      * <ul>
-     * <li>{@value #ADD} returns the sum of the left and right</li>
-     * <li>{@value #SUBTRACT} returns the difference of the left and right</li>
-     * <li>{@value #MULTIPLY} returns the product of the left and right</li>
-     * <li>{@value #DIVIDE} returns the quotient of the left and right</li>
-     * <li>{@value #MODULO} returns the modulo of the left and right</li>
+     * <li>+ returns the sum of the left and right</li>
+     * <li>- returns the difference of the left and right</li>
+     * <li>* returns the product of the left and right</li>
+     * <li>/ returns the quotient of the left and right</li>
+     * <li>% returns the modulo of the left and right</li>
      * </ul>
      * 
      * @param left
@@ -68,11 +68,11 @@ public class OperationEvaluator {
     /**
      * Return the result of the calculation for the provided longs using the provided calculation operator. Supported operators:
      * <ul>
-     * <li>{@value #ADD} returns the sum of the left and right</li>
-     * <li>{@value #SUBTRACT} returns the difference of the left and right</li>
-     * <li>{@value #MULTIPLY} returns the product of the left and right</li>
-     * <li>{@value #DIVIDE} returns the quotient of the left and right</li>
-     * <li>{@value #MODULO} returns the modulo of the left and right</li>
+     * <li>+ returns the sum of the left and right</li>
+     * <li>- returns the difference of the left and right</li>
+     * <li>* returns the product of the left and right</li>
+     * <li>/ returns the quotient of the left and right</li>
+     * <li>% returns the modulo of the left and right</li>
      * </ul>
      * 
      * @param left
@@ -105,11 +105,11 @@ public class OperationEvaluator {
     /**
      * Return the result of the calculation for the provided floats using the provided calculation operator. Supported operators:
      * <ul>
-     * <li>{@value #ADD} returns the sum of the left and right</li>
-     * <li>{@value #SUBTRACT} returns the difference of the left and right</li>
-     * <li>{@value #MULTIPLY} returns the product of the left and right</li>
-     * <li>{@value #DIVIDE} returns the quotient of the left and right</li>
-     * <li>{@value #MODULO} returns the modulo of the left and right</li>
+     * <li>+ returns the sum of the left and right</li>
+     * <li>- returns the difference of the left and right</li>
+     * <li>* returns the product of the left and right</li>
+     * <li>/ returns the quotient of the left and right</li>
+     * <li>% returns the modulo of the left and right</li>
      * </ul>
      * 
      * @param left
@@ -142,11 +142,11 @@ public class OperationEvaluator {
     /**
      * Return the result of the calculation for the provided doubles using the provided calculation operator. Supported operators:
      * <ul>
-     * <li>{@value #ADD} returns the sum of the left and right</li>
-     * <li>{@value #SUBTRACT} returns the difference of the left and right</li>
-     * <li>{@value #MULTIPLY} returns the product of the left and right</li>
-     * <li>{@value #DIVIDE} returns the quotient of the left and right</li>
-     * <li>{@value #MODULO} returns the modulo of the left and right</li>
+     * <li>+ returns the sum of the left and right</li>
+     * <li>- returns the difference of the left and right</li>
+     * <li>* returns the product of the left and right</li>
+     * <li>/ returns the quotient of the left and right</li>
+     * <li>% returns the modulo of the left and right</li>
      * </ul>
      * 
      * @param left
@@ -179,11 +179,11 @@ public class OperationEvaluator {
     /**
      * Return the result of the calculation for the time in milliseconds of the provided dates using the provided calculation operator. Supported operators:
      * <ul>
-     * <li>{@value #ADD} returns the sum of the left and right</li>
-     * <li>{@value #SUBTRACT} returns the difference of the left and right</li>
-     * <li>{@value #MULTIPLY} returns the product of the left and right</li>
-     * <li>{@value #DIVIDE} returns the quotient of the left and right</li>
-     * <li>{@value #MODULO} returns the modulo of the left and right</li>
+     * <li>+ returns the sum of the left and right</li>
+     * <li>- returns the difference of the left and right</li>
+     * <li>* returns the product of the left and right</li>
+     * <li>/ returns the quotient of the left and right</li>
+     * <li>% returns the modulo of the left and right</li>
      * </ul>
      * 
      * @param left
@@ -203,12 +203,12 @@ public class OperationEvaluator {
     /**
      * Return the result of the comparison of the provided integers using the provided logical operator. Supported operators:
      * <ul>
-     * <li>{@value #EQUALS} and {@value #DOUBLE_EQUALS} returns whether the left and right are equal</li>
-     * <li>{@value #NOT_EQUAL} returns whether the left and right are not equal</li>
-     * <li>{@value #LESS_THAN} returns whether the left is less than the right</li>
-     * <li>{@value #LESS_THAN_EQUALS} returns whether the left is less or equal to the right</li>
-     * <li>{@value #GREATER_THAN} returns whether the left is greater than the right</li>
-     * <li>{@value #GREATER_THAN_EQUALS} returns whether the left is greater than or equal to the right</li>
+     * <li>= and == returns whether the left and right are equal</li>
+     * <li>!= returns whether the left and right are not equal</li>
+     * <li>&lt; returns whether the left is less than the right</li>
+     * <li>&lt;= returns whether the left is less or equal to the right</li>
+     * <li>&gt; returns whether the left is greater than the right</li>
+     * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
      * 
      * @param left
@@ -244,12 +244,12 @@ public class OperationEvaluator {
     /**
      * Return the result of the comparison of the provided longs using the provided logical operator. Supported operators:
      * <ul>
-     * <li>{@value #EQUALS} and {@value #DOUBLE_EQUALS} returns whether the left and right are equal</li>
-     * <li>{@value #NOT_EQUAL} returns whether the left and right are not equal</li>
-     * <li>{@value #LESS_THAN} returns whether the left is less than the right</li>
-     * <li>{@value #LESS_THAN_EQUALS} returns whether the left is less or equal to the right</li>
-     * <li>{@value #GREATER_THAN} returns whether the left is greater than the right</li>
-     * <li>{@value #GREATER_THAN_EQUALS} returns whether the left is greater than or equal to the right</li>
+     * <li>= and == returns whether the left and right are equal</li>
+     * <li>!= returns whether the left and right are not equal</li>
+     * <li>&lt; returns whether the left is less than the right</li>
+     * <li>&lt;= returns whether the left is less or equal to the right</li>
+     * <li>&gt; returns whether the left is greater than the right</li>
+     * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
      * 
      * @param left
@@ -285,12 +285,12 @@ public class OperationEvaluator {
     /**
      * Return the result of the comparison of the provided floats using the provided logical operator. Supported operators:
      * <ul>
-     * <li>{@value #EQUALS} and {@value #DOUBLE_EQUALS} returns whether the left and right are equal</li>
-     * <li>{@value #NOT_EQUAL} returns whether the left and right are not equal</li>
-     * <li>{@value #LESS_THAN} returns whether the left is less than the right</li>
-     * <li>{@value #LESS_THAN_EQUALS} returns whether the left is less or equal to the right</li>
-     * <li>{@value #GREATER_THAN} returns whether the left is greater than the right</li>
-     * <li>{@value #GREATER_THAN_EQUALS} returns whether the left is greater than or equal to the right</li>
+     * <li>= and == returns whether the left and right are equal</li>
+     * <li>!= returns whether the left and right are not equal</li>
+     * <li>&lt; returns whether the left is less than the right</li>
+     * <li>&lt;= returns whether the left is less or equal to the right</li>
+     * <li>&gt; returns whether the left is greater than the right</li>
+     * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
      * 
      * @param left
@@ -326,12 +326,12 @@ public class OperationEvaluator {
     /**
      * Return the result of the comparison of the provided doubles using the provided logical operator. Supported operators:
      * <ul>
-     * <li>{@value #EQUALS} and {@value #DOUBLE_EQUALS} returns whether the left and right are equal</li>
-     * <li>{@value #NOT_EQUAL} returns whether the left and right are not equal</li>
-     * <li>{@value #LESS_THAN} returns whether the left is less than the right</li>
-     * <li>{@value #LESS_THAN_EQUALS} returns whether the left is less or equal to the right</li>
-     * <li>{@value #GREATER_THAN} returns whether the left is greater than the right</li>
-     * <li>{@value #GREATER_THAN_EQUALS} returns whether the left is greater than or equal to the right</li>
+     * <li>= and == returns whether the left and right are equal</li>
+     * <li>!= returns whether the left and right are not equal</li>
+     * <li>&lt; returns whether the left is less than the right</li>
+     * <li>&lt;= returns whether the left is less or equal to the right</li>
+     * <li>&gt; returns whether the left is greater than the right</li>
+     * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
      * 
      * @param left
@@ -367,12 +367,12 @@ public class OperationEvaluator {
     /**
      * Return the result of the comparison of the time in milliseconds of the provided dates using the provided logical operator. Supported operators:
      * <ul>
-     * <li>{@value #EQUALS} and {@value #DOUBLE_EQUALS} returns whether the left and right are equal</li>
-     * <li>{@value #NOT_EQUAL} returns whether the left and right are not equal</li>
-     * <li>{@value #LESS_THAN} returns whether the left is less than the right</li>
-     * <li>{@value #LESS_THAN_EQUALS} returns whether the left is less or equal to the right</li>
-     * <li>{@value #GREATER_THAN} returns whether the left is greater than the right</li>
-     * <li>{@value #GREATER_THAN_EQUALS} returns whether the left is greater than or equal to the right</li>
+     * <li>= and == returns whether the left and right are equal</li>
+     * <li>!= returns whether the left and right are not equal</li>
+     * <li>&lt; returns whether the left is less than the right</li>
+     * <li>&lt;= returns whether the left is less or equal to the right</li>
+     * <li>&gt; returns whether the left is greater than the right</li>
+     * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
      * 
      * @param left
@@ -392,12 +392,12 @@ public class OperationEvaluator {
     /**
      * Return the result of the comparison of the provided comparables using the provided logical operator. Supported operators:
      * <ul>
-     * <li>{@value #EQUALS} and {@value #DOUBLE_EQUALS} returns whether the left and right are equal</li>
-     * <li>{@value #NOT_EQUAL} returns whether the left and right are not equal</li>
-     * <li>{@value #LESS_THAN} returns whether the left is less than the right</li>
-     * <li>{@value #LESS_THAN_EQUALS} returns whether the left is less or equal to the right</li>
-     * <li>{@value #GREATER_THAN} returns whether the left is greater than the right</li>
-     * <li>{@value #GREATER_THAN_EQUALS} returns whether the left is greater than or equal to the right</li>
+     * <li>= and == returns whether the left and right are equal</li>
+     * <li>!= returns whether the left and right are not equal</li>
+     * <li>&lt; returns whether the left is less than the right</li>
+     * <li>&lt;= returns whether the left is less or equal to the right</li>
+     * <li>&gt; returns whether the left is greater than the right</li>
+     * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
      * 
      * @param left
@@ -433,12 +433,12 @@ public class OperationEvaluator {
     /**
      * Return the result of the comparison of the provided objects using the provided logical operator and comparator. Supported operators:
      * <ul>
-     * <li>{@value #EQUALS} and {@value #DOUBLE_EQUALS} returns whether the left and right are equal</li>
-     * <li>{@value #NOT_EQUAL} returns whether the left and right are not equal</li>
-     * <li>{@value #LESS_THAN} returns whether the left is less than the right</li>
-     * <li>{@value #LESS_THAN_EQUALS} returns whether the left is less or equal to the right</li>
-     * <li>{@value #GREATER_THAN} returns whether the left is greater than the right</li>
-     * <li>{@value #GREATER_THAN_EQUALS} returns whether the left is greater than or equal to the right</li>
+     * <li>= and == returns whether the left and right are equal</li>
+     * <li>!= returns whether the left and right are not equal</li>
+     * <li>&lt; returns whether the left is less than the right</li>
+     * <li>&lt;= returns whether the left is less or equal to the right</li>
+     * <li>&gt; returns whether the left is greater than the right</li>
+     * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
      * 
      * @param left
