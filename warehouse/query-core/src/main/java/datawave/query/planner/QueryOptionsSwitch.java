@@ -45,6 +45,11 @@ public class QueryOptionsSwitch {
                 case QueryParameters.UNIQUE_FIELDS:
                     UniqueFields uniqueFields = UniqueFields.from(value);
                     config.setUniqueFields(uniqueFields);
+                    break;
+                case QueryParameters.NOEXPANSION_FIELDS:
+                    String[] fields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    config.setNoExpansionFields(Sets.newHashSet(fields));
+                    break;
             }
         }
     }

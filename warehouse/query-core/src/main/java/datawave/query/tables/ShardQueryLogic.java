@@ -821,6 +821,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setHierarchyFieldOptions(options);
         }
         
+        // Get the NOEXPANSION_FIELDS parameter if given
+        String noExpansionFieldsStr = settings.findParameter(QueryParameters.NOEXPANSION_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(noExpansionFieldsStr)) {
+            List<String> noExpansionFields = Arrays.asList(StringUtils.split(noExpansionFieldsStr, Constants.PARAM_VALUE_SEP));
+            
+            // Only set the noexpansion fields if we were actually given some
+            if (!noExpansionFields.isEmpty()) {
+                config.setNoExpansionFields(new HashSet<>(noExpansionFields));
+            }
+        }
+        
         // Get the query profile to allow us to select the tune profile of the query
         String queryProfile = settings.findParameter(QueryParameters.QUERY_PROFILE).getParameterValue().trim();
         if ((org.apache.commons.lang.StringUtils.isNotBlank(queryProfile))) {

@@ -141,6 +141,12 @@ public class QueryParameters {
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
+    
+    /**
+     * Used to specify fields that are excluded from query model expansion.
+     */
+    public static final String NOEXPANSION_FIELDS = "noexpansion.fields";
+    
     /**
      * Used to cause Documents to contain a list of selectors that hit;
      */
