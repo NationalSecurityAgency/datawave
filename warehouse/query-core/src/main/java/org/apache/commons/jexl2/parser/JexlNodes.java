@@ -1,6 +1,7 @@
 package org.apache.commons.jexl2.parser;
 
 import com.google.common.base.Preconditions;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -170,7 +171,18 @@ public class JexlNodes {
         literal.image = value;
     }
     
+    /**
+     * Negate the provided JexlNode
+     *
+     * @param node
+     *            an arbitrary JexlNode
+     * @return a negated version of the provided JexlNode
+     */
     public static ASTNotNode negate(JexlNode node) {
+        if (QueryPropertyMarker.findInstance(node).isAnyType()) {
+            // marked node trees begin with ref-refExpr, no need to wrap again
+            return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), node);
+        }
         return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), makeRef(wrap(node)));
     }
     
