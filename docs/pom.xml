@@ -308,7 +308,7 @@
                         <configuration combine.children="append">
                             <sourcepath>${project.build.directory}/dependency</sourcepath>
                             <outputDirectory>${project.build.directory}/apidocs</outputDirectory>
-                            <excludePackageNames>generated-sources.*</excludePackageNames>
+                            <excludePackageNames>generated-sources.*:datawave.microservice.querymetric</excludePackageNames>
                         </configuration>
                     </execution>
                 </executions>
