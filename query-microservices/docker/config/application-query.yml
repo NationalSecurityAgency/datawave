@@ -22,6 +22,8 @@ warehouse:
       name: 'datawave.metadata'
     model:
       name: 'datawave.metadata'
+    edge:
+      name: 'datawave.edge'
   errorTables:
     shard:
       name: "datawave.error_s"
@@ -222,7 +224,7 @@ datawave:
 
         EdgeQuery:
           checkpointable: true
-          tableName: ${warehouse.tables.shard.name}
+          tableName: ${warehouse.tables.edge.name}
           metadataTableName: ${warehouse.tables.metadata.name}
           modelTableName: ${warehouse.tables.model.name}
           modelName: ${warehouse.defaults.edgeModelName}

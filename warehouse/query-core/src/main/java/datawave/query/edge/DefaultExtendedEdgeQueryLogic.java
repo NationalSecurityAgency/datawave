@@ -145,6 +145,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
         }
         
         QueryData qData = new QueryData();
+        qData.setTableName(config.getTableName());
         qData.setRanges(ranges);
         
         addIterators(qData,

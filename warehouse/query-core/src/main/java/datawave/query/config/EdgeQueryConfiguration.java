@@ -52,7 +52,6 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
     
     private List<? extends Type<?>> dataTypes;
     private List<? extends Type<?>> regexDataTypes = null;
-    private int numQueryThreads;
     
     // to be backwards compatible, by default we want to return
     protected boolean includeStats = true;
@@ -96,13 +95,12 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
         setEdgeQueryModel(other.getEdgeQueryModel());
         setDataTypes(other.getDataTypes());
         setRegexDataTypes(other.getRegexDataTypes());
-        setNumQueryThreads(other.getNumQueryThreads());
+        setQueryThreads(other.getQueryThreads());
         setIncludeStats(other.includeStats());
         setMaxQueryTerms(other.getMaxQueryTerms());
         setMaxPrefilterValues(other.getMaxPrefilterValues());
         setDateRangeType(other.getDateRangeType());
         setAggregateResults(other.isAggregateResults());
-        setQueryThreads(other.getQueryThreads());
         setDateFilterScanLimit(other.getDateFilterScanLimit());
         setDateFilterSkipLimit(other.getDateFilterSkipLimit());
     }
@@ -203,14 +201,6 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
     
     public void setDataTypes(List<? extends Type<?>> dataTypes) {
         this.dataTypes = dataTypes;
-    }
-    
-    public int getNumQueryThreads() {
-        return numQueryThreads;
-    }
-    
-    public void setNumQueryThreads(int numQueryThreads) {
-        this.numQueryThreads = numQueryThreads;
     }
     
     public dateType getDateRangeType() {
@@ -371,7 +361,7 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
         if (!super.equals(o))
             return false;
         EdgeQueryConfiguration that = (EdgeQueryConfiguration) o;
-        return numQueryThreads == that.numQueryThreads && includeStats == that.includeStats && maxQueryTerms == that.maxQueryTerms
+        return queryThreads == that.queryThreads && includeStats == that.includeStats && maxQueryTerms == that.maxQueryTerms
                         && maxPrefilterValues == that.maxPrefilterValues && aggregateResults == that.aggregateResults
                         && Objects.equals(modelName, that.modelName) && Objects.equals(modelTableName, that.modelTableName)
                         && Objects.equals(edgeQueryModel, that.edgeQueryModel) && Objects.equals(dataTypes, that.dataTypes)
@@ -381,7 +371,7 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
     
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), modelName, modelTableName, edgeQueryModel, dataTypes, numQueryThreads, includeStats, maxQueryTerms,
+        return Objects.hash(super.hashCode(), modelName, modelTableName, edgeQueryModel, dataTypes, queryThreads, includeStats, maxQueryTerms,
                         maxPrefilterValues, dateRangeType, aggregateResults, dateFilterScanLimit, dateFilterSkipLimit);
     }
 }

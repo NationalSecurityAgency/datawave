@@ -1,10 +1,10 @@
 package datawave.query.edge;
 
-import datawave.configuration.spring.SpringBean;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.query.tables.edge.EdgeQueryFunctionalTest;
 import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.services.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.logic.QueryLogic;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -12,7 +12,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -21,9 +20,10 @@ import java.util.Set;
 
 public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
     
-    @Inject
-    @SpringBean(name = "ExtendedEdgeQuery")
-    private DefaultExtendedEdgeQueryLogic logic;
+    @Override
+    public QueryLogic<?> createLogic() throws Exception {
+        return factory.getQueryLogic("ExtendedEdgeQuery");
+    }
     
     @Override
     public DefaultExtendedEdgeQueryLogic runLogic(QueryImpl q, Set<Authorizations> auths) throws Exception {
@@ -34,7 +34,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         logic.setDateFilterScanLimit(scanLimit);
         GenericQueryConfiguration config = logic.initialize(connector, q, auths);
         logic.setupQuery(config);
-        return logic;
+        return (DefaultExtendedEdgeQueryLogic) logic;
     }
     
     @Test
@@ -49,7 +49,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("mercury STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -64,7 +64,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("mercury STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test(expected = UnsupportedOperationException.class)
@@ -76,7 +76,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         
         List<String> expected = new ArrayList<>();
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -95,7 +95,7 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         expected.add("mars%00;ceres AdjacentDwarfPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [B]");
         expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -186,11 +186,11 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("mercury STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
         
         try {
             logic = runLogic(q, auths, 1);
-            compareResults(logic, expected);
+            compareResults(logic, factory, expected);
             Assert.fail("Expected to fail because the scan limit was reached");
         } catch (ColumnRangeIterator.ScanLimitReached e) {
             // expected

@@ -1,5 +1,6 @@
 package datawave.edge.model;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,7 +19,7 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
  * The intention is to enforce a unified approach to field name management and usage throughout the entire codebase, so that the actual field names in use can
  * be dictated by the deployment environment rather than the code itself.
  */
-public class EdgeModelFields {
+public class EdgeModelFields implements Serializable {
     
     /** internal fields common to all application tiers */
     private Map<String,String> baseFieldMap;

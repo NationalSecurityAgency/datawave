@@ -1,6 +1,7 @@
 package datawave.webservice.query.configuration;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import datawave.services.query.configuration.QueryData;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Range;
@@ -42,6 +43,7 @@ public class QueryDataTest {
         expect(this.copy.getQuery()).andReturn("TEST");
         expect(this.copy.getRanges()).andReturn(Arrays.asList(this.range));
         expect(this.copy.getSettings()).andReturn(Arrays.asList(this.setting));
+        expect(this.copy.getColumnFamilies()).andReturn(Sets.newHashSet());
         
         // Run the test
         PowerMock.replayAll();

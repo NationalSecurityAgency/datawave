@@ -84,6 +84,8 @@ public abstract class GenericQueryConfiguration implements Serializable {
     }
     
     public GenericQueryConfiguration(GenericQueryConfiguration genericConfig) {
+        this.setQuery(genericConfig.getQuery());
+        this.setCheckpointable(genericConfig.isCheckpointable());
         this.setBaseIteratorPriority(genericConfig.getBaseIteratorPriority());
         this.setBypassAccumulo(genericConfig.getBypassAccumulo());
         this.setAuthorizations(genericConfig.getAuthorizations());

@@ -41,15 +41,13 @@ public class QueryData implements ResultContext, Externalizable {
     }
     
     public QueryData(QueryData other) {
-        this(other.getTableName(), other.getQuery(), other.getRanges(), other.getSettings());
+        this(other.getTableName(), other.getQuery(), other.getRanges(), other.getSettings(), other.getColumnFamilies());
         this.lastResult = other.lastResult;
         this.finished = other.finished;
     }
     
     public QueryData(QueryData other, Collection<Range> ranges) {
-        setTableName(other.getTableName());
-        setQuery(other.getQuery());
-        setSettings(other.getSettings());
+        this(other);
         setRanges(ranges);
     }
     

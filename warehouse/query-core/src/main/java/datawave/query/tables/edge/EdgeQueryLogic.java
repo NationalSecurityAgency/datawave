@@ -12,7 +12,6 @@ import datawave.edge.model.EdgeModelFieldsFactory;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.EdgeQueryConfiguration;
-import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.filter.DateTypeFilter;
 import datawave.query.iterator.filter.EdgeFilterIterator;
@@ -23,6 +22,7 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.model.edge.EdgeQueryModel;
+import datawave.query.scheduler.SingleRangeQueryDataIterator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.edge.contexts.VisitationContext;
 import datawave.query.transformer.EdgeQueryTransformer;
@@ -173,6 +173,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         }
         
         QueryData qData = new QueryData();
+        qData.setTableName(config.getTableName());
         qData.setRanges(ranges);
         
         addIterators(qData,
@@ -622,7 +623,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     
     @Override
     public void setupQuery(Connector connection, QueryCheckpoint checkpoint) throws Exception {
-        ShardQueryConfiguration config = (ShardQueryConfiguration) checkpoint.getConfig();
+        EdgeQueryConfiguration config = (EdgeQueryConfiguration) checkpoint.getConfig();
         config.setConnector(connection);
         
         scannerFactory = new ScannerFactory(connection);
@@ -639,7 +640,9 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         // if we have started returning results, then capture the state of the query data objects
         if (this.iterator != null) {
             List<QueryCheckpoint> checkpoints = Lists.newLinkedList();
-            for (QueryData qd : getConfig().getQueries()) {
+            for (SingleRangeQueryDataIterator it = new SingleRangeQueryDataIterator(getConfig().getQueries().iterator()); it.hasNext();) {
+                QueryData qd = it.next();
+                
                 checkpoints.add(getConfig().checkpoint(queryKey, Collections.singleton(qd)));
             }
             return checkpoints;
@@ -653,7 +656,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     protected BatchScanner createBatchScanner(GenericQueryConfiguration config) {
         EdgeQueryConfiguration conf = (EdgeQueryConfiguration) config;
         try {
-            return scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), conf.getNumQueryThreads(), conf.getQuery());
+            return scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), conf.getQueryThreads(), conf.getQuery());
         } catch (TableNotFoundException e) {
             throw new IllegalStateException(e);
         }

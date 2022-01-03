@@ -1,31 +1,49 @@
 package datawave.query.tables.edge;
 
-import datawave.configuration.spring.SpringBean;
 import datawave.services.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.logic.QueryLogic;
+import datawave.services.query.logic.QueryLogicFactory;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.exception.UnauthorizedQueryException;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.context.ApplicationContext;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @RunWith(Arquillian.class)
 public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
-    private static final Logger log = Logger.getLogger(EdgeQueryFunctionalTest.class);
+    protected EdgeQueryLogic logic;
     
     @Inject
-    @SpringBean(name = "RewriteEdgeQuery")
-    EdgeQueryLogic logic;
+    protected ApplicationContext applicationContext;
+    
+    protected QueryLogicFactory factory = new TestQueryLogicFactory();
+    
+    @Before
+    public void setup() throws Exception {
+        logic = (EdgeQueryLogic) createLogic();
+    }
+    
+    public QueryLogic<?> createLogic() throws Exception {
+        return factory.getQueryLogic("RewriteEdgeQuery");
+    }
     
     /*
      * NOTE: If you're trying to debug within your IDE's debugger and you're getting Spring errors related to EdgeModelContext.xml or NoClassDefFound related to
@@ -68,7 +86,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("pluto%00;neptune AdjacentPlanets/TO-FROM:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
         expected.add("pluto STATS/ACTIVITY/DwarfPlanets/TO:20150713/NEW_HORIZONS [D]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -82,7 +100,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("pluto%00;neptune AdjacentPlanets/TO-FROM:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
         expected.add("pluto STATS/ACTIVITY/DwarfPlanets/TO:20150713/NEW_HORIZONS [D]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -96,7 +114,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("pluto%00;neptune AdjacentPlanets/TO-FROM:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
         expected.add("pluto STATS/ACTIVITY/DwarfPlanets/TO:20150713/NEW_HORIZONS [D]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -112,7 +130,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("earth STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("eris STATS/ACTIVITY/DwarfPlanets/TO:20150713/COSMOS_DATA [D]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -123,7 +141,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         List<String> expected = new ArrayList<>();
         expected.add("earth%00;moon AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("earth STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -136,7 +154,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("earth%00;venus AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("earth STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("eris STATS/ACTIVITY/DwarfPlanets/TO:20150713/COSMOS_DATA [D]");
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -155,7 +173,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("pluto%00;neptune AdjacentPlanets/TO-FROM:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
         expected.add("pluto STATS/ACTIVITY/DwarfPlanets/TO:20150713/NEW_HORIZONS [D]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -175,7 +193,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("eris STATS/ACTIVITY/DwarfPlanets/TO:20150713/COSMOS_DATA [D]");
         expected.add("eris%00;dysnomia AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [B]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -188,7 +206,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("earth STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("asteroid_belt%00;mars AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -202,7 +220,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("asteroid_belt%00;mars AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("eris STATS/ACTIVITY/DwarfPlanets/TO:20150713/COSMOS_DATA [D]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -222,7 +240,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("asteroid_belt%00;ceres AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("asteroid_belt%00;jupiter AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -249,7 +267,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mercury%00;venus AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -265,7 +283,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("pluto STATS/ACTIVITY/DwarfPlanets/TO:20150713/NEW_HORIZONS [D]");
         expected.add("eris STATS/ACTIVITY/DwarfPlanets/TO:20150713/COSMOS_DATA [D]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -276,7 +294,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         List<String> expected = new ArrayList<>();
         expected.add("jupiter%00;ceres AdjacentDwarfPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [B]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -288,7 +306,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("mars%00;earth AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mercury%00;venus AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -299,7 +317,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         List<String> expected = new ArrayList<>();
         expected.add("mars%00;earth AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -315,7 +333,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("mars%00;ceres AdjacentDwarfPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [B]");
         expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("mercury STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -329,7 +347,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("mercury STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("mercury%00;venus AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars%00;ceres AdjacentDwarfPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [B]");
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -346,7 +364,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("ceres STATS/ACTIVITY/DwarfPlanets/TO:20150713/COSMOS_DATA [D]");
         expected.add("earth STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("eris STATS/ACTIVITY/DwarfPlanets/TO:20150713/COSMOS_DATA [D]");
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -360,7 +378,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("mars%00;earth AdjacentPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("mars%00;asteroid_belt AdjacentCelestialBodies/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -378,7 +396,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("mercury STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("moon%00;earth AdjacentCelestialBodies/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mercury%00;venus AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -398,7 +416,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("mercury%00;venus AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars%00;ceres AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [B]");
         expected.add("mars%00;ceres AdjacentDwarfPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [B]");
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -416,7 +434,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("mercury%00;venus AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars%00;ceres AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [B]");
         expected.add("mars%00;ceres AdjacentDwarfPlanets/TO-FROM:20150713/COSMOS_DATA-COSMOS_DATA [B]");
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -429,7 +447,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("mercury%00;venus AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("mercury STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
         
     }
     
@@ -442,7 +460,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         
         List<String> expected = new ArrayList<>();
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -461,7 +479,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("earth STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
         expected.add("sun STATS/ACTIVITY/Stars/TO:20150713/COSMOS_DATA [A]");
         
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -476,7 +494,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("asteroid_belt%00;mars AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("asteroid_belt%00;jupiter AdjacentCelestialBodies/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
         expected.add("mars STATS/ACTIVITY/Planets/TO:20150713/COSMOS_DATA [B]");
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -489,7 +507,7 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         
         List<String> expected = new ArrayList<>();
         expected.add("mars%00;jupiter AdjacentPlanets/FROM-TO:20150713/COSMOS_DATA-COSMOS_DATA [A]");
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
     }
     
     @Test
@@ -503,7 +521,52 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
         expected.add("pluto%00;neptune AdjacentPlanets/TO-FROM:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
         expected.add("pluto STATS/ACTIVITY/DwarfPlanets/TO:20150713/NEW_HORIZONS [D]");
         expected.add("pluto%00;charon AdjacentCelestialBodies/FROM-TO:20150713/NEW_HORIZONS-NEW_HORIZONS [C]");
-        compareResults(logic, expected);
+        compareResults(logic, factory, expected);
+    }
+    
+    public class TestQueryLogicFactory implements QueryLogicFactory {
+        
+        @Override
+        public QueryLogic<?> getQueryLogic(String name, Collection<String> userRoles) throws QueryException {
+            return getQueryLogic(name, userRoles, true);
+        }
+        
+        @Override
+        public QueryLogic<?> getQueryLogic(String name) throws QueryException {
+            return getQueryLogic(name, null, false);
+        }
+        
+        private QueryLogic<?> getQueryLogic(String name, Collection<String> userRoles, boolean checkRoles) throws QueryException {
+            QueryLogic<?> logic;
+            try {
+                logic = (QueryLogic<?>) applicationContext.getBean(name);
+            } catch (ClassCastException | NoSuchBeanDefinitionException cce) {
+                throw new IllegalArgumentException("Logic name '" + name + "' does not exist in the configuration");
+            }
+            
+            if (checkRoles && !logic.canRunQuery(userRoles)) {
+                throw new UnauthorizedQueryException(DatawaveErrorCode.MISSING_REQUIRED_ROLES, new IllegalAccessException(
+                                "User does not have required role(s): " + logic.getRequiredRoles()));
+            }
+            
+            logic.setLogicName(name);
+            return logic;
+        }
+        
+        @Override
+        public List<QueryLogic<?>> getQueryLogicList() {
+            Map<String,QueryLogic> logicMap = applicationContext.getBeansOfType(QueryLogic.class);
+            
+            List<QueryLogic<?>> logicList = new ArrayList<>();
+            
+            for (Map.Entry<String,QueryLogic> entry : logicMap.entrySet()) {
+                QueryLogic<?> logic = entry.getValue();
+                logic.setLogicName(entry.getKey());
+                logicList.add(logic);
+            }
+            return logicList;
+            
+        }
     }
     
 }
