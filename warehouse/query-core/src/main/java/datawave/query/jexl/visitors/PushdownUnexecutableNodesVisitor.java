@@ -57,6 +57,7 @@ import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl2.parser.ASTVar;
 import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
@@ -180,7 +181,8 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
                 ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, data, config, indexedFields, indexOnlyFields,
                                 nonEventFields, forFieldIndex, null, helper);
                 if (state == ExecutableDeterminationVisitor.STATE.PARTIAL) {
-                    ASTDelayedPredicate.create(child);
+                    JexlNode delayed = ASTDelayedPredicate.create(child);
+                    JexlNodes.replaceChild(node, child, delayed);
                 }
             }
         }

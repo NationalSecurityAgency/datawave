@@ -2,8 +2,6 @@ package org.apache.commons.jexl2.parser;
 
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 
-import java.util.function.Function;
-
 /**
  * Represents a delayed predicate. If this reference expression exists, we should not perform any processing that may affect the indexed query.
  */
@@ -28,10 +26,10 @@ public class ASTDelayedPredicate extends QueryPropertyMarker {
      * @param node
      *            the source node
      * @return the new marker node
-     * @see QueryPropertyMarker#create(JexlNode, Function)
+     * @see QueryPropertyMarker#create(JexlNode, Class)
      */
-    public static ASTDelayedPredicate create(JexlNode node) {
-        return create(node, ASTDelayedPredicate::new);
+    public static JexlNode create(JexlNode node) {
+        return create(node, ASTDelayedPredicate.class);
     }
     
     public ASTDelayedPredicate() {

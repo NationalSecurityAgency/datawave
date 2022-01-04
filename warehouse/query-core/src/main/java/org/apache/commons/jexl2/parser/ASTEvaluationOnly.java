@@ -31,7 +31,7 @@ public class ASTEvaluationOnly extends QueryPropertyMarker {
      * @return the new marker node
      * @see QueryPropertyMarker#create(JexlNode, Function)
      */
-    public static ASTEvaluationOnly create(JexlNode node) {
+    public static JexlNode create(JexlNode node) {
         return create(node, ASTEvaluationOnly::new);
     }
     

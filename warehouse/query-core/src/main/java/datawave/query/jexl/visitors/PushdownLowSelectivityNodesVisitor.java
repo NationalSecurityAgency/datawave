@@ -10,6 +10,7 @@ import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.util.Map;
@@ -58,7 +59,9 @@ public class PushdownLowSelectivityNodesVisitor extends BaseVisitor {
     public Object visit(ASTEQNode node, Object data) {
         // if this node represents a field/value that has poor selectability, then push it down
         if (hasLowSelectability(node)) {
-            return ASTDelayedPredicate.create(node);
+            JexlNode delayed = ASTDelayedPredicate.create(node);
+            JexlNodes.replaceChild(node.jjtGetParent(), node, delayed);
+            return delayed;
         }
         return node;
     }

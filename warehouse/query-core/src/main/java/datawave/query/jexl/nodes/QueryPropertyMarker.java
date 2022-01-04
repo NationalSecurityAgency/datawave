@@ -40,7 +40,7 @@ public abstract class QueryPropertyMarker extends ASTReference {
     /**
      * Create and return a new query property marker with the given source node. If the source has a parent, the source will be replaced with the new marker
      * node in the parent's children.
-     * 
+     *
      * @param source
      *            the source node
      * @param constructor
@@ -49,7 +49,7 @@ public abstract class QueryPropertyMarker extends ASTReference {
      *            the {@link QueryPropertyMarker} type
      * @return a new marker instance
      */
-    public static <MARKER extends QueryPropertyMarker> MARKER create(JexlNode source, Function<JexlNode,MARKER> constructor) {
+    public static <MARKER extends QueryPropertyMarker> JexlNode create(JexlNode source, Function<JexlNode,MARKER> constructor) {
         JexlNode parent = source.jjtGetParent();
         MARKER marker = constructor.apply(source);
         if (parent != null) {
@@ -59,7 +59,8 @@ public abstract class QueryPropertyMarker extends ASTReference {
     }
     
     /**
-     * Create and return a new query property marker of the supplied marker type with the specified source via reflection.
+     * Create and return a new query property marker of the supplied marker type with the specified source via reflection. If the source node or one of its
+     * ancestors is already marked with the supplied marker type the original source node is returned instead of a new marker instance.
      * 
      * @param source
      *            the source node
@@ -67,10 +68,13 @@ public abstract class QueryPropertyMarker extends ASTReference {
      *            the marker type
      * @param <MARKER>
      *            the marker type
-     * @return the new query property marker instance
+     * @return the new query property marker instance, or the original source if the marker has already been applied
      */
-    public static <MARKER extends QueryPropertyMarker> MARKER create(JexlNode source, Class<MARKER> markerType) {
+    public static <MARKER extends QueryPropertyMarker> JexlNode create(JexlNode source, Class<MARKER> markerType) {
         try {
+            if (isSourceAlreadyMarked(source, markerType) || isSubTreeAlreadyMarked(source, markerType)) {
+                return source;
+            }
             Constructor<MARKER> constructor = markerType.getConstructor(JexlNode.class);
             return constructor.newInstance(source);
         } catch (Exception e) {
@@ -159,6 +163,66 @@ public abstract class QueryPropertyMarker extends ASTReference {
         // and make a child of this
         refExpNode1.jjtSetParent(this);
         this.jjtAddChild(refExpNode1, 0);
+    }
+    
+    /**
+     * Determines if this source node is already marked with the provided marker class
+     *
+     * @param source
+     *            a JexlNode
+     * @param markerClass
+     *            an instance of a {@link QueryPropertyMarker}
+     * @return true if this node is already marked with the provided marker class
+     */
+    public static boolean isSourceAlreadyMarked(JexlNode source, Class<? extends QueryPropertyMarker> markerClass) {
+        return QueryPropertyMarker.findInstance(source).isType(markerClass);
+    }
+    
+    /**
+     * Determine if one the source node's ancestors is already marked. For example, is this subtree already marked as delayed?
+     *
+     *
+     * @param node
+     *            a JexlNode
+     * @return true
+     */
+    public static boolean isSubTreeAlreadyMarked(JexlNode node, Class<? extends QueryPropertyMarker> markerClass) {
+        // marker nodes are by definition the intersection of a marker and a source
+        if (node instanceof ASTAndNode && node.jjtGetNumChildren() == 2) {
+            if (QueryPropertyMarker.findInstance(node).isType(markerClass)) {
+                return true;
+            }
+        }
+        
+        if (node.jjtGetParent() == null) {
+            return false;
+        } else {
+            return isSubTreeAlreadyMarked(node.jjtGetParent(), markerClass);
+        }
+    }
+    
+    /**
+     * Unwrap a delayed predicate, fully. Intended to handle the odd edge case when multiple delayed predicate markers are applied to the same node
+     *
+     * @param node
+     *            an arbitrary jexl node
+     * @return the source node, or the original node if this node is not delayed
+     */
+    public static JexlNode unwrapFully(JexlNode node) {
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
+        if (instance.isType(ASTDelayedPredicate.class)) {
+            
+            JexlNode source = instance.getSource();
+            instance = QueryPropertyMarker.findInstance(source);
+            
+            while (instance.isType(ASTDelayedPredicate.class)) {
+                source = instance.getSource();
+                instance = QueryPropertyMarker.findInstance(source);
+            }
+            
+            return source;
+        }
+        return node;
     }
     
     /**
