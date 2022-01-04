@@ -7,6 +7,7 @@ import datawave.microservice.query.messaging.QueryResultsManager;
 import datawave.microservice.query.messaging.Result;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.QueryCheckpoint;
 import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
@@ -64,7 +65,32 @@ public abstract class QueryStorageCacheTest {
     
     @ActiveProfiles({"QueryStarterDefaults", "QueryStorageCacheTest", "use-hazelcast"})
     @ContextConfiguration(classes = QueryStorageCacheTestConfiguration.class)
-    public static class HazelcastQueryStorageCacheTest extends QueryStorageCacheTest {}
+    public static class HazelcastQueryStorageCacheTest extends QueryStorageCacheTest {
+        @DirtiesContext
+        @Test
+        public void testStorageErrorHandler() throws ParseException, IOException, TaskLockException {
+            Query query = new QueryImpl();
+            query.setQueryLogicName("EventQuery");
+            query.setQuery("foo == bar");
+            query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
+            query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
+            UnserializableQueryConfiguration config = new UnserializableQueryConfiguration();
+            config.setQuery(query);
+            String queryId = UUID.randomUUID().toString();
+            createdQueries.add(queryId);
+            String queryPool = TEST_POOL;
+            QueryKey queryKey = new QueryKey(queryPool, queryId, query.getQueryLogicName());
+            QueryCheckpoint checkpoint = new QueryCheckpoint(queryKey, config);
+            taskStatesCache.updateTaskStates(new TaskStates(queryKey, 10));
+            try {
+                storageService.createTask(QueryRequest.Method.NEXT, checkpoint);
+                fail("Expected unserializable configuration to fail storage");
+            } catch (Exception e) {
+                // expected
+            }
+        }
+        
+    }
     
     @Disabled("Cannot run this test without an externally deployed RabbitMQ instance.")
     @ActiveProfiles({"QueryStarterDefaults", "QueryStorageCacheTest", "use-rabbit"})
@@ -88,24 +114,24 @@ public abstract class QueryStorageCacheTest {
     }
     
     @Autowired
-    private QueryStatusCache queryStatusCache;
+    protected QueryStatusCache queryStatusCache;
     
     @Autowired
-    private TaskStatesCache taskStatesCache;
+    protected TaskStatesCache taskStatesCache;
     
     @Autowired
-    private TaskCache taskCache;
+    protected TaskCache taskCache;
     
     @Autowired
-    private QueryStorageCache storageService;
+    protected QueryStorageCache storageService;
     
     @Autowired
-    private QueryResultsManager queueManager;
+    protected QueryResultsManager queueManager;
     
     public String TEST_POOL = "TestPool";
     
-    private final Queue<QueryResultsListener> listeners = new LinkedList<>();
-    private final Queue<String> createdQueries = new LinkedList<>();
+    protected final Queue<QueryResultsListener> listeners = new LinkedList<>();
+    protected final Queue<String> createdQueries = new LinkedList<>();
     
     @AfterEach
     public void cleanup() throws Exception {
@@ -217,6 +243,31 @@ public abstract class QueryStorageCacheTest {
         assertQueryTask(key, QueryRequest.Method.NEXT, query, task);
         
         storageService.deleteTask(task.getTaskKey());
+    }
+    
+    public static class UnserializableQueryConfiguration extends GenericQueryConfiguration {
+        private UnserializableObject obj = new UnserializableObject();
+        
+        public static class UnserializableObject {
+            private String bla = "bla";
+            
+            public String getBla() {
+                throw new RuntimeException("Failed to get bla");
+            }
+            
+            public void setBla(String bla) {
+                throw new RuntimeException("Failed to set bla");
+            }
+        }
+        
+        public UnserializableObject getObj() {
+            throw new RuntimeException("Failed to get obj");
+        }
+        
+        public void setObj(UnserializableObject obj) {
+            throw new RuntimeException("Failed to set obj");
+        }
+        
     }
     
     @DirtiesContext
