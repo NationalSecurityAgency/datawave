@@ -31,7 +31,6 @@ import datawave.webservice.query.logic.EasyRoleManager;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.query.logic.composite.CompositeQueryLogic;
-import datawave.webservice.query.metric.NoOpQueryMetricHandler;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.results.cached.CachedResultsConfiguration;
 
@@ -77,9 +76,9 @@ public class WiredQueryExecutorBeanTest {
                                         DefaultQueryPlanner.class, BooleanChunkingQueryPlanner.class, ShardQueryLogic.class, CountingShardQueryLogic.class,
                                         EventQueryDataDecoratorTransformer.class, FieldIndexCountQueryLogic.class, CompositeQueryLogic.class,
                                         QueryMetricQueryLogic.class, TLDQueryLogic.class, ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class,
-                                        QueryLogicFactoryImpl.class, NoOpQueryMetricHandler.class, DatawaveRoleManager.class, EasyRoleManager.class,
-                                        CachedResultsConfiguration.class, DateIndexHelperFactory.class, EdgeDictionaryResponseTypeProducer.class,
-                                        RemoteEdgeDictionary.class, DefaultMapperDecorator.class).addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+                                        QueryLogicFactoryImpl.class, DatawaveRoleManager.class, EasyRoleManager.class, CachedResultsConfiguration.class,
+                                        DateIndexHelperFactory.class, EdgeDictionaryResponseTypeProducer.class, RemoteEdgeDictionary.class,
+                                        DefaultMapperDecorator.class).addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
     
     @Test
