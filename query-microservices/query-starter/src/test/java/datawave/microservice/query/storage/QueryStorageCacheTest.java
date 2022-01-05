@@ -74,7 +74,7 @@ public abstract class QueryStorageCacheTest {
             query.setQuery("foo == bar");
             query.setBeginDate(new SimpleDateFormat("yyyyMMdd").parse("20200101"));
             query.setEndDate(new SimpleDateFormat("yyyMMdd").parse("20210101"));
-            UnserializableQueryConfiguration config = new UnserializableQueryConfiguration();
+            ThisClassIsUnserializableOnPurposeToTestErrorHandling config = new ThisClassIsUnserializableOnPurposeToTestErrorHandling();
             config.setQuery(query);
             String queryId = UUID.randomUUID().toString();
             createdQueries.add(queryId);
@@ -245,10 +245,10 @@ public abstract class QueryStorageCacheTest {
         storageService.deleteTask(task.getTaskKey());
     }
     
-    public static class UnserializableQueryConfiguration extends GenericQueryConfiguration {
-        private UnserializableObject obj = new UnserializableObject();
+    public static class ThisClassIsUnserializableOnPurposeToTestErrorHandling extends GenericQueryConfiguration {
+        private ThisSubclassIsUnserializableOnPurposeToTestErrorHandling obj = new ThisSubclassIsUnserializableOnPurposeToTestErrorHandling();
         
-        public static class UnserializableObject {
+        public static class ThisSubclassIsUnserializableOnPurposeToTestErrorHandling {
             private String bla = "bla";
             
             public String getBla() {
@@ -260,11 +260,11 @@ public abstract class QueryStorageCacheTest {
             }
         }
         
-        public UnserializableObject getObj() {
+        public ThisSubclassIsUnserializableOnPurposeToTestErrorHandling getObj() {
             throw new RuntimeException("Failed to get obj");
         }
         
-        public void setObj(UnserializableObject obj) {
+        public void setObj(ThisSubclassIsUnserializableOnPurposeToTestErrorHandling obj) {
             throw new RuntimeException("Failed to set obj");
         }
         
