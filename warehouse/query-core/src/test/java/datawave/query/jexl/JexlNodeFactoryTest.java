@@ -71,6 +71,26 @@ public class JexlNodeFactoryTest {
         assertTrue(JexlASTHelper.validateLineage(node, false));
     }
     
+    // an AndNode is created when expanding a negation
+    @Test
+    public void testAndFromFieldValues() throws ParseException {
+        JexlNode original = JexlASTHelper.parseJexlQuery("!(FOO =~ 'bar.*')");
+        // and get the erNode...
+        List<ASTERNode> erNodes = JexlASTHelper.getERNodes(original);
+        assertEquals("Expected 1 ERNode but got " + erNodes.size(), 1, erNodes.size());
+        ASTERNode erNode = erNodes.get(0);
+        
+        List<String> fieldValues = Lists.newArrayList("bar1", "bar2", "bar3");
+        
+        // Convert FOO to a conjunction of FOO[1,3]
+        JexlNode node = JexlNodeFactory.createNodeTreeFromFieldValues(JexlNodeFactory.ContainerType.AND_NODE, new ASTEQNode(ParserTreeConstants.JJTANDNODE),
+                        erNode, "FOO", fieldValues);
+        
+        // we only assert the expansion inside the negated branch
+        assertEquals("(FOO == 'bar1' && FOO == 'bar2' && FOO == 'bar3')", JexlStringBuildingVisitor.buildQueryWithoutParse(node));
+        assertTrue(JexlASTHelper.validateLineage(node, false));
+    }
+    
     @Test
     public void testOrFromFieldsToValues() throws ParseException {
         JexlNode original = JexlASTHelper.parseJexlQuery("FOO =~ 'bar.*'");
