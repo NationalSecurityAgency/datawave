@@ -95,6 +95,18 @@ public class MinimalReferenceExpressionsVisitorTest {
         validate(query, false);
     }
     
+    @Test
+    public void testFilterBetweenDates() {
+        String query = "FOO == 'bar' && filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000')";
+        validate(query, true);
+    }
+    
+    @Test
+    public void testShardsAndDays() {
+        String query = "FOO == 'bar' && (SHARDS_AND_DAYS = '20100703_0,20100704_0,20100704_2,20100705_1')";
+        validate(query, true);
+    }
+    
     private void validate(String query, boolean expected) {
         try {
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
