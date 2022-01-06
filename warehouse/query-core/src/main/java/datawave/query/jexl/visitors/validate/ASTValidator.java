@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors.validate;
 
+import com.google.common.base.Joiner;
 import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -7,6 +8,9 @@ import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Validates an AST with respect to some basic assumptions. Intended to be called after a given visitor is done visiting a query tree.
@@ -75,21 +79,27 @@ public class ASTValidator {
         
         if (!isValid) {
             
-            if (!isLineageValid)
-                log.error("Valid Lineage: " + isLineageValid);
-            if (!isTreeFlattened)
-                log.error("Valid Flatten: " + isTreeFlattened);
-            if (!areJunctionsValid)
-                log.error("Valid Junctions: " + areJunctionsValid);
-            if (!areReferenceExpressionsValid)
-                log.error("Valid RefExpr: " + areReferenceExpressionsValid);
+            List<String> reasons = new ArrayList<>();
+            if (!isLineageValid) {
+                reasons.add("Lineage");
+            }
+            if (!isTreeFlattened) {
+                reasons.add("Flatten");
+            }
+            if (!areJunctionsValid) {
+                reasons.add("Junctions");
+            }
+            if (!areReferenceExpressionsValid) {
+                reasons.add("RefExpr");
+            }
             
-            log.error(sourceVisitor + " produced an invalid query tree, see logs for details.");
+            String joined = "[" + Joiner.on(',').join(reasons) + "]";
+            log.error(sourceVisitor + " produced an invalid query tree for reasons " + joined);
             if (failHard) {
                 if (sourceVisitor != null) {
-                    throw new InvalidQueryTreeException(sourceVisitor + " produced an invalid query tree, see logs for details.");
+                    throw new InvalidQueryTreeException(sourceVisitor + " produced an invalid query tree: " + joined);
                 } else {
-                    throw new InvalidQueryTreeException("Invalid query tree detected outside of normal scope, see logs for details");
+                    throw new InvalidQueryTreeException("Invalid query tree detected outside of normal scope: " + joined);
                 }
             }
         }
