@@ -1621,6 +1621,7 @@ public class JexlNodeFactory {
         }
         
         ASTReference ref = new ASTReference(ParserTreeConstants.JJTREFERENCE);
+        ref.jjtSetParent(child.jjtGetParent());
         
         if (child instanceof ASTReferenceExpression) {
             child.jjtSetParent(ref);
@@ -1634,8 +1635,6 @@ public class JexlNodeFactory {
             exp.jjtSetParent(ref);
             ref.jjtAddChild(exp, 0);
         }
-        
-        ref.jjtSetParent(child.jjtGetParent());
         
         return ref;
     }
