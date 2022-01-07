@@ -22,7 +22,7 @@ public class CountingResponseBodyEmitterListener implements StreamingResponseLis
     }
     
     @Override
-    public void cleanup() {
+    public void close() {
         countingEmitter.complete();
     }
     

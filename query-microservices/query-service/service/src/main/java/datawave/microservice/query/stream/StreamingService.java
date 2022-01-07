@@ -7,7 +7,6 @@ import datawave.microservice.query.stream.runner.StreamingCall;
 import datawave.microservice.querymetric.QueryMetricClient;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
-import org.springframework.util.MultiValueMap;
 
 @Service
 public class StreamingService {
@@ -22,13 +21,26 @@ public class StreamingService {
         this.streamingExecutor = streamingExecutor;
     }
     
-    public void execute(String queryId, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser, StreamingResponseListener listener) {
+    /**
+     * Gets all pages of results for the given query and streams them to the configured listener.
+     * <p>
+     * Execute can only be called on a running query. <br>
+     * Execute is a non-blocking call, and will return immediately. <br>
+     * Only the query owner can call execute on the specified query.
+     *
+     * @param queryId
+     *            the query id, not null
+     * @param currentUser
+     *            the user who called this method, not null
+     * @param listener
+     *            the listener which will handle the result pages, not null
+     */
+    public void execute(String queryId, ProxiedUserDetails currentUser, StreamingResponseListener listener) {
         // @formatter:off
         streamingExecutor.submit(
                 new StreamingCall.Builder()
                         .setQueryManagementService(queryManagementService)
                         .setQueryMetricClient(queryMetricClient)
-                        .setParameters(parameters)
                         .setCurrentUser(currentUser)
                         .setQueryId(queryId)
                         .setListener(listener)

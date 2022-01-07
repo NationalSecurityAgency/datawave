@@ -283,10 +283,7 @@ public class QueryController {
         queryMetricsEnrichmentContext.setQueryId(queryId);
         
         CountingResponseBodyEmitter emitter = baseMethodStatsContext.getCountingResponseBodyEmitter();
-        
-        // bytesWritten is updated as streaming data is written to the response output stream
-        streamingService.execute(queryId, parameters, currentUser, new CountingResponseBodyEmitterListener(emitter, headers.getAccept()));
-        
+        streamingService.execute(queryId, currentUser, new CountingResponseBodyEmitterListener(emitter, headers.getAccept()));
         return emitter;
     }
 }

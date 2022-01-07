@@ -13,13 +13,10 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.BaseQueryResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.MultiValueMap;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
-
-import static datawave.microservice.query.QueryParameters.QUERY_STRING;
 
 public class StreamingCall implements Callable<Void> {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
@@ -28,7 +25,6 @@ public class StreamingCall implements Callable<Void> {
     final private QueryMetricClient queryMetricClient;
     final private BaseQueryMetric baseQueryMetric;
     
-    final private MultiValueMap<String,String> parameters;
     final private ProxiedUserDetails currentUser;
     final private String queryId;
     
@@ -39,7 +35,6 @@ public class StreamingCall implements Callable<Void> {
         this.queryMetricClient = builder.queryMetricClient;
         this.baseQueryMetric = builder.queryManagementService.getBaseQueryMetric().duplicate();
         
-        this.parameters = builder.parameters;
         this.currentUser = builder.currentUser;
         this.queryId = builder.queryId;
         
@@ -70,7 +65,7 @@ public class StreamingCall implements Callable<Void> {
             throw e;
         } finally {
             baseQueryMetricOverride.remove();
-            listener.cleanup();
+            listener.close();
         }
     }
     
@@ -86,9 +81,9 @@ public class StreamingCall implements Callable<Void> {
                 lastPageMetric.setCallTime(nextCallTimeMillis);
             }
         } catch (NoResultsQueryException e) {
-            log.debug("No results found for query '{}'", parameters.getFirst(QUERY_STRING));
+            log.debug("No results found for query '{}'", queryId);
         } catch (QueryException e) {
-            log.info("Encountered error while getting results for query '{}'", parameters.getFirst(QUERY_STRING));
+            log.info("Encountered error while getting results for query '{}'", queryId);
         }
         return nextResponse;
     }
@@ -146,7 +141,6 @@ public class StreamingCall implements Callable<Void> {
         private QueryManagementService queryManagementService;
         private QueryMetricClient queryMetricClient;
         
-        private MultiValueMap<String,String> parameters;
         private ProxiedUserDetails currentUser;
         private String queryId;
         
@@ -159,11 +153,6 @@ public class StreamingCall implements Callable<Void> {
         
         public Builder setQueryMetricClient(QueryMetricClient queryMetricClient) {
             this.queryMetricClient = queryMetricClient;
-            return this;
-        }
-        
-        public Builder setParameters(MultiValueMap<String,String> parameters) {
-            this.parameters = parameters;
             return this;
         }
         

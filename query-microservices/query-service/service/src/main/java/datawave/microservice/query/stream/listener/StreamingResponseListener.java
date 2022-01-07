@@ -8,7 +8,7 @@ public interface StreamingResponseListener {
     
     void onResponse(BaseQueryResponse response) throws IOException;
     
-    default void cleanup() {
+    default void close() {
         // do nothing
     }
 }
