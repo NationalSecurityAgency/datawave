@@ -28,7 +28,7 @@ public class IndexHoleMarkerJexlNode extends QueryPropertyMarker {
      * @return the new marker node
      * @see QueryPropertyMarker#create(JexlNode, Function)
      */
-    public static JexlNode create(JexlNode node) {
+    public static IndexHoleMarkerJexlNode create(JexlNode node) {
         return create(node, IndexHoleMarkerJexlNode::new);
     }
     

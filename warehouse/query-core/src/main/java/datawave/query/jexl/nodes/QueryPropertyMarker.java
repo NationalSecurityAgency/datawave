@@ -49,7 +49,7 @@ public abstract class QueryPropertyMarker extends ASTReference {
      *            the {@link QueryPropertyMarker} type
      * @return a new marker instance
      */
-    public static <MARKER extends QueryPropertyMarker> JexlNode create(JexlNode source, Function<JexlNode,MARKER> constructor) {
+    public static <MARKER extends QueryPropertyMarker> MARKER create(JexlNode source, Function<JexlNode,MARKER> constructor) {
         JexlNode parent = source.jjtGetParent();
         MARKER marker = constructor.apply(source);
         if (parent != null) {
@@ -72,7 +72,7 @@ public abstract class QueryPropertyMarker extends ASTReference {
      */
     public static <MARKER extends QueryPropertyMarker> JexlNode create(JexlNode source, Class<MARKER> markerType) {
         try {
-            if (isSourceAlreadyMarked(source, markerType) || isSubTreeAlreadyMarked(source, markerType)) {
+            if (isSourceMarked(source, markerType) || isAncestorMarked(source, markerType)) {
                 return source;
             }
             Constructor<MARKER> constructor = markerType.getConstructor(JexlNode.class);
@@ -174,53 +174,42 @@ public abstract class QueryPropertyMarker extends ASTReference {
      *            an instance of a {@link QueryPropertyMarker}
      * @return true if this node is already marked with the provided marker class
      */
-    public static boolean isSourceAlreadyMarked(JexlNode source, Class<? extends QueryPropertyMarker> markerClass) {
+    public static boolean isSourceMarked(JexlNode source, Class<? extends QueryPropertyMarker> markerClass) {
         return QueryPropertyMarker.findInstance(source).isType(markerClass);
     }
     
     /**
      * Determine if one the source node's ancestors is already marked. For example, is this subtree already marked as delayed?
      *
-     *
      * @param node
      *            a JexlNode
      * @return true
      */
-    public static boolean isSubTreeAlreadyMarked(JexlNode node, Class<? extends QueryPropertyMarker> markerClass) {
-        // marker nodes are by definition the intersection of a marker and a source
-        if (node instanceof ASTAndNode && node.jjtGetNumChildren() == 2) {
-            if (QueryPropertyMarker.findInstance(node).isType(markerClass)) {
-                return true;
+    public static boolean isAncestorMarked(JexlNode node, Class<? extends QueryPropertyMarker> markerClass) {
+        JexlNode parent = node.jjtGetParent();
+        if (parent != null) {
+            // marker nodes are by definition the intersection of a marker and a source
+            if (parent instanceof ASTAndNode && parent.jjtGetNumChildren() == 2) {
+                if (QueryPropertyMarker.findInstance(parent).isType(markerClass)) {
+                    return true;
+                }
             }
+            return isAncestorMarked(parent, markerClass);
         }
-        
-        if (node.jjtGetParent() == null) {
-            return false;
-        } else {
-            return isSubTreeAlreadyMarked(node.jjtGetParent(), markerClass);
-        }
+        return false;
     }
     
     /**
-     * Unwrap a delayed predicate, fully. Intended to handle the odd edge case when multiple delayed predicate markers are applied to the same node
+     * Unwrap a marker node, fully. Intended to handle the odd edge case when multiple instances of the same marker is applied to the same node
      *
      * @param node
      *            an arbitrary jexl node
-     * @return the source node, or the original node if this node is not delayed
+     * @return the source node, or the original node if the source node is not marked
      */
-    public static JexlNode unwrapFully(JexlNode node) {
+    public static JexlNode unwrapFully(JexlNode node, Class<? extends QueryPropertyMarker> marker) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
-        if (instance.isType(ASTDelayedPredicate.class)) {
-            
-            JexlNode source = instance.getSource();
-            instance = QueryPropertyMarker.findInstance(source);
-            
-            while (instance.isType(ASTDelayedPredicate.class)) {
-                source = instance.getSource();
-                instance = QueryPropertyMarker.findInstance(source);
-            }
-            
-            return source;
+        if (instance.isType(marker)) {
+            return unwrapFully(instance.getSource(), marker);
         }
         return node;
     }

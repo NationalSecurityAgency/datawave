@@ -29,7 +29,7 @@ public class BoundedRange extends QueryPropertyMarker {
      * @return the new marker node
      * @see QueryPropertyMarker#create(JexlNode, Function)
      */
-    public static JexlNode create(JexlNode node) {
+    public static BoundedRange create(JexlNode node) {
         return create(node, BoundedRange::new);
     }
     

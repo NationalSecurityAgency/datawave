@@ -39,7 +39,7 @@ public class ASTDelayedPredicateTest {
         assertEquals(expectedSource, JexlStringBuildingVisitor.buildQueryWithoutParse(source));
         
         expectedSource = "FOO == 'bar'";
-        source = ASTDelayedPredicate.unwrapFully(node);
+        source = ASTDelayedPredicate.unwrapFully(node, ASTDelayedPredicate.class);
         assertEquals(expectedSource, JexlStringBuildingVisitor.buildQueryWithoutParse(source));
     }
     
@@ -49,12 +49,12 @@ public class ASTDelayedPredicateTest {
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         
         assertNull(node.jjtGetParent());
-        assertFalse(QueryPropertyMarker.isSubTreeAlreadyMarked(node, ASTDelayedPredicate.class));
+        assertFalse(QueryPropertyMarker.isAncestorMarked(node, ASTDelayedPredicate.class));
         
         JexlNode delayed = ASTDelayedPredicate.create(node);
         assertNotNull(node.jjtGetParent());
         assertTrue(QueryPropertyMarker.findInstance(delayed).isType(ASTDelayedPredicate.class));
-        assertTrue(ASTDelayedPredicate.isSubTreeAlreadyMarked(node, ASTDelayedPredicate.class));
+        assertTrue(ASTDelayedPredicate.isAncestorMarked(node, ASTDelayedPredicate.class));
     }
     
 }
