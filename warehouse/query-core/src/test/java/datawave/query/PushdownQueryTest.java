@@ -138,6 +138,21 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
         }
     }
     
+    @Test
+    public void testDelayedFilterIncludeRegexExpansion() throws Exception {
+        log.info("------  testErrorFilterIncludeRegexExpansion  ------");
+        String state = "'ohio'";
+        String code = "'itA'";
+        for (final TestCities city : TestCities.values()) {
+            String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + code + OR_OP
+                            + "filter:includeRegex(" + CityField.STATE.name() + "," + state + "))";
+            String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + code + OR_OP
+                            + CityField.STATE.name() + RE_OP + state + ")";
+            ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(true);
+            runTest(query, expectQuery);
+        }
+    }
+    
     // ============================================
     // error conditions
     @Test
