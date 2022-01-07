@@ -26,7 +26,6 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -50,12 +49,6 @@ public class QueryAuthsTest extends AbstractFunctionalQuery {
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
-        // Set<String> virt = new HashSet<>(Arrays.asList(CityField.CITY.name(), CityField.CONTINENT.name()));
-        // generic.removeVirtualField(virt);
-        // generic.addIndexField(CityField.CODE.name());
-        // for (String idx : generic.getIndexFields()) {
-        // generic.addReverseIndexField(idx);
-        // }
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
