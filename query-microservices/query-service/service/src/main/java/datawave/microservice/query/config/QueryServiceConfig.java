@@ -4,6 +4,7 @@ import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.stream.StreamingProperties;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
@@ -52,6 +53,19 @@ public class QueryServiceConfig {
     @Bean
     public ThreadPoolTaskExecutor nextCallExecutor(QueryProperties queryProperties) {
         ThreadPoolTaskExecutorProperties executorProperties = queryProperties.getNextCall().getExecutor();
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(executorProperties.getCorePoolSize());
+        executor.setMaxPoolSize(executorProperties.getMaxPoolSize());
+        executor.setQueueCapacity(executorProperties.getQueueCapacity());
+        executor.setThreadNamePrefix(executorProperties.getThreadNamePrefix());
+        executor.initialize();
+        return executor;
+    }
+    
+    @RefreshScope
+    @Bean
+    public ThreadPoolTaskExecutor streamingExecutor(StreamingProperties streamingProperties) {
+        ThreadPoolTaskExecutorProperties executorProperties = streamingProperties.getExecutor();
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(executorProperties.getCorePoolSize());
         executor.setMaxPoolSize(executorProperties.getMaxPoolSize());

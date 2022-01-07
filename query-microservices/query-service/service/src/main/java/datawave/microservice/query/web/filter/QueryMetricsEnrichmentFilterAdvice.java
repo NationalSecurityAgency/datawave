@@ -168,7 +168,7 @@ public class QueryMetricsEnrichmentFilterAdvice extends BaseMethodStatsFilter im
         }
     }
     
-    private static class QueryMetricsEnrichmentContext {
+    public static class QueryMetricsEnrichmentContext {
         private String queryId;
         private EnrichQueryMetrics.MethodType methodType;
         

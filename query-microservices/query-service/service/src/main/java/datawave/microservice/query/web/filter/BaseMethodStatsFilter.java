@@ -100,17 +100,18 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
         public MultiValueMap<String,Object> getResponseHeaders() {
             return responseHeaders;
         }
-        
     }
     
     @Override
     public void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain chain)
                     throws IOException, ServletException {
-        
         preProcess(request, response);
         
         if (!(response instanceof CountingHttpServletResponseWrapper)) {
             response = new CountingHttpServletResponseWrapper(response);
+        }
+        if (baseMethodStatsContext.getCountingResponseBodyEmitter() == null) {
+            baseMethodStatsContext.setCountingResponseBodyEmitter(new CountingResponseBodyEmitter((CountingHttpServletResponseWrapper) response));
         }
         
         chain.doFilter(request, response);
@@ -200,7 +201,7 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
         responseStats.callTime = TimeUnit.NANOSECONDS.toMillis(stop - baseMethodStatsContext.getRequestStats().getCallStartTime());
         
         if (response instanceof CountingHttpServletResponseWrapper) {
-            responseStats.bytesWritten = ((CountingHttpServletResponseWrapper) response).getByteCount();
+            responseStats.bytesWritten = ((CountingHttpServletResponseWrapper) response).getBytesWritten();
         }
         
         for (String header : response.getHeaderNames()) {
@@ -210,7 +211,7 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
         return responseStats;
     }
     
-    private static class CountingHttpServletResponseWrapper extends HttpServletResponseWrapper {
+    static class CountingHttpServletResponseWrapper extends HttpServletResponseWrapper {
         private final ServletResponse response;
         private CountingServletOutputStream cos;
         
@@ -235,8 +236,8 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
             return cos;
         }
         
-        public long getByteCount() {
-            return cos.getByteCount();
+        public long getBytesWritten() {
+            return cos != null ? cos.getBytesWritten() : 0L;
         }
     }
     
@@ -267,17 +268,18 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
             outputStream.write(b, off, len);
-            this.count += (long) len;
+            count += len;
         }
         
-        public long getByteCount() {
+        public long getBytesWritten() {
             return count;
         }
     }
     
-    private static class BaseMethodStatsContext {
+    public static class BaseMethodStatsContext {
         private RequestMethodStats requestStats;
         private ResponseMethodStats responseStats;
+        private CountingResponseBodyEmitter countingResponseBodyEmitter;
         
         public RequestMethodStats getRequestStats() {
             return requestStats;
@@ -293,6 +295,14 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
         
         public void setResponseStats(ResponseMethodStats responseStats) {
             this.responseStats = responseStats;
+        }
+        
+        public CountingResponseBodyEmitter getCountingResponseBodyEmitter() {
+            return countingResponseBodyEmitter;
+        }
+        
+        public void setCountingResponseBodyEmitter(CountingResponseBodyEmitter countingResponseBodyEmitter) {
+            this.countingResponseBodyEmitter = countingResponseBodyEmitter;
         }
     }
     

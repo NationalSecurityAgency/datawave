@@ -46,7 +46,7 @@ read_dom () {
 
 get_query_id () {
     while read_dom; do
-        if [[ $ENTITY =~ 'Result' ]] && [[ ! $ENTITY =~ 'HasResults'  ]]; then
+        if [[ $ENTITY =~ 'QueryId' ]]; then
             echo $CONTENT
             break
         fi
@@ -54,23 +54,24 @@ get_query_id () {
 }
 
 get_num_events () {
+    count=0
     while read_dom; do
         if [[ $ENTITY = 'ReturnedEvents' ]]; then
-            echo $CONTENT
-            break
+            count=$((count + CONTENT))
         fi
     done
+    echo $count
 }
 
-FOLDER="query_$(date +%Y%m%d_%I%M%S.%3N)"
+FOLDER="streamingQuery_$(date +%Y%m%d_%I%M%S.%3N)"
 
 mkdir $FOLDER
 cd $FOLDER
 
 SYSTEM_FROM=$(hostname)
 
-echo "$(date): Creating query"
-echo "$(date): Creating query" > querySummary.txt
+echo "$(date): Running streaming query"
+echo "$(date): Running streaming query" > querySummary.txt
 curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
     --data-urlencode "begin=19660908 000000.000" \
@@ -80,53 +81,25 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "query.syntax=LUCENE" \
     --data-urlencode "auths=PUBLIC,PRIVATE,BAR,FOO" \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
-    --data-urlencode "queryName=Developer Test Query" \
+    --data-urlencode "queryName=Developer Test Streaming Query" \
     --data-urlencode "pagesize=10" \
     --data-urlencode "pool=$POOL" \
-    ${DATAWAVE_ENDPOINT}/EventQuery/create -o createResponse.xml
+    ${DATAWAVE_ENDPOINT}/EventQuery/execute -o streamingResponse.xml
 
-i=1
+QUERY_ID=$(get_query_id < streamingResponse.xml)
+NUM_EVENTS=$(get_num_events < streamingResponse.xml)
 
-QUERY_ID=$(get_query_id < createResponse.xml)
-
-while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
-    echo "$(date): Requesting page $i for $QUERY_ID"
-    echo "$(date): Requesting page $i for $QUERY_ID" >> querySummary.txt
-    curl -s -D headers_$i.txt -q -k -E ${TMP_PEM} \
-        -H "Accept: application/xml" \
-        ${DATAWAVE_ENDPOINT}/$QUERY_ID/next -o nextResponse_$i.xml
-
-    CONTINUE=`grep 'HTTP/1.1 200 OK' headers_$i.txt`
-
-    if [ -z "$CONTINUE" ]; then
-        i=-1
-    else
-        NUM_EVENTS=$(get_num_events < nextResponse_$i.xml)
-        echo "$(date): Page $i contained $NUM_EVENTS events"
-
-        ((i++))
-    fi
-
-    if [ "$PAUSE" == "true" ]; then
-        echo "press any key to continue"
-        read -n 1
-    fi
-done
-
-echo "$(date): Closing $QUERY_ID"
-# close the query
-curl -s -q -k -X POST -E ${TMP_PEM} \
-    -H "Accept: application/xml" \
-    ${DATAWAVE_ENDPOINT}/$QUERY_ID/close -o closeResponse.xml
+echo "$(date): Streaming results contained $NUM_EVENTS events"
+echo "$(date): Creating query" > querySummary.txt
 
 cd ../
 
 if [ ! -z "$QUERY_ID" ]; then
-    mv $FOLDER query_$QUERY_ID
+    mv $FOLDER streamingQuery_$QUERY_ID
 
     echo "$(date): Getting metrics for $QUERY_ID"
-    echo "$(date): Getting metrics for $QUERY_ID" >> query_$QUERY_ID/querySummary.txt
+    echo "$(date): Getting metrics for $QUERY_ID" >> streamingQuery_$QUERY_ID/querySummary.txt
 
     echo "$(date): Metrics available at: ${METRICS_ENDPOINT}/id/$QUERY_ID"
-    echo "$(date): Metrics available at: ${METRICS_ENDPOINT}/id/$QUERY_ID" >> query_$QUERY_ID/querySummary.txt
+    echo "$(date): Metrics available at: ${METRICS_ENDPOINT}/id/$QUERY_ID" >> streamingQuery_$QUERY_ID/querySummary.txt
 fi

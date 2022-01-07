@@ -396,6 +396,10 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         this.future = future;
     }
     
+    public BaseQueryMetric.Lifecycle getLifecycle() {
+        return lifecycle;
+    }
+    
     public static class Builder {
         private NextCallProperties nextCallProperties;
         private QueryExpirationProperties expirationProperties;

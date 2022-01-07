@@ -11,16 +11,13 @@ import datawave.microservice.query.storage.TaskStates;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricClient;
 import datawave.microservice.querymetric.QueryMetricType;
-import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.CheckpointableQueryLogic;
 import datawave.services.query.logic.QueryLogic;
-import datawave.webservice.query.exception.DatawaveErrorCode;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
 
-import java.io.IOException;
 import java.util.Date;
 
 public class CreateTask extends ExecutorTask {
