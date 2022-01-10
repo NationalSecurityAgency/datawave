@@ -103,7 +103,7 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         JexlNode currentNode = futureJexlNode.getOrigNode();
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
         
-        futureJexlNode.setRebuiltNode(JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE,
-                        futureJexlNode.isKeepOriginalNode(), currentNode, fieldsToTerms, expandFields, expandValues, futureJexlNode.isKeepOriginalNode()));
+        futureJexlNode.setRebuiltNode(JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, currentNode,
+                        fieldsToTerms, expandFields, expandValues, futureJexlNode.isKeepOriginalNode()));
     }
 }
