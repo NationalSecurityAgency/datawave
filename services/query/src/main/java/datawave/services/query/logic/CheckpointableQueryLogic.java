@@ -1,7 +1,10 @@
 package datawave.services.query.logic;
 
+import datawave.services.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.configuration.QueryData;
 import org.apache.accumulo.core.client.Connector;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface CheckpointableQueryLogic {
@@ -38,11 +41,13 @@ public interface CheckpointableQueryLogic {
      *
      * @param connection
      *            - The accumulo connector
+     * @param config
+     *            - The query configuration
      * @param checkpoint
-     *            - Encapsulates all information needed to run a portion of the query.
+     *            - the checkpoint
      * @throws Exception
      *             on failure
      */
-    void setupQuery(Connector connection, QueryCheckpoint checkpoint) throws Exception;
+    void setupQuery(Connector connection, GenericQueryConfiguration config, QueryCheckpoint checkpoint) throws Exception;
     
 }

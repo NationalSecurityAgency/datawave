@@ -9,6 +9,8 @@ import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.services.query.configuration.CheckpointableQueryConfiguration;
+import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.BaseQueryLogic;
 import datawave.services.query.logic.CheckpointableQueryLogic;
 import datawave.services.query.logic.QueryCheckpoint;
@@ -21,6 +23,11 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -67,7 +74,7 @@ public class QueryLogicTestHarness {
     // assert methods
     
     private void dumpCp(String start, QueryCheckpoint cp) {
-        cp.getConfig().getQueriesIter().forEachRemaining(qd -> {
+        cp.getQueries().iterator().forEachRemaining(qd -> {
             System.out.println(">>>> " + start + ": " + qd.getRanges() + " -> " + qd.getLastResult());
         });
     }
@@ -85,7 +92,7 @@ public class QueryLogicTestHarness {
      *            list of additional validation methods
      */
     public void assertLogicResults(BaseQueryLogic<Map.Entry<Key,Value>> logic, QueryLogicFactory factory, Collection<String> expected,
-                    List<DocumentChecker> checkers) {
+                    List<DocumentChecker> checkers) throws IOException, ClassNotFoundException {
         Set<String> actualResults = new HashSet<>();
         
         if (log.isDebugEnabled()) {
@@ -98,8 +105,14 @@ public class QueryLogicTestHarness {
         boolean disableCheckpoint = false;
         if (!disableCheckpoint && logic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) logic).isCheckpointable() && factory != null) {
             Queue<QueryCheckpoint> cps = new LinkedList<>();
-            Connector connection = logic.getConfig().getConnector();
+            GenericQueryConfiguration config = logic.getConfig();
+            Connector connection = config.getConnector();
             QueryKey queryKey = new QueryKey("default", logic.getConfig().getQuery().getId().toString(), logic.getLogicName());
+            // replace the config with that which would have been stored
+            if (config instanceof CheckpointableQueryConfiguration) {
+                config = ((CheckpointableQueryConfiguration) config).checkpoint();
+            }
+            
             cps.addAll(((CheckpointableQueryLogic) logic).checkpoint(queryKey));
             while (!cps.isEmpty()) {
                 QueryCheckpoint cp = cps.remove();
@@ -111,7 +124,7 @@ public class QueryLogicTestHarness {
                 }
                 // now reset the logic given the checkpoint
                 try {
-                    ((CheckpointableQueryLogic) logic).setupQuery(connection, cp);
+                    ((CheckpointableQueryLogic) logic).setupQuery(connection, config, cp);
                 } catch (Exception e) {
                     log.error("Failed to setup query given last checkpoint", e);
                     Assert.fail("Failed to setup query given last checkpoint: " + e.getMessage());

@@ -11,6 +11,7 @@ import datawave.microservice.query.storage.TaskStates;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetricClient;
 import datawave.microservice.querymetric.QueryMetricType;
+import datawave.services.query.configuration.CheckpointableQueryConfiguration;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.CheckpointableQueryLogic;
 import datawave.services.query.logic.QueryLogic;
@@ -64,6 +65,13 @@ public class CreateTask extends ExecutorTask {
         // update the query status plan
         log.debug("Setting plan for " + queryId);
         queryStatus.setPlan(config.getQueryString());
+        
+        // update the query status configuration
+        if (config instanceof CheckpointableQueryConfiguration) {
+            queryStatus.setConfig(((CheckpointableQueryConfiguration) config).checkpoint());
+        } else {
+            queryStatus.setConfig(config);
+        }
         
         // update the query metrics with the plan
         BaseQueryMetric baseQueryMetric = metricFactory.createMetric();

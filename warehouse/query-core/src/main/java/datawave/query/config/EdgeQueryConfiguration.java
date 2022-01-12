@@ -6,8 +6,6 @@ import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.services.query.configuration.CheckpointableQueryConfiguration;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.configuration.QueryData;
-import datawave.services.query.logic.QueryCheckpoint;
-import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 
@@ -123,14 +121,9 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration implements
     }
     
     @Override
-    public QueryCheckpoint checkpoint(QueryKey queryKey, Collection<QueryData> ranges) {
+    public EdgeQueryConfiguration checkpoint() {
         // Create a new config that only contains what is needed to execute the specified ranges
-        return new EdgeQueryConfiguration(this, ranges).checkpoint(queryKey);
-    }
-    
-    @Override
-    public QueryCheckpoint checkpoint(QueryKey queryKey) {
-        return new QueryCheckpoint(queryKey, this);
+        return new EdgeQueryConfiguration(this, getQueries());
     }
     
     /**

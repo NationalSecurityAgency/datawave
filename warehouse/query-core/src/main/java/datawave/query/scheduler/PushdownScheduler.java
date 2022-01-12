@@ -106,7 +106,7 @@ public class PushdownScheduler extends Scheduler {
             Iterator<QueryData> queries = getQueryDataIterator();
             List<QueryCheckpoint> checkpoints = new ArrayList<>();
             while (queries.hasNext()) {
-                checkpoints.add(config.checkpoint(queryKey, Collections.singleton(queries.next())));
+                checkpoints.add(new QueryCheckpoint(queryKey, Collections.singletonList(queries.next())));
             }
             return checkpoints;
         } else {

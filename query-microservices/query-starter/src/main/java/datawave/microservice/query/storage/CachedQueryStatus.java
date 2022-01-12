@@ -2,6 +2,7 @@ package datawave.microservice.query.storage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -228,6 +229,24 @@ public class CachedQueryStatus extends QueryStatus {
         try {
             forceCacheUpdateInsideSetter();
             queryStatus.setQuery(query);
+            cache.updateQueryStatus(queryStatus);
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    @Override
+    public GenericQueryConfiguration getConfig() {
+        return get().getConfig();
+    }
+    
+    @Override
+    public void setConfig(GenericQueryConfiguration config) {
+        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
+        lock.lock();
+        try {
+            forceCacheUpdateInsideSetter();
+            queryStatus.setConfig(config);
             cache.updateQueryStatus(queryStatus);
         } finally {
             lock.unlock();

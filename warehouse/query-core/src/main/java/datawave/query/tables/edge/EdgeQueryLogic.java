@@ -212,7 +212,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         
         addCustomFilters(qData, currentIteratorPriority);
         
-        config.setQueries(Collections.singleton(qData));
+        config.setQueries(Collections.singletonList(qData));
         
         return config;
     }
@@ -622,8 +622,9 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
     }
     
     @Override
-    public void setupQuery(Connector connection, QueryCheckpoint checkpoint) throws Exception {
-        EdgeQueryConfiguration config = (EdgeQueryConfiguration) checkpoint.getConfig();
+    public void setupQuery(Connector connection, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {
+        EdgeQueryConfiguration config = (EdgeQueryConfiguration) baseConfig;
+        baseConfig.setQueries(checkpoint.getQueries());
         config.setConnector(connection);
         
         scannerFactory = new ScannerFactory(connection);
@@ -643,13 +644,13 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
             for (SingleRangeQueryDataIterator it = new SingleRangeQueryDataIterator(getConfig().getQueries().iterator()); it.hasNext();) {
                 QueryData qd = it.next();
                 
-                checkpoints.add(getConfig().checkpoint(queryKey, Collections.singleton(qd)));
+                checkpoints.add(new QueryCheckpoint(queryKey, Collections.singletonList(qd)));
             }
             return checkpoints;
         }
         // otherwise we still need to plan or there are no results
         else {
-            return Lists.newArrayList(getConfig().checkpoint(queryKey));
+            return Lists.newArrayList(new QueryCheckpoint(queryKey));
         }
     }
     

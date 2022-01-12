@@ -1,14 +1,12 @@
 package datawave.services.query.configuration;
 
-import datawave.services.query.logic.QueryCheckpoint;
-import datawave.services.query.logic.QueryKey;
-
-import java.util.Collection;
-
 public interface CheckpointableQueryConfiguration {
     
-    QueryCheckpoint checkpoint(QueryKey queryKey, Collection<QueryData> ranges);
-    
-    QueryCheckpoint checkpoint(QueryKey queryKey);
-    
+    /**
+     * Create an instance of this configuration suitable for a checkpoint. Basically ensure that everything is copied that is required to continue execution of
+     * the query post create.
+     * 
+     * @return The configuration
+     */
+    GenericQueryConfiguration checkpoint();
 }

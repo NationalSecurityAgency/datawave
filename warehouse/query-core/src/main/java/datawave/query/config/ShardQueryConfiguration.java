@@ -30,8 +30,6 @@ import datawave.query.util.QueryStopwatch;
 import datawave.services.query.configuration.CheckpointableQueryConfiguration;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.configuration.QueryData;
-import datawave.services.query.logic.QueryCheckpoint;
-import datawave.services.query.logic.QueryKey;
 import datawave.util.TableName;
 import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
@@ -630,14 +628,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     @Override
-    public QueryCheckpoint checkpoint(QueryKey queryKey, Collection<QueryData> ranges) {
-        // Create a new config that only contains what is needed to execute the specified ranges
-        return new ShardQueryConfiguration(this, ranges).checkpoint(queryKey);
-    }
-    
-    @Override
-    public QueryCheckpoint checkpoint(QueryKey queryKey) {
-        return new QueryCheckpoint(queryKey, this);
+    public ShardQueryConfiguration checkpoint() {
+        return new ShardQueryConfiguration(this, getQueries());
     }
     
     /**

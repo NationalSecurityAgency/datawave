@@ -14,6 +14,7 @@ import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
@@ -40,7 +41,6 @@ import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.transformer.GroupingTransform;
-import datawave.query.attributes.UniqueFields;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
@@ -2288,15 +2288,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
     /**
      * Implementations use the configuration to setup execution of a portion of their query. getTransformIterator should be used to get the partial results if
      * any.
-     *
+     * 
      * @param connection
      *            The accumulo connection
+     * @param baseConfig
+     *            The shard query configuration
      * @param checkpoint
-     *            Encapsulates all information needed to run a portion of the query.
      */
     @Override
-    public void setupQuery(Connector connection, QueryCheckpoint checkpoint) throws Exception {
-        ShardQueryConfiguration config = (ShardQueryConfiguration) checkpoint.getConfig();
+    public void setupQuery(Connector connection, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {
+        ShardQueryConfiguration config = (ShardQueryConfiguration) baseConfig;
+        config.setQueries(checkpoint.getQueries());
         config.setConnector(connection);
         setScannerFactory(new ScannerFactory(config));
         
@@ -2336,7 +2338,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
             Iterator<QueryData> queries = getConfig().getQueriesIter();
             List<QueryCheckpoint> checkpoints = new ArrayList<>();
             while (queries.hasNext()) {
-                checkpoints.add(config.checkpoint(queryKey, Collections.singleton(queries.next())));
+                checkpoints.add(new QueryCheckpoint(queryKey, Collections.singletonList(queries.next())));
             }
             return checkpoints;
         }

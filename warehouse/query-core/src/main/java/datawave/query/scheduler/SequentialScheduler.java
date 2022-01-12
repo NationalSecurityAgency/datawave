@@ -185,11 +185,11 @@ public class SequentialScheduler extends Scheduler {
             close();
             List<QueryCheckpoint> checkpoints = new ArrayList<>();
             if (currentQuery != null) {
-                checkpoints.add(config.checkpoint(queryKey, Collections.singleton(currentQuery)));
+                checkpoints.add(new QueryCheckpoint(queryKey, Collections.singletonList(currentQuery)));
                 currentQuery = null;
             }
             while (queries.hasNext()) {
-                checkpoints.add(config.checkpoint(queryKey, Collections.singleton(queries.next())));
+                checkpoints.add(new QueryCheckpoint(queryKey, Collections.singletonList(queries.next())));
             }
             config.setQueries(null);
             config.setQueriesIter(null);
@@ -227,7 +227,7 @@ public class SequentialScheduler extends Scheduler {
             if (null == this.config) {
                 throw new IllegalArgumentException("Null configuration provided");
             }
-            return Lists.newArrayList(this.config.checkpoint(queryKey));
+            return Lists.newArrayList(new QueryCheckpoint(queryKey, config.getQueries()));
         }
     }
     

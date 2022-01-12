@@ -11,6 +11,7 @@ import com.google.common.collect.Sets;
 import datawave.data.type.Type;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.discovery.FindLiteralsAndPatternsVisitor.QueryValues;
 import datawave.query.exceptions.IllegalRangeArgumentException;
 import datawave.query.jexl.JexlASTHelper;
@@ -26,6 +27,7 @@ import datawave.query.tables.ShardIndexQueryTable;
 import datawave.query.util.MetadataHelper;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.configuration.QueryData;
+import datawave.services.query.logic.QueryCheckpoint;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -206,8 +208,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         return getConfig();
     }
     
-    public Collection<QueryData> createQueries(DiscoveryQueryConfiguration config) throws QueryException, TableNotFoundException, IOException,
-                    ExecutionException {
+    public List<QueryData> createQueries(DiscoveryQueryConfiguration config) throws QueryException, TableNotFoundException, IOException, ExecutionException {
         final List<QueryData> queries = Lists.newLinkedList();
         
         Set<String> familiesToSeek = Sets.newHashSet();

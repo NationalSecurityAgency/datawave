@@ -60,7 +60,7 @@ public class QueryTask implements Serializable {
     
     @Override
     public String toString() {
-        return getTaskKey() + " with " + getQueryCheckpoint().getConfig();
+        return getTaskKey() + " with " + getQueryCheckpoint().getQueries();
     }
     
     /**

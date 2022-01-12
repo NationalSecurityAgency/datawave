@@ -1,10 +1,11 @@
 package datawave.services.query.logic;
 
-import datawave.services.query.configuration.GenericQueryConfiguration;
+import datawave.services.query.configuration.QueryData;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.io.Serializable;
+import java.util.Collection;
 
 /**
  * A query checkpoint will be very different depending on the query logic. It is expected that whatever the query state is can be encoded in a map of
@@ -14,20 +15,20 @@ public class QueryCheckpoint implements Serializable {
     private static final long serialVersionUID = -9201879510622137934L;
     
     private final QueryKey queryKey;
-    private final GenericQueryConfiguration config;
+    private final Collection<QueryData> queries;
     
-    public QueryCheckpoint(String queryPool, String queryId, String queryLogic, GenericQueryConfiguration config) {
-        this(new QueryKey(queryPool, queryId, queryLogic), config);
+    public QueryCheckpoint(String queryPool, String queryId, String queryLogic, Collection<QueryData> queries) {
+        this(new QueryKey(queryPool, queryId, queryLogic), queries);
     }
     
     public QueryCheckpoint(QueryKey queryKey) {
         this.queryKey = queryKey;
-        this.config = null;
+        this.queries = null;
     }
     
-    public QueryCheckpoint(QueryKey queryKey, GenericQueryConfiguration config) {
+    public QueryCheckpoint(QueryKey queryKey, Collection<QueryData> queries) {
         this.queryKey = queryKey;
-        this.config = config;
+        this.queries = queries;
     }
     
     /**
@@ -40,30 +41,30 @@ public class QueryCheckpoint implements Serializable {
     }
     
     /**
-     * Get the configuration representing the state of the query.
-     * 
-     * @return The configuration
+     * Get the QueryData objects representing the state of the query.
+     *
+     * @return The QueryData objects representing the query checkpoint
      */
-    public GenericQueryConfiguration getConfig() {
-        return config;
+    public Collection<QueryData> getQueries() {
+        return queries;
     }
     
     @Override
     public String toString() {
-        return getQueryKey() + ": " + getConfig();
+        return getQueryKey() + ": " + getQueries();
     }
     
     @Override
     public boolean equals(Object o) {
         if (o instanceof QueryCheckpoint) {
             QueryCheckpoint other = (QueryCheckpoint) o;
-            return new EqualsBuilder().append(getQueryKey(), other.getQueryKey()).append(getConfig(), other.getConfig()).isEquals();
+            return new EqualsBuilder().append(getQueryKey(), other.getQueryKey()).append(getQueries(), other.getQueries()).isEquals();
         }
         return false;
     }
     
     @Override
     public int hashCode() {
-        return new HashCodeBuilder().append(getQueryKey()).append(getConfig()).toHashCode();
+        return new HashCodeBuilder().append(getQueryKey()).append(getQueries()).toHashCode();
     }
 }

@@ -3,6 +3,7 @@ package datawave.query.tables.edge;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.data.normalizer.Normalizer;
 import datawave.query.MockAccumuloRecordWriter;
+import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.BaseQueryLogic;
 import datawave.services.query.logic.CheckpointableQueryLogic;
 import datawave.services.query.logic.QueryCheckpoint;
@@ -150,7 +151,8 @@ public abstract class BaseEdgeQueryTest {
         boolean disableCheckpoint = false;
         if (!disableCheckpoint && logic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) logic).isCheckpointable() && factory != null) {
             Queue<QueryCheckpoint> cps = new LinkedList<>();
-            Connector connection = logic.getConfig().getConnector();
+            GenericQueryConfiguration config = logic.getConfig();
+            Connector connection = config.getConnector();
             QueryKey queryKey = new QueryKey("default", logic.getConfig().getQuery().getId().toString(), logic.getLogicName());
             cps.addAll(((CheckpointableQueryLogic) logic).checkpoint(queryKey));
             while (!cps.isEmpty()) {
@@ -164,7 +166,7 @@ public abstract class BaseEdgeQueryTest {
                 }
                 // now reset the logic given the checkpoint
                 try {
-                    ((CheckpointableQueryLogic) logic).setupQuery(connection, cp);
+                    ((CheckpointableQueryLogic) logic).setupQuery(connection, config, cp);
                 } catch (Exception e) {
                     log.error("Failed to setup query given last checkpoint", e);
                     Assert.fail("Failed to setup query given last checkpoint: " + e.getMessage());

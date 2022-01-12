@@ -138,8 +138,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         List<QueryCheckpoint> checkpoints = new ArrayList<>();
         for (ResultContext context : runningQueries) {
             if (!context.isFinished()) {
-                // TODO: Do we need a QueryData or will a ResultContext do
-                checkpoints.add(((ShardQueryConfiguration) config).checkpoint(queryKey, Collections.singleton((QueryData) context)));
+                checkpoints.add(new QueryCheckpoint(queryKey, Collections.singletonList((QueryData) context)));
             }
             
         }
@@ -147,7 +146,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         for (Iterator<List<ScannerChunk>> it = scannerBatches; it.hasNext();) {
             List<ScannerChunk> chunks = it.next();
             for (ScannerChunk chunk : chunks) {
-                checkpoints.add(((ShardQueryConfiguration) config).checkpoint(queryKey, Collections.singleton((QueryData) chunk.getContext())));
+                checkpoints.add(new QueryCheckpoint(queryKey, Collections.singletonList((QueryData) chunk.getContext())));
             }
         }
         return checkpoints;

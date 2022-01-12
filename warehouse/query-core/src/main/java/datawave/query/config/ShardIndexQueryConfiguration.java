@@ -6,13 +6,12 @@ import com.google.common.collect.Multimap;
 import datawave.query.tables.ShardIndexQueryTable;
 import datawave.services.query.configuration.CheckpointableQueryConfiguration;
 import datawave.services.query.configuration.QueryData;
-import datawave.services.query.logic.QueryCheckpoint;
-import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.data.Range;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -141,9 +140,9 @@ public class ShardIndexQueryConfiguration extends ShardQueryConfiguration implem
     }
     
     @Override
-    public QueryCheckpoint checkpoint(QueryKey queryKey, Collection<QueryData> ranges) {
-        // Create a new config that only contains what is needed to execute the specified ranges
-        return new ShardIndexQueryConfiguration(this, ranges).checkpoint(queryKey);
+    public ShardIndexQueryConfiguration checkpoint() {
+        // Create a new config that only contains what is needed to execute the ranges
+        return new ShardIndexQueryConfiguration(this, getQueries());
     }
     
     @Override

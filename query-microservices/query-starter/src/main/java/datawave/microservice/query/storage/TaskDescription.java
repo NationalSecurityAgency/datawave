@@ -2,9 +2,11 @@ package datawave.microservice.query.storage;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import datawave.services.query.configuration.GenericQueryConfiguration;
+import com.google.common.collect.Sets;
+import datawave.services.query.configuration.QueryData;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Collection;
 import java.util.Objects;
 
 /**
@@ -13,25 +15,25 @@ import java.util.Objects;
 @XmlRootElement
 public class TaskDescription {
     private final TaskKey taskKey;
-    private final GenericQueryConfiguration config;
+    private final Collection<QueryData> queries;
     
     @JsonCreator
-    public TaskDescription(@JsonProperty("taskKey") TaskKey taskKey, @JsonProperty("config") GenericQueryConfiguration config) {
+    public TaskDescription(@JsonProperty("taskKey") TaskKey taskKey, @JsonProperty("queries") Collection<QueryData> queries) {
         this.taskKey = taskKey;
-        this.config = config;
+        this.queries = queries;
     }
     
     public TaskKey getTaskKey() {
         return taskKey;
     }
     
-    public GenericQueryConfiguration getConfig() {
-        return config;
+    public Collection<QueryData> getQueries() {
+        return queries;
     }
     
     @Override
     public String toString() {
-        return getTaskKey() + " on " + getConfig();
+        return getTaskKey() + " on " + getQueries();
     }
     
     public String toDebug() {
@@ -45,11 +47,11 @@ public class TaskDescription {
         if (o == null || getClass() != o.getClass())
             return false;
         TaskDescription that = (TaskDescription) o;
-        return Objects.equals(taskKey, that.taskKey) && Objects.equals(config, that.config);
+        return Objects.equals(taskKey, that.taskKey) && Objects.equals(Sets.newHashSet(queries), Sets.newHashSet(that.queries));
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(taskKey, config);
+        return Objects.hash(taskKey, queries);
     }
 }
