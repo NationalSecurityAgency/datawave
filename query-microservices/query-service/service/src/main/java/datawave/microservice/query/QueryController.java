@@ -3,6 +3,7 @@ package datawave.microservice.query;
 import com.codahale.metrics.annotation.Timed;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.lookup.LookupService;
+import datawave.microservice.query.stream.StreamingProperties;
 import datawave.microservice.query.stream.StreamingService;
 import datawave.microservice.query.stream.listener.CountingResponseBodyEmitterListener;
 import datawave.microservice.query.web.annotation.EnrichQueryMetrics;
@@ -16,7 +17,9 @@ import datawave.webservice.result.QueryImplListResponse;
 import datawave.webservice.result.QueryLogicResponse;
 import datawave.webservice.result.VoidResponse;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 
 import javax.annotation.security.RolesAllowed;
+import java.util.List;
 
 @RestController
 @RequestMapping(path = "/v1", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -36,17 +40,20 @@ public class QueryController {
     private final LookupService lookupService;
     private final StreamingService streamingService;
     
+    private final StreamingProperties streamingProperties;
+    
     // Note: baseMethodStatsContext needs to be request scoped
     private final BaseMethodStatsFilter.BaseMethodStatsContext baseMethodStatsContext;
     // Note: queryMetricsEnrichmentContest needs to be request scoped
     private final QueryMetricsEnrichmentFilterAdvice.QueryMetricsEnrichmentContext queryMetricsEnrichmentContext;
     
     public QueryController(QueryManagementService queryManagementService, LookupService lookupService, StreamingService streamingService,
-                    BaseMethodStatsFilter.BaseMethodStatsContext baseMethodStatsContext,
+                    StreamingProperties streamingProperties, BaseMethodStatsFilter.BaseMethodStatsContext baseMethodStatsContext,
                     QueryMetricsEnrichmentFilterAdvice.QueryMetricsEnrichmentContext queryMetricsEnrichmentContext) {
         this.queryManagementService = queryManagementService;
         this.lookupService = lookupService;
         this.streamingService = streamingService;
+        this.streamingProperties = streamingProperties;
         this.baseMethodStatsContext = baseMethodStatsContext;
         this.queryMetricsEnrichmentContext = queryMetricsEnrichmentContext;
     }
@@ -271,19 +278,52 @@ public class QueryController {
         return queryManagementService.adminRemoveAll(currentUser);
     }
     
-    @Timed(name = "dw.query.executeQuery", absolute = true)
-    @RequestMapping(path = "{queryLogic}/execute", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
-            "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
-    public ResponseBodyEmitter execute(@PathVariable String queryLogic, @RequestParam MultiValueMap<String,String> parameters,
+    @Timed(name = "dw.query.createAndExecuteQuery", absolute = true)
+    @RequestMapping(path = "{queryLogic}/createAndExecute", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
+            "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public ResponseEntity<ResponseBodyEmitter> createAndExecute(@PathVariable String queryLogic, @RequestParam MultiValueMap<String,String> parameters,
                     @AuthenticationPrincipal ProxiedUserDetails currentUser, @RequestHeader HttpHeaders headers) throws QueryException {
-        String queryId = queryManagementService.create(queryLogic, parameters, currentUser).getResult();
+        MediaType contentType = determineContentType(headers.getAccept(), MediaType.parseMediaType(streamingProperties.getDefaultContentType()));
+        CountingResponseBodyEmitter emitter = baseMethodStatsContext.createCountingResponseBodyEmitter(streamingProperties.getCallTimeoutMillis());
+        String queryId = streamingService.createAndExecute(queryLogic, parameters, currentUser, new CountingResponseBodyEmitterListener(emitter, contentType));
         
         // unfortunately this needs to be set manually. ResponseBodyAdvice does not run for streaming endpoints
         queryMetricsEnrichmentContext.setMethodType(EnrichQueryMetrics.MethodType.CREATE);
         queryMetricsEnrichmentContext.setQueryId(queryId);
         
-        CountingResponseBodyEmitter emitter = baseMethodStatsContext.getCountingResponseBodyEmitter();
-        streamingService.execute(queryId, currentUser, new CountingResponseBodyEmitterListener(emitter, headers.getAccept()));
-        return emitter;
+        return createStreamingResponse(emitter, contentType);
+    }
+    
+    @Timed(name = "dw.query.executeQuery", absolute = true)
+    @RequestMapping(path = "{queryId}/execute", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+            "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public ResponseEntity<ResponseBodyEmitter> execute(@PathVariable String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser,
+                    @RequestHeader HttpHeaders headers) {
+        MediaType contentType = determineContentType(headers.getAccept(), MediaType.parseMediaType(streamingProperties.getDefaultContentType()));
+        CountingResponseBodyEmitter emitter = baseMethodStatsContext.createCountingResponseBodyEmitter(streamingProperties.getCallTimeoutMillis());
+        streamingService.execute(queryId, currentUser, new CountingResponseBodyEmitterListener(emitter, contentType));
+        
+        return createStreamingResponse(emitter, contentType);
+    }
+    
+    private MediaType determineContentType(List<MediaType> acceptedMediaTypes, MediaType defaultMediaType) {
+        MediaType mediaType = null;
+        
+        if (acceptedMediaTypes != null && !acceptedMediaTypes.isEmpty()) {
+            MediaType.sortBySpecificityAndQuality(acceptedMediaTypes);
+            mediaType = acceptedMediaTypes.get(0);
+        }
+        
+        if (mediaType == null || MediaType.ALL.equals(mediaType)) {
+            mediaType = defaultMediaType;
+        }
+        
+        return mediaType;
+    }
+    
+    private ResponseEntity<ResponseBodyEmitter> createStreamingResponse(ResponseBodyEmitter emitter, MediaType contentType) {
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.setContentType(contentType);
+        return new ResponseEntity<>(emitter, responseHeaders, HttpStatus.OK);
     }
 }

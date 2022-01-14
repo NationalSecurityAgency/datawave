@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -27,7 +28,7 @@ public class TestQueryResultsManager implements QueryResultsManager {
     public static final String TEST = "test";
     
     private final Map<String,Queue<Result>> queues = Collections.synchronizedMap(new HashMap<>());
-    private final Map<String,Set<String>> listenerToQueue = Collections.synchronizedMap(new HashMap<>());
+    private final Map<String,String> listenerToQueue = Collections.synchronizedMap(new HashMap<>());
     private final List<QueryResultsListener> listeners = new ArrayList<>();
     
     /**
@@ -42,8 +43,7 @@ public class TestQueryResultsManager implements QueryResultsManager {
     public QueryResultsListener createListener(String listenerId, String queueName) {
         TestListenerQuery listener = new TestListenerQuery(listenerId);
         synchronized (listenerToQueue) {
-            listenerToQueue.put(listener.getListenerId(), Collections.synchronizedSet(new HashSet<>()));
-            listenerToQueue.get(listenerId).add(queueName);
+            listenerToQueue.put(listener.getListenerId(), queueName);
         }
         listeners.add(listener);
         return listener;
@@ -64,8 +64,14 @@ public class TestQueryResultsManager implements QueryResultsManager {
     @Override
     public void deleteQuery(String name) {
         synchronized (listenerToQueue) {
-            for (Set<String> queues : listenerToQueue.values()) {
-                queues.remove(name);
+            Set<Map.Entry<String,String>> entriesToRemove = new HashSet<>();
+            for (Map.Entry<String,String> entry : listenerToQueue.entrySet()) {
+                if (entry.getValue().equals(name)) {
+                    entriesToRemove.add(entry);
+                }
+            }
+            for (Map.Entry<String,String> entry : entriesToRemove) {
+                listenerToQueue.remove(entry.getKey(), entry.getValue());
             }
         }
         queues.remove(name);
@@ -119,6 +125,8 @@ public class TestQueryResultsManager implements QueryResultsManager {
         private final LinkedBlockingQueue<Result> resultQueue = new LinkedBlockingQueue<>();
         private final String listenerId;
         private Thread thread;
+        private CountDownLatch stoppedLatch = new CountDownLatch(1);
+        private CountDownLatch closedLatch = new CountDownLatch(1);
         
         public TestListenerQuery(String listenerId) {
             this.listenerId = listenerId;
@@ -144,39 +152,71 @@ public class TestQueryResultsManager implements QueryResultsManager {
                         break;
                     }
                 }
+                
+                try {
+                    stoppedLatch.await();
+                } catch (Exception e) {
+                    log.error("Interrupted while waiting for latch");
+                }
+                
+                String queueId = listenerToQueue.get(listenerId);
+                if (queueId != null) {
+                    Queue<Result> queue = queues.get(queueId);
+                    if (queue != null) {
+                        queue.addAll(resultQueue);
+                    }
+                }
                 listenerToQueue.remove(listenerId);
+                closedLatch.countDown();
             }
         }
         
         public void run() {
             while (thread != null) {
                 if (listenerToQueue.containsKey(listenerId)) {
-                    for (String queue : listenerToQueue.get(listenerId)) {
-                        if (queues.containsKey(queue)) {
-                            Result result = queues.get(queue).poll();
-                            if (result != null) {
-                                message(result);
+                    String queue = listenerToQueue.get(listenerId);
+                    if (queues.containsKey(queue)) {
+                        Result result = queues.get(queue).poll();
+                        if (result != null) {
+                            if (!message(result)) {
+                                // if we aren't able to consume the result, put it back
+                                queues.get(queue).offer(result);
                             }
                         }
                     }
                 }
             }
+            stoppedLatch.countDown();
+            try {
+                closedLatch.await();
+            } catch (Exception e) {
+                log.error("Interrupted while waiting for latch");
+            }
         }
         
-        public void message(Result result) {
-            try {
-                result.setAcknowledgementCallback(status -> log.debug("result acknowledged"));
-                if (!resultQueue.offer(result, 10, TimeUnit.SECONDS)) {
-                    log.error("Messages are not being pulled off the queue in time.  " + result.getId() + " is being dropped!");
+        public boolean message(Result result) {
+            boolean success = false;
+            if (this.thread != null) {
+                try {
+                    result.setAcknowledgementCallback(status -> log.debug("result acknowledged"));
+                    if (!resultQueue.offer(result, 10, TimeUnit.SECONDS)) {
+                        log.error("Messages are not being pulled off the queue in time.  " + result.getId() + " is being dropped!");
+                    }
+                    success = true;
+                } catch (InterruptedException e) {
+                    throw new IllegalStateException(e);
                 }
-            } catch (InterruptedException e) {
-                throw new IllegalStateException(e);
             }
+            return success;
         }
         
         @Override
         public boolean hasResults() {
-            return !resultQueue.isEmpty();
+            if (this.thread != null) {
+                return !resultQueue.isEmpty();
+            } else {
+                return false;
+            }
         }
         
         @Override
@@ -187,11 +227,13 @@ public class TestQueryResultsManager implements QueryResultsManager {
         @Override
         public Result receive(long interval, TimeUnit timeUnit) {
             Result result = null;
-            try {
-                result = resultQueue.poll(interval, timeUnit);
-            } catch (InterruptedException e) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Interrupted while waiting for query results");
+            if (this.thread != null) {
+                try {
+                    result = resultQueue.poll(interval, timeUnit);
+                } catch (InterruptedException e) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Interrupted while waiting for query results");
+                    }
                 }
             }
             return result;

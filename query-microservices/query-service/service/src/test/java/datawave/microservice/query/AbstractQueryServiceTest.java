@@ -62,6 +62,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +88,8 @@ public abstract class AbstractQueryServiceTest {
     protected static final String TEST_QUERY_BEGIN = "20000101 000000.000";
     protected static final String TEST_QUERY_END = "20500101 000000.000";
     protected static final String TEST_VISIBILITY_MARKING = "ALL";
+    protected static final long TEST_MAX_RESULTS_OVERRIDE = 369L;
+    protected static final long TEST_PAGESIZE = 123L;
     
     @LocalServerPort
     protected int webServicePort;
@@ -147,7 +150,7 @@ public abstract class AbstractQueryServiceTest {
             List<DefaultField> fields = new ArrayList<>();
             for (Map.Entry<String,List<String>> entry : fieldValues.entrySet()) {
                 for (String value : entry.getValue()) {
-                    fields.add(new DefaultField(entry.getKey(), visibility, currentTime, value));
+                    fields.add(new DefaultField(entry.getKey(), visibility, new HashMap<>(), currentTime, value));
                 }
             }
             event.setFields(fields);
@@ -365,8 +368,8 @@ public abstract class AbstractQueryServiceTest {
         map.set(DefaultQueryParameters.QUERY_END, TEST_QUERY_END);
         map.set(ColumnVisibilitySecurityMarking.VISIBILITY_MARKING, TEST_VISIBILITY_MARKING);
         map.set(QUERY_MAX_CONCURRENT_TASKS, Integer.toString(1));
-        map.set(QUERY_MAX_RESULTS_OVERRIDE, Long.toString(369));
-        map.set(QUERY_PAGESIZE, Long.toString(123));
+        map.set(QUERY_MAX_RESULTS_OVERRIDE, Long.toString(TEST_MAX_RESULTS_OVERRIDE));
+        map.set(QUERY_PAGESIZE, Long.toString(TEST_PAGESIZE));
         return map;
     }
     

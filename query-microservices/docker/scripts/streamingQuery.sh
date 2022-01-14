@@ -84,7 +84,7 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "queryName=Developer Test Streaming Query" \
     --data-urlencode "pagesize=10" \
     --data-urlencode "pool=$POOL" \
-    ${DATAWAVE_ENDPOINT}/EventQuery/execute -o streamingResponse.xml
+    ${DATAWAVE_ENDPOINT}/EventQuery/createAndExecute -o streamingResponse.xml
 
 QUERY_ID=$(get_query_id < streamingResponse.xml)
 NUM_EVENTS=$(get_num_events < streamingResponse.xml)

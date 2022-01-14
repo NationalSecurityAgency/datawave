@@ -11,4 +11,8 @@ public interface StreamingResponseListener {
     default void close() {
         // do nothing
     }
+    
+    default void closeWithError(Throwable t) {
+        // do nothing
+    }
 }

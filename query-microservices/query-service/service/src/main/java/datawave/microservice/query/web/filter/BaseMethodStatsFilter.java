@@ -110,8 +110,8 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
         if (!(response instanceof CountingHttpServletResponseWrapper)) {
             response = new CountingHttpServletResponseWrapper(response);
         }
-        if (baseMethodStatsContext.getCountingResponseBodyEmitter() == null) {
-            baseMethodStatsContext.setCountingResponseBodyEmitter(new CountingResponseBodyEmitter((CountingHttpServletResponseWrapper) response));
+        if (baseMethodStatsContext.getCountingHttpServletResponseWrapper() == null) {
+            baseMethodStatsContext.setCountingHttpServletResponseWrapper((CountingHttpServletResponseWrapper) response);
         }
         
         chain.doFilter(request, response);
@@ -279,7 +279,7 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
     public static class BaseMethodStatsContext {
         private RequestMethodStats requestStats;
         private ResponseMethodStats responseStats;
-        private CountingResponseBodyEmitter countingResponseBodyEmitter;
+        private CountingHttpServletResponseWrapper countingHttpServletResponseWrapper;
         
         public RequestMethodStats getRequestStats() {
             return requestStats;
@@ -297,12 +297,16 @@ public abstract class BaseMethodStatsFilter extends OncePerRequestFilter {
             this.responseStats = responseStats;
         }
         
-        public CountingResponseBodyEmitter getCountingResponseBodyEmitter() {
-            return countingResponseBodyEmitter;
+        CountingHttpServletResponseWrapper getCountingHttpServletResponseWrapper() {
+            return countingHttpServletResponseWrapper;
         }
         
-        public void setCountingResponseBodyEmitter(CountingResponseBodyEmitter countingResponseBodyEmitter) {
-            this.countingResponseBodyEmitter = countingResponseBodyEmitter;
+        public void setCountingHttpServletResponseWrapper(CountingHttpServletResponseWrapper countingHttpServletResponseWrapper) {
+            this.countingHttpServletResponseWrapper = countingHttpServletResponseWrapper;
+        }
+        
+        public CountingResponseBodyEmitter createCountingResponseBodyEmitter(Long timeout) {
+            return new CountingResponseBodyEmitter(timeout, countingHttpServletResponseWrapper);
         }
     }
     

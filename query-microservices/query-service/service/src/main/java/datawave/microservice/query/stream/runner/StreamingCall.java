@@ -59,13 +59,14 @@ public class StreamingCall implements Callable<Void> {
                 }
             } while (!isFinished);
             
+            listener.close();
             return null;
         } catch (Exception e) {
             log.error("Error encountered while processing streaming results for query {}", queryId, e);
+            listener.closeWithError(e);
             throw e;
         } finally {
             baseQueryMetricOverride.remove();
-            listener.close();
         }
     }
     
