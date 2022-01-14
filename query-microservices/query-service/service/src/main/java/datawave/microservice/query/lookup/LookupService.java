@@ -6,6 +6,8 @@ import datawave.microservice.authorization.util.AuthorizationsUtil;
 import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryManagementService;
 import datawave.microservice.query.QueryParameters;
+import datawave.microservice.query.stream.StreamingService;
+import datawave.microservice.query.stream.listener.StreamingResponseListener;
 import datawave.query.data.UUIDType;
 import datawave.security.util.ProxiedEntityUtils;
 import datawave.services.query.logic.QueryLogic;
@@ -48,6 +50,7 @@ public class LookupService {
     
     public static final String LOOKUP_UUID_PAIRS = "uuidPairs";
     public static final String LUCENE_UUID_SYNTAX = "LUCENE-UUID";
+    public static final String LOOKUP_STREAMING = "streaming";
     
     private static final String CONTENT_QUERY_TERM_DELIMITER = ":";
     private static final String CONTENT_QUERY_VALUE_DELIMITER = "/";
@@ -58,29 +61,30 @@ public class LookupService {
     
     private final QueryLogicFactory queryLogicFactory;
     private final QueryManagementService queryManagementService;
+    private final StreamingService streamingService;
     
-    public LookupService(LookupProperties lookupProperties, QueryLogicFactory queryLogicFactory, QueryManagementService queryManagementService) {
+    public LookupService(LookupProperties lookupProperties, QueryLogicFactory queryLogicFactory, QueryManagementService queryManagementService,
+                    StreamingService streamingService) {
         this.lookupProperties = lookupProperties;
         this.queryLogicFactory = queryLogicFactory;
         this.queryManagementService = queryManagementService;
+        this.streamingService = streamingService;
     }
     
     /**
-     * Creates an event lookup query using the query logic associated with the given uuid type and parameters, and returns the first page of results.
+     * Creates a batch event lookup query using the query logic associated with the given uuid type(s) and parameters, and returns the first page of results.
      * <p>
      * Lookup queries will start running immediately. <br>
      * Auditing is performed before the query is started. <br>
+     * Each of the uuid pairs must map to the same query logic. <br>
      * After the first page is returned, the query will be closed.
      *
-     * @param uuidType
-     *            the uuid type, not null
-     * @param uuid
-     *            the uuid, not null
      * @param parameters
      *            the query parameters, not null
      * @param currentUser
      *            the user who called this method, not null
-     * @return a base query response containing the first page of results
+     * @param listener
+     *            the listener which will handle the result pages, not null
      * @throws BadRequestQueryException
      *             if parameter validation fails
      * @throws BadRequestQueryException
@@ -102,19 +106,16 @@ public class LookupService {
      * @throws QueryException
      *             if there is an unknown error
      */
-    public BaseQueryResponse lookupUUID(String uuidType, String uuid, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
-                    throws QueryException {
+    public void lookupUUID(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser, StreamingResponseListener listener) throws QueryException {
         String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
-            log.info("Request: lookupUUID/{}/{} from {} with params: {}", uuidType, uuid, user, parameters);
+            log.info("Request: lookupUUID from {} with params: {}", user, parameters);
         } else {
-            log.info("Request: lookupUUID/{}/{} from {}", uuidType, uuid, user);
+            log.info("Request: lookupUUID from {}", user);
         }
         
-        parameters.add(LOOKUP_UUID_PAIRS, String.join(LOOKUP_KEY_VALUE_DELIMITER, uuidType, uuid));
-        
         try {
-            return lookup(parameters, currentUser, false);
+            lookup(parameters, currentUser, listener);
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
@@ -160,13 +161,13 @@ public class LookupService {
     public BaseQueryResponse lookupUUID(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
         String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
-            log.info("Request: lookupUUID (batch) from {} with params: {}", user, parameters);
+            log.info("Request: lookupUUID from {} with params: {}", user, parameters);
         } else {
-            log.info("Request: lookupUUID (batch) from {}", user);
+            log.info("Request: lookupUUID from {}", user);
         }
         
         try {
-            return lookup(parameters, currentUser, false);
+            return lookup(parameters, currentUser, null);
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
@@ -176,20 +177,19 @@ public class LookupService {
     }
     
     /**
-     * Creates a content lookup query using the query logic associated with the given uuid type and parameters, and returns the first page of results.
+     * Creates a batch content lookup query using the query logic associated with the given uuid type(s) and parameters, and returns the first page of results.
      * <p>
      * Lookup queries will start running immediately. <br>
      * Auditing is performed before the query is started. <br>
+     * Each of the uuid pairs must map to the same query logic. <br>
      * After the first page is returned, the query will be closed.
      *
-     * @param uuidType
-     *            the uuid type, not null
-     * @param uuid
-     *            the uuid, not null
      * @param parameters
      *            the query parameters, not null
      * @param currentUser
      *            the user who called this method, not null
+     * @param listener
+     *            the listener which will handle the result pages, not null
      * @return a base query response containing the first page of results
      * @throws BadRequestQueryException
      *             if parameter validation fails
@@ -212,20 +212,18 @@ public class LookupService {
      * @throws QueryException
      *             if there is an unknown error
      */
-    public BaseQueryResponse lookupContentUUID(String uuidType, String uuid, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser)
+    public <T> T lookupContentUUID(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser, StreamingResponseListener listener)
                     throws QueryException {
         String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
-            log.info("Request: lookupContentUUID/{}/{} from {} with params: {}", uuidType, uuid, user, parameters);
+            log.info("Request: lookupContentUUID from {} with params: {}", user, parameters);
         } else {
-            log.info("Request: lookupContentUUID/{}/{} from {}", uuidType, uuid, user);
+            log.info("Request: lookupContentUUID from {}", user);
         }
-        
-        parameters.add(LOOKUP_UUID_PAIRS, String.join(LOOKUP_KEY_VALUE_DELIMITER, uuidType, uuid));
         
         try {
             // first lookup the UUIDs, then get the content for each UUID
-            return lookup(parameters, currentUser, true);
+            return lookupContent(parameters, currentUser, listener);
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
@@ -271,14 +269,14 @@ public class LookupService {
     public BaseQueryResponse lookupContentUUID(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
         String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
         if (log.isDebugEnabled()) {
-            log.info("Request: lookupContentUUID (batch) from {} with params: {}", user, parameters);
+            log.info("Request: lookupContentUUID from {} with params: {}", user, parameters);
         } else {
-            log.info("Request: lookupContentUUID (batch) from {}", user);
+            log.info("Request: lookupContentUUID from {}", user);
         }
         
         try {
             // first lookup the UUIDs, then get the content for each UUID
-            return lookup(parameters, currentUser, true);
+            return lookupContent(parameters, currentUser, null);
         } catch (QueryException e) {
             throw e;
         } catch (Exception e) {
@@ -287,7 +285,7 @@ public class LookupService {
         }
     }
     
-    private BaseQueryResponse lookup(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser, boolean isContentLookup) throws QueryException {
+    private <T> T lookup(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser, StreamingResponseListener listener) throws QueryException {
         List<String> lookupTerms = parameters.get(LOOKUP_UUID_PAIRS);
         if (lookupTerms == null || lookupTerms.isEmpty()) {
             log.error("Unable to validate lookupUUID parameters: No UUID Pairs");
@@ -299,32 +297,17 @@ public class LookupService {
         // validate the lookup terms
         LookupQueryLogic<?> lookupQueryLogic = validateLookupTerms(lookupTerms, lookupTermMap);
         
-        BaseQueryResponse response = null;
-        
-        boolean isEventLookupRequired = lookupQueryLogic.isEventLookupRequired(lookupTermMap);
-        
-        // do the event lookup if necessary
-        if (!isContentLookup || isEventLookupRequired) {
-            response = lookupEvents(lookupTermMap, lookupQueryLogic, new LinkedMultiValueMap<>(parameters), currentUser);
-        }
-        
-        // perform the content lookup if necessary
-        if (isContentLookup) {
-            Set<String> contentLookupTerms;
-            if (!isEventLookupRequired) {
-                contentLookupTerms = lookupQueryLogic.getContentLookupTerms(lookupTermMap);
-            } else {
-                contentLookupTerms = getContentLookupTerms(response);
-            }
-            
-            response = lookupContent(contentLookupTerms, new LinkedMultiValueMap<>(parameters), currentUser);
-        }
-        
-        return response;
+        // perform the event lookup
+        return lookupEvents(lookupTermMap, lookupQueryLogic, new LinkedMultiValueMap<>(parameters), currentUser, listener);
     }
     
     private BaseQueryResponse lookupEvents(MultiValueMap<String,String> lookupTermMap, LookupQueryLogic<?> lookupQueryLogic,
                     MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) throws QueryException {
+        return lookupEvents(lookupTermMap, lookupQueryLogic, parameters, currentUser, null);
+    }
+    
+    private <T> T lookupEvents(MultiValueMap<String,String> lookupTermMap, LookupQueryLogic<?> lookupQueryLogic, MultiValueMap<String,String> parameters,
+                    ProxiedUserDetails currentUser, StreamingResponseListener listener) throws QueryException {
         String queryId = null;
         try {
             // add the query logic name and query string to our parameters
@@ -334,16 +317,21 @@ public class LookupService {
             // update the parameters for query
             setEventQueryParameters(parameters, currentUser);
             
-            // run the query
-            BaseQueryResponse nextResponse = queryManagementService.createAndNext(parameters.getFirst(QUERY_LOGIC_NAME), parameters, currentUser);
+            // create the query
+            queryId = queryManagementService.create(parameters.getFirst(QUERY_LOGIC_NAME), parameters, currentUser).getResult();
             
-            // save the query id
-            queryId = nextResponse.getQueryId();
-            
-            return nextResponse;
+            if (listener != null) {
+                // stream results to the listener
+                streamingService.execute(queryId, currentUser, listener);
+                return null;
+            } else {
+                // get the first page of results
+                // noinspection unchecked
+                return (T) queryManagementService.next(queryId, currentUser);
+            }
         } finally {
             // close the query if applicable
-            if (queryId != null) {
+            if (listener == null && queryId != null) {
                 queryManagementService.close(queryId, currentUser);
             }
         }
@@ -464,6 +452,39 @@ public class LookupService {
         }
     }
     
+    private <T> T lookupContent(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser, StreamingResponseListener listener)
+                    throws QueryException {
+        List<String> lookupTerms = parameters.get(LOOKUP_UUID_PAIRS);
+        if (lookupTerms == null || lookupTerms.isEmpty()) {
+            log.error("Unable to validate lookupContentUUID parameters: No UUID Pairs");
+            throw new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER);
+        }
+        
+        MultiValueMap<String,String> lookupTermMap = new LinkedMultiValueMap<>();
+        
+        // validate the lookup terms
+        LookupQueryLogic<?> lookupQueryLogic = validateLookupTerms(lookupTerms, lookupTermMap);
+        
+        BaseQueryResponse response = null;
+        
+        boolean isEventLookupRequired = lookupQueryLogic.isEventLookupRequired(lookupTermMap);
+        
+        // do the event lookup if necessary
+        if (isEventLookupRequired) {
+            response = lookupEvents(lookupTermMap, lookupQueryLogic, new LinkedMultiValueMap<>(parameters), currentUser);
+        }
+        
+        // perform the content lookup
+        Set<String> contentLookupTerms;
+        if (!isEventLookupRequired) {
+            contentLookupTerms = lookupQueryLogic.getContentLookupTerms(lookupTermMap);
+        } else {
+            contentLookupTerms = getContentLookupTerms(response);
+        }
+        
+        return lookupContent(contentLookupTerms, parameters, currentUser, listener);
+    }
+    
     private Set<String> getContentLookupTerms(BaseQueryResponse response) {
         Set<String> contentQueries = new HashSet<>();
         
@@ -479,31 +500,40 @@ public class LookupService {
                         + String.join(CONTENT_QUERY_VALUE_DELIMITER, eventMetadata.getRow(), eventMetadata.getDataType(), eventMetadata.getInternalId());
     }
     
-    private BaseQueryResponse lookupContent(Set<String> contentLookupTerms, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) {
+    private <T> T lookupContent(Set<String> contentLookupTerms, MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser,
+                    StreamingResponseListener listener) throws QueryException {
         // create queries from the content lookup terms
         List<String> contentQueries = createContentQueries(contentLookupTerms);
         
         EventQueryResponseBase mergedResponse = null;
         for (String contentQuery : contentQueries) {
+            MultiValueMap<String,String> queryParameters = new LinkedMultiValueMap<>(parameters);
+            
             // set the content query string
-            parameters.put(QUERY_STRING, Collections.singletonList(contentQuery));
+            queryParameters.put(QUERY_STRING, Collections.singletonList(contentQuery));
             
             // update parameters for the query
-            setContentQueryParameters(parameters, currentUser);
+            setContentQueryParameters(queryParameters, currentUser);
             
-            // run the query
-            EventQueryResponseBase contentQueryResponse = runContentQuery(parameters, currentUser);
-            
-            if (contentQueryResponse != null) {
-                if (mergedResponse == null) {
-                    mergedResponse = contentQueryResponse;
-                } else {
-                    mergedResponse.merge(contentQueryResponse);
+            if (listener != null) {
+                streamingService.createAndExecute(parameters.getFirst(QUERY_LOGIC_NAME), parameters, currentUser, listener);
+            } else {
+                // run the query
+                EventQueryResponseBase contentQueryResponse = runContentQuery(queryParameters, currentUser);
+                
+                // merge the response
+                if (contentQueryResponse != null) {
+                    if (mergedResponse == null) {
+                        mergedResponse = contentQueryResponse;
+                    } else {
+                        mergedResponse.merge(contentQueryResponse);
+                    }
                 }
             }
-            
         }
-        return mergedResponse;
+        
+        // noinspection unchecked
+        return (T) mergedResponse;
     }
     
     private List<String> createContentQueries(Set<String> contentLookupTerms) {

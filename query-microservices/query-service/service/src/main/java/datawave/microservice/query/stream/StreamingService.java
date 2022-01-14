@@ -47,6 +47,8 @@ public class StreamingService {
      *            the query parameters, not null
      * @param currentUser
      *            the user who called this method, not null
+     * @param listener
+     *            the listener which will handle the result pages, not null
      * @return the query id
      * @throws BadRequestQueryException
      *             if parameter validation fails

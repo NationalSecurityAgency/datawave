@@ -33,6 +33,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter
 import javax.annotation.security.RolesAllowed;
 import java.util.List;
 
+import static datawave.microservice.query.lookup.LookupService.LOOKUP_STREAMING;
+import static datawave.microservice.query.lookup.LookupService.LOOKUP_UUID_PAIRS;
+import static datawave.services.query.logic.lookup.LookupQueryLogic.LOOKUP_KEY_VALUE_DELIMITER;
+
 @RestController
 @RequestMapping(path = "/v1", produces = MediaType.APPLICATION_JSON_VALUE)
 public class QueryController {
@@ -102,33 +106,67 @@ public class QueryController {
     @Timed(name = "dw.query.lookupUUID", absolute = true)
     @RequestMapping(path = "lookupUUID/{uuidType}/{uuid}", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json",
             "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
-    public BaseQueryResponse lookupUUID(@PathVariable(required = false) String uuidType, @PathVariable(required = false) String uuid,
-                    @RequestParam MultiValueMap<String,String> parameters, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
-        return lookupService.lookupUUID(uuidType, uuid, parameters, currentUser);
+    public Object lookupUUID(@PathVariable(required = false) String uuidType, @PathVariable(required = false) String uuid,
+                    @RequestParam MultiValueMap<String,String> parameters, @AuthenticationPrincipal ProxiedUserDetails currentUser,
+                    @RequestHeader HttpHeaders headers) throws QueryException {
+        parameters.add(LOOKUP_UUID_PAIRS, String.join(LOOKUP_KEY_VALUE_DELIMITER, uuidType, uuid));
+        
+        if (Boolean.parseBoolean(parameters.getFirst(LOOKUP_STREAMING))) {
+            MediaType contentType = determineContentType(headers.getAccept(), MediaType.parseMediaType(streamingProperties.getDefaultContentType()));
+            CountingResponseBodyEmitter emitter = baseMethodStatsContext.createCountingResponseBodyEmitter(streamingProperties.getCallTimeoutMillis());
+            lookupService.lookupUUID(parameters, currentUser, new CountingResponseBodyEmitterListener(emitter, contentType));
+            return emitter;
+        } else {
+            return lookupService.lookupUUID(parameters, currentUser);
+        }
     }
     
     @Timed(name = "dw.query.lookupUUIDBatch", absolute = true)
     @RequestMapping(path = "lookupUUID", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
-    public BaseQueryResponse lookupUUIDBatch(@PathVariable(required = false) String uuidType, @PathVariable(required = false) String uuid,
-                    @RequestParam MultiValueMap<String,String> parameters, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
-        return lookupService.lookupUUID(parameters, currentUser);
+    public Object lookupUUIDBatch(@RequestParam MultiValueMap<String,String> parameters, @AuthenticationPrincipal ProxiedUserDetails currentUser,
+                    @RequestHeader HttpHeaders headers) throws QueryException {
+        if (Boolean.parseBoolean(parameters.getFirst(LOOKUP_STREAMING))) {
+            MediaType contentType = determineContentType(headers.getAccept(), MediaType.parseMediaType(streamingProperties.getDefaultContentType()));
+            CountingResponseBodyEmitter emitter = baseMethodStatsContext.createCountingResponseBodyEmitter(streamingProperties.getCallTimeoutMillis());
+            lookupService.lookupUUID(parameters, currentUser, new CountingResponseBodyEmitterListener(emitter, contentType));
+            return emitter;
+        } else {
+            return lookupService.lookupUUID(parameters, currentUser);
+        }
     }
     
     @Timed(name = "dw.query.lookupContentUUID", absolute = true)
     @RequestMapping(path = "lookupContentUUID/{uuidType}/{uuid}", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json",
             "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
-    public BaseQueryResponse lookupContentUUID(@PathVariable(required = false) String uuidType, @PathVariable(required = false) String uuid,
-                    @RequestParam MultiValueMap<String,String> parameters, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
-        return lookupService.lookupContentUUID(uuidType, uuid, parameters, currentUser);
+    public Object lookupContentUUID(@PathVariable(required = false) String uuidType, @PathVariable(required = false) String uuid,
+                    @RequestParam MultiValueMap<String,String> parameters, @AuthenticationPrincipal ProxiedUserDetails currentUser,
+                    @RequestHeader HttpHeaders headers) throws QueryException {
+        parameters.add(LOOKUP_UUID_PAIRS, String.join(LOOKUP_KEY_VALUE_DELIMITER, uuidType, uuid));
+        
+        if (Boolean.parseBoolean(parameters.getFirst(LOOKUP_STREAMING))) {
+            MediaType contentType = determineContentType(headers.getAccept(), MediaType.parseMediaType(streamingProperties.getDefaultContentType()));
+            CountingResponseBodyEmitter emitter = baseMethodStatsContext.createCountingResponseBodyEmitter(streamingProperties.getCallTimeoutMillis());
+            lookupService.lookupContentUUID(parameters, currentUser, new CountingResponseBodyEmitterListener(emitter, contentType));
+            return emitter;
+        } else {
+            return lookupService.lookupContentUUID(parameters, currentUser);
+        }
     }
     
     @Timed(name = "dw.query.lookupContentUUIDBatch", absolute = true)
     @RequestMapping(path = "lookupContentUUID", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
-    public BaseQueryResponse lookupContentUUIDBatch(@PathVariable(required = false) String uuidType, @PathVariable(required = false) String uuid,
-                    @RequestParam MultiValueMap<String,String> parameters, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
-        return lookupService.lookupContentUUID(parameters, currentUser);
+    public Object lookupContentUUIDBatch(@RequestParam MultiValueMap<String,String> parameters, @AuthenticationPrincipal ProxiedUserDetails currentUser,
+                    @RequestHeader HttpHeaders headers) throws QueryException {
+        if (Boolean.parseBoolean(parameters.getFirst(LOOKUP_STREAMING))) {
+            MediaType contentType = determineContentType(headers.getAccept(), MediaType.parseMediaType(streamingProperties.getDefaultContentType()));
+            CountingResponseBodyEmitter emitter = baseMethodStatsContext.createCountingResponseBodyEmitter(streamingProperties.getCallTimeoutMillis());
+            lookupService.lookupContentUUID(parameters, currentUser, new CountingResponseBodyEmitterListener(emitter, contentType));
+            return emitter;
+        } else {
+            return lookupService.lookupContentUUID(parameters, currentUser);
+        }
     }
     
     @Timed(name = "dw.query.createAndNext", absolute = true)

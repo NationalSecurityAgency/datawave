@@ -265,38 +265,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
                 queryId,
                 queryRequestEvents.removeLast());
         // @formatter:on
-        
     }
-    
-    @Test
-    public void testBatchLookupUUIDSuccess() throws Exception {}
-    
-    @Test
-    public void testLookupContentUUIDSuccess() throws Exception {}
-    
-    @Test
-    public void testBatchLookupContentUUIDSuccess() throws Exception {}
-    
-    @Test
-    public void testBatchLookupUUIDFailure_noLookupUUIDPairs() throws Exception {}
-    
-    @Test
-    public void testBatchLookupUUIDFailure_mixedQueryLogics() throws Exception {}
-    
-    @Test
-    public void testBatchLookupUUIDFailure_nullUUIDType() throws Exception {}
-    
-    @Test
-    public void testBatchLookupUUIDFailure_emptyUUIDFieldValue() throws Exception {}
-    
-    @Test
-    public void testBatchLookupUUIDFailure_invalidUUIDPair() throws Exception {}
-    
-    @Test
-    public void testBatchLookupUUIDFailure_tooManyTerms() throws Exception {}
-    
-    @Test
-    public void testBatchLookupUUIDFailure_nonLookupQueryLogic() throws Exception {}
     
     protected Future<ResponseEntity<String>> createAndExecute(ProxiedUserDetails authUser, MultiValueMap<String,String> map) {
         UriComponents uri = createUri("EventQuery/createAndExecute");
