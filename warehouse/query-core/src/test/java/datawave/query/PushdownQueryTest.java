@@ -125,7 +125,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
     
     @Test
     public void testDelayedFilterIncludeRegex() throws Exception {
-        log.info("------  testErrorFilterIncludeRegex  ------");
+        log.info("------  testDelayedFilterIncludeRegex  ------");
         String state = "'ohio'";
         String code = "'itA'";
         for (final TestCities city : TestCities.values()) {
@@ -140,7 +140,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
     
     @Test
     public void testDelayedFilterIncludeRegexExpansion() throws Exception {
-        log.info("------  testErrorFilterIncludeRegexExpansion  ------");
+        log.info("------  testDelayedFilterIncludeRegexExpansion  ------");
         String state = "'ohio'";
         String code = "'itA'";
         for (final TestCities city : TestCities.values()) {
