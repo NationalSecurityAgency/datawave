@@ -312,7 +312,7 @@ public class DatawaveInterpreter extends Interpreter {
      * independently as that does not work when there are sets of values in the context. * * @param node * @return a collection of hits (or empty set) if we
      * evaluated a range. null otherwise.
      */
-    private Collection<?> evaluateRange(ASTAndNode node) {
+    protected Collection<?> evaluateRange(ASTAndNode node) {
         Collection<?> evaluation = null;
         
         LiteralRange range = JexlASTHelper.findRange().getRange(node);
@@ -562,7 +562,7 @@ public class DatawaveInterpreter extends Interpreter {
         }
     }
     
-    private Object visitExceededOrThresholdMarker(JexlNode node) {
+    protected Object visitExceededOrThresholdMarker(JexlNode node) {
         String id = ExceededOrThresholdMarkerJexlNode.getId(node);
         String field = ExceededOrThresholdMarkerJexlNode.getField(node);
         
