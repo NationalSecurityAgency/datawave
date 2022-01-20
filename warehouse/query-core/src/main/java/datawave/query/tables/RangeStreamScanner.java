@@ -34,7 +34,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
@@ -116,7 +115,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         currentQueue = Queues.newArrayDeque();
         readLock = queueLock.readLock();
         writeLock = queueLock.writeLock();
-        myExecutor = MoreExecutors.sameThreadExecutor();
+        myExecutor = MoreExecutors.newDirectExecutorService();
         if (null != stats)
             initializeTimers();
     }
@@ -134,7 +133,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         currentQueue = Queues.newArrayDeque();
         readLock = queueLock.readLock();
         writeLock = queueLock.writeLock();
-        myExecutor = MoreExecutors.sameThreadExecutor();
+        myExecutor = MoreExecutors.newDirectExecutorService();
         if (null != stats)
             initializeTimers();
     }

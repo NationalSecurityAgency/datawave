@@ -24,8 +24,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -418,7 +416,7 @@ public class MapReduceJobConfiguration {
         Path destination = new Path(classpath, outputName);
         try (FSDataOutputStream hadoopOutputStream = fs.create(destination, false); JarOutputStream jarOutputStream = new JarOutputStream(hadoopOutputStream)) {
             boolean first = true;
-            for (File candidate : Files.fileTreeTraverser().preOrderTraversal(sourceDir)) {
+            for (File candidate : Files.fileTraverser().depthFirstPreOrder(sourceDir)) {
                 // Skip the first node since it's the root node of the tree and equates to the directory "/" in the jar, which we don't want to add.
                 if (first) {
                     first = false;

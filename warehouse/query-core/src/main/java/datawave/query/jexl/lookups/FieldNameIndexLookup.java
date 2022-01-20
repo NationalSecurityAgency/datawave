@@ -24,7 +24,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.function.Function;
 
 /**
  * An asynchronous index lookup which Looks up field names from the index which match the provided set of terms, and optionally limits them to the specified
@@ -71,7 +70,7 @@ public class FieldNameIndexLookup extends AsyncIndexLookup {
         if (indexLookupMap == null) {
             indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
             
-            Iterator<Entry<Key,Value>> iter = Iterators.emptyIterator();
+            Iterator<Entry<Key,Value>> iter = Collections.emptyIterator();
             
             ScannerSession bs;
             

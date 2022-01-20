@@ -182,7 +182,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         script = QueryModelVisitor.applyModel(script, getQueryModel(), allFields);
         
         QueryValues literalsAndPatterns = FindLiteralsAndPatternsVisitor.find(script);
-        Stopwatch timer = new Stopwatch();
+        Stopwatch timer = Stopwatch.createUnstarted();
         timer.start();
         // no caching for getAllNormalizers, so try some magic with getFields...
         Multimap<String,Type<?>> dataTypeMap = ArrayListMultimap.create(metadataHelper.getFieldsToDatatypes(getConfig().getDatatypeFilter()));

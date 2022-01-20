@@ -90,6 +90,11 @@ i=1
 QUERY_ID=$(get_query_id < createResponse.xml)
 
 while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
+    if [ "$PAUSE" == "true" ]; then
+        echo "press any key to continue"
+        read -n 1
+    fi
+
     echo "$(date): Requesting page $i for $QUERY_ID"
     echo "$(date): Requesting page $i for $QUERY_ID" >> querySummary.txt
     curl -s -D headers_$i.txt -q -k -E ${TMP_PEM} \
@@ -105,11 +110,6 @@ while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
         echo "$(date): Page $i contained $NUM_EVENTS events"
 
         ((i++))
-    fi
-
-    if [ "$PAUSE" == "true" ]; then
-        echo "press any key to continue"
-        read -n 1
     fi
 done
 

@@ -17,7 +17,7 @@ public class TermFilter<T> implements Funnel<T> {
     
     @Override
     public void funnel(T from, PrimitiveSink into) {
-        into.putString(from.toString());
+        into.putUnencodedChars(from.toString());
     }
     
 }

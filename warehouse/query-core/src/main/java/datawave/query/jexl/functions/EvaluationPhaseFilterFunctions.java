@@ -5,8 +5,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.data.type.Type;
 import datawave.query.attributes.ValueTuple;
-import datawave.query.jexl.JexlPatternCache;
 import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.JexlPatternCache;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.log4j.Logger;
 
@@ -108,7 +108,7 @@ public class EvaluationPhaseFilterFunctions {
         if (log.isDebugEnabled())
             log.debug("evaluate(" + obj + ", size=" + size + " " + operatorString + ", " + count + ")");
         // clean up, in case they input extra spaces in or around the operator
-        switch (CharMatcher.WHITESPACE.removeFrom(operatorString)) {
+        switch (CharMatcher.whitespace().removeFrom(operatorString)) {
             case "<":
                 return size < count;
             case "<=":
@@ -130,7 +130,7 @@ public class EvaluationPhaseFilterFunctions {
     private static boolean evaluate(long term1, long term2, String operatorString, String equalityString, long goalResult) {
         long result = calculate(term1, term2, operatorString);
         // clean up, in case they input extra spaces in or around the equalityString
-        switch (CharMatcher.WHITESPACE.removeFrom(equalityString)) {
+        switch (CharMatcher.whitespace().removeFrom(equalityString)) {
             case "<":
                 return result < goalResult;
             case "<=":
@@ -151,7 +151,7 @@ public class EvaluationPhaseFilterFunctions {
     
     private static long calculate(long term1, long term2, String operatorString) {
         // clean up, in case they input extra spaces in or around the operatorString
-        switch (CharMatcher.WHITESPACE.removeFrom(operatorString)) {
+        switch (CharMatcher.whitespace().removeFrom(operatorString)) {
             case "+":
                 return term1 + term2;
             case "-":
@@ -1856,7 +1856,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return the comparison result
      */
     private static boolean compareFields(FunctionalSet<ValueTuple> set1, FunctionalSet<ValueTuple> set2, String operator, boolean matchAny) {
-        switch (CharMatcher.WHITESPACE.removeFrom(operator)) {
+        switch (CharMatcher.whitespace().removeFrom(operator)) {
             case "==":
             case "=":
                 return areNormalizedValuesEqual(set1, set2, matchAny);

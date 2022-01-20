@@ -56,7 +56,7 @@ public class SharedBoolean implements Closeable, SharedBooleanReader, Listenable
     }
     
     public void addListener(SharedBooleanListener listener) {
-        this.addListener((SharedBooleanListener) listener, MoreExecutors.sameThreadExecutor());
+        this.addListener((SharedBooleanListener) listener, MoreExecutors.directExecutor());
     }
     
     public void addListener(final SharedBooleanListener listener, Executor executor) {

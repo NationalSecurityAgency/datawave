@@ -3,7 +3,6 @@ package datawave.query.tables;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
@@ -204,7 +203,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
         
         delegatorReference = super.sessionDelegator;
         
-        scannerBatches = Iterators.emptyIterator();
+        scannerBatches = Collections.emptyIterator();
         
         currentBatch = Queues.newLinkedBlockingDeque();
         
@@ -517,7 +516,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Resu
             runnableCount.incrementAndGet();
             runningQueries.add((QueryData) (scan.getScannerChunk().getContext()));
         }
-        Futures.addCallback(future, this);
+        Futures.addCallback(future, this, MoreExecutors.directExecutor());
     }
     
     /**

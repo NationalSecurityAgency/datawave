@@ -282,7 +282,16 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             // until we've completed the start process
             if (null != stats)
                 initializeTimers();
-            startAndWait();
+            startAsync();
+            try {
+                awaitRunning();
+            } catch (IllegalStateException e) {
+                // TERMINATED indicates that the thread is no longer
+                // running a that it completed execution normally
+                if (state() != State.TERMINATED) {
+                    throw e;
+                }
+            }
             
         }
         
@@ -406,7 +415,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 flush();
                 return;
             }
-            stop();
+            stopAsync();
             
             return;
         }
@@ -670,7 +679,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
     
     public void close() {
         forceClose = true;
-        stop();
+        stopAsync();
         synchronized (sessionDelegator) {
             if (null != delegatedResource) {
                 try {

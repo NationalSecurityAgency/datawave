@@ -1,13 +1,15 @@
 package datawave.core.iterators;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.google.common.base.Stopwatch;
+import com.google.common.base.Ticker;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Sets;
 import datawave.marking.MarkingFunctions;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -21,15 +23,11 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.log4j.Logger;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.KryoSerializable;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import com.google.common.base.Stopwatch;
-import com.google.common.base.Ticker;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Sets;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <p>
@@ -116,13 +114,13 @@ public class ResultCountingIterator extends WrappingIterator {
         Stopwatch consumeSW = null, processResultSW = null, ioWaitSW = null;
         
         if (log.isTraceEnabled()) {
-            consumeSW = new Stopwatch();
-            processResultSW = new Stopwatch();
-            ioWaitSW = new Stopwatch();
+            consumeSW = Stopwatch.createUnstarted();
+            processResultSW = Stopwatch.createUnstarted();
+            ioWaitSW = Stopwatch.createUnstarted();
         } else {
-            consumeSW = new Stopwatch(zeroTicker);
-            processResultSW = new Stopwatch(zeroTicker);
-            ioWaitSW = new Stopwatch(zeroTicker);
+            consumeSW = Stopwatch.createUnstarted(zeroTicker);
+            processResultSW = Stopwatch.createUnstarted(zeroTicker);
+            ioWaitSW = Stopwatch.createUnstarted(zeroTicker);
         }
         
         consumeSW.start();
@@ -172,9 +170,9 @@ public class ResultCountingIterator extends WrappingIterator {
         }
         
         if (log.isTraceEnabled()) {
-            log.trace(threadName + ": Total consume() time: " + consumeSW.elapsedMillis());
-            log.trace(threadName + ": Total next()/hasNext() time: " + ioWaitSW.elapsedMillis());
-            log.trace(threadName + ": Total internal time: " + processResultSW.elapsedMillis());
+            log.trace(threadName + ": Total consume() time: " + consumeSW.elapsed().toMillis());
+            log.trace(threadName + ": Total next()/hasNext() time: " + ioWaitSW.elapsed().toMillis());
+            log.trace(threadName + ": Total internal time: " + processResultSW.elapsed().toMillis());
         }
     }
     
@@ -198,9 +196,9 @@ public class ResultCountingIterator extends WrappingIterator {
         
         if (log.isTraceEnabled()) {
             log.trace(threadName + ": getTopValue()");
-            sw = new Stopwatch();
+            sw = Stopwatch.createUnstarted();
         } else {
-            sw = new Stopwatch(zeroTicker);
+            sw = Stopwatch.createUnstarted(zeroTicker);
         }
         
         sw.start();
@@ -222,7 +220,7 @@ public class ResultCountingIterator extends WrappingIterator {
         
         sw.stop();
         if (log.isTraceEnabled()) {
-            log.trace(threadName + ": Elapsed getTopValue(): " + sw.elapsedMillis());
+            log.trace(threadName + ": Elapsed getTopValue(): " + sw.elapsed().toMillis());
         }
         
         return new Value(baos.toByteArray());

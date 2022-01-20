@@ -1,5 +1,13 @@
 package datawave.query.tables;
 
+import com.google.common.base.Preconditions;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -8,16 +16,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterators;
 
 /**
  * Purpose: Basic Iterable resource. Contains the connector from which we will create the scanners.
@@ -83,7 +81,7 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
      */
     @Override
     public Iterator<Entry<Key,Value>> iterator() {
-        return Iterators.emptyIterator();
+        return Collections.emptyIterator();
     }
     
     public static final class ResourceFactory {

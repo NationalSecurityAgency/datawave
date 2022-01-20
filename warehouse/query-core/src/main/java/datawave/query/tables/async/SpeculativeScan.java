@@ -100,7 +100,7 @@ public class SpeculativeScan extends Scan implements FutureCallback<Scan>, Uncau
             scans.add(scan);
             ListenableFuture<Scan> future = (ListenableFuture<Scan>) service.submit(scan);
             scanFutures.add(future);
-            Futures.addCallback(future, this);
+            Futures.addCallback(future, this, MoreExecutors.directExecutor());
         }
         return true;
     }

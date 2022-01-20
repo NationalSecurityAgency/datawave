@@ -11,6 +11,7 @@
     <version>1.0-SNAPSHOT</version>
     <properties>
         <version.datawave>3.11.0-SNAPSHOT</version.datawave>
+        <version.guava>31.0.1-jre</version.guava>
         <version.microservice.hazelcast-client>1.7-SNAPSHOT</version.microservice.hazelcast-client>
         <version.microservice.starter>1.6.6-SNAPSHOT</version.microservice.starter>
         <version.microservice.starter-metadata>1.0-SNAPSHOT</version.microservice.starter-metadata>
@@ -18,6 +19,11 @@
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${version.guava}</version>
+            </dependency>
             <dependency>
                 <groupId>com.zaxxer</groupId>
                 <artifactId>SparseBitSet</artifactId>

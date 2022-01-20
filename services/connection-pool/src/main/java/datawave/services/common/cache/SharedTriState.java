@@ -75,7 +75,7 @@ public class SharedTriState implements Closeable, SharedTriStateReader, Listenab
     }
     
     public void addListener(SharedTriStateListener listener) {
-        this.addListener((SharedTriStateListener) listener, MoreExecutors.sameThreadExecutor());
+        this.addListener((SharedTriStateListener) listener, MoreExecutors.directExecutor());
     }
     
     public void addListener(final SharedTriStateListener listener, Executor executor) {

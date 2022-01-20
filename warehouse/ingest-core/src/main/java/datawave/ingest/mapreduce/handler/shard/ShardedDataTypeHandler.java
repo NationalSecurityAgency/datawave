@@ -585,7 +585,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             
             try {
                 // Create and start the stopwatch
-                final Stopwatch stopWatch = new Stopwatch();
+                final Stopwatch stopWatch = Stopwatch.createUnstarted();
                 stopWatch.start();
                 
                 // Create the bloom filter, which may involve NGram expansion

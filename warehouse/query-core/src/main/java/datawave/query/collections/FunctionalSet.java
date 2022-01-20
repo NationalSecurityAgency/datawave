@@ -1,7 +1,9 @@
 package datawave.query.collections;
 
+import com.google.common.base.CharMatcher;
 import com.google.common.collect.Sets;
 import datawave.data.type.NumberType;
+import datawave.data.type.Type;
 import datawave.query.attributes.ValueTuple;
 import org.apache.log4j.Logger;
 
@@ -14,9 +16,6 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
-
-import com.google.common.base.CharMatcher;
-import datawave.data.type.Type;
 
 public class FunctionalSet<T extends ValueTuple> implements Set<T> {
     
@@ -362,7 +361,7 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
                 Class typeClass = nextType.getClass();
                 Type referenceType = Type.Factory.createType(typeClass.getName());
                 referenceType.setDelegateFromString(reference.toString());
-                switch (CharMatcher.WHITESPACE.removeFrom(operatorString)) {
+                switch (CharMatcher.whitespace().removeFrom(operatorString)) {
                     case "<":
                         if (nextType.normalize().compareTo(referenceType.normalize()) < 0) {
                             values.add(next);
