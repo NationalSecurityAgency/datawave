@@ -679,16 +679,21 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         
         if (null != maskedFieldHelper && maskedFieldHelper.contains(column)) {
             // These Keys are for the index, so if they are masked, we really want to use the normalized masked values
+            // It was observed that the normalized mask values aren't coming back reversed, so account for that before creating the row.
             final String normalizedMaskedValue = helper.getNormalizedMaskedValue(column);
+            StringBuilder rev = new StringBuilder();
+            rev.append(normalizedMaskedValue);
+            rev.reverse();
             
+            String newMaskedValue = rev.toString();
             Text colf = new Text(column);
             Text colq = new Text(shardId);
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
             
             // Dont create index entries for empty values
-            if (!StringUtils.isEmpty(normalizedMaskedValue)) {
+            if (!StringUtils.isEmpty(newMaskedValue)) {
                 // Create a key for the masked field value with the masked visibility
-                Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getDate(), false);
+                Key k = this.createIndexKey(newMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getDate(), false);
                 
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, indexValue);
