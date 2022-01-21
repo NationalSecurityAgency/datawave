@@ -1,10 +1,12 @@
 package datawave.microservice.common.storage;
 
+import com.ctc.wstx.io.InputBootstrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.messaging.QueryResultsManager;
+import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryState;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
@@ -13,10 +15,15 @@ import datawave.microservice.query.storage.TaskDescription;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskLockException;
 import datawave.microservice.query.storage.TaskStates;
+import datawave.query.iterator.QueryIterator;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.services.query.configuration.QueryData;
+import datawave.services.query.logic.QueryCheckpoint;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryStorageStateServiceTest"})
+@ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryStorageStateServiceTest", "use-hazelcast"})
 @EnableRabbit
 public class QueryStorageStateServiceTest {
     
@@ -107,11 +114,15 @@ public class QueryStorageStateServiceTest {
         auths.add(new Authorizations("FOO", "BAR"));
         TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
         assertNotNull(key);
+        InputBootstrapper stap;
+        QueryData queryData = new QueryData("table", "query", Collections.singleton(new Range("shard1")),
+                        Collections.singletonList(new IteratorSetting(10, "query", QueryIterator.class.getName())));
+        QueryTask task2 = storageService.createTask(QueryRequest.Method.NEXT, new QueryCheckpoint(key.getQueryKey(), Collections.singletonList(queryData)));
         QueryTask storedTask = storageService.getTask(key);
         assertNotNull(storedTask);
         List<TaskKey> storedTasks = storageService.getTasks(key.getQueryId());
         assertNotNull(storedTasks);
-        assertEquals(1, storedTasks.size());
+        assertEquals(2, storedTasks.size());
         
         QueryStorageStateService storageStateService = new TestQueryStateService("Administrator");
         
@@ -124,7 +135,7 @@ public class QueryStorageStateServiceTest {
         
         List<TaskDescription> tasks = storageStateService.getTasks(key.getQueryId().toString());
         QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
-        assertEquals(1, tasks.size());
+        assertEquals(2, tasks.size());
         assertQueryCreate(key.getQueryId(), queryPool, query, tasks.get(0), queryStatus);
     }
     

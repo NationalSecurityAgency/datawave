@@ -317,8 +317,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         return getConfig();
     }
     
-    public Collection<QueryData> createQueries(ShardIndexQueryConfiguration config) throws QueryException, TableNotFoundException, IOException,
-                    ExecutionException {
+    public List<QueryData> createQueries(ShardIndexQueryConfiguration config) throws QueryException, TableNotFoundException, IOException, ExecutionException {
         final List<QueryData> queries = Lists.newLinkedList();
         
         for (Entry<String,String> termEntry : getConfig().getNormalizedTerms().entries()) {
@@ -409,15 +408,17 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     /**
      * Implementations use the configuration to setup execution of a portion of their query. getTransformIterator should be used to get the partial results if
      * any.
-     *
+     * 
      * @param connection
      *            The accumulo connection
+     * @param baseConfig
+     *            The shard query configuration
      * @param checkpoint
-     *            Encapsulates all information needed to run a portion of the query.
      */
     @Override
-    public void setupQuery(Connector connection, QueryCheckpoint checkpoint) throws Exception {
-        ShardQueryConfiguration config = (ShardQueryConfiguration) checkpoint.getConfig();
+    public void setupQuery(Connector connection, GenericQueryConfiguration baseConfig, QueryCheckpoint checkpoint) throws Exception {
+        ShardIndexQueryConfiguration config = (ShardIndexQueryConfiguration) baseConfig;
+        baseConfig.setQueries(checkpoint.getQueries());
         config.setConnector(connection);
         
         scannerFactory = new ScannerFactory(connection);
@@ -455,13 +456,13 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         if (this.iterator != null) {
             List<QueryCheckpoint> checkpoints = Lists.newLinkedList();
             for (QueryData qd : getConfig().getQueries()) {
-                checkpoints.add(getConfig().checkpoint(queryKey, Collections.singleton(qd)));
+                checkpoints.add(new QueryCheckpoint(queryKey, Collections.singletonList(qd)));
             }
             return checkpoints;
         }
         // otherwise we still need to plan or there are no results
         else {
-            return Lists.newArrayList(getConfig().checkpoint(queryKey));
+            return Lists.newArrayList(new QueryCheckpoint(queryKey));
         }
     }
     

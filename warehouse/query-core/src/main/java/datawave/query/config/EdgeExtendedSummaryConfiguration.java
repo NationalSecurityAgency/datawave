@@ -1,18 +1,16 @@
 package datawave.query.config;
 
 import datawave.query.edge.DefaultExtendedEdgeQueryLogic;
-import datawave.services.query.configuration.CheckpointableQueryConfiguration;
 import datawave.services.query.configuration.QueryData;
-import datawave.services.query.logic.QueryCheckpoint;
-import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
-public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration implements Serializable, CheckpointableQueryConfiguration {
+public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration implements Serializable {
     
     public static final String SUMMARIZE = "summarize";
     public static final String LIMITED_JEXL = "LIMITED_JEXL";
@@ -84,14 +82,9 @@ public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration imp
     }
     
     @Override
-    public QueryCheckpoint checkpoint(QueryKey queryKey, Collection<QueryData> ranges) {
+    public EdgeExtendedSummaryConfiguration checkpoint() {
         // Create a new config that only contains what is needed to execute the specified ranges
-        return new EdgeExtendedSummaryConfiguration(this, ranges).checkpoint(queryKey);
-    }
-    
-    @Override
-    public QueryCheckpoint checkpoint(QueryKey queryKey) {
-        return new QueryCheckpoint(queryKey, this);
+        return new EdgeExtendedSummaryConfiguration(this, getQueries());
     }
     
     /**

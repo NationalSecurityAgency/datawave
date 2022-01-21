@@ -30,7 +30,7 @@ public class ResultsTask extends ExecutorTask {
         if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
             CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
             
-            cpQueryLogic.setupQuery(connector, task.getQueryCheckpoint());
+            cpQueryLogic.setupQuery(connector, queryStatus.getConfig(), task.getQueryCheckpoint());
             
             log.debug("Pulling results for  " + task.getTaskKey() + ": " + task.getQueryCheckpoint());
             

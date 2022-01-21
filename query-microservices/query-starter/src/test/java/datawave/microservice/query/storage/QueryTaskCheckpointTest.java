@@ -6,11 +6,16 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.zaxxer.sparsebits.SparseBitSet;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.services.query.configuration.QueryData;
 import datawave.services.query.logic.QueryCheckpoint;
 import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.QueryImpl;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -113,10 +118,13 @@ public class QueryTaskCheckpointTest {
         query.setQuery("foo == bar");
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setQuery(query);
-        QueryCheckpoint qcp = new QueryCheckpoint(queryPool, uuid, queryLogic, config);
+        QueryData queryData = new QueryData("table", "logic", Collections.singletonList(new Range()),
+                        Collections.singletonList(new IteratorSetting(10, "test", "test")));
+        config.setQueries(Collections.singletonList(queryData));
+        QueryCheckpoint qcp = new QueryCheckpoint(queryPool, uuid, queryLogic, config.getQueries());
         
         assertEquals(queryPool, qcp.getQueryKey().getQueryPool());
-        assertEquals(config, qcp.getConfig());
+        assertEquals(Collections.singletonList(queryData), qcp.getQueries());
         assertEquals(uuid, qcp.getQueryKey().getQueryId());
         
         String uuid2 = uuid;
@@ -127,8 +135,9 @@ public class QueryTaskCheckpointTest {
         query2.setQuery("foo == bar");
         ShardQueryConfiguration config2 = new ShardQueryConfiguration();
         config2.setQuery(query2);
+        config2.setQueries(Collections.singletonList(queryData));
         assertEquals(config, config2);
-        QueryCheckpoint qcp2 = new QueryCheckpoint(queryPool2, uuid2, queryLogic2, config2);
+        QueryCheckpoint qcp2 = new QueryCheckpoint(queryPool2, uuid2, queryLogic2, config2.getQueries());
         
         assertEquals(qcp, qcp2);
         assertEquals(qcp.hashCode(), qcp2.hashCode());
@@ -140,13 +149,13 @@ public class QueryTaskCheckpointTest {
         otherQuery.setQueryName("bar");
         ShardQueryConfiguration otherConfig = new ShardQueryConfiguration();
         otherConfig.setQuery(otherQuery);
-        QueryCheckpoint otherCp = new QueryCheckpoint(otherPool, uuid, queryLogic, config);
+        QueryCheckpoint otherCp = new QueryCheckpoint(otherPool, uuid, queryLogic, config.getQueries());
         assertNotEquals(otherCp, qcp);
-        otherCp = new QueryCheckpoint(queryPool, otherId, queryLogic, config);
+        otherCp = new QueryCheckpoint(queryPool, otherId, queryLogic, config.getQueries());
         assertNotEquals(otherCp, qcp);
-        otherCp = new QueryCheckpoint(queryPool, uuid, otherLogic, config);
+        otherCp = new QueryCheckpoint(queryPool, uuid, otherLogic, config.getQueries());
         assertNotEquals(otherCp, qcp);
-        otherCp = new QueryCheckpoint(queryPool, uuid, queryLogic, otherConfig);
+        otherCp = new QueryCheckpoint(queryPool, uuid, queryLogic, otherConfig.getQueries());
         assertNotEquals(otherCp, qcp);
     }
     
@@ -160,7 +169,10 @@ public class QueryTaskCheckpointTest {
         query.setQuery("foo == bar");
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setQuery(query);
-        QueryCheckpoint qcp = new QueryCheckpoint(queryPool, uuid, queryLogic, config);
+        QueryData queryData = new QueryData("table", "logic", Collections.singletonList(new Range()),
+                        Collections.singletonList(new IteratorSetting(10, "test", "test")));
+        config.setQueries(Collections.singletonList(queryData));
+        QueryCheckpoint qcp = new QueryCheckpoint(queryPool, uuid, queryLogic, config.getQueries());
         QueryTask task = new QueryTask(0, QueryRequest.Method.CREATE, qcp);
         
         assertEquals(QueryRequest.Method.CREATE, task.getAction());
@@ -174,7 +186,8 @@ public class QueryTaskCheckpointTest {
         query2.setQuery("foo == bar");
         ShardQueryConfiguration config2 = new ShardQueryConfiguration();
         config2.setQuery(query2);
-        QueryCheckpoint qcp2 = new QueryCheckpoint(queryPool2, uuid2, queryLogic2, config2);
+        config2.setQueries(Collections.singletonList(queryData));
+        QueryCheckpoint qcp2 = new QueryCheckpoint(queryPool2, uuid2, queryLogic2, config2.getQueries());
         assertEquals(qcp, qcp2);
         QueryTask task2 = new QueryTask(task.getTaskKey().getTaskId(), QueryRequest.Method.CREATE, qcp2);
         
@@ -183,7 +196,7 @@ public class QueryTaskCheckpointTest {
         assertEquals(task.getTaskKey(), task2.getTaskKey());
         
         String otherId = UUID.randomUUID().toString();
-        QueryCheckpoint otherCp = new QueryCheckpoint(queryPool, otherId, queryLogic, config);
+        QueryCheckpoint otherCp = new QueryCheckpoint(queryPool, otherId, queryLogic, config.getQueries());
         QueryTask otherTask = new QueryTask(1, QueryRequest.Method.CREATE, qcp);
         assertNotEquals(otherTask, task);
         assertNotEquals(otherTask.getTaskKey(), task.getTaskKey());
@@ -205,10 +218,14 @@ public class QueryTaskCheckpointTest {
         query.setQuery("foo == bar");
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setQuery(query);
-        TaskDescription desc = new TaskDescription(key, config);
+        QueryData queryData = new QueryData("table", "logic",
+                        Collections.singletonList(new Range(new Key("row1", "cf1", "cq1", "(FOO)"), true, new Key("row2", "cf2", "cq2", "(BAR)"), false)),
+                        Collections.singletonList(new IteratorSetting(10, "test", "test", Collections.singletonMap("key", "value"))));
+        config.setQueries(Collections.singletonList(queryData));
+        TaskDescription desc = new TaskDescription(key, config.getQueries());
         
         assertEquals(key, desc.getTaskKey());
-        assertEquals(config, desc.getConfig());
+        assertEquals(config.getQueries(), desc.getQueries());
         
         String json = new ObjectMapper().registerModule(new GuavaModule()).writeValueAsString(desc);
         TaskDescription desc2 = new ObjectMapper().registerModule(new GuavaModule()).readerFor(TaskDescription.class).readValue(json);
@@ -222,7 +239,8 @@ public class QueryTaskCheckpointTest {
         query2.setQuery("foo == bar");
         ShardQueryConfiguration config2 = new ShardQueryConfiguration();
         config2.setQuery(query2);
-        desc2 = new TaskDescription(key2, config2);
+        config2.setQueries(Collections.singletonList(queryData));
+        desc2 = new TaskDescription(key2, config2.getQueries());
         
         assertEquals(desc, desc2);
         assertEquals(desc.hashCode(), desc.hashCode());
@@ -233,9 +251,9 @@ public class QueryTaskCheckpointTest {
         otherQuery.setQuery("foo == bar");
         ShardQueryConfiguration otherConfig = new ShardQueryConfiguration();
         otherConfig.setQuery(otherQuery);
-        TaskDescription otherDesc = new TaskDescription(otherKey, config);
+        TaskDescription otherDesc = new TaskDescription(otherKey, config.getQueries());
         assertNotEquals(otherDesc, desc);
-        otherDesc = new TaskDescription(key, otherConfig);
+        otherDesc = new TaskDescription(key, otherConfig.getQueries());
         assertNotEquals(otherDesc, desc);
     }
     

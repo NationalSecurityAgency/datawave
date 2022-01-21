@@ -3,14 +3,12 @@ package datawave.query.discovery;
 import com.google.common.collect.Multimap;
 import datawave.query.config.ShardIndexQueryConfiguration;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.tables.ShardIndexQueryTable;
 import datawave.services.query.configuration.QueryData;
-import datawave.services.query.logic.QueryCheckpoint;
-import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -136,9 +134,9 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
     }
     
     @Override
-    public QueryCheckpoint checkpoint(QueryKey queryKey, Collection<QueryData> ranges) {
+    public DiscoveryQueryConfiguration checkpoint() {
         // Create a new config that only contains what is needed to execute the specified ranges
-        return new DiscoveryQueryConfiguration(this, ranges).checkpoint(queryKey);
+        return new DiscoveryQueryConfiguration(this, getQueries());
     }
     
     @Override

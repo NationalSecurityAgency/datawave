@@ -193,7 +193,7 @@ public class TaskCache {
     private List<TaskDescription> getTaskDescriptions(List<QueryTask> tasks) {
         List<TaskDescription> descriptions = new ArrayList<>();
         for (QueryTask task : tasks) {
-            descriptions.add(new TaskDescription(task.getTaskKey(), task.getQueryCheckpoint().getConfig()));
+            descriptions.add(new TaskDescription(task.getTaskKey(), task.getQueryCheckpoint().getQueries()));
         }
         return descriptions;
     }

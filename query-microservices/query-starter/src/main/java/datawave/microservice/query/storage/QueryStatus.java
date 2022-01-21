@@ -2,6 +2,7 @@ package datawave.microservice.query.storage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.QueryKey;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -30,6 +31,7 @@ public class QueryStatus implements Serializable {
     private QueryKey queryKey;
     private QUERY_STATE queryState = QUERY_STATE.DEFINED;
     private Query query;
+    private GenericQueryConfiguration config;
     private Set<String> calculatedAuths;
     @JsonIgnore
     private Set<Authorizations> calculatedAuthorizations;
@@ -120,6 +122,14 @@ public class QueryStatus implements Serializable {
     
     public void setQuery(Query query) {
         this.query = query;
+    }
+    
+    public GenericQueryConfiguration getConfig() {
+        return config;
+    }
+    
+    public void setConfig(GenericQueryConfiguration config) {
+        this.config = config;
     }
     
     public Set<String> getCalculatedAuths() {
