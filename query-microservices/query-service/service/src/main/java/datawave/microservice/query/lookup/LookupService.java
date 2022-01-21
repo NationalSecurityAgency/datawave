@@ -516,7 +516,7 @@ public class LookupService {
             setContentQueryParameters(queryParameters, currentUser);
             
             if (listener != null) {
-                streamingService.createAndExecute(parameters.getFirst(QUERY_LOGIC_NAME), parameters, currentUser, listener);
+                streamingService.createAndExecute(queryParameters.getFirst(QUERY_LOGIC_NAME), queryParameters, currentUser, listener);
             } else {
                 // run the query
                 EventQueryResponseBase contentQueryResponse = runContentQuery(queryParameters, currentUser);

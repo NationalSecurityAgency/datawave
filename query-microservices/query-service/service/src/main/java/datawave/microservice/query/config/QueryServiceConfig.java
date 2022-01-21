@@ -64,7 +64,7 @@ public class QueryServiceConfig {
     
     @RefreshScope
     @Bean
-    public ThreadPoolTaskExecutor streamingExecutor(StreamingProperties streamingProperties) {
+    public ThreadPoolTaskExecutor streamingCallExecutor(StreamingProperties streamingProperties) {
         ThreadPoolTaskExecutorProperties executorProperties = streamingProperties.getExecutor();
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(executorProperties.getCorePoolSize());

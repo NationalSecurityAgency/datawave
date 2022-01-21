@@ -23,12 +23,12 @@ public class StreamingService {
     private final QueryManagementService queryManagementService;
     private final QueryMetricClient queryMetricClient;
     
-    private final ThreadPoolTaskExecutor streamingExecutor;
+    private final ThreadPoolTaskExecutor streamingCallExecutor;
     
-    public StreamingService(QueryManagementService queryManagementService, QueryMetricClient queryMetricClient, ThreadPoolTaskExecutor streamingExecutor) {
+    public StreamingService(QueryManagementService queryManagementService, QueryMetricClient queryMetricClient, ThreadPoolTaskExecutor streamingCallExecutor) {
         this.queryManagementService = queryManagementService;
         this.queryMetricClient = queryMetricClient;
-        this.streamingExecutor = streamingExecutor;
+        this.streamingCallExecutor = streamingCallExecutor;
     }
     
     /**
@@ -103,7 +103,7 @@ public class StreamingService {
     
     private void submitStreamingCall(String queryId, ProxiedUserDetails currentUser, StreamingResponseListener listener) {
         // @formatter:off
-        streamingExecutor.submit(
+        streamingCallExecutor.submit(
                 new StreamingCall.Builder()
                         .setQueryManagementService(queryManagementService)
                         .setQueryMetricClient(queryMetricClient)

@@ -286,9 +286,10 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             try {
                 awaitRunning();
             } catch (IllegalStateException e) {
-                // TERMINATED indicates that the thread is no longer
-                // running a that it completed execution normally
-                if (state() != State.TERMINATED) {
+                // This is thrown if the state is anything other than RUNNING
+                // STOPPING, and TERMINATED are valid as they indicate successful execution
+                // FAILED is not ok, and should be thrown
+                if (state() == State.FAILED) {
                     throw e;
                 }
             }

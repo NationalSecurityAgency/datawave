@@ -22,7 +22,7 @@ public class StreamingProperties {
     @NotEmpty
     private String defaultContentType = MediaType.APPLICATION_JSON_VALUE;
     
-    private ThreadPoolTaskExecutorProperties executor = new ThreadPoolTaskExecutorProperties(10, 100, 100, "streamingQuery-");
+    private ThreadPoolTaskExecutorProperties executor = new ThreadPoolTaskExecutorProperties(10, 100, 100, "streamingCall-");
     
     public long getCallTimeout() {
         return callTimeout;
