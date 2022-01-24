@@ -1,0 +1,4 @@
+[submodule "query-microservices/query-metric"]
+	path = query-microservices/query-metric
+	url = git@github.com:NationalSecurityAgency/datawave-query-metric-service.git
+	branch = feature/spring-boot-2.4

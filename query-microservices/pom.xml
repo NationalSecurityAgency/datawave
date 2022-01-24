@@ -11,6 +11,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>metadata-starter</module>
+        <module>query-metric</module>
         <module>query-service</module>
         <module>query-starter</module>
         <module>query-storage</module>
