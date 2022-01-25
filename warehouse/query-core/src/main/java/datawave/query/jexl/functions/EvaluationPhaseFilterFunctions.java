@@ -7,6 +7,7 @@ import datawave.data.type.Type;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.query.collections.FunctionalSet;
+import datawave.util.OperationEvaluator;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.log4j.Logger;
 
@@ -105,63 +106,10 @@ public class EvaluationPhaseFilterFunctions {
     
     private static boolean evaluateSizeOf(Object obj, String operatorString, int count) {
         int size = getSizeOf(obj);
-        if (log.isDebugEnabled())
+        if (log.isDebugEnabled()) {
             log.debug("evaluate(" + obj + ", size=" + size + " " + operatorString + ", " + count + ")");
-        // clean up, in case they input extra spaces in or around the operator
-        switch (CharMatcher.WHITESPACE.removeFrom(operatorString)) {
-            case "<":
-                return size < count;
-            case "<=":
-                return size <= count;
-            case "==":
-                return size == count;
-            case "=":
-                return size == count;
-            case ">=":
-                return size >= count;
-            case ">":
-                return size > count;
-            case "!=":
-                return size != count;
         }
-        throw new IllegalArgumentException("cannot use " + operatorString + " in this equation");
-    }
-    
-    private static boolean evaluate(long term1, long term2, String operatorString, String equalityString, long goalResult) {
-        long result = calculate(term1, term2, operatorString);
-        // clean up, in case they input extra spaces in or around the equalityString
-        switch (CharMatcher.WHITESPACE.removeFrom(equalityString)) {
-            case "<":
-                return result < goalResult;
-            case "<=":
-                return result <= goalResult;
-            case "==":
-                return result == goalResult;
-            case "=":
-                return result == goalResult;
-            case ">=":
-                return result >= goalResult;
-            case ">":
-                return result > goalResult;
-            case "!=":
-                return result != goalResult;
-        }
-        throw new IllegalArgumentException("cannot use " + equalityString + " in this equation");
-    }
-    
-    private static long calculate(long term1, long term2, String operatorString) {
-        // clean up, in case they input extra spaces in or around the operatorString
-        switch (CharMatcher.WHITESPACE.removeFrom(operatorString)) {
-            case "+":
-                return term1 + term2;
-            case "-":
-                return term1 - term2;
-            case "*":
-                return term1 * term2;
-            case "/":
-                return term1 / term2;
-        }
-        throw new IllegalArgumentException("cannot use " + operatorString + " in this equation");
+        return OperationEvaluator.compare(size, count, operatorString);
     }
     
     /**
@@ -1487,7 +1435,8 @@ public class EvaluationPhaseFilterFunctions {
     public static FunctionalSet<ValueTuple> timeFunction(Object time1, Object time2, String operatorString, String equalityString, long goal) {
         FunctionalSet<ValueTuple> matches = new FunctionalSet();
         try {
-            boolean truth = evaluate(getMaxTime(time1), getMinTime(time2), operatorString, equalityString, goal);
+            long calculation = OperationEvaluator.calculate(getMaxTime(time1), getMinTime(time2), operatorString);
+            boolean truth = OperationEvaluator.compare(calculation, goal, equalityString);
             if (truth) {
                 matches.addAll(Sets.newHashSet(getHitTerm(getMaxValue(time1)), getHitTerm(getMinValue(time2))));
             }
