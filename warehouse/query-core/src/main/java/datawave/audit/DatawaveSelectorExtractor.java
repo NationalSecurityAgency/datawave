@@ -17,7 +17,6 @@ public class DatawaveSelectorExtractor implements SelectorExtractor {
     @Override
     public List<String> extractSelectors(Query query) throws IllegalArgumentException {
         List<String> selectorList = new ArrayList<>();
-        List<ASTEQNode> eqNodes = null;
         QueryNode node = null;
         ASTJexlScript jexlScript = null;
         
@@ -36,13 +35,13 @@ public class DatawaveSelectorExtractor implements SelectorExtractor {
         }
         
         if (jexlScript != null) {
-            eqNodes = JexlASTHelper.getPositiveEQNodes(jexlScript);
-        }
-        
-        for (ASTEQNode n : eqNodes) {
-            Object literal = JexlASTHelper.getLiteralValue(n);
-            if (literal != null) {
-                selectorList.add(literal.toString());
+            List<ASTEQNode> eqNodes = JexlASTHelper.getPositiveEQNodes(jexlScript);
+            
+            for (ASTEQNode n : eqNodes) {
+                Object literal = JexlASTHelper.getLiteralValue(n);
+                if (literal != null) {
+                    selectorList.add(literal.toString());
+                }
             }
         }
         return selectorList;

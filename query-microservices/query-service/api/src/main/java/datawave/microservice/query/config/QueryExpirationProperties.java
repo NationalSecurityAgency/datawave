@@ -21,6 +21,10 @@ public class QueryExpirationProperties {
     @NotNull
     private TimeUnit callTimeUnit = TimeUnit.MINUTES;
     @Positive
+    private long callTimeoutInterval = 1;
+    @NotNull
+    private TimeUnit callTimeoutIntervalUnit = TimeUnit.MINUTES;
+    @Positive
     private long pageMinTimeout = 1;
     @NotNull
     private TimeUnit pageMinTimeUnit = TimeUnit.MINUTES;
@@ -95,6 +99,26 @@ public class QueryExpirationProperties {
     
     public void setCallTimeUnit(TimeUnit callTimeUnit) {
         this.callTimeUnit = callTimeUnit;
+    }
+    
+    public long getCallTimeoutInterval() {
+        return callTimeoutInterval;
+    }
+    
+    public long getCallTimeoutIntervalMillis() {
+        return callTimeoutIntervalUnit.toMillis(callTimeoutInterval);
+    }
+    
+    public void setCallTimeoutInterval(long callTimeoutInterval) {
+        this.callTimeoutInterval = callTimeoutInterval;
+    }
+    
+    public TimeUnit getCallTimeoutIntervalUnit() {
+        return callTimeoutIntervalUnit;
+    }
+    
+    public void setCallTimeoutIntervalUnit(TimeUnit callTimeoutIntervalUnit) {
+        this.callTimeoutIntervalUnit = callTimeoutIntervalUnit;
     }
     
     public long getPageMinTimeout() {

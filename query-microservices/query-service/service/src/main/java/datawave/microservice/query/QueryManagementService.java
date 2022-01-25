@@ -80,6 +80,7 @@ import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CANCEL
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSED;
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATED;
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.DEFINED;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.FAILED;
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.PLANNED;
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.PREDICTED;
 import static datawave.webservice.query.QueryImpl.DN_LIST;
@@ -592,23 +593,37 @@ public class QueryManagementService implements QueryRequestHandler {
             queryLatchMap.put(request.getQueryId(), new CountDownLatch(1));
         }
         
-        // publish a plan event to the executor pool
+        // publish an event to the executor pool
         publishExecutorEvent(request, getPoolName());
         
         if (isAwaitResponse) {
+            // TODO: Should we incorporate the call start time into this check?
+            long startTimeMillis = System.currentTimeMillis();
+            
             log.info("Waiting on query {} response from the executor.", request.getMethod().name());
-            // wait for the executor to finish creating the query
+            
             try {
-                // TODO: Should we incorporate the call start time into this check?
-                if (!queryLatchMap.get(request.getQueryId()).await(queryProperties.getExpiration().getCallTimeout(),
-                                queryProperties.getExpiration().getCallTimeUnit())) {
-                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Timed out waiting for query " + request.getMethod().name() + " to finish.");
-                } else {
-                    log.info("Received query {} response from the executor.", request.getMethod().name());
+                boolean isFinished = false;
+                while (!isFinished && System.currentTimeMillis() < (startTimeMillis + queryProperties.getExpiration().getCallTimeoutMillis())) {
+                    try {
+                        // wait for the executor response
+                        if (queryLatchMap.get(request.getQueryId()).await(queryProperties.getExpiration().getCallTimeoutInterval(),
+                                        queryProperties.getExpiration().getCallTimeoutIntervalUnit())) {
+                            log.info("Received query {} response from the executor.", request.getMethod().name());
+                            isFinished = true;
+                        }
+                        
+                        // did the request fail?
+                        QueryStatus queryStatus = queryStorageCache.getQueryStatus(request.getQueryId());
+                        if (queryStorageCache.getQueryStatus(request.getQueryId()).getQueryState() == FAILED) {
+                            log.error("Query {} failed for queryId {}: {}", request.getMethod().name(), request.getQueryId(), queryStatus.getFailureMessage());
+                            throw new QueryException(queryStatus.getErrorCode(), "Query " + request.getMethod().name() + " failed for queryId "
+                                            + request.getQueryId() + ": " + queryStatus.getFailureMessage());
+                        }
+                    } catch (InterruptedException e) {
+                        log.warn("Interrupted while waiting for query {} latch for queryId {}", request.getMethod().name(), request.getQueryId());
+                    }
                 }
-            } catch (InterruptedException e) {
-                log.warn("Interrupted while waiting for query {} latch for queryId {}", request.getMethod().name(), request.getQueryId());
-                throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Interrupted while waiting for query " + request.getMethod().name() + " to finish.");
             } finally {
                 queryLatchMap.remove(request.getQueryId());
             }

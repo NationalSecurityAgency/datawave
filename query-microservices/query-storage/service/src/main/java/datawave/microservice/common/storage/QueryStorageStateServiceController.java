@@ -1,6 +1,5 @@
 package datawave.microservice.common.storage;
 
-import datawave.microservice.query.storage.QueryState;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStatusCache;
 import datawave.microservice.query.storage.TaskCache;
@@ -38,15 +37,15 @@ public class QueryStorageStateServiceController implements QueryStorageStateServ
     @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
     @RequestMapping(path = "/queries", method = RequestMethod.GET)
     @Override
-    public List<QueryState> getRunningQueries() {
-        List<QueryState> queries = new ArrayList<>();
+    public List<datawave.microservice.query.storage.QueryState> getRunningQueries() {
+        List<datawave.microservice.query.storage.QueryState> queries = new ArrayList<>();
         for (QueryStatus query : queryStatusCache.getQueryStatus()) {
             if (query.getQueryState() == QueryStatus.QUERY_STATE.CREATED || query.getQueryState() == QueryStatus.QUERY_STATE.DEFINED
                             || query.getQueryState() == QueryStatus.QUERY_STATE.CLOSED) {
                 TaskStates taskStates = taskStatesCache.getTaskStates(query.getQueryKey().getQueryId());
                 if (taskStates.isCreatingTasks() || taskStates.hasRunningTasks()
                                 || (query.getQueryState() != QueryStatus.QUERY_STATE.CLOSED && taskStates.hasUnfinishedTasks())) {
-                    queries.add(new QueryState(query, taskStates));
+                    queries.add(new datawave.microservice.query.storage.QueryState(query, taskStates));
                 }
             }
         }
@@ -57,10 +56,10 @@ public class QueryStorageStateServiceController implements QueryStorageStateServ
     @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
     @RequestMapping(path = "/query/{id}", method = RequestMethod.GET)
     @Override
-    public QueryState getQuery(@PathVariable("id") String queryId) {
+    public datawave.microservice.query.storage.QueryState getQuery(@PathVariable("id") String queryId) {
         QueryStatus query = queryStatusCache.getQueryStatus(queryId);
         if (query != null) {
-            return new QueryState(query, taskStatesCache.getTaskStates(queryId));
+            return new datawave.microservice.query.storage.QueryState(query, taskStatesCache.getTaskStates(queryId));
         }
         return null;
     }
