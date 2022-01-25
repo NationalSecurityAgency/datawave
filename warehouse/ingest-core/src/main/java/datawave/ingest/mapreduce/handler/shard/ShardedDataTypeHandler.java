@@ -681,17 +681,19 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // These Keys are for the index, so if they are masked, we really want to use the normalized masked values
             // It was observed that the normalized mask values aren't coming back reversed, so account for that before creating the row.
             final String normalizedMaskedValue = helper.getNormalizedMaskedValue(column);
-            StringBuilder rev = new StringBuilder();
-            rev.append(normalizedMaskedValue);
-            rev.reverse();
             
-            String newMaskedValue = rev.toString();
             Text colf = new Text(column);
             Text colq = new Text(shardId);
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
             
             // Dont create index entries for empty values
-            if (!StringUtils.isEmpty(newMaskedValue)) {
+            if (!StringUtils.isEmpty(normalizedMaskedValue)) {
+                StringBuilder rev = new StringBuilder();
+                rev.append(normalizedMaskedValue);
+                rev.reverse();
+                String newMaskedValue = rev.toString();
+                log.info("ShardedDataTypeHandler -- newMaskedValue: " + newMaskedValue);
+                
                 // Create a key for the masked field value with the masked visibility
                 Key k = this.createIndexKey(newMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getDate(), false);
                 
@@ -700,8 +702,14 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             }
             
             if (!StringUtils.isEmpty(fieldValue)) {
+                StringBuilder rev = new StringBuilder();
+                rev.append(fieldValue);
+                rev.reverse();
+                String newUnmaskedValue = rev.toString();
+                log.info("ShardedDataTypeHandler -- newUnmaskedValue: " + newUnmaskedValue);
+                
                 // Now create a key for the unmasked value with the original visibility
-                Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getDate(), deleteMode);
+                Key k = this.createIndexKey(newUnmaskedValue.getBytes(), colf, colq, visibility, event.getDate(), deleteMode);
                 BulkIngestKey bkey = new BulkIngestKey(tableName, k);
                 values.put(bkey, indexValue);
             }
