@@ -690,7 +690,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
                 StringBuilder rev = new StringBuilder();
                 rev.append(normalizedMaskedValue);
-                rev.reverse();
+                rev = rev.reverse();
                 String newMaskedValue = rev.toString();
                 log.info("ShardedDataTypeHandler -- newMaskedValue: " + newMaskedValue);
 
