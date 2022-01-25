@@ -2,6 +2,7 @@ package datawave.query.metrics;
 
 import java.io.IOException;
 import java.net.URL;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,7 +45,6 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.map.SimpleQueryGeometryHandler;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.system.CallerPrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
@@ -117,10 +117,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     
     @Inject
     private QueryLogicFactory queryLogicFactory;
-    
-    @Inject
-    @CallerPrincipal
-    private DatawavePrincipal callerPrincipal;
     
     @Inject
     @ConfigProperty(name = "dw.query.metrics.marking")
@@ -422,7 +418,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     query.setPagesize(1000);
                     query.setId(UUID.randomUUID());
                     query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
-                    queryMetrics = getQueryMetrics(response, query, callerPrincipal);
+                    queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
                 }
             } else {
                 queryMetrics = Collections.singletonList(cachedQueryMetric);
@@ -570,80 +566,12 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         return response;
     }
     
-    @Override
-    public QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
-        QueryMetricsSummaryResponse response = new QueryMetricsSummaryResponse();
-        
-        try {
-            enableLogs(false);
-            // this method is open to any user
-            datawavePrincipal = callerPrincipal;
-            
-            Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
-            QueryImpl query = new QueryImpl();
-            query.setBeginDate(begin);
-            query.setEndDate(end);
-            query.setQueryLogicName(QUERY_METRICS_LOGIC_NAME);
-            query.setQuery("USER > 'A' && USER < 'ZZZZZZZ'");
-            query.setQueryName(QUERY_METRICS_LOGIC_NAME);
-            query.setColumnVisibility(visibilityString);
-            query.setQueryAuthorizations(AuthorizationsUtil.buildAuthorizationString(authorizations));
-            query.setExpirationDate(DateUtils.addDays(new Date(), 1));
-            query.setPagesize(1000);
-            query.setUserDN(datawavePrincipal.getShortName());
-            query.setId(UUID.randomUUID());
-            query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
-            
-            List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
-            response = processQueryMetricsSummary(queryMetrics);
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        } finally {
-            enableLogs(true);
-        }
-        
-        return response;
-    }
-    
-    @Override
-    public QueryMetricsSummaryHtmlResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
-        QueryMetricsSummaryHtmlResponse response = new QueryMetricsSummaryHtmlResponse();
-        
-        try {
-            String user = datawavePrincipal.getShortName();
-            enableLogs(false);
-            // this method is open to any user
-            datawavePrincipal = callerPrincipal;
-            
-            Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
-            QueryImpl query = new QueryImpl();
-            query.setBeginDate(begin);
-            query.setEndDate(end);
-            query.setQueryLogicName(QUERY_METRICS_LOGIC_NAME);
-            query.setQuery("USER == '" + user + "'");
-            query.setQueryName(QUERY_METRICS_LOGIC_NAME);
-            query.setColumnVisibility(visibilityString);
-            query.setQueryAuthorizations(AuthorizationsUtil.buildAuthorizationString(authorizations));
-            query.setExpirationDate(DateUtils.addDays(new Date(), 1));
-            query.setPagesize(1000);
-            query.setUserDN(datawavePrincipal.getShortName());
-            query.setId(UUID.randomUUID());
-            query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
-            
-            List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
-            response = processQueryMetricsHtmlSummary(queryMetrics);
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        } finally {
-            enableLogs(true);
-        }
-        
-        return response;
-    }
-    
     public QueryMetric toMetric(datawave.webservice.query.result.event.EventBase event) {
         SimpleDateFormat sdf_date_time1 = new SimpleDateFormat("yyyyMMdd HHmmss");
         SimpleDateFormat sdf_date_time2 = new SimpleDateFormat("yyyyMMdd HHmmss");
+        SimpleDateFormat sdf_date_time3 = new SimpleDateFormat("yyyyMMdd");
+        
+        List<String> excludedFields = Arrays.asList("ELAPSED_TIME", "RECORD_ID", "NUM_PAGES", "NUM_RESULTS");
         
         try {
             QueryMetric m = new QueryMetric();
@@ -651,164 +579,150 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             m.setMarkings(event.getMarkings());
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
             
+            boolean createDateSet = false;
             for (FieldBase f : field) {
                 String fieldName = f.getName();
                 String fieldValue = f.getValueString();
-                
-                if (fieldName.equals("USER")) {
-                    m.setUser(fieldValue);
-                } else if (fieldName.equals("USER_DN")) {
-                    m.setUserDN(fieldValue);
-                } else if (fieldName.equals("QUERY_ID")) {
-                    m.setQueryId(fieldValue);
-                } else if (fieldName.equals("CREATE_DATE")) {
-                    try {
-                        Date d = sdf_date_time2.parse(fieldValue);
-                        m.setCreateDate(d);
-                    } catch (Exception e) {
-                        log.error(e.getMessage());
-                    }
-                } else if (fieldName.equals("QUERY")) {
-                    m.setQuery(fieldValue);
-                } else if (fieldName.equals("PLAN")) {
-                    m.setPlan(fieldValue);
-                } else if (fieldName.equals("QUERY_LOGIC")) {
-                    m.setQueryLogic(fieldValue);
-                } else if (fieldName.equals("QUERY_ID")) {
-                    m.setQueryId(fieldValue);
-                } else if (fieldName.equals("BEGIN_DATE")) {
-                    try {
-                        Date d = sdf_date_time1.parse(fieldValue);
-                        m.setBeginDate(d);
-                    } catch (Exception e) {
-                        log.error(e.getMessage());
-                    }
-                } else if (fieldName.equals("END_DATE")) {
-                    try {
-                        Date d = sdf_date_time1.parse(fieldValue);
-                        m.setEndDate(d);
-                    } catch (Exception e) {
-                        log.error(e.getMessage());
-                    }
-                } else if (fieldName.equals("HOST")) {
-                    m.setHost(fieldValue);
-                } else if (fieldName.equals("PROXY_SERVERS")) {
-                    m.setProxyServers(Arrays.asList(StringUtils.split(fieldValue, ",")));
-                } else if (fieldName.equals("AUTHORIZATIONS")) {
-                    m.setQueryAuthorizations(fieldValue);
-                } else if (fieldName.equals("QUERY_TYPE")) {
-                    m.setQueryType(fieldValue);
-                } else if (fieldName.equals("LIFECYCLE")) {
-                    m.setLifecycle(Lifecycle.valueOf(fieldValue));
-                } else if (fieldName.equals("ERROR_CODE")) {
-                    m.setErrorCode(fieldValue);
-                } else if (fieldName.equals("ERROR_MESSAGE")) {
-                    m.setErrorMessage(fieldValue);
-                } else if (fieldName.equals("SETUP_TIME")) {
-                    m.setSetupTime(Long.parseLong(fieldValue));
-                } else if (fieldName.equals("CREATE_CALL_TIME")) {
-                    m.setCreateCallTime(Long.parseLong(fieldValue));
-                } else if (fieldName.startsWith("PAGE_METRICS")) {
-                    int index = fieldName.indexOf(".");
-                    if (-1 == index) {
-                        log.error("Could not parse field name to extract repetition count: " + fieldName);
-                    } else {
-                        Long repetition = Long.parseLong(fieldName.substring(index + 1));
-                        
-                        String[] parts = StringUtils.split(fieldValue, "/");
-                        PageMetric pageMetric = null;
-                        if (parts.length == 8) {
-                            pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]), Long.parseLong(parts[3]),
-                                            Long.parseLong(parts[4]), Long.parseLong(parts[5]), Long.parseLong(parts[6]), Long.parseLong(parts[7]));
-                        } else if (parts.length == 7) {
-                            pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]), Long.parseLong(parts[3]),
-                                            Long.parseLong(parts[4]), Long.parseLong(parts[5]), Long.parseLong(parts[6]));
-                        } else if (parts.length == 5) {
-                            pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]), Long.parseLong(parts[3]),
-                                            Long.parseLong(parts[4]), 0l, 0l);
-                        } else if (parts.length == 2) {
-                            pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), 0l, 0l);
-                        }
-                        
-                        if (pageMetric != null)
-                            pageMetrics.put(repetition, pageMetric);
-                    }
-                } else if (fieldName.equals("POSITIVE_SELECTORS")) {
-                    List<String> positiveSelectors = m.getPositiveSelectors();
-                    if (positiveSelectors == null) {
-                        positiveSelectors = new ArrayList<>();
-                    }
-                    positiveSelectors.add(fieldValue);
-                    m.setPositiveSelectors(positiveSelectors);
-                } else if (fieldName.equals("NEGATIVE_SELECTORS")) {
-                    List<String> negativeSelectors = m.getNegativeSelectors();
-                    if (negativeSelectors == null) {
-                        negativeSelectors = new ArrayList<>();
-                    }
-                    negativeSelectors.add(fieldValue);
-                    m.setNegativeSelectors(negativeSelectors);
-                } else if (fieldName.equals("LAST_UPDATED")) {
-                    try {
-                        Date d = sdf_date_time2.parse(fieldValue);
-                        m.setLastUpdated(d);
-                    } catch (Exception e) {
-                        log.error(e.getMessage());
-                    }
-                } else if (fieldName.equals("NUM_UPDATES")) {
-                    try {
-                        long numUpdates = Long.parseLong(fieldValue);
-                        m.setNumUpdates(numUpdates);
-                    } catch (Exception e) {
-                        log.error(e.getMessage());
-                    }
-                } else if (fieldName.equals("QUERY_NAME")) {
-                    m.setQueryName(fieldValue);
-                } else if (fieldName.equals("PARAMETERS")) {
-                    if (fieldValue != null) {
+                if (!excludedFields.contains(fieldName)) {
+                    if (fieldName.equals("USER")) {
+                        m.setUser(fieldValue);
+                    } else if (fieldName.equals("USER_DN")) {
+                        m.setUserDN(fieldValue);
+                    } else if (fieldName.equals("QUERY_ID")) {
+                        m.setQueryId(fieldValue);
+                    } else if (fieldName.equals("CREATE_DATE")) {
                         try {
-                            Set<Parameter> parameters = QueryUtil.parseParameters(fieldValue);
-                            m.setParameters(parameters);
-                            
+                            Date d = sdf_date_time2.parse(fieldValue);
+                            m.setCreateDate(d);
+                            createDateSet = true;
                         } catch (Exception e) {
-                            log.debug(e.getMessage());
+                            log.error(e.getMessage());
                         }
+                    } else if (fieldName.equals("QUERY")) {
+                        m.setQuery(fieldValue);
+                    } else if (fieldName.equals("PLAN")) {
+                        m.setPlan(fieldValue);
+                    } else if (fieldName.equals("QUERY_LOGIC")) {
+                        m.setQueryLogic(fieldValue);
+                    } else if (fieldName.equals("QUERY_ID")) {
+                        m.setQueryId(fieldValue);
+                    } else if (fieldName.equals("BEGIN_DATE")) {
+                        try {
+                            Date d = sdf_date_time1.parse(fieldValue);
+                            m.setBeginDate(d);
+                        } catch (Exception e) {
+                            log.error(e.getMessage());
+                        }
+                    } else if (fieldName.equals("END_DATE")) {
+                        try {
+                            Date d = sdf_date_time1.parse(fieldValue);
+                            m.setEndDate(d);
+                        } catch (Exception e) {
+                            log.error(e.getMessage());
+                        }
+                    } else if (fieldName.equals("HOST")) {
+                        m.setHost(fieldValue);
+                    } else if (fieldName.equals("PROXY_SERVERS")) {
+                        m.setProxyServers(Arrays.asList(StringUtils.split(fieldValue, ",")));
+                    } else if (fieldName.equals("AUTHORIZATIONS")) {
+                        m.setQueryAuthorizations(fieldValue);
+                    } else if (fieldName.equals("QUERY_TYPE")) {
+                        m.setQueryType(fieldValue);
+                    } else if (fieldName.equals("LIFECYCLE")) {
+                        m.setLifecycle(Lifecycle.valueOf(fieldValue));
+                    } else if (fieldName.equals("ERROR_CODE")) {
+                        m.setErrorCode(fieldValue);
+                    } else if (fieldName.equals("ERROR_MESSAGE")) {
+                        m.setErrorMessage(fieldValue);
+                    } else if (fieldName.equals("SETUP_TIME")) {
+                        m.setSetupTime(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("CREATE_CALL_TIME")) {
+                        m.setCreateCallTime(Long.parseLong(fieldValue));
+                    } else if (fieldName.startsWith("PAGE_METRICS")) {
+                        int index = fieldName.indexOf(".");
+                        if (-1 == index) {
+                            log.error("Could not parse field name to extract repetition count: " + fieldName);
+                        } else {
+                            Long pageNum = Long.parseLong(fieldName.substring(index + 1));
+                            PageMetric pageMetric = PageMetric.parse(fieldValue);
+                            if (pageMetric != null) {
+                                pageMetric.setPageNumber(pageNum);
+                                pageMetrics.put(pageNum, pageMetric);
+                            }
+                        }
+                    } else if (fieldName.equals("POSITIVE_SELECTORS")) {
+                        List<String> positiveSelectors = m.getPositiveSelectors();
+                        if (positiveSelectors == null) {
+                            positiveSelectors = new ArrayList<>();
+                        }
+                        positiveSelectors.add(fieldValue);
+                        m.setPositiveSelectors(positiveSelectors);
+                    } else if (fieldName.equals("NEGATIVE_SELECTORS")) {
+                        List<String> negativeSelectors = m.getNegativeSelectors();
+                        if (negativeSelectors == null) {
+                            negativeSelectors = new ArrayList<>();
+                        }
+                        negativeSelectors.add(fieldValue);
+                        m.setNegativeSelectors(negativeSelectors);
+                    } else if (fieldName.equals("LAST_UPDATED")) {
+                        try {
+                            Date d = sdf_date_time2.parse(fieldValue);
+                            m.setLastUpdated(d);
+                        } catch (Exception e) {
+                            log.error(e.getMessage());
+                        }
+                    } else if (fieldName.equals("NUM_UPDATES")) {
+                        try {
+                            long numUpdates = Long.parseLong(fieldValue);
+                            m.setNumUpdates(numUpdates);
+                        } catch (Exception e) {
+                            log.error(e.getMessage());
+                        }
+                    } else if (fieldName.equals("QUERY_NAME")) {
+                        m.setQueryName(fieldValue);
+                    } else if (fieldName.equals("PARAMETERS")) {
+                        if (fieldValue != null) {
+                            try {
+                                Set<Parameter> parameters = QueryUtil.parseParameters(fieldValue);
+                                m.setParameters(parameters);
+                                
+                            } catch (Exception e) {
+                                log.debug(e.getMessage());
+                            }
+                        }
+                    } else if (fieldName.equals("SOURCE_COUNT")) {
+                        m.setSourceCount(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("NEXT_COUNT")) {
+                        m.setNextCount(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("SEEK_COUNT")) {
+                        m.setSeekCount(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("YIELD_COUNT")) {
+                        m.setYieldCount(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("DOC_RANGES")) {
+                        m.setDocRanges(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("FI_RANGES")) {
+                        m.setFiRanges(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("VERSION")) {
+                        m.setVersion(fieldValue);
+                    } else if (fieldName.equals("YIELD_COUNT")) {
+                        m.setYieldCount(Long.parseLong(fieldValue));
+                    } else if (fieldName.equals("LOGIN_TIME")) {
+                        m.setLoginTime(Long.parseLong(fieldValue));
+                    } else {
+                        log.debug("encountered unanticipated field name: " + fieldName);
                     }
-                }
-                
-                else if (fieldName.equals("SOURCE_COUNT")) {
-                    m.setSourceCount(Long.parseLong(fieldValue));
-                }
-                
-                else if (fieldName.equals("NEXT_COUNT")) {
-                    m.setNextCount(Long.parseLong(fieldValue));
-                }
-                
-                else if (fieldName.equals("SEEK_COUNT")) {
-                    m.setSeekCount(Long.parseLong(fieldValue));
-                }
-                
-                else if (fieldName.equals("YIELD_COUNT")) {
-                    m.setYieldCount(Long.parseLong(fieldValue));
-                }
-                
-                else if (fieldName.equals("DOC_RANGES")) {
-                    m.setDocRanges(Long.parseLong(fieldValue));
-                }
-                
-                else if (fieldName.equals("FI_RANGES")) {
-                    m.setFiRanges(Long.parseLong(fieldValue));
-                }
-                
-                else if (fieldName.equals("VERSION")) {
-                    m.setVersion(fieldValue);
-                } else {
-                    log.error("encountered unanticipated field name: " + fieldName);
                 }
             }
-            
-            for (final Entry<Long,PageMetric> entry : pageMetrics.entrySet())
-                m.addPageMetric(entry.getValue());
-            
+            // if createDate has not been set, try to parse it from the event row
+            if (!createDateSet) {
+                try {
+                    String dateStr = event.getMetadata().getRow().substring(0, 8);
+                    m.setCreateDate(sdf_date_time3.parse(dateStr));
+                } catch (ParseException e) {
+                    
+                }
+            }
+            m.setPageTimes(new ArrayList<>(pageMetrics.values()));
             return m;
         } catch (Exception e) {
             log.warn("Unexpected error creating query metric. Returning null", e);
@@ -914,21 +828,37 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     }
     
     @Override
+    public QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryResponse());
+    }
+    
+    @Override
     public QueryMetricsSummaryHtmlResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
-        QueryMetricsSummaryHtmlResponse response = new QueryMetricsSummaryHtmlResponse();
+        return (QueryMetricsSummaryHtmlResponse) getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryHtmlResponse());
+    }
+    
+    @Override
+    public QueryMetricsSummaryHtmlResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return (QueryMetricsSummaryHtmlResponse) getQueryMetricsSummary(begin, end, true, datawavePrincipal, new QueryMetricsSummaryHtmlResponse());
+    }
+    
+    public QueryMetricsSummaryResponse getQueryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser, DatawavePrincipal datawavePrincipal,
+                    QueryMetricsSummaryResponse response) {
         
         try {
             enableLogs(false);
-            enableLogs(true);
-            // this method is open to any user
-            datawavePrincipal = callerPrincipal;
             
             Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
             QueryImpl query = new QueryImpl();
             query.setBeginDate(begin);
             query.setEndDate(end);
             query.setQueryLogicName(QUERY_METRICS_LOGIC_NAME);
-            query.setQuery("USER > 'A' && USER < 'ZZZZZZZ'");
+            if (onlyCurrentUser) {
+                String user = datawavePrincipal.getShortName();
+                query.setQuery("USER == '" + user + "'");
+            } else {
+                query.setQuery("((_Bounded_ = true) && (USER > 'A' && USER < 'ZZZZZZZ'))");
+            }
             query.setQueryName(QUERY_METRICS_LOGIC_NAME);
             query.setColumnVisibility(visibilityString);
             query.setQueryAuthorizations(AuthorizationsUtil.buildAuthorizationString(authorizations));
@@ -939,7 +869,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
             
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
-            response = processQueryMetricsHtmlSummary(queryMetrics);
+            response = processQueryMetricsSummary(queryMetrics, end, response);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         } finally {

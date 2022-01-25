@@ -9,6 +9,8 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.MaxExpandCityFields;
+
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -364,8 +366,9 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
     
     // ============================================
     // implemented abstract methods
+    @Override
     protected void testInit() {
-        this.auths = CitiesDataType.getTestAuths();
+        this.auths = CitiesDataType.getExpansionAuths();
         this.documentKey = CitiesDataType.CityField.EVENT_ID.name();
     }
 }

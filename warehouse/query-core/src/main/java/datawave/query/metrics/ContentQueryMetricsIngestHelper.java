@@ -224,9 +224,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             List<PageMetric> pageMetrics = updatedQueryMetric.getPageTimes();
             if (pageMetrics != null && !pageMetrics.isEmpty()) {
                 for (PageMetric p : pageMetrics) {
-                    fields.put("PAGE_METRICS." + p.getPageNumber(),
-                                    p.getPagesize() + "/" + p.getReturnTime() + "/" + p.getCallTime() + "/" + p.getSerializationTime() + "/"
-                                                    + p.getBytesWritten() + "/" + p.getPageRequested() + "/" + p.getPageReturned() + "/" + p.getLoginTime());
+                    fields.put("PAGE_METRICS." + p.getPageNumber(), p.toEventString());
                 }
             }
             fields.put("SOURCE_COUNT", Long.toString(updatedQueryMetric.getSourceCount()));
@@ -310,11 +308,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                     long pageNum = p.getPageNumber();
                     PageMetric storedPageMetric = storedPageMetricMap.get(pageNum);
                     if (storedPageMetric != null && !storedPageMetric.equals(p)) {
-                        fields.put("PAGE_METRICS." + pageNum,
-                                        storedPageMetric.getPagesize() + "/" + storedPageMetric.getReturnTime() + "/" + storedPageMetric.getCallTime() + "/"
-                                                        + storedPageMetric.getSerializationTime() + "/" + storedPageMetric.getBytesWritten() + "/"
-                                                        + storedPageMetric.getPageRequested() + "/" + storedPageMetric.getPageReturned() + "/"
-                                                        + storedPageMetric.getLoginTime());
+                        fields.put("PAGE_METRICS." + storedPageMetric.getPageNumber(), storedPageMetric.toEventString());
                     }
                 }
             }
