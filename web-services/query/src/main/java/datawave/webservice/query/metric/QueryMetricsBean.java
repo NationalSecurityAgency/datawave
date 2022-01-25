@@ -187,7 +187,7 @@ public class QueryMetricsBean {
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @HTTP 200 success
      * @HTTP 500 internal server error
-     * @deprecated Please use /summary/all instead
+     * @deprecated use /summary/all instead
      */
     @GET
     @Path("/summary")
@@ -215,13 +215,13 @@ public class QueryMetricsBean {
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @HTTP 200 success
      * @HTTP 500 internal server error
-     * @deprecated Please use /summary/all instead
+     * @deprecated use /summary/all instead
      */
     @GET
     @Path("/summaryCounts")
     @Interceptors(ResponseInterceptor.class)
     @RolesAllowed({"Administrator", "MetricsAdministrator"})
-    public QueryMetricsSummaryResponse getQueryMetricsSummaryDeprecated2(
+    public QueryMetricsSummaryHtmlResponse getQueryMetricsSummaryDeprecated2(
                     @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
                                     defaultTime = "235959", defaultMillisec = "999") Date end) {
         
@@ -247,8 +247,9 @@ public class QueryMetricsBean {
     @GET
     @Path("/summary/user")
     @Interceptors(ResponseInterceptor.class)
-    public QueryMetricsSummaryResponse getQueryMetricsUserSummary(@QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
-                    @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
+    public QueryMetricsSummaryHtmlResponse getQueryMetricsUserSummary(
+                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
+                                    defaultTime = "235959", defaultMillisec = "999") Date end) {
         
         return queryMetricsSummary(begin, end, true);
     }
@@ -268,19 +269,18 @@ public class QueryMetricsBean {
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @HTTP 200 success
      * @HTTP 500 internal server error
-     * @deprecated Please use /summary/user instead
+     * @deprecated use /summary/user instead
      */
     @GET
     @Path("/summaryCounts/user")
     @Interceptors(ResponseInterceptor.class)
-    public QueryMetricsSummaryResponse getQueryMetricsUserSummaryDeprecated(
-                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
-                                    defaultTime = "235959", defaultMillisec = "999") Date end) {
+    public QueryMetricsSummaryHtmlResponse getQueryMetricsUserSummaryDeprecated(@QueryParam("begin") @DateFormat(defaultTime = "000000",
+                    defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
         
         return queryMetricsSummary(begin, end, true);
     }
     
-    private QueryMetricsSummaryResponse queryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser) {
+    private QueryMetricsSummaryHtmlResponse queryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser) {
         
         if (null == end) {
             end = new Date();
@@ -296,14 +296,18 @@ public class QueryMetricsBean {
         } else {
             begin = DateUtils.truncate(begin, Calendar.SECOND);
         }
-        QueryMetricsSummaryResponse response;
+        QueryMetricsSummaryHtmlResponse response;
         if (end.before(begin)) {
-            response = new QueryMetricsSummaryResponse();
+            response = new QueryMetricsSummaryHtmlResponse();
             String s = "begin date can not be after end date";
             response.addException(new QueryException(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE, new IllegalArgumentException(s), s));
         } else {
             DatawavePrincipal dp = getPrincipal();
-            response = queryHandler.getQueryMetricsSummary(begin, end, onlyCurrentUser, dp);
+            if (onlyCurrentUser) {
+                response = queryHandler.getUserQueriesSummary(begin, end, dp);
+            } else {
+                response = queryHandler.getTotalQueriesSummary(begin, end, dp);
+            }
         }
         return response;
     }

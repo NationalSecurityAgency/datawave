@@ -307,7 +307,7 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
     private void assertEqual(JexlNode actual, JexlNode expected, boolean printQueries) {
         int result = COMPARATOR.compare(actual, expected);
         if (result != 0) {
-            failWithMessage("Expected message to be " + getQueryString(expected) + " but was " + getQueryString(expected));
+            failWithMessage("Expected message to be " + getQueryString(expected) + " but was " + getQueryString(actual));
             if (printQueries) {
                 PrintingVisitor.printQuery(actual);
                 PrintingVisitor.printQuery(expected);

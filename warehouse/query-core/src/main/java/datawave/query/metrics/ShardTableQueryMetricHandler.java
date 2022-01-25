@@ -45,7 +45,6 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.map.SimpleQueryGeometryHandler;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.system.CallerPrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
@@ -66,6 +65,7 @@ import datawave.webservice.query.metric.BaseQueryMetricListResponse;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricListResponse;
 import datawave.webservice.query.metric.QueryMetricsDetailListResponse;
+import datawave.webservice.query.metric.QueryMetricsSummaryHtmlResponse;
 import datawave.webservice.query.metric.QueryMetricsSummaryResponse;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
@@ -117,10 +117,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     
     @Inject
     private QueryLogicFactory queryLogicFactory;
-    
-    @Inject
-    @CallerPrincipal
-    private DatawavePrincipal callerPrincipal;
     
     @Inject
     @ConfigProperty(name = "dw.query.metrics.marking")
@@ -422,7 +418,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     query.setPagesize(1000);
                     query.setId(UUID.randomUUID());
                     query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
-                    queryMetrics = getQueryMetrics(response, query, callerPrincipal);
+                    queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
                 }
             } else {
                 queryMetrics = Collections.singletonList(cachedQueryMetric);
@@ -832,13 +828,25 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     }
     
     @Override
-    public QueryMetricsSummaryResponse getQueryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser, DatawavePrincipal datawavePrincipal) {
-        QueryMetricsSummaryResponse response = new QueryMetricsSummaryResponse();
+    public QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryResponse());
+    }
+    
+    @Override
+    public QueryMetricsSummaryHtmlResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return (QueryMetricsSummaryHtmlResponse) getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryHtmlResponse());
+    }
+    
+    @Override
+    public QueryMetricsSummaryHtmlResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return (QueryMetricsSummaryHtmlResponse) getQueryMetricsSummary(begin, end, true, datawavePrincipal, new QueryMetricsSummaryHtmlResponse());
+    }
+    
+    public QueryMetricsSummaryResponse getQueryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser, DatawavePrincipal datawavePrincipal,
+                    QueryMetricsSummaryResponse response) {
         
         try {
             enableLogs(false);
-            // this method is open to any user
-            datawavePrincipal = callerPrincipal;
             
             Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
             QueryImpl query = new QueryImpl();
@@ -861,7 +869,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
             
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
-            response = processQueryMetricsSummary(queryMetrics, end);
+            response = processQueryMetricsSummary(queryMetrics, end, response);
         } catch (IOException e) {
             log.error(e.getMessage(), e);
         } finally {

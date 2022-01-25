@@ -28,6 +28,7 @@ import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 import datawave.webservice.query.metric.QueryMetricSummary;
 import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.metric.QueryMetricsSummaryHtmlResponse;
 import datawave.webservice.query.metric.QueryMetricsSummaryResponse;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.result.QueryImplListResponse;

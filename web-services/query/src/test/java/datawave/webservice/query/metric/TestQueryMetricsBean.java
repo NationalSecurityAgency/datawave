@@ -35,7 +35,7 @@ public class TestQueryMetricsBean extends EasyMockSupport {
     @Mock
     QueryMetric metric;
     @Mock
-    QueryMetricsSummaryResponse summaryResponse;
+    QueryMetricsSummaryHtmlResponse summaryResponse;
     
     @Test
     public void testQuery_TotalQueriesSummary() throws Exception {
@@ -45,8 +45,7 @@ public class TestQueryMetricsBean extends EasyMockSupport {
         
         // Set expectations
         expect(this.ejbContext.getCallerPrincipal()).andReturn(this.callerPrincipal);
-        expect(this.queryMetricHandler.getQueryMetricsSummary(isA(Date.class), isA(Date.class), anyBoolean(), isA(DatawavePrincipal.class))).andReturn(
-                        this.summaryResponse);
+        expect(this.queryMetricHandler.getTotalQueriesSummary(isA(Date.class), isA(Date.class), isA(DatawavePrincipal.class))).andReturn(this.summaryResponse);
         
         // Run the test
         replayAll();

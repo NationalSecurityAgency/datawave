@@ -308,7 +308,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                     long pageNum = p.getPageNumber();
                     PageMetric storedPageMetric = storedPageMetricMap.get(pageNum);
                     if (storedPageMetric != null && !storedPageMetric.equals(p)) {
-                        fields.put("PAGE_METRICS." + p.getPageNumber(), p.toEventString());
+                        fields.put("PAGE_METRICS." + storedPageMetric.getPageNumber(), storedPageMetric.toEventString());
                     }
                 }
             }

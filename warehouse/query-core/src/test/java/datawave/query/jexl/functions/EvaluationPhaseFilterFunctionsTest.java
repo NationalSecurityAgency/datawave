@@ -215,7 +215,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             givenFieldValue(null);
             givenOperator("~=");
             
-            assertThatIllegalArgumentException().isThrownBy(() -> resultForOperator(0)).withMessage("cannot use ~= in this equation");
+            assertThatIllegalArgumentException().isThrownBy(() -> resultForOperator(0)).withMessage("~= is not a valid comparison operator");
         }
         
         // Verify that the default operator is ==.
@@ -392,7 +392,7 @@ public class EvaluationPhaseFilterFunctionsTest {
             givenFieldValue(null);
             givenOperator("~=");
             
-            assertThatIllegalArgumentException().isThrownBy(() -> resultForOperator(0)).withMessage("cannot use ~= in this equation");
+            assertThatIllegalArgumentException().isThrownBy(() -> resultForOperator(0)).withMessage("~= is not a valid comparison operator");
         }
         
         // Verify that the default operator is ==.

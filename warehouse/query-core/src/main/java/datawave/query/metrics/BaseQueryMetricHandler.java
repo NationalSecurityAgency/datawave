@@ -27,9 +27,12 @@ public abstract class BaseQueryMetricHandler<T extends BaseQueryMetric> implemen
         }
     }
     
-    public QueryMetricsSummaryResponse processQueryMetricsSummary(List<T> queryMetrics, Date end) throws IOException {
+    public QueryMetricsSummaryResponse processQueryMetricsSummary(List<T> queryMetrics) throws IOException {
+        return processQueryMetricsSummary(queryMetrics, new Date(), new QueryMetricsSummaryResponse());
+    }
+    
+    public QueryMetricsSummaryResponse processQueryMetricsSummary(List<T> queryMetrics, Date end, QueryMetricsSummaryResponse summary) throws IOException {
         
-        QueryMetricsSummaryResponse summary = new QueryMetricsSummaryResponse();
         Date hour1 = DateUtils.addHours(end, -1);
         Date hour6 = DateUtils.addHours(end, -6);
         Date hour12 = DateUtils.addHours(end, -12);
