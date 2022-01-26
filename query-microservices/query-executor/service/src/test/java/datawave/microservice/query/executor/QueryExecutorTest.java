@@ -39,6 +39,7 @@ import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,6 +64,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -93,8 +95,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public abstract class QueryExecutorTest {
     private static final Logger log = Logger.getLogger(QueryExecutorTest.class);
     
-    public static DataTypeHadoopConfig dataType;
-    public static TestAccumuloSetup accumuloSetup;
+    private static DataTypeHadoopConfig dataType;
+    private static List<TestAccumuloSetup> dataToCleanup = new ArrayList<>();
+    
+    @Autowired
+    public TestAccumuloSetup accumuloSetup;
     
     @Autowired
     private QueryLogicFactory queryLogicFactory;
@@ -159,6 +164,15 @@ public abstract class QueryExecutorTest {
             log.error("failed to get URI for .", se);
             Assert.fail();
         }
+        FieldConfig generic = new GenericCityFields();
+        generic.addReverseIndexField(CitiesDataType.CityField.STATE.name());
+        generic.addReverseIndexField(CitiesDataType.CityField.CONTINENT.name());
+        try {
+            dataType = new CitiesDataType(CitiesDataType.CityEntry.generic, generic);
+        } catch (Exception e) {
+            log.error("Failed to load cities data type", e);
+            Assert.fail();
+        }
     }
     
     @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryExecutorTest", "use-test"})
@@ -184,25 +198,14 @@ public abstract class QueryExecutorTest {
     @ContextConfiguration(classes = QueryExecutorTestConfiguration.class)
     public static class KafkaQueryExecutorTest extends QueryExecutorTest {}
     
-    @BeforeAll
-    public static void setupData() throws Exception {
-        try {
-            FieldConfig generic = new GenericCityFields();
-            generic.addReverseIndexField(CitiesDataType.CityField.STATE.name());
-            generic.addReverseIndexField(CitiesDataType.CityField.CONTINENT.name());
-            dataType = new CitiesDataType(CitiesDataType.CityEntry.generic, generic);
-            accumuloSetup = new TestAccumuloSetup();
-            accumuloSetup.before();
-            accumuloSetup.setData(FileType.CSV, dataType);
-        } catch (Exception e) {
-            log.error("Failed to setup data", e);
-            throw e;
-        }
-    }
-    
     @AfterAll
     public static void cleanupData() {
-        accumuloSetup.after();
+        synchronized (dataToCleanup) {
+            for (TestAccumuloSetup setup : dataToCleanup) {
+                setup.after();
+            }
+            dataToCleanup.clear();
+        }
     }
     
     @AfterEach
@@ -761,7 +764,19 @@ public abstract class QueryExecutorTest {
         
         @Bean
         @Primary
-        public Connector testConnector() throws Exception {
+        TestAccumuloSetup testAccumuloSetup() throws Exception {
+            TestAccumuloSetup accumuloSetup = new TestAccumuloSetup();
+            accumuloSetup.before();
+            accumuloSetup.setData(FileType.CSV, dataType);
+            synchronized (dataToCleanup) {
+                dataToCleanup.add(accumuloSetup);
+            }
+            return accumuloSetup;
+        }
+        
+        @Bean
+        @Primary
+        public Connector testConnector(TestAccumuloSetup accumuloSetup) throws Exception {
             return accumuloSetup.loadTables(log);
         }
         
