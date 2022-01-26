@@ -10,7 +10,9 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -111,6 +113,25 @@ public class TaskStates implements Serializable {
         this.maxRunning = maxRunning;
     }
     
+    /**
+     * This will get the number of tasks we can start running now (concurrently) by subtracting the number of runnning tasks from the max concurrent running
+     */
+    @JsonIgnore
+    public int getAvailableRunningSlots() {
+        return getMaxRunning() - getRunningTaskCount();
+    }
+    
+    /**
+     * This will get the number of tasks we can start running now (@see getAvailableRunningSlots) out of the tasks that are currently in a READY state. This
+     * would be a minimum of the ready tasks and the available running slots
+     * 
+     * @return
+     */
+    @JsonIgnore
+    public int getAvailableReadyTasksToRun() {
+        return Math.min(getAvailableRunningSlots(), getReadyTaskCount());
+    }
+    
     public Map<TASK_STATE,SparseBitSet> getTaskStates() {
         return taskStates;
     }
@@ -135,7 +156,7 @@ public class TaskStates implements Serializable {
         }
         if (taskState == TASK_STATE.RUNNING) {
             // if we already have the max number of running tasks, then we cannot change state
-            if (taskStates.containsKey(taskState) && taskStates.get(taskState).cardinality() >= maxRunning) {
+            if (getAvailableRunningSlots() <= 0) {
                 return false;
             }
         }
@@ -151,20 +172,70 @@ public class TaskStates implements Serializable {
         return true;
     }
     
-    public boolean hasTasksForState(TASK_STATE state) {
-        return taskStates.get(state) != null && !taskStates.get(state).isEmpty();
+    public int getTaskCountForState(TASK_STATE state) {
+        return taskStates.containsKey(state) ? taskStates.get(state).cardinality() : 0;
     }
     
+    @JsonIgnore
+    public int getReadyTaskCount() {
+        return getTaskCountForState(TASK_STATE.READY);
+    }
+    
+    @JsonIgnore
+    public int getRunningTaskCount() {
+        return getTaskCountForState(TASK_STATE.RUNNING);
+    }
+    
+    @JsonIgnore
+    public int getFailedTaskCount() {
+        return getTaskCountForState(TASK_STATE.FAILED);
+    }
+    
+    @JsonIgnore
+    public int getCompletedTaskCount() {
+        return getTaskCountForState(TASK_STATE.COMPLETED);
+    }
+    
+    public boolean hasTasksForState(TASK_STATE state) {
+        return taskStates.containsKey(state) && !taskStates.get(state).isEmpty();
+    }
+    
+    @JsonIgnore
     public boolean hasReadyTasks() {
         return hasTasksForState(TASK_STATE.READY);
     }
     
+    @JsonIgnore
     public boolean hasRunningTasks() {
         return hasTasksForState(TASK_STATE.RUNNING);
     }
     
+    @JsonIgnore
     public boolean hasUnfinishedTasks() {
         return hasReadyTasks() || hasRunningTasks();
+    }
+    
+    @JsonIgnore
+    public boolean hasCompletedTasks() {
+        return hasTasksForState(TASK_STATE.COMPLETED);
+    }
+    
+    @JsonIgnore
+    public boolean hasFailedTasks() {
+        return hasTasksForState(TASK_STATE.FAILED);
+    }
+    
+    public List<TaskKey> getTasksForState(TASK_STATE state, int maxTasks) {
+        List<TaskKey> tasks = new ArrayList<>();
+        if (maxTasks > 0) {
+            SparseBitSet states = taskStates.get(state);
+            int taskId = states.nextSetBit(0);
+            while (taskId >= 0 && tasks.size() < maxTasks) {
+                tasks.add(new TaskKey(taskId, queryKey));
+                taskId = states.nextSetBit(taskId + 1);
+            }
+        }
+        return tasks;
     }
     
     @Override
