@@ -1,12 +1,12 @@
 package datawave.query.jexl.functions;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import datawave.data.type.Type;
+import datawave.query.attributes.Attribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.query.collections.FunctionalSet;
+import datawave.util.OperationEvaluator;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.log4j.Logger;
 
@@ -18,7 +18,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
@@ -58,32 +57,36 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     private static int getSizeOf(Iterable<?> iterable) {
-        Map<String,Integer> countMap = Maps.newHashMap();
-        int count = 0;
         if (iterable != null) {
-            // additional datatypes may have been added to this field to assist with evaluation and for use as
-            // a 'marker' for some other condition. We care only about how many were in the original so
-            // bin them all up to count what was really there in the beginning
+            int sourcedFromEvent = 0;
+            int sourcedFromIndex = 0;
+            int nonValueTuples = 0;
             for (Object o : iterable) {
                 if (o instanceof ValueTuple) {
                     ValueTuple valueTuple = (ValueTuple) o;
-                    if (valueTuple.second() instanceof Type<?>) {
-                        String typeName = valueTuple.second().getClass().toString();
-                        if (countMap.containsKey(typeName)) {
-                            countMap.put(typeName, countMap.get(typeName) + 1);
-                        } else {
-                            countMap.put(typeName, 1);
-                        }
-                        count = countMap.get(typeName);
+                    Attribute<?> attribute = valueTuple.getSource();
+                    // Count which fields were found from the events vs. the index.
+                    if (attribute.isFromIndex()) {
+                        sourcedFromIndex++;
                     } else {
-                        count++;
+                        sourcedFromEvent++;
                     }
                 } else {
-                    count++;
+                    nonValueTuples++;
                 }
             }
+            // If any of the fields were found in the events, only return the number of fields found in the events.
+            if (sourcedFromEvent > 0) {
+                return sourcedFromEvent;
+            } else if (sourcedFromIndex > 0) {
+                // If the field was index-only, return the number of fields found in the index.
+                return sourcedFromIndex;
+            } else {
+                // If we found no value tuples, return the number of objects we saw.
+                return nonValueTuples;
+            }
         }
-        return count;
+        return 0;
     }
     
     /**
@@ -105,63 +108,10 @@ public class EvaluationPhaseFilterFunctions {
     
     private static boolean evaluateSizeOf(Object obj, String operatorString, int count) {
         int size = getSizeOf(obj);
-        if (log.isDebugEnabled())
+        if (log.isDebugEnabled()) {
             log.debug("evaluate(" + obj + ", size=" + size + " " + operatorString + ", " + count + ")");
-        // clean up, in case they input extra spaces in or around the operator
-        switch (CharMatcher.WHITESPACE.removeFrom(operatorString)) {
-            case "<":
-                return size < count;
-            case "<=":
-                return size <= count;
-            case "==":
-                return size == count;
-            case "=":
-                return size == count;
-            case ">=":
-                return size >= count;
-            case ">":
-                return size > count;
-            case "!=":
-                return size != count;
         }
-        throw new IllegalArgumentException("cannot use " + operatorString + " in this equation");
-    }
-    
-    private static boolean evaluate(long term1, long term2, String operatorString, String equalityString, long goalResult) {
-        long result = calculate(term1, term2, operatorString);
-        // clean up, in case they input extra spaces in or around the equalityString
-        switch (CharMatcher.WHITESPACE.removeFrom(equalityString)) {
-            case "<":
-                return result < goalResult;
-            case "<=":
-                return result <= goalResult;
-            case "==":
-                return result == goalResult;
-            case "=":
-                return result == goalResult;
-            case ">=":
-                return result >= goalResult;
-            case ">":
-                return result > goalResult;
-            case "!=":
-                return result != goalResult;
-        }
-        throw new IllegalArgumentException("cannot use " + equalityString + " in this equation");
-    }
-    
-    private static long calculate(long term1, long term2, String operatorString) {
-        // clean up, in case they input extra spaces in or around the operatorString
-        switch (CharMatcher.WHITESPACE.removeFrom(operatorString)) {
-            case "+":
-                return term1 + term2;
-            case "-":
-                return term1 - term2;
-            case "*":
-                return term1 * term2;
-            case "/":
-                return term1 / term2;
-        }
-        throw new IllegalArgumentException("cannot use " + operatorString + " in this equation");
+        return OperationEvaluator.compare(size, count, operatorString);
     }
     
     /**
@@ -1487,7 +1437,8 @@ public class EvaluationPhaseFilterFunctions {
     public static FunctionalSet<ValueTuple> timeFunction(Object time1, Object time2, String operatorString, String equalityString, long goal) {
         FunctionalSet<ValueTuple> matches = new FunctionalSet();
         try {
-            boolean truth = evaluate(getMaxTime(time1), getMinTime(time2), operatorString, equalityString, goal);
+            long calculation = OperationEvaluator.calculate(getMaxTime(time1), getMinTime(time2), operatorString);
+            boolean truth = OperationEvaluator.compare(calculation, goal, equalityString);
             if (truth) {
                 matches.addAll(Sets.newHashSet(getHitTerm(getMaxValue(time1)), getHitTerm(getMinValue(time2))));
             }
