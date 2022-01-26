@@ -37,9 +37,6 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,13 +55,11 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.HttpEntity;
 import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -76,7 +71,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
@@ -145,9 +139,6 @@ public abstract class QueryExecutorTest {
     
     public String TEST_POOL = "TestPool";
     
-    protected Queue<QueryResultsListener> listeners = new LinkedList<>();
-    protected Queue<String> createdQueries = new LinkedList<>();
-    
     public static HashSet<BaseQueryMetric.Prediction> predictions = Sets.newHashSet(new BaseQueryMetric.Prediction("Success", 0.5d),
                     new BaseQueryMetric.Prediction("Elephants", 0.0d));
     
@@ -208,21 +199,6 @@ public abstract class QueryExecutorTest {
         }
     }
     
-    @AfterEach
-    public void cleanup() throws Exception {
-        while (!listeners.isEmpty()) {
-            listeners.remove().close();
-        }
-        while (!createdQueries.isEmpty()) {
-            try {
-                storageService.deleteQuery(createdQueries.remove());
-            } catch (Exception e) {
-                log.error("Failed to delete query", e);
-            }
-        }
-    }
-    
-    @DirtiesContext
     @Test
     public void testCheckpointableQuery() throws Exception {
         // ensure the message queue is empty
@@ -250,7 +226,6 @@ public abstract class QueryExecutorTest {
         String queryPool = new String(TEST_POOL);
         TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
-        createdQueries.add(key.getQueryId());
         
         QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
         
@@ -294,7 +269,7 @@ public abstract class QueryExecutorTest {
         
         checkFailed(key.getQueryId());
         
-        QueryResultsListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId());
+        QueryResultsListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery[" + key.getQueryId() + "]", key.getQueryId());
         
         List<RemoteQueryRequestEvent> eventsToRemove = new ArrayList<>();
         
@@ -338,7 +313,6 @@ public abstract class QueryExecutorTest {
         assertFalse(requests.isEmpty());
     }
     
-    @DirtiesContext
     @Test
     public void testNonCheckpointableQuery() throws Exception {
         // ensure the message queue is empty
@@ -365,10 +339,9 @@ public abstract class QueryExecutorTest {
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
         TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 20);
-        createdQueries.add(key.getQueryId());
         assertNotNull(key);
         
-        QueryResultsListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId());
+        QueryResultsListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery[" + key.getQueryId() + "]", key.getQueryId());
         
         TaskStates states = storageService.getTaskStates(key.getQueryId());
         assertEquals(TaskStates.TASK_STATE.READY, states.getState(key.getTaskId()));
@@ -430,7 +403,6 @@ public abstract class QueryExecutorTest {
         assertFalse(requests.isEmpty());
     }
     
-    @DirtiesContext
     @Test
     public void testCheckpointableDiscoveryQuery() throws Exception {
         // ensure the message queue is empty
@@ -455,7 +427,6 @@ public abstract class QueryExecutorTest {
         String queryPool = new String(TEST_POOL);
         TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
-        createdQueries.add(key.getQueryId());
         
         QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
         
@@ -499,7 +470,7 @@ public abstract class QueryExecutorTest {
         
         checkFailed(key.getQueryId());
         
-        QueryResultsListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery", key.getQueryId());
+        QueryResultsListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery[" + key.getQueryId() + "]", key.getQueryId());
         
         List<RemoteQueryRequestEvent> eventsToRemove = new ArrayList<>();
         
@@ -541,7 +512,6 @@ public abstract class QueryExecutorTest {
         assertFalse(requests.isEmpty());
     }
     
-    @DirtiesContext
     @Test
     public void testPlan() throws Exception {
         // ensure the message queue is empty
@@ -569,7 +539,6 @@ public abstract class QueryExecutorTest {
         String queryPool = new String(TEST_POOL);
         TaskKey key = storageService.planQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()));
         assertNotNull(key);
-        createdQueries.add(key.getQueryId());
         
         QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
         
@@ -602,7 +571,6 @@ public abstract class QueryExecutorTest {
         assertEquals(expectPlan, queryStatus.getPlan());
     }
     
-    @DirtiesContext
     @Test
     public void testPredict() throws Exception {
         // ensure the message queue is empty
@@ -630,7 +598,6 @@ public abstract class QueryExecutorTest {
         String queryPool = new String(TEST_POOL);
         TaskKey key = storageService.predictQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()));
         assertNotNull(key);
-        createdQueries.add(key.getQueryId());
         
         QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
         

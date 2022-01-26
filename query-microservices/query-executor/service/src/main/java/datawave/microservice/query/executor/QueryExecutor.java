@@ -1,6 +1,5 @@
 package datawave.microservice.query.executor;
 
-import com.zaxxer.sparsebits.SparseBitSet;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.executor.action.CreateTask;
 import datawave.microservice.query.executor.action.ExecutorTask;
@@ -33,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
