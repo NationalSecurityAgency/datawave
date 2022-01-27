@@ -655,6 +655,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * @param shardId
      * @param tableName
      * @param indexValue
+     * @param isReverse
      */
     protected Multimap<BulkIngestKey,Value> createTermIndexColumn(RawRecordContainer event, String column, String fieldValue, byte[] visibility,
                     byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Text tableName, Value indexValue, boolean isReverse) {
@@ -687,6 +688,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             Text colq = new Text(shardId);
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
             
+            // if this method was called with the intention to create reverse index keys, ensure the masked values are reversed.
             if (isReverse) {
                 StringBuilder rev = new StringBuilder();
                 rev.append(normalizedMaskedValue);
