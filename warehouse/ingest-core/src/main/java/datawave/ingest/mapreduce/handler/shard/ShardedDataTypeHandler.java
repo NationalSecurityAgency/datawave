@@ -681,37 +681,25 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         if (null != maskedFieldHelper && maskedFieldHelper.contains(column)) {
             // These Keys are for the index, so if they are masked, we really want to use the normalized masked values
             // It was observed that the normalized mask values aren't coming back reversed, so account for that before creating the row.
-            final String normalizedMaskedValue = helper.getNormalizedMaskedValue(column);
+            String normalizedMaskedValue = helper.getNormalizedMaskedValue(column);
             
             Text colf = new Text(column);
             Text colq = new Text(shardId);
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
             
             // if this method was called with the intention to create reverse index keys, ensure the masked values are reversed.
-            if (isReverse) {
-                final String newMaskedValue = new StringBuilder().append(normalizedMaskedValue).reverse().toString();
-                if (log.isTraceEnabled()) {
-                    log.trace("newMaskedValue to index: " + newMaskedValue);
+            if (!StringUtils.isEmpty(normalizedMaskedValue)) {
+                if (isReverse) {
+                    normalizedMaskedValue = new StringBuilder().append(normalizedMaskedValue).reverse().toString();
+                    if (log.isTraceEnabled()) {
+                        log.trace("normalizedMaskedValue is reversed to: " + normalizedMaskedValue);
+                    }
                 }
-                
-                if (!StringUtils.isEmpty(newMaskedValue)) {
-                    // Create a key for the masked field value with the masked visibility.
-                    Key k = this.createIndexKey(newMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getDate(), false);
-                    
-                    BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-                    values.put(bkey, indexValue);
-                }
-            } else {
-                // Dont create index entries for empty values. No need to adjust the masked value if it is meant for the shardIndex table.
-                if (!StringUtils.isEmpty(normalizedMaskedValue)) {
-                    // Create a key for the masked field value with the masked visibility
-                    Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getDate(), false);
-                    
-                    BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-                    values.put(bkey, indexValue);
-                }
+                // Create a key for the masked field value with the masked visibility.
+                Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getDate(), false);
+                BulkIngestKey bkey = new BulkIngestKey(tableName, k);
+                values.put(bkey, indexValue);
             }
-            
             if (!StringUtils.isEmpty(fieldValue)) {
                 // Now create a key for the unmasked value with the original visibility
                 Key k = this.createIndexKey(fieldValue.getBytes(), colf, colq, visibility, event.getDate(), deleteMode);
