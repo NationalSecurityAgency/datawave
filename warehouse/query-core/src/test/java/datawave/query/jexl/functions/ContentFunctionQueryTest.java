@@ -438,7 +438,7 @@ public class ContentFunctionQueryTest {
         private void getShardIndexFIKey(final NormalizedFieldAndValue nfv, final RawRecordContainer event, final Multimap values) {
             Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID(this.eventUid).build();
             Multimap<BulkIngestKey,Value> termIndex = createTermIndexColumn(event, nfv.getEventFieldName(), nfv.getEventFieldValue(),
-                            getVisibility(event, nfv), null, null, shardId, this.getShardIndexTableName(), new Value(uid.toByteArray()));
+                            getVisibility(event, nfv), null, null, shardId, this.getShardIndexTableName(), new Value(uid.toByteArray()), false);
             values.putAll(termIndex);
         }
         

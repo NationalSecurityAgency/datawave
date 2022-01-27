@@ -498,12 +498,12 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         
         // produce cardinality of terms
         values.putAll(createTermIndexColumn(event, value.getIndexedFieldName(), value.getIndexedFieldValue(), visibility, maskedVisibility, maskedFieldHelper,
-                        shardId, this.getIndexStatsTableName(), indexValue));
+                        shardId, this.getIndexStatsTableName(), indexValue, false));
         
         String reverse = new StringBuilder(value.getIndexedFieldValue()).reverse().toString();
         
         values.putAll(createTermIndexColumn(event, value.getIndexedFieldName(), reverse, visibility, maskedVisibility, maskedFieldHelper, shardId,
-                        this.getIndexStatsTableName(), indexValue));
+                        this.getIndexStatsTableName(), indexValue, true));
         
         return values;
     }
@@ -534,7 +534,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         
         // produce index column
         values.putAll(createTermIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
-                        this.getShardIndexTableName(), indexValue));
+                        this.getShardIndexTableName(), indexValue, false));
         
         return values;
     }
@@ -549,7 +549,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         String fieldValue = value.getIndexedFieldValue();
         // produce index column
         values.putAll(createTermIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
-                        this.getShardReverseIndexTableName(), indexValue));
+                        this.getShardReverseIndexTableName(), indexValue, true));
         
         return values;
     }
@@ -657,7 +657,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * @param indexValue
      */
     protected Multimap<BulkIngestKey,Value> createTermIndexColumn(RawRecordContainer event, String column, String fieldValue, byte[] visibility,
-                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Text tableName, Value indexValue) {
+                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Text tableName, Value indexValue, boolean isReverse) {
         // Shard Global Index Table Structure
         // Row: Field Value
         // Colf: Field Name
@@ -681,24 +681,35 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // These Keys are for the index, so if they are masked, we really want to use the normalized masked values
             // It was observed that the normalized mask values aren't coming back reversed, so account for that before creating the row.
             final String normalizedMaskedValue = helper.getNormalizedMaskedValue(column);
-
+            String newMaskedValue = "";
+            
             Text colf = new Text(column);
             Text colq = new Text(shardId);
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
             
-            // Dont create index entries for empty values
-            if (!StringUtils.isEmpty(normalizedMaskedValue)) {
+            if (isReverse) {
                 StringBuilder rev = new StringBuilder();
                 rev.append(normalizedMaskedValue);
-                rev = rev.reverse();
-                String newMaskedValue = rev.toString();
-                log.info("ShardedDataTypeHandler -- newMaskedValue: " + newMaskedValue);
-
-                // Create a key for the masked field value with the masked visibility
-                Key k = this.createIndexKey(newMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getDate(), false);
+                rev.reverse();
+                newMaskedValue = rev.toString();
+                log.info("newMaskedValue: " + newMaskedValue);
                 
-                BulkIngestKey bkey = new BulkIngestKey(tableName, k);
-                values.put(bkey, indexValue);
+                if (!StringUtils.isEmpty(newMaskedValue)) {
+                    // Create a key for the masked field value with the masked visibility.
+                    Key k = this.createIndexKey(newMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getDate(), false);
+                    
+                    BulkIngestKey bkey = new BulkIngestKey(tableName, k);
+                    values.put(bkey, indexValue);
+                }
+            } else {
+                // Dont create index entries for empty values. No need to adjust the masked value if it is meant for the shardIndex table.
+                if (!StringUtils.isEmpty(normalizedMaskedValue)) {
+                    // Create a key for the masked field value with the masked visibility
+                    Key k = this.createIndexKey(normalizedMaskedValue.getBytes(), colf, colq, maskedVisibility, event.getDate(), false);
+                    
+                    BulkIngestKey bkey = new BulkIngestKey(tableName, k);
+                    values.put(bkey, indexValue);
+                }
             }
             
             if (!StringUtils.isEmpty(fieldValue)) {
