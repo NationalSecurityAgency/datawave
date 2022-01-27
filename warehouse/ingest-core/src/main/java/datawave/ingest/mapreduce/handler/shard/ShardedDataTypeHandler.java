@@ -682,7 +682,6 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             // These Keys are for the index, so if they are masked, we really want to use the normalized masked values
             // It was observed that the normalized mask values aren't coming back reversed, so account for that before creating the row.
             final String normalizedMaskedValue = helper.getNormalizedMaskedValue(column);
-            String newMaskedValue = "";
             
             Text colf = new Text(column);
             Text colq = new Text(shardId);
@@ -690,11 +689,11 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             
             // if this method was called with the intention to create reverse index keys, ensure the masked values are reversed.
             if (isReverse) {
-                StringBuilder rev = new StringBuilder();
-                rev.append(normalizedMaskedValue);
-                rev.reverse();
-                newMaskedValue = rev.toString();
-                log.info("newMaskedValue: " + newMaskedValue);
+                StringBuilder rev = new StringBuilder().append(normalizedMaskedValue).reverse();
+                final String newMaskedValue = rev.toString();
+                if (log.isTraceEnabled()) {
+                    log.trace("newMaskedValue to index: " + newMaskedValue);
+                }
                 
                 if (!StringUtils.isEmpty(newMaskedValue)) {
                     // Create a key for the masked field value with the masked visibility.
