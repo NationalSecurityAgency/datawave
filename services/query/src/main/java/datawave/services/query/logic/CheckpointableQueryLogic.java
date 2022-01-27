@@ -26,14 +26,22 @@ public interface CheckpointableQueryLogic {
     void setCheckpointable(boolean checkpointable);
     
     /**
-     * This can be called at any point to get a checkpoint such that this query logic instance can be torn down to be rebuilt later. At a minimum this should be
-     * called after the getTransformIterator is depleted of results.
+     * This can be called at any point to get a checkpoint such that this query logic instance can be torn down to be rebuilt later.
      *
      * @param queryKey
      *            - the query key to include in the checkpoint
      * @return The query checkpoints
      */
     List<QueryCheckpoint> checkpoint(QueryKey queryKey);
+    
+    /**
+     * This can be called at any point to update a checkpoint with its updated state. This will be called periodically while pulling results for a query task
+     * handling a previously returned checkpoint.
+     * 
+     * @param checkpoint
+     * @return The updated checkpoint
+     */
+    QueryCheckpoint updateCheckpoint(QueryCheckpoint checkpoint);
     
     /**
      * Implementations use the configuration to setup execution of a portion of their query. getTransformIterator should be used to get the partial results if

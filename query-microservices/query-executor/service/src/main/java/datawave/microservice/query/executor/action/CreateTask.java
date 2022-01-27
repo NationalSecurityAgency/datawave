@@ -116,7 +116,7 @@ public class CreateTask extends ExecutorTask {
             queryLogic.setupQuery(config);
             
             log.debug("Exhausting results for " + queryId);
-            taskComplete = pullResults(task.getTaskKey(), queryLogic, queryStatus, true);
+            taskComplete = pullResults(task, queryLogic, queryStatus, true);
             
             if (!taskComplete) {
                 Exception e = new IllegalStateException("Expected to have exhausted results.  Something went wrong here");

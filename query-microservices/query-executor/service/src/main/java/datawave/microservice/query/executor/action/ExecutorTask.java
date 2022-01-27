@@ -251,10 +251,58 @@ public abstract class ExecutorTask implements Runnable {
         return (queueSize < bufferSize);
     }
     
-    protected boolean pullResults(TaskKey taskKey, QueryLogic queryLogic, CachedQueryStatus queryStatus, boolean exhaustIterator) throws Exception {
+    private class QueryTaskUpdater {
+        private QueryTask task;
+        private CheckpointableQueryLogic queryLogic;
+        private long timer;
+        private int resultsCount = 0;
+        private int resultsThreshold = 0;
+        
+        public QueryTaskUpdater(QueryTask task, CheckpointableQueryLogic queryLogic) {
+            this.task = task;
+            this.queryLogic = queryLogic;
+            updateTimers();
+        }
+        
+        private void updateTimers() {
+            timer = System.currentTimeMillis() + executorProperties.getQueryTaskCheckpointFlushInterval();
+            resultsThreshold = resultsCount + executorProperties.getQueryTaskCheckpointResultsInterval();
+        }
+        
+        public void resultPublished() {
+            resultsCount++;
+            if (isFlushTime()) {
+                // update the task with the updated checkpoint
+                task = cache.checkpointTask(task.getTaskKey(), queryLogic.updateCheckpoint(task.getQueryCheckpoint()));
+                updateTimers();
+            }
+        }
+        
+        private boolean isFlushTime() {
+            return (System.currentTimeMillis() >= timer || resultsCount >= resultsThreshold);
+        }
+    }
+    
+    private class NoopQueryTaskUpdater extends QueryTaskUpdater {
+        public NoopQueryTaskUpdater() {
+            super(null, null);
+        }
+        
+        public void resultPublished() {
+            // noop
+        }
+    }
+    
+    protected boolean pullResults(QueryTask task, QueryLogic queryLogic, CachedQueryStatus queryStatus, boolean exhaustIterator) throws Exception {
         // start the timer on the query status to ensure we flush numResultsGenerated updates periodically
         queryStatus.startTimer();
+        QueryTaskUpdater queryTaskUpdater = new NoopQueryTaskUpdater();
+        // if we have a checkpointable query logic, the startup a query task updater to periodically update our checkpoint
+        if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
+            queryTaskUpdater = new QueryTaskUpdater(task, (CheckpointableQueryLogic) queryLogic);
+        }
         try {
+            TaskKey taskKey = task.getTaskKey();
             String queryId = taskKey.getQueryId();
             TransformIterator iter = queryLogic.getTransformIterator(queryStatus.getQuery());
             long maxResults = queryLogic.getResultLimit(queryStatus.getQuery().getDnList());
@@ -277,6 +325,7 @@ public abstract class ExecutorTask implements Runnable {
                 Object result = iter.next();
                 log.trace("Generated result for " + taskKey + ": " + result);
                 publisher.publish(new Result(UUID.randomUUID().toString(), result));
+                queryTaskUpdater.resultPublished();
                 queryStatus.incrementNumResultsGenerated(1);
                 updateMetrics(queryId, queryStatus, iter);
                 running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);

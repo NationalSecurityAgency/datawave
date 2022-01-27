@@ -2344,6 +2344,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         }
     }
     
+    @Override
+    public QueryCheckpoint updateCheckpoint(QueryCheckpoint checkpoint) {
+        // for the shard query logic, the query data objects automatically get update with
+        // the last result returned, so the checkpoint should already be updated!
+        return checkpoint;
+    }
+    
     public Set<String> getDisallowedRegexPatterns() {
         return getConfig().getDisallowedRegexPatterns();
     }

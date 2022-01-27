@@ -200,7 +200,7 @@ public interface QueryStorageCache {
     
     /**
      * Update a stored query task with an updated checkpoint.
-     * 
+     *
      * @param taskKey
      *            The task key to update
      * @param checkpoint

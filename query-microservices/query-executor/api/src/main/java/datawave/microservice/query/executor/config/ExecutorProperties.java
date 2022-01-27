@@ -25,6 +25,10 @@ public class ExecutorProperties {
     private long keepAliveMs = 10 * 60 * 1000;
     // The amount of time before invalidating the local QueryStatus object
     private long queryStatusExpirationMs = 60 * 1000;
+    // The number of results from one results task in between which we flush the checkpoint
+    private int queryTaskCheckpointResultsInterval = 2;
+    // The amount of time for one results task after which we flush the checkpoint
+    private long queryTaskCheckpointFlushInterval = 1000;
     @PositiveOrZero
     private long monitorTaskLease = TimeUnit.MILLISECONDS.toMillis(100);
     @NotNull
@@ -145,4 +149,21 @@ public class ExecutorProperties {
     public void setMonitorMaxCacheSize(int monitorMaxCacheSize) {
         this.monitorMaxCacheSize = monitorMaxCacheSize;
     }
+    
+    public int getQueryTaskCheckpointResultsInterval() {
+        return queryTaskCheckpointResultsInterval;
+    }
+    
+    public void setQueryTaskCheckpointResultsInterval(int queryTaskCheckpointResultsInterval) {
+        this.queryTaskCheckpointResultsInterval = queryTaskCheckpointResultsInterval;
+    }
+    
+    public long getQueryTaskCheckpointFlushInterval() {
+        return queryTaskCheckpointFlushInterval;
+    }
+    
+    public void setQueryTaskCheckpointFlushInterval(long queryTaskCheckpointFlushInterval) {
+        this.queryTaskCheckpointFlushInterval = queryTaskCheckpointFlushInterval;
+    }
+    
 }

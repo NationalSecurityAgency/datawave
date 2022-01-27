@@ -466,6 +466,13 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         }
     }
     
+    @Override
+    public QueryCheckpoint updateCheckpoint(QueryCheckpoint checkpoint) {
+        // for the shard index query logic, the query data objects automatically get update with
+        // the last result returned, so the checkpoint should already be updated!
+        return checkpoint;
+    }
+    
     public static List<IteratorSetting> getIteratorSettingsForDiscovery(ShardQueryConfiguration config, Collection<String> literals,
                     Collection<String> patterns, boolean reverseIndex, boolean uniqueTermsOnly) {
         
