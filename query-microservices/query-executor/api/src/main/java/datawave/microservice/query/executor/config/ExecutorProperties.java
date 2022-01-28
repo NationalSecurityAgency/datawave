@@ -13,8 +13,6 @@ public class ExecutorProperties {
     private String pool = "default";
     // A multiplier on the page size use to determine how but the pool of generated results should be.
     private float availableResultsPageMultiplier = 2.5f;
-    // The maximum age of the query status object
-    private long maxQueryStatusAge = 1000L;
     // The maximum number of queue tasks
     private int maxQueueSize = 400;
     // The core thread pool size
@@ -26,21 +24,15 @@ public class ExecutorProperties {
     // The amount of time before invalidating the local QueryStatus object
     private long queryStatusExpirationMs = 60 * 1000;
     // The number of results from one results task in between which we flush the checkpoint
-    private int queryTaskCheckpointResultsInterval = 2;
+    private int checkpointFlushResults = 2;
     // The amount of time for one results task after which we flush the checkpoint
-    private long queryTaskCheckpointFlushInterval = 1000;
+    private long checkpointFlushMs = 1000;
     @PositiveOrZero
     private long monitorTaskLease = TimeUnit.MILLISECONDS.toMillis(100);
     @NotNull
     private TimeUnit monitorTaskLeaseTimeUnit = TimeUnit.MILLISECONDS;
     // the max cache size used by the monitor to avoid excessive close/cancel task executions
     private int monitorMaxCacheSize = 500;
-    // The amount of time to wait for the lock to be acquired
-    @PositiveOrZero
-    private long lockWaitTimeMillis = TimeUnit.SECONDS.toMillis(5);
-    // The amount of time that the lock will be held before being automatically released
-    @PositiveOrZero
-    private long lockLeaseTimeMillis = TimeUnit.SECONDS.toMillis(30);
     
     public String getPool() {
         return pool;
@@ -90,36 +82,12 @@ public class ExecutorProperties {
         this.availableResultsPageMultiplier = availableResultsPageMultiplier;
     }
     
-    public long getMaxQueryStatusAge() {
-        return maxQueryStatusAge;
-    }
-    
-    public void setMaxQueryStatusAge(long maxQueryStatusAge) {
-        this.maxQueryStatusAge = maxQueryStatusAge;
-    }
-    
     public long getQueryStatusExpirationMs() {
         return queryStatusExpirationMs;
     }
     
     public void setQueryStatusExpirationMs(long queryStatusExpirationMs) {
         this.queryStatusExpirationMs = queryStatusExpirationMs;
-    }
-    
-    public long getLockWaitTimeMillis() {
-        return lockWaitTimeMillis;
-    }
-    
-    public void setLockWaitTimeMillis(long lockWaitTimeMillis) {
-        this.lockWaitTimeMillis = lockWaitTimeMillis;
-    }
-    
-    public long getLockLeaseTimeMillis() {
-        return lockLeaseTimeMillis;
-    }
-    
-    public void setLockLeaseTimeMillis(long lockLeaseTimeMillis) {
-        this.lockLeaseTimeMillis = lockLeaseTimeMillis;
     }
     
     public long getMonitorTaskLease() {
@@ -150,20 +118,20 @@ public class ExecutorProperties {
         this.monitorMaxCacheSize = monitorMaxCacheSize;
     }
     
-    public int getQueryTaskCheckpointResultsInterval() {
-        return queryTaskCheckpointResultsInterval;
+    public int getCheckpointFlushResults() {
+        return checkpointFlushResults;
     }
     
-    public void setQueryTaskCheckpointResultsInterval(int queryTaskCheckpointResultsInterval) {
-        this.queryTaskCheckpointResultsInterval = queryTaskCheckpointResultsInterval;
+    public void setCheckpointFlushResults(int checkpointFlushResults) {
+        this.checkpointFlushResults = checkpointFlushResults;
     }
     
-    public long getQueryTaskCheckpointFlushInterval() {
-        return queryTaskCheckpointFlushInterval;
+    public long getCheckpointFlushMs() {
+        return checkpointFlushMs;
     }
     
-    public void setQueryTaskCheckpointFlushInterval(long queryTaskCheckpointFlushInterval) {
-        this.queryTaskCheckpointFlushInterval = queryTaskCheckpointFlushInterval;
+    public void setCheckpointFlushMs(long checkpointFlushMs) {
+        this.checkpointFlushMs = checkpointFlushMs;
     }
     
 }

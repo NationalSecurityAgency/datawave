@@ -72,14 +72,13 @@ datawave:
       pool: "TestPool"
       pollQueueSize: true
       availableResultsPageMultiplier: 2.5
-      maxQueryStatusAge: 1000
       maxQueueSize: 400
       coreThreads: 10
       maxThreads: 40
       keepAliveMs: 600000
       queryStatusExpirationMs: 60000
-      lockWaitTimeMillis: 5000
-      lockLeaseTimeMillis: 30000
+      checkpointFlushMs: 1000
+      checkpointFlushResults: 2
       monitor:
         enabled: false
 

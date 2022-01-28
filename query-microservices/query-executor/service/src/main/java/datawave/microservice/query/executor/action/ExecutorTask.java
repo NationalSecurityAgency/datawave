@@ -265,8 +265,8 @@ public abstract class ExecutorTask implements Runnable {
         }
         
         private void updateTimers() {
-            timer = System.currentTimeMillis() + executorProperties.getQueryTaskCheckpointFlushInterval();
-            resultsThreshold = resultsCount + executorProperties.getQueryTaskCheckpointResultsInterval();
+            timer = System.currentTimeMillis() + executorProperties.getCheckpointFlushMs();
+            resultsThreshold = resultsCount + executorProperties.getCheckpointFlushResults();
         }
         
         public void resultPublished() {
