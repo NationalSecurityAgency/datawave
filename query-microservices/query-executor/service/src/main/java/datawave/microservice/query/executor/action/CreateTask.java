@@ -59,69 +59,77 @@ public class CreateTask extends ExecutorTask {
         String queryId = taskKey.getQueryId();
         
         QueryLogic<?> queryLogic = getQueryLogic(queryStatus.getQuery());
-        log.debug("Initializing query logic for " + queryId);
-        GenericQueryConfiguration config = queryLogic.initialize(connector, queryStatus.getQuery(), queryStatus.getCalculatedAuthorizations());
-        
-        // update the query status plan
-        log.debug("Setting plan for " + queryId);
-        queryStatus.setPlan(config.getQueryString());
-        
-        // update the query status configuration
-        if (config instanceof CheckpointableQueryConfiguration) {
-            queryStatus.setConfig(((CheckpointableQueryConfiguration) config).checkpoint());
-        } else {
-            queryStatus.setConfig(config);
-        }
-        
-        // update the query metrics with the plan
-        BaseQueryMetric baseQueryMetric = metricFactory.createMetric();
-        baseQueryMetric.setQueryId(taskKey.getQueryId());
-        baseQueryMetric.setPlan(config.getQueryString());
-        baseQueryMetric.setLastUpdated(new Date(queryStatus.getLastUpdatedMillis()));
         try {
-            // @formatter:off
-            metricClient.submit(
-                    new QueryMetricClient.Request.Builder()
-                            .withMetric(baseQueryMetric)
-                            .withMetricType(QueryMetricType.DISTRIBUTED)
-                            .build());
-            // @formatter:on
-        } catch (Exception e) {
-            log.error("Error updating query metric", e);
-        }
-        
-        if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
-            log.debug("Checkpointing " + queryId);
-            CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
-            queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
+            log.debug("Initializing query logic for " + queryId);
+            GenericQueryConfiguration config = queryLogic.initialize(connector, queryStatus.getQuery(), queryStatus.getCalculatedAuthorizations());
             
-            notifyOriginOfCreation(queryId);
+            // update the query status plan
+            log.debug("Setting plan for " + queryId);
+            queryStatus.setPlan(config.getQueryString());
             
-            checkpoint(task.getTaskKey().getQueryKey(), cpQueryLogic);
+            // update the query status configuration
+            if (config instanceof CheckpointableQueryConfiguration) {
+                queryStatus.setConfig(((CheckpointableQueryConfiguration) config).checkpoint());
+            } else {
+                queryStatus.setConfig(config);
+            }
             
-            // update the task states to indicate that all tasks are created
-            taskCreationComplete(queryId);
+            // update the query metrics with the plan
+            BaseQueryMetric baseQueryMetric = metricFactory.createMetric();
+            baseQueryMetric.setQueryId(taskKey.getQueryId());
+            baseQueryMetric.setPlan(config.getQueryString());
+            baseQueryMetric.setLastUpdated(new Date(queryStatus.getLastUpdatedMillis()));
+            try {
+                // @formatter:off
+                metricClient.submit(
+                        new QueryMetricClient.Request.Builder()
+                                .withMetric(baseQueryMetric)
+                                .withMetricType(QueryMetricType.DISTRIBUTED)
+                                .build());
+                // @formatter:on
+            } catch (Exception e) {
+                log.error("Error updating query metric", e);
+            }
             
-            taskComplete = true;
-        } else {
-            queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
-            
-            // update the task states to indicate that all tasks are created
-            taskCreationComplete(queryId);
-            
-            // notify the origin that the creation is complete
-            notifyOriginOfCreation(queryId);
-            
-            log.debug("Setup query logic for " + queryId);
-            queryLogic.setupQuery(config);
-            
-            log.debug("Exhausting results for " + queryId);
-            taskComplete = pullResults(task, queryLogic, queryStatus, true);
-            
-            if (!taskComplete) {
-                Exception e = new IllegalStateException("Expected to have exhausted results.  Something went wrong here");
-                cache.updateFailedQueryStatus(queryId, e);
-                throw e;
+            if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
+                log.debug("Checkpointing " + queryId);
+                CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
+                queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
+                
+                notifyOriginOfCreation(queryId);
+                
+                checkpoint(task.getTaskKey().getQueryKey(), cpQueryLogic);
+                
+                // update the task states to indicate that all tasks are created
+                taskCreationComplete(queryId);
+                
+                taskComplete = true;
+            } else {
+                queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
+                
+                // update the task states to indicate that all tasks are created
+                taskCreationComplete(queryId);
+                
+                // notify the origin that the creation is complete
+                notifyOriginOfCreation(queryId);
+                
+                log.debug("Setup query logic for " + queryId);
+                queryLogic.setupQuery(config);
+                
+                log.debug("Exhausting results for " + queryId);
+                taskComplete = pullResults(task, queryLogic, queryStatus, true);
+                
+                if (!taskComplete) {
+                    Exception e = new IllegalStateException("Expected to have exhausted results.  Something went wrong here");
+                    cache.updateFailedQueryStatus(queryId, e);
+                    throw e;
+                }
+            }
+        } finally {
+            try {
+                queryLogic.close();
+            } catch (Exception e) {
+                log.error("Failed to close query logic", e);
             }
         }
         

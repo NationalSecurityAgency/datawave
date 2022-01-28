@@ -27,22 +27,29 @@ public class ResultsTask extends ExecutorTask {
         String queryId = taskKey.getQueryId();
         
         QueryLogic<?> queryLogic = getQueryLogic(queryStatus.getQuery());
-        if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
-            CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
-            
-            cpQueryLogic.setupQuery(connector, queryStatus.getConfig(), task.getQueryCheckpoint());
-            
-            log.debug("Pulling results for  " + task.getTaskKey() + ": " + task.getQueryCheckpoint());
-            
-            taskComplete = pullResults(task, queryLogic, queryStatus, false);
-            if (!taskComplete) {
-                checkpoint(taskKey.getQueryKey(), cpQueryLogic);
-                taskComplete = true;
+        try {
+            if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
+                CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
+                
+                cpQueryLogic.setupQuery(connector, queryStatus.getConfig(), task.getQueryCheckpoint());
+                
+                log.debug("Pulling results for  " + task.getTaskKey() + ": " + task.getQueryCheckpoint());
+                taskComplete = pullResults(task, queryLogic, queryStatus, false);
+                if (!taskComplete) {
+                    checkpoint(taskKey.getQueryKey(), cpQueryLogic);
+                    taskComplete = true;
+                }
+            } else {
+                Exception e = new IllegalStateException("Attempting to get results for an uninitialized, non-checkpointable query logic");
+                cache.updateFailedQueryStatus(queryId, e);
+                throw e;
             }
-        } else {
-            Exception e = new IllegalStateException("Attempting to get results for an uninitialized, non-checkpointable query logic");
-            cache.updateFailedQueryStatus(queryId, e);
-            throw e;
+        } finally {
+            try {
+                queryLogic.close();
+            } catch (Exception e) {
+                log.error("Failed to close query logic", e);
+            }
         }
         
         return taskComplete;

@@ -8,6 +8,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.io.Serializable;
+import java.util.Date;
 
 /**
  * A query task is an action to perform for a specified query.
@@ -18,12 +19,13 @@ public class QueryTask implements Serializable {
     private final int taskId;
     private final QueryRequest.Method action;
     private final QueryCheckpoint queryCheckpoint;
+    // datetime of last service interaction
+    private long lastUpdatedMillis = System.currentTimeMillis();
     
     public QueryTask(int taskId, QueryRequest.Method action, QueryCheckpoint queryCheckpoint) {
         this.taskId = taskId;
         this.action = action;
         this.queryCheckpoint = queryCheckpoint;
-        
     }
     
     @JsonIgnore
@@ -50,6 +52,25 @@ public class QueryTask implements Serializable {
     }
     
     /**
+     * Get the last updated time for this query task
+     * 
+     * @return the last updated time
+     */
+    public long getLastUpdatedMillis() {
+        return lastUpdatedMillis;
+    }
+    
+    /**
+     * Update the last updated time for this query task
+     * 
+     * @param lastUpdatedMillis
+     *            The last updated date/time
+     */
+    public void setLastUpdatedMillis(long lastUpdatedMillis) {
+        this.lastUpdatedMillis = lastUpdatedMillis;
+    }
+    
+    /**
      * Get the task id
      *
      * @return The task id
@@ -60,7 +81,7 @@ public class QueryTask implements Serializable {
     
     @Override
     public String toString() {
-        return getTaskKey() + " with " + getQueryCheckpoint().getQueries();
+        return getTaskKey() + " with " + getQueryCheckpoint().getQueries() + "; lastUpdated : " + new Date(lastUpdatedMillis);
     }
     
     /**

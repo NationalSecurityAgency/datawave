@@ -251,56 +251,120 @@ public abstract class ExecutorTask implements Runnable {
         return (queueSize < bufferSize);
     }
     
-    private class QueryTaskUpdater {
-        private QueryTask task;
-        private CheckpointableQueryLogic queryLogic;
-        private long timer;
-        private int resultsCount = 0;
-        private int resultsThreshold = 0;
+    private interface QueryTaskUpdater {
+        public void start();
         
-        public QueryTaskUpdater(QueryTask task, CheckpointableQueryLogic queryLogic) {
+        public void resultPublished();
+        
+        public void close();
+    }
+    
+    /**
+     * The default query task updater that will update the QueryTask in the cache periodically based on the number of results returned or the time that has
+     * passed.
+     */
+    private class DefaultQueryTaskUpdater implements QueryTaskUpdater, Runnable {
+        protected QueryTask task;
+        
+        protected volatile int resultsCount = 0;
+        protected volatile int resultsThreshold;
+        protected volatile long lastRefresh;
+        
+        protected volatile boolean closed = false;
+        // the refresh object is used to notify that a checkpoint update may be required or we just closed
+        protected final Object refresh = new Object();
+        protected Thread workThread;
+        
+        public DefaultQueryTaskUpdater(QueryTask task) {
             this.task = task;
-            this.queryLogic = queryLogic;
-            updateTimers();
+            resultsThreshold = executorProperties.getCheckpointFlushResults();
+            lastRefresh = System.currentTimeMillis();
         }
         
-        private void updateTimers() {
-            timer = System.currentTimeMillis() + executorProperties.getCheckpointFlushMs();
-            resultsThreshold = resultsCount + executorProperties.getCheckpointFlushResults();
+        @Override
+        public void start() {
+            workThread = new Thread(this, "Checkpoint Updater for " + task.getTaskKey().toString());
+            workThread.setDaemon(true);
+            workThread.start();
         }
         
-        public void resultPublished() {
-            resultsCount++;
-            if (isFlushTime()) {
-                // update the task with the updated checkpoint
-                task = cache.checkpointTask(task.getTaskKey(), queryLogic.updateCheckpoint(task.getQueryCheckpoint()));
-                updateTimers();
+        @Override
+        public void run() {
+            synchronized (refresh) {
+                while (!closed) {
+                    try {
+                        refresh.wait(executorProperties.getCheckpointFlushMs());
+                    } catch (InterruptedException e) {
+                        // time to potentially refresh and loop
+                    }
+                    if (isRefreshTime()) {
+                        refreshTask();
+                        updateCounters();
+                    }
+                }
             }
         }
         
-        private boolean isFlushTime() {
-            return (System.currentTimeMillis() >= timer || resultsCount >= resultsThreshold);
+        @Override
+        public void close() {
+            closed = true;
+            while (workThread.isAlive()) {
+                synchronized (refresh) {
+                    refresh.notifyAll();
+                }
+            }
+        }
+        
+        protected boolean isRefreshTime() {
+            return (resultsCount >= resultsThreshold || lastRefresh + executorProperties.getCheckpointFlushMs() < System.currentTimeMillis());
+        }
+        
+        protected void refreshTask() {
+            task = cache.checkpointTask(task.getTaskKey(), task.getQueryCheckpoint());
+        }
+        
+        protected void updateCounters() {
+            lastRefresh = System.currentTimeMillis();
+            if (resultsCount >= resultsThreshold) {
+                resultsThreshold = resultsCount + executorProperties.getCheckpointFlushResults();
+            }
+        }
+        
+        @Override
+        public void resultPublished() {
+            resultsCount++;
+            if (resultsCount >= resultsThreshold) {
+                synchronized (refresh) {
+                    refresh.notifyAll();
+                }
+            }
         }
     }
     
-    private class NoopQueryTaskUpdater extends QueryTaskUpdater {
-        public NoopQueryTaskUpdater() {
-            super(null, null);
+    private class CheckpointableQueryTaskUpdater extends DefaultQueryTaskUpdater {
+        private CheckpointableQueryLogic queryLogic;
+        
+        public CheckpointableQueryTaskUpdater(QueryTask task, CheckpointableQueryLogic queryLogic) {
+            super(task);
+            this.queryLogic = queryLogic;
         }
         
-        public void resultPublished() {
-            // noop
+        @Override
+        protected void refreshTask() {
+            task = cache.checkpointTask(task.getTaskKey(), queryLogic.updateCheckpoint(task.getQueryCheckpoint()));
         }
+        
     }
     
     protected boolean pullResults(QueryTask task, QueryLogic queryLogic, CachedQueryStatus queryStatus, boolean exhaustIterator) throws Exception {
         // start the timer on the query status to ensure we flush numResultsGenerated updates periodically
         queryStatus.startTimer();
-        QueryTaskUpdater queryTaskUpdater = new NoopQueryTaskUpdater();
+        QueryTaskUpdater queryTaskUpdater = new DefaultQueryTaskUpdater(task);
         // if we have a checkpointable query logic, the startup a query task updater to periodically update our checkpoint
         if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
-            queryTaskUpdater = new QueryTaskUpdater(task, (CheckpointableQueryLogic) queryLogic);
+            queryTaskUpdater = new CheckpointableQueryTaskUpdater(task, (CheckpointableQueryLogic) queryLogic);
         }
+        queryTaskUpdater.start();
         try {
             TaskKey taskKey = task.getTaskKey();
             String queryId = taskKey.getQueryId();
@@ -335,6 +399,7 @@ public abstract class ExecutorTask implements Runnable {
             
             return !iter.hasNext();
         } finally {
+            queryTaskUpdater.close();
             queryStatus.stopTimer();
             queryStatus.forceCacheUpdateIfDirty();
         }

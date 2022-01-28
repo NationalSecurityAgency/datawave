@@ -33,21 +33,29 @@ public class PlanTask extends ExecutorTask {
         TaskKey taskKey = task.getTaskKey();
         String queryId = taskKey.getQueryId();
         QueryLogic<?> queryLogic = getQueryLogic(queryStatus.getQuery());
-        // by default we will expand the fields but not the values.
-        boolean expandFields = true;
-        boolean expandValues = false;
-        Query query = queryStatus.getQuery();
-        for (QueryImpl.Parameter p : query.getParameters()) {
-            if (p.getParameterName().equals(QUERY_PLAN_EXPAND_FIELDS)) {
-                expandFields = Boolean.parseBoolean(p.getParameterValue());
-            } else if (p.getParameterName().equals(QUERY_PLAN_EXPAND_VALUES)) {
-                expandValues = Boolean.parseBoolean(p.getParameterValue());
+        try {
+            // by default we will expand the fields but not the values.
+            boolean expandFields = true;
+            boolean expandValues = false;
+            Query query = queryStatus.getQuery();
+            for (QueryImpl.Parameter p : query.getParameters()) {
+                if (p.getParameterName().equals(QUERY_PLAN_EXPAND_FIELDS)) {
+                    expandFields = Boolean.parseBoolean(p.getParameterValue());
+                } else if (p.getParameterName().equals(QUERY_PLAN_EXPAND_VALUES)) {
+                    expandValues = Boolean.parseBoolean(p.getParameterValue());
+                }
+            }
+            String plan = queryLogic.getPlan(connector, queryStatus.getQuery(), queryStatus.getCalculatedAuthorizations(), expandFields, expandValues);
+            queryStatus.setPlan(plan);
+            
+            notifyOriginOfPlan(queryId);
+        } finally {
+            try {
+                queryLogic.close();
+            } catch (Exception e) {
+                log.error("Failed to close query logic", e);
             }
         }
-        String plan = queryLogic.getPlan(connector, queryStatus.getQuery(), queryStatus.getCalculatedAuthorizations(), expandFields, expandValues);
-        queryStatus.setPlan(plan);
-        
-        notifyOriginOfPlan(queryId);
         
         return true;
     }
