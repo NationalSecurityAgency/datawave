@@ -15,6 +15,11 @@ spring:
       retry:
         max-attempts: 60
       uri: '${CONFIG_SERVER_URL:http://configuration:8888/configserver}'
+  # Starting with spring-boot 2.6, circular references are disabled by default
+  # This is still needed for the evaluation-only function
+  main:
+    allow-circular-references: true
+
 ---
 
 # For the dev profile, check localhost for the config server by default

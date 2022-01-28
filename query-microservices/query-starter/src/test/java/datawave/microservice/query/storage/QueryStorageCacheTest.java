@@ -1,5 +1,6 @@
 package datawave.microservice.query.storage;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import datawave.microservice.query.messaging.QueryResultsListener;
@@ -107,7 +108,9 @@ public abstract class QueryStorageCacheTest {
         @Profile("use-hazelcast")
         @Bean
         public HazelcastInstance hazelcastInstance() {
-            return Hazelcast.newHazelcastInstance();
+            Config config = new Config();
+            config.setClusterName(UUID.randomUUID().toString());
+            return Hazelcast.newHazelcastInstance(config);
         }
     }
     

@@ -2,6 +2,7 @@ package datawave.microservice.query.executor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Sets;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
@@ -73,6 +74,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
@@ -661,7 +663,9 @@ public abstract class QueryExecutorTest {
     public static class QueryExecutorTestConfiguration {
         @Bean
         public HazelcastInstance hazelcastInstance() {
-            return Hazelcast.newHazelcastInstance();
+            Config config = new Config();
+            config.setClusterName(UUID.randomUUID().toString());
+            return Hazelcast.newHazelcastInstance(config);
         }
         
         @Bean

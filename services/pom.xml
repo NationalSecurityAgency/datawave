@@ -22,8 +22,8 @@
     </scm>
     <properties>
         <version.junit>4.13.2</version.junit>
-        <version.junit.jupiter>5.7.2</version.junit.jupiter>
-        <version.junit.vintage>5.7.2</version.junit.vintage>
+        <version.junit.jupiter>5.8.2</version.junit.jupiter>
+        <version.junit.vintage>5.8.2</version.junit.vintage>
     </properties>
     <dependencyManagement>
         <dependencies>

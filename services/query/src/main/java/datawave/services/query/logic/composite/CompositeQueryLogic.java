@@ -198,11 +198,14 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             }
         }
         
-        final String compositeQueryString = logicQueryStringBuilder.toString();
+        return createCompositeQueryConfiguration(logicQueryStringBuilder.toString());
+    }
+    
+    private static GenericQueryConfiguration createCompositeQueryConfiguration(String queryString) {
         return new GenericQueryConfiguration() {
             @Override
             public String getQueryString() {
-                return compositeQueryString;
+                return queryString;
             }
         };
     }

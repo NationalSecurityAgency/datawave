@@ -83,6 +83,7 @@ hazelcast:
           <!-- No matter what, entries get evicted after this time. -->
           <time-to-live-seconds>3600</time-to-live-seconds>
           <merge-policy>com.hazelcast.spi.merge.LatestUpdateMergePolicy</merge-policy>
+          <per-entry-stats-enabled>true</per-entry-stats-enabled>
           <!-- Evict the least frequently used entries first if we run out of space and allow 2GB for each cluster node to store data -->
           <eviction eviction-policy="LFU" max-size-policy="USED_HEAP_SIZE" size="2048"/>
           <map-store enabled="true" initial-mode="LAZY">
@@ -100,6 +101,7 @@ hazelcast:
           <!-- No matter what, entries get evicted after this time. -->
           <time-to-live-seconds>3600</time-to-live-seconds>
           <merge-policy>com.hazelcast.spi.merge.LatestUpdateMergePolicy</merge-policy>
+          <per-entry-stats-enabled>true</per-entry-stats-enabled>
           <!-- Evict the least frequently used entries first if we run out of space and allow 2GB for each cluster node to store data -->
           <eviction eviction-policy="LFU" max-size-policy="USED_HEAP_SIZE" size="2048"/>
           <map-store enabled="true" initial-mode="LAZY">
