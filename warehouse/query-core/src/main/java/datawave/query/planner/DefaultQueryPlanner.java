@@ -704,6 +704,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         if (optionsMap.containsKey(QueryParameters.SHARDS_AND_DAYS)) {
             config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
+        } else {
+            // look for the shards and days hint in the query settings
+            Parameter parameter = settings.findParameter(QueryParameters.SHARDS_AND_DAYS);
+            if (StringUtils.isNotBlank(parameter.getParameterValue())) {
+                optionsMap.put(QueryParameters.SHARDS_AND_DAYS, parameter.getParameterValue());
+                config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
+            }
         }
         
         // extract #NO_EXPANSION function, if it exists
