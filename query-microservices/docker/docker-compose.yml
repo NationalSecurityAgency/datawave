@@ -285,6 +285,7 @@ services:
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
+      - "HADOOP_HOST=${HOSTNAME}"
       - "BACKEND=${BACKEND:-kafka}"
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
@@ -328,6 +329,7 @@ services:
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
+      - "HADOOP_HOST=${HOSTNAME}"
       - "BACKEND=${BACKEND:-kafka}"
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
