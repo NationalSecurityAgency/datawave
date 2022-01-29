@@ -434,6 +434,7 @@
         <property name="maxWork" value="-1" />
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
+        <property name="metadataTableName" value="${metadata.table.name}" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
@@ -452,6 +453,7 @@
         <property name="maxWork" value="-1" />
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
+        <property name="metadataTableName" value="${error.metadata.table.name}" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
