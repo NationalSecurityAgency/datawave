@@ -14,6 +14,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,46 +34,46 @@ public class ShouldGenerateResultsTest {
         queryStatus.setNumResultsGenerated(1);
         
         // default positive case
-        assertTrue(action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
+        assertEquals(ExecutorTask.RESULTS_ACTION.GENERATE, action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
         // closed, no next running
         queryStatus.setQueryState(QueryStatus.QUERY_STATE.CLOSED);
         queryStatus.setActiveNextCalls(0);
-        assertFalse(action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
+        assertEquals(ExecutorTask.RESULTS_ACTION.COMPLETE, action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
         // closed but next running
         queryStatus.setActiveNextCalls(1);
-        assertTrue(action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
+        assertEquals(ExecutorTask.RESULTS_ACTION.GENERATE, action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
         // canceled
         queryStatus.setQueryState(QueryStatus.QUERY_STATE.CANCELED);
-        assertFalse(action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
+        assertEquals(ExecutorTask.RESULTS_ACTION.COMPLETE, action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
         // failed
         queryStatus.setQueryState(QueryStatus.QUERY_STATE.FAILED);
-        assertFalse(action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
+        assertEquals(ExecutorTask.RESULTS_ACTION.COMPLETE, action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
         // max results reached
         queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
-        assertFalse(action.shouldGenerateMoreResults(false, key, 10, 1, queryStatus));
-        assertTrue(action.shouldGenerateMoreResults(false, key, 10, 0, queryStatus));
+        assertEquals(ExecutorTask.RESULTS_ACTION.COMPLETE, action.shouldGenerateMoreResults(false, key, 10, 1, queryStatus));
+        assertEquals(ExecutorTask.RESULTS_ACTION.GENERATE, action.shouldGenerateMoreResults(false, key, 10, 0, queryStatus));
         
         // default negative case
         queues.setQueueSize(20);
-        assertFalse(action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
+        assertEquals(ExecutorTask.RESULTS_ACTION.PAUSE, action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
         // exhaust results
-        assertTrue(action.shouldGenerateMoreResults(true, key, 10, 100, queryStatus));
+        assertEquals(ExecutorTask.RESULTS_ACTION.GENERATE, action.shouldGenerateMoreResults(true, key, 10, 100, queryStatus));
         
         // queue size test
         queues.setQueueSize(19);
-        assertTrue(action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
+        assertEquals(ExecutorTask.RESULTS_ACTION.GENERATE, action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
         // capped by max results
         queues.setQueueSize(10);
         queryStatus.setNumResultsGenerated(90);
-        assertFalse(action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
-        assertTrue(action.shouldGenerateMoreResults(false, key, 10, 0, queryStatus));
+        assertEquals(ExecutorTask.RESULTS_ACTION.PAUSE, action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
+        assertEquals(ExecutorTask.RESULTS_ACTION.GENERATE, action.shouldGenerateMoreResults(false, key, 10, 0, queryStatus));
     }
     
     public class TestQueryResultsManagerForSize implements QueryResultsManager {
@@ -115,7 +116,7 @@ public class ShouldGenerateResultsTest {
         }
         
         @Override
-        public boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize, long maxResults, QueryStatus queryStatus) {
+        public RESULTS_ACTION shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize, long maxResults, QueryStatus queryStatus) {
             return super.shouldGenerateMoreResults(exhaust, taskKey, maxPageSize, maxResults, queryStatus);
         }
         

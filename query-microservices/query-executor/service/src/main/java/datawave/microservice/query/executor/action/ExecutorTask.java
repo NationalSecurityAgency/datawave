@@ -201,7 +201,11 @@ public abstract class ExecutorTask implements Runnable {
         return queryLogicFactory.getQueryLogic(query.getQueryLogicName());
     }
     
-    protected boolean shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize, long maxResults, QueryStatus queryStatus) {
+    public enum RESULTS_ACTION {
+        PAUSE, GENERATE, COMPLETE;
+    }
+    
+    protected RESULTS_ACTION shouldGenerateMoreResults(boolean exhaust, TaskKey taskKey, int maxPageSize, long maxResults, QueryStatus queryStatus) {
         QueryStatus.QUERY_STATE state = queryStatus.getQueryState();
         int concurrentNextCalls = queryStatus.getActiveNextCalls();
         float bufferMultiplier = executorProperties.getAvailableResultsPageMultiplier();
@@ -211,7 +215,7 @@ public abstract class ExecutorTask implements Runnable {
         if (state == QueryStatus.QUERY_STATE.CLOSED) {
             if (concurrentNextCalls == 0) {
                 log.debug("Not getting results for closed query " + taskKey);
-                return false;
+                return RESULTS_ACTION.COMPLETE;
             } else {
                 // we know these are the last next calls, so cap the buffer multiplier to 1
                 bufferMultiplier = 1.0f;
@@ -221,18 +225,18 @@ public abstract class ExecutorTask implements Runnable {
         // if the state is canceled or failed, then stop
         if (state == QueryStatus.QUERY_STATE.CANCELED || state == QueryStatus.QUERY_STATE.FAILED) {
             log.debug("Not getting results for canceled or failed query " + taskKey);
-            return false;
+            return RESULTS_ACTION.COMPLETE;
         }
         
         // if we have reached the max results for this query, then stop
         if (maxResults > 0 && queryStatus.getNumResultsGenerated() >= maxResults) {
             log.debug("max resuilts reached for " + taskKey);
-            return false;
+            return RESULTS_ACTION.COMPLETE;
         }
         
         // if we are to exhaust the iterator, then continue generating results
         if (exhaust) {
-            return true;
+            return RESULTS_ACTION.GENERATE;
         }
         
         // get the queue size
@@ -248,7 +252,11 @@ public abstract class ExecutorTask implements Runnable {
         
         // we should return results if we have less than what we want to have buffered
         log.debug("Getting results if " + queueSize + " < " + bufferSize);
-        return (queueSize < bufferSize);
+        if (queueSize < bufferSize) {
+            return RESULTS_ACTION.GENERATE;
+        } else {
+            return RESULTS_ACTION.PAUSE;
+        }
     }
     
     private interface QueryTaskUpdater {
@@ -382,9 +390,9 @@ public abstract class ExecutorTask implements Runnable {
                 pageSize = Math.min(pageSize, queryLogic.getMaxPageSize());
             }
             QueryResultsPublisher publisher = resultsManager.createPublisher(queryId);
-            boolean running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
+            RESULTS_ACTION running = shouldGenerateMoreResults(exhaustIterator, taskKey, pageSize, maxResults, queryStatus);
             int count = 0;
-            while (running && iter.hasNext()) {
+            while (running == RESULTS_ACTION.GENERATE && iter.hasNext()) {
                 count++;
                 Object result = iter.next();
                 log.trace("Generated result for " + taskKey + ": " + result);
@@ -397,7 +405,8 @@ public abstract class ExecutorTask implements Runnable {
             log.debug("Generated " + count + " results for " + taskKey);
             updateMetrics(queryId, queryStatus, iter);
             
-            return !iter.hasNext();
+            // if the query is complete or we have no more results to generate, then the task is complete
+            return (running == RESULTS_ACTION.COMPLETE || !iter.hasNext());
         } finally {
             queryTaskUpdater.close();
             queryStatus.stopTimer();
