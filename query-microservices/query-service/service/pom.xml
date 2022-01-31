@@ -12,6 +12,7 @@
     <description>DATAWAVE Query Microservice</description>
     <properties>
         <start-class>datawave.microservice.query.QueryService</start-class>
+        <surefire.forkCount>1</surefire.forkCount>
         <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
         <version.microservice.starter-audit>1.3-SNAPSHOT</version.microservice.starter-audit>
         <version.microservice.starter-query>1.0-SNAPSHOT</version.microservice.starter-query>
