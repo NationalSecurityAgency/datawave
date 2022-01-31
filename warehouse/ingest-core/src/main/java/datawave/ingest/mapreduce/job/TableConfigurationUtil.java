@@ -354,7 +354,8 @@ public class TableConfigurationUtil {
                 setTableConfigsFromCacheFile();
                 return;
             } catch (Exception e) {
-                log.error("Unable to read accumulo config cache at " + tableConfigCache.getCacheFilePath() + ". Proceeding to read directly from Accumulo.");
+                log.error("Unable to read accumulo config cache at " + tableConfigCache.getCacheFilePath() + "\n " + e.getCause()
+                                + ". Proceeding to read directly from Accumulo.");
             }
         }
         try {

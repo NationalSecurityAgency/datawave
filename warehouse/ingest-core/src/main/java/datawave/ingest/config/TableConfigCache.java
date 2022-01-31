@@ -19,7 +19,6 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
     public static final String DEFAULT_ACCUMULO_CONFIG_CACHE_PATH = "/data/accumuloConfigCache/accConfCache.txt";
     public static final String ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY = "accumulo.config.cache.enable";
     
-    protected static final String DELIMITER = "\t";
     private Map<String,Map<String,String>> configMap = new HashMap<>();
     private static TableConfigCache cache;
     
@@ -53,7 +52,7 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
         try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpCacheFile)), false, "UTF-8")) {
             for (Map.Entry<String,Map<String,String>> table : configMap.entrySet()) {
                 for (Map.Entry tableProp : table.getValue().entrySet()) {
-                    out.println(table.getKey() + DELIMITER + tableProp.getKey() + DELIMITER + tableProp.getValue());
+                    out.println(table.getKey() + this.delimiter + tableProp.getKey() + this.delimiter + tableProp.getValue());
                 }
             }
         } catch (IOException e) {
@@ -62,7 +61,7 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
     }
     
     @Override
-    protected void readCache(BufferedReader in, String delimiter) throws IOException {
+    protected void readCache(BufferedReader in) throws IOException {
         this.configMap = new HashMap<>();
         String line;
         String table = null;
@@ -70,7 +69,7 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
         String propVal;
         Map<String,String> tempMap = new HashMap<>();
         while ((line = in.readLine()) != null) {
-            String[] parts = StringUtils.split(line, delimiter);
+            String[] parts = StringUtils.split(line, this.delimiter);
             if (table == null || !table.equals(parts[0])) {
                 table = parts[0];
                 tempMap = new HashMap<>();
@@ -84,7 +83,6 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
                 throw new IOException("Invalid Table Config Cache at " + this.cacheFilePath + " . Please verify its contents.");
             }
         }
-        in.close();
         
     }
     
