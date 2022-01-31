@@ -1,12 +1,12 @@
 package datawave.query.jexl.functions;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import datawave.data.type.Type;
+import datawave.query.attributes.Attribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.query.collections.FunctionalSet;
+import datawave.util.OperationEvaluator;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.log4j.Logger;
 
@@ -67,32 +67,36 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     private static int getSizeOf(Iterable<?> iterable) {
-        Map<String,Integer> countMap = Maps.newHashMap();
-        int count = 0;
         if (iterable != null) {
-            // additional datatypes may have been added to this field to assist with evaluation and for use as
-            // a 'marker' for some other condition. We care only about how many were in the original so
-            // bin them all up to count what was really there in the beginning
+            int sourcedFromEvent = 0;
+            int sourcedFromIndex = 0;
+            int nonValueTuples = 0;
             for (Object o : iterable) {
                 if (o instanceof ValueTuple) {
                     ValueTuple valueTuple = (ValueTuple) o;
-                    if (valueTuple.second() instanceof Type<?>) {
-                        String typeName = valueTuple.second().getClass().toString();
-                        if (countMap.containsKey(typeName)) {
-                            countMap.put(typeName, countMap.get(typeName) + 1);
-                        } else {
-                            countMap.put(typeName, 1);
-                        }
-                        count = countMap.get(typeName);
+                    Attribute<?> attribute = valueTuple.getSource();
+                    // Count which fields were found from the events vs. the index.
+                    if (attribute.isFromIndex()) {
+                        sourcedFromIndex++;
                     } else {
-                        count++;
+                        sourcedFromEvent++;
                     }
                 } else {
-                    count++;
+                    nonValueTuples++;
                 }
             }
+            // If any of the fields were found in the events, only return the number of fields found in the events.
+            if (sourcedFromEvent > 0) {
+                return sourcedFromEvent;
+            } else if (sourcedFromIndex > 0) {
+                // If the field was index-only, return the number of fields found in the index.
+                return sourcedFromIndex;
+            } else {
+                // If we found no value tuples, return the number of objects we saw.
+                return nonValueTuples;
+            }
         }
-        return count;
+        return 0;
     }
     
     /**
@@ -112,81 +116,12 @@ public class EvaluationPhaseFilterFunctions {
         }
     }
     
-    /**
-     * Compare the size of the given object to the given right using the comparison operation indicated by the given operator.
-     *
-     * @param obj
-     *            the object whose size will be used as the left side of the comparison
-     * @param operator
-     *            the operator
-     * @param right
-     *            the intended right side of the comparison
-     * @return the comparison result
-     */
-    private static boolean compareSizeToCount(Object obj, String operator, int right) {
+    private static boolean compareSizeToCount(Object obj, String operatorString, int count) {
         int size = getSizeOf(obj);
         if (log.isDebugEnabled()) {
-            log.debug("compareSizeToCount(" + obj + ", size=" + size + " " + operator + ", " + right + ")");
+            log.debug("evaluate(" + obj + ", size=" + size + " " + operatorString + ", " + count + ")");
         }
-        return compare(size, right, operator);
-    }
-    
-    /**
-     * Return the result of the comparison indicated by the specified operator on the given left and right side value.
-     *
-     * @param left
-     *            the left side of the comparison
-     * @param right
-     *            the right side of the comparison
-     * @param operator
-     *            the operator, must be &lt;, &lt;=, ==, =, !=, &gt;, or &gt;=
-     * @return the comparison result
-     */
-    private static boolean compare(long left, long right, String operator) {
-        // Remove any whitespace from the operator before matching it to the correct comparison operation.
-        switch (CharMatcher.WHITESPACE.removeFrom(operator)) {
-            case "<":
-                return left < right;
-            case "<=":
-                return left <= right;
-            case "==":
-            case "=":
-                return left == right;
-            case ">=":
-                return left >= right;
-            case ">":
-                return left > right;
-            case "!=":
-                return left != right;
-            default:
-                throw new IllegalArgumentException("Cannot use " + operator + " in this equation");
-        }
-    }
-    
-    /**
-     * Return the result of the calculation indicated by the specified operator on the given left and right side values.
-     *
-     * @param left
-     *            the left side of the calculation
-     * @param right
-     *            the right side of the calculation
-     * @param operator
-     *            the operator, must be +, -, *, or /
-     * @return the calculation result
-     */
-    private static long calculate(long left, long right, String operator) {
-        // Remove any whitespace from the operator before matching it to the correct calculation operation.
-        switch (CharMatcher.WHITESPACE.removeFrom(operator)) {
-            case "+":
-                return left + right;
-            case "-":
-                return left - right;
-            case "*":
-                return left * right;
-            case "/":
-                return left / right;
-        }
-        throw new IllegalArgumentException("Cannot use " + operator + " in this equation");
+        return OperationEvaluator.compare(size, count, operatorString);
     }
     
     /**
@@ -1470,8 +1405,8 @@ public class EvaluationPhaseFilterFunctions {
     public static FunctionalSet<ValueTuple> timeFunction(Object time1, Object time2, String operatorString, String equalityString, long goal) {
         FunctionalSet<ValueTuple> matches = new FunctionalSet();
         try {
-            long time = calculate(getMaxTime(time1), getMinTime(time2), operatorString);
-            boolean truth = compare(time, goal, equalityString);
+            long calculation = OperationEvaluator.calculate(getMaxTime(time1), getMinTime(time2), operatorString);
+            boolean truth = OperationEvaluator.compare(calculation, goal, equalityString);
             if (truth) {
                 matches.addAll(Sets.newHashSet(getHitTerm(getMaxValue(time1)), getHitTerm(getMinValue(time2))));
             }
