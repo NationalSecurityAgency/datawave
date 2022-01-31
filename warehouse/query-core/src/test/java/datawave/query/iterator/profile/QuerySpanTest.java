@@ -83,7 +83,7 @@ public class QuerySpanTest {
         Runnable r2 = new QSRunnable(qsc, qs2);
         Runnable r3 = new QSRunnable(qsc, qs3);
         
-        ExecutorService executorService = ThreadPools.createFixedThreadPool(10, "QSExecutor");
+        ExecutorService executorService = ThreadPools.createFixedThreadPool(10, "QSExecutor", false);
         executorService.execute(r1);
         executorService.execute(r2);
         executorService.execute(r3);

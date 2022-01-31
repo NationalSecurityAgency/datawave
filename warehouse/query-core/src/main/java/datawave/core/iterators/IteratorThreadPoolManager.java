@@ -65,7 +65,7 @@ public class IteratorThreadPoolManager {
     
     private ThreadPoolExecutor createExecutorService(int maxThreads, String name) {
         ThreadPoolExecutor pool = ThreadPools.createThreadPool(maxThreads, maxThreads, 5 * 60,
-                TimeUnit.SECONDS, name, new LinkedBlockingQueue<>(), OptionalInt.empty());
+                TimeUnit.SECONDS, name, new LinkedBlockingQueue<>(), false);
         pool.allowCoreThreadTimeOut(true);
         return pool;
     }
