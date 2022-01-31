@@ -1,0 +1,20 @@
+<ageoffConfiguration>
+    <parent>alternate-root.xml</parent>
+    <rules>
+        <rule label="labeledPatternsFormat" mode="merge">
+            <ttl units="d">0</ttl>
+            <filterClass>datawave.iterators.filter.EdgeColumnQualifierTokenFilter</filterClass>
+            <!-- Overrides some, but not all, of the parent's ttl entries -->
+            <!-- Introduces additional ttl keys -->
+            <!-- Uses a variety of formats -->
+            <matchPattern>
+                001 bakingPowder:548d     <!-- in mylar bag with desiccant -->
+                002 driedBeans:  90d      <!-- in cardboard box -->
+                003 bakingSoda = 365d     <!-- in cardboard box -->
+                    "coffeeInstant" :365d <!-- in cardboard box -->
+                    "mysteryMeat"= 3650d  <!-- in mylar bag with desiccant -->
+                BFF proteinPowder=365d    <!-- in mylar bag with desiccant -->
+            </matchPattern>
+        </rule>
+    </rules>
+</ageoffConfiguration>

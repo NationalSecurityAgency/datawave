@@ -9,13 +9,14 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.assertj.core.api.AbstractAssert;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 /**
  * This class provides the ability to perform a number of assertions specific to {@link JexlNode} instances, and is intended to be used for testing purposes.
  */
 public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
+    
+    private static final DeepJexlNodeComparator COMPARATOR = new DeepJexlNodeComparator();
     
     /**
      * Return a new {@link JexlNodeAssert} that will perform assertions on the specified node.
@@ -25,7 +26,11 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
      * @return a new {@link JexlNodeAssert} for the node
      */
     public static JexlNodeAssert assertThat(JexlNode node) {
-        return new JexlNodeAssert(node, JexlNodeAssert.class);
+        return new JexlNodeAssert(node);
+    }
+    
+    public JexlNodeAssert(JexlNode node) {
+        super(node, JexlNodeAssert.class);
     }
     
     protected JexlNodeAssert(JexlNode node, Class<?> selfType) {
@@ -281,7 +286,7 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
     
     /**
      * Verifies that the actual node is equal to the given node as determined by a {@link TreeEqualityVisitor} comparison. If the assertion fails and
-     * printQueries is true, both the actual node and parsed node will be printed to the system output via {@link PrintingVisitor#printQuery(String)} for
+     * printQueries is true, both the actual node and expected node will be printed to the system output via {@link PrintingVisitor#printQuery(String)} for
      * debugging purposes.
      * 
      * @param node
@@ -289,29 +294,8 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
      * @return this {@link JexlNodeAssert}
      */
     public JexlNodeAssert isEqualTo(JexlNode node, boolean printQueries) {
-        if (node != actual) {
-            if (node == null || actual == null) {
-                failWithMessage("Expected actual to be " + getQueryString(node) + " but was " + getQueryString(actual));
-            } else {
-                assertEqual(actual, node, printQueries);
-            }
-        }
+        assertEqual(actual, node, printQueries);
         return this;
-    }
-    
-    // Return a comma-delimited list of the node's children.
-    private String formatChildren(JexlNode node) {
-        return Arrays.toString(getChildren(node));
-    }
-    
-    // Return a copy of the node's children array.
-    private JexlNode[] getChildren(JexlNode node) {
-        int numChildren = node.jjtGetNumChildren();
-        JexlNode[] children = new JexlNode[numChildren];
-        for (int i = 0; i < numChildren; i++) {
-            children[i] = node.jjtGetChild(i);
-        }
-        return children;
     }
     
     // Return the query tree's query string, or "null" if the query tree is null.
@@ -321,9 +305,9 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
     
     // Assert whether the two nodes are equal.
     private void assertEqual(JexlNode actual, JexlNode expected, boolean printQueries) {
-        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expected, actual);
-        if (!comparison.isEqual()) {
-            failWithMessage("Expected actual to be " + getQueryString(expected) + " but was non-equal: " + comparison.getReason());
+        int result = COMPARATOR.compare(actual, expected);
+        if (result != 0) {
+            failWithMessage("Expected message to be " + getQueryString(expected) + " but was " + getQueryString(actual));
             if (printQueries) {
                 PrintingVisitor.printQuery(actual);
                 PrintingVisitor.printQuery(expected);

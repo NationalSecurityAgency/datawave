@@ -36,30 +36,39 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
     
     private static final String LABEL = "_List_";
     
+    /**
+     * Return the label this marker type: {@value #LABEL}. Overrides {@link QueryPropertyMarker#label()}.
+     * 
+     * @return the label
+     */
     public static String label() {
         return LABEL;
-    }
-    
-    public ExceededOrThresholdMarkerJexlNode(int id) {
-        super(id);
     }
     
     public ExceededOrThresholdMarkerJexlNode() {
         super();
     }
     
+    public ExceededOrThresholdMarkerJexlNode(int id) {
+        super(id);
+    }
+    
     /**
-     * This will create a structure as follows around the specified node: Reference (this node) Reference Expression AND Reference Reference Expression
-     * Assignment Reference Identifier:_List_ True node (the one specified
-     * 
-     * Hence the resulting expression will be ((_List_ = True) AND {specified node})
+     * Returns a new query property marker with the expression <code>(({@value #LABEL} = true) &amp;&amp; ({source}))</code>.
      * 
      * @param node
+     *            the source node
+     * @see QueryPropertyMarker#QueryPropertyMarker(JexlNode) the super constructor for additional information on the tree structure
      */
     public ExceededOrThresholdMarkerJexlNode(JexlNode node) {
         super(node);
     }
     
+    /**
+     * Returns {@value #LABEL}.
+     * 
+     * @return the label
+     */
     @Override
     public String getLabel() {
         return LABEL;

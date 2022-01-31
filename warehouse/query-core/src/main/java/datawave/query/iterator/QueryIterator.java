@@ -863,7 +863,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     
                     Entry<DocumentData,Document> entry = null;
                     if (input != null) {
-                        entry = Maps.immutableEntry(new DocumentData(input.getKey(), Collections.singleton(input.getKey()), Collections.EMPTY_LIST),
+                        entry = Maps.immutableEntry(new DocumentData(input.getKey(), Collections.singleton(input.getKey()), Collections.EMPTY_LIST, true),
                                         input.getValue());
                     }
                     return entry;

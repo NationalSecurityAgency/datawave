@@ -9,15 +9,18 @@ import datawave.marking.MarkingFunctions;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.HasMarkings;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.log4j.Logger;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,10 +29,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public abstract class BaseQueryMetric implements HasMarkings, Serializable {
+    
+    private static final Logger log = Logger.getLogger(BaseQueryMetric.class);
     
     @XmlAccessorType(XmlAccessType.NONE)
     public static class PageMetric implements Serializable, Message<PageMetric> {
@@ -175,6 +181,50 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
         
         public void setLoginTime(long loginTime) {
             this.loginTime = loginTime;
+        }
+        
+        public String toEventString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(pagesize).append("/");
+            sb.append(returnTime).append("/");
+            sb.append(callTime).append("/");
+            sb.append(serializationTime).append("/");
+            sb.append(bytesWritten).append("/");
+            sb.append(pageRequested).append("/");
+            sb.append(pageReturned).append("/");
+            sb.append(loginTime);
+            return sb.toString();
+        }
+        
+        static public PageMetric parse(String s) {
+            String[] parts = StringUtils.split(s, "/");
+            PageMetric pageMetric = null;
+            
+            if (parts.length == 10) {
+                // host/pageUuid/pageSize/returnTime/callTime/serializationTime/bytesWritten/pageRequested/pageReturned/loginTime
+                pageMetric = new PageMetric(Long.parseLong(parts[2]), Long.parseLong(parts[3]), Long.parseLong(parts[4]), Long.parseLong(parts[5]),
+                                Long.parseLong(parts[6]), Long.parseLong(parts[7]), Long.parseLong(parts[8]), Long.parseLong(parts[9]));
+            } else if (parts.length == 9) {
+                // /pageUuid/pageSize/returnTime/callTime/serializationTime/bytesWritten/pageRequested/pageReturned/loginTime
+                pageMetric = new PageMetric(Long.parseLong(parts[1]), Long.parseLong(parts[2]), Long.parseLong(parts[3]), Long.parseLong(parts[4]),
+                                Long.parseLong(parts[5]), Long.parseLong(parts[6]), Long.parseLong(parts[7]), Long.parseLong(parts[8]));
+            } else if (parts.length == 8) {
+                // pageSize/returnTime/callTime/serializationTime/bytesWritten/pageRequested/pageReturned/loginTime
+                pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]), Long.parseLong(parts[3]),
+                                Long.parseLong(parts[4]), Long.parseLong(parts[5]), Long.parseLong(parts[6]), Long.parseLong(parts[7]));
+            } else if (parts.length == 7) {
+                // pageSize/returnTime/callTime/serializationTime/bytesWritten/pageRequested/pageReturned
+                pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]), Long.parseLong(parts[3]),
+                                Long.parseLong(parts[4]), Long.parseLong(parts[5]), Long.parseLong(parts[6]));
+            } else if (parts.length == 5) {
+                // pageSize/returnTime/callTime/serializationTime/bytesWritten
+                pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]), Long.parseLong(parts[3]),
+                                Long.parseLong(parts[4]), 0l, 0l);
+            } else if (parts.length == 2) {
+                // pageSize/returnTime
+                pageMetric = new PageMetric(Long.parseLong(parts[0]), Long.parseLong(parts[1]), 0l, 0l);
+            }
+            return pageMetric;
         }
         
         @Override
@@ -573,6 +623,8 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     @XmlElement
     protected long yieldCount = 0L;
     @XmlElement
+    protected String version = getVersion();
+    @XmlElement
     protected long docRanges = 0;
     @XmlElement
     protected long fiRanges = 0;
@@ -700,6 +752,29 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     public void setHost(String host) {
         this.host = host;
+    }
+    
+    public String getVersion() {
+        String returnStr = "";
+        try {
+            final Properties props = new Properties();
+            InputStream in = BaseQueryMetric.class.getResourceAsStream("/version.properties");
+            if (in != null) {
+                props.load(in);
+                returnStr = props.getProperty("currentVersion");
+                in.close();
+            } else {
+                log.warn("version.properties InputStream is null. Keeping version string empty.");
+            }
+            
+        } catch (IOException e) {
+            log.warn("IOException encountered, attempting to read in version.properties.");
+        }
+        return returnStr;
+    }
+    
+    public void setVersion(String version) {
+        this.version = version;
     }
     
     public void addPageTime(long pagesize, long timeToReturn, long requestedTime, long returnedTime) {
@@ -938,6 +1013,11 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     
     public void setPageTimes(ArrayList<PageMetric> pageTimes) {
         this.pageTimes = pageTimes;
+        this.numResults = 0;
+        if (pageTimes != null) {
+            this.numPages = pageTimes.size();
+            pageTimes.forEach(p -> this.numResults += p.getPagesize());
+        }
     }
     
     public void setPredictions(Set<Prediction> predictions) {
