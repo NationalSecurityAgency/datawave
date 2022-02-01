@@ -52,6 +52,8 @@ public class RegexIndexLookup extends AsyncIndexLookup {
     protected RegexLookupData forwardLookupData = new RegexLookupData();
     protected RegexLookupData reverseLookupData = new RegexLookupData();
     
+    private ExpandedFieldCache fieldCache = new ExpandedFieldCache(); // Todo - check if we already performed lookups for certain fields
+    
     /**
      *
      * @param config

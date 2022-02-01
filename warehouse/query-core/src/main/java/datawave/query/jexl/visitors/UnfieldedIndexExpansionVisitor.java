@@ -5,6 +5,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.lookups.ExpandedFieldCache;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
@@ -42,6 +43,10 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     
     protected Set<String> expansionFields;
     protected Set<Type<?>> allTypes;
+    
+    // This contains the fields we look up against the index and their expansions for each term expanded in this visitor. This will allow us to avoid
+    // performing lookups on the same fields multiple times.
+    private ExpandedFieldCache expandedFieldCache = new ExpandedFieldCache();
     
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected UnfieldedIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
@@ -220,7 +225,8 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         try {
             // Using the datatype filter when expanding this term isn't really
             // necessary
-            return ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, config, scannerFactory, expansionFields, allTypes, helper, executor);
+            return ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, config, scannerFactory, expansionFields, allTypes, helper, executor,
+                            expandedFieldCache);
         } catch (TableNotFoundException e) {
             throw new DatawaveFatalQueryException(e);
         }

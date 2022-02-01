@@ -2,6 +2,9 @@ package datawave.query.jexl.lookups;
 
 import datawave.query.config.ShardQueryConfiguration;
 
+import java.util.Collections;
+import java.util.Set;
+
 /**
  * An index lookup which does no work and returns an empty IndexLookupMap
  */

@@ -617,7 +617,9 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      */
     public boolean mustExpand(ASTERNode node) throws TableNotFoundException {
         String fieldName = JexlASTHelper.getIdentifier(node);
-        
+        if (log.isTraceEnabled()) {
+            log.trace("fieldName: " + fieldName);
+        }
         // if the identifier is a non-event field, then we must expand it
         return helper.getNonEventFields(config.getDatatypeFilter()).contains(fieldName);
     }
@@ -692,8 +694,11 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     @Override
     protected void rebuildFutureJexlNode(FutureJexlNode futureJexlNode) {
         JexlNode currentNode = futureJexlNode.getOrigNode();
-        IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
         
+        if (log.isTraceEnabled()) {
+            log.trace("currentNode " + currentNode);
+        }
+        IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
         if (futureJexlNode.isIgnoreComposites()) {
             removeCompositeFields(fieldsToTerms);
         }

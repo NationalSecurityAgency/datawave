@@ -7,12 +7,14 @@ import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,6 +33,9 @@ import java.util.function.Supplier;
  * Abstract class which provides a framework for visitors which perform index lookups based on the contents of the Jexl tree
  */
 public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
+    
+    private static final Logger log = ThreadConfigurableLogger.getLogger(BaseIndexExpansionVisitor.class);
+    
     private static final int MIN_THREADS = 1;
     
     protected ShardQueryConfiguration config;
@@ -60,8 +65,14 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         this.config = config;
         this.scannerFactory = scannerFactory;
         this.helper = helper;
-        this.expandFields = config.isExpandFields();
-        this.expandValues = config.isExpandValues();
+        
+        if (log.isTraceEnabled()) {
+            this.expandFields = config.isExpandFields();
+            this.expandValues = config.isExpandValues();
+            
+            log.trace("expanded fields?" + expandFields);
+            log.trace("expanded values?" + expandValues);
+        }
         this.threadName = threadName;
         
         this.indexOnlyFields = helper.getIndexOnlyFields(config.getDatatypeFilter());
