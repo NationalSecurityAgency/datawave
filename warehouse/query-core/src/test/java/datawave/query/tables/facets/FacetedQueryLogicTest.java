@@ -57,7 +57,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
     private static final Logger log = Logger.getLogger(FacetedQueryLogicTest.class);
     
     public FacetedQueryLogicTest() {
-        super(CarsDataType.getManager());
+        super(CitiesDataType.getManager());
     }
     
     @BeforeClass
@@ -74,6 +74,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         dataTypes.add(new FacetedCitiesDataType(CitiesDataType.CityEntry.rome, generic));
         
         accumuloSetup.setData(FileType.CSV, dataTypes);
+        accumuloSetup.setAuthorizations(CitiesDataType.getTestAuths());
         connector = accumuloSetup.loadTables(log, TEARDOWN.EVERY_OTHER, INTERRUPT.NEVER);
     }
     

@@ -80,20 +80,21 @@ public class Document extends AttributeBag<Document> implements Serializable {
         this.trackSizes = trackSizes;
     }
     
-    public Document(Key key, Set<Key> docKeys, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata, CompositeMetadata compositeMetadata,
-                    boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter) {
-        this(key, docKeys, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter, true);
+    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
+                    CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter) {
+        this(key, docKeys, fromIndex, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter, true);
     }
     
-    public Document(Key key, Set<Key> docKeys, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata, CompositeMetadata compositeMetadata,
-                    boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter, boolean toKeep) {
-        this(key, docKeys, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter, toKeep, true);
+    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
+                    CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter, boolean toKeep) {
+        this(key, docKeys, fromIndex, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter, toKeep, true);
     }
     
-    public Document(Key key, Set<Key> docKeys, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata, CompositeMetadata compositeMetadata,
-                    boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter, boolean toKeep, boolean trackSizes) {
+    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
+                    CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter, boolean toKeep,
+                    boolean trackSizes) {
         this(key, toKeep, trackSizes);
-        this.consumeRawData(key, docKeys, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter);
+        this.consumeRawData(key, docKeys, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter, fromIndex);
     }
     
     @Override
@@ -126,7 +127,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * @return
      */
     public Document consumeRawData(Key docKey, Set<Key> docKeys, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
-                    CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter) {
+                    CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter,
+                    boolean fromIndex) {
         invalidateMetadata();
         // extract the sharded time from the dockey if possible
         try {
@@ -142,7 +144,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         
         // Transform the remaining entries back into Attributes
         Iterator<Iterable<Entry<String,Attribute<? extends Comparable<?>>>>> attributes = Iterators.transform(extractedFieldNames, new ValueToAttributes(
-                        compositeMetadata, typeMetadata, attrFilter, MarkingFunctions.Factory.createMarkingFunctions()));
+                        compositeMetadata, typeMetadata, attrFilter, MarkingFunctions.Factory.createMarkingFunctions(), fromIndex));
         
         // Add all of the String=>Attribute pairs to this Document
         while (attributes.hasNext()) {
