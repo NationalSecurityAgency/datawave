@@ -447,7 +447,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                     log.trace("fieldToFieldWithContextMap: {} did not contain: {}", fieldToFieldWithContextMap, fieldListItem);
                 } else {
                     String nameWithGrouping = fieldListItem + "." + currentGroupingContext;
-                    final String gtName = gtNames.stream().filter(name -> nameWithGrouping.equals(gtNames.iterator().next())).findAny().orElse(null);
+                    final String gtName = gtNames.stream().filter(name -> nameWithGrouping.equals(name)).findAny().orElse(null);
                     if (gtName == null || gtName.isEmpty()) {
                         continue;
                     }
