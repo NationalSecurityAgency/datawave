@@ -97,9 +97,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         if (keyDocumentEntry != null) {
-            log.info("UniqueTransform.apply " + keyDocumentEntry.getKey() + " " + keyDocumentEntry.getValue().get("UUID.0"));
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
-                log.info("Found Final Doc " + keyDocumentEntry.getValue().get("UUID.0"));
                 return keyDocumentEntry;
             }
             
@@ -125,15 +123,9 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         byte[] bytes = getBytes(document);
         synchronized (bloom) {
             if (bloom.mightContain(bytes)) {
-                if (bytes.length == 0) {
-                    log.info("Dup blank field. Fields: " + document.getDictionary().keySet() + " " + document.get("UUID.0"));
-                }
                 return true;
             }
             bloom.put(bytes);
-        }
-        if (bytes.length == 0) {
-            log.info("First blank field. Fields: " + document.getDictionary().keySet() + " " + document.get("UUID.0"));
         }
         return false;
     }
