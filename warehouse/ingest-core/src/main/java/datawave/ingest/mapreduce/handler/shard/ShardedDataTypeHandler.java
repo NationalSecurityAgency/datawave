@@ -498,12 +498,12 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         
         // produce cardinality of terms
         values.putAll(createTermIndexColumn(event, value.getIndexedFieldName(), value.getIndexedFieldValue(), visibility, maskedVisibility, maskedFieldHelper,
-                        shardId, this.getIndexStatsTableName(), indexValue, false));
+                        shardId, this.getIndexStatsTableName(), indexValue, Direction.FORWARD));
         
         String reverse = new StringBuilder(value.getIndexedFieldValue()).reverse().toString();
         
         values.putAll(createTermIndexColumn(event, value.getIndexedFieldName(), reverse, visibility, maskedVisibility, maskedFieldHelper, shardId,
-                        this.getIndexStatsTableName(), indexValue, true));
+                        this.getIndexStatsTableName(), indexValue, Direction.REVERSE));
         
         return values;
     }
@@ -534,7 +534,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         
         // produce index column
         values.putAll(createTermIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
-                        this.getShardIndexTableName(), indexValue, false));
+                        this.getShardIndexTableName(), indexValue, Direction.FORWARD));
         
         return values;
     }
@@ -549,7 +549,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         String fieldValue = value.getIndexedFieldValue();
         // produce index column
         values.putAll(createTermIndexColumn(event, fieldName, fieldValue, visibility, maskedVisibility, maskedFieldHelper, shardId,
-                        this.getShardReverseIndexTableName(), indexValue, true));
+                        this.getShardReverseIndexTableName(), indexValue, Direction.REVERSE));
         
         return values;
     }
@@ -655,10 +655,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * @param shardId
      * @param tableName
      * @param indexValue
-     * @param isReverse
+     * @param direction
      */
     protected Multimap<BulkIngestKey,Value> createTermIndexColumn(RawRecordContainer event, String column, String fieldValue, byte[] visibility,
-                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Text tableName, Value indexValue, boolean isReverse) {
+                    byte[] maskedVisibility, MaskedFieldHelper maskedFieldHelper, byte[] shardId, Text tableName, Value indexValue, Direction direction) {
         // Shard Global Index Table Structure
         // Row: Field Value
         // Colf: Field Name
@@ -689,8 +689,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             
             // if this method was called with the intention to create reverse index keys, ensure the masked values are reversed.
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
-                if (isReverse) {
-                    normalizedMaskedValue = new StringBuilder().append(normalizedMaskedValue).reverse().toString();
+                if (direction.getValue().equals("reverse")) {
+                    normalizedMaskedValue = new StringBuilder(normalizedMaskedValue).reverse().toString();
                     if (log.isTraceEnabled()) {
                         log.trace("normalizedMaskedValue is reversed to: " + normalizedMaskedValue);
                     }

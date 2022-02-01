@@ -16,6 +16,7 @@ import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexDataTypeHandler;
+import datawave.ingest.mapreduce.handler.shard.Direction;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
@@ -438,7 +439,7 @@ public class ContentFunctionQueryTest {
         private void getShardIndexFIKey(final NormalizedFieldAndValue nfv, final RawRecordContainer event, final Multimap values) {
             Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID(this.eventUid).build();
             Multimap<BulkIngestKey,Value> termIndex = createTermIndexColumn(event, nfv.getEventFieldName(), nfv.getEventFieldValue(),
-                            getVisibility(event, nfv), null, null, shardId, this.getShardIndexTableName(), new Value(uid.toByteArray()), false);
+                            getVisibility(event, nfv), null, null, shardId, this.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
             values.putAll(termIndex);
         }
         
