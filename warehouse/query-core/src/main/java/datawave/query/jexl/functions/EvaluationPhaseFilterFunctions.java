@@ -1,9 +1,8 @@
 package datawave.query.jexl.functions;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import datawave.data.type.Type;
+import datawave.query.attributes.Attribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.query.collections.FunctionalSet;
@@ -19,7 +18,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
@@ -59,32 +57,36 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     private static int getSizeOf(Iterable<?> iterable) {
-        Map<String,Integer> countMap = Maps.newHashMap();
-        int count = 0;
         if (iterable != null) {
-            // additional datatypes may have been added to this field to assist with evaluation and for use as
-            // a 'marker' for some other condition. We care only about how many were in the original so
-            // bin them all up to count what was really there in the beginning
+            int sourcedFromEvent = 0;
+            int sourcedFromIndex = 0;
+            int nonValueTuples = 0;
             for (Object o : iterable) {
                 if (o instanceof ValueTuple) {
                     ValueTuple valueTuple = (ValueTuple) o;
-                    if (valueTuple.second() instanceof Type<?>) {
-                        String typeName = valueTuple.second().getClass().toString();
-                        if (countMap.containsKey(typeName)) {
-                            countMap.put(typeName, countMap.get(typeName) + 1);
-                        } else {
-                            countMap.put(typeName, 1);
-                        }
-                        count = countMap.get(typeName);
+                    Attribute<?> attribute = valueTuple.getSource();
+                    // Count which fields were found from the events vs. the index.
+                    if (attribute.isFromIndex()) {
+                        sourcedFromIndex++;
                     } else {
-                        count++;
+                        sourcedFromEvent++;
                     }
                 } else {
-                    count++;
+                    nonValueTuples++;
                 }
             }
+            // If any of the fields were found in the events, only return the number of fields found in the events.
+            if (sourcedFromEvent > 0) {
+                return sourcedFromEvent;
+            } else if (sourcedFromIndex > 0) {
+                // If the field was index-only, return the number of fields found in the index.
+                return sourcedFromIndex;
+            } else {
+                // If we found no value tuples, return the number of objects we saw.
+                return nonValueTuples;
+            }
         }
-        return count;
+        return 0;
     }
     
     /**
