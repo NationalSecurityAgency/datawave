@@ -148,7 +148,6 @@ public class ShardedDataTypeHandlerTest {
         
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
-        byte[] maskVisibility = new byte[] {67, 76, 76};
         byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
         
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "FIELD_NAME", "FIELD_VALUE", visibility, null, null, shardId,
