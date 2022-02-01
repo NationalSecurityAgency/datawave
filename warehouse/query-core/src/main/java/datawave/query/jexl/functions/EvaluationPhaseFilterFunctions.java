@@ -1293,7 +1293,7 @@ public class EvaluationPhaseFilterFunctions {
      * "yyyy-MM-dd", "yyyy-MM-dd'T'HH'|'mm", "EEE MMM dd HH:mm:ss zzz yyyy", "yyyyMMddhhmmss" "yyyyMMddHHmm", "yyyyMMddHH", "yyyyMMdd",
      */
     // @formatter:off
-    private static final String[] DATE_FORMAT_STRINGS = {
+    protected static final String[] DATE_FORMAT_STRINGS = {
                     "yyyyMMdd:HH:mm:ss:SSSZ",
                     "yyyyMMdd:HH:mm:ss:SSS",
                     "EEE MMM dd HH:mm:ss zzz yyyy",
