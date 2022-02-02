@@ -87,13 +87,6 @@ public class ShardedDataTypeHandlerTest {
     }
     
     public static void setupConfiguration(Configuration conf) {
-        String compositeFieldName = GEO_FIELD;
-        conf.set(DATA_TYPE_NAME + "." + compositeFieldName + BaseIngestHelper.COMPOSITE_FIELD_MAP, GEO_FIELD + "," + WKT_BYTE_LENGTH_FIELD);
-        conf.set(DATA_TYPE_NAME + "." + compositeFieldName + BaseIngestHelper.COMPOSITE_FIELD_SEPARATOR, " ");
-        conf.set(DATA_TYPE_NAME + BaseIngestHelper.INDEX_FIELDS, GEO_FIELD + ((!compositeFieldName.equals(GEO_FIELD)) ? "," + compositeFieldName : ""));
-        conf.set(DATA_TYPE_NAME + "." + GEO_FIELD + BaseIngestHelper.FIELD_TYPE, GeometryType.class.getName());
-        conf.set(DATA_TYPE_NAME + "." + WKT_BYTE_LENGTH_FIELD + BaseIngestHelper.FIELD_TYPE, NumberType.class.getName());
-        
         conf.set(DATA_TYPE_NAME + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         conf.set(DataTypeHelper.Properties.DATA_NAME, DATA_TYPE_NAME);
         conf.set(TypeRegistry.INGEST_DATA_TYPES, DATA_TYPE_NAME);
@@ -110,11 +103,6 @@ public class ShardedDataTypeHandlerTest {
         conf.set(TableName.SHARD_INDEX + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX, ShardTableConfigHelper.class.getName());
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_LPRIORITY, "30");
-        conf.set(TableName.SHARD_RINDEX + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX, ShardTableConfigHelper.class.getName());
-        conf.set(ShardTableConfigHelper.MARKINGS_SETUP_ITERATOR_ENABLED, "false");
-        conf.set(ShardTableConfigHelper.MARKINGS_SETUP_ITERATOR_CONFIG, "");
-        conf.set("partitioner.category.shardedTables", BalancedShardPartitioner.class.getName());
-        conf.set("partitioner.category.member." + TableName.SHARD, "shardedTables");
     }
     
     @Before
