@@ -10,6 +10,9 @@ import datawave.query.transformer.ContentQueryTransformer;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.BaseQueryLogic;
+import datawave.services.query.logic.CheckpointableQueryLogic;
+import datawave.services.query.logic.QueryCheckpoint;
+import datawave.services.query.logic.QueryKey;
 import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
@@ -29,6 +32,7 @@ import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
@@ -47,7 +51,7 @@ import java.util.TreeSet;
  * The optional parameter content.view.name can be used to retrieve an alternate view of the document, assuming one is stored with that name. The optional
  * parameter content.view.all can be used to retrieve all documents for the parent and children Both optional parameters can be used together
  */
-public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
+public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
     
     private static final Logger log = Logger.getLogger(ContentQueryLogic.class);
     
@@ -57,6 +61,8 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private int queryThreads = 100;
     private ScannerFactory scannerFactory;
     private String viewName = null;
+    
+    private ContentQueryConfiguration config;
     
     public ContentQueryLogic() {
         super();
@@ -90,7 +96,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     @Override
     public GenericQueryConfiguration initialize(final Connector connection, final Query settings, final Set<Authorizations> auths) throws Exception {
         // Initialize the config and scanner factory
-        final ContentQueryConfiguration config = new ContentQueryConfiguration(this, settings);
+        config = new ContentQueryConfiguration(this, settings);
         this.scannerFactory = new ScannerFactory(connection);
         config.setConnector(connection);
         config.setAuthorizations(auths);
@@ -259,5 +265,62 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     @Override
     public Set<String> getExampleQueries() {
         return Collections.emptySet();
+    }
+    
+    @Override
+    public ContentQueryConfiguration getConfig() {
+        if (this.config == null) {
+            this.config = ContentQueryConfiguration.create();
+        }
+        
+        return this.config;
+    }
+    
+    @Override
+    public boolean isCheckpointable() {
+        return getConfig().isCheckpointable();
+    }
+    
+    @Override
+    public void setCheckpointable(boolean checkpointable) {
+        getConfig().setCheckpointable(checkpointable);
+    }
+    
+    @Override
+    public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
+        if (!isCheckpointable()) {
+            throw new UnsupportedOperationException("Cannot checkpoint a query that is not checkpointable.  Try calling setCheckpointable(true) first.");
+        }
+        
+        // if we have started returning results, then capture the state of the query data objects
+        if (this.iterator != null) {
+            List<QueryCheckpoint> checkpoints = Lists.newLinkedList();
+            for (Range range : ((ContentQueryConfiguration) getConfig()).getRanges()) {
+                checkpoints.add(new ContentQueryCheckpoint(queryKey, Collections.singletonList(range)));
+            }
+            return checkpoints;
+        }
+        // otherwise we still need to plan or there are no results
+        else {
+            return Lists.newArrayList(new QueryCheckpoint(queryKey));
+        }
+    }
+    
+    @Override
+    public QueryCheckpoint updateCheckpoint(QueryCheckpoint checkpoint) {
+        // for the content query logic, the query data objects automatically get updated with
+        // the last result returned, so the checkpoint should already be updated!
+        return checkpoint;
+    }
+    
+    @Override
+    public void setupQuery(Connector connection, GenericQueryConfiguration config, QueryCheckpoint checkpoint) throws Exception {
+        ContentQueryConfiguration contentQueryConfig = (ContentQueryConfiguration) config;
+        contentQueryConfig.setRanges(((ContentQueryCheckpoint) checkpoint).getRanges());
+        contentQueryConfig.setConnector(connection);
+        
+        scannerFactory = new ScannerFactory(connection);
+        
+        setupQuery(contentQueryConfig);
     }
 }

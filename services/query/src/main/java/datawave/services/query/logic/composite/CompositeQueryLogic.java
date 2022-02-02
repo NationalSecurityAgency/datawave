@@ -1,5 +1,6 @@
 package datawave.services.query.logic.composite;
 
+import com.google.common.collect.Iterables;
 import datawave.services.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.services.query.cache.ResultsPage;
 import datawave.services.query.configuration.GenericQueryConfiguration;
@@ -167,13 +168,16 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             }
         }
         
-        Iterator<BaseQueryLogic<?>> itr = queryLogics.values().iterator();
+        Map<String,GenericQueryConfiguration> configs = new HashMap<>();
+        Iterator<Map.Entry<String,BaseQueryLogic<?>>> itr = queryLogics.entrySet().iterator();
         StringBuilder logicQueryStringBuilder = new StringBuilder("CompositeQueryLogic: ");
         while (itr.hasNext()) {
-            BaseQueryLogic<?> logic = itr.next();
+            Map.Entry<String,BaseQueryLogic<?>> entry = itr.next();
+            BaseQueryLogic<?> logic = entry.getValue();
             GenericQueryConfiguration config = null;
             try {
                 config = logic.initialize(connection, settings, runtimeQueryAuthorizations);
+                configs.put(entry.getKey(), config);
                 logicQueryStringBuilder.append("(table=" + config.getTableName());
                 logicQueryStringBuilder.append(",query=" + config.getQueryString());
                 logicQueryStringBuilder.append(") ");
@@ -185,7 +189,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             } catch (Exception e) {
                 log.info(e.getMessage() + " removing query logic " + logic.getClass().getName() + " from CompositeQuery");
                 itr.remove();
-                if (itr.hasNext() == false && logicState.isEmpty()) {
+                if (!itr.hasNext() && logicState.isEmpty()) {
                     // all logics have failed to initialize, rethrow the last exception caught
                     throw new IllegalStateException("All logics have failed to initialize", e);
                 }
@@ -201,16 +205,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             }
         }
         
-        return createCompositeQueryConfiguration(logicQueryStringBuilder.toString());
-    }
-    
-    private static GenericQueryConfiguration createCompositeQueryConfiguration(String queryString) {
-        return new GenericQueryConfiguration() {
-            @Override
-            public String getQueryString() {
-                return queryString;
-            }
-        };
+        return new CompositeQueryConfiguration(logicQueryStringBuilder.toString(), configs);
     }
     
     @Override
@@ -285,9 +280,13 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     
     @Override
     public TransformIterator getTransformIterator(Query settings) {
-        // The objects put into the pageQueue have already been transformed.
-        // We will iterate over the pagequeue with the No-Op transformer
-        return new TransformIterator(results.iterator(), NOPTransformer.nopTransformer());
+        if (isCheckpointable()) {
+            return Iterables.getOnlyElement(queryLogics.values()).getTransformIterator(settings);
+        } else {
+            // The objects put into the pageQueue have already been transformed.
+            // We will iterate over the pagequeue with the No-Op transformer
+            return new TransformIterator(results.iterator(), NOPTransformer.nopTransformer());
+        }
     }
     
     @Override
@@ -424,7 +423,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     
     @Override
     public void setupQuery(Connector connection, GenericQueryConfiguration config, QueryCheckpoint checkpoint) throws Exception {
-        if (!isCheckpointable() || !(checkpoint instanceof CompositeQueryCheckpoint)) {
+        if (!isCheckpointable() || !(checkpoint instanceof CompositeQueryCheckpoint) || !(config instanceof CompositeQueryConfiguration)) {
             throw new UnsupportedOperationException("Cannot setup a non-composite query checkpoint with the composite query logic.");
         }
         
@@ -436,6 +435,13 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                             + compositeCheckpoint.getDelegateQueryLogic() + "]does not exist");
         }
         
-        logic.setupQuery(connection, config, checkpoint);
+        // we are setting up a checkpoint, with a single query data, against a single query logic, so just keep the one we need
+        queryLogics.clear();
+        queryLogics.put(compositeCheckpoint.getDelegateQueryLogic(), (BaseQueryLogic<?>) logic);
+        
+        CompositeQueryConfiguration compositeConfig = (CompositeQueryConfiguration) config;
+        GenericQueryConfiguration delegateConfig = compositeConfig.getConfigs().get(compositeCheckpoint.getDelegateQueryLogic());
+        
+        logic.setupQuery(connection, delegateConfig, checkpoint);
     }
 }

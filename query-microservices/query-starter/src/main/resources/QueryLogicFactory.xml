@@ -300,6 +300,7 @@
 
     <!-- Query Logic that returns document content -->
     <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryLogic">
+        <property name="checkpointable" value="${datawave.query.logic.logics.ContentQuery.checkpointable}" />
         <property name="tableName" value="${datawave.query.logic.logics.ContentQuery.tableName}" />
         <property name="maxResults" value="${datawave.query.logic.logics.ContentQuery.maxResults}" />
         <property name="maxWork" value="${datawave.query.logic.logics.ContentQuery.maxWork}" />

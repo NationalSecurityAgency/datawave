@@ -217,6 +217,7 @@ datawave:
             reverseIndexTableName: ${warehouse.errorTables.reverseIndex.name}
 
         ContentQuery:
+          checkpointable: ${warehouse.defaults.checkpointable}
           tableName: ${warehouse.tables.shard.name}
           maxResults: -1
           maxWork: -1

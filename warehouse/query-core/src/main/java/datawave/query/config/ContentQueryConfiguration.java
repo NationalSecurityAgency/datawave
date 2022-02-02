@@ -4,8 +4,10 @@ import datawave.query.tables.content.ContentQueryLogic;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.BaseQueryLogic;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.data.Range;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,37 +22,44 @@ public class ContentQueryConfiguration extends GenericQueryConfiguration impleme
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 1662850178943683419L;
     
-    private final Collection<Range> ranges = new TreeSet<>();
+    private transient Collection<Range> ranges;
+    
+    public ContentQueryConfiguration() {
+        super();
+        setQuery(new QueryImpl());
+    }
     
     public ContentQueryConfiguration(BaseQueryLogic<?> configuredLogic, Query query) {
         super(configuredLogic);
         setQuery(query);
+        this.ranges = new TreeSet<>();
     }
     
-    public void addRange(final Range range) {
+    /**
+     * Factory method that instantiates a fresh ContentQueryConfiguration
+     *
+     * @return - a clean ContentQueryConfiguration
+     */
+    public static ContentQueryConfiguration create() {
+        return new ContentQueryConfiguration();
+    }
+    
+    public synchronized void addRange(final Range range) {
         if (null != range) {
-            synchronized (this.ranges) {
-                this.ranges.add(range);
-            }
+            this.ranges.add(range);
         }
     }
     
-    public Collection<Range> getRanges() {
-        final Collection<Range> orderedCopy;
-        synchronized (this.ranges) {
-            orderedCopy = new ArrayList<>(this.ranges);
-        }
-        return orderedCopy;
+    public synchronized Collection<Range> getRanges() {
+        return new ArrayList<>(this.ranges);
     }
     
-    public void setRanges(final Collection<Range> ranges) {
+    public synchronized void setRanges(final Collection<Range> ranges) {
         // As a single atomic operation, clear the range and add all of the
         // specified ranges
-        synchronized (this.ranges) {
-            this.ranges.clear();
-            if (null != ranges) {
-                this.ranges.addAll(ranges);
-            }
+        this.ranges.clear();
+        if (null != ranges) {
+            this.ranges.addAll(ranges);
         }
     }
     
@@ -69,5 +78,24 @@ public class ContentQueryConfiguration extends GenericQueryConfiguration impleme
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), ranges);
+    }
+    
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+        out.writeInt(ranges != null ? ranges.size() : 0);
+        for (Range range : ranges) {
+            range.write(out);
+        }
+    }
+    
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        ranges = new TreeSet<>();
+        int numRanges = in.readInt();
+        while (numRanges-- > 0) {
+            Range range = new Range();
+            range.readFields(in);
+            ranges.add(range);
+        }
     }
 }
