@@ -41,6 +41,10 @@ management:
     web:
       base-path: "/mgmt"
 
+query:
+  messaging:
+    backend: hazelcast
+
 logging:
   level:
     root: FATAL

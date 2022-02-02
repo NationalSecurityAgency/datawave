@@ -43,4 +43,5 @@ public class LookupUUIDQueryLogic<T> extends LookupQueryLogic<T> {
     public Object clone() throws CloneNotSupportedException {
         return new LookupUUIDQueryLogic<>(this);
     }
+    
 }

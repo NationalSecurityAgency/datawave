@@ -31,9 +31,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.easymock.EasyMock.anyObject;
@@ -166,7 +168,7 @@ public class RunningQueryTest {
         String[] auths = new String[2];
         auths[0] = "A";
         auths[1] = "C";
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        Map<String,BaseQueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("NONTESTROLE");
@@ -177,8 +179,8 @@ public class RunningQueryTest {
         roles2.add("NONTESTROLE");
         logic2.setTableName("thatTable");
         logic2.setRequiredRoles(roles2);
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         CompositeQueryLogic compositeQueryLogic = new CompositeQueryLogic();
         compositeQueryLogic.setQueryLogics(logics);
         

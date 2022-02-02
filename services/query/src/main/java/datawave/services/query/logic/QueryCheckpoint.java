@@ -5,6 +5,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -29,6 +30,14 @@ public class QueryCheckpoint implements Serializable {
     public QueryCheckpoint(QueryKey queryKey, Collection<QueryData> queries) {
         this.queryKey = queryKey;
         this.queries = queries;
+    }
+    
+    public QueryCheckpoint(QueryCheckpoint checkpoint) {
+        this.queryKey = new QueryKey(checkpoint.queryKey.toString());
+        this.queries = new ArrayList<>(checkpoint.queries.size());
+        for (QueryData query : checkpoint.queries) {
+            this.queries.add(new QueryData(query));
+        }
     }
     
     /**

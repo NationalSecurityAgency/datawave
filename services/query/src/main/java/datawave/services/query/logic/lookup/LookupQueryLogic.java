@@ -4,6 +4,9 @@ import datawave.audit.SelectorExtractor;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.BaseQueryLogic;
+import datawave.services.query.logic.CheckpointableQueryLogic;
+import datawave.services.query.logic.QueryCheckpoint;
+import datawave.services.query.logic.QueryKey;
 import datawave.services.query.logic.QueryLogicTransformer;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.query.Query;
@@ -22,7 +25,7 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
-public abstract class LookupQueryLogic<T> extends BaseQueryLogic<T> {
+public abstract class LookupQueryLogic<T> extends BaseQueryLogic<T> implements CheckpointableQueryLogic {
     public static final String LOOKUP_KEY_VALUE_DELIMITER = ":";
     
     // The underlying query logic to use for the lookup
@@ -333,5 +336,47 @@ public abstract class LookupQueryLogic<T> extends BaseQueryLogic<T> {
     
     public BaseQueryLogic<T> getDelegateQueryLogic() {
         return delegateQueryLogic;
+    }
+    
+    @Override
+    public boolean isCheckpointable() {
+        if (delegateQueryLogic instanceof CheckpointableQueryLogic) {
+            return ((CheckpointableQueryLogic) delegateQueryLogic).isCheckpointable();
+        }
+        return false;
+    }
+    
+    @Override
+    public void setCheckpointable(boolean checkpointable) {
+        if (delegateQueryLogic instanceof CheckpointableQueryLogic) {
+            ((CheckpointableQueryLogic) delegateQueryLogic).setCheckpointable(checkpointable);
+        }
+    }
+    
+    @Override
+    public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
+        if (!isCheckpointable()) {
+            throw new UnsupportedOperationException("Cannot create checkpoints because the query logic is not checkpointable.");
+        }
+        
+        return ((CheckpointableQueryLogic) delegateQueryLogic).checkpoint(queryKey);
+    }
+    
+    @Override
+    public QueryCheckpoint updateCheckpoint(QueryCheckpoint checkpoint) {
+        if (!isCheckpointable()) {
+            throw new UnsupportedOperationException("Cannot update the query checkpoint because the query logic is not checkpointable.");
+        }
+        
+        return ((CheckpointableQueryLogic) delegateQueryLogic).updateCheckpoint(checkpoint);
+    }
+    
+    @Override
+    public void setupQuery(Connector connection, GenericQueryConfiguration config, QueryCheckpoint checkpoint) throws Exception {
+        if (!isCheckpointable()) {
+            throw new UnsupportedOperationException("Cannot setup a query checkpoint because the query logic is not checkpointable.");
+        }
+        
+        ((CheckpointableQueryLogic) delegateQueryLogic).setupQuery(connection, config, checkpoint);
     }
 }

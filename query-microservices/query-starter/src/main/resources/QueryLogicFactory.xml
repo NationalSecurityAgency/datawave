@@ -160,37 +160,42 @@
                 <property name="logicDescription" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.logicDescription}" />
                 <property name="auditType" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.auditType}" />
                 <property name="queryLogics">
-                    <list value-type="datawave.webservice.query.logic.BaseQueryLogic">
-                        <bean scope="prototype" parent="BaseEventQuery">
-                            <property name="auditType" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.auditType}" />
-                            <property name="logicDescription" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.logicDescription}" />
-                            <property name="mandatoryQuerySyntax">
-                                <util:set value-type="java.lang.String">
-                                    <value>${datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.mandatoryQuerySyntax}</value>
-                                </util:set>
-                            </property>
-                            <property name="connPoolName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.connPoolName}" />
-                        </bean>
-                        <bean scope="prototype" parent="BaseEventQuery">
-                            <property name="tableName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.tableName}" />
-                            <property name="dateIndexTableName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.dateIndexTableName}" />
-                            <property name="metadataTableName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.metadataTableName}" />
-                            <property name="indexTableName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.indexTableName}" />
-                            <property name="reverseIndexTableName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.reverseIndexTableName}" />
-                            <property name="auditType" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.auditType}" />
-                            <property name="logicDescription" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.logicDescription}" />
-                            <property name="mandatoryQuerySyntax">
-                                <util:set value-type="java.lang.String">
-                                    <value>${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.mandatoryQuerySyntax}</value>
-                                </util:set>
-                            </property>
-                            <property name="connPoolName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.connPoolName}" />
-                        </bean>
-                    </list>
+                    <map key-type="java.lang.String" value-type="datawave.webservice.query.logic.BaseQueryLogic">
+                        <entry key="EventQuery">
+                            <bean scope="prototype" parent="BaseEventQuery">
+                                <property name="auditType" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.auditType}" />
+                                <property name="logicDescription" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.logicDescription}" />
+                                <property name="mandatoryQuerySyntax">
+                                    <util:set value-type="java.lang.String">
+                                        <value>${datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.mandatoryQuerySyntax}</value>
+                                    </util:set>
+                                </property>
+                                <property name="connPoolName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.eventQuery.connPoolName}" />
+                            </bean>
+                        </entry>
+                        <entry key="ErrorEventQuery">
+                            <bean scope="prototype" parent="BaseEventQuery">
+                                <property name="tableName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.tableName}" />
+                                <property name="dateIndexTableName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.dateIndexTableName}" />
+                                <property name="metadataTableName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.metadataTableName}" />
+                                <property name="indexTableName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.indexTableName}" />
+                                <property name="reverseIndexTableName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.reverseIndexTableName}" />
+                                <property name="auditType" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.auditType}" />
+                                <property name="logicDescription" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.logicDescription}" />
+                                <property name="mandatoryQuerySyntax">
+                                    <util:set value-type="java.lang.String">
+                                        <value>${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.mandatoryQuerySyntax}</value>
+                                    </util:set>
+                                </property>
+                                <property name="connPoolName" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.errorEventQuery.connPoolName}" />
+                            </bean>
+                        </entry>
+                    </map>
                 </property>
                 <property name="selectorExtractor"><null/></property>
             </bean>
         </constructor-arg>
+        <property name="checkpointable" value="${datawave.query.logic.logics.LuceneUUIDEventQuery.checkpointable}" />
     </bean>
 
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >

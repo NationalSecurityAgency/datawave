@@ -73,9 +73,6 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
                 queryStatus);
         // @formatter:on
         
-        // verify that the result queue is gone
-        Assert.assertFalse(queryQueueManager.queueExists(queryId));
-        
         // verify that the query tasks are still present
         assertTasksCreated(queryId);
         
@@ -131,12 +128,12 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         
         Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
         
-        // verify that query status was created correctly
-        QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
-        
         // wait for the next call to drop out before checking status
         // since we canceled, this should quit immediately, but just in case, we add a timeout
         nextFuture.get(10, TimeUnit.SECONDS);
+        
+        // verify that query status was created correctly
+        QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
         // @formatter:off
         assertQueryStatus(
@@ -148,9 +145,6 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
                 currentTimeMillis,
                 queryStatus);
         // @formatter:on
-        
-        // verify that the result queue is gone
-        Assert.assertFalse(queryQueueManager.queueExists(queryId));
         
         // wait for the next call to return
         nextFuture.get();
@@ -326,9 +320,6 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
                 queryStatus);
         // @formatter:on
         
-        // verify that the result queue is gone
-        Assert.assertFalse(queryQueueManager.queueExists(queryId));
-        
         // verify that the query tasks are still present
         assertTasksCreated(queryId);
         
@@ -428,9 +419,6 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
             // @formatter:on
             
             String queryId = queryStatus.getQueryKey().getQueryId();
-            
-            // verify that the result queue is gone
-            Assert.assertFalse(queryQueueManager.queueExists(queryStatus.getQueryKey().getQueryId()));
             
             // verify that the query tasks are still present
             assertTasksCreated(queryStatus.getQueryKey().getQueryId());

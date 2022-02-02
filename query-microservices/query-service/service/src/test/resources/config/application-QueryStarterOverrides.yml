@@ -7,9 +7,6 @@ datawave:
     nextCall:
       resultPollInterval: 500
       statusUpdateInterval: 500
-    expiration:
-      callTimeout: 5
-      callTimeUnit: SECONDS
     logic:
       factory:
         # Uncomment the following line to override the query logic beans to load
@@ -18,6 +15,9 @@ datawave:
         BaseEventQuery:
           maxResults: 369
           auditType: "ACTIVE"
+        ContentQuery:
+          maxResults: 10
+
     lookup:
       types:
         'EVENT_ID':

@@ -102,9 +102,6 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // verify that no audit message was sent
         assertAuditNotSent();
         
-        // verify that the results queue wasn't created
-        Assert.assertFalse(queryQueueManager.queueExists(queryId));
-        
         // verify that query tasks weren't created
         assertTasksNotCreated(queryId);
     }

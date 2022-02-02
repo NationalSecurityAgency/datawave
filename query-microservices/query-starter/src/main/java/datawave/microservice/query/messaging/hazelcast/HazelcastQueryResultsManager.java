@@ -1,5 +1,6 @@
 package datawave.microservice.query.messaging.hazelcast;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastInstance;
 import datawave.microservice.query.messaging.QueryResultsListener;
 import datawave.microservice.query.messaging.QueryResultsManager;
@@ -23,6 +24,7 @@ public class HazelcastQueryResultsManager implements QueryResultsManager {
     
     private final MessagingProperties messagingProperties;
     private final HazelcastInstance hazelcastInstance;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     
     public HazelcastQueryResultsManager(MessagingProperties messagingProperties, HazelcastInstance hazelcastInstance) {
         this.messagingProperties = messagingProperties;
@@ -32,13 +34,15 @@ public class HazelcastQueryResultsManager implements QueryResultsManager {
     @Override
     public QueryResultsListener createListener(String listenerId, String queryId) {
         return new HazelcastQueryResultsListener(
-                        HazelcastMessagingUtils.getOrCreateQueue(hazelcastInstance, messagingProperties.getHazelcast().getBackupCount(), queryId), listenerId);
+                        HazelcastMessagingUtils.getOrCreateQueue(hazelcastInstance, messagingProperties.getHazelcast().getBackupCount(), queryId), objectMapper,
+                        listenerId);
     }
     
     @Override
     public QueryResultsPublisher createPublisher(String queryId) {
         return new HazelcastQueryResultsPublisher(
-                        HazelcastMessagingUtils.getOrCreateQueue(hazelcastInstance, messagingProperties.getHazelcast().getBackupCount(), queryId));
+                        HazelcastMessagingUtils.getOrCreateQueue(hazelcastInstance, messagingProperties.getHazelcast().getBackupCount(), queryId),
+                        objectMapper);
     }
     
     @Override

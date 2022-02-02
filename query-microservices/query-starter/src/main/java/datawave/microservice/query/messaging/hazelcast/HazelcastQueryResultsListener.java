@@ -3,6 +3,7 @@ package datawave.microservice.query.messaging.hazelcast;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.collection.IQueue;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import datawave.microservice.query.messaging.QueryResultsListener;
 import datawave.microservice.query.messaging.Result;
 import org.slf4j.Logger;
@@ -15,14 +16,14 @@ public class HazelcastQueryResultsListener implements QueryResultsListener {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
     private final IQueue<String> queue;
+    private final ObjectMapper objectMapper;
     private final String listenerId;
-    
-    private final ObjectMapper objectMapper = new ObjectMapper();
     
     private boolean stopped = false;
     
-    public HazelcastQueryResultsListener(IQueue<String> queue, String listenerId) {
+    public HazelcastQueryResultsListener(IQueue<String> queue, ObjectMapper objectMapper, String listenerId) {
         this.queue = queue;
+        this.objectMapper = objectMapper;
         this.listenerId = listenerId;
     }
     
@@ -41,13 +42,11 @@ public class HazelcastQueryResultsListener implements QueryResultsListener {
                     result = objectMapper.readerFor(Result.class).readValue(data);
                 }
             } catch (InterruptedException e) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Interrupted while waiting for query results");
-                }
+                log.debug("Interrupted while waiting for query results");
             } catch (JsonProcessingException e) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Unable to deserialize result");
-                }
+                log.debug("Unable to deserialize result");
+            } catch (DistributedObjectDestroyedException e) {
+                log.debug("Unable to poll results from destroyed queue");
             }
         }
         return result;

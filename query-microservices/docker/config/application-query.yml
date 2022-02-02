@@ -197,6 +197,7 @@ datawave:
           maxWork: -1
         
         LuceneUUIDEventQuery:
+          checkpointable: ${warehouse.defaults.checkpointable}
           logicDescription: "Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml"
           auditType: "NONE"
           eventQuery:

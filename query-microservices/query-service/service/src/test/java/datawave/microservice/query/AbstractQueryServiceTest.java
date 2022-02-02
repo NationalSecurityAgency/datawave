@@ -1,12 +1,16 @@
 package datawave.microservice.query;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.microservice.audit.AuditClient;
 import datawave.microservice.authorization.jwt.JWTRestTemplate;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.query.messaging.QueryResultsManager;
+import datawave.microservice.query.messaging.QueryResultsPublisher;
 import datawave.microservice.query.messaging.Result;
-import datawave.microservice.query.messaging.TestQueryResultsManager;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
@@ -66,6 +70,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -109,7 +114,7 @@ public abstract class AbstractQueryServiceTest {
     protected QueryStorageCache queryStorageCache;
     
     @Autowired
-    protected TestQueryResultsManager queryQueueManager;
+    protected QueryResultsManager queryQueueManager;
     
     @Autowired
     protected AuditClient auditClient;
@@ -140,10 +145,10 @@ public abstract class AbstractQueryServiceTest {
     public void teardown() throws Exception {
         queryStorageCache.clear();
         queryRequestEvents.clear();
-        queryQueueManager.clear();
     }
     
     protected void publishEventsToQueue(String queryId, int numEvents, MultiValueMap<String,String> fieldValues, String visibility) throws Exception {
+        QueryResultsPublisher publisher = queryQueueManager.createPublisher(queryId);
         for (int resultId = 0; resultId < numEvents; resultId++) {
             DefaultEvent event = new DefaultEvent();
             long currentTime = System.currentTimeMillis();
@@ -154,7 +159,7 @@ public abstract class AbstractQueryServiceTest {
                 }
             }
             event.setFields(fields);
-            queryQueueManager.createPublisher(queryId).publish(new Result(Integer.toString(resultId), event));
+            publisher.publish(new Result(Integer.toString(resultId), event));
         }
     }
     
@@ -504,6 +509,13 @@ public abstract class AbstractQueryServiceTest {
     @Profile("QueryServiceTest")
     @ComponentScan(basePackages = "datawave.microservice")
     public static class QueryServiceTestConfiguration {
+        @Bean
+        public HazelcastInstance hazelcastInstance() {
+            Config config = new Config();
+            config.setClusterName(UUID.randomUUID().toString());
+            return Hazelcast.newHazelcastInstance(config);
+        }
+        
         @Bean
         public LinkedList<RemoteQueryRequestEvent> queryRequestEvents() {
             return new LinkedList<>();

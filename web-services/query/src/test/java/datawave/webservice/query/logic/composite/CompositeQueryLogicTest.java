@@ -30,6 +30,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -360,9 +361,9 @@ public class CompositeQueryLogicTest {
     @Test(expected = RuntimeException.class)
     public void testInitializeWithSameQueryLogicAndTableNames() throws Exception {
         
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic());
-        logics.add(new TestQueryLogic());
+        Map<String,BaseQueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic-A", new TestQueryLogic());
+        logics.put("TestQueryLogic-B", new TestQueryLogic());
         
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
@@ -380,14 +381,14 @@ public class CompositeQueryLogicTest {
     @Test
     public void testInitializeWithSameQueryLogicAndDifferentTableNames() throws Exception {
         
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic() {
+        Map<String,BaseQueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic-A", new TestQueryLogic() {
             @Override
             public String getTableName() {
                 return "table1";
             }
         });
-        logics.add(new TestQueryLogic() {
+        logics.put("TestQueryLogic-B", new TestQueryLogic() {
             @Override
             public String getTableName() {
                 return "table2";
@@ -410,9 +411,9 @@ public class CompositeQueryLogicTest {
     @Test
     public void testInitialize() throws Exception {
         
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic());
-        logics.add(new TestQueryLogic2());
+        Map<String,BaseQueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic());
+        logics.put("TestQueryLogic2", new TestQueryLogic2());
         
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
@@ -430,9 +431,9 @@ public class CompositeQueryLogicTest {
     @Test
     public void testInitializeWithDifferentResponseTypes() throws Exception {
         
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic());
-        logics.add(new DifferentTestQueryLogic());
+        Map<String,BaseQueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic());
+        logics.put("DifferentTestQueryLogic", new DifferentTestQueryLogic());
         
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
@@ -450,9 +451,9 @@ public class CompositeQueryLogicTest {
     @Test
     public void testCloseWithNoSetup() throws Exception {
         
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
-        logics.add(new TestQueryLogic());
-        logics.add(new TestQueryLogic2());
+        Map<String,BaseQueryLogic<?>> logics = new HashMap<>();
+        logics.put("TestQueryLogic", new TestQueryLogic());
+        logics.put("TestQueryLogic2", new TestQueryLogic2());
         
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
@@ -474,11 +475,11 @@ public class CompositeQueryLogicTest {
         Logger.getLogger(CompositeQueryLogic.class).setLevel(Level.TRACE);
         Logger.getLogger(CompositeQueryLogicResults.class).setLevel(Level.TRACE);
         Logger.getLogger(CompositeQueryLogicTransformer.class).setLevel(Level.TRACE);
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        Map<String,BaseQueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         logic1.getData().put(key1, value1);
         logic1.getData().put(key2, value2);
@@ -541,11 +542,11 @@ public class CompositeQueryLogicTest {
         Logger.getLogger(CompositeQueryLogic.class).setLevel(Level.TRACE);
         Logger.getLogger(CompositeQueryLogicResults.class).setLevel(Level.TRACE);
         Logger.getLogger(CompositeQueryLogicTransformer.class).setLevel(Level.TRACE);
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        Map<String,BaseQueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         logic1.getData().put(key1, value1);
         logic1.getData().put(key2, value2);
@@ -604,11 +605,11 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoDataLogic1() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        Map<String,BaseQueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         logic2.getData().put(key1, value1);
         logic2.getData().put(key2, value2);
@@ -667,11 +668,11 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoDataLogic2() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        Map<String,BaseQueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         logic1.getData().put(key1, value1);
         logic1.getData().put(key2, value2);
@@ -730,11 +731,11 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testQueryLogicNoData() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        Map<String,BaseQueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
@@ -770,15 +771,15 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testCanRunQueryLogic() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        Map<String,BaseQueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("TESTROLE");
         logic1.setRequiredRoles(roles);
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         logic2.setRequiredRoles(Collections.emptySet());
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
@@ -789,7 +790,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testCanRunQueryLogic2() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        Map<String,BaseQueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("TESTROLE");
@@ -798,8 +799,8 @@ public class CompositeQueryLogicTest {
         HashSet<String> roles2 = new HashSet<>();
         roles2.add("NONTESTROLE");
         logic2.setRequiredRoles(roles2);
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
@@ -810,7 +811,7 @@ public class CompositeQueryLogicTest {
     
     @Test
     public void testCannotRunQueryLogic2() throws Exception {
-        List<BaseQueryLogic<?>> logics = new ArrayList<>();
+        Map<String,BaseQueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         HashSet<String> roles = new HashSet<>();
         roles.add("NONTESTROLE");
@@ -819,8 +820,8 @@ public class CompositeQueryLogicTest {
         HashSet<String> roles2 = new HashSet<>();
         roles2.add("NONTESTROLE");
         logic2.setRequiredRoles(roles2);
-        logics.add(logic1);
-        logics.add(logic2);
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
         
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);

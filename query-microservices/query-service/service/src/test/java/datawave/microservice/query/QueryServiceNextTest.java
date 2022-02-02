@@ -16,6 +16,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
@@ -589,9 +590,13 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // @formatter:on
     }
     
+    @DirtiesContext
     @Test
     public void testNextFailure_timeout() throws Exception {
         ProxiedUserDetails authUser = createUserDetails();
+        
+        // override the call timeout for this test
+        queryProperties.getExpiration().setCallTimeout(0);
         
         // create a valid query
         String queryId = createQuery(authUser, createParams());

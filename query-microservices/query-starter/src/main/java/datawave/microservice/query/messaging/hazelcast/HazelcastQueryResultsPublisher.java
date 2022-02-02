@@ -14,11 +14,11 @@ public class HazelcastQueryResultsPublisher implements QueryResultsPublisher {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
     private final IQueue<String> queue;
+    private final ObjectMapper objectMapper;
     
-    private final ObjectMapper objectMapper = new ObjectMapper();
-    
-    public HazelcastQueryResultsPublisher(IQueue<String> queue) {
+    public HazelcastQueryResultsPublisher(IQueue<String> queue, ObjectMapper objectMapper) {
         this.queue = queue;
+        this.objectMapper = objectMapper;
     }
     
     @Override

@@ -75,9 +75,6 @@ public class QueryServiceCloseTest extends AbstractQueryServiceTest {
                 queryStatus);
         // @formatter:on
         
-        // verify that the result queue is gone
-        Assert.assertFalse(queryQueueManager.queueExists(queryId));
-        
         // verify that the query tasks are still present
         assertTasksCreated(queryId);
         
@@ -161,9 +158,6 @@ public class QueryServiceCloseTest extends AbstractQueryServiceTest {
         
         // wait for the next call to return
         nextFuture.get();
-        
-        // verify that the result queue is now gone
-        Assert.assertFalse(queryQueueManager.queueExists(queryId));
         
         // verify that the query tasks are still present
         assertTasksCreated(queryId);
@@ -326,9 +320,6 @@ public class QueryServiceCloseTest extends AbstractQueryServiceTest {
                 queryStatus);
         // @formatter:on
         
-        // verify that the result queue is gone
-        Assert.assertFalse(queryQueueManager.queueExists(queryId));
-        
         // verify that the query tasks are still present
         assertTasksCreated(queryId);
         
@@ -421,9 +412,6 @@ public class QueryServiceCloseTest extends AbstractQueryServiceTest {
             // @formatter:on
             
             String queryId = queryStatus.getQueryKey().getQueryId();
-            
-            // verify that the result queue is gone
-            Assert.assertFalse(queryQueueManager.queueExists(queryStatus.getQueryKey().getQueryId()));
             
             // verify that the query tasks are still present
             assertTasksCreated(queryStatus.getQueryKey().getQueryId());

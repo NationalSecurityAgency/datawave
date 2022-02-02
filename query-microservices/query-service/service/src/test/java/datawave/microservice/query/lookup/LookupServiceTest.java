@@ -6,6 +6,7 @@ import datawave.microservice.authorization.service.RemoteAuthorizationServiceUse
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.AbstractQueryServiceTest;
 import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.messaging.QueryResultsPublisher;
 import datawave.microservice.query.messaging.Result;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryStatus;
@@ -35,6 +36,7 @@ import org.springframework.web.util.UriComponents;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,6 +47,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static datawave.microservice.query.QueryParameters.QUERY_MAX_CONCURRENT_TASKS;
+import static datawave.microservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE;
 import static datawave.microservice.query.lookup.LookupService.LOOKUP_UUID_PAIRS;
 
 @RunWith(SpringRunner.class)
@@ -294,6 +297,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 contentQueryIds = queryStatuses.stream().map(QueryStatus::getQueryKey).map(QueryKey::getQueryId)
                                 .filter(contentQueryId -> !contentQueryId.equals(eventQueryId)).collect(Collectors.toSet());
             }
+            Thread.sleep(500);
         }
         
         Assert.assertNotNull(contentQueryIds);
@@ -394,6 +398,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         MultiValueMap<String,String> uuidParams = createUUIDParams();
         uuidParams.add(LOOKUP_UUID_PAIRS, "PAGE_TITLE:anarchy");
         uuidParams.add(LOOKUP_UUID_PAIRS, "PAGE_TITLE:accessiblecomputing");
+        uuidParams.add(QUERY_MAX_RESULTS_OVERRIDE, "10");
         
         Future<ResponseEntity<BaseQueryResponse>> future = batchLookupContentUUID(authUser, uuidParams);
         
@@ -434,6 +439,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                 contentQueryIds = queryStatuses.stream().map(QueryStatus::getQueryKey).map(QueryKey::getQueryId)
                                 .filter(contentQueryId -> !contentQueryId.equals(eventQueryId)).collect(Collectors.toSet());
             }
+            Thread.sleep(500);
         }
         
         Assert.assertNotNull(contentQueryIds);
@@ -448,6 +454,16 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
                     contentFieldValues,
                     "ALL");
             // @formatter:on
+        }
+        
+        // wait until each query has read its results, and then close it
+        for (String contentQueryId : contentQueryIds) {
+            QueryStatus status = queryStorageCache.getQueryStatus(contentQueryId);
+            startTime = System.currentTimeMillis();
+            while ((System.currentTimeMillis() - startTime) < 5000 && status.getNumResultsConsumed() < pageSize) {
+                Thread.sleep(500);
+                status = queryStorageCache.getQueryStatus(contentQueryId);
+            }
         }
         
         ResponseEntity<BaseQueryResponse> response = future.get();
@@ -771,13 +787,14 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
     }
     
     protected void publishEventsToQueue(String queryId, int numEvents, MultiValueMap<String,String> fieldValues, String visibility) throws Exception {
+        QueryResultsPublisher publisher = queryQueueManager.createPublisher(queryId);
         for (int resultId = 0; resultId < numEvents; resultId++) {
             DefaultEvent event = new DefaultEvent();
             long currentTime = System.currentTimeMillis();
             List<DefaultField> fields = new ArrayList<>();
             for (Map.Entry<String,List<String>> entry : fieldValues.entrySet()) {
                 for (String value : entry.getValue()) {
-                    fields.add(new DefaultField(entry.getKey(), visibility, currentTime, value));
+                    fields.add(new DefaultField(entry.getKey(), visibility, new HashMap<>(), currentTime, value));
                 }
             }
             event.setFields(fields);
@@ -788,7 +805,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
             metadata.setDataType("prince");
             metadata.setInternalId(UUID.randomUUID().toString());
             event.setMetadata(metadata);
-            queryQueueManager.createPublisher(queryId).publish(new Result(Integer.toString(resultId), event));
+            publisher.publish(new Result(Integer.toString(resultId), event));
         }
     }
     
