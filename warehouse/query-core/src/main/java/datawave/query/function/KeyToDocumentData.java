@@ -139,7 +139,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                 attrs = Collections.emptyList();
             }
             
-            return Maps.immutableEntry(new DocumentData(from.getKey(), docKeys, attrs), from.getValue());
+            return Maps.immutableEntry(new DocumentData(from.getKey(), docKeys, attrs, false), from.getValue());
         } catch (IOException e) {
             log.error("Unable to collection document attributes for evaluation: " + keyRange, e);
             QueryException qe = new QueryException(DatawaveErrorCode.DOCUMENT_EVALUATION_ERROR, e);
