@@ -1150,7 +1150,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testInvalidPosition() {
             givenPosition(2);
             
-            assertThatExceptionOfType(RuntimeException.class).isThrownBy(() -> assertResult("doesn't matter")).withMessage(
+            assertThatIllegalArgumentException().isThrownBy(() -> assertResult("doesn't matter")).withMessage(
                             "Input second.third.fourth does not have a '.' at position " + position + " from the left.");
         }
         
@@ -1189,7 +1189,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testInvalidPosition() {
             givenPosition(3);
             
-            assertThatExceptionOfType(RuntimeException.class).isThrownBy(() -> assertResult("doesn't matter")).withMessage(
+            assertThatIllegalArgumentException().isThrownBy(() -> assertResult("doesn't matter")).withMessage(
                             "Input " + input + " does not have a '.' at position " + position + " from the right.");
         }
         
