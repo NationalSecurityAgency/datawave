@@ -1435,15 +1435,17 @@ public class EvaluationPhaseFilterFunctions {
     }
     
     public static FunctionalSet<ValueTuple> timeFunction(Object time1, Object time2, String operatorString, String equalityString, long goal) {
-        FunctionalSet<ValueTuple> matches = new FunctionalSet();
-        try {
-            long calculation = OperationEvaluator.calculate(getMaxTime(time1), getMinTime(time2), operatorString);
-            boolean truth = OperationEvaluator.compare(calculation, goal, equalityString);
-            if (truth) {
-                matches.addAll(Sets.newHashSet(getHitTerm(getMaxValue(time1)), getHitTerm(getMinValue(time2))));
+        FunctionalSet<ValueTuple> matches = new FunctionalSet<>();
+        if (time1 != null && time2 != null) {
+            try {
+                long calculation = OperationEvaluator.calculate(getMaxTime(time1), getMinTime(time2), operatorString);
+                boolean truth = OperationEvaluator.compare(calculation, goal, equalityString);
+                if (truth) {
+                    matches.addAll(Sets.newHashSet(getHitTerm(getMaxValue(time1)), getHitTerm(getMinValue(time2))));
+                }
+            } catch (ParseException e) {
+                log.warn("could not evaluate:" + time1 + " " + operatorString + " " + time2 + " " + equalityString + " " + goal);
             }
-        } catch (ParseException e) {
-            log.warn("could not evaluate:" + time1 + " " + operatorString + " " + time2 + " " + equalityString + " " + goal);
         }
         return FunctionalSet.unmodifiableSet(matches);
     }
@@ -1457,8 +1459,10 @@ public class EvaluationPhaseFilterFunctions {
     
     public static long getMaxTime(Iterable<?> dates) throws ParseException {
         long max = Long.MIN_VALUE;
-        for (Object date : dates) {
-            max = Math.max(max, getTime(date));
+        if (dates != null) {
+            for (Object date : dates) {
+                max = Math.max(max, getTime(date));
+            }
         }
         return max;
     }
@@ -1525,7 +1529,7 @@ public class EvaluationPhaseFilterFunctions {
      * @param granularity
      * @return next date/time in milliseconds
      */
-    static long getNextTime(long time, int granularity) {
+    public static long getNextTime(long time, int granularity) {
         Calendar c = Calendar.getInstance();
         c.setTimeInMillis(time);
         c.add(granularity, 1);
@@ -1543,7 +1547,7 @@ public class EvaluationPhaseFilterFunctions {
      * @throws ParseException
      *             if the value failed to be parsed using the supplied format
      */
-    protected static long getTime(Object value, DateFormat format) throws ParseException {
+    public static long getTime(Object value, DateFormat format) throws ParseException {
         synchronized (format) {
             return format.parse(ValueTuple.getStringValue(value)).getTime();
         }
@@ -1563,7 +1567,7 @@ public class EvaluationPhaseFilterFunctions {
      * @throws ParseException
      *             if the value failed to be parsed using the suppied format
      */
-    static long getNextTime(Object value, DateFormat format, int granularity) throws ParseException {
+    public static long getNextTime(Object value, DateFormat format, int granularity) throws ParseException {
         return getNextTime(getTime(value, format), granularity);
     }
     
@@ -1576,7 +1580,7 @@ public class EvaluationPhaseFilterFunctions {
      * @throws ParseException
      *             if the value failed to be parsed using any of the known formats
      */
-    protected static long getTime(Object value) throws ParseException {
+    public static long getTime(Object value) throws ParseException {
         return getTime(value, false);
     }
     
@@ -1592,7 +1596,7 @@ public class EvaluationPhaseFilterFunctions {
      * @throws ParseException
      *             if the value failed to be parsed by any of the known formats.
      */
-    protected static long getTime(Object value, boolean nextTime) throws ParseException {
+    public static long getTime(Object value, boolean nextTime) throws ParseException {
         // determine if a number first
         for (int i = 0; i < dateFormatList.size(); i++) {
             DateFormat format = dateFormatList.get(i);
@@ -1632,7 +1636,7 @@ public class EvaluationPhaseFilterFunctions {
      * @return a {@link ValueTuple}
      * @see ValueTuple#toValueTuple(Object) documentation on conversion details
      */
-    protected static ValueTuple getHitTerm(Object valueTuple) {
+    public static ValueTuple getHitTerm(Object valueTuple) {
         return ValueTuple.toValueTuple(valueTuple);
     }
     

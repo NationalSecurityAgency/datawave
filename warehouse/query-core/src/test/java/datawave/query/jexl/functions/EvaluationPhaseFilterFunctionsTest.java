@@ -1944,6 +1944,21 @@ public class EvaluationPhaseFilterFunctionsTest {
         }
     }
     
+    /**
+     * Tests for {@link EvaluationPhaseFilterFunctions#timeFunction(Object, Object, String, String, long)}.
+     */
+    public static class TimeFunctionTests {
+        
+        @Test
+        public void testNullTimeValues() {
+            ValueTuple nonNullTuple = toValueTuple("FOO,foo,bar");
+            
+            // Verify that NPEs are not thrown when either time values are null.
+            assertTrue(EvaluationPhaseFilterFunctions.timeFunction(null, nonNullTuple, "+", ">", 10L).isEmpty());
+            assertTrue(EvaluationPhaseFilterFunctions.timeFunction(nonNullTuple, null, "+", ">", 10L).isEmpty());
+        }
+    }
+    
     private static ValueTuple toValueTuple(String csv) {
         return toValueTuple(csv, LcNoDiacriticsType::new);
     }
