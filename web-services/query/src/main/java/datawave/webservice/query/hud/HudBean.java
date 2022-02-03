@@ -28,6 +28,7 @@ import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 import datawave.webservice.query.metric.QueryMetricSummary;
 import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.metric.QueryMetricsSummaryHtmlResponse;
 import datawave.webservice.query.metric.QueryMetricsSummaryResponse;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.result.QueryImplListResponse;
@@ -120,7 +121,7 @@ public class HudBean {
     @Path("/summaryall")
     @GET
     public String getSummaryQueryStats() throws Exception {
-        QueryMetricsSummaryResponse summaryResp = queryMetrics.getTotalQueriesSummary(null, null);
+        QueryMetricsSummaryResponse summaryResp = queryMetrics.getQueryMetricsSummary(null, null);
         QueryMetricSummary hour1 = summaryResp.getHour1();
         QueryMetricSummary hour6 = summaryResp.getHour6();
         QueryMetricSummary hour12 = summaryResp.getHour12();
