@@ -34,6 +34,8 @@ import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.map.QueryGeometryHandler;
 import datawave.webservice.query.map.QueryGeometryResponse;
 import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
@@ -161,24 +163,13 @@ public class QueryMetricsBean {
      * @HTTP 500 internal server error
      */
     @GET
-    @Path("/summaryCounts")
+    @Path("/summary/all")
     @Interceptors(ResponseInterceptor.class)
-    public QueryMetricsSummaryHtmlResponse getTotalQueriesSummary(@QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
+    @RolesAllowed({"Administrator", "MetricsAdministrator"})
+    public QueryMetricsSummaryResponse getQueryMetricsSummary(@QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
                     @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
         
-        if (null == begin) {
-            // midnight of the current day
-            begin = DateUtils.truncate(Calendar.getInstance(DateUtils.UTC_TIME_ZONE), Calendar.DATE).getTime();
-        } else {
-            begin = DateUtils.truncate(begin, Calendar.SECOND);
-        }
-        if (null == end) {
-            end = new Date();
-        } else {
-            end = DateUtils.truncate(end, Calendar.SECOND);
-        }
-        DatawavePrincipal dp = getPrincipal();
-        return queryHandler.getTotalQueriesSummary(begin, end, dp);
+        return queryMetricsSummary(begin, end, false);
     }
     
     /**
@@ -196,29 +187,45 @@ public class QueryMetricsBean {
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @HTTP 200 success
      * @HTTP 500 internal server error
+     * @deprecated use /summary/all instead
      */
     @GET
     @Path("/summary")
     @Interceptors(ResponseInterceptor.class)
-    public QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(
+    @RolesAllowed({"Administrator", "MetricsAdministrator"})
+    public QueryMetricsSummaryResponse getQueryMetricsSummaryDeprecated1(
                     @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
                                     defaultTime = "235959", defaultMillisec = "999") Date end) {
         
-        if (null == begin) {
-            // midnight of ninety days ago
-            Calendar ninetyDaysAgo = Calendar.getInstance(DateUtils.UTC_TIME_ZONE);
-            ninetyDaysAgo.add(Calendar.DATE, -90);
-            begin = DateUtils.truncate(ninetyDaysAgo, Calendar.DATE).getTime();
-        } else {
-            begin = DateUtils.truncate(begin, Calendar.SECOND);
-        }
-        if (null == end) {
-            end = new Date();
-        } else {
-            end = DateUtils.truncate(end, Calendar.SECOND);
-        }
-        DatawavePrincipal dp = getPrincipal();
-        return queryHandler.getTotalQueriesSummaryCounts(begin, end, dp);
+        return queryMetricsSummary(begin, end, false);
+    }
+    
+    /**
+     *
+     * Returns a summary of the query metrics
+     *
+     * @param begin
+     *            (optional)
+     * @param end
+     *            (optional)
+     *
+     * @return datawave.webservice.result.QueryMetricsSummaryResponse
+     *
+     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
+     * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
+     * @HTTP 200 success
+     * @HTTP 500 internal server error
+     * @deprecated use /summary/all instead
+     */
+    @GET
+    @Path("/summaryCounts")
+    @Interceptors(ResponseInterceptor.class)
+    @RolesAllowed({"Administrator", "MetricsAdministrator"})
+    public QueryMetricsSummaryHtmlResponse getQueryMetricsSummaryDeprecated2(
+                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
+                                    defaultTime = "235959", defaultMillisec = "999") Date end) {
+        
+        return queryMetricsSummary(begin, end, false);
     }
     
     /**
@@ -238,26 +245,71 @@ public class QueryMetricsBean {
      * @HTTP 500 internal server error
      */
     @GET
+    @Path("/summary/user")
+    @Interceptors(ResponseInterceptor.class)
+    public QueryMetricsSummaryHtmlResponse getQueryMetricsUserSummary(
+                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
+                                    defaultTime = "235959", defaultMillisec = "999") Date end) {
+        
+        return queryMetricsSummary(begin, end, true);
+    }
+    
+    /**
+     *
+     * Returns a summary of the requesting user's query metrics
+     *
+     * @param begin
+     *            (optional)
+     * @param end
+     *            (optional)
+     *
+     * @return datawave.webservice.result.QueryMetricsSummaryResponse
+     *
+     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
+     * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
+     * @HTTP 200 success
+     * @HTTP 500 internal server error
+     * @deprecated use /summary/user instead
+     */
+    @GET
     @Path("/summaryCounts/user")
     @Interceptors(ResponseInterceptor.class)
-    public QueryMetricsSummaryHtmlResponse getUserQueriesSummary(@QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
-                    @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
+    public QueryMetricsSummaryHtmlResponse getQueryMetricsUserSummaryDeprecated(@QueryParam("begin") @DateFormat(defaultTime = "000000",
+                    defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
         
-        if (null == begin) {
-            // midnight of ninety days ago
-            Calendar ninetyDaysAgo = Calendar.getInstance(DateUtils.UTC_TIME_ZONE);
-            ninetyDaysAgo.add(Calendar.DATE, -90);
-            begin = DateUtils.truncate(ninetyDaysAgo, Calendar.DATE).getTime();
-        } else {
-            begin = DateUtils.truncate(begin, Calendar.SECOND);
-        }
+        return queryMetricsSummary(begin, end, true);
+    }
+    
+    private QueryMetricsSummaryHtmlResponse queryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser) {
+        
         if (null == end) {
             end = new Date();
         } else {
             end = DateUtils.truncate(end, Calendar.SECOND);
         }
-        DatawavePrincipal dp = getPrincipal();
-        return queryHandler.getUserQueriesSummary(begin, end, dp);
+        Calendar ninetyDaysBeforeEnd = Calendar.getInstance();
+        ninetyDaysBeforeEnd.setTime(end);
+        ninetyDaysBeforeEnd.add(Calendar.DATE, -90);
+        if (null == begin) {
+            // midnight of ninety days before end
+            begin = DateUtils.truncate(ninetyDaysBeforeEnd, Calendar.DATE).getTime();
+        } else {
+            begin = DateUtils.truncate(begin, Calendar.SECOND);
+        }
+        QueryMetricsSummaryHtmlResponse response;
+        if (end.before(begin)) {
+            response = new QueryMetricsSummaryHtmlResponse();
+            String s = "begin date can not be after end date";
+            response.addException(new QueryException(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE, new IllegalArgumentException(s), s));
+        } else {
+            DatawavePrincipal dp = getPrincipal();
+            if (onlyCurrentUser) {
+                response = queryHandler.getUserQueriesSummary(begin, end, dp);
+            } else {
+                response = queryHandler.getTotalQueriesSummary(begin, end, dp);
+            }
+        }
+        return response;
     }
     
     /**
