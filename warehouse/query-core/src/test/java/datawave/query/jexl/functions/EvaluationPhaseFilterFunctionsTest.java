@@ -1150,7 +1150,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testInvalidPosition() {
             givenPosition(2);
             
-            assertThatExceptionOfType(RuntimeException.class).isThrownBy(() -> assertResult("doesn't matter")).withMessage(
+            assertThatIllegalArgumentException().isThrownBy(() -> assertResult("doesn't matter")).withMessage(
                             "Input second.third.fourth does not have a '.' at position " + position + " from the left.");
         }
         
@@ -1189,7 +1189,7 @@ public class EvaluationPhaseFilterFunctionsTest {
         public void testInvalidPosition() {
             givenPosition(3);
             
-            assertThatExceptionOfType(RuntimeException.class).isThrownBy(() -> assertResult("doesn't matter")).withMessage(
+            assertThatIllegalArgumentException().isThrownBy(() -> assertResult("doesn't matter")).withMessage(
                             "Input " + input + " does not have a '.' at position " + position + " from the right.");
         }
         
@@ -1941,6 +1941,21 @@ public class EvaluationPhaseFilterFunctionsTest {
             for (ValueTuple valueTuple : result) {
                 Assert.assertEquals("2021-10-15", valueTuple.getValue());
             }
+        }
+    }
+    
+    /**
+     * Tests for {@link EvaluationPhaseFilterFunctions#timeFunction(Object, Object, String, String, long)}.
+     */
+    public static class TimeFunctionTests {
+        
+        @Test
+        public void testNullTimeValues() {
+            ValueTuple nonNullTuple = toValueTuple("FOO,foo,bar");
+            
+            // Verify that NPEs are not thrown when either time values are null.
+            assertTrue(EvaluationPhaseFilterFunctions.timeFunction(null, nonNullTuple, "+", ">", 10L).isEmpty());
+            assertTrue(EvaluationPhaseFilterFunctions.timeFunction(nonNullTuple, null, "+", ">", 10L).isEmpty());
         }
     }
     
