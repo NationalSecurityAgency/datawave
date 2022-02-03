@@ -689,7 +689,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             
             // if this method was called with the intention to create reverse index keys, ensure the masked values are reversed.
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
-                if (direction.getValue().equals("reverse")) {
+                if (direction == Direction.REVERSE) {
                     normalizedMaskedValue = new StringBuilder(normalizedMaskedValue).reverse().toString();
                     if (log.isTraceEnabled()) {
                         log.trace("normalizedMaskedValue is reversed to: " + normalizedMaskedValue);

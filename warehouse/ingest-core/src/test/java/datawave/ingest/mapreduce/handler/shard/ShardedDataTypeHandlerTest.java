@@ -41,8 +41,6 @@ public class ShardedDataTypeHandlerTest {
     TestMaskedHelper maskedFieldHelper;
     private static final int NUM_SHARDS = 241;
     private static final String DATA_TYPE_NAME = "wkt";
-    private static final String WKT_BYTE_LENGTH_FIELD = "WKT_BYTE_LENGTH";
-    private static final String GEO_FIELD = "GEO";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
     
     Configuration configuration;
@@ -60,7 +58,7 @@ public class ShardedDataTypeHandlerTest {
         }
         
         public String getNormalizedMaskedValue(final String key) {
-            return "FIELD_NAME";
+            return "MASKED_VALUE";
         }
     }
     
@@ -82,7 +80,7 @@ public class ShardedDataTypeHandlerTest {
         
         @Override
         public String get(String key) {
-            return "FIELD_NAME";
+            return "MASKED_VALUE";
         }
     }
     
@@ -138,7 +136,7 @@ public class ShardedDataTypeHandlerTest {
         byte[] visibility = new byte[] {65, 76, 76};
         byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
         
-        Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "FIELD_NAME", "FIELD_VALUE", visibility, null, null, shardId,
+        Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, null, null, shardId,
                         handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
         
         assertTrue(termIndex.size() == 1);
@@ -159,18 +157,47 @@ public class ShardedDataTypeHandlerTest {
         byte[] maskVisibility = new byte[] {67, 76, 76};
         byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
         
-        Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "FIELD_NAME", "FIELD_VALUE", visibility, maskVisibility,
+        Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, maskVisibility,
                         maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
         
         assertTrue(termIndex.size() == 2);
-        boolean foundReverse = false;
+        boolean foundValue = false;
         for (BulkIngestKey k : termIndex.keySet()) {
             Text row = k.getKey().getRow();
-            if (row.toString().contains("EMAN_DLEIF")) {
-                foundReverse = true;
+            if (row.toString().contains("EULAV_DEKSAM")) {
+                foundValue = true;
             }
         }
-        assertTrue(foundReverse);
+        assertTrue(foundValue);
+    }
+    
+    @Test
+    public void testMaskedForward() {
+        Type dataType = new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 10, null);
+        String entry = "testingtesting";
+        RawRecordContainer record = new RawRecordContainerImpl();
+        record.setDataType(dataType);
+        record.setRawFileName("data_" + 0 + ".dat");
+        record.setRawRecordNumber(1);
+        record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
+        
+        Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
+        byte[] visibility = new byte[] {65, 76, 76};
+        byte[] maskVisibility = new byte[] {67, 76, 76};
+        byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
+        
+        Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, maskVisibility,
+                        maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
+        
+        assertTrue(termIndex.size() == 2);
+        boolean foundValue = false;
+        for (BulkIngestKey k : termIndex.keySet()) {
+            Text row = k.getKey().getRow();
+            if (row.toString().contains("MASKED_VALUE")) {
+                foundValue = true;
+            }
+        }
+        assertTrue(foundValue);
     }
     
 }
