@@ -391,9 +391,37 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     protected void runTestQuery(Collection<String> expected, String queryStr, Date startDate, Date endDate, Map<String,String> options,
                     List<DocumentChecker> checkers) throws Exception {
+        runTestQuery(expected, queryStr, startDate, endDate, options, checkers, this.authSet);
+    }
+    
+    /**
+     * Executes the query and performs validation of the results.
+     *
+     * @param expected
+     *            expected results from the query
+     * @param queryStr
+     *            execution query string
+     * @param startDate
+     *            start date for query (inclusive)
+     * @param endDate
+     *            end date for query (exclusive)
+     * @param options
+     *            optional parameters to query
+     * @param checkers
+     *            optional list of assert checker methods
+     * @param authSet
+     *            optional set of authorizations to use. If null or empty, will use default auths.
+     */
+    protected void runTestQuery(Collection<String> expected, String queryStr, Date startDate, Date endDate, Map<String,String> options,
+                    List<DocumentChecker> checkers, Set<Authorizations> authSet) throws Exception {
         if (log.isDebugEnabled()) {
             log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startDate) + ")  end(" + YMD_DateFormat.format(endDate) + ")");
         }
+        
+        if (authSet == null || authSet.isEmpty()) {
+            authSet = this.authSet;
+        }
+        
         QueryImpl q = new QueryImpl();
         q.setBeginDate(startDate);
         q.setEndDate(endDate);
@@ -407,7 +435,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             QueryMetricFactory queryMetricFactory = (metricFactory == null) ? new QueryMetricFactoryImpl() : metricFactory;
             new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, this.logic, q, "", principal, queryMetricFactory);
         } else {
-            GenericQueryConfiguration config = this.logic.initialize(connector, q, this.authSet);
+            GenericQueryConfiguration config = this.logic.initialize(connector, q, authSet);
             this.logic.setupQuery(config);
             if (log.isDebugEnabled()) {
                 log.debug("Plan: " + config.getQueryString());

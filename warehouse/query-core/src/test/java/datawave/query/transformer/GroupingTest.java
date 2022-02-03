@@ -29,6 +29,7 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
+import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.Authorizations;
@@ -80,6 +81,9 @@ import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.RANDOM_SANS_CO
 public abstract class GroupingTest {
     
     private static final Logger log = Logger.getLogger(GroupingTest.class);
+    
+    private static final String COLVIS_MARKING = "columnVisibility";
+    private static final String EXPECTED_COLVIS = "ALL&E&I";
     
     private static Authorizations auths = new Authorizations("ALL", "E", "I");
     
@@ -357,6 +361,41 @@ public abstract class GroupingTest {
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
                 runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+    
+    @Test
+    public void testGroupingWithReducedResponse() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
+        
+        extraParameters.put("reduced.response", "true");
+        extraParameters.put("group.fields", "GENDER");
+        extraParameters.put("group.fields.batch.size", "0");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                EventQueryResponseBase response = (EventQueryResponseBase) runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate,
+                                extraParameters, teardown, interrupt);
+                
+                for (EventBase event : response.getEvents()) {
+                    // The event should have a collapsed columnVisibility
+                    String actualCV = event.getMarkings().get(COLVIS_MARKING).toString();
+                    Assert.assertEquals(EXPECTED_COLVIS, actualCV);
+                    
+                    // The fields should have no columnVisibility
+                    for (Object f : event.getFields()) {
+                        FieldBase<?> field = (FieldBase<?>) f;
+                        Assert.assertNull(field.getMarkings().get(COLVIS_MARKING));
+                    }
+                }
             }
         }
     }
