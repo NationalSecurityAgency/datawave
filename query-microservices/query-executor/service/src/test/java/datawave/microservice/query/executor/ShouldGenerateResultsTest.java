@@ -15,8 +15,6 @@ import org.apache.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ShouldGenerateResultsTest {
     private static final Logger log = Logger.getLogger(ShouldGenerateResultsTest.class);
