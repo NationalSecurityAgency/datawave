@@ -30,7 +30,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ShardedDataTypeHandlerTest {
@@ -75,7 +77,12 @@ public class ShardedDataTypeHandlerTest {
         
         @Override
         public boolean contains(String key) {
-            return true;
+            if (key.equals("TEST_COL")) {
+                return true;
+            } else {
+                return false;
+            }
+            
         }
         
         @Override
@@ -89,7 +96,6 @@ public class ShardedDataTypeHandlerTest {
         conf.set(DataTypeHelper.Properties.DATA_NAME, DATA_TYPE_NAME);
         conf.set(TypeRegistry.INGEST_DATA_TYPES, DATA_TYPE_NAME);
         conf.set(DATA_TYPE_NAME + TypeRegistry.INGEST_HELPER, INGEST_HELPER_CLASS);
-        
         conf.set(ShardedDataTypeHandler.METADATA_TABLE_NAME, TableName.METADATA);
         conf.set(ShardedDataTypeHandler.NUM_SHARDS, Integer.toString(NUM_SHARDS));
         conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, TableName.SHARD + "," + TableName.ERROR_SHARD);
@@ -226,6 +232,31 @@ public class ShardedDataTypeHandlerTest {
             }
         }
         assertTrue(foundValue);
+    }
+    
+    @Test
+    public void testNonMaskedVisibility() {
+        Type dataType = new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 10, null);
+        String entry = "testingtesting";
+        RawRecordContainer record = new RawRecordContainerImpl();
+        record.setDataType(dataType);
+        record.setRawFileName("data_" + 0 + ".dat");
+        record.setRawRecordNumber(1);
+        record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
+        
+        Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
+        byte[] visibility = new byte[] {65, 76, 76};
+        byte[] maskVisibility = new byte[] {67, 76, 76};
+        byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
+        
+        Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "OTHER_COL", "FIELD_VALUE", visibility, maskVisibility,
+                        maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
+        
+        assertTrue(termIndex.size() == 1);
+        for (BulkIngestKey k : termIndex.keySet()) {
+            byte[] keyBytes = k.getKey().getColumnVisibility().getBytes();
+            assertTrue(Arrays.equals(keyBytes, maskVisibility));
+        }
     }
     
 }
