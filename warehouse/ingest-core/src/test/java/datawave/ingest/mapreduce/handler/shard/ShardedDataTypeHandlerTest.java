@@ -200,4 +200,32 @@ public class ShardedDataTypeHandlerTest {
         assertTrue(foundValue);
     }
     
+    @Test
+    public void testNonMaskedReverseIndex() {
+        Type dataType = new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 10, null);
+        String entry = "testingtesting";
+        RawRecordContainer record = new RawRecordContainerImpl();
+        record.setDataType(dataType);
+        record.setRawFileName("data_" + 0 + ".dat");
+        record.setRawRecordNumber(1);
+        record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
+        
+        Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
+        byte[] visibility = new byte[] {65, 76, 76};
+        byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
+        
+        Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, null, null, shardId,
+                        handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
+        
+        assertTrue(termIndex.size() == 1);
+        boolean foundValue = false;
+        for (BulkIngestKey k : termIndex.keySet()) {
+            Text row = k.getKey().getRow();
+            if (row.toString().contains("FIELD_VALUE")) {
+                foundValue = true;
+            }
+        }
+        assertTrue(foundValue);
+    }
+    
 }
