@@ -40,24 +40,24 @@ import java.util.Set;
  * Also added in the ability to count attributes pulled from the ValueTuples which contribute to the positive evaluation.
  */
 public class DatawavePartialInterpreter extends DatawaveInterpreter {
-
+    
     private static final Logger log = Logger.getLogger(DatawavePartialInterpreter.class);
     private final Set<String> incompleteFields;
-
+    
     public DatawavePartialInterpreter(JexlEngine jexl, JexlContext aContext, boolean strictFlag, boolean silentFlag, Set<String> incompleteFields) {
         super(jexl, aContext, strictFlag, silentFlag);
         this.incompleteFields = incompleteFields;
     }
-
+    
     public enum MATCH {
         TRUE, FALSE, UNKNOWN;
-
+        
         public static MATCH valueFor(boolean value) {
             return (value ? TRUE : FALSE);
         }
-
+        
         public MATCH negate() {
-            switch(this) {
+            switch (this) {
                 case UNKNOWN:
                     return UNKNOWN;
                 case FALSE:
@@ -67,9 +67,10 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             }
         }
     }
-
+    
     /**
      * Determine whether a node expression contains an incomplete fieldname
+     * 
      * @param node
      * @return true if incomplete fieldname found, false otherwise
      */
@@ -83,9 +84,8 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     }
     
     /**
-     * This convenience method can be used to interpret the result of the script.execute() result which calls the interpret method below.
-     * If the result is false but it involves incomplete fields, then MATCH.UNKNOWN is returned.  Other with MATCH.TRUE or MATCH.FALSE is
-     * returned as appropriate
+     * This convenience method can be used to interpret the result of the script.execute() result which calls the interpret method below. If the result is false
+     * but it involves incomplete fields, then MATCH.UNKNOWN is returned. Other with MATCH.TRUE or MATCH.FALSE is returned as appropriate
      *
      * @param node
      * @param scriptExecuteResult
@@ -94,18 +94,18 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     public MATCH getMatched(JexlNode node, Object scriptExecuteResult) {
         return getMatched(node, scriptExecuteResult, false);
     }
-
+    
     public MATCH getMatched(JexlNode node, Object scriptExecuteResult, boolean negated) {
         MATCH matched = getMatched(scriptExecuteResult);
-
+        
         // now determine whether the result should actually be unknown
         if ((matched == (negated ? MATCH.TRUE : MATCH.FALSE)) && isIncomplete(node)) {
             matched = MATCH.UNKNOWN;
         }
-
+        
         return matched;
     }
-
+    
     public MATCH getMatched(Object scriptExecuteResult) {
         MATCH matched = MATCH.FALSE;
         if (scriptExecuteResult != null) {
@@ -121,37 +121,37 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         }
         return matched;
     }
-
+    
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         return getMatched(node, super.visit(node, data));
     }
-
+    
     @Override
     public Object visit(ASTEQNode node, Object data) {
         return getMatched(node, super.visit(node, data));
     }
-
+    
     @Override
     public Object visit(ASTERNode node, Object data) {
         return getMatched(node, super.visit(node, data));
     }
-
+    
     @Override
     public Object visit(ASTOrNode node, Object data) {
         Deque<JexlNode> children = new ArrayDeque<>();
         Deque<JexlNode> stack = new ArrayDeque<>();
         stack.push(node);
-
+        
         boolean allIdentifiers = true;
-
+        
         // iterative depth-first traversal of tree to avoid stack
         // overflow when traversing large or'd lists
         JexlNode current;
         JexlNode child;
         while (!stack.isEmpty()) {
             current = stack.pop();
-
+            
             if (current instanceof ASTOrNode) {
                 for (int i = current.jjtGetNumChildren() - 1; i >= 0; i--) {
                     child = JexlASTHelper.dereference(current.jjtGetChild(i));
@@ -164,7 +164,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
                 }
             }
         }
-
+        
         // If all ASTIdentifiers, then traverse the whole queue. Otherwise we can attempt to short circuit.
         Object result = null;
         if (allIdentifiers) {
@@ -181,10 +181,10 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
                 result = interpretOr(children.pollLast().jjtAccept(this, data), result);
             }
         }
-
+        
         return result;
     }
-
+    
     public Object interpretOr(Object left, Object right) {
         FunctionalSet leftFunctionalSet = null;
         FunctionalSet rightFunctionalSet = null;
@@ -232,7 +232,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             return getMatchedOr(left, right);
         }
     }
-
+    
     private MATCH getMatchedOr(Object left, Object right) {
         left = getMatched(left);
         right = getMatched(right);
@@ -244,20 +244,20 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             return MATCH.UNKNOWN;
         }
     }
-
+    
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // we could have arrived here after the node was dereferenced
         if (QueryPropertyMarker.findInstance(node).isType(ExceededOrThresholdMarkerJexlNode.class)) {
             return getMatched(node, visitExceededOrThresholdMarker(node));
         }
-
+        
         // check for the special case of a range (conjunction of a G/GE and a L/LE node) and reinterpret as a function
         Object evaluation = evaluateRange(node);
         if (evaluation != null) {
             return getMatched(node, evaluation);
         }
-
+        
         FunctionalSet leftFunctionalSet = null;
         FunctionalSet rightFunctionalSet = null;
         Object left = node.jjtGetChild(0).jjtAccept(this, data);
@@ -307,7 +307,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             return getMatchedAnd(left, right);
         }
     }
-
+    
     private MATCH getMatchedAnd(Object left, Object right) {
         left = getMatched(left);
         right = getMatched(right);
@@ -319,23 +319,23 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             return MATCH.UNKNOWN;
         }
     }
-
+    
     @Override
     public Object visit(ASTAssignment node, Object data) {
         super.visit(node, data);
         return MATCH.TRUE;
     }
-
+    
     @Override
     public Object visit(ASTGENode node, Object data) {
         return getMatched(node, super.visit(node, data));
     }
-
+    
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return getMatched(node, super.visit(node, data));
     }
-
+    
     @Override
     public Object visit(ASTIfStatement node, Object data) {
         Object expression = node.jjtGetChild(0).jjtAccept(this, data);
@@ -344,33 +344,33 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         }
         return super.visit(node, data);
     }
-
+    
     @Override
     public Object visit(ASTLENode node, Object data) {
         return getMatched(node, super.visit(node, data));
     }
-
+    
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return getMatched(node, super.visit(node, data));
     }
-
+    
     @Override
     public Object visit(ASTNENode node, Object data) {
         return getMatched(node, super.visit(node, data), false);
     }
-
+    
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return getMatched(node, super.visit(node, data), false);
     }
-
+    
     @Override
     public Object visit(ASTNotNode node, Object data) {
         Object val = node.jjtGetChild(0).jjtAccept(this, data);
         return getMatched(val).negate();
     }
-
+    
     @Override
     public Object visit(ASTReference node, Object data) {
         if (QueryPropertyMarker.findInstance(node).isType(ExceededOrThresholdMarkerJexlNode.class)) {
