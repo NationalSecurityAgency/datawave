@@ -1,6 +1,10 @@
 package datawave.query.jexl;
 
 import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.functions.ContentFunctions;
+import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.JexlContext;
@@ -17,14 +21,13 @@ import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTIfStatement;
 import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayDeque;
@@ -38,6 +41,8 @@ import java.util.Set;
  * arithmetic.
  *
  * Also added in the ability to count attributes pulled from the ValueTuples which contribute to the positive evaluation.
+ *
+ *
  */
 public class DatawavePartialInterpreter extends DatawaveInterpreter {
     
@@ -70,13 +75,17 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     
     /**
      * Determine whether a node expression contains an incomplete fieldname
+     * <p>
+     * Incomplete nodes contain at least one field that is both in the context and in the set of incomplete fields
      * 
      * @param node
      * @return true if incomplete fieldname found, false otherwise
      */
     private boolean isIncomplete(JexlNode node) {
         for (String field : JexlASTHelper.getIdentifierNames(node)) {
-            if (incompleteFields.contains(field)) {
+            field = JexlASTHelper.deconstructIdentifier(field);
+            // if the field is not in the context, we cannot evaluate it.
+            if (incompleteFields.contains(field) && context.has(field)) {
                 return true;
             }
         }
@@ -111,8 +120,10 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         if (scriptExecuteResult != null) {
             if (MATCH.class.isAssignableFrom(scriptExecuteResult.getClass())) {
                 matched = (MATCH) scriptExecuteResult;
-            } else {
+            } else if (Boolean.class.isAssignableFrom(scriptExecuteResult.getClass())) {
                 matched = MATCH.valueFor(isMatched(scriptExecuteResult));
+            } else {
+                matched = MATCH.valueFor(arithmetic.toBoolean(scriptExecuteResult));
             }
         } else {
             if (log.isDebugEnabled()) {
@@ -122,9 +133,82 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         return matched;
     }
     
+    public static boolean isMatched(Object scriptExecuteResult) {
+        if (scriptExecuteResult != null && DatawavePartialInterpreter.MATCH.class.isAssignableFrom(scriptExecuteResult.getClass())) {
+            DatawavePartialInterpreter.MATCH match = (DatawavePartialInterpreter.MATCH) scriptExecuteResult;
+            switch (match) {
+                case FALSE:
+                    return false;
+                case UNKNOWN:
+                case TRUE:
+                    return true;
+                default:
+                    throw new IllegalStateException("Unexpected value: " + match);
+            }
+        } else {
+            return DatawaveInterpreter.isMatched(scriptExecuteResult);
+        }
+    }
+    
+    /**
+     * More broadly, what happens when a phrase function is queried against an incomplete field?
+     * <p>
+     * Form A: content:phrase(FIELD, tfmap, Field A, Field B)
+     * <p>
+     * Form B: content:phrase(tfmap, Field A, Field B) && ...
+     *
+     * @param node
+     *            an ASTFunctionNode
+     * @param data
+     *            some data
+     * @return a result
+     */
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        return getMatched(node, super.visit(node, data));
+        
+        // get the namespace
+        FunctionJexlNodeVisitor visitor = new FunctionJexlNodeVisitor();
+        visitor.visit(node, null);
+        
+        // content functions should always have the field as the first argument
+        if (visitor.namespace().equals(ContentFunctions.CONTENT_FUNCTION_NAMESPACE)) {
+            JexlNode first = visitor.args().get(0);
+            if (first instanceof ASTIdentifier) {
+                String field = JexlASTHelper.deconstructIdentifier((ASTIdentifier) first);
+                if (context.has(field) && incompleteFields.contains(field)) {
+                    return MATCH.UNKNOWN;
+                }
+            }
+        } else {
+            // fall back to descriptor for non-content functions
+            JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
+            Set<String> fields = descriptor.fields(null, null);
+            
+            boolean incomplete = false;
+            for (String field : fields) {
+                if (context.has(field) && incompleteFields.contains(field)) {
+                    incomplete = true;
+                    break;
+                }
+            }
+            
+            if (incomplete) {
+                return MATCH.UNKNOWN;
+            }
+        }
+        
+        // if no determination could be made about an UNKNOWN status, fallback to a normal visit
+        Object result = super.visit(node, data);
+        
+        if (result instanceof Collection) {
+            if (hasSiblings(node)) {
+                return result;
+            } else {
+                return ((Collection<?>) result).isEmpty();
+            }
+        }
+        
+        return getMatched(node, result);
     }
     
     @Override
@@ -185,6 +269,16 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         return result;
     }
     
+    /**
+     * Interpret the result of a union via pairwise element evaluation
+     *
+     * @param left
+     *            the current element
+     * @param right
+     *            the current evaluation state of this union
+     * @return the updated evaluation state of this union
+     */
+    @Override
     public Object interpretOr(Object left, Object right) {
         FunctionalSet leftFunctionalSet = null;
         FunctionalSet rightFunctionalSet = null;
@@ -193,7 +287,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         if (!(left instanceof Collection)) {
             try {
                 MATCH leftValue = getMatched(left);
-                if (leftValue == MATCH.TRUE) {
+                if (leftValue == MATCH.TRUE || leftValue == MATCH.UNKNOWN) {
                     return leftValue;
                 }
             } catch (ArithmeticException xrt) {
@@ -258,65 +352,41 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             return getMatched(node, evaluation);
         }
         
-        FunctionalSet leftFunctionalSet = null;
-        FunctionalSet rightFunctionalSet = null;
-        Object left = node.jjtGetChild(0).jjtAccept(this, data);
-        if (left == null)
-            left = FunctionalSet.empty();
-        if (left instanceof Collection == false) {
-            try {
-                MATCH leftValue = getMatched(left);
-                if (leftValue == MATCH.FALSE) {
-                    return leftValue;
-                }
-            } catch (RuntimeException xrt) {
-                throw new JexlException(node.jjtGetChild(0), "boolean coercion error", xrt);
+        // values for intersection
+        FunctionalSet functionalSet = new FunctionalSet();
+        for (JexlNode child : JexlNodes.children(node)) {
+            
+            Object o = child.jjtAccept(this, data);
+            if (o == null) {
+                o = FunctionalSet.empty();
             }
-        } else {
-            if (leftFunctionalSet == null)
-                leftFunctionalSet = new FunctionalSet();
-            leftFunctionalSet.addAll((Collection) left);
-        }
-        Object right = node.jjtGetChild(1).jjtAccept(this, data);
-        if (right == null)
-            right = FunctionalSet.empty();
-        if (right instanceof Collection == false) {
-            try {
-                MATCH rightValue = getMatched(right);
-                if (rightValue == MATCH.FALSE) {
+            
+            if (o instanceof Collection) {
+                if (((Collection<?>) o).isEmpty()) {
                     return Boolean.FALSE;
+                } else {
+                    functionalSet.addAll((Collection<?>) o);
                 }
-            } catch (ArithmeticException xrt) {
-                throw new JexlException(node.jjtGetChild(1), "boolean coercion error", xrt);
-            }
-        } else {
-            if (rightFunctionalSet == null)
-                rightFunctionalSet = new FunctionalSet();
-            rightFunctionalSet.addAll((Collection) right);
-        }
-        // return union of left and right iff they are both non-null & non-empty
-        if (leftFunctionalSet != null && rightFunctionalSet != null) {
-            if (!leftFunctionalSet.isEmpty() && !rightFunctionalSet.isEmpty()) {
-                FunctionalSet functionalSet = new FunctionalSet(leftFunctionalSet);
-                functionalSet.addAll(rightFunctionalSet);
-                return functionalSet;
+            } else if (o instanceof MATCH) {
+                if (o.equals(MATCH.FALSE)) {
+                    return MATCH.FALSE;
+                }
             } else {
-                return MATCH.FALSE;
+                try {
+                    boolean value = arithmetic.toBoolean(o);
+                    if (!value) {
+                        return Boolean.FALSE;
+                    }
+                } catch (RuntimeException xrt) {
+                    throw new JexlException(child, "boolean coercion error", xrt);
+                }
             }
-        } else {
-            return getMatchedAnd(left, right);
         }
-    }
-    
-    private MATCH getMatchedAnd(Object left, Object right) {
-        left = getMatched(left);
-        right = getMatched(right);
-        if (left == MATCH.TRUE && right == MATCH.TRUE) {
-            return MATCH.TRUE;
-        } else if (left == MATCH.FALSE || right == MATCH.FALSE) {
-            return MATCH.FALSE;
+        
+        if (!functionalSet.isEmpty()) {
+            return functionalSet;
         } else {
-            return MATCH.UNKNOWN;
+            return MATCH.TRUE;
         }
     }
     

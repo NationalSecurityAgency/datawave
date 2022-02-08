@@ -1,6 +1,8 @@
 package datawave.query.jexl;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.jexl2.Interpreter;
 import org.apache.commons.jexl2.JexlArithmetic;
@@ -15,6 +17,10 @@ import org.apache.commons.logging.Log;
  * 
  */
 public class DatawaveJexlEngine extends JexlEngine {
+    
+    // support for a partial document evaluation
+    private boolean usePartialInterpreter = false;
+    private Set<String> incompleteFields = Collections.emptySet();
     
     public DatawaveJexlEngine() {
         super();
@@ -32,10 +38,30 @@ public class DatawaveJexlEngine extends JexlEngine {
     
     @Override
     protected Interpreter createInterpreter(JexlContext context, boolean strictFlag, boolean silentFlag) {
-        return new DatawaveInterpreter(this, context, strictFlag, silentFlag);
+        if (usePartialInterpreter) {
+            return new DatawavePartialInterpreter(this, context, strictFlag, silentFlag, incompleteFields);
+        } else {
+            return new DatawaveInterpreter(this, context, strictFlag, silentFlag);
+        }
     }
     
     public ASTJexlScript parse(CharSequence expression) {
         return super.parse(expression, null, null);
+    }
+    
+    public boolean getUsePartialInterpreter() {
+        return this.usePartialInterpreter;
+    }
+    
+    public void setUsePartialInterpreter(boolean usePartialInterpreter) {
+        this.usePartialInterpreter = usePartialInterpreter;
+    }
+    
+    public Set<String> getIncompleteFields() {
+        return this.incompleteFields;
+    }
+    
+    public void setIncompleteFields(Set<String> incompleteFields) {
+        this.incompleteFields = incompleteFields;
     }
 }

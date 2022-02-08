@@ -232,6 +232,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setConfiguredProfiles(other.getConfiguredProfiles());
         this.setSelectedProfile(other.getSelectedProfile());
         this.setPrimaryToSecondaryFieldMap(other.getPrimaryToSecondaryFieldMap());
+        this.setUsePartialInterpreter(other.getUsePartialInterpreter());
         
         if (other.eventQueryDataDecoratorTransformer != null) {
             this.eventQueryDataDecoratorTransformer = new EventQueryDataDecoratorTransformer(other.eventQueryDataDecoratorTransformer);
@@ -2353,5 +2354,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
+    }
+    
+    public boolean getUsePartialInterpreter() {
+        return getConfig().isUsePartialInterpreter();
+    }
+    
+    public void setUsePartialInterpreter(boolean usePartialInterpreter) {
+        getConfig().setUsePartialInterpreter(usePartialInterpreter);
     }
 }

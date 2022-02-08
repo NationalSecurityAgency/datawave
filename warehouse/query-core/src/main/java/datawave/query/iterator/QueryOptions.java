@@ -153,6 +153,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String STATSD_MAX_QUEUE_SIZE = "statsd.max.queue.size";
     public static final String DATATYPE_FIELDNAME = "include.datatype.fieldname";
     public static final String TRACK_SIZES = "track.sizes";
+    public static final String USE_PARTIAL_INTERPRETER = "use.partial.interpreter";
+    public static final String INCOMPLETE_FIELDS = "incomplete.fields";
     
     public static final String QUERY_PAGE_EXECUTION_TIMEOUT = "query.execution.for.page.timeout";
     public static final String QUERY_IS_LONG_RUNNING = "query.is.long.running";
@@ -276,6 +278,8 @@ public class QueryOptions implements OptionDescriber {
     protected Map<String,Integer> limitFieldsMap = new HashMap<>();
     protected boolean limitFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
+    protected boolean usePartialInterpreter = false;
+    protected Set<String> incompleteFields = new HashSet<>();
     
     protected Set<String> groupFields = Sets.newHashSet();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
@@ -937,6 +941,22 @@ public class QueryOptions implements OptionDescriber {
         this.limitFieldsField = limitFieldsField;
     }
     
+    public boolean getUsePartialInterpreter() {
+        return this.usePartialInterpreter;
+    }
+    
+    public void setUsePartialInterpreter(boolean usePartialInterpreter) {
+        this.usePartialInterpreter = usePartialInterpreter;
+    }
+    
+    public Set<String> getIncompleteFields() {
+        return this.incompleteFields;
+    }
+    
+    public void setIncompleteFields(Set<String> incompleteFields) {
+        this.incompleteFields = incompleteFields;
+    }
+    
     public Set<String> getGroupFields() {
         return groupFields;
     }
@@ -1346,6 +1366,14 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(LIMIT_FIELDS_FIELD)) {
             this.setLimitFieldsField(options.get(LIMIT_FIELDS_FIELD));
+        }
+        
+        if (options.containsKey(USE_PARTIAL_INTERPRETER)) {
+            this.setUsePartialInterpreter(Boolean.parseBoolean(options.get(USE_PARTIAL_INTERPRETER)));
+        }
+        
+        if (options.containsKey(INCOMPLETE_FIELDS)) {
+            this.setIncompleteFields(Sets.newHashSet(StringUtils.split(options.get(INCOMPLETE_FIELDS), ",")));
         }
         
         if (options.containsKey(GROUP_FIELDS)) {

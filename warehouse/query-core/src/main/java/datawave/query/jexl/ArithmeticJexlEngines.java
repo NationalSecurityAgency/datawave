@@ -2,6 +2,7 @@ package datawave.query.jexl;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import datawave.query.jexl.functions.JexlFunctionNamespaceRegistry;
@@ -27,10 +28,47 @@ public class ArithmeticJexlEngines {
      * @return true if we matched, false otherwise.
      */
     public static boolean isMatched(Object scriptExecuteResult) {
-        return DatawaveInterpreter.isMatched(scriptExecuteResult);
+        return isMatched(scriptExecuteResult, false);
     }
     
+    /**
+     * Convenience method used to interpret the result of a script.execute() call. Supports partial evaluations.
+     *
+     * @param scriptExecuteResult
+     *            the result of an evaluation
+     * @param usePartialEvaluation
+     *            flag that determines which interpreter to use
+     * @return
+     */
+    public static boolean isMatched(Object scriptExecuteResult, boolean usePartialEvaluation) {
+        if (usePartialEvaluation) {
+            return DatawavePartialInterpreter.isMatched(scriptExecuteResult);
+        } else {
+            return DatawaveInterpreter.isMatched(scriptExecuteResult);
+        }
+    }
+    
+    /**
+     * Get a {@link DatawaveJexlEngine} that supports full document evaluation
+     *
+     * @param arithmetic
+     *            an arithmetic
+     * @return a JexlEngine
+     */
     public static DatawaveJexlEngine getEngine(JexlArithmetic arithmetic) {
+        return getEngine(arithmetic, false, Collections.emptySet());
+    }
+    
+    /**
+     * Get a {@link DatawaveJexlEngine} that supports document evaluation. Optionally builds a JexlEngine that supports partial document evaluation
+     *
+     * @param arithmetic
+     *            an arithmetic
+     * @param usePartialInterpreter
+     *            flag indicating this JexlEngine should support partial document evaluaiton
+     * @return a JexlEngine
+     */
+    public static DatawaveJexlEngine getEngine(JexlArithmetic arithmetic, boolean usePartialInterpreter, Set<String> incompleteFields) {
         if (null == arithmetic) {
             return null;
         }
@@ -39,8 +77,10 @@ public class ArithmeticJexlEngines {
         
         if (!engineCache.containsKey(arithmeticClass)) {
             DatawaveJexlEngine engine = createEngine(arithmetic);
+            engine.setUsePartialInterpreter(usePartialInterpreter);
+            engine.setIncompleteFields(incompleteFields);
             
-            if (arithmetic instanceof StatefulArithmetic == false) {
+            if (!(arithmetic instanceof StatefulArithmetic)) {
                 // do not cache an Arithmetic that has state
                 engineCache.put(arithmeticClass, engine);
             }

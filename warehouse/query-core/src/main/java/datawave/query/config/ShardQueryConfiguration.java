@@ -278,6 +278,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean speculativeScanning = false;
     private boolean disableEvaluation = false;
+    
+    // a partial interpreter will evaluate 'incomplete fields' as true when more work is required for a full evaluation
+    private boolean usePartialInterpreter = false;
+    private Set<String> incompleteFields = new HashSet<>(0);
+    
     private boolean containsIndexOnlyTerms = false;
     private boolean containsCompositeTerms = false;
     /**
@@ -497,6 +502,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setAllowShortcutEvaluation(other.getAllowShortcutEvaluation());
         this.setSpeculativeScanning(other.getSpeculativeScanning());
         this.setDisableEvaluation(other.isDisableEvaluation());
+        this.setUsePartialInterpreter(other.isUsePartialInterpreter());
+        this.setIncompleteFields(other.getIncompleteFields());
         this.setContainsIndexOnlyTerms(other.isContainsIndexOnlyTerms());
         this.setContainsCompositeTerms(other.isContainsCompositeTerms());
         this.setAllowFieldIndexEvaluation(other.isAllowFieldIndexEvaluation());
@@ -2240,5 +2247,21 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public long getQueryExecutionForPageTimeout() {
         return this.queryExecutionForPageTimeout;
+    }
+    
+    public boolean isUsePartialInterpreter() {
+        return usePartialInterpreter;
+    }
+    
+    public void setUsePartialInterpreter(boolean usePartialInterpreter) {
+        this.usePartialInterpreter = usePartialInterpreter;
+    }
+    
+    public Set<String> getIncompleteFields() {
+        return incompleteFields;
+    }
+    
+    public void setIncompleteFields(Set<String> incompleteFields) {
+        this.incompleteFields = incompleteFields;
     }
 }

@@ -245,7 +245,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // Parse the query
         try {
             this.script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
-            this.myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
+            this.myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic, getUsePartialInterpreter(), getIncompleteFields());
             
         } catch (Exception e) {
             throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
@@ -707,7 +707,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 try {
                     
                     myScript = JexlASTHelper.parseJexlQuery(queries.getValue());
-                    eval = new JexlEvaluation(queries.getValue(), myArithmetic);
+                    eval = new JexlEvaluation(queries.getValue(), myArithmetic, getUsePartialInterpreter(), getIncompleteFields());
                     
                 } catch (Exception e) {
                     throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
@@ -1088,16 +1088,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected JexlEvaluation getJexlEvaluation(NestedQueryIterator<Key> documentSource) {
         
         if (null == documentSource) {
-            return new JexlEvaluation(query, getArithmetic());
+            return new JexlEvaluation(query, getArithmetic(), getUsePartialInterpreter(), getIncompleteFields());
         }
         JexlEvaluation jexlEvaluationFunction = null;
         NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
         if (null == nestedQuery) {
-            jexlEvaluationFunction = new JexlEvaluation(query, getArithmetic());
+            jexlEvaluationFunction = new JexlEvaluation(query, getArithmetic(), getUsePartialInterpreter(), getIncompleteFields());
         } else {
             jexlEvaluationFunction = nestedQuery.getEvaluation();
             if (null == jexlEvaluationFunction) {
-                return new JexlEvaluation(query, getArithmetic());
+                return new JexlEvaluation(query, getArithmetic(), getUsePartialInterpreter(), getIncompleteFields());
             }
         }
         return jexlEvaluationFunction;

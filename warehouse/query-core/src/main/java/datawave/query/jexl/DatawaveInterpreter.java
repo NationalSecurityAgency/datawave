@@ -522,7 +522,7 @@ public class DatawaveInterpreter extends Interpreter {
      * @param node
      * @return
      */
-    private boolean hasSiblings(ASTFunctionNode node) {
+    protected boolean hasSiblings(ASTFunctionNode node) {
         
         JexlNode parent = node.jjtGetParent();
         

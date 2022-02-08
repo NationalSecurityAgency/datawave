@@ -22,6 +22,9 @@ import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.util.Tuple3;
 
+import java.util.Collections;
+import java.util.Set;
+
 public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJexlContext>> {
     private static final Logger log = Logger.getLogger(JexlEvaluation.class);
     
@@ -41,11 +44,15 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     }
     
     public JexlEvaluation(String query, JexlArithmetic arithmetic) {
+        this(query, arithmetic, false, Collections.emptySet());
+    }
+    
+    public JexlEvaluation(String query, JexlArithmetic arithmetic, boolean usePartialInterpreter, Set<String> incompleteFields) {
         this.query = query;
         this.arithmetic = arithmetic;
         
         // Get a JexlEngine initialized with the correct JexlArithmetic for this Document
-        this.engine = ArithmeticJexlEngines.getEngine(arithmetic);
+        this.engine = ArithmeticJexlEngines.getEngine(arithmetic, usePartialInterpreter, incompleteFields);
         
         // Evaluate the JexlContext against the Script
         this.script = DatawaveJexlScript.create((ExpressionImpl) this.engine.createScript(this.query));
@@ -64,7 +71,11 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     }
     
     public boolean isMatched(Object o) {
-        return ArithmeticJexlEngines.isMatched(o);
+        return isMatched(o, engine.getUsePartialInterpreter());
+    }
+    
+    public boolean isMatched(Object o, boolean usePartialInterpreter) {
+        return ArithmeticJexlEngines.isMatched(o, usePartialInterpreter);
     }
     
     @Override
