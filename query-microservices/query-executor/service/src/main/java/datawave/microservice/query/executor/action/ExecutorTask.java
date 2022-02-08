@@ -172,6 +172,7 @@ public abstract class ExecutorTask implements Runnable {
         for (QueryCheckpoint cp : cpQueryLogic.checkpoint(queryKey)) {
             log.debug("Storing a query checkpoint: " + cp);
             cache.createTask(QueryRequest.Method.NEXT, cp);
+            // TODO: Should we create an event per checkpoint, or every Nth checkpoint, or only once
             publishExecutorEvent(QueryRequest.next(queryKey.getQueryId()), queryKey.getQueryPool());
         }
     }

@@ -34,6 +34,9 @@ public class ExecutorProperties {
     // the max cache size used by the monitor to avoid excessive close/cancel task executions
     private int monitorMaxCacheSize = 500;
     
+    // The max number of orphaned tasks to check per monitor cycle
+    private int maxOrphanedTasksToCheck = 100;
+    
     public String getPool() {
         return pool;
     }
@@ -132,6 +135,14 @@ public class ExecutorProperties {
     
     public void setCheckpointFlushMs(long checkpointFlushMs) {
         this.checkpointFlushMs = checkpointFlushMs;
+    }
+    
+    public int getMaxOrphanedTasksToCheck() {
+        return maxOrphanedTasksToCheck;
+    }
+    
+    public void setMaxOrphanedTasksToCheck(int maxOrphanedTasksToCheck) {
+        this.maxOrphanedTasksToCheck = maxOrphanedTasksToCheck;
     }
     
 }

@@ -4,11 +4,16 @@ import datawave.microservice.query.executor.QueryExecutor;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
+import datawave.microservice.query.storage.QueryStorageLock;
+import datawave.microservice.query.storage.QueryTask;
+import datawave.microservice.query.storage.TaskKey;
+import datawave.microservice.query.storage.TaskStates;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.log4j.Logger;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Spliterator;
 import java.util.concurrent.Callable;
 
@@ -40,15 +45,18 @@ public class FindWorkTask implements Callable<Void> {
                         log.debug("Closing " + queryId);
                         executor.handleRemoteRequest(QueryRequest.close(queryId), originService, destinationService);
                     }
+                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.ORPHANED);
                     break;
                 case CANCELED:
                     if (closeCancelCache.add(queryId)) {
                         log.debug("Cancelling " + queryId);
                         executor.handleRemoteRequest(QueryRequest.cancel(queryId), originService, destinationService);
                     }
+                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.ORPHANED);
                     break;
                 case CREATED:
                     log.debug("Nexting " + queryId);
+                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY);
                     // TODO: The monitor task lease is 100ms by default. Is that enough time to ensure that the handleRemoteRequest call will finish?
                     // Should we create a new thread to handle the remote request instead so that we can return immediately?
                     // even if the next task is to plan, this will take care of it
@@ -56,6 +64,7 @@ public class FindWorkTask implements Callable<Void> {
                     break;
                 case PLANNED:
                     log.debug("Planning " + queryId);
+                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY);
                     // TODO: The monitor task lease is 100ms by default. Is that enough time to ensure that the handleRemoteRequest call will finish?
                     // Should we create a new thread to handle the remote request instead so that we can return immediately?
                     // even if the next task is to plan, this will take care of it
@@ -68,6 +77,38 @@ public class FindWorkTask implements Callable<Void> {
             }
         }
         return null;
+    }
+    
+    /**
+     * For the specified query id, find tasks that are orphaned and reset their state
+     * 
+     * @param queryId
+     *            The query id
+     * @param state
+     *            The state to reset orphaned tasks to
+     */
+    public void recoverOrphanedTasks(String queryId, TaskStates.TASK_STATE state) {
+        QueryStorageLock lock = cache.getTaskStatesLock(queryId);
+        lock.lock();
+        try {
+            // get the query states from the cache
+            TaskStates taskStates = cache.getTaskStates(queryId);
+            
+            if (taskStates != null) {
+                log.debug("Searching for orphaned tasks for " + queryId);
+                
+                List<TaskKey> taskKeys = taskStates.getTasksForState(TaskStates.TASK_STATE.RUNNING,
+                                executor.getExecutorProperties().getMaxOrphanedTasksToCheck());
+                for (TaskKey taskKey : taskKeys) {
+                    QueryTask task = cache.getTask(taskKey);
+                    if (System.currentTimeMillis() - task.getLastUpdatedMillis() > (executor.getExecutorProperties().getCheckpointFlushMs() * 2)) {
+                        taskStates.setState(taskKey.getTaskId(), state);
+                    }
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
     }
     
     /**

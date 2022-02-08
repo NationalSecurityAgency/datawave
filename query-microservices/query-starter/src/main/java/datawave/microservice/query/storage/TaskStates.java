@@ -17,8 +17,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class TaskStates implements Serializable {
+    /*
+     * The possible task states: READY: ready to run RUNNING: current running COMPLETED: completed successfully FAILED: failed to execute successfully ORPHANED:
+     * orphaned after the query is closed or cancelled.
+     */
     public enum TASK_STATE implements Serializable {
-        READY, RUNNING, COMPLETED, FAILED
+        READY, RUNNING, COMPLETED, FAILED, ORPHANED
     }
     
     private QueryKey queryKey;
@@ -196,6 +200,11 @@ public class TaskStates implements Serializable {
         return getTaskCountForState(TASK_STATE.COMPLETED);
     }
     
+    @JsonIgnore
+    public int getOrphanedTaskCount() {
+        return getTaskCountForState(TASK_STATE.ORPHANED);
+    }
+    
     public boolean hasTasksForState(TASK_STATE state) {
         return taskStates.containsKey(state) && !taskStates.get(state).isEmpty();
     }
@@ -225,14 +234,21 @@ public class TaskStates implements Serializable {
         return hasTasksForState(TASK_STATE.FAILED);
     }
     
+    @JsonIgnore
+    public boolean hasOrphanedTasks() {
+        return hasTasksForState(TASK_STATE.ORPHANED);
+    }
+    
     public List<TaskKey> getTasksForState(TASK_STATE state, int maxTasks) {
         List<TaskKey> tasks = new ArrayList<>();
         if (maxTasks > 0) {
             SparseBitSet states = taskStates.get(state);
-            int taskId = states.nextSetBit(0);
-            while (taskId >= 0 && tasks.size() < maxTasks) {
-                tasks.add(new TaskKey(taskId, queryKey));
-                taskId = states.nextSetBit(taskId + 1);
+            if (states != null) {
+                int taskId = states.nextSetBit(0);
+                while (taskId >= 0 && tasks.size() < maxTasks) {
+                    tasks.add(new TaskKey(taskId, queryKey));
+                    taskId = states.nextSetBit(taskId + 1);
+                }
             }
         }
         return tasks;
