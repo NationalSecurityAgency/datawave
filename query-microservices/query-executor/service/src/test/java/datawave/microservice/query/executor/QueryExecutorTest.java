@@ -256,7 +256,7 @@ public abstract class QueryExecutorTest {
         assertEquals(key.getQueryId(), notification.getRequest().getQueryId());
         
         QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
-        assertEquals(QueryStatus.QUERY_STATE.RUNNING, queryStatus.getQueryState());
+        assertEquals(QueryStatus.QUERY_STATE.CREATED, queryStatus.getQueryState());
         assertEquals(expectPlan, queryStatus.getPlan());
         
         TaskStates taskStates = storageService.getTaskStates(key.getQueryId());
@@ -370,7 +370,7 @@ public abstract class QueryExecutorTest {
         assertEquals(key.getQueryId(), notification.getRequest().getQueryId());
         
         QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
-        assertEquals(QueryStatus.QUERY_STATE.RUNNING, queryStatus.getQueryState());
+        assertEquals(QueryStatus.QUERY_STATE.CREATED, queryStatus.getQueryState());
         assertEquals(expectPlan, queryStatus.getPlan());
         
         TaskStates taskStates = storageService.getTaskStates(key.getQueryId());
@@ -392,7 +392,7 @@ public abstract class QueryExecutorTest {
         assertTrue(states.hasTasksForState(TaskStates.TASK_STATE.COMPLETED));
         assertFalse(states.hasUnfinishedTasks());
         queryStatus = storageService.getQueryStatus(key.getQueryId());
-        assertEquals(QueryStatus.QUERY_STATE.RUNNING, queryStatus.getQueryState());
+        assertEquals(QueryStatus.QUERY_STATE.CREATED, queryStatus.getQueryState());
         
         // get a result
         startTime = System.currentTimeMillis();
@@ -457,7 +457,7 @@ public abstract class QueryExecutorTest {
         assertEquals(key.getQueryId(), notification.getRequest().getQueryId());
         
         QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
-        assertEquals(QueryStatus.QUERY_STATE.RUNNING, queryStatus.getQueryState());
+        assertEquals(QueryStatus.QUERY_STATE.CREATED, queryStatus.getQueryState());
         assertEquals(expectPlan, queryStatus.getPlan());
         
         TaskStates taskStates = storageService.getTaskStates(key.getQueryId());
@@ -569,7 +569,7 @@ public abstract class QueryExecutorTest {
         assertEquals(key.getQueryId(), notification.getRequest().getQueryId());
         
         QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
-        assertEquals(QueryStatus.QUERY_STATE.PLAN, queryStatus.getQueryState());
+        assertEquals(QueryStatus.QUERY_STATE.PLANNED, queryStatus.getQueryState());
         assertEquals(expectPlan, queryStatus.getPlan());
     }
     
@@ -628,7 +628,7 @@ public abstract class QueryExecutorTest {
         assertEquals(key.getQueryId(), notification.getRequest().getQueryId());
         
         QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
-        assertEquals(QueryStatus.QUERY_STATE.PREDICT, queryStatus.getQueryState());
+        assertEquals(QueryStatus.QUERY_STATE.PREDICTED, queryStatus.getQueryState());
         
         assertEquals(predictions, queryStatus.getPredictions());
     }

@@ -482,7 +482,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         for (QueryStatus queryStatus : queryStatusList) {
             // @formatter:off
             assertQueryStatus(
-                    QueryStatus.QUERY_STATE.CREATE,
+                    QueryStatus.QUERY_STATE.CREATED,
                     0,
                     0,
                     0,

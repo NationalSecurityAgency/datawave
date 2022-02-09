@@ -27,7 +27,7 @@ public class ShouldGenerateResultsTest {
         TestExecutorShouldGenerateResults action = new TestExecutorShouldGenerateResults(props, queues);
         TaskKey key = new TaskKey(1, new QueryKey("default", "queryid", "querylogic"));
         QueryStatus queryStatus = new QueryStatus();
-        queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATE);
+        queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
         queryStatus.setActiveNextCalls(1);
         queryStatus.setNumResultsGenerated(1);
         
@@ -52,7 +52,7 @@ public class ShouldGenerateResultsTest {
         assertEquals(ExecutorTask.RESULTS_ACTION.COMPLETE, action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
         // max results reached
-        queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATE);
+        queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
         assertEquals(ExecutorTask.RESULTS_ACTION.COMPLETE, action.shouldGenerateMoreResults(false, key, 10, 1, queryStatus));
         assertEquals(ExecutorTask.RESULTS_ACTION.GENERATE, action.shouldGenerateMoreResults(false, key, 10, 0, queryStatus));
         

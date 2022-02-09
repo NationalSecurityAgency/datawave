@@ -45,30 +45,24 @@ public class FindWorkTask implements Callable<Void> {
                         log.debug("Closing " + queryId);
                         executor.handleRemoteRequest(QueryRequest.close(queryId), originService, destinationService);
                     }
+                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.ORPHANED);
                     break;
                 case CANCELED:
                     if (closeCancelCache.add(queryId)) {
                         log.debug("Cancelling " + queryId);
                         executor.handleRemoteRequest(QueryRequest.cancel(queryId), originService, destinationService);
                     }
+                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.ORPHANED);
                     break;
-                case CREATE:
-                    log.debug("Creating " + queryId);
-                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY);
-                    // TODO: The monitor task lease is 100ms by default. Is that enough time to ensure that the handleRemoteRequest call will finish?
-                    // Should we create a new thread to handle the remote request instead so that we can return immediately?
-                    // even if the next task is to plan, this will take care of it
-                    executor.handleRemoteRequest(QueryRequest.create(queryId), originService, destinationService);
-                    break;
-                case RUNNING:
-                    log.debug("Getting results for " + queryId);
+                case CREATED:
+                    log.debug("Nexting " + queryId);
                     recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY);
                     // TODO: The monitor task lease is 100ms by default. Is that enough time to ensure that the handleRemoteRequest call will finish?
                     // Should we create a new thread to handle the remote request instead so that we can return immediately?
                     // even if the next task is to plan, this will take care of it
                     executor.handleRemoteRequest(QueryRequest.next(queryId), originService, destinationService);
                     break;
-                case PLAN:
+                case PLANNED:
                     log.debug("Planning " + queryId);
                     recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY);
                     // TODO: The monitor task lease is 100ms by default. Is that enough time to ensure that the handleRemoteRequest call will finish?
@@ -107,7 +101,7 @@ public class FindWorkTask implements Callable<Void> {
                                 executor.getExecutorProperties().getMaxOrphanedTasksToCheck());
                 for (TaskKey taskKey : taskKeys) {
                     QueryTask task = cache.getTask(taskKey);
-                    if (System.currentTimeMillis() - task.getLastUpdatedMillis() > executor.getExecutorProperties().getOrphanThresholdMs()) {
+                    if (System.currentTimeMillis() - task.getLastUpdatedMillis() > (executor.getExecutorProperties().getCheckpointFlushMs() * 2)) {
                         taskStates.setState(taskKey.getTaskId(), state);
                     }
                 }
