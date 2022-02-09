@@ -82,8 +82,8 @@ class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
                         functionNodes.add(JexlNodes.makeRef(FunctionJexlNodeVisitor.makeFunctionFrom(functionVisitor.namespace(), functionVisitor.name(),
                                         newArgs.toArray(new JexlNode[0]))));
                     }
+                    return JexlNodeFactory.createUnwrappedOrNode(functionNodes);
                 }
-                return JexlNodeFactory.createUnwrappedOrNode(functionNodes);
             }
         }
         return super.visit(node, data);
