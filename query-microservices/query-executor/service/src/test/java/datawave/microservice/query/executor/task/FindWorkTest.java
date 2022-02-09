@@ -223,7 +223,7 @@ public class FindWorkTest {
         assertEquals(1, queryRequests.size());
         QueryRequest request = queryRequests.poll();
         assertEquals(key.getQueryId(), request.getQueryId());
-        assertEquals(QueryRequest.Method.NEXT, request.getMethod());
+        assertEquals(QueryRequest.Method.CREATE, request.getMethod());
         
         // now put the task in a running state
         storageService.updateTaskState(key, TaskStates.TASK_STATE.RUNNING);
@@ -231,7 +231,7 @@ public class FindWorkTest {
         assertEquals(TaskStates.TASK_STATE.RUNNING, states.getState(key.getTaskId()));
         
         // wait until the timeout
-        Thread.sleep(2 * executorProperties.getCheckpointFlushMs());
+        Thread.sleep(executorProperties.getOrphanThresholdMs() + 500);
         
         // execute the find work task to reset the now orphaned task
         findWorkTask.call();

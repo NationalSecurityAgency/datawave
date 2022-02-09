@@ -88,7 +88,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus dupeQueryStatus = queryStorageCache.getQueryStatus(dupeQueryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,
@@ -147,7 +147,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,
@@ -159,7 +159,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus dupeQueryStatus = queryStorageCache.getQueryStatus(dupeQueryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,
@@ -243,7 +243,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus dupeQueryStatus = queryStorageCache.getQueryStatus(dupeQueryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,
@@ -337,7 +337,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus dupeQueryStatus = queryStorageCache.getQueryStatus(dupeQueryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,
@@ -429,7 +429,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus dupeQueryStatus = queryStorageCache.getQueryStatus(dupeQueryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,

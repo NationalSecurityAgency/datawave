@@ -94,7 +94,7 @@ public class CreateTask extends ExecutorTask {
             if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
                 log.debug("Checkpointing " + queryId);
                 CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
-                queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
+                queryStatus.setQueryState(QueryStatus.QUERY_STATE.RUNNING);
                 
                 notifyOriginOfCreation(queryId);
                 
@@ -105,7 +105,7 @@ public class CreateTask extends ExecutorTask {
                 
                 taskComplete = true;
             } else {
-                queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
+                queryStatus.setQueryState(QueryStatus.QUERY_STATE.RUNNING);
                 
                 // update the task states to indicate that all tasks are created
                 taskCreationComplete(queryId);

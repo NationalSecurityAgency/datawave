@@ -9,7 +9,8 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.QueryException;
 
-import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATED;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATE;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.RUNNING;
 
 public class QueryStatusUpdateUtil {
     
@@ -22,8 +23,8 @@ public class QueryStatusUpdateUtil {
     }
     
     public void claimNextCall(QueryStatus queryStatus) throws QueryException {
-        // we can only call next on a created query
-        if (queryStatus.getQueryState() == CREATED) {
+        // we can only call next on a running query
+        if (queryStatus.getQueryState() == RUNNING || queryStatus.getQueryState() == CREATE) {
             // increment the concurrent next count
             if (queryStatus.getActiveNextCalls() < queryProperties.getNextCall().getConcurrency()) {
                 queryStatus.setActiveNextCalls(queryStatus.getActiveNextCalls() + 1);
@@ -35,7 +36,7 @@ public class QueryStatusUpdateUtil {
                                 "Concurrent next call limit reached: " + queryProperties.getNextCall().getConcurrency());
             }
         } else {
-            throw new QueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, "Unable to find query status in cache with CREATED state.");
+            throw new QueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH, "Unable to find query status in cache with RUNNING or CREATE state.");
         }
     }
     

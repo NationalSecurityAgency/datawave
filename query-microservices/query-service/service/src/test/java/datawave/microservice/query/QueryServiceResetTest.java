@@ -93,7 +93,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,
@@ -170,7 +170,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,
@@ -270,7 +270,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,
@@ -365,7 +365,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,

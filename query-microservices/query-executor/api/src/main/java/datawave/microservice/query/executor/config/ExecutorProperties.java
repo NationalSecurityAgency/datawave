@@ -36,6 +36,9 @@ public class ExecutorProperties {
     
     // The max number of orphaned tasks to check per monitor cycle
     private int maxOrphanedTasksToCheck = 100;
+    // The time after which we consider a task orphaned. Note that this should be greater than checkpointFlushMs
+    // as that defines how ofter the task timestamp is updated.
+    private int orphanThresholdMs = 5000;
     
     public String getPool() {
         return pool;
@@ -145,4 +148,11 @@ public class ExecutorProperties {
         this.maxOrphanedTasksToCheck = maxOrphanedTasksToCheck;
     }
     
+    public int getOrphanThresholdMs() {
+        return orphanThresholdMs;
+    }
+    
+    public void setOrphanThresholdMs(int orphanThresholdMs) {
+        this.orphanThresholdMs = orphanThresholdMs;
+    }
 }

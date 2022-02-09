@@ -66,7 +66,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public TaskKey createQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) {
-        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATED);
+        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATE);
     }
     
     /**
@@ -82,7 +82,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public TaskKey planQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations) {
-        return storeQuery(queryPool, query, calculatedAuthorizations, 1, QueryStatus.QUERY_STATE.PLANNED);
+        return storeQuery(queryPool, query, calculatedAuthorizations, 1, QueryStatus.QUERY_STATE.PLAN);
     }
     
     /**
@@ -98,7 +98,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public TaskKey predictQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations) {
-        return storeQuery(queryPool, query, calculatedAuthorizations, 1, QueryStatus.QUERY_STATE.PREDICTED);
+        return storeQuery(queryPool, query, calculatedAuthorizations, 1, QueryStatus.QUERY_STATE.PREDICT);
     }
     
     private TaskKey storeQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count, QueryStatus.QUERY_STATE queryState) {
@@ -124,31 +124,19 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         queryStatus.setLastUpdatedMillis(queryStatus.getLastUsedMillis());
         queryStatusCache.updateQueryStatus(queryStatus);
         
-        // only create tasks if we are creating a query
-        if (queryState == QueryStatus.QUERY_STATE.CREATED || queryState == QueryStatus.QUERY_STATE.PLANNED || queryState == QueryStatus.QUERY_STATE.PREDICTED) {
+        // only create tasks if we are creating, planning, or predicting a query
+        if (queryState == QueryStatus.QUERY_STATE.CREATE || queryState == QueryStatus.QUERY_STATE.PLAN || queryState == QueryStatus.QUERY_STATE.PREDICT) {
             // store the initial tasks states
             TaskStates taskStates = new TaskStates(queryKey, count);
             taskStatesCache.updateTaskStates(taskStates);
             
             // create and store the initial task with the checkpoint
-            QueryTask task = createTask(stateToMethod(queryState), checkpoint);
+            QueryTask task = createTask(queryState.getMethod(), checkpoint);
             return task.getTaskKey();
         }
         
         // return the an empty task key
         return new TaskKey(-1, new QueryKey(queryPool, queryId, query.getQueryLogicName()));
-    }
-    
-    private QueryRequest.Method stateToMethod(QueryStatus.QUERY_STATE queryState) {
-        switch (queryState) {
-            case CREATED:
-                return QueryRequest.Method.CREATE;
-            case PLANNED:
-                return QueryRequest.Method.PLAN;
-            case PREDICTED:
-                return QueryRequest.Method.PREDICT;
-        }
-        return null;
     }
     
     /**

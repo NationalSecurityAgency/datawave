@@ -1,6 +1,7 @@
 package datawave.microservice.query.storage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.QueryKey;
@@ -15,17 +16,36 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSED;
-import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATED;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATE;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.RUNNING;
 
 public class QueryStatus implements Serializable {
     public enum QUERY_STATE {
-        DEFINED, CREATED, PLANNED, PREDICTED, CLOSED, CANCELED, FAILED
+        DEFINED(null),
+        CREATE(QueryRequest.Method.CREATE),
+        RUNNING(QueryRequest.Method.NEXT),
+        PLAN(QueryRequest.Method.PLAN),
+        PREDICT(QueryRequest.Method.PREDICT),
+        CLOSED(QueryRequest.Method.CLOSE),
+        CANCELED(QueryRequest.Method.CANCEL),
+        FAILED(null);
+        
+        private final QueryRequest.Method method;
+        
+        QUERY_STATE(QueryRequest.Method method) {
+            this.method = method;
+        }
+        
+        public QueryRequest.Method getMethod() {
+            return method;
+        }
     }
     
     private QueryKey queryKey;
@@ -80,8 +100,8 @@ public class QueryStatus implements Serializable {
     
     @JsonIgnore
     public boolean isRunning() {
-        // the query is considered to be running if it is created, or closed with an open next call
-        return queryState == CREATED || (queryState == CLOSED && activeNextCalls > 0);
+        // the query is considered to be running if it is created, running, or closed with an open next call
+        return queryState == CREATE || queryState == RUNNING || (queryState == CLOSED && activeNextCalls > 0);
     }
     
     public void setQueryKey(QueryKey key) {

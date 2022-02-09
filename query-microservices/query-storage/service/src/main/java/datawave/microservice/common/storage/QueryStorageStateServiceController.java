@@ -40,8 +40,8 @@ public class QueryStorageStateServiceController implements QueryStorageStateServ
     public List<datawave.microservice.query.storage.QueryState> getRunningQueries() {
         List<datawave.microservice.query.storage.QueryState> queries = new ArrayList<>();
         for (QueryStatus query : queryStatusCache.getQueryStatus()) {
-            if (query.getQueryState() == QueryStatus.QUERY_STATE.CREATED || query.getQueryState() == QueryStatus.QUERY_STATE.DEFINED
-                            || query.getQueryState() == QueryStatus.QUERY_STATE.CLOSED) {
+            if (query.getQueryState() == QueryStatus.QUERY_STATE.CREATE || query.getQueryState() == QueryStatus.QUERY_STATE.RUNNING
+                            || query.getQueryState() == QueryStatus.QUERY_STATE.DEFINED || query.getQueryState() == QueryStatus.QUERY_STATE.CLOSED) {
                 TaskStates taskStates = taskStatesCache.getTaskStates(query.getQueryKey().getQueryId());
                 if (taskStates.isCreatingTasks() || taskStates.hasRunningTasks()
                                 || (query.getQueryState() != QueryStatus.QUERY_STATE.CLOSED && taskStates.hasUnfinishedTasks())) {

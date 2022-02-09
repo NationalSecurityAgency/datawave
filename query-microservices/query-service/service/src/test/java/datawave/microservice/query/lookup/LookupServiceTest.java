@@ -82,7 +82,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         
         // get the lookup query id
         long startTime = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - startTime) < 5000 && queryId == null) {
+        while ((System.currentTimeMillis() - startTime) < Long.MAX_VALUE && queryId == null) {
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
             if (queryStatuses.size() > 0) {
                 queryId = queryStatuses.get(0).getQueryKey().getQueryId();

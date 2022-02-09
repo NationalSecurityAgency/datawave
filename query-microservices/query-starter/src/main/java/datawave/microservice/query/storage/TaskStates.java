@@ -22,7 +22,7 @@ public class TaskStates implements Serializable {
      * orphaned after the query is closed or cancelled.
      */
     public enum TASK_STATE implements Serializable {
-        READY, RUNNING, COMPLETED, FAILED, ORPHANED
+        READY, RUNNING, COMPLETED, FAILED;
     }
     
     private QueryKey queryKey;
@@ -200,11 +200,6 @@ public class TaskStates implements Serializable {
         return getTaskCountForState(TASK_STATE.COMPLETED);
     }
     
-    @JsonIgnore
-    public int getOrphanedTaskCount() {
-        return getTaskCountForState(TASK_STATE.ORPHANED);
-    }
-    
     public boolean hasTasksForState(TASK_STATE state) {
         return taskStates.containsKey(state) && !taskStates.get(state).isEmpty();
     }
@@ -232,11 +227,6 @@ public class TaskStates implements Serializable {
     @JsonIgnore
     public boolean hasFailedTasks() {
         return hasTasksForState(TASK_STATE.FAILED);
-    }
-    
-    @JsonIgnore
-    public boolean hasOrphanedTasks() {
-        return hasTasksForState(TASK_STATE.ORPHANED);
     }
     
     public List<TaskKey> getTasksForState(TASK_STATE state, int maxTasks) {
