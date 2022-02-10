@@ -20,16 +20,16 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSED;
-import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATED;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSE;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATE;
 
 public class QueryStatus implements Serializable {
     public enum QUERY_STATE {
-        DEFINED, CREATED, PLANNED, PREDICTED, CLOSED, CANCELED, FAILED
+        DEFINE, CREATE, PLAN, PREDICT, CLOSE, CANCEL, FAIL
     }
     
     private QueryKey queryKey;
-    private QUERY_STATE queryState = QUERY_STATE.DEFINED;
+    private QUERY_STATE queryState = QUERY_STATE.DEFINE;
     private Query query;
     private GenericQueryConfiguration config;
     private Set<String> calculatedAuths;
@@ -81,7 +81,7 @@ public class QueryStatus implements Serializable {
     @JsonIgnore
     public boolean isRunning() {
         // the query is considered to be running if it is created, or closed with an open next call
-        return queryState == CREATED || (queryState == CLOSED && activeNextCalls > 0);
+        return queryState == CREATE || (queryState == CLOSE && activeNextCalls > 0);
     }
     
     public void setQueryKey(QueryKey key) {

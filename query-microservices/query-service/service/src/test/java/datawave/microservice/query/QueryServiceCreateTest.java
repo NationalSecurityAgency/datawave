@@ -88,7 +88,7 @@ public class QueryServiceCreateTest extends AbstractQueryServiceTest {
         
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,

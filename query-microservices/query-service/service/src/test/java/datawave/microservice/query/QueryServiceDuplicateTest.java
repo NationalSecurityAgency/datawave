@@ -76,7 +76,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.DEFINED,
+                QueryStatus.QUERY_STATE.DEFINE,
                 0,
                 0,
                 0,
@@ -88,7 +88,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus dupeQueryStatus = queryStorageCache.getQueryStatus(dupeQueryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,
@@ -147,7 +147,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,
@@ -159,7 +159,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus dupeQueryStatus = queryStorageCache.getQueryStatus(dupeQueryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,
@@ -231,7 +231,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CANCELED,
+                QueryStatus.QUERY_STATE.CANCEL,
                 0,
                 0,
                 0,
@@ -243,7 +243,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus dupeQueryStatus = queryStorageCache.getQueryStatus(dupeQueryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,
@@ -325,7 +325,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CLOSED,
+                QueryStatus.QUERY_STATE.CLOSE,
                 0,
                 0,
                 0,
@@ -337,7 +337,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus dupeQueryStatus = queryStorageCache.getQueryStatus(dupeQueryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,
@@ -417,7 +417,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.DEFINED,
+                QueryStatus.QUERY_STATE.DEFINE,
                 0,
                 0,
                 0,
@@ -429,7 +429,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus dupeQueryStatus = queryStorageCache.getQueryStatus(dupeQueryId);
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CREATED,
+                QueryStatus.QUERY_STATE.CREATE,
                 0,
                 0,
                 0,

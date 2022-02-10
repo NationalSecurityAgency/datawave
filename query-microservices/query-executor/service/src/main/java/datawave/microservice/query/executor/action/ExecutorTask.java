@@ -213,7 +213,7 @@ public abstract class ExecutorTask implements Runnable {
         long numResultsGenerated = queryStatus.getNumResultsGenerated();
         
         // if the state is closed AND we don't have any ongoing next calls, then stop
-        if (state == QueryStatus.QUERY_STATE.CLOSED) {
+        if (state == QueryStatus.QUERY_STATE.CLOSE) {
             if (concurrentNextCalls == 0) {
                 log.debug("Not getting results for closed query " + taskKey);
                 return RESULTS_ACTION.COMPLETE;
@@ -224,7 +224,7 @@ public abstract class ExecutorTask implements Runnable {
         }
         
         // if the state is canceled or failed, then stop
-        if (state == QueryStatus.QUERY_STATE.CANCELED || state == QueryStatus.QUERY_STATE.FAILED) {
+        if (state == QueryStatus.QUERY_STATE.CANCEL || state == QueryStatus.QUERY_STATE.FAIL) {
             log.debug("Not getting results for canceled or failed query " + taskKey);
             return RESULTS_ACTION.COMPLETE;
         }

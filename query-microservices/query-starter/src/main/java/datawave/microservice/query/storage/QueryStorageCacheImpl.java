@@ -48,7 +48,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public TaskKey defineQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) {
-        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.DEFINED);
+        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.DEFINE);
     }
     
     /**
@@ -66,7 +66,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public TaskKey createQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) {
-        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATED);
+        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATE);
     }
     
     /**
@@ -82,7 +82,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public TaskKey planQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations) {
-        return storeQuery(queryPool, query, calculatedAuthorizations, 1, QueryStatus.QUERY_STATE.PLANNED);
+        return storeQuery(queryPool, query, calculatedAuthorizations, 1, QueryStatus.QUERY_STATE.PLAN);
     }
     
     /**
@@ -98,7 +98,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      */
     @Override
     public TaskKey predictQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations) {
-        return storeQuery(queryPool, query, calculatedAuthorizations, 1, QueryStatus.QUERY_STATE.PREDICTED);
+        return storeQuery(queryPool, query, calculatedAuthorizations, 1, QueryStatus.QUERY_STATE.PREDICT);
     }
     
     private TaskKey storeQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count, QueryStatus.QUERY_STATE queryState) {
@@ -125,7 +125,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         queryStatusCache.updateQueryStatus(queryStatus);
         
         // only create tasks if we are creating a query
-        if (queryState == QueryStatus.QUERY_STATE.CREATED || queryState == QueryStatus.QUERY_STATE.PLANNED || queryState == QueryStatus.QUERY_STATE.PREDICTED) {
+        if (queryState == QueryStatus.QUERY_STATE.CREATE || queryState == QueryStatus.QUERY_STATE.PLAN || queryState == QueryStatus.QUERY_STATE.PREDICT) {
             // store the initial tasks states
             TaskStates taskStates = new TaskStates(queryKey, count);
             taskStatesCache.updateTaskStates(taskStates);
@@ -141,11 +141,11 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
     
     private QueryRequest.Method stateToMethod(QueryStatus.QUERY_STATE queryState) {
         switch (queryState) {
-            case CREATED:
+            case CREATE:
                 return QueryRequest.Method.CREATE;
-            case PLANNED:
+            case PLAN:
                 return QueryRequest.Method.PLAN;
-            case PREDICTED:
+            case PREDICT:
                 return QueryRequest.Method.PREDICT;
         }
         return null;
@@ -228,7 +228,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         lock.lock();
         try {
             QueryStatus status = queryStatusCache.getQueryStatus(queryId);
-            status.setQueryState(QueryStatus.QUERY_STATE.FAILED);
+            status.setQueryState(QueryStatus.QUERY_STATE.FAIL);
             status.setFailure(getErrorCode(e), e);
             updateQueryStatus(status);
         } finally {

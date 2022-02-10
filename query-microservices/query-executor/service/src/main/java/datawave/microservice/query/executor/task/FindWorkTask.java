@@ -40,21 +40,21 @@ public class FindWorkTask implements Callable<Void> {
         for (QueryStatus queryStatus : cache.getQueryStatus()) {
             String queryId = queryStatus.getQueryKey().getQueryId();
             switch (queryStatus.getQueryState()) {
-                case CLOSED:
+                case CLOSE:
                     if (closeCancelCache.add(queryId)) {
                         log.debug("Closing " + queryId);
                         executor.handleRemoteRequest(QueryRequest.close(queryId), originService, destinationService);
                     }
                     recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.ORPHANED);
                     break;
-                case CANCELED:
+                case CANCEL:
                     if (closeCancelCache.add(queryId)) {
                         log.debug("Cancelling " + queryId);
                         executor.handleRemoteRequest(QueryRequest.cancel(queryId), originService, destinationService);
                     }
                     recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.ORPHANED);
                     break;
-                case CREATED:
+                case CREATE:
                     log.debug("Nexting " + queryId);
                     recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY);
                     // TODO: The monitor task lease is 100ms by default. Is that enough time to ensure that the handleRemoteRequest call will finish?
@@ -62,7 +62,7 @@ public class FindWorkTask implements Callable<Void> {
                     // even if the next task is to plan, this will take care of it
                     executor.handleRemoteRequest(QueryRequest.next(queryId), originService, destinationService);
                     break;
-                case PLANNED:
+                case PLAN:
                     log.debug("Planning " + queryId);
                     recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY);
                     // TODO: The monitor task lease is 100ms by default. Is that enough time to ensure that the handleRemoteRequest call will finish?
@@ -70,8 +70,8 @@ public class FindWorkTask implements Callable<Void> {
                     // even if the next task is to plan, this will take care of it
                     executor.handleRemoteRequest(QueryRequest.plan(queryId), originService, destinationService);
                     break;
-                case DEFINED:
-                case FAILED:
+                case DEFINE:
+                case FAIL:
                     // noop
                     break;
             }

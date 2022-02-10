@@ -64,7 +64,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CANCELED,
+                QueryStatus.QUERY_STATE.CANCEL,
                 0,
                 0,
                 0,
@@ -137,7 +137,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CANCELED,
+                QueryStatus.QUERY_STATE.CANCEL,
                 0,
                 0,
                 0,
@@ -311,7 +311,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CANCELED,
+                QueryStatus.QUERY_STATE.CANCEL,
                 0,
                 0,
                 0,
@@ -409,7 +409,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         for (QueryStatus queryStatus : queryStatusList) {
             // @formatter:off
             assertQueryStatus(
-                    QueryStatus.QUERY_STATE.CANCELED,
+                    QueryStatus.QUERY_STATE.CANCEL,
                     0,
                     0,
                     0,
@@ -482,7 +482,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         for (QueryStatus queryStatus : queryStatusList) {
             // @formatter:off
             assertQueryStatus(
-                    QueryStatus.QUERY_STATE.CREATED,
+                    QueryStatus.QUERY_STATE.CREATE,
                     0,
                     0,
                     0,
