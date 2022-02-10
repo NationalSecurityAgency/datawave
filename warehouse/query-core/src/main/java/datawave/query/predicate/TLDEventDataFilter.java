@@ -121,6 +121,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         super.startNewDocument(document);
         // clear the parse info so a length comparison can't be made against a new document
         lastParseInfo = null;
+        // reset the seek index so the first call to getListSeek() will return the first field
+        lastListSeekIndex = -1;
     }
     
     /**
@@ -595,12 +597,13 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * @param script
      */
     private void extractQueryFieldsFromScript(ASTJexlScript script) {
-        List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(script);
-        
         queryFields = new ArrayList<>();
+        String field;
+        List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(script);
         for (ASTIdentifier identifier : identifiers) {
-            if (!queryFields.contains(identifier.image)) {
-                queryFields.add(identifier.image);
+            field = JexlASTHelper.deconstructIdentifier(identifier);
+            if (!queryFields.contains(field)) {
+                queryFields.add(field);
             }
         }
         
