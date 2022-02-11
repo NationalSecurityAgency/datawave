@@ -19,9 +19,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import avro.shaded.com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.base.Throwables;
+
 import datawave.mr.bulk.RfileScanner;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.IndexMatch;
@@ -47,7 +50,6 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
-import com.google.common.util.concurrent.MoreExecutors;
 
 /**
  * Purpose: Extends Scanner session so that we can modify how we build our subsequent ranges. Breaking this out cleans up the code. May require implementation
@@ -375,7 +377,9 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
         try {
             if (null != stats)
                 stats.getTimer(TIMERS.HASNEXT).resume();
-            
+            if (log.isTraceEnabled()) {
+                log.trace("Looking for current entry in hasnext with a wait of " + getPollTime());
+            }
             while (null == currentEntry && (!finished || !resultQueue.isEmpty() || flushNeeded())) {
                 
                 try {
@@ -393,8 +397,14 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 if (currentEntry == null && (!finished && resultQueue.isEmpty())) {
                     submitTask();
                 } else if (flushNeeded()) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Attempting to flush");
+                    }
                     flush();
                 }
+            }
+            if (log.isTraceEnabled()) {
+                log.trace("Found current entry or null");
             }
         } finally {
             if (null != stats) {
@@ -414,12 +424,14 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     
     private void submitTask() {
         // wait on results. submit the task if we can
+        if (log.isTraceEnabled())
+            log.trace("Submitting tasks");
         Future future = myExecutor.submit(this);
-        try {
-            future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
+        while (resultQueue.isEmpty() && !future.isDone() && !future.isCancelled()) {
+            LockSupport.parkNanos(100);
         }
+        if (log.isTraceEnabled())
+            log.trace("Tasks are submitted");
     }
     
     /*
@@ -515,14 +527,27 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                         }
                         lastSeenKey = kvIter.next().getKey();
                     } else {
-                        
-                        int dequeueCount = dequeue();
-                        retrievalCount += dequeueCount;
-                        int queueSize = currentQueue.size();
-                        dequeue(true);
+                        if (log.isTraceEnabled()) {
+                            log.trace("it's a new day! no longer matching");
+                            log.trace("adding " + currentKeyValue.getKey() + " to queue because it matches " + currentDay);
+                        }
+                        retrievalCount += dequeue(true);
                         currentDay = null;
-                        
-                        if (dequeueCount != queueSize || retrievalCount <= Math.ceil(maxResults * 1.5)) {
+                        /**
+                         * The original logic here was meant to enforce fairness. The concept was aged, but viewed dequeueCount != the current queue size and
+                         * retrieval count being less than max results as a reflection of "less activity" and thus we could spend time on other threads. This
+                         * isn't always a correct assumption. A more simple method is to "switch" when retrieval count for this thread is more than the max
+                         * results. That will support a methodology of fairness without causing starvation.
+                         *
+                         * The problem the prior logic enforces is that ThreadedRangeBundlerIterator becomes serialized and slowed. Further, the AccumuloScanner
+                         * for this thread will still have results ( potentially ) increasing the load on accumulo through index scans. The change, coupled with
+                         * synchronization changes in RangeStreamScanner allows QueryData objects to be produced earlier and thus moving through all possible
+                         * ranges faster.
+                         */
+                        if (retrievalCount >= Math.ceil(maxResults * 1.5)) {
+                            if (log.isTraceEnabled()) {
+                                log.trace("breaking because " + retrievalCount + " >= " + maxResults * 1.5);
+                            }
                             break;
                         }
                     }
@@ -661,12 +686,20 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
     }
     
     protected boolean flushNeeded() {
-        readLock.lock();
+        
         try {
-            return !currentQueue.isEmpty();
-        } finally {
-            readLock.unlock();
+            if (readLock.tryLock(2, TimeUnit.MILLISECONDS)) {
+                try {
+                    return !currentQueue.isEmpty();
+                } finally {
+                    readLock.unlock();
+                }
+            }
+        } catch (InterruptedException e) {
+            log.error(e);
+            throw new RuntimeException(e);
         }
+        return false;
     }
     
     /**
@@ -753,6 +786,8 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             
             if (baseScanner instanceof Scanner)
                 ((Scanner) baseScanner).setReadaheadThreshold(Long.MAX_VALUE);
+            else if (baseScanner instanceof RfileScanner)
+                ((RfileScanner) baseScanner).setRanges(Collections.singleton(currentRange));
             
             for (Column family : options.getFetchedColumns()) {
                 if (family.columnQualifier != null)
@@ -799,7 +834,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             else if (baseScanner instanceof RfileScanner) {
                 ((RfileScanner) baseScanner).setRanges(Collections.singleton(currentRange));
             }
-            
             Iterator<Entry<Key,Value>> iter = baseScanner.iterator();
             
             // do not continue if we've reached the end of the corpus

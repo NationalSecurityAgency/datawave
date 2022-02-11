@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 /**
- * 
+ *
  */
 public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closeable {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ThreadedRangeBundlerIterator.class);
@@ -336,7 +336,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     
     /**
      * It is expected that the ranges supplied by plans are in sorted order. In the ThreadedRAngeBundlerIterator, this will always be the case
-     * 
+     *
      * @param plans
      *            incoming list of plans to combine.
      * @return combined plans
@@ -389,7 +389,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
     
     /**
      * Determines if we are running a tld query
-     * 
+     *
      * @param settings
      *            original query settings.
      * @return
