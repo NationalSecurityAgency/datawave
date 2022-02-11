@@ -410,7 +410,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
          * becomes
          * 
          * <pre>
-         * (content:phrase(F1, termOffsetMap, 'foo', 'bar') && F1 == 'foo' && F2 == 'bar'))
+         * (content:phrase(F1, termOffsetMap, 'foo', 'bar') &amp;&amp; F1 == 'foo' &amp;&amp; F2 == 'bar'))
          * </pre>
          *
          * @param function
