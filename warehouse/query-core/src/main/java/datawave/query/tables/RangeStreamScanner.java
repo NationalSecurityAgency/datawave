@@ -406,7 +406,13 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             log.trace("Submitting tasks");
         Future future = myExecutor.submit(this);
         while (resultQueue.isEmpty() && !future.isDone() && !future.isCancelled()) {
-            LockSupport.parkNanos(100);
+            try {
+                future.get(100, TimeUnit.NANOSECONDS);
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            } catch (TimeoutException e) {
+                continue;
+            }
         }
         if (log.isTraceEnabled())
             log.trace("Tasks are submitted");
