@@ -542,6 +542,8 @@
                                             <include>io.protostuff:protostuff-api</include>
                                             <include>io.protostuff:protostuff-core</include>
                                             <include>io.protostuff:protostuff-collectionschema</include>
+                                            <include>com.google.guava:guava</include>
+                                            <include>com.google.guava:failureaccess</include>
                                         </includes>
                                     </dependency>
                                 </mapping>

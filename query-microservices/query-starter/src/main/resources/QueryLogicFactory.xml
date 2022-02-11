@@ -281,7 +281,6 @@
         <property name="logicDescription" value="${datawave.query.logic.logics.EventQuery.logicDescription}" />
     </bean>
 
-    <!-- TODO: Test this! -->
     <bean id="ErrorEventQuery" scope="prototype" parent="BaseEventQuery">
         <property name="checkpointable" value="${datawave.query.logic.logics.ErrorEventQuery.checkpointable}" />
         <property name="logicDescription" value="${datawave.query.logic.logics.ErrorEventQuery.logicDescription}" />
@@ -314,7 +313,6 @@
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
     </bean>
 
-    <!-- TODO: Test this! -->
     <!-- Query Logic that implements a discovery type query over the index -->
     <bean id="ErrorDiscoveryQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.discovery.DiscoveryLogic">
         <property name="checkpointable" value="${datawave.query.logic.logics.ErrorDiscoveryQuery.checkpointable}" />
@@ -348,13 +346,11 @@
 
     <bean id="BaseCountQuery" parent="BaseEventQuery" class="datawave.query.tables.CountingShardQueryLogic" abstract="true" />
 
-    <!-- TODO: Test this! -->
     <bean id="CountQuery" scope="prototype"  parent="BaseCountQuery">
         <property name="checkpointable" value="${datawave.query.logic.logics.CountQuery.checkpointable}" />
         <property name="logicDescription" value="${datawave.query.logic.logics.CountQuery.logicDescription}"/>
     </bean>
 
-    <!-- TODO: Test this! -->
     <bean id="ErrorCountQuery" scope="prototype"  parent="BaseCountQuery">
         <property name="checkpointable" value="${datawave.query.logic.logics.ErrorCountQuery.checkpointable}" />
         <property name="logicDescription" value="${datawave.query.logic.logics.ErrorCountQuery.logicDescription}" />

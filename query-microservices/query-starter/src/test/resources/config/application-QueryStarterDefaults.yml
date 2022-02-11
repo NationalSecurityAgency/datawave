@@ -42,7 +42,7 @@ warehouse:
     metadata:
       name: "error_m"
     model:
-      name: ""
+      name: "error_m"
   metricTables:
     shard:
       name: "queryMetrics_s"
@@ -239,7 +239,7 @@ datawave:
           maxResults: -1
           maxWork: -1
           metadataTableName: ${warehouse.errorTables.metadata.name}
-          modelTableName: ${warehouse.defaults.modelName}
+          modelTableName: ${warehouse.errorTables.model.name}
           modelName: ${warehouse.defaults.modelName}
           fullTableScanEnabled: ${warehouse.defaults.fullTableScanEnabled}
           allowLeadingWildcard: true

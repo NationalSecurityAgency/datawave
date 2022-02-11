@@ -287,6 +287,7 @@ services:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
       - "HADOOP_HOST=${HOSTNAME}"
       - "BACKEND=${BACKEND:-kafka}"
+      - HADOOP_CONF_DIR
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -300,7 +301,7 @@ services:
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs/pool1:/logs
-      - ../../contrib/datawave-quickstart/hadoop/etc/hadoop:/etc/hadoop/conf
+      - ${HADOOP_CONF_DIR}:${HADOOP_CONF_DIR}
     networks:
       - demo
     healthcheck:
@@ -331,6 +332,7 @@ services:
       - "ZOOKEEPER_HOST=${HOSTNAME}"
       - "HADOOP_HOST=${HOSTNAME}"
       - "BACKEND=${BACKEND:-kafka}"
+      - HADOOP_CONF_DIR
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -343,7 +345,7 @@ services:
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs/pool2:/logs
-      - ../../contrib/datawave-quickstart/hadoop/etc/hadoop:/etc/hadoop/conf
+      - ${HADOOP_CONF_DIR}:${HADOOP_CONF_DIR}
     networks:
       - demo
     healthcheck:

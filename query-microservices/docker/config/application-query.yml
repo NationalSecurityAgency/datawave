@@ -36,7 +36,7 @@ warehouse:
     metadata:
       name: "datawave.error_m"
     model:
-      name: ""
+      name: "datawave.error_m"
   metricTables:
     shard:
       name: "datawave.queryMetrics_s"
@@ -73,8 +73,8 @@ warehouse:
     maxIvaratorSources: 20
     maxEvaluationPipelines: 16
     maxPipelineCachedResults: 16
-    hdfsSiteConfigURLs: 'file:///etc/hadoop/conf/core-site.xml,file:///etc/hadoop/conf/hdfs-site.xml'
-    ivaratorFstHdfsBaseURIs: "hdfs://${HADOOP_HOST:localhost}:9000/data"
+    hdfsSiteConfigURLs: 'file://${HADOOP_CONF_DIR:/etc/hadoop/conf}/core-site.xml,file://${HADOOP_CONF_DIR:/etc/hadoop/conf}/hdfs-site.xml'
+    ivaratorFstHdfsBaseURIs: "hdfs://${HADOOP_HOST:localhost}:9000/IvaratorCache"
     ivaratorCacheBufferSize: 10000
     ivaratorMaxOpenFiles: 100
     ivaratorCacheScanPersistThreshold: 100000
@@ -162,7 +162,7 @@ datawave:
           hdfsSiteConfigURLs: ${warehouse.defaults.hdfsSiteConfigURLs}
           zookeeperConfig: ${warehouse.accumulo.zookeepers}
           ivaratorCacheDirConfigs:
-            - basePathURI: "hdfs://${HADOOP_HOST:localhost}:9000/data"
+            - basePathURI: "hdfs://${HADOOP_HOST:localhost}:9000/IvaratorCache"
           ivaratorFstHdfsBaseURIs: ${warehouse.defaults.ivaratorFstHdfsBaseURIs}
           ivaratorCacheBufferSize: ${warehouse.defaults.ivaratorCacheBufferSize}
           ivaratorMaxOpenFiles: ${warehouse.defaults.ivaratorMaxOpenFiles}
@@ -234,7 +234,7 @@ datawave:
           maxResults: -1
           maxWork: -1
           metadataTableName: ${warehouse.errorTables.metadata.name}
-          modelTableName: ${warehouse.defaults.modelName}
+          modelTableName: ${warehouse.errorTables.model.name}
           modelName: ${warehouse.defaults.modelName}
           fullTableScanEnabled: ${warehouse.defaults.fullTableScanEnabled}
           allowLeadingWildcard: true
@@ -392,7 +392,7 @@ datawave:
           hdfsSiteConfigURLs: ${warehouse.defaults.hdfsSiteConfigURLs}
           zookeeperConfig: ${warehouse.accumulo.zookeepers}
           ivaratorCacheDirConfigs:
-            - basePathURI: "hdfs:///IvaratorCache"
+            - basePathURI: "hdfs://${HADOOP_HOST:localhost}:9000/IvaratorCache"
           ivaratorFstHdfsBaseURIs: ${warehouse.defaults.ivaratorFstHdfsBaseURIs}
           ivaratorCacheBufferSize: 10000
           ivaratorMaxOpenFiles: ${warehouse.defaults.ivaratorMaxOpenFiles}

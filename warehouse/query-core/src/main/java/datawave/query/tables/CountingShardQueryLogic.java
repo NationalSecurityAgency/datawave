@@ -41,7 +41,7 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
     
     @Override
     public TransformIterator getTransformIterator(Query settings) {
-        return new CountAggregatingIterator(this.iterator(), getTransformer(settings));
+        return new CountAggregatingIterator(this.iterator(), getTransformer(settings), this.markingFunctions);
     }
     
     @Override

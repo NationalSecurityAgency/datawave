@@ -141,6 +141,6 @@ public class RabbitMQQueryResultsManager implements QueryResultsManager {
         if (queueInfo != null) {
             return queueInfo.getMessageCount();
         }
-        return -1;
+        return 0;
     }
 }

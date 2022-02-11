@@ -134,7 +134,7 @@ public class KafkaQueryResultsManager implements QueryResultsManager {
             log.warn("Unable to list consumer group offsets " + topic, e);
         }
         
-        long combinedLag = -1L;
+        long combinedLag = 0L;
         if (!consumerOffsetMap.isEmpty()) {
             Map<TopicPartition,Long> endOffsetMap = new HashMap<>();
             
