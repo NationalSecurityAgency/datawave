@@ -26,7 +26,6 @@ public class CreateTask extends ExecutorTask {
     
     private final String originService;
     private volatile boolean originNotified = false;
-    private volatile boolean taskCreationComplete = false;
     
     public CreateTask(QueryExecutor source, QueryTask task, String originService) {
         super(source, task);
@@ -44,7 +43,6 @@ public class CreateTask extends ExecutorTask {
             // in the case of the create, don't leave em hanging in case we failed somewhere.
             TaskKey taskKey = task.getTaskKey();
             String queryId = taskKey.getQueryId();
-            taskCreationComplete(queryId);
             notifyOriginOfCreation(queryId);
         }
     }
@@ -60,6 +58,9 @@ public class CreateTask extends ExecutorTask {
         
         QueryLogic<?> queryLogic = getQueryLogic(queryStatus.getQuery());
         try {
+            // start with the planning stage
+            queryStatus.setCreateStage(QueryStatus.CREATE_STAGE.PLAN);
+            
             log.debug("Initializing query logic for " + queryId);
             GenericQueryConfiguration config = queryLogic.initialize(connector, queryStatus.getQuery(), queryStatus.getCalculatedAuthorizations());
             
@@ -91,33 +92,32 @@ public class CreateTask extends ExecutorTask {
                 log.error("Error updating query metric", e);
             }
             
+            // now we move into the tasking stage
+            queryStatus.setCreateStage(QueryStatus.CREATE_STAGE.TASK);
+            
+            // notify the origin that the creation stage is complete
+            notifyOriginOfCreation(queryId);
+            
             if (queryLogic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
                 log.debug("Checkpointing " + queryId);
                 CheckpointableQueryLogic cpQueryLogic = (CheckpointableQueryLogic) queryLogic;
-                queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATE);
                 
-                notifyOriginOfCreation(queryId);
-                
+                // create the tasks
                 checkpoint(task.getTaskKey().getQueryKey(), cpQueryLogic);
                 
-                // update the task states to indicate that all tasks are created
-                taskCreationComplete(queryId);
+                // Now that the checkpoints are created, we can start the results stage
+                queryStatus.setCreateStage(QueryStatus.CREATE_STAGE.RESULTS);
                 
                 taskComplete = true;
             } else {
-                queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATE);
-                
-                // update the task states to indicate that all tasks are created
-                taskCreationComplete(queryId);
-                
-                // notify the origin that the creation is complete
-                notifyOriginOfCreation(queryId);
+                // for non checkpointable queries we go immediately into the results stage since no tasks will be generated
+                queryStatus.setCreateStage(QueryStatus.CREATE_STAGE.RESULTS);
                 
                 log.debug("Setup query logic for " + queryId);
                 queryLogic.setupQuery(config);
                 
                 log.debug("Exhausting results for " + queryId);
-                taskComplete = pullResults(task, queryLogic, queryStatus, true);
+                taskComplete = pullResults(queryLogic, queryStatus, true);
                 
                 if (!taskComplete) {
                     Exception e = new IllegalStateException("Expected to have exhausted results.  Something went wrong here");
@@ -151,19 +151,4 @@ public class CreateTask extends ExecutorTask {
         }
     }
     
-    private void taskCreationComplete(String queryId) {
-        if (!taskCreationComplete) {
-            // update the task states to indicate that all tasks are created
-            QueryStorageLock lock = cache.getTaskStatesLock(queryId);
-            lock.lock();
-            try {
-                TaskStates taskStates = cache.getTaskStates(queryId);
-                taskStates.setCreatingTasks(false);
-                cache.updateTaskStates(taskStates);
-            } finally {
-                lock.unlock();
-            }
-            taskCreationComplete = true;
-        }
-    }
 }

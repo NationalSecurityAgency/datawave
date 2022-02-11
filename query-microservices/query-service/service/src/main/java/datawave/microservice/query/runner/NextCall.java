@@ -202,7 +202,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         }
         
         // 5) have we retrieved all of the results?
-        if (!finished && !getTaskStates().isCreatingTasks() && !getTaskStates().hasUnfinishedTasks()
+        if (!finished && (queryStatus.getCreateStage() == QueryStatus.CREATE_STAGE.RESULTS) && !getTaskStates().hasUnfinishedTasks()
                         && queryResultsManager.getNumResultsRemaining(queryId) == 0) {
             // update the number of results consumed
             queryStatus = updateNumResultsConsumed();

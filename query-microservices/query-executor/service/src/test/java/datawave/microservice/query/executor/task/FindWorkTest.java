@@ -10,6 +10,7 @@ import datawave.microservice.query.messaging.QueryResultsManager;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.QueryStorageCache;
+import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskStates;
 import datawave.microservice.querymetric.BaseQueryMetric;
@@ -183,9 +184,6 @@ public class FindWorkTest {
         String queryStr = CitiesDataType.CityField.CITY.name() + ":\"" + city + "\"" + AND_OP + "#EVALUATION_ONLY('" + CitiesDataType.CityField.COUNTRY.name()
                         + ":\"" + country + "\"')";
         
-        String expectPlan = CitiesDataType.CityField.CITY.name() + EQ_OP + "'" + city + "'" + JEXL_AND_OP + "((_Eval_ = true) && ("
-                        + CitiesDataType.CityField.COUNTRY.name() + EQ_OP + "'" + country + "'))";
-        
         Query query = new QueryImpl();
         query.setQuery(queryStr);
         query.setQueryLogicName("EventQuery");
@@ -209,16 +207,19 @@ public class FindWorkTest {
         // execute the find work task, and nothing should be found
         findWorkTask.call();
         
-        // Should have create a create requeyst
+        // ensure we are still in a READY state
+        states = storageService.getTaskStates(key.getQueryId());
+        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key.getTaskId()));
+        
+        // Should have create for a create request
         assertEquals(1, queryRequests.size());
         QueryRequest request = queryRequests.poll();
         assertEquals(key.getQueryId(), request.getQueryId());
-        assertEquals(QueryRequest.Method.NEXT, request.getMethod());
+        assertEquals(QueryRequest.Method.CREATE, request.getMethod());
         
         // now put the task in a running state
         storageService.updateTaskState(key, TaskStates.TASK_STATE.RUNNING);
-        states = storageService.getTaskStates(key.getQueryId());
-        assertEquals(TaskStates.TASK_STATE.RUNNING, states.getState(key.getTaskId()));
+        storageService.updateCreateStage(key.getQueryId(), QueryStatus.CREATE_STAGE.TASK);
         
         // wait until the timeout
         Thread.sleep(2 * executorProperties.getCheckpointFlushMs());
@@ -226,10 +227,9 @@ public class FindWorkTest {
         // execute the find work task to reset the now orphaned task
         findWorkTask.call();
         
-        // verify the task is now back in a ready state
+        // verify the task has been set to a failed status
         states = storageService.getTaskStates(key.getQueryId());
-        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key.getTaskId()));
-        
+        assertEquals(TaskStates.TASK_STATE.FAILED, states.getState(key.getTaskId()));
     }
     
     private void checkFailed(String queryId) {

@@ -263,9 +263,9 @@ public abstract class QueryExecutorTest {
         
         // now we will wait for all next tasks to be generated
         startTime = System.currentTimeMillis();
-        while (taskStates.isCreatingTasks() && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
+        while ((queryStatus.getCreateStage() == QueryStatus.CREATE_STAGE.TASK) && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
             Thread.sleep(250);
-            taskStates = storageService.getTaskStates(key.getQueryId());
+            queryStatus = storageService.getQueryStatus(key.getQueryId());
             checkFailed(key.getQueryId());
         }
         
@@ -377,9 +377,11 @@ public abstract class QueryExecutorTest {
         
         // wait for the create task to finish
         startTime = System.currentTimeMillis();
-        while ((taskStates.hasUnfinishedTasks() || taskStates.isCreatingTasks()) && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
+        while ((taskStates.hasUnfinishedTasks() || (queryStatus.getCreateStage() == QueryStatus.CREATE_STAGE.TASK))
+                        && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
             Thread.sleep(250);
             taskStates = storageService.getTaskStates(key.getQueryId());
+            queryStatus = storageService.getQueryStatus(key.getQueryId());
             checkFailed(key.getQueryId());
         }
         
@@ -464,7 +466,7 @@ public abstract class QueryExecutorTest {
         
         // now we will wait for all next tasks to be generated
         startTime = System.currentTimeMillis();
-        while (taskStates.isCreatingTasks() && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
+        while ((queryStatus.getCreateStage() == QueryStatus.CREATE_STAGE.TASK) && (System.currentTimeMillis() - startTime) < TimeUnit.SECONDS.toMillis(60)) {
             Thread.sleep(250);
             taskStates = storageService.getTaskStates(key.getQueryId());
             checkFailed(key.getQueryId());

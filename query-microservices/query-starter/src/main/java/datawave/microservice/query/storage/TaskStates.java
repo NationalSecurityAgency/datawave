@@ -22,13 +22,13 @@ public class TaskStates implements Serializable {
      * orphaned after the query is closed or cancelled.
      */
     public enum TASK_STATE implements Serializable {
-        READY, RUNNING, COMPLETED, FAILED, ORPHANED
+        READY, RUNNING, COMPLETED, FAILED
     }
     
     private QueryKey queryKey;
     private int maxRunning = 1;
     private int nextTaskId = 1;
-    private boolean creatingTasks = true;
+    
     @JsonIgnore
     private Map<TASK_STATE,SparseBitSet> taskStates = new HashMap<>();
     
@@ -49,10 +49,6 @@ public class TaskStates implements Serializable {
     
     public int getNextTaskId() {
         return nextTaskId;
-    }
-    
-    public boolean isCreatingTasks() {
-        return creatingTasks;
     }
     
     @JsonIgnore
@@ -103,10 +99,6 @@ public class TaskStates implements Serializable {
     
     public void setNextTaskId(int nextTaskId) {
         this.nextTaskId = nextTaskId;
-    }
-    
-    public void setCreatingTasks(boolean creatingTasks) {
-        this.creatingTasks = creatingTasks;
     }
     
     public int getMaxRunning() {
@@ -200,11 +192,6 @@ public class TaskStates implements Serializable {
         return getTaskCountForState(TASK_STATE.COMPLETED);
     }
     
-    @JsonIgnore
-    public int getOrphanedTaskCount() {
-        return getTaskCountForState(TASK_STATE.ORPHANED);
-    }
-    
     public boolean hasTasksForState(TASK_STATE state) {
         return taskStates.containsKey(state) && !taskStates.get(state).isEmpty();
     }
@@ -232,11 +219,6 @@ public class TaskStates implements Serializable {
     @JsonIgnore
     public boolean hasFailedTasks() {
         return hasTasksForState(TASK_STATE.FAILED);
-    }
-    
-    @JsonIgnore
-    public boolean hasOrphanedTasks() {
-        return hasTasksForState(TASK_STATE.ORPHANED);
     }
     
     public List<TaskKey> getTasksForState(TASK_STATE state, int maxTasks) {

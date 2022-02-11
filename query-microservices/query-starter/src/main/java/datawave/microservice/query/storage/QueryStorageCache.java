@@ -125,6 +125,16 @@ public interface QueryStorageCache {
      *
      * @param queryId
      *            The query id
+     * @param stage
+     *            The updated state
+     */
+    void updateCreateStage(String queryId, QueryStatus.CREATE_STAGE stage);
+    
+    /**
+     * Update the query status state
+     *
+     * @param queryId
+     *            The query id
      * @param e
      *            The exception
      */

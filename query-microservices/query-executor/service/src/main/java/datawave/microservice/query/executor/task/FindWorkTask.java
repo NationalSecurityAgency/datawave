@@ -11,9 +11,11 @@ import datawave.microservice.query.storage.TaskStates;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.log4j.Logger;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Spliterator;
 import java.util.concurrent.Callable;
 
@@ -45,30 +47,47 @@ public class FindWorkTask implements Callable<Void> {
                         log.debug("Closing " + queryId);
                         executor.handleRemoteRequest(QueryRequest.close(queryId), originService, destinationService);
                     }
-                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.ORPHANED);
+                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.FAILED);
                     break;
                 case CANCEL:
                     if (closeCancelCache.add(queryId)) {
                         log.debug("Cancelling " + queryId);
                         executor.handleRemoteRequest(QueryRequest.cancel(queryId), originService, destinationService);
                     }
-                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.ORPHANED);
+                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.FAILED);
                     break;
                 case CREATE:
-                    log.debug("Nexting " + queryId);
-                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY);
-                    // TODO: The monitor task lease is 100ms by default. Is that enough time to ensure that the handleRemoteRequest call will finish?
+                    // recover orphaned tasks, however create tasks should be failed
+                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY,
+                                    Collections.singletonMap(QueryRequest.Method.CREATE, TaskStates.TASK_STATE.FAILED));
                     // Should we create a new thread to handle the remote request instead so that we can return immediately?
                     // even if the next task is to plan, this will take care of it
-                    executor.handleRemoteRequest(QueryRequest.next(queryId), originService, destinationService);
+                    switch (queryStatus.getCreateStage()) {
+                        case CREATE:
+                        case PLAN:
+                            log.debug("Creating " + queryId);
+                            executor.handleRemoteRequest(QueryRequest.create(queryId), originService, destinationService);
+                            break;
+                        case TASK:
+                        case RESULTS:
+                            log.debug("Nexting " + queryId);
+                            executor.handleRemoteRequest(QueryRequest.next(queryId), originService, destinationService);
+                            break;
+                    }
                     break;
                 case PLAN:
                     log.debug("Planning " + queryId);
                     recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY);
-                    // TODO: The monitor task lease is 100ms by default. Is that enough time to ensure that the handleRemoteRequest call will finish?
                     // Should we create a new thread to handle the remote request instead so that we can return immediately?
                     // even if the next task is to plan, this will take care of it
                     executor.handleRemoteRequest(QueryRequest.plan(queryId), originService, destinationService);
+                    break;
+                case PREDICT:
+                    log.debug("Predicting " + queryId);
+                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY);
+                    // Should we create a new thread to handle the remote request instead so that we can return immediately?
+                    // even if the next task is to plan, this will take care of it
+                    executor.handleRemoteRequest(QueryRequest.predict(queryId), originService, destinationService);
                     break;
                 case DEFINE:
                 case FAIL:
@@ -81,13 +100,27 @@ public class FindWorkTask implements Callable<Void> {
     
     /**
      * For the specified query id, find tasks that are orphaned and reset their state
-     * 
+     *
      * @param queryId
      *            The query id
      * @param state
      *            The state to reset orphaned tasks to
      */
     public void recoverOrphanedTasks(String queryId, TaskStates.TASK_STATE state) {
+        recoverOrphanedTasks(queryId, state, Collections.emptyMap());
+    }
+    
+    /**
+     * For the specified query id, find tasks that are orphaned and reset their state
+     * 
+     * @param queryId
+     *            The query id
+     * @param state
+     *            The state to reset orphaned tasks to
+     * @param overrides
+     *            The state to reset orphaned tasks for a specific method
+     */
+    public void recoverOrphanedTasks(String queryId, TaskStates.TASK_STATE state, Map<QueryRequest.Method,TaskStates.TASK_STATE> overrides) {
         QueryStorageLock lock = cache.getTaskStatesLock(queryId);
         lock.lock();
         try {
@@ -102,7 +135,11 @@ public class FindWorkTask implements Callable<Void> {
                 for (TaskKey taskKey : taskKeys) {
                     QueryTask task = cache.getTask(taskKey);
                     if (System.currentTimeMillis() - task.getLastUpdatedMillis() > (executor.getExecutorProperties().getCheckpointFlushMs() * 2)) {
-                        taskStates.setState(taskKey.getTaskId(), state);
+                        if (overrides.containsKey(task.getAction())) {
+                            taskStates.setState(taskKey.getTaskId(), overrides.get(task.getAction()));
+                        } else {
+                            taskStates.setState(taskKey.getTaskId(), state);
+                        }
                     }
                 }
             }

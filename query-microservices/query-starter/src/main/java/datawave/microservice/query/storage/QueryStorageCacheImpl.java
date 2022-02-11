@@ -219,6 +219,27 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *
      * @param queryId
      *            The query id
+     * @param stage
+     *            the query create stage
+     */
+    @Override
+    public void updateCreateStage(String queryId, QueryStatus.CREATE_STAGE stage) {
+        QueryStorageLock lock = queryStatusCache.getQueryStatusLock(queryId);
+        lock.lock();
+        try {
+            QueryStatus status = queryStatusCache.getQueryStatus(queryId);
+            status.setCreateStage(stage);
+            updateQueryStatus(status);
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    /**
+     * Update the query status state
+     *
+     * @param queryId
+     *            The query id
      * @param e
      *            the exception
      */

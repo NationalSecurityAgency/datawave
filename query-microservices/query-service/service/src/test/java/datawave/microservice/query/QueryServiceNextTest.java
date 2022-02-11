@@ -1,9 +1,11 @@
 package datawave.microservice.query;
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import datawave.microservice.authorization.service.RemoteAuthorizationServiceUserDetailsService;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.remote.QueryRequest;
+import datawave.microservice.query.storage.QueryStatus;
 import datawave.microservice.query.storage.TaskStates;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.result.BaseResponse;
@@ -444,8 +446,8 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         for (int i = 0; i < taskStates.getNextTaskId(); i++) {
             taskStates.setState(i, TaskStates.TASK_STATE.COMPLETED);
         }
-        taskStates.setCreatingTasks(false);
         queryStorageCache.updateTaskStates(taskStates);
+        queryStorageCache.updateCreateStage(queryId, QueryStatus.CREATE_STAGE.RESULTS);
         
         // make the next call asynchronously
         Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);

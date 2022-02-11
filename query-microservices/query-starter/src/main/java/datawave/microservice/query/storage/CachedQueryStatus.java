@@ -35,6 +35,26 @@ public class CachedQueryStatus extends QueryStatus {
         loadQueryStatus();
     }
     
+    /**
+     * Update the query status, merging in any pending updates and executing the supplied query status updater
+     * 
+     * @param updater
+     */
+    public synchronized void updateQueryStatus(Runnable updater) {
+        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
+        lock.lock();
+        try {
+            forceCacheUpdateInsideSetter();
+            updater.run();
+            cache.updateQueryStatus(queryStatus);
+        } finally {
+            lock.unlock();
+        }
+    }
+    
+    /**
+     * Are there pending updates we need to merge into the query status?
+     */
     public boolean hasPendingUpdates() {
         return super.getNumResultsGenerated() > 0 || super.getNumResultsReturned() > 0 || super.getNextCount() > 0 || super.getSeekCount() > 0;
     }
@@ -147,15 +167,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public synchronized void setQueryKey(QueryKey key) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setQueryKey(key);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setQueryKey(key));
     }
     
     @Override
@@ -170,15 +182,17 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public synchronized void setQueryState(QUERY_STATE queryState) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setQueryState(queryState);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setQueryState(queryState));
+    }
+    
+    @Override
+    public CREATE_STAGE getCreateStage() {
+        return get().getCreateStage();
+    }
+    
+    @Override
+    public synchronized void setCreateStage(CREATE_STAGE createStage) {
+        updateQueryStatus(() -> queryStatus.setCreateStage(createStage));
     }
     
     @Override
@@ -188,15 +202,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public synchronized void setPlan(String plan) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setPlan(plan);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setPlan(plan));
     }
     
     @Override
@@ -206,15 +212,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public void setPredictions(Set<BaseQueryMetric.Prediction> predictions) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setPredictions(predictions);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setPredictions(predictions));
     }
     
     @Override
@@ -224,15 +222,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public synchronized void setQuery(Query query) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setQuery(query);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setQuery(query));
     }
     
     @Override
@@ -242,15 +232,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public void setConfig(GenericQueryConfiguration config) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setConfig(config);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setConfig(config));
     }
     
     @Override
@@ -260,15 +242,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public synchronized void setCalculatedAuths(Set<String> calculatedAuths) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setCalculatedAuths(calculatedAuths);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setCalculatedAuths(calculatedAuths));
     }
     
     @Override
@@ -278,15 +252,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public synchronized void setCalculatedAuthorizations(Set<Authorizations> calculatedAuthorizations) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setCalculatedAuthorizations(calculatedAuthorizations);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setCalculatedAuthorizations(calculatedAuthorizations));
     }
     
     @Override
@@ -296,15 +262,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public synchronized void setFailureMessage(String failureMessage) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setFailureMessage(failureMessage);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setFailureMessage(failureMessage));
     }
     
     @Override
@@ -314,29 +272,13 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public synchronized void setStackTrace(String stackTrace) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setStackTrace(stackTrace);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setStackTrace(stackTrace));
     }
     
     @Override
     @JsonIgnore
     public synchronized void setFailure(DatawaveErrorCode errorCode, Exception failure) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setFailure(errorCode, failure);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setFailure(errorCode, failure));
     }
     
     @Override
@@ -346,15 +288,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public synchronized void setNumResultsReturned(long numResultsReturned) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setNumResultsReturned(numResultsReturned);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setNumResultsReturned(numResultsReturned));
     }
     
     @Override
@@ -369,15 +303,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public synchronized void setNumResultsGenerated(long numResultsGenerated) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setNumResultsGenerated(numResultsGenerated);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setNumResultsGenerated(numResultsGenerated));
     }
     
     @Override
@@ -392,28 +318,12 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public void setNumResultsConsumed(long numResultsConsumed) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setNumResultsGenerated(numResultsConsumed);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setNumResultsConsumed(numResultsConsumed));
     }
     
     @Override
     public void incrementNumResultsConsumed(long increment) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.incrementNumResultsConsumed(increment);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.incrementNumResultsConsumed(increment));
     }
     
     @Override
@@ -423,15 +333,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public synchronized void setActiveNextCalls(int activeNextCalls) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setActiveNextCalls(activeNextCalls);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setActiveNextCalls(activeNextCalls));
     }
     
     @Override
@@ -441,15 +343,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public void setErrorCode(DatawaveErrorCode errorCode) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setErrorCode(errorCode);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setErrorCode(errorCode));
     }
     
     @Override
@@ -459,15 +353,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public synchronized void setLastPageNumber(long lastPageNumber) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setLastPageNumber(lastPageNumber);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setLastPageNumber(lastPageNumber));
     }
     
     @Override
@@ -506,15 +392,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public synchronized void setLastUsedMillis(long lastUsedMillis) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setLastUsedMillis(lastUsedMillis);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setLastUsedMillis(lastUsedMillis));
     }
     
     @Override
@@ -524,15 +402,7 @@ public class CachedQueryStatus extends QueryStatus {
     
     @Override
     public synchronized void setLastUpdatedMillis(long lastUpdatedMillis) {
-        QueryStorageLock lock = cache.getQueryStatusLock(queryId);
-        lock.lock();
-        try {
-            forceCacheUpdateInsideSetter();
-            queryStatus.setLastUpdatedMillis(lastUpdatedMillis);
-            cache.updateQueryStatus(queryStatus);
-        } finally {
-            lock.unlock();
-        }
+        updateQueryStatus(() -> queryStatus.setLastUpdatedMillis(lastUpdatedMillis));
     }
     
     @Override

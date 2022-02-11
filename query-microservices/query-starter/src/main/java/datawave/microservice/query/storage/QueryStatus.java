@@ -24,12 +24,27 @@ import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSE;
 import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATE;
 
 public class QueryStatus implements Serializable {
+    /**
+     * These are the possible query states correlating with the activity that the user is requesting. DEFINE: define a query CREATE: create a query and get
+     * results PLAN: plan a query PREDICT: predict a query CLOSE: close the activity (finish executing tasks in progress) CANCEL: cancel the activity FAIL: the
+     * activity failed
+     */
     public enum QUERY_STATE {
         DEFINE, CREATE, PLAN, PREDICT, CLOSE, CANCEL, FAIL
     }
     
+    /**
+     * These are the possible stages of a query create/next/close CREATE: Create the query. PLAN: The query is being planned TASK: planning is complete and next
+     * tasks are being generated RESULTS: All next tasks have been generated and we are only generating results DONE: The query id done (QUERY_STATE should be
+     * set to CLOSE, CANCEL, or FAIL).
+     */
+    public enum CREATE_STAGE {
+        CREATE, PLAN, TASK, RESULTS
+    }
+    
     private QueryKey queryKey;
     private QUERY_STATE queryState = QUERY_STATE.DEFINE;
+    private CREATE_STAGE createStage = CREATE_STAGE.CREATE;
     private Query query;
     private GenericQueryConfiguration config;
     private Set<String> calculatedAuths;
@@ -98,6 +113,14 @@ public class QueryStatus implements Serializable {
     
     public void setQueryState(QUERY_STATE queryState) {
         this.queryState = queryState;
+    }
+    
+    public CREATE_STAGE getCreateStage() {
+        return createStage;
+    }
+    
+    public void setCreateStage(CREATE_STAGE createStage) {
+        this.createStage = createStage;
     }
     
     public String getPlan() {
@@ -293,16 +316,19 @@ public class QueryStatus implements Serializable {
         return new HashCodeBuilder()
                 .append(queryKey)
                 .append(queryState)
+                .append(createStage)
                 .append(query)
                 .append(calculatedAuths)
                 .append(calculatedAuthorizations)
                 .append(plan)
+                .append(predictions)
                 .append(numResultsReturned)
                 .append(numResultsGenerated)
                 .append(activeNextCalls)
                 .append(lastPageNumber)
                 .append(lastUsedMillis)
                 .append(lastUpdatedMillis)
+                .append(errorCode)
                 .append(failureMessage)
                 .append(stackTrace)
                 .build();
@@ -317,16 +343,19 @@ public class QueryStatus implements Serializable {
             return new EqualsBuilder()
                     .append(queryKey, other.queryKey)
                     .append(queryState, other.queryState)
+                    .append(createStage, other.createStage)
                     .append(query, other.query)
                     .append(calculatedAuths, other.calculatedAuths)
                     .append(calculatedAuthorizations, other.calculatedAuthorizations)
                     .append(plan, other.plan)
+                    .append(predictions, other.predictions)
                     .append(numResultsReturned, other.numResultsReturned)
                     .append(numResultsGenerated, other.numResultsGenerated)
                     .append(activeNextCalls, other.activeNextCalls)
                     .append(lastPageNumber, other.lastPageNumber)
                     .append(lastUsedMillis, other.lastUsedMillis)
                     .append(lastUpdatedMillis, other.lastUpdatedMillis)
+                    .append(errorCode, other.errorCode)
                     .append(failureMessage, other.failureMessage)
                     .append(stackTrace, other.stackTrace)
                     .build();
@@ -341,16 +370,19 @@ public class QueryStatus implements Serializable {
         return new ToStringBuilder(this)
                 .append("queryKey", queryKey)
                 .append("queryState", queryState)
+                .append("createStage", createStage)
                 .append("query", query)
                 .append("calculatedAuths", calculatedAuths)
                 .append("calculatedAuthorizations", calculatedAuthorizations)
                 .append("plan", plan)
+                .append("predictions", predictions)
                 .append("numResultsReturned", numResultsReturned)
                 .append("numResultsGenerated", numResultsGenerated)
                 .append("concurrentNextCount", activeNextCalls)
                 .append("lastPageNumber", lastPageNumber)
                 .append("lastUsed", lastUsedMillis)
                 .append("lastUpdated", lastUpdatedMillis)
+                .append("errorCode", errorCode)
                 .append("failureMessage", failureMessage)
                 .append("stackTrace", stackTrace)
                 .build();

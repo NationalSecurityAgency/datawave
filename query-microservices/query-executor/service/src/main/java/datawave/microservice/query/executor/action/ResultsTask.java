@@ -34,7 +34,7 @@ public class ResultsTask extends ExecutorTask {
                 cpQueryLogic.setupQuery(connector, queryStatus.getConfig(), task.getQueryCheckpoint());
                 
                 log.debug("Pulling results for  " + task.getTaskKey() + ": " + task.getQueryCheckpoint());
-                taskComplete = pullResults(task, queryLogic, queryStatus, false);
+                taskComplete = pullResults(queryLogic, queryStatus, false);
                 if (!taskComplete) {
                     checkpoint(taskKey.getQueryKey(), cpQueryLogic);
                     taskComplete = true;
