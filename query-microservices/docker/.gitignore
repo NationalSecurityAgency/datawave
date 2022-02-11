@@ -12,3 +12,5 @@
 **/scripts/errorDiscovery_*
 **/scripts/count_*
 **/scripts/errorCount_*
+**/scripts/fieldIndexCount_*
+**/scripts/errorFieldIndexCount_*

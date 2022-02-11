@@ -298,7 +298,7 @@ datawave:
           reverseIndexTableName: ${warehouse.errorTables.reverseIndex.name}
 
         FieldIndexCountQuery:
-          checkpointable: true
+          checkpointable: false
           tableName: ${warehouse.tables.shard.name}
           indexTableName: ${warehouse.tables.index.name}
           reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
@@ -306,14 +306,14 @@ datawave:
           maxResults: -1
           maxWork: -1
           queryThreads: ${warehouse.defaults.queryThreads}
-          modelTableName: ${warehouse.defaults.modelName}
+          modelTableName: ${warehouse.tables.model.name}
           modelName: "DATAWAVE"
           maxUniqueValues: 20000
           auditType: "NONE"
           logicDescription: "Indexed Fields Only:  Given FIELDNAME returns counts for each unique value. Given FIELDNAME:FIELDVALUE returns count for only that value."
 
         ErrorFieldIndexCountQuery:
-          checkpointable: true
+          checkpointable: false
           tableName: ${warehouse.errorTables.shard.name}
           indexTableName: ${warehouse.errorTables.index.name}
           reverseIndexTableName: ${warehouse.errorTables.reverseIndex.name}
@@ -321,7 +321,7 @@ datawave:
           maxResults: -1
           maxWork: -1
           queryThreads: ${warehouse.defaults.queryThreads}
-          modelTableName: ${warehouse.defaults.modelName}
+          modelTableName: ${warehouse.errorTables.model.name}
           modelName: "DATAWAVE"
           maxUniqueValues: 20000
           auditType: "NONE"

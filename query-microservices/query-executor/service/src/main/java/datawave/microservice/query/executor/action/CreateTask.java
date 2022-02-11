@@ -67,8 +67,8 @@ public class CreateTask extends ExecutorTask {
             log.debug("Setting plan for " + queryId);
             queryStatus.setPlan(config.getQueryString());
             
-            // update the query status configuration
-            if (config instanceof CheckpointableQueryConfiguration) {
+            // update the query status configuration, but only if we configured the query logic to be checkpointable
+            if (config instanceof CheckpointableQueryConfiguration && ((CheckpointableQueryLogic) queryLogic).isCheckpointable()) {
                 queryStatus.setConfig(((CheckpointableQueryConfiguration) config).checkpoint());
             } else {
                 queryStatus.setConfig(config);

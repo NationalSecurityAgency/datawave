@@ -360,7 +360,7 @@
         <property name="reverseIndexTableName" value="${datawave.query.logic.logics.ErrorCountQuery.indexTableName}" />
     </bean>
 
-    <!-- TODO: Test this! -->
+    <!-- TODO: This works, but only with checkpointable set to 'false'.  We need custom logic to make this truly checkpointable. -->
     <!-- Query Logic which performs a count on fieldIndex keys -->
     <bean id="FieldIndexCountQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.shard.FieldIndexCountQueryLogic">
         <property name="checkpointable" value="${datawave.query.logic.logics.FieldIndexCountQuery.checkpointable}" />
@@ -382,7 +382,7 @@
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
     </bean>
 
-    <!-- TODO: Test this! -->
+    <!-- TODO: This works, but only with checkpointable set to 'false'.  We need custom logic to make this truly checkpointable. -->
     <!-- Query Logic which performs a count on error table fieldIndex keys -->
     <bean id="ErrorFieldIndexCountQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.shard.FieldIndexCountQueryLogic">
         <property name="checkpointable" value="${datawave.query.logic.logics.ErrorFieldIndexCountQuery.checkpointable}" />

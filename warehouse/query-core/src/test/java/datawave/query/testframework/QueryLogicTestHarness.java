@@ -109,7 +109,7 @@ public class QueryLogicTestHarness {
             Connector connection = config.getConnector();
             QueryKey queryKey = new QueryKey("default", logic.getConfig().getQuery().getId().toString(), logic.getLogicName());
             // replace the config with that which would have been stored
-            if (config instanceof CheckpointableQueryConfiguration) {
+            if (config instanceof CheckpointableQueryConfiguration && ((CheckpointableQueryLogic) logic).isCheckpointable()) {
                 config = ((CheckpointableQueryConfiguration) config).checkpoint();
             }
             
