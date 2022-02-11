@@ -66,7 +66,7 @@ public class QueryServiceCloseTest extends AbstractQueryServiceTest {
         
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CLOSED,
+                QueryStatus.QUERY_STATE.CLOSE,
                 0,
                 0,
                 0,
@@ -130,7 +130,7 @@ public class QueryServiceCloseTest extends AbstractQueryServiceTest {
         
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CLOSED,
+                QueryStatus.QUERY_STATE.CLOSE,
                 0,
                 0,
                 1,
@@ -311,7 +311,7 @@ public class QueryServiceCloseTest extends AbstractQueryServiceTest {
         
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.CLOSED,
+                QueryStatus.QUERY_STATE.CLOSE,
                 0,
                 0,
                 0,
@@ -402,7 +402,7 @@ public class QueryServiceCloseTest extends AbstractQueryServiceTest {
         for (QueryStatus queryStatus : queryStatusList) {
             // @formatter:off
             assertQueryStatus(
-                    QueryStatus.QUERY_STATE.CLOSED,
+                    QueryStatus.QUERY_STATE.CLOSE,
                     0,
                     0,
                     0,
@@ -470,7 +470,7 @@ public class QueryServiceCloseTest extends AbstractQueryServiceTest {
         for (QueryStatus queryStatus : queryStatusList) {
             // @formatter:off
             assertQueryStatus(
-                    QueryStatus.QUERY_STATE.CREATED,
+                    QueryStatus.QUERY_STATE.CREATE,
                     0,
                     0,
                     0,

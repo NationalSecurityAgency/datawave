@@ -77,7 +77,7 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         
         // @formatter:off
         assertQueryStatus(
-                QueryStatus.QUERY_STATE.DEFINED,
+                QueryStatus.QUERY_STATE.DEFINE,
                 0,
                 0,
                 0,

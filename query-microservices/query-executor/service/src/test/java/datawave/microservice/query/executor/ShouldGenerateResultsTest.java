@@ -27,7 +27,7 @@ public class ShouldGenerateResultsTest {
         TestExecutorShouldGenerateResults action = new TestExecutorShouldGenerateResults(props, queues);
         TaskKey key = new TaskKey(1, new QueryKey("default", "queryid", "querylogic"));
         QueryStatus queryStatus = new QueryStatus();
-        queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
+        queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATE);
         queryStatus.setActiveNextCalls(1);
         queryStatus.setNumResultsGenerated(1);
         
@@ -35,7 +35,7 @@ public class ShouldGenerateResultsTest {
         assertEquals(ExecutorTask.RESULTS_ACTION.GENERATE, action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
         // closed, no next running
-        queryStatus.setQueryState(QueryStatus.QUERY_STATE.CLOSED);
+        queryStatus.setQueryState(QueryStatus.QUERY_STATE.CLOSE);
         queryStatus.setActiveNextCalls(0);
         assertEquals(ExecutorTask.RESULTS_ACTION.COMPLETE, action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
@@ -44,15 +44,15 @@ public class ShouldGenerateResultsTest {
         assertEquals(ExecutorTask.RESULTS_ACTION.GENERATE, action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
         // canceled
-        queryStatus.setQueryState(QueryStatus.QUERY_STATE.CANCELED);
+        queryStatus.setQueryState(QueryStatus.QUERY_STATE.CANCEL);
         assertEquals(ExecutorTask.RESULTS_ACTION.COMPLETE, action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
         // failed
-        queryStatus.setQueryState(QueryStatus.QUERY_STATE.FAILED);
+        queryStatus.setQueryState(QueryStatus.QUERY_STATE.FAIL);
         assertEquals(ExecutorTask.RESULTS_ACTION.COMPLETE, action.shouldGenerateMoreResults(false, key, 10, 100, queryStatus));
         
         // max results reached
-        queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATED);
+        queryStatus.setQueryState(QueryStatus.QUERY_STATE.CREATE);
         assertEquals(ExecutorTask.RESULTS_ACTION.COMPLETE, action.shouldGenerateMoreResults(false, key, 10, 1, queryStatus));
         assertEquals(ExecutorTask.RESULTS_ACTION.GENERATE, action.shouldGenerateMoreResults(false, key, 10, 0, queryStatus));
         

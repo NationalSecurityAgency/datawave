@@ -76,13 +76,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
-import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CANCELED;
-import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSED;
-import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATED;
-import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.DEFINED;
-import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.FAILED;
-import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.PLANNED;
-import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.PREDICTED;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CANCEL;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CLOSE;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.CREATE;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.DEFINE;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.FAIL;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.PLAN;
+import static datawave.microservice.query.storage.QueryStatus.QUERY_STATE.PREDICT;
 import static datawave.webservice.query.QueryImpl.DN_LIST;
 import static datawave.webservice.query.QueryImpl.QUERY_ID;
 import static datawave.webservice.query.QueryImpl.USER_DN;
@@ -272,7 +272,7 @@ public class QueryManagementService implements QueryRequestHandler {
         }
         
         try {
-            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, DEFINED);
+            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, DEFINE);
             GenericResponse<String> response = new GenericResponse<>();
             response.setResult(taskKey.getQueryId());
             return response;
@@ -328,7 +328,7 @@ public class QueryManagementService implements QueryRequestHandler {
         }
         
         try {
-            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, CREATED);
+            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, CREATE);
             GenericResponse<String> response = new GenericResponse<>();
             response.setResult(taskKey.getQueryId());
             response.setHasResults(true);
@@ -384,7 +384,7 @@ public class QueryManagementService implements QueryRequestHandler {
         }
         
         try {
-            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, PLANNED);
+            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, PLAN);
             String queryPlan = queryStorageCache.getQueryStatus(taskKey.getQueryId()).getPlan();
             queryStorageCache.deleteQuery(taskKey.getQueryId());
             GenericResponse<String> response = new GenericResponse<>();
@@ -443,7 +443,7 @@ public class QueryManagementService implements QueryRequestHandler {
         }
         
         try {
-            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, PREDICTED);
+            TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, PREDICT);
             String queryPrediction = queryStorageCache.getQueryStatus(taskKey.getQueryId()).getPredictions().toString();
             queryStorageCache.deleteQuery(taskKey.getQueryId());
             GenericResponse<String> response = new GenericResponse<>();
@@ -521,14 +521,14 @@ public class QueryManagementService implements QueryRequestHandler {
         }
         
         // if this is a create request, or a plan request where we are expanding values, send an audit record to the auditor
-        if (queryType == CREATED || (queryType == PLANNED && queryParameters.isExpandValues())) {
+        if (queryType == CREATE || (queryType == PLAN && queryParameters.isExpandValues())) {
             audit(query, queryLogic, parameters, currentUser);
         }
         
         try {
             // persist the query w/ query id in the query storage cache
             TaskKey taskKey = null;
-            if (queryType == DEFINED) {
+            if (queryType == DEFINE) {
                 // @formatter:off
                 taskKey = queryStorageCache.defineQuery(
                         getPoolName(),
@@ -536,7 +536,7 @@ public class QueryManagementService implements QueryRequestHandler {
                         downgradedAuthorizations,
                         getMaxConcurrentTasks(queryLogic));
                 // @formatter:on
-            } else if (queryType == CREATED) {
+            } else if (queryType == CREATE) {
                 // @formatter:off
                 taskKey = queryStorageCache.createQuery(
                         getPoolName(),
@@ -546,7 +546,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 // @formatter:on
                 
                 sendRequestAwaitResponse(QueryRequest.create(taskKey.getQueryId()), queryProperties.isAwaitExecutorCreateResponse());
-            } else if (queryType == PLANNED) {
+            } else if (queryType == PLAN) {
                 // @formatter:off
                 taskKey = queryStorageCache.planQuery(
                         getPoolName(),
@@ -555,7 +555,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 // @formatter:on
                 
                 sendRequestAwaitResponse(QueryRequest.plan(taskKey.getQueryId()), true);
-            } else if (queryType == PREDICTED) {
+            } else if (queryType == PREDICT) {
                 // @formatter:off
                 taskKey = queryStorageCache.predictQuery(
                         getPoolName(),
@@ -573,7 +573,7 @@ public class QueryManagementService implements QueryRequestHandler {
             
             // update the query metric
             BaseQueryMetric baseQueryMetric = getBaseQueryMetric();
-            if (queryType == DEFINED || queryType == CREATED) {
+            if (queryType == DEFINE || queryType == CREATE) {
                 baseQueryMetric.setQueryId(taskKey.getQueryId());
                 baseQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.DEFINED);
                 baseQueryMetric.populate(query);
@@ -615,7 +615,7 @@ public class QueryManagementService implements QueryRequestHandler {
                         
                         // did the request fail?
                         QueryStatus queryStatus = queryStorageCache.getQueryStatus(request.getQueryId());
-                        if (queryStorageCache.getQueryStatus(request.getQueryId()).getQueryState() == FAILED) {
+                        if (queryStorageCache.getQueryStatus(request.getQueryId()).getQueryState() == FAIL) {
                             log.error("Query {} failed for queryId {}: {}", request.getMethod().name(), request.getQueryId(), queryStatus.getFailureMessage());
                             throw new QueryException(queryStatus.getErrorCode(), "Query " + request.getMethod().name() + " failed for queryId "
                                             + request.getQueryId() + ": " + queryStatus.getFailureMessage());
@@ -745,7 +745,7 @@ public class QueryManagementService implements QueryRequestHandler {
             QueryStatus queryStatus = validateRequest(queryId, currentUser);
             
             // make sure the state is created
-            if (queryStatus.getQueryState() == CREATED) {
+            if (queryStatus.getQueryState() == CREATE) {
                 return next(queryId, currentUser.getPrimaryUser().getRoles());
             } else {
                 throw new BadRequestQueryException("Cannot call next on a query that is not running", HttpStatus.SC_BAD_REQUEST + "-1");
@@ -971,7 +971,7 @@ public class QueryManagementService implements QueryRequestHandler {
         
         try {
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
-            queryStatuses.removeIf(s -> s.getQueryState() != CREATED);
+            queryStatuses.removeIf(s -> s.getQueryState() != CREATE);
             
             VoidResponse response = new VoidResponse();
             for (QueryStatus queryStatus : queryStatuses) {
@@ -1045,7 +1045,7 @@ public class QueryManagementService implements QueryRequestHandler {
      * <p>
      * Cancels any locally-running next calls. <br>
      * Called with {@code publishEvent} set to <code>true</code> when the user calls cancel. <br>
-     * When {@code publishEvent} is <code>true</code>, changes the query state to {@link QueryStatus.QUERY_STATE#CANCELED}. <br>
+     * When {@code publishEvent} is <code>true</code>, changes the query state to {@link QueryStatus.QUERY_STATE#CANCEL}. <br>
      * Called with {@code publishEvent} set to <code>false</code> when handling a remote cancel event.
      *
      * @param queryId
@@ -1070,7 +1070,7 @@ public class QueryManagementService implements QueryRequestHandler {
             // only the initial event publisher should update the status
             QueryStatus queryStatus = queryStatusUpdateUtil.lockedUpdate(queryId, status -> {
                 // update query state to CANCELED
-                status.setQueryState(CANCELED);
+                status.setQueryState(CANCEL);
             });
             
             // delete the results queue
@@ -1188,7 +1188,7 @@ public class QueryManagementService implements QueryRequestHandler {
         
         try {
             List<QueryStatus> queryStatuses = queryStorageCache.getQueryStatus();
-            queryStatuses.removeIf(s -> s.getQueryState() != CREATED);
+            queryStatuses.removeIf(s -> s.getQueryState() != CREATE);
             
             VoidResponse response = new VoidResponse();
             for (QueryStatus queryStatus : queryStatuses) {
@@ -1237,7 +1237,7 @@ public class QueryManagementService implements QueryRequestHandler {
             // make sure the query is valid, and the user can act on it
             QueryStatus queryStatus = validateRequest(queryId, currentUser, adminOverride);
             
-            if (queryStatus.getQueryState() == CREATED) {
+            if (queryStatus.getQueryState() == CREATE) {
                 close(queryId);
             } else {
                 throw new BadRequestQueryException("Cannot call close on a query that is not running", HttpStatus.SC_BAD_REQUEST + "-1");
@@ -1258,7 +1258,7 @@ public class QueryManagementService implements QueryRequestHandler {
     /**
      * Closes the specified query, and publishes a close event to the executor services.
      * <p>
-     * Changes the query state to {@link QueryStatus.QUERY_STATE#CLOSED}.
+     * Changes the query state to {@link QueryStatus.QUERY_STATE#CLOSE}.
      *
      * @param queryId
      *            the query id, not null
@@ -1272,7 +1272,7 @@ public class QueryManagementService implements QueryRequestHandler {
     public void close(String queryId) throws InterruptedException, QueryException {
         QueryStatus queryStatus = queryStatusUpdateUtil.lockedUpdate(queryId, status -> {
             // update query state to CLOSED
-            status.setQueryState(CLOSED);
+            status.setQueryState(CLOSE);
         });
         
         // if the query has no active next calls, delete the results queue
@@ -1572,13 +1572,13 @@ public class QueryManagementService implements QueryRequestHandler {
                 currentParams.remove(DN_LIST);
                 
                 boolean updated;
-                if (queryStatus.getQueryState() == DEFINED) {
+                if (queryStatus.getQueryState() == DEFINE) {
                     // update all parameters if the state is defined
                     updated = updateParameters(parameters, currentParams);
                     
                     // redefine the query
                     if (updated) {
-                        storeQuery(currentParams.getFirst(QUERY_LOGIC_NAME), currentParams, currentUser, DEFINED, queryId);
+                        storeQuery(currentParams.getFirst(QUERY_LOGIC_NAME), currentParams, currentUser, DEFINE, queryId);
                     }
                 } else if (queryStatus.isRunning()) {
                     // if the query is created/running, update safe parameters only
@@ -1744,7 +1744,7 @@ public class QueryManagementService implements QueryRequestHandler {
         updateParameters(parameters, currentParams);
         
         // define a duplicate query
-        return storeQuery(currentParams.getFirst(QUERY_LOGIC_NAME), currentParams, currentUser, CREATED);
+        return storeQuery(currentParams.getFirst(QUERY_LOGIC_NAME), currentParams, currentUser, CREATE);
     }
     
     private boolean updateParameters(MultiValueMap<String,String> newParameters, MultiValueMap<String,String> currentParams) throws BadRequestQueryException {

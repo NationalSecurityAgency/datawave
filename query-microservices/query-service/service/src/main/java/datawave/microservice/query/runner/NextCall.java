@@ -161,7 +161,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         QueryStatus queryStatus = getQueryStatus();
         
         // if the query state is FAILED, throw an exception up to the query management service with the failure message
-        if (queryStatus.getQueryState() == QueryStatus.QUERY_STATE.FAILED) {
+        if (queryStatus.getQueryState() == QueryStatus.QUERY_STATE.FAIL) {
             log.error("Query [{}]: query failed, aborting next call. Cause: {}", queryId, queryStatus.getFailureMessage());
             
             throw new QueryException(queryStatus.getErrorCode(), queryStatus.getFailureMessage());
@@ -182,7 +182,7 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         }
         
         // 3) was this query canceled?
-        if (!finished && (canceled || queryStatus.getQueryState() == QueryStatus.QUERY_STATE.CANCELED)) {
+        if (!finished && (canceled || queryStatus.getQueryState() == QueryStatus.QUERY_STATE.CANCEL)) {
             log.info("Query [{}]: query cancelled, aborting next call", queryId);
             
             // no query metric lifecycle update - assumption is that the cancel call handled that
