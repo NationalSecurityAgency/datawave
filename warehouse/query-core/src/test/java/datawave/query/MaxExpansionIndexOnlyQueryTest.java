@@ -137,7 +137,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
     // ============================================
     // implemented abstract methods
     protected void testInit() {
-        this.auths = CitiesDataType.getTestAuths();
+        this.auths = CitiesDataType.getExpansionAuths();
         this.documentKey = CitiesDataType.CityField.EVENT_ID.name();
     }
 }

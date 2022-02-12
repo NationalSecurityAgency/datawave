@@ -30,37 +30,37 @@ import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
 import datawave.webservice.query.util.QueryUtil;
 
 public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements TermFrequencyIngestHelperInterface {
-    
+
     /*
      * Field Name | Content | Update | Delete
-     * 
+     *
      * ELAPSED_TIME X X LAST_UPDATED X X LIFECYCLE X X NUM_PAGES X X NUM_RESULTS X X PAGE_METRICS.X X X SETUP_TIME X X CREATE_CALL_TIME X X
-     * 
+     *
      * AUTHORIZATIONS X BEGIN_DATE X END_DATE X ERROR_CODE X ERROR_MESSAGE X HOST X NEGATIVE_SELECTORS X POSITIVE_SELECTORS X PROXY_SERVERS QUERY X QUERY_ID X
      * QUERY_LOGIC X QUERY_TYPE X QUERY_NAME X X PARAMETERS X CREATE_DATE X USER X
      */
-    
+
     private static final Logger log = Logger.getLogger(ContentQueryMetricsIngestHelper.class);
-    
+
     private Set<String> contentIndexFields = new HashSet<>();
     private HelperDelegate<BaseQueryMetric> delegate = new HelperDelegate<>();
-    
+
     public ContentQueryMetricsIngestHelper() {
-        
+
     }
-    
+
     public ContentQueryMetricsIngestHelper(boolean deleteMode) {
         this.deleteMode = deleteMode;
     }
-    
+
     public Multimap<String,NormalizedContentInterface> getEventFieldsToDelete(BaseQueryMetric updatedQueryMetric, BaseQueryMetric storedQueryMetric) {
         return normalize(delegate.getEventFieldsToDelete(updatedQueryMetric, storedQueryMetric));
     }
-    
+
     @Override
     public Multimap<String,NormalizedContentInterface> normalize(Multimap<String,String> fields) {
         Multimap<String,NormalizedContentInterface> results = HashMultimap.create();
-        
+
         for (Map.Entry<String,String> e : fields.entries()) {
             if (e.getValue() != null) {
                 String field = e.getKey();
@@ -79,45 +79,45 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
         }
         return results;
     }
-    
+
     public Multimap<String,NormalizedContentInterface> getEventFieldsToWrite(BaseQueryMetric updatedQueryMetric) {
         return normalize(delegate.getEventFieldsToWrite(updatedQueryMetric));
     }
-    
+
     @Override
     public boolean isTermFrequencyField(String field) {
         return contentIndexFields.contains(field);
     }
-    
+
     @Override
     public String getTokenFieldNameDesignator() {
         return "";
     }
-    
+
     @Override
     public boolean isIndexOnlyField(String fieldName) {
         return false;
     }
-    
+
     public int getFieldSizeThreshold() {
         return helper.getFieldSizeThreshold();
     }
-    
+
     public static class HelperDelegate<T extends BaseQueryMetric> {
-        
+
         public Multimap<String,String> getEventFieldsToWrite(T updatedQueryMetric) {
-            
+
             HashMultimap<String,String> fields = HashMultimap.create();
-            
+
             SimpleDateFormat sdf_date_time1 = new SimpleDateFormat("yyyyMMdd HHmmss");
             SimpleDateFormat sdf_date_time2 = new SimpleDateFormat("yyyyMMdd HHmmss");
-            
+
             String type = updatedQueryMetric.getQueryType();
             // this is time consuming - we only need to parse the query and write the selectors once
             if (type.equalsIgnoreCase("RunningQuery") && updatedQueryMetric.getNumUpdates() == 0) {
-                
+
                 String query = updatedQueryMetric.getQuery();
-                
+
                 ASTJexlScript jexlScript = null;
                 try {
                     // Parse and flatten here before visitors visit.
@@ -130,12 +130,12 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                         String jexlQuery = node.getOriginalQuery();
                         jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery);
                     } catch (Throwable t2) {
-                        
+
                     }
                 }
-                
+
                 jexlScript = TreeFlatteningRebuildingVisitor.flatten(jexlScript);
-                
+
                 if (jexlScript != null) {
                     List<ASTEQNode> positiveEQNodes = JexlASTHelper.getPositiveEQNodes(jexlScript);
                     for (ASTEQNode pos : positiveEQNodes) {
@@ -155,7 +155,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                     }
                 }
             }
-            
+
             if (updatedQueryMetric.getQueryAuthorizations() != null) {
                 fields.put("AUTHORIZATIONS", updatedQueryMetric.getQueryAuthorizations());
             }
@@ -191,7 +191,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             if (updatedQueryMetric.getQueryName() != null) {
                 fields.put("QUERY_NAME", updatedQueryMetric.getQueryName());
             }
-            
+
             Set<Parameter> parameters = updatedQueryMetric.getParameters();
             if (parameters != null && !parameters.isEmpty()) {
                 fields.put("PARAMETERS", QueryUtil.toParametersString(parameters));
@@ -211,7 +211,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             if (updatedQueryMetric.getErrorMessage() != null) {
                 fields.put("ERROR_MESSAGE", updatedQueryMetric.getErrorMessage());
             }
-            
+
             fields.put("SETUP_TIME", Long.toString(updatedQueryMetric.getSetupTime()));
             fields.put("NUM_RESULTS", Long.toString(updatedQueryMetric.getNumResults()));
             fields.put("NUM_PAGES", Long.toString(updatedQueryMetric.getNumPages()));
@@ -224,9 +224,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             List<PageMetric> pageMetrics = updatedQueryMetric.getPageTimes();
             if (pageMetrics != null && !pageMetrics.isEmpty()) {
                 for (PageMetric p : pageMetrics) {
-                    fields.put("PAGE_METRICS." + p.getPageNumber(),
-                                    p.getPagesize() + "/" + p.getReturnTime() + "/" + p.getCallTime() + "/" + p.getSerializationTime() + "/"
-                                                    + p.getBytesWritten() + "/" + p.getPageRequested() + "/" + p.getPageReturned() + "/" + p.getLoginTime());
+                    fields.put("PAGE_METRICS." + p.getPageNumber(), p.toEventString());
                 }
             }
             fields.put("SOURCE_COUNT", Long.toString(updatedQueryMetric.getSourceCount()));
@@ -244,26 +242,26 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                     fields.put("PREDICTION", prediction.getName() + ":" + prediction.getPrediction());
                 }
             }
-            
+
             putExtendedFieldsToWrite(updatedQueryMetric, fields);
-            
+
             return fields;
         }
-        
+
         protected void putExtendedFieldsToWrite(T updatedQueryMetric, Multimap<String,String> fields) {
-            
+
         }
-        
+
         public Multimap<String,String> getEventFieldsToDelete(T updatedQueryMetric, T storedQueryMetric) {
-            
+
             HashMultimap<String,String> fields = HashMultimap.create();
-            
+
             SimpleDateFormat sdf_date_time2 = new SimpleDateFormat("yyyyMMdd HHmmss");
-            
+
             if (updatedQueryMetric.getElapsedTime() != storedQueryMetric.getElapsedTime()) {
                 fields.put("ELAPSED_TIME", Long.toString(storedQueryMetric.getElapsedTime()));
             }
-            
+
             if (storedQueryMetric.getLastUpdated() != null && updatedQueryMetric.getLastUpdated() != null) {
                 String storedValue = sdf_date_time2.format(storedQueryMetric.getLastUpdated());
                 String updatedValue = sdf_date_time2.format(updatedQueryMetric.getLastUpdated());
@@ -271,31 +269,31 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                     fields.put("LAST_UPDATED", storedValue);
                 }
             }
-            
+
             fields.put("NUM_UPDATES", Long.toString(storedQueryMetric.getNumUpdates()));
-            
+
             if (!updatedQueryMetric.getLifecycle().equals(storedQueryMetric.getLifecycle())) {
                 if (storedQueryMetric.getLifecycle() != null) {
                     fields.put("LIFECYCLE", storedQueryMetric.getLifecycle().toString());
                 }
             }
-            
+
             if (updatedQueryMetric.getNumPages() != storedQueryMetric.getNumPages()) {
                 fields.put("NUM_PAGES", Long.toString(storedQueryMetric.getNumPages()));
             }
-            
+
             if (updatedQueryMetric.getNumResults() != storedQueryMetric.getNumResults()) {
                 fields.put("NUM_RESULTS", Long.toString(storedQueryMetric.getNumResults()));
             }
-            
+
             if (updatedQueryMetric.getSetupTime() != storedQueryMetric.getSetupTime()) {
                 fields.put("SETUP_TIME", Long.toString(storedQueryMetric.getSetupTime()));
             }
-            
+
             if (updatedQueryMetric.getLoginTime() != storedQueryMetric.getLoginTime()) {
                 fields.put("LOGIN_TIME", Long.toString(storedQueryMetric.getLoginTime()));
             }
-            
+
             Map<Long,PageMetric> storedPageMetricMap = new HashMap<>();
             List<PageMetric> storedPageMetrics = storedQueryMetric.getPageTimes();
             if (storedPageMetrics != null) {
@@ -303,26 +301,22 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                     storedPageMetricMap.put(p.getPageNumber(), p);
                 }
             }
-            
+
             List<PageMetric> updatedPageMetrics = updatedQueryMetric.getPageTimes();
             if (updatedPageMetrics != null) {
                 for (PageMetric p : updatedPageMetrics) {
                     long pageNum = p.getPageNumber();
                     PageMetric storedPageMetric = storedPageMetricMap.get(pageNum);
                     if (storedPageMetric != null && !storedPageMetric.equals(p)) {
-                        fields.put("PAGE_METRICS." + pageNum,
-                                        storedPageMetric.getPagesize() + "/" + storedPageMetric.getReturnTime() + "/" + storedPageMetric.getCallTime() + "/"
-                                                        + storedPageMetric.getSerializationTime() + "/" + storedPageMetric.getBytesWritten() + "/"
-                                                        + storedPageMetric.getPageRequested() + "/" + storedPageMetric.getPageReturned() + "/"
-                                                        + storedPageMetric.getLoginTime());
+                        fields.put("PAGE_METRICS." + storedPageMetric.getPageNumber(), storedPageMetric.toEventString());
                     }
                 }
             }
-            
+
             if (updatedQueryMetric.getCreateCallTime() != storedQueryMetric.getCreateCallTime()) {
                 fields.put("CREATE_CALL_TIME", Long.toString(storedQueryMetric.getCreateCallTime()));
             }
-            
+
             if (updatedQueryMetric.getSourceCount() != storedQueryMetric.getSourceCount()) {
                 fields.put("SOURCE_COUNT", Long.toString(storedQueryMetric.getSourceCount()));
             }
@@ -341,14 +335,14 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             if (updatedQueryMetric.getFiRanges() != storedQueryMetric.getFiRanges()) {
                 fields.put("FI_RANGES", Long.toString(storedQueryMetric.getFiRanges()));
             }
-            
+
             putExtendedFieldsToDelete(updatedQueryMetric, fields);
-            
+
             return fields;
         }
-        
+
         protected void putExtendedFieldsToDelete(T updatedQueryMetric, Multimap<String,String> fields) {
-            
+
         }
     }
 }
