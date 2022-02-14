@@ -26,6 +26,7 @@ import datawave.query.testframework.GenericCityFields;
 import datawave.security.util.DnUtils;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.common.result.ConnectionPool;
+import datawave.services.query.logic.QueryCheckpoint;
 import datawave.services.query.logic.QueryLogicFactory;
 import datawave.services.query.predict.QueryPredictor;
 import datawave.webservice.query.Query;
@@ -57,6 +58,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -71,11 +73,8 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import static datawave.query.testframework.RawDataManager.AND_OP;
-import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
@@ -130,7 +129,7 @@ public class FindWorkTest {
     protected QueryMetricFactory metricFactory;
     
     @Autowired
-    protected Queue<QueryRequest> queryRequests;
+    protected Map<String,Queue<QueryRequest>> queryRequests;
     
     @Autowired
     protected FindWorkTask findWorkTask;
@@ -164,21 +163,7 @@ public class FindWorkTest {
         }
     }
     
-    @AfterAll
-    public static void cleanupData() {
-        synchronized (dataToCleanup) {
-            for (TestAccumuloSetup setup : dataToCleanup) {
-                setup.after();
-            }
-            dataToCleanup.clear();
-        }
-    }
-    
-    @Test
-    public void testFindWorkQuery() throws Exception {
-        // ensure the query requests starts as empty
-        assertTrue(queryRequests.isEmpty());
-        
+    public Query getQuery() throws ParseException {
         String city = "rome";
         String country = "italy";
         String queryStr = CitiesDataType.CityField.CITY.name() + ":\"" + city + "\"" + AND_OP + "#EVALUATION_ONLY('" + CitiesDataType.CityField.COUNTRY.name()
@@ -195,41 +180,126 @@ public class FindWorkTest {
         query.setUserDN("test user");
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
-        String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        return query;
+    }
+    
+    @AfterAll
+    public static void cleanupData() {
+        synchronized (dataToCleanup) {
+            for (TestAccumuloSetup setup : dataToCleanup) {
+                setup.after();
+            }
+            dataToCleanup.clear();
+        }
+    }
+    
+    private void testCreateOrphans(TaskStates.TASK_STATE initialState, QueryStatus.CREATE_STAGE initialStage, TaskStates.TASK_STATE expectedState,
+                    QueryRequest.Method expectedAction) throws Exception {
+        TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
         
-        QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
+        // now set the initial stage
+        storageService.updateCreateStage(key.getQueryId(), initialStage);
         
-        TaskStates states = storageService.getTaskStates(key.getQueryId());
-        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key.getTaskId()));
+        // and test
+        testOrphans(key, initialState, expectedState, expectedAction);
+    }
+    
+    private void testOrphans(TaskKey key, TaskStates.TASK_STATE initialState, TaskStates.TASK_STATE expectedState, QueryRequest.Method expectedAction)
+                    throws Exception {
+        assertNotNull(key);
         
-        // execute the find work task, and nothing should be found
-        findWorkTask.call();
-        
-        // ensure we are still in a READY state
-        states = storageService.getTaskStates(key.getQueryId());
-        assertEquals(TaskStates.TASK_STATE.READY, states.getState(key.getTaskId()));
-        
-        // Should have create for a create request
-        assertEquals(1, queryRequests.size());
-        QueryRequest request = queryRequests.poll();
-        assertEquals(key.getQueryId(), request.getQueryId());
-        assertEquals(QueryRequest.Method.CREATE, request.getMethod());
-        
-        // now put the task in a running state
-        storageService.updateTaskState(key, TaskStates.TASK_STATE.RUNNING);
-        storageService.updateCreateStage(key.getQueryId(), QueryStatus.CREATE_STAGE.TASK);
+        // now put the task in a running state in the PLAN stage
+        storageService.updateTaskState(key, initialState);
         
         // wait until the timeout
-        Thread.sleep(2 * executorProperties.getCheckpointFlushMs());
+        Thread.sleep(2 * executorProperties.getOrphanThresholdMs());
         
         // execute the find work task to reset the now orphaned task
         findWorkTask.call();
         
-        // verify the task has been set to a failed status
-        states = storageService.getTaskStates(key.getQueryId());
-        assertEquals(TaskStates.TASK_STATE.FAILED, states.getState(key.getTaskId()));
+        // verify the task has been set to an expected state
+        TaskStates states = storageService.getTaskStates(key.getQueryId());
+        assertEquals(expectedState, states.getState(key.getTaskId()));
+        
+        // Should have an expected request
+        assertEquals(1, queryRequests.get(key.getQueryId()).size());
+        QueryRequest request = queryRequests.get(key.getQueryId()).poll();
+        assertEquals(key.getQueryId(), request.getQueryId());
+        assertEquals(expectedAction, request.getMethod());
+    }
+    
+    @Test
+    public void testFindNoOrphans() throws Exception {
+        testCreateOrphans(TaskStates.TASK_STATE.READY, QueryStatus.CREATE_STAGE.CREATE, TaskStates.TASK_STATE.READY, QueryRequest.Method.CREATE);
+    }
+    
+    @Test
+    public void testOrphanedCreateCreate() throws Exception {
+        testCreateOrphans(TaskStates.TASK_STATE.RUNNING, QueryStatus.CREATE_STAGE.CREATE, TaskStates.TASK_STATE.READY, QueryRequest.Method.CREATE);
+    }
+    
+    @Test
+    public void testOrphanedCreatePlan() throws Exception {
+        testCreateOrphans(TaskStates.TASK_STATE.RUNNING, QueryStatus.CREATE_STAGE.PLAN, TaskStates.TASK_STATE.READY, QueryRequest.Method.CREATE);
+    }
+    
+    @Test
+    public void testOrphanedCreateTask() throws Exception {
+        testCreateOrphans(TaskStates.TASK_STATE.RUNNING, QueryStatus.CREATE_STAGE.TASK, TaskStates.TASK_STATE.FAILED, QueryRequest.Method.NEXT);
+    }
+    
+    @Test
+    public void testOrphanedCreateResults() throws Exception {
+        testCreateOrphans(TaskStates.TASK_STATE.RUNNING, QueryStatus.CREATE_STAGE.RESULTS, TaskStates.TASK_STATE.COMPLETED, QueryRequest.Method.NEXT);
+    }
+    
+    @Test
+    public void testOrphanedNext() throws Exception {
+        TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        assertNotNull(key);
+        
+        // Assume the create task is complete
+        storageService.updateTaskState(key, TaskStates.TASK_STATE.COMPLETED);
+        storageService.updateCreateStage(key.getQueryId(), QueryStatus.CREATE_STAGE.RESULTS);
+        
+        // create a next task
+        QueryTask task = storageService.createTask(QueryRequest.Method.NEXT, new QueryCheckpoint(key.getQueryKey()));
+        testOrphans(task.getTaskKey(), TaskStates.TASK_STATE.RUNNING, TaskStates.TASK_STATE.READY, QueryRequest.Method.NEXT);
+    }
+    
+    @Test
+    public void testOrphanedClose() throws Exception {
+        TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        assertNotNull(key);
+        
+        // Set the query status state to close
+        storageService.updateQueryStatus(key.getQueryId(), QueryStatus.QUERY_STATE.CLOSE);
+        
+        testOrphans(key, TaskStates.TASK_STATE.RUNNING, TaskStates.TASK_STATE.FAILED, QueryRequest.Method.CLOSE);
+    }
+    
+    @Test
+    public void testOrphanedCancel() throws Exception {
+        TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        assertNotNull(key);
+        
+        // Set the query status state to close
+        storageService.updateQueryStatus(key.getQueryId(), QueryStatus.QUERY_STATE.CANCEL);
+        
+        testOrphans(key, TaskStates.TASK_STATE.RUNNING, TaskStates.TASK_STATE.FAILED, QueryRequest.Method.CANCEL);
+    }
+    
+    @Test
+    public void testOrphanedPlan() throws Exception {
+        TaskKey key = storageService.planQuery(TEST_POOL, getQuery(), Collections.singleton(CitiesDataType.getTestAuths()));
+        testOrphans(key, TaskStates.TASK_STATE.RUNNING, TaskStates.TASK_STATE.READY, QueryRequest.Method.PLAN);
+    }
+    
+    @Test
+    public void testOrphanedPredict() throws Exception {
+        TaskKey key = storageService.predictQuery(TEST_POOL, getQuery(), Collections.singleton(CitiesDataType.getTestAuths()));
+        testOrphans(key, TaskStates.TASK_STATE.RUNNING, TaskStates.TASK_STATE.READY, QueryRequest.Method.PREDICT);
     }
     
     private void checkFailed(String queryId) {
@@ -262,17 +332,19 @@ public class FindWorkTest {
     public static class FindWorkTestConfiguration {
         @Bean
         @Primary
-        public QueryExecutor executor(Queue<QueryRequest> queryRequests, ExecutorProperties executorProperties, QueryProperties queryProperties,
+        public QueryExecutor executor(Map<String,Queue<QueryRequest>> queryRequests, ExecutorProperties executorProperties, QueryProperties queryProperties,
                         BusProperties busProperties, ApplicationContext appCtx, AccumuloConnectionFactory connectionFactory, QueryStorageCache cache,
                         QueryResultsManager queues, QueryLogicFactory queryLogicFactory, QueryPredictor predictor, ApplicationEventPublisher publisher,
                         QueryMetricFactory metricFactory, QueryMetricClient metricClient) {
+            // lets avoid waiting too long for these tests.
+            executorProperties.setOrphanThresholdMs(100L);
             return new TestQueryExecutor(queryRequests, executorProperties, queryProperties, busProperties, appCtx, connectionFactory, cache, queues,
                             queryLogicFactory, predictor, publisher, metricFactory, metricClient);
         }
         
         @Bean
-        public Queue<QueryRequest> queryRequests() {
-            return new LinkedList<>();
+        public Map<String,Queue<QueryRequest>> queryRequests() {
+            return new HashMap<>();
         }
         
         @Bean
@@ -414,9 +486,9 @@ public class FindWorkTest {
     }
     
     public static class TestQueryExecutor extends QueryExecutor {
-        private final Queue<QueryRequest> requests;
+        private final Map<String,Queue<QueryRequest>> requests;
         
-        public TestQueryExecutor(Queue<QueryRequest> queryRequests, ExecutorProperties executorProperties, QueryProperties queryProperties,
+        public TestQueryExecutor(Map<String,Queue<QueryRequest>> queryRequests, ExecutorProperties executorProperties, QueryProperties queryProperties,
                         BusProperties busProperties, ApplicationContext appCtx, AccumuloConnectionFactory connectionFactory, QueryStorageCache cache,
                         QueryResultsManager queues, QueryLogicFactory queryLogicFactory, QueryPredictor predictor, ApplicationEventPublisher publisher,
                         QueryMetricFactory metricFactory, QueryMetricClient metricClient) {
@@ -427,7 +499,14 @@ public class FindWorkTest {
         
         @Override
         public void handleRemoteRequest(QueryRequest queryRequest, String originService, String destinationService) {
-            requests.add(queryRequest);
+            synchronized (requests) {
+                Queue<QueryRequest> queue = requests.get(queryRequest.getQueryId());
+                if (queue == null) {
+                    queue = new LinkedList<>();
+                    requests.put(queryRequest.getQueryId(), queue);
+                }
+                queue.offer(queryRequest);
+            }
         }
     }
     

@@ -79,6 +79,9 @@ datawave:
       queryStatusExpirationMs: 60000
       checkpointFlushMs: 1000
       checkpointFlushResults: 2
+      orphanThresholdMs: 2000
+      maxOrphanedTasksToCheck: 100
+
       monitor:
         enabled: false
 

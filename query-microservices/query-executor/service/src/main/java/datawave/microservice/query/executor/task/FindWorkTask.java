@@ -57,19 +57,27 @@ public class FindWorkTask implements Callable<Void> {
                     recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.FAILED);
                     break;
                 case CREATE:
-                    // recover orphaned tasks, however create tasks should be failed
-                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY,
-                                    Collections.singletonMap(QueryRequest.Method.CREATE, TaskStates.TASK_STATE.FAILED));
                     // Should we create a new thread to handle the remote request instead so that we can return immediately?
                     // even if the next task is to plan, this will take care of it
                     switch (queryStatus.getCreateStage()) {
                         case CREATE:
                         case PLAN:
+                            // recover orphaned tasks
+                            recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY);
                             log.debug("Creating " + queryId);
                             executor.handleRemoteRequest(QueryRequest.create(queryId), originService, destinationService);
                             break;
                         case TASK:
+                            // recover orphaned tasks, however create tasks should be failed as we were already creating tasks
+                            recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY,
+                                            Collections.singletonMap(QueryRequest.Method.CREATE, TaskStates.TASK_STATE.FAILED));
+                            log.debug("Nexting " + queryId);
+                            executor.handleRemoteRequest(QueryRequest.next(queryId), originService, destinationService);
+                            break;
                         case RESULTS:
+                            // recover orphaned tasks, however create tasks should be completed as all tasks have already been created
+                            recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.READY,
+                                            Collections.singletonMap(QueryRequest.Method.CREATE, TaskStates.TASK_STATE.COMPLETED));
                             log.debug("Nexting " + queryId);
                             executor.handleRemoteRequest(QueryRequest.next(queryId), originService, destinationService);
                             break;
@@ -134,7 +142,7 @@ public class FindWorkTask implements Callable<Void> {
                                 executor.getExecutorProperties().getMaxOrphanedTasksToCheck());
                 for (TaskKey taskKey : taskKeys) {
                     QueryTask task = cache.getTask(taskKey);
-                    if (System.currentTimeMillis() - task.getLastUpdatedMillis() > (executor.getExecutorProperties().getCheckpointFlushMs() * 2)) {
+                    if ((System.currentTimeMillis() - task.getLastUpdatedMillis()) > executor.getExecutorProperties().getOrphanThresholdMs()) {
                         if (overrides.containsKey(task.getAction())) {
                             taskStates.setState(taskKey.getTaskId(), overrides.get(task.getAction()));
                         } else {
