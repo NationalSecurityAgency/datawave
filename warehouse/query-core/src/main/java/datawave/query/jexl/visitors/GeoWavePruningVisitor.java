@@ -114,7 +114,7 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
                         if (prunedTerms != null) {
                             prunedTerms.put(field, value);
                         }
-                        return null;
+                        return new ASTFalseNode(ParserTreeConstants.JJTFALSENODE);
                     }
                 }
             }
