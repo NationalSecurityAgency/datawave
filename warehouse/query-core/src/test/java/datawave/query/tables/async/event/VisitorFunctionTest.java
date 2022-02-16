@@ -85,7 +85,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
         
         // set thresholds
-        config.setMaxTermThreshold(2);
+        config.setFinalMaxTermThreshold(2);
         config.setMaxDepthThreshold(2);
         
         SessionOptions options = new SessionOptions();
@@ -117,7 +117,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
         
         // set thresholds
-        config.setMaxTermThreshold(1);
+        config.setFinalMaxTermThreshold(1);
         config.setMaxDepthThreshold(10);
         config.setMaxOrExpansionFstThreshold(100);
         config.setMaxOrExpansionThreshold(20);
@@ -163,7 +163,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
         
         // set thresholds
-        config.setMaxTermThreshold(1);
+        config.setFinalMaxTermThreshold(1);
         config.setMaxDepthThreshold(10);
         config.setMaxOrExpansionFstThreshold(100);
         config.setMaxOrExpansionThreshold(20);
@@ -209,7 +209,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
         
         // set thresholds
-        config.setMaxTermThreshold(5);
+        config.setFinalMaxTermThreshold(5);
         config.setMaxDepthThreshold(20);
         config.setMaxOrExpansionFstThreshold(100);
         config.setMaxOrExpansionThreshold(5);
@@ -256,7 +256,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
         
         // set thresholds
-        config.setMaxTermThreshold(1);
+        config.setFinalMaxTermThreshold(1);
         config.setMaxDepthThreshold(10);
         config.setMaxOrExpansionFstThreshold(100);
         config.setMaxOrExpansionThreshold(20);
