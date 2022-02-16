@@ -102,6 +102,48 @@ public class WhindexVisitorTest {
     }
     
     @Test
+    public void oneToOneWithinBoundingBoxTest() throws ParseException {
+        String query = "geo:within_bounding_box(ICE_CREAM, '-10_-10', '10_10') && TOPPINGS == 'HOT_FUDGE'";
+        
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setWhindexMappingFields(mappingFields);
+        config.setWhindexFieldMappings(singleFieldMapping);
+        
+        ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
+        jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
+        
+        Assert.assertEquals("geo:within_bounding_box(HOT_FUDGE_SUNDAE, '-10_-10', '10_10')", JexlStringBuildingVisitor.buildQuery(jexlScript));
+    }
+    
+    @Test
+    public void oneToOneWithinBoundingBoxParensTest() throws ParseException {
+        String query = "geo:within_bounding_box(ICE_CREAM, '-10_-10', '10_10') && (TOPPINGS == 'HOT_FUDGE')";
+        
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setWhindexMappingFields(mappingFields);
+        config.setWhindexFieldMappings(singleFieldMapping);
+        
+        ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
+        jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
+        
+        Assert.assertEquals("geo:within_bounding_box(HOT_FUDGE_SUNDAE, '-10_-10', '10_10')", JexlStringBuildingVisitor.buildQuery(jexlScript));
+    }
+    
+    @Test
+    public void oneToOneWithinCircleTest() throws ParseException {
+        String query = "geo:within_circle(ICE_CREAM, '-10_-10', '10') && TOPPINGS == 'HOT_FUDGE'";
+        
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setWhindexMappingFields(mappingFields);
+        config.setWhindexFieldMappings(singleFieldMapping);
+        
+        ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
+        jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
+        
+        Assert.assertEquals("geo:within_circle(HOT_FUDGE_SUNDAE, '-10_-10', '10')", JexlStringBuildingVisitor.buildQuery(jexlScript));
+    }
+    
+    @Test
     public void oneToOneNestedIntersectsTest() throws ParseException {
         String query = "(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || FIELD == 'blah') && TOPPINGS == 'HOT_FUDGE'";
         
@@ -315,6 +357,22 @@ public class WhindexVisitorTest {
         
         Assert.assertEquals(
                         "((TOPPINGS == 'HOT_FUDGE' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(HOT_FUDGE_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || ((TOPPINGS == 'BANANA' && geowave:intersects(SHERBERT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || geowave:intersects(BANANA_SPLIT, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
+                        JexlStringBuildingVisitor.buildQuery(jexlScript));
+    }
+    
+    @Test
+    public void manyToManyWithinBoundingBoxTest() throws ParseException {
+        String query = "geo:within_bounding_box((ICE_CREAM || SHERBERT), '-10_-10', '10_10') && (TOPPINGS == 'HOT_FUDGE' || TOPPINGS == 'BANANA')";
+        
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setWhindexMappingFields(mappingFields);
+        config.setWhindexFieldMappings(multipleFieldMapping);
+        
+        ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
+        jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
+        
+        Assert.assertEquals(
+                        "((TOPPINGS == 'HOT_FUDGE' && geo:within_bounding_box(SHERBERT, '-10_-10', '10_10')) || geo:within_bounding_box(HOT_FUDGE_SUNDAE, '-10_-10', '10_10')) || ((TOPPINGS == 'BANANA' && geo:within_bounding_box(SHERBERT, '-10_-10', '10_10')) || geo:within_bounding_box(BANANA_SPLIT, '-10_-10', '10_10'))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
     

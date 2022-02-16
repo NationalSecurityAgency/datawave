@@ -12,6 +12,7 @@ import datawave.query.predicate.PeekingPredicate;
 import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.TypeMetadata;
+import datawave.test.JexlNodeAssert;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -915,9 +916,12 @@ public class EventDataQueryExpressionVisitorTest {
         String originalQuery = "content:phrase(termOffsetMap, 'abc', 'def')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
-        String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
-        // this is fragile, but captures what should be here.
-        assertEquals("(content:phrase(termOffsetMap, 'abc', 'def') && ((BAR == 'def' && BAR == 'abc') || (FOO == 'def' && FOO == 'abc')))", newQuery);
+        
+        String expected = "((content:phrase(BAR, termOffsetMap, 'abc', 'def') && BAR == 'def' && BAR == 'abc') || (content:phrase(FOO, termOffsetMap, 'abc', 'def') && FOO == 'def' && FOO == 'abc'))";
+        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
+        
+        JexlNodeAssert.assertThat(newScript).isEqualTo(expectedScript);
+        JexlNodeAssert.assertThat(newScript).hasValidLineage();
     }
     
     @Test
