@@ -86,7 +86,6 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
     @Override
     public void readFields(DataInput in) throws IOException {
         readMetadata(in);
-        
         byte[] wellKnownBinary = WritableUtils.readCompressedByteArray(in);
         try {
             geometry = new WKBReader().read(wellKnownBinary);

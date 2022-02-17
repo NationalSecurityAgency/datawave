@@ -1,13 +1,21 @@
 package datawave.query.tables;
 
 import com.google.common.base.Function;
+import com.google.common.base.Splitter;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.function.ws.DocumentEvaluation;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.CloseableIterable;
@@ -25,7 +33,6 @@ import datawave.query.index.lookup.CreateUidsIterator;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.UidIntersector;
 import datawave.query.iterator.QueryOptions;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
@@ -37,11 +44,21 @@ import datawave.query.planner.QueryPlanner;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
+import datawave.query.tables.facets.FacetedQueryLogic;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransform;
+import datawave.query.function.ws.AttributeKeepFunction;
+import datawave.query.function.ws.CompositeProjectionFunction;
+import datawave.query.function.ws.DocumentMetadataFunction;
 import datawave.query.transformer.DocumentTransformer;
+import datawave.query.function.ws.EmptyDocumentFunction;
+import datawave.query.function.ws.EvaluationFunction;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.transformer.GroupingTransform;
+import datawave.query.function.ws.LimitFieldsTransform;
+import datawave.query.function.ws.MaskedValueFilterFunction;
+import datawave.query.function.ws.ProjectionFunction;
+import datawave.query.function.ws.RemoveGroupingContextFunction;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
@@ -49,6 +66,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.StringUtils;
+import datawave.util.UniversalSet;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -187,6 +205,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private GroupingTransform groupingTransformerInstance = null;
     
     private CardinalityConfiguration cardinalityConfiguration = null;
+    private EvaluationFunction evaluationFunction = null;
     
     /**
      * Basic constructor
@@ -426,6 +445,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         validateConfiguration(config);
         
+        if (getUsePartialInterpreter()) {
+            config.setEvaluationFunction(new EvaluationFunction(config));
+        }
+        
         if (getCardinalityConfiguration() != null && (!config.getBlacklistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
             // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
             // Modify the projectFields and blacklistFields only for this stage, then return to the original values.
@@ -449,6 +472,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         } else {
             this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
         }
+        
+        this.evaluationFunction = config.getEvaluationFunction();
         
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
         
@@ -562,6 +587,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.scanner = null;
         this.iterator = this.scheduler.iterator();
         
+        if (evaluationFunction != null && !(this instanceof FacetedQueryLogic)) {
+            this.iterator = Iterators.transform(iterator, buildDocumentEvaluation());
+            this.iterator = QueryIterator.statelessFilter(iterator, input -> (input != null && input.getValue() != null && input.getValue().getSize() > 0));
+        }
+        
         if (!config.isSortedUIDs()) {
             this.iterator = new DedupingIterator(this.iterator);
         }
@@ -637,6 +667,71 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (getQueryModel() != null) {
             ((DocumentTransformer) this.transformerInstance).setQm(getQueryModel());
         }
+    }
+    
+    protected DocumentEvaluation buildDocumentEvaluation() {
+        DocumentEvaluation documentEvaluation = new DocumentEvaluation();
+        documentEvaluation.setSerDe(config.getReturnType());
+        documentEvaluation.addFunction(evaluationFunction);
+        
+        boolean includeGroupingContext = config.getIncludeGroupingContext() || (config.getGroupFields() != null && !config.getGroupFields().isEmpty());
+        
+        documentEvaluation.addFunction(new MaskedValueFilterFunction(includeGroupingContext, isReducedResponse()));
+        documentEvaluation.addFunction(new AttributeKeepFunction());
+        // sort out include/whitelist/projection fields
+        Set<String> includeFields;
+        if (getConfig().getProjectFieldsAsString().equals(QueryOptions.EVERYTHING)) {
+            includeFields = UniversalSet.instance();
+        } else {
+            includeFields = getConfig().getProjectFields();
+        }
+        Set<String> excludeFields = getBlacklistedFields();
+        
+        if (!includeFields.isEmpty()) {
+            documentEvaluation.addFunction(new ProjectionFunction(includeGroupingContext, isReducedResponse(), includeFields, Collections.emptySet()));
+        } else {
+            documentEvaluation.addFunction(new ProjectionFunction(includeGroupingContext, isReducedResponse(), Collections.emptySet(), excludeFields));
+        }
+        
+        try {
+            if (scannerFactory.config.getConnector() != null) {
+                MetadataHelper metadataHelper = prepareMetadataHelper(scannerFactory.config.getConnector(), getConfig().getMetadataTableName(), getConfig()
+                                .getAuthorizations());
+                CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
+                Collection<Multimap<String,String>> compositeMaps = compositeMetadata.getCompositeFieldMapByType().values();
+                documentEvaluation.addFunction(new CompositeProjectionFunction(includeGroupingContext, isReducedResponse(), compositeMaps));
+            }
+        } catch (TableNotFoundException e) {
+            log.error("Could not add CompositeProjectionTransform, error was: ", e);
+        }
+        
+        documentEvaluation.addFunction(new EmptyDocumentFunction());
+        documentEvaluation.addFunction(new DocumentMetadataFunction());
+        
+        // configure limit fields
+        String limitFieldsString = getConfig().getLimitFieldsAsString();
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(limitFieldsString)) {
+            Map<String,Integer> limitFieldsMap = new HashMap<>();
+            for (String paramGroup : Splitter.on(',').omitEmptyStrings().trimResults().split(limitFieldsString)) {
+                String[] keyAndValue = Iterables.toArray(Splitter.on('=').omitEmptyStrings().trimResults().split(paramGroup), String.class);
+                if (keyAndValue != null && keyAndValue.length > 1) {
+                    limitFieldsMap.put(keyAndValue[0], Integer.parseInt(keyAndValue[1]));
+                }
+            }
+            documentEvaluation.addFunction(new LimitFieldsTransform(limitFieldsMap));
+        }
+        
+        // remove grouping context, if it was added by QueryIterator
+        // we only drop into this block if the evaluating transform was provided with an updated query tree.
+        String query = evaluationFunction.getUpdatedQueryString();
+        if (!includeGroupingContext
+                        && query != null
+                        && (query.contains("grouping:") || query.contains("matchesInGroup") || query.contains("MatchesInGroup") || query
+                                        .contains("atomValuesMatch"))) {
+            documentEvaluation.addFunction(new RemoveGroupingContextFunction());
+        }
+        
+        return documentEvaluation;
     }
     
     protected void loadQueryParameters(ShardQueryConfiguration config, Query settings) throws QueryException {

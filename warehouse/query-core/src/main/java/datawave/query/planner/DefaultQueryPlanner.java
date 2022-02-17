@@ -457,6 +457,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException(qe);
         }
         
+        if (config.getEvaluationFunction() != null) {
+            config.getEvaluationFunction().lazyInitialize(config.getQueryString());
+        }
+        
         stopwatch.stop();
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Construct IteratorSettings");
         

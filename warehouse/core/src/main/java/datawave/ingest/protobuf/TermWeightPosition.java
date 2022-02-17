@@ -2,12 +2,13 @@ package datawave.ingest.protobuf;
 
 import org.apache.log4j.Logger;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 /**
  * This is a utility class for processing a single term weight position. These get aggregated into a TermWeight,
  */
-public class TermWeightPosition implements Comparable<TermWeightPosition> {
+public class TermWeightPosition implements Comparable<TermWeightPosition>, Serializable {
     private static final Logger log = Logger.getLogger(TermWeightPosition.class);
     public static final int DEFAULT_OFFSET = -1;
     public static final int DEFAULT_PREV_SKIPS = -1;

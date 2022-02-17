@@ -85,14 +85,6 @@ public class ContentFunctionsTest {
             return result.equals(expected);
         }
         
-        if (result instanceof DatawavePartialInterpreter.MATCH) {
-            if (expected) {
-                return DatawavePartialInterpreter.MATCH.TRUE.equals(result) || DatawavePartialInterpreter.MATCH.UNKNOWN.equals(result);
-            } else {
-                return DatawavePartialInterpreter.MATCH.FALSE.equals(result);
-            }
-        }
-        
         return false;
     }
     

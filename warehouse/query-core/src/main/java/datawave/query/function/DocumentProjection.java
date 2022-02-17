@@ -79,6 +79,7 @@ public class DocumentProjection implements DocumentPermutation {
     private Document trim(Document d) {
         Map<String,Attribute<? extends Comparable<?>>> dict = d.getDictionary();
         Document newDoc = new Document();
+        newDoc.setOffsetMap(d.getOffsetMap());
         
         for (Entry<String,Attribute<? extends Comparable<?>>> entry : dict.entrySet()) {
             String fieldName = entry.getKey();

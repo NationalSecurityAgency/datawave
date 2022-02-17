@@ -25,6 +25,7 @@ import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.function.ws.EvaluationFunction;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.TableName;
 import datawave.util.UniversalSet;
@@ -281,7 +282,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     // a partial interpreter will evaluate 'incomplete fields' as true when more work is required for a full evaluation
     private boolean usePartialInterpreter = false;
-    private Set<String> incompleteFields = new HashSet<>(0);
+    private Set<String> incompleteFields = Collections.emptySet();
+    private EvaluationFunction evaluationFunction = null;
     
     private boolean containsIndexOnlyTerms = false;
     private boolean containsCompositeTerms = false;
@@ -504,6 +506,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setDisableEvaluation(other.isDisableEvaluation());
         this.setUsePartialInterpreter(other.isUsePartialInterpreter());
         this.setIncompleteFields(other.getIncompleteFields());
+        this.setEvaluationFunction(other.getEvaluationFunction());
         this.setContainsIndexOnlyTerms(other.isContainsIndexOnlyTerms());
         this.setContainsCompositeTerms(other.isContainsCompositeTerms());
         this.setAllowFieldIndexEvaluation(other.isAllowFieldIndexEvaluation());
@@ -2263,5 +2266,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setIncompleteFields(Set<String> incompleteFields) {
         this.incompleteFields = incompleteFields;
+    }
+    
+    public EvaluationFunction getEvaluationFunction() {
+        return evaluationFunction;
+    }
+    
+    public void setEvaluationFunction(EvaluationFunction evaluationFunction) {
+        this.evaluationFunction = evaluationFunction;
     }
 }

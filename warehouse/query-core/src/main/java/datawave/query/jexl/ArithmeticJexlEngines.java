@@ -56,19 +56,6 @@ public class ArithmeticJexlEngines {
      * @return a JexlEngine
      */
     public static DatawaveJexlEngine getEngine(JexlArithmetic arithmetic) {
-        return getEngine(arithmetic, false, Collections.emptySet());
-    }
-    
-    /**
-     * Get a {@link DatawaveJexlEngine} that supports document evaluation. Optionally builds a JexlEngine that supports partial document evaluation
-     *
-     * @param arithmetic
-     *            an arithmetic
-     * @param usePartialInterpreter
-     *            flag indicating this JexlEngine should support partial document evaluaiton
-     * @return a JexlEngine
-     */
-    public static DatawaveJexlEngine getEngine(JexlArithmetic arithmetic, boolean usePartialInterpreter, Set<String> incompleteFields) {
         if (null == arithmetic) {
             return null;
         }
@@ -77,8 +64,6 @@ public class ArithmeticJexlEngines {
         
         if (!engineCache.containsKey(arithmeticClass)) {
             DatawaveJexlEngine engine = createEngine(arithmetic);
-            engine.setUsePartialInterpreter(usePartialInterpreter);
-            engine.setIncompleteFields(incompleteFields);
             
             if (!(arithmetic instanceof StatefulArithmetic)) {
                 // do not cache an Arithmetic that has state
@@ -89,6 +74,26 @@ public class ArithmeticJexlEngines {
         }
         
         return engineCache.get(arithmeticClass);
+    }
+    
+    /**
+     * Get a {@link DatawaveJexlEngine} that supports partial document evaluation via a set of incomplete fields. This engine is not cached.
+     *
+     * @param arithmetic
+     *            an arithmetic
+     * @param incompleteFields
+     *            a set of fields which cannot be fully evaluated
+     * @return a JexlEngine
+     */
+    public static DatawaveJexlEngine getEngine(JexlArithmetic arithmetic, Set<String> incompleteFields) {
+        if (arithmetic == null) {
+            return null;
+        }
+        
+        DatawaveJexlEngine engine = createEngine(arithmetic);
+        engine.setUsePartialInterpreter(true);
+        engine.setIncompleteFields(incompleteFields);
+        return engine;
     }
     
     private static DatawaveJexlEngine createEngine(JexlArithmetic arithmetic) {

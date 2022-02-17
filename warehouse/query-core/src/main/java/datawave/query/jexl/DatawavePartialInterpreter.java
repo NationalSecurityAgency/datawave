@@ -36,13 +36,16 @@ import java.util.Deque;
 import java.util.Set;
 
 /**
+ * The DatawavePartialInterpreter supports partial document evaluation. For the purposes of evaluation, a query term whose field is a member of the incomplete
+ * field set will evaluate to 'true' even though it's actual state is 'unknown'.
+ * <p>
+ * It is expected that a full document evaluation will happen later
+ * <p>
  * Extended so that calls to a function node, which can return a collection of 'hits' instead of a Boolean, can be evaluated as true/false based on the size of
  * the hit collection. Also, if the member 'arithmetic' has been set to a HitListArithmetic, then the returned hits will be added to the hitSet of the
  * arithmetic.
- *
+ * <p>
  * Also added in the ability to count attributes pulled from the ValueTuples which contribute to the positive evaluation.
- *
- *
  */
 public class DatawavePartialInterpreter extends DatawaveInterpreter {
     
@@ -55,21 +58,10 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     }
     
     public enum MATCH {
-        TRUE, FALSE, UNKNOWN;
-        
-        public static MATCH valueFor(boolean value) {
-            return (value ? TRUE : FALSE);
-        }
+        UNKNOWN;
         
         public MATCH negate() {
-            switch (this) {
-                case UNKNOWN:
-                    return UNKNOWN;
-                case FALSE:
-                    return TRUE;
-                default:
-                    return FALSE;
-            }
+            return UNKNOWN;
         }
     }
     
@@ -100,48 +92,46 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
      * @param scriptExecuteResult
      * @return the MATCH value
      */
-    public MATCH getMatched(JexlNode node, Object scriptExecuteResult) {
+    public Object getMatched(JexlNode node, Object scriptExecuteResult) {
         return getMatched(node, scriptExecuteResult, false);
     }
     
-    public MATCH getMatched(JexlNode node, Object scriptExecuteResult, boolean negated) {
-        MATCH matched = getMatched(scriptExecuteResult);
+    public Object getMatched(JexlNode node, Object scriptExecuteResult, boolean negated) {
+        Object matched = getMatched(scriptExecuteResult);
         
         // now determine whether the result should actually be unknown
-        if ((matched == (negated ? MATCH.TRUE : MATCH.FALSE)) && isIncomplete(node)) {
+        if ((matched == (negated ? Boolean.TRUE : Boolean.FALSE)) && isIncomplete(node)) {
             matched = MATCH.UNKNOWN;
         }
         
         return matched;
     }
     
-    public MATCH getMatched(Object scriptExecuteResult) {
-        MATCH matched = MATCH.FALSE;
+    public Object getMatched(Object scriptExecuteResult) {
         if (scriptExecuteResult != null) {
             if (MATCH.class.isAssignableFrom(scriptExecuteResult.getClass())) {
-                matched = (MATCH) scriptExecuteResult;
+                return scriptExecuteResult;
             } else if (Boolean.class.isAssignableFrom(scriptExecuteResult.getClass())) {
-                matched = MATCH.valueFor(isMatched(scriptExecuteResult));
+                return isMatched(scriptExecuteResult);
+            } else if (scriptExecuteResult instanceof Integer || scriptExecuteResult instanceof Long) {
+                return scriptExecuteResult;
             } else {
-                matched = MATCH.valueFor(arithmetic.toBoolean(scriptExecuteResult));
+                return arithmetic.toBoolean(scriptExecuteResult);
             }
         } else {
             if (log.isDebugEnabled()) {
                 log.debug("Unable to process null result from JEXL evaluation");
             }
         }
-        return matched;
+        return Boolean.FALSE;
     }
     
     public static boolean isMatched(Object scriptExecuteResult) {
         if (scriptExecuteResult != null && DatawavePartialInterpreter.MATCH.class.isAssignableFrom(scriptExecuteResult.getClass())) {
             DatawavePartialInterpreter.MATCH match = (DatawavePartialInterpreter.MATCH) scriptExecuteResult;
             switch (match) {
-                case FALSE:
-                    return false;
                 case UNKNOWN:
-                case TRUE:
-                    return true;
+                    return Boolean.TRUE;
                 default:
                     throw new IllegalStateException("Unexpected value: " + match);
             }
@@ -260,7 +250,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             }
         } else {
             // We are likely within a normal union and can short circuit
-            while (getMatched(result) == MATCH.FALSE && !children.isEmpty()) {
+            while (getMatched(result) == Boolean.FALSE && !children.isEmpty()) {
                 // Child nodes were put onto the stack left to right. PollLast to evaluate left to right.
                 result = interpretOr(children.pollLast().jjtAccept(this, data), result);
             }
@@ -286,8 +276,8 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             left = FunctionalSet.empty();
         if (!(left instanceof Collection)) {
             try {
-                MATCH leftValue = getMatched(left);
-                if (leftValue == MATCH.TRUE || leftValue == MATCH.UNKNOWN) {
+                Object leftValue = getMatched(left);
+                if (leftValue == Boolean.TRUE || leftValue == MATCH.UNKNOWN) {
                     return leftValue;
                 }
             } catch (ArithmeticException xrt) {
@@ -301,8 +291,8 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             right = FunctionalSet.empty();
         if (!(right instanceof Collection)) {
             try {
-                MATCH rightValue = getMatched(right);
-                if (rightValue == MATCH.TRUE) {
+                Object rightValue = getMatched(right);
+                if (rightValue == Boolean.TRUE) {
                     return Boolean.TRUE;
                 }
             } catch (ArithmeticException xrt) {
@@ -327,13 +317,13 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         }
     }
     
-    private MATCH getMatchedOr(Object left, Object right) {
+    private Object getMatchedOr(Object left, Object right) {
         left = getMatched(left);
         right = getMatched(right);
-        if (left == MATCH.TRUE || right == MATCH.TRUE) {
-            return MATCH.TRUE;
-        } else if (left == MATCH.FALSE && right == MATCH.FALSE) {
-            return MATCH.FALSE;
+        if (left == Boolean.TRUE || right == Boolean.TRUE) {
+            return Boolean.TRUE;
+        } else if (left == Boolean.FALSE && right == Boolean.FALSE) {
+            return Boolean.FALSE;
         } else {
             return MATCH.UNKNOWN;
         }
@@ -368,9 +358,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
                     functionalSet.addAll((Collection<?>) o);
                 }
             } else if (o instanceof MATCH) {
-                if (o.equals(MATCH.FALSE)) {
-                    return MATCH.FALSE;
-                }
+                // UNKNOWN case is fine, keep going
             } else {
                 try {
                     boolean value = arithmetic.toBoolean(o);
@@ -386,14 +374,14 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         if (!functionalSet.isEmpty()) {
             return functionalSet;
         } else {
-            return MATCH.TRUE;
+            return Boolean.TRUE;
         }
     }
     
     @Override
     public Object visit(ASTAssignment node, Object data) {
         super.visit(node, data);
-        return MATCH.TRUE;
+        return Boolean.TRUE;
     }
     
     @Override
@@ -438,7 +426,13 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
     @Override
     public Object visit(ASTNotNode node, Object data) {
         Object val = node.jjtGetChild(0).jjtAccept(this, data);
-        return getMatched(val).negate();
+        Object o = getMatched(val);
+        if (o instanceof MATCH) {
+            return o;
+        } else {
+            // see Interpreter#visit(ASTNotNode)
+            return arithmetic.toBoolean(val) ? Boolean.FALSE : Boolean.TRUE;
+        }
     }
     
     @Override

@@ -17,6 +17,7 @@ import datawave.data.type.Type;
 import datawave.query.DocumentSerialization;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
+import datawave.query.function.ws.EvaluationFunction;
 import datawave.query.model.QueryModel;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
@@ -146,6 +147,9 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.getBypassAccumulo());
         Assert.assertFalse(config.getSpeculativeScanning());
         Assert.assertFalse(config.isDisableEvaluation());
+        Assert.assertFalse(config.isUsePartialInterpreter());
+        Assert.assertEquals(Collections.emptySet(), config.getIncompleteFields());
+        Assert.assertNull(config.getEvaluationFunction());
         Assert.assertFalse(config.isContainsIndexOnlyTerms());
         Assert.assertFalse(config.isContainsCompositeTerms());
         Assert.assertTrue(config.isAllowFieldIndexEvaluation());
@@ -257,6 +261,9 @@ public class ShardQueryConfigurationTest {
         List<String> contentFieldNames = Lists.newArrayList("fieldA");
         Set<String> noExpansionFields = Sets.newHashSet("NoExpansionFieldA");
         Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
+        boolean usePartialInterpreter = true;
+        Set<String> incompleteFields = Sets.newHashSet("INCOMPLETE_FIELD_A", "INCOMPLETE_FIELD_B");
+        EvaluationFunction evaluationFunction = null;
         
         // Set collections on 'other' ShardQueryConfiguration
         other.setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
@@ -290,6 +297,9 @@ public class ShardQueryConfigurationTest {
         other.setContentFieldNames(contentFieldNames);
         other.setNoExpansionFields(noExpansionFields);
         other.setDisallowedRegexPatterns(disallowedRegexPatterns);
+        other.setUsePartialInterpreter(usePartialInterpreter);
+        other.setIncompleteFields(incompleteFields);
+        other.setEvaluationFunction(evaluationFunction);
         
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
@@ -373,6 +383,9 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(expectedQueryModel.getReverseQueryMapping(), config.getQueryModel().getReverseQueryMapping());
         Assert.assertEquals(expectedQueryModel.getUnevaluatedFields(), config.getQueryModel().getUnevaluatedFields());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
+        Assert.assertEquals(usePartialInterpreter, config.isUsePartialInterpreter());
+        Assert.assertEquals(incompleteFields, config.getIncompleteFields());
+        Assert.assertEquals(evaluationFunction, config.getEvaluationFunction());
         
         // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
         QueryImpl expectedQuery = new QueryImpl();
@@ -451,13 +464,16 @@ public class ShardQueryConfigurationTest {
     }
     
     /**
-     * This test will fail if a new variable is added improperly to the ShardQueryConfiguration
+     * This test is a canary to make sure any new additions to the ShardQueryLogic are also added to the
+     * {@link ShardQueryConfiguration#ShardQueryConfiguration(ShardQueryConfiguration)} method.
+     * <p>
+     * As annoying as this test is, it's more annoying to have properties that do not get cloned all the way through
      *
      * @throws IOException
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 186;
+        int expectedObjectCount = 187;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

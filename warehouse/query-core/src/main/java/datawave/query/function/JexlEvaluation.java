@@ -52,7 +52,11 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         this.arithmetic = arithmetic;
         
         // Get a JexlEngine initialized with the correct JexlArithmetic for this Document
-        this.engine = ArithmeticJexlEngines.getEngine(arithmetic, usePartialInterpreter, incompleteFields);
+        if (usePartialInterpreter) {
+            this.engine = ArithmeticJexlEngines.getEngine(arithmetic, incompleteFields);
+        } else {
+            this.engine = ArithmeticJexlEngines.getEngine(arithmetic);
+        }
         
         // Evaluate the JexlContext against the Script
         this.script = DatawaveJexlScript.create((ExpressionImpl) this.engine.createScript(this.query));

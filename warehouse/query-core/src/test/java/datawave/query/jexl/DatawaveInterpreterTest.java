@@ -226,6 +226,13 @@ public class DatawaveInterpreterTest {
         test(query, buildTermOffsetContext(), false);
     }
     
+    @Test
+    public void testMultipleTimeFunctions() {
+        // long value is 80+ years
+        String query = "FOO == 'bar' && filter:getMaxTime(DEATH_DATE) - filter:getMinTime(BIRTH_DATE) > 2522880000000L";
+        test(query, buildDateContext(), true);
+    }
+    
     /**
      * Evaluate a query against a default context
      *
@@ -289,6 +296,18 @@ public class DatawaveInterpreterTest {
         DatawaveJexlContext context = new DatawaveJexlContext();
         context.set("SPEED", new FunctionalSet(Arrays.asList("123", "147")));
         context.set("FOO", new FunctionalSet(Arrays.asList("bar", "baz")));
+        return context;
+    }
+    
+    /**
+     * Build a JexlContext with date values to test time functions
+     *
+     * @return a context
+     */
+    protected JexlContext buildDateContext() {
+        JexlContext context = buildDefaultContext();
+        context.set("BIRTH_DATE", new FunctionalSet(Arrays.asList("1910-12-28T00:00:05.000Z", "1930-12-28T00:00:05.000Z", "1950-12-28T00:00:05.000Z")));
+        context.set("DEATH_DATE", new FunctionalSet(Arrays.asList("2000-12-28T00:00:05.000Z")));
         return context;
     }
     

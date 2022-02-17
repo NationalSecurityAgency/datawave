@@ -506,12 +506,12 @@ public class CompositeIndexTest {
         Query query = new QueryImpl();
         query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
         
+        Connector connector = instance.getConnector("root", PASSWORD);
+        
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
-        
-        logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
-        
+        config.setConnector(connector);
+        logic.initialize(config, connector, query, auths);
         logic.setupQuery(config);
-        
         return logic.getTransformIterator(query);
     }
     

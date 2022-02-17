@@ -31,7 +31,7 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
      */
     @Override
     protected JexlEngine getJexlEngine() {
-        return ArithmeticJexlEngines.getEngine(new HitListArithmetic(), true, incompleteFields);
+        return ArithmeticJexlEngines.getEngine(new HitListArithmetic(), incompleteFields);
     }
     
     @Override
@@ -193,6 +193,14 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
         test(query, buildDefaultIncompleteContext(), true);
     }
     
+    // UNKNOWN && DATE_FUNCTION -> UNKNOWN -> TRUE
+    @Test
+    public void testArithmeticWithFunctionOutputs() {
+        // check for boolean coercion errors, long value is 80+ years
+        String query = "FIELD_A == 'a1b2c3' && filter:getMaxTime(DEATH_DATE) - filter:getMinTime(BIRTH_DATE) > 2522880000000L";
+        test(query, buildIncompleteDateContext(), true);
+    }
+    
     /**
      * Evaluate a query against a context with an incomplete field
      * 
@@ -212,6 +220,12 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
      */
     protected JexlContext buildDefaultIncompleteContext() {
         JexlContext context = buildDefaultContext();
+        context.set(INCOMPLETE_FIELD_A, "a1b2c3");
+        return context;
+    }
+    
+    protected JexlContext buildIncompleteDateContext() {
+        JexlContext context = buildDateContext();
         context.set(INCOMPLETE_FIELD_A, "a1b2c3");
         return context;
     }

@@ -1065,6 +1065,9 @@ public class QueryOptions implements OptionDescriber {
         options.put(GROUP_FIELDS_BATCH_SIZE, "group fields.batch.size");
         options.put(UNIQUE_FIELDS, "unique fields");
         options.put(HIT_LIST, "hit list");
+        options.put(USE_PARTIAL_INTERPRETER,
+                        "A flag that indicates the tablet server should do a partial document evaluation. Full document evaluation will happen in the webservice.");
+        options.put(INCOMPLETE_FIELDS, "A set of fields which require additional context to be fully evaluated.");
         options.put(NON_INDEXED_DATATYPES, "Normalizers to apply only at aggregation time");
         options.put(CONTAINS_INDEX_ONLY_TERMS, "Does the query being evaluated contain any terms which are index-only");
         options.put(ALLOW_FIELD_INDEX_EVALUATION,
