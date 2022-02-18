@@ -79,8 +79,8 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
     @Override
     public void write(DataOutput out, boolean reducedResponse) throws IOException {
         writeMetadata(out, reducedResponse);
-        
         WritableUtils.writeCompressedByteArray(out, write());
+        WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
     
     @Override
@@ -94,6 +94,7 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
             throw new IllegalArgumentException("Cannot parse the geometry", e);
         }
         validate();
+        this.toKeep = WritableUtils.readVInt(in) != 0;
     }
     
     @Override
@@ -157,6 +158,7 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
     @Override
     public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         writeMetadata(kryo, output, reducedResponse);
+        output.writeBoolean(this.toKeep);
         byte[] wellKnownBinary = write();
         output.write(wellKnownBinary.length);
         output.write(wellKnownBinary);
@@ -165,6 +167,7 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
     @Override
     public void read(Kryo kryo, Input input) {
         readMetadata(kryo, input);
+        this.toKeep = input.readBoolean();
         int wkbLength = input.read();
         byte[] wellKnownBinary = new byte[wkbLength];
         input.read(wellKnownBinary);

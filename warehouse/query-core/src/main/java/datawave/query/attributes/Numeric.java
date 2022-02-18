@@ -54,6 +54,9 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
         // 8 for string references
     }
     
+    /**
+     * Validates the backing value for this attribute
+     */
     protected void validate() {
         if (value == null) {
             throw new IllegalArgumentException("Numeric value was not set");
@@ -114,6 +117,7 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
     public void write(DataOutput out, boolean reducedResponse) throws IOException {
         writeMetadata(out, reducedResponse);
         WritableUtils.writeString(out, normalizedValue);
+        WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
     
     @Override
@@ -123,6 +127,7 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
         setValue(stringValue);
         setNormalizedValue(stringValue);
         validate();
+        this.toKeep = WritableUtils.readVInt(in) != 0;
     }
     
     @Override
@@ -174,8 +179,8 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
     @Override
     public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         writeMetadata(kryo, output, reducedResponse);
-        
         output.writeString(this.normalizedValue);
+        output.writeBoolean(this.toKeep);
     }
     
     @Override
@@ -185,6 +190,7 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
         setValue(stringValue);
         setNormalizedValue(stringValue);
         validate();
+        this.toKeep = input.readBoolean();
     }
     
     /*

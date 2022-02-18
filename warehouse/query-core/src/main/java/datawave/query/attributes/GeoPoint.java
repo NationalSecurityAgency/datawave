@@ -66,16 +66,16 @@ public class GeoPoint extends Attribute<GeoPoint> implements Serializable {
     @Override
     public void write(DataOutput out, boolean reducedResponse) throws IOException {
         writeMetadata(out, reducedResponse);
-        
         WritableUtils.writeString(out, this.point);
+        WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
     
     @Override
     public void readFields(DataInput in) throws IOException {
         readMetadata(in);
-        
         this.point = WritableUtils.readString(in);
         validate();
+        this.toKeep = WritableUtils.readVInt(in) != 0;
     }
     
     @Override
@@ -140,16 +140,16 @@ public class GeoPoint extends Attribute<GeoPoint> implements Serializable {
     @Override
     public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         writeMetadata(kryo, output, reducedResponse);
-        
         output.writeString(this.point);
+        output.writeBoolean(this.toKeep);
     }
     
     @Override
     public void read(Kryo kryo, Input input) {
         readMetadata(kryo, input);
-        
         this.point = input.readString();
         validate();
+        this.toKeep = input.readBoolean();
     }
     
     /*
