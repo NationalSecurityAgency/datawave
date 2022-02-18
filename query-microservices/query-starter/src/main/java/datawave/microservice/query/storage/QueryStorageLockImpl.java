@@ -92,7 +92,9 @@ public class QueryStorageLockImpl implements QueryStorageLock {
      */
     @Override
     public void unlock() {
-        cacheInspector.unlock(cacheName, storageKey);
+        if (isLocked()) {
+            cacheInspector.unlock(cacheName, storageKey);
+        }
     }
     
     /**

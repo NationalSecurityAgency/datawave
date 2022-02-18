@@ -20,6 +20,7 @@ import org.springframework.kafka.support.Acknowledgment;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static datawave.microservice.query.messaging.AcknowledgementCallback.Status.ACK;
@@ -34,11 +35,12 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
     private final LinkedBlockingQueue<Result> resultQueue = new LinkedBlockingQueue<>();
     private final AbstractMessageListenerContainer<String,String> container;
     private final ObjectMapper objectMapper = new ObjectMapper();
-    
+    private final String queryId;
     private boolean stopped = false;
     
     public KafkaQueryResultsListener(MessagingProperties messagingProperties, ConsumerFactory<String,String> kafkaConsumerFactory, String listenerId,
                     String queryId) {
+        this.queryId = queryId;
         ContainerProperties containerProps = new ContainerProperties(queryId);
         containerProps.setClientId(listenerId);
         
@@ -77,9 +79,12 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
     public void close() {
         stopped = true;
         
-        // nack all of the extra messages we have received
-        for (Result result : resultQueue) {
-            result.acknowledge(NACK);
+        // synchronizing on the resultQueue to ensure onMessage() does not add anymore results
+        synchronized (resultQueue) {
+            // nack all of the extra messages we have received
+            for (Result result : resultQueue) {
+                result.acknowledge(NACK);
+            }
         }
         
         container.stop(false);
@@ -113,9 +118,11 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
      */
     @Override
     public void onMessage(ConsumerRecord<String,String> data, final Acknowledgment acknowledgment) {
+        boolean added = false;
+        
         if (!stopped) {
             if (log.isTraceEnabled()) {
-                log.trace("Listener " + getListenerId() + " got message " + data.key());
+                log.trace("Query " + queryId + " Listener " + getListenerId() + " got message " + data.key());
             }
             
             Result result;
@@ -127,7 +134,8 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
                 resultId = result.getId();
                 
                 if (log.isTraceEnabled()) {
-                    log.trace("Received record {} from topic {} and partition {} at offset {}", resultId, data.topic(), data.partition(), data.offset());
+                    log.trace("Query {} Received record {} from topic {} and partition {} at offset {}", queryId, resultId, data.topic(), data.partition(),
+                                    data.offset());
                 }
                 
                 result.setAcknowledgementCallback(status -> {
@@ -135,37 +143,50 @@ class KafkaQueryResultsListener implements QueryResultsListener, AcknowledgingMe
                     latch.countDown();
                 });
             } catch (JsonProcessingException e) {
-                throw new RuntimeException("Unable to deserialize results", e);
+                throw new RuntimeException("Unable to deserialize results for " + queryId, e);
             }
             
-            resultQueue.add(result);
+            // synchronize on resultQueue to ensure we don't add any results if in the close call.
+            synchronized (resultQueue) {
+                if (!stopped) {
+                    resultQueue.add(result);
+                    added = true;
+                }
+            }
             
-            try {
-                latch.await();
-                if (ackStatus.get() == ACK) {
-                    acknowledgment.acknowledge();
-                    if (log.isTraceEnabled()) {
-                        log.trace("Acking record {} from topic {} and partition {} at offset {}", resultId, data.topic(), data.partition(), data.offset());
+            // if we added the result to the queue, then wait for the ack/nack
+            if (added) {
+                try {
+                    latch.await();
+                    if (ackStatus.get() == ACK) {
+                        acknowledgment.acknowledge();
+                        if (log.isTraceEnabled()) {
+                            log.trace("Query {} Acking record {} from topic {} and partition {} at offset {}", queryId, resultId, data.topic(),
+                                            data.partition(), data.offset());
+                        }
+                    } else if (ackStatus.get() == NACK) {
+                        acknowledgment.nack(0);
+                        if (log.isTraceEnabled()) {
+                            log.trace("Query {} Nacking record {} from topic {} and partition {} at offset {} because the record was rejected", queryId,
+                                            resultId, data.topic(), data.partition(), data.offset());
+                        }
                     }
-                } else if (ackStatus.get() == NACK) {
+                } catch (InterruptedException ie) {
                     acknowledgment.nack(0);
                     if (log.isTraceEnabled()) {
-                        log.trace("Nacking record {} from topic {} and partition {} at offset {} because the record was rejected", resultId, data.topic(),
-                                        data.partition(), data.offset());
+                        log.trace("Query {} Nacking record {} from topic {} and partition {} at offset {} because the latch was interrupted", queryId, resultId,
+                                        data.topic(), data.partition(), data.offset());
                     }
                 }
-            } catch (InterruptedException ie) {
-                acknowledgment.nack(0);
-                if (log.isTraceEnabled()) {
-                    log.trace("Nacking record {} from topic {} and partition {} at offset {} because the latch was interrupted", resultId, data.topic(),
-                                    data.partition(), data.offset());
-                }
             }
-        } else {
+        }
+        
+        // if we did not add the result to the queue, then nack it right away.
+        if (!added) {
             acknowledgment.nack(0);
             if (log.isTraceEnabled()) {
-                log.trace("Nacking record from topic {} and partition {} at offset {} because the container was stopped", data.topic(), data.partition(),
-                                data.offset());
+                log.trace("Query {} Nacking record from topic {} and partition {} at offset {} because the container was stopped", queryId, data.topic(),
+                                data.partition(), data.offset());
             }
         }
     }

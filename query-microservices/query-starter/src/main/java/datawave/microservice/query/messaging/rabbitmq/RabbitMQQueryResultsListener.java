@@ -64,9 +64,12 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
     public void close() {
         stopped = true;
         
-        // nack all of the extra messages we have received
-        for (Result result : resultQueue) {
-            result.acknowledge(NACK);
+        // synchronizing on the resultQueue to ensure onMessage() does not add anymore results
+        synchronized (resultQueue) {
+            // nack all of the extra messages we have received
+            for (Result result : resultQueue) {
+                result.acknowledge(NACK);
+            }
         }
         
         MessageListenerContainer container = endpointRegistry.unregisterListenerContainer(listenerId);
@@ -79,6 +82,7 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
     
     @Override
     public void onMessage(Message message, final Channel channel) throws Exception {
+        boolean added = false;
         if (!stopped) {
             Result result = new ObjectMapper().readerFor(Result.class).readValue(message.getBody());
             
@@ -94,28 +98,40 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
                 latch.countDown();
             });
             
-            resultQueue.add(result);
-            
-            try {
-                latch.await();
-                if (ackStatus.get() == ACK) {
-                    channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-                    if (log.isTraceEnabled()) {
-                        log.trace("Acking record {} from queue {}", result.getId(), queryId);
-                    }
-                } else if (ackStatus.get() == NACK) {
-                    channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
-                    if (log.isTraceEnabled()) {
-                        log.trace("Nacking record {} from queue {} because the record was rejected", result.getId(), queryId);
-                    }
-                }
-            } catch (InterruptedException e) {
-                channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
-                if (log.isTraceEnabled()) {
-                    log.trace("Nacking record {} from queue {} because the latch was interrupted", result.getId(), queryId);
+            // synchronize on resultQueue to ensure we don't add any results if in the close call.
+            synchronized (resultQueue) {
+                if (!stopped) {
+                    resultQueue.add(result);
+                    added = true;
                 }
             }
-        } else {
+            
+            // if we added the result to the queue, then wait for the ack/nack
+            if (added) {
+                try {
+                    latch.await();
+                    if (ackStatus.get() == ACK) {
+                        channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+                        if (log.isTraceEnabled()) {
+                            log.trace("Acking record {} from queue {}", result.getId(), queryId);
+                        }
+                    } else if (ackStatus.get() == NACK) {
+                        channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
+                        if (log.isTraceEnabled()) {
+                            log.trace("Nacking record {} from queue {} because the record was rejected", result.getId(), queryId);
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
+                    if (log.isTraceEnabled()) {
+                        log.trace("Nacking record {} from queue {} because the latch was interrupted", result.getId(), queryId);
+                    }
+                }
+            }
+        }
+        
+        // if we did not add the result to the queue, then nack it right away.
+        if (!added) {
             channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
             if (log.isTraceEnabled()) {
                 log.trace("Nacking record from queue {} because the container was stopped", queryId);

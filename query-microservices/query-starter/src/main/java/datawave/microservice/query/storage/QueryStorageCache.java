@@ -209,7 +209,7 @@ public interface QueryStorageCache {
     QueryTask getTask(TaskKey taskKey);
     
     /**
-     * Update a stored query task with an updated checkpoint.
+     * Update a stored query task with an updated checkpoint. This will also update the last updated time in the task.
      *
      * @param taskKey
      *            The task key to update
@@ -218,6 +218,18 @@ public interface QueryStorageCache {
      * @return The updated query task
      */
     QueryTask checkpointTask(TaskKey taskKey, QueryCheckpoint checkpoint);
+    
+    /**
+     * Update the stored query task last updated time
+     *
+     * @param task
+     *            The task to updatge
+     *
+     * @return The updated query task
+     */
+    default QueryTask updateTask(QueryTask task) {
+        return checkpointTask(task.getTaskKey(), task.getQueryCheckpoint());
+    }
     
     /**
      * Delete a query task.

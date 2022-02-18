@@ -12,8 +12,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class TaskStates implements Serializable {
@@ -221,19 +224,34 @@ public class TaskStates implements Serializable {
         return hasTasksForState(TASK_STATE.FAILED);
     }
     
-    public List<TaskKey> getTasksForState(TASK_STATE state, int maxTasks) {
-        List<TaskKey> tasks = new ArrayList<>();
-        if (maxTasks > 0) {
-            SparseBitSet states = taskStates.get(state);
-            if (states != null) {
-                int taskId = states.nextSetBit(0);
-                while (taskId >= 0 && tasks.size() < maxTasks) {
-                    tasks.add(new TaskKey(taskId, queryKey));
-                    taskId = states.nextSetBit(taskId + 1);
-                }
+    public Iterable<TaskKey> getTasksForState(TASK_STATE state, int maxTasks) {
+        return new Iterable<TaskKey>() {
+            private SparseBitSet states = (taskStates.containsKey(state) ? taskStates.get(state) : new SparseBitSet());
+            
+            @Override
+            public Iterator<TaskKey> iterator() {
+                return new Iterator<TaskKey>() {
+                    private int nextTaskId = states.nextSetBit(0);
+                    private int count = 0;
+                    
+                    @Override
+                    public boolean hasNext() {
+                        return (count != maxTasks) && (nextTaskId >= 0);
+                    }
+                    
+                    @Override
+                    public TaskKey next() {
+                        if (hasNext()) {
+                            TaskKey returnTask = new TaskKey(nextTaskId, queryKey);
+                            nextTaskId = states.nextSetBit(nextTaskId + 1);
+                            count++;
+                            return returnTask;
+                        }
+                        return null;
+                    }
+                };
             }
-        }
-        return tasks;
+        };
     }
     
     @Override
@@ -252,6 +270,17 @@ public class TaskStates implements Serializable {
     
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("queryKey", queryKey).append("maxRunning", maxRunning).append("taskStates", taskStates).build();
+        return new ToStringBuilder(this).append("queryKey", queryKey).append("maxRunning", maxRunning).append("taskStates", taskStatesString()).build();
+    }
+    
+    public String taskStatesString() {
+        StringBuilder str = new StringBuilder();
+        String sep = "";
+        for (TASK_STATE state : TASK_STATE.values()) {
+            str.append(sep);
+            str.append(state).append(':').append(getTaskCountForState(state));
+            sep = ",";
+        }
+        return str.toString();
     }
 }

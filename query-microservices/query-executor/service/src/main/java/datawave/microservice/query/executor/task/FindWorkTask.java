@@ -14,7 +14,6 @@ import org.apache.log4j.Logger;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
 import java.util.concurrent.Callable;
@@ -39,6 +38,7 @@ public class FindWorkTask implements Callable<Void> {
     
     @Override
     public Void call() throws Exception {
+        log.info("Executor status: " + executor.getStatus());
         for (QueryStatus queryStatus : cache.getQueryStatus()) {
             String queryId = queryStatus.getQueryKey().getQueryId();
             switch (queryStatus.getQueryState()) {
@@ -46,15 +46,15 @@ public class FindWorkTask implements Callable<Void> {
                     if (closeCancelCache.add(queryId)) {
                         log.debug("Closing " + queryId);
                         executor.handleRemoteRequest(QueryRequest.close(queryId), originService, destinationService);
+                        recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.FAILED, true);
                     }
-                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.FAILED);
                     break;
                 case CANCEL:
                     if (closeCancelCache.add(queryId)) {
                         log.debug("Cancelling " + queryId);
                         executor.handleRemoteRequest(QueryRequest.cancel(queryId), originService, destinationService);
+                        recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.FAILED, true);
                     }
-                    recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.FAILED);
                     break;
                 case CREATE:
                     // Should we create a new thread to handle the remote request instead so that we can return immediately?
@@ -115,7 +115,35 @@ public class FindWorkTask implements Callable<Void> {
      *            The state to reset orphaned tasks to
      */
     public void recoverOrphanedTasks(String queryId, TaskStates.TASK_STATE state) {
-        recoverOrphanedTasks(queryId, state, Collections.emptyMap());
+        recoverOrphanedTasks(queryId, state, false);
+    }
+    
+    /**
+     * For the specified query id, find tasks that are orphaned and reset their state
+     *
+     * @param queryId
+     *            The query id
+     * @param state
+     *            The state to reset orphaned tasks to
+     * @param all
+     *            If true then all of the running tasks will be addressed instead of maxOrphanedTasksToCheck
+     */
+    public void recoverOrphanedTasks(String queryId, TaskStates.TASK_STATE state, boolean all) {
+        recoverOrphanedTasks(queryId, state, Collections.emptyMap(), all);
+    }
+    
+    /**
+     * For the specified query id, find tasks that are orphaned and reset their state
+     *
+     * @param queryId
+     *            The query id
+     * @param state
+     *            The state to reset orphaned tasks to
+     * @param overrides
+     *            The state to reset orphaned tasks for a specific method
+     */
+    public void recoverOrphanedTasks(String queryId, TaskStates.TASK_STATE state, Map<QueryRequest.Method,TaskStates.TASK_STATE> overrides) {
+        recoverOrphanedTasks(queryId, state, overrides, false);
     }
     
     /**
@@ -127,8 +155,10 @@ public class FindWorkTask implements Callable<Void> {
      *            The state to reset orphaned tasks to
      * @param overrides
      *            The state to reset orphaned tasks for a specific method
+     * @param all
+     *            If true then all of the running tasks will be addressed instead of maxOrphanedTasksToCheck
      */
-    public void recoverOrphanedTasks(String queryId, TaskStates.TASK_STATE state, Map<QueryRequest.Method,TaskStates.TASK_STATE> overrides) {
+    public void recoverOrphanedTasks(String queryId, TaskStates.TASK_STATE state, Map<QueryRequest.Method,TaskStates.TASK_STATE> overrides, boolean all) {
         QueryStorageLock lock = cache.getTaskStatesLock(queryId);
         lock.lock();
         try {
@@ -138,14 +168,15 @@ public class FindWorkTask implements Callable<Void> {
             if (taskStates != null) {
                 log.debug("Searching for orphaned tasks for " + queryId);
                 
-                List<TaskKey> taskKeys = taskStates.getTasksForState(TaskStates.TASK_STATE.RUNNING,
-                                executor.getExecutorProperties().getMaxOrphanedTasksToCheck());
-                for (TaskKey taskKey : taskKeys) {
+                for (TaskKey taskKey : taskStates.getTasksForState(TaskStates.TASK_STATE.RUNNING,
+                                all ? -1 : executor.getExecutorProperties().getMaxOrphanedTasksToCheck())) {
                     QueryTask task = cache.getTask(taskKey);
                     if ((System.currentTimeMillis() - task.getLastUpdatedMillis()) > executor.getExecutorProperties().getOrphanThresholdMs()) {
                         if (overrides.containsKey(task.getAction())) {
+                            log.info("Resetting orphaned task " + taskKey.getTaskId() + " for " + queryId + " to " + overrides.get(task.getAction()));
                             taskStates.setState(taskKey.getTaskId(), overrides.get(task.getAction()));
                         } else {
+                            log.info("Resetting orphaned task " + taskKey.getTaskId() + " for " + queryId + " to " + state);
                             taskStates.setState(taskKey.getTaskId(), state);
                         }
                     }

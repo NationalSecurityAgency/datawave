@@ -34,9 +34,9 @@ public class ExecutorProperties {
     // the max cache size used by the monitor to avoid excessive close/cancel task executions
     private int monitorMaxCacheSize = 500;
     
-    // The time after which we consider a task orphaned. Note that this should be greater than checkpointFlushMs
+    // The time after which we consider a task orphaned. Note that this must be greater than checkpointFlushMs
     // as that defines how ofter the task timestamp is updated.
-    private long orphanThresholdMs = 5000;
+    private long orphanThresholdMs = 60000;
     
     // The max number of orphaned tasks to check per monitor cycle
     private int maxOrphanedTasksToCheck = 100;

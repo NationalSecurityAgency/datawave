@@ -50,6 +50,7 @@ datawave:
       queryStatusExpirationMs: 60000
       checkpointFlushMs: 1000
       checkpointFlushResults: 2
+      orphanThresholdMs: 60000
       monitorTaskLease: 30
       monitorTaskLeaseTimeUnit: SECONDS
       monitor:

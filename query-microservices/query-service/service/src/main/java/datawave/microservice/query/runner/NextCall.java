@@ -202,8 +202,8 @@ public class NextCall implements Callable<ResultsPage<Object>> {
         }
         
         // 5) have we retrieved all of the results?
-        if (!finished && (queryStatus.getCreateStage() == QueryStatus.CREATE_STAGE.RESULTS) && !getTaskStates().hasUnfinishedTasks()
-                        && queryResultsManager.getNumResultsRemaining(queryId) == 0) {
+        if (!finished && (queryStatus.getCreateStage() == QueryStatus.CREATE_STAGE.RESULTS) && !getTaskStates().hasUnfinishedTasks()) {
+            
             // update the number of results consumed
             queryStatus = updateNumResultsConsumed();
             
@@ -220,6 +220,9 @@ public class NextCall implements Callable<ResultsPage<Object>> {
             
             // how many results does the broker think are left
             long brokerResultsRemaining = queryResultsManager.getNumResultsRemaining(queryId);
+            
+            log.info("All tasks appear to be completed for " + queryId + " with " + queryResultsRemaining + " yet to be retrieved and " + brokerResultsRemaining
+                            + " left in broker");
             
             // if the broker thinks there are not results left, we may be done
             if (brokerResultsRemaining == 0) {

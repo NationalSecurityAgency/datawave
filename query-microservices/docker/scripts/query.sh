@@ -62,7 +62,7 @@ get_num_events () {
     done
 }
 
-FOLDER="query_$(date +%Y%m%d_%I%M%S.%3N)"
+FOLDER="query_$(date +%Y%m%d_%I%M%S.%3N)${1}"
 
 mkdir $FOLDER
 cd $FOLDER

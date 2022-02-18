@@ -58,7 +58,7 @@ public class FindWorkMonitor {
                 } catch (InterruptedException e) {
                     log.warn("Query Monitor task was interrupted");
                 } catch (Exception e) {
-                    log.error("Query Monitor task failed", e.getCause());
+                    log.error("Query Monitor task failed", e);
                 }
                 taskFuture = null;
             } else if (isTaskLeaseExpired()) {

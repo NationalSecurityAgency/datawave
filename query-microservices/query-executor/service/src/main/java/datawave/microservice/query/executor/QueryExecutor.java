@@ -96,6 +96,10 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         log.info("Listening to bus id " + busProperties.getId() + " with a destination of " + busProperties.getDestination());
     }
     
+    public String getStatus() {
+        return threadPool.toString();
+    }
+    
     private void removeFromWorkQueue(String queryId) {
         List<Runnable> removals = new ArrayList<Runnable>();
         for (Runnable action : workQueue) {
@@ -129,7 +133,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         
         final QueryStatus queryStatus = cache.getQueryStatus(queryId);
         
-        // validate we actual have such a query
+        // validate we actually have such a query
         if (queryStatus == null) {
             String msg = "Failed to find stored query status for " + queryId;
             log.error(msg);
@@ -202,12 +206,13 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                 int tasksAvailableToRun = taskStates.getAvailableReadyTasksToRun();
                 
                 // use less if our thread pool is already full
-                tasksAvailableToRun = Math.min(tasksAvailableToRun, threadPool.getMaximumPoolSize() - threadPool.getActiveCount());
+                tasksAvailableToRun = Math.min(tasksAvailableToRun,
+                                threadPool.getMaximumPoolSize() - threadPool.getQueue().size() - threadPool.getActiveCount());
                 
-                log.debug("Getting up to " + tasksAvailableToRun + " tasks to run for " + queryId);
+                log.info("Getting up to " + tasksAvailableToRun + " tasks to run for " + queryId + " (" + taskStates.taskStatesString() + ", "
+                                + threadPool.getActiveCount() + '/' + threadPool.getMaximumPoolSize());
                 if (tasksAvailableToRun > 0) {
-                    List<TaskKey> taskKeys = taskStates.getTasksForState(TaskStates.TASK_STATE.READY, tasksAvailableToRun);
-                    for (TaskKey taskKey : taskKeys) {
+                    for (TaskKey taskKey : taskStates.getTasksForState(TaskStates.TASK_STATE.READY, tasksAvailableToRun)) {
                         QueryTask task = cache.getTask(taskKey);
                         
                         // if we have such a task, and the task is for the action requested,
@@ -227,12 +232,16 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                     
                     // store the updated task states if we changed anything
                     if (!nextTasks.isEmpty()) {
+                        // update the tasks last update millis to avoid the appearance of orphaned tasks
+                        for (QueryTask task : nextTasks) {
+                            cache.updateTask(task);
+                        }
+                        // now update the task states
                         cache.updateTaskStates(taskStates);
                     }
                 }
             } else {
                 log.error("Need to cleanup query because we have no task states for " + queryId);
-                // TODO: cleanup the query because we are referencing a query that has no task states ??
             }
         } finally {
             lock.unlock();

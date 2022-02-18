@@ -137,7 +137,6 @@ public abstract class ExecutorTask implements Runnable {
             DatawaveErrorCode errorCode = DatawaveErrorCode.QUERY_EXECUTION_ERROR;
             cache.updateFailedQueryStatus(taskKey.getQueryId(), e);
         } finally {
-            queryTaskUpdater.close();
             if (connector != null) {
                 try {
                     connectionFactory.returnConnection(connector);
@@ -160,6 +159,7 @@ public abstract class ExecutorTask implements Runnable {
                 // more work to do on this task, lets notify
                 publishExecutorEvent(QueryRequest.next(queryId), task.getTaskKey().getQueryPool());
             }
+            queryTaskUpdater.close();
         }
     }
     
@@ -380,6 +380,7 @@ public abstract class ExecutorTask implements Runnable {
         }
         
         public void start() {
+            refreshTask();
             workThread = new Thread(this, "Checkpoint Updater for " + task.getTaskKey().toString());
             workThread.setDaemon(true);
             workThread.start();
@@ -421,9 +422,11 @@ public abstract class ExecutorTask implements Runnable {
         
         protected void refreshTask() {
             if (queryLogic != null) {
+                // update the task checkpoint and its last update millis
                 task = cache.checkpointTask(task.getTaskKey(), queryLogic.updateCheckpoint(task.getQueryCheckpoint()));
             } else {
-                task = cache.checkpointTask(task.getTaskKey(), task.getQueryCheckpoint());
+                // update the task last update millis
+                task = cache.updateTask(task);
             }
         }
         
