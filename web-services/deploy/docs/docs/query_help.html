@@ -209,5 +209,16 @@
 		</ul>
 		<li>A special date format of 'e' can be supplied to mean milliseconds since epoch.</li>
 	</ol>
+	<p class="left">In addition, there are functions that are available to visit the query tree, and perform operations on the nodes and their
+		children. The extracted parameters will be added to the provided data. Potential function options that the user may use are listed below.</p>
+	<ul>
+		<li>f:options(): Expects a comma-delimited list of key/value pairs, e.g. f:options('hit.list','true','limit.fields','FOO_1_BAR=3)</li>
+		<li>f:groupby(): Expects a comma-delimited list of fields to group by, e.g. f:groupby('field1','field2',field3')</li>
+		<li>f:unique(): Expects a comma-delimited list of fields to be unique and their granularity levels, e.g. f:unique('field1[ALL]','field2[DAY]','field3[MINUTE,SECOND]')</li>
+		<li>f:unique_by_day(): Expects a comma-delimited list of fields to be unique with a granularity level of by DAY, e.g. unique_by_day('field1','field2')</li>
+		<li>f:unique_by_minute(): Expects a comma-delimited list of fields to be unique with a granularity level of by MINUTE, e.g. unique_by_minute('field1','field2')</li>
+		<li>f:unique_by_second(): Expects a comma-delimited list of fields to be unique with a granularity level of by SECOND, e.g. unique_by_second('field1','field2')</li>
+	</ul>
+
 	<br />
 </body>
