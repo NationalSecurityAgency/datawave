@@ -1,14 +1,16 @@
 package datawave.query.transformer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map.Entry;
-
+import datawave.marking.MarkingFunctions;
 import datawave.query.table.parser.TermFrequencyKeyValueFactory;
+import datawave.query.table.parser.TermFrequencyKeyValueFactory.TermFrequencyKeyValue;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.exception.EmptyObjectException;
+import datawave.webservice.query.logic.BaseQueryLogicTransformer;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.Metadata;
+import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -16,17 +18,15 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.shaded.com.google.common.collect.ImmutableList;
 
-import datawave.marking.MarkingFunctions;
-import datawave.query.table.parser.TermFrequencyKeyValueFactory.TermFrequencyKeyValue;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.exception.EmptyObjectException;
-import datawave.webservice.query.logic.BaseQueryLogicTransformer;
-import datawave.webservice.result.BaseQueryResponse;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
 
 public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,DefaultEvent> {
     
     private Query query = null;
     private Authorizations auths = null;
+    private long queryExecutionForCurrentPageStartTime;
     
     public TermFrequencyQueryTransformer(Query query, MarkingFunctions markingFunctions) {
         super(markingFunctions);
@@ -81,7 +81,12 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
         
         return e;
     }
-    
+
+    @Override
+    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
+        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
+    }
+
     protected DefaultField createField(TermFrequencyKeyValue tfkv, Entry<Key,Value> e, String name, String value) {
         DefaultField field = new DefaultField();
         field.setMarkings(tfkv.getMarkings());

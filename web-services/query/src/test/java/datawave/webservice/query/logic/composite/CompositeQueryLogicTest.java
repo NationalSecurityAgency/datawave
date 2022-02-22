@@ -1,16 +1,5 @@
 package datawave.webservice.query.logic.composite;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
 import datawave.marking.MarkingFunctions;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
@@ -23,15 +12,10 @@ import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.ResultsPage.Status;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.BaseQueryLogicTransformer;
-import datawave.webservice.query.logic.DatawaveRoleManager;
-import datawave.webservice.query.logic.EasyRoleManager;
-import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.logic.*;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.result.BaseQueryResponse;
-
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -42,6 +26,10 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CompositeQueryLogicTest {
     
@@ -154,7 +142,9 @@ public class CompositeQueryLogicTest {
         public TestQueryLogicTransformer(MarkingFunctions markingFunctions) {
             super(markingFunctions);
         }
-        
+
+        long queryExecutionForCurrentPageStartTime;
+
         @Override
         public TestQueryResponse transform(Entry<?,?> input) {
             if (input instanceof Entry<?,?>) {
@@ -168,7 +158,12 @@ public class CompositeQueryLogicTest {
                 throw new IllegalArgumentException("Invalid input type: " + input.getClass());
             }
         }
-        
+
+        @Override
+        public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
+            this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
+        }
+
         @Override
         public BaseQueryResponse createResponse(List<Object> resultList) {
             TestQueryResponseList response = new TestQueryResponseList();
@@ -186,6 +181,8 @@ public class CompositeQueryLogicTest {
         public DifferentTestQueryLogicTransformer(MarkingFunctions markingFunctions) {
             super(markingFunctions);
         }
+
+        long queryExecutionForCurrentPageStartTime;
         
         @Override
         public TestQueryResponse transform(Entry<?,?> input) {
@@ -200,7 +197,12 @@ public class CompositeQueryLogicTest {
                 throw new IllegalArgumentException("Invalid input type: " + input.getClass());
             }
         }
-        
+
+        @Override
+        public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
+            this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
+        }
+
         @Override
         public BaseQueryResponse createResponse(List<Object> resultList) {
             return new TestEdgeQueryResponse();

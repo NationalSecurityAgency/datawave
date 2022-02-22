@@ -61,7 +61,9 @@ public abstract class Query {
     public abstract boolean isMaxResultsOverridden();
     
     public abstract Set<Parameter> getParameters();
-    
+
+    public abstract long getQueryExecutionForCurrentPageStartTime();
+
     public abstract void setParameters(Set<Parameter> params);
     
     public abstract void setQueryLogicName(String name);
@@ -79,7 +81,9 @@ public abstract class Query {
     public abstract Parameter findParameter(String parameter);
     
     public abstract void setParameters(Map<String,String> parameters);
-    
+
+    public abstract void setQueryExecutionForCurrentPageStartTime(long queryExecutionForCurrentPageStartTime);
+
     public abstract void addParameter(String key, String val);
     
     public abstract void addParameters(Map<String,String> parameters);

@@ -1,7 +1,5 @@
 package datawave.webservice.query.logic.composite;
 
-import java.util.List;
-
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
@@ -9,8 +7,9 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.AbstractQueryLogicTransformer;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.result.BaseQueryResponse;
-
 import org.apache.log4j.Logger;
+
+import java.util.List;
 
 public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTransformer<I,O> implements CacheableLogic {
     
@@ -21,6 +20,8 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
     public CompositeQueryLogicTransformer(List<QueryLogicTransformer<I,O>> delegates) {
         this.delegates = delegates;
     }
+
+    private long queryExecutionForCurrentPageStartTime;
     
     @Override
     public O transform(I input) {
@@ -40,7 +41,12 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         }
         return result;
     }
-    
+
+    @Override
+    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
+        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
+    }
+
     @Override
     public List<CacheableQueryRow> writeToCache(Object o) throws QueryException {
         List<CacheableQueryRow> result = null;

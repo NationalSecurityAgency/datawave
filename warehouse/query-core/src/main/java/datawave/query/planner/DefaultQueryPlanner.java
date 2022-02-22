@@ -394,10 +394,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // lets mark the query as started (used by ivarators at a minimum)
         try {
             markQueryStarted(config, settings);
+            settings.setQueryExecutionForCurrentPageStartTime(System.currentTimeMillis());
         } catch (Exception e) {
             throw new DatawaveQueryException("Failed to mark query as started" + settings.getId(), e);
         }
-        
         return process(scannerFactory, getMetadataHelper(config), getDateIndexHelper(config), config, query, settings);
     }
     

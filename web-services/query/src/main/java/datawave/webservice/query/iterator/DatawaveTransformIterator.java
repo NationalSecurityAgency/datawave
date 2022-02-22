@@ -1,12 +1,13 @@
 package datawave.webservice.query.iterator;
 
+import datawave.webservice.query.exception.EmptyObjectException;
+import datawave.webservice.query.exception.IntermediateResultException;
 import datawave.webservice.query.logic.Flushable;
-import java.util.Iterator;
-
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import datawave.webservice.query.exception.EmptyObjectException;
 import org.apache.log4j.Logger;
+
+import java.util.Iterator;
 
 public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
     
@@ -57,6 +58,8 @@ public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
                 done = true;
             } catch (EmptyObjectException e) {
                 // not yet done, so continue fetching next
+            } catch (IntermediateResultException e) {
+                throw(e);
             }
         }
         // see if there are any results cached by the transformer
@@ -68,6 +71,8 @@ public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
                     done = true;
                 } catch (EmptyObjectException e) {
                     // not yet done, so continue flushing
+                }  catch (IntermediateResultException e) {
+                    throw(e);
                 }
             }
         }

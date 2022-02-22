@@ -1,10 +1,6 @@
 package datawave.query.transformer;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.SortedSetMultimap;
-import com.google.common.collect.TreeMultimap;
+import com.google.common.collect.*;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
@@ -15,6 +11,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.exception.IntermediateResultException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -26,20 +23,8 @@ import org.springframework.util.Assert;
 
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -96,20 +81,33 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     private List<Key> keys = new ArrayList<>();
     
     /**
-     * flatten or not. true on the tserver, false on the webserver
+     * Indicates the caller of this iterator - true on the tserver, false on the webserver
      */
-    private boolean flatten;
+    private boolean runningOnTServer = false;
+
+    /**
+     * Used by the web client. How long to let a page of results collect before signaling to return a blank page to the client
+     * (which indicates the request is still in process and all results will be returned at once at the end)
+     */
+    private long queryExecutionForPageTimeout;
+
+//    private long queryExecutionForPageStartTime;
+
+    /**
+     *
+     */
+    private boolean allowLongRunningQuery;
     
     /**
-     * tserver calls this CTOR with flatten = true. Called by QueryIterator::seek
+     * tserver calls this CTOR with runningOnTServer = true. Called by QueryIterator::seek
      * 
      * @param logic
      * @param groupFieldsSet
-     * @param flatten
+     * @param runningOnTServer
      */
-    public GroupingTransform(BaseQueryLogic<Entry<Key,Value>> logic, Collection<String> groupFieldsSet, boolean flatten) {
-        this(logic, groupFieldsSet);
-        this.flatten = flatten;
+    public GroupingTransform(BaseQueryLogic<Entry<Key,Value>> logic, Collection<String> groupFieldsSet, boolean runningOnTServer, long queryExecutionTimeout, boolean allowLongRunningQuery) {
+        this(logic, groupFieldsSet, queryExecutionTimeout, allowLongRunningQuery);
+        this.runningOnTServer = runningOnTServer;
     }
     
     /**
@@ -118,8 +116,11 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * @param logic
      * @param groupFieldsSet
      */
-    public GroupingTransform(BaseQueryLogic<Entry<Key,Value>> logic, Collection<String> groupFieldsSet) {
+    public GroupingTransform(BaseQueryLogic<Entry<Key,Value>> logic, Collection<String> groupFieldsSet, long queryExecutionForPageTimeout, boolean allowLongRunningQuery) {
         this.groupFieldsSet = deconstruct(groupFieldsSet);
+        this.runningOnTServer = false;
+        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
+        this.allowLongRunningQuery = allowLongRunningQuery;
         if (logic != null) {
             QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
             if (model != null) {
@@ -159,14 +160,14 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     }
     
     /**
-     * Aggregate items from the incoming iterator and supply them via the flush method
+     * Aggregate items from the incoming iterator and supply them via the flush method. This iterator is shared by both
+     * the client and the tserver. Consider explicitly separating them for clarity.
      * 
      * @param in
      *            an iterator source
      * @return the flushed value that is an aggregation from the source iterator
      */
     public Iterator<Entry<Key,Document>> getGroupingIterator(final Iterator<Entry<Key,Document>> in, int groupFieldsBatchSize, YieldCallback<Key> yieldCallback) {
-        
         return new Iterator<Entry<Key,Document>>() {
             
             Entry<Key,Document> next;
@@ -195,7 +196,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             
             @Override
             public Entry<Key,Document> next() {
-                if (flatten) {
+                if (runningOnTServer) {
                     return new AbstractMap.SimpleEntry<>(next.getKey(), next.getValue());
                 } else {
                     // web server will aggregate the visibilities from the Attributes
@@ -210,10 +211,16 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             }
         };
     }
-    
+
+    /**
+     * The client uses this method to retrieve the next element - it does not call #getIterator().next().
+     * The tserver uses this method in #getIterator().hasNext() to set the next value for the iterator.
+     * @return
+     */
     @Override
     public Entry<Key,Document> flush() {
-        
+        Document document = null;
+
         if (!countingMap.isEmpty()) {
             
             log.trace("flush will use the countingMap: {}", countingMap);
@@ -240,26 +247,46 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 d.put("COUNT", attr);
                 documents.add(d);
             }
-            if (flatten) {
+            if (runningOnTServer) {
                 // flatten to just one document on the tserver.
-                flatten(documents);
+                document = flatten(documents);
             }
         }
-        if (!documents.isEmpty()) {
+
+        // Handle if the current page has exceeded its execution timeout, but there are still more results to return
+        // This is WEB-CLIENT behavior only (the tserver will always have queryExecutionForPageStartTime == 0)
+        if (!runningOnTServer && allowLongRunningQuery && this.queryExecutionForPageStartTime > 0) {
+            long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
+            if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
+                // Reset the queryExecutionForPageStartTime and clear the documents list so that it doesn't contain
+                // duplicates
+                this.queryExecutionForPageStartTime = System.currentTimeMillis();
+                documents.clear();
+                throw new IntermediateResultException();
+            }
+        }
+
+        // Flatten has not been called - the client is calling this, not the tserver.
+        if (document == null && !documents.isEmpty()) {
             log.trace("{} will flush first of {} documents: {}", this.hashCode(), documents.size(), documents);
-            Document d = documents.pop();
+            document = documents.pop();
+        }
+
+       if (document != null) {
             Key key;
-            if (keys.size() > 0 && flatten) {
+            if (keys.size() > 0 && runningOnTServer) {
                 // use the last (most recent) key so a new iterator will know where to start
                 key = keys.get(keys.size() - 1);
             } else {
-                key = d.getMetadata();
+                key = document.getMetadata();
             }
-            Entry<Key,Document> entry = Maps.immutableEntry(key, d);
-            log.trace("flushing out {}", entry);
-            countingMap.clear();
-            return entry;
+
+           Entry<Key,Document> entry = Maps.immutableEntry(key, document);
+           log.trace("flushing out {}", entry);
+           countingMap.clear();
+           return entry;
         }
+
         return null;
     }
     
@@ -312,7 +339,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      *
      * @param documents
      */
-    private void flatten(List<Document> documents) {
+    private Document flatten(List<Document> documents) {
         log.trace("flatten {}", documents);
         Document theDocument = new Document(documents.get(documents.size() - 1).getMetadata(), true);
         int context = 0;
@@ -336,7 +363,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         theDocument.setColumnVisibility(combinedVisibility);
         documents.clear();
         log.trace("flattened document: {}", theDocument);
-        documents.add(theDocument);
+        return theDocument;
     }
     
     private Multimap<String,String> getFieldToFieldWithGroupingContextMap(Document d, Set<String> expandedGroupFieldsList) {
@@ -401,7 +428,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     }
     
     private GroupingTypeAttribute<?> makeGroupingTypeAttribute(String fieldName, Object fieldValue) {
-        log.trace("{} creating attribute with {} and {}", flatten ? "tserver" : "webserver", fieldName, fieldValue);
+        log.trace("{} creating attribute with {} and {}", runningOnTServer ? "tserver" : "webserver", fieldName, fieldValue);
         return new GroupingTypeAttribute<>((Type) fieldValue, createAttrKey(fieldName), true);
     }
     
@@ -415,7 +442,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     
     private void getListKeyCounts(Entry<Key,Document> entry) {
         
-        log.trace("{} get list key counts for: {}", flatten ? "t" : "web" + "server", entry);
+        log.trace("{} get list key counts for: {}", runningOnTServer ? "t" : "web" + "server", entry);
         keys.add(entry.getKey());
         
         Set<String> expandedGroupFieldsList = new LinkedHashSet<>();
@@ -465,7 +492,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 if (count == null)
                     count = 1;
                 // see above comment about the COUNT field
-                log.trace("{} adding {} of {} to counting map", flatten ? "tserver" : "webserver", count, fieldCollection);
+                log.trace("{} adding {} of {} to counting map", runningOnTServer ? "tserver" : "webserver", count, fieldCollection);
                 IntStream.range(0, count).forEach(j -> countingMap.add(fieldCollection));
                 fieldVisibilities.put(fieldCollection, getColumnVisibility(entry));
                 log.trace("put {} to {} into fieldVisibilities {}", fieldCollection, getColumnVisibility(entry), fieldVisibilities);

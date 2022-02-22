@@ -83,6 +83,8 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     private Set<String> blacklistedFields = Collections.emptySet();
     
     protected List<DocumentTransform> transforms = new ArrayList<>();
+
+    protected long queryExecutionForCurrentPageStartTime;
     
     /*
      * The 'HIT_TERM' feature required that an attribute value also contain the attribute's field name. The current implementation does it by prepending the
@@ -171,7 +173,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     protected Collection<FieldBase<?>> buildDocumentFields(Key documentKey, String documentName, Document document, ColumnVisibility topLevelColumnVisibility,
                     MarkingFunctions markingFunctions) {
         
-        // Whether the fields were added to projectFields or removed from blacklistedFields, they user does not want them returned
+        // Whether the fields were added to projectFields or removed from blacklistedFields, the user does not want them returned
         // If neither a projection nor a blacklist was used then the suppressFields set should remain empty
         Set<String> suppressFields = Collections.emptySet();
         if (cardinalityConfiguration != null) {

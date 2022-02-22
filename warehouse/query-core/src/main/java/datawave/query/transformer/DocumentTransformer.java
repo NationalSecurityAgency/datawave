@@ -6,14 +6,12 @@ import datawave.query.attributes.Document;
 import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.EmptyObjectException;
+import datawave.webservice.query.exception.IntermediateResultException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.Flushable;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.logic.WritesResultCardinalities;
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.FieldBase;
-import datawave.webservice.query.result.event.Metadata;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.result.event.*;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -59,7 +57,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
     }
     
     @Override
-    public EventBase flush() throws EmptyObjectException {
+    public EventBase flush() throws EmptyObjectException, IntermediateResultException {
         Entry<Key,Document> documentEntry = null;
         boolean flushedObjectFound = false;
         for (DocumentTransform transform : transforms) {
@@ -86,7 +84,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
     }
     
     @Override
-    public EventBase transform(Entry<Key,Value> entry) throws EmptyObjectException {
+    public EventBase transform(Entry<Key,Value> entry) throws EmptyObjectException, IntermediateResultException {
         
         Entry<Key,Document> documentEntry = deserializer.apply(entry);
         for (DocumentTransform transform : transforms) {
@@ -96,16 +94,16 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
                 break;
             }
         }
-        
+
         return _transform(documentEntry);
     }
     
-    private EventBase _transform(Entry<Key,Document> documentEntry) throws EmptyObjectException {
+    private EventBase _transform(Entry<Key,Document> documentEntry) throws EmptyObjectException, IntermediateResultException {
         if (documentEntry == null) {
             // buildResponse will return a null object if there was only metadata in the document
             throw new EmptyObjectException();
         }
-        
+
         Key documentKey = correctKey(documentEntry.getKey());
         Document document = documentEntry.getValue();
         
@@ -130,19 +128,21 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         ColumnVisibility eventCV = new ColumnVisibility(documentKey.getColumnVisibility());
         
         EventBase output = null;
-        try {
-            // build response method here
-            output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);
-        } catch (Exception ex) {
-            log.error("Error building response document", ex);
-            throw new RuntimeException(ex);
-        }
-        
+
+            try {
+                // build response method here
+                output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);
+            } catch (Exception ex) {
+                log.error("Error building response document", ex);
+                throw new RuntimeException(ex);
+            }
+
         if (output == null) {
-            // buildResponse will return a null object if there was only metadata in the document
+            // buildResponse will return a null object if there was only metadata in the document and a special flag was
+            // not found in the document
             throw new EmptyObjectException();
         }
-        
+
         if (cardinalityConfiguration != null) {
             collectCardinalities(document, documentKey, uid, dataType);
         }
@@ -190,6 +190,14 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         }
         
         return event;
+    }
+
+    @Override
+    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
+        for (DocumentTransform dt: transforms) {
+            dt.setQueryExecutionForPageStartTime(queryExecutionForCurrentPageStartTime);
+        }
+        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
     
 }

@@ -182,6 +182,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private Set<String> mandatoryQuerySyntax = null;
     private QueryPlanner planner = null;
     private QueryParser parser = null;
+    private QueryLogicTransformer transformerInstance = null;
     
     private CardinalityConfiguration cardinalityConfiguration = null;
     
@@ -445,7 +446,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         } else {
             this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
         }
-        
+
+        // Now that the query has been started, update the transformers used by the client  with the start time that was set on the settings
+        // by the call to process()
+        getTransformer(settings).setQueryExecutionForPageStartTime(settings.getQueryExecutionForCurrentPageStartTime());
+
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
         
         if (this.queries != null) {
@@ -575,6 +580,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
+        if (this.transformerInstance != null) {
+            return this.transformerInstance;
+        }
+
         MarkingFunctions markingFunctions = this.getMarkingFunctions();
         ResponseObjectFactory responseObjectFactory = this.getResponseObjectFactory();
         
@@ -598,13 +607,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 transformer.addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
             }
             if (getConfig().getGroupFields() != null && !getConfig().getGroupFields().isEmpty()) {
-                transformer.addTransform(new GroupingTransform(this, getConfig().getGroupFields()));
+                transformer.addTransform(new GroupingTransform(this, getConfig().getGroupFields(), this.getQueryExecutionForPageTimeout(), this.isLongRunningQuery()));
             }
         }
-        
-        return transformer;
+        this.transformerInstance = transformer;
+        return this.transformerInstance;
     }
-    
+
     protected void loadQueryParameters(ShardQueryConfiguration config, Query settings) throws QueryException {
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Parse query parameters");
         boolean rawDataOnly = false;
@@ -872,7 +881,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         final String postProcessingClasses = settings.findParameter(QueryOptions.POSTPROCESSING_CLASSES).getParameterValue().trim();
         
         final String postProcessingOptions = settings.findParameter(QueryOptions.POSTPROCESSING_OPTIONS).getParameterValue().trim();
-        
+
         // build the post p
         if (org.apache.commons.lang.StringUtils.isNotBlank(postProcessingClasses)) {
             
@@ -1997,7 +2006,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public boolean getAllowShortcutEvaluation() {
         return getConfig().getAllowShortcutEvaluation();
     }
-    
+
     public void setAllowShortcutEvaluation(boolean allowShortcutEvaluation) {
         getConfig().setAllowShortcutEvaluation(allowShortcutEvaluation);
     }

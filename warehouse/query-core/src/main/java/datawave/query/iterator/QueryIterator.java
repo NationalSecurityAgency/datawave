@@ -3,7 +3,6 @@ package datawave.query.iterator;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -198,7 +197,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected Map<String,Object> exceededOrEvaluationCache = null;
     
     protected ActiveQueryLog activeQueryLog;
-    
     public QueryIterator() {}
     
     public QueryIterator(QueryIterator other, IteratorEnvironment env) {
@@ -1185,7 +1183,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             this.key = entry.getKey();
             this.value = entry.getValue();
-            
+
             if (Trace.isTracing()) {
                 span.data("Key", rowColFamToString(this.key));
             }
@@ -1601,7 +1599,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (groupingTransform == null && getGroupFields() != null && !getGroupFields().isEmpty()) {
             synchronized (getGroupFields()) {
                 if (groupingTransform == null) {
-                    groupingTransform = new GroupingTransform(null, getGroupFields(), true);
+                    groupingTransform = new GroupingTransform(null, getGroupFields(), true, this.queryExecutionTimeout, this.allowLongRunningQuery);
                     groupingTransform.initialize(null, MarkingFunctionsFactory.createMarkingFunctions());
                 }
             }
