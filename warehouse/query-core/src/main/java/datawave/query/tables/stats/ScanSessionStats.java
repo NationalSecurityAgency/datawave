@@ -104,7 +104,7 @@ public class ScanSessionStats {
         
         logToUse.debug("Elapsed time running query");
         
-        final int length = Integer.valueOf(TIMERS.values().length).toString().length();
+        final int length = Integer.toString(TIMERS.values().length).length();
         for (TIMERS timer : TIMERS.values()) {
             
             final String countStr = Integer.toString(count);

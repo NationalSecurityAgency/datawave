@@ -74,6 +74,7 @@
             datawave.webservice.operations.user.LookupBean,
             <!-- From Query -->
             datawave.webservice.query.runner.QueryExecutorBean,
+            datawave.webservice.query.runner.BasicQueryBean,
             datawave.webservice.query.hud.HudBean,
             datawave.webservice.query.metric.QueryMetricsBean,
             datawave.webservice.query.cache.QueryCacheBean,
@@ -114,6 +115,8 @@
             datawave.webservice.result.VoidResponseHtmlMessageBodyWriter,
             datawave.resteasy.util.DateParamConverterProvider,
             datawave.security.authorization.DatawaveUserHtmlMessageBodyWriter,
+            org.jboss.resteasy.plugins.interceptors.encoding.GZIPEncodingInterceptor,
+            org.jboss.resteasy.plugins.interceptors.encoding.GZIPDecodingInterceptor,
             datawave.security.user.TextMessageBodyWriter
         </param-value>
     </context-param>

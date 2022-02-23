@@ -28,14 +28,14 @@ import com.google.common.collect.HashMultimap;
 /**
  * This is a simple JEXL query filter iterator used in conjunction with the EdgeQueryLogic to evaluate more complicated expressions against edge keys.
  *
- * As implemented as of 3.0, EdgeQuery by itself will configure ranges, and regex filters that will return ALL keys that could satisfy the supplied JEXL query.
- * This filter is intended to pair the returned values from that iterator stack down to only those that actually do adhere to the full JEXL expression.
+ * EdgeQuery by itself will configure ranges, and regex filters that will return ALL keys that could satisfy the supplied JEXL query. This filter is intended to
+ * pair the returned values from that iterator stack down to only those that actually do adhere to the full JEXL expression.
  *
  * Prefiltering is an optional component that can determine quickly if a key will fail using a whitelist of accepted values parsed from the jexl
  *
  */
 public class EdgeFilterIterator extends Filter {
-    public static Logger log = Logger.getLogger(EdgeFilterIterator.class);
+    public static final Logger log = Logger.getLogger(EdgeFilterIterator.class);
     
     public static final String JEXL_OPTION = "jexlQuery";
     public static final String PROTOBUF_OPTION = "protobuffFormat";

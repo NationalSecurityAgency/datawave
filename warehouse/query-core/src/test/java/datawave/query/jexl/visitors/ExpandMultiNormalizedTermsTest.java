@@ -12,14 +12,13 @@ import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
+import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Date;
-
-import static org.junit.Assert.assertEquals;
 
 public class ExpandMultiNormalizedTermsTest {
     
@@ -178,7 +177,23 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "FOO > '1' && FOO < '10'";
-        String expected = "(FOO > '+aE1' && FOO < '+bE1')";
+        String expected = "FOO > '+aE1' && FOO < '+bE1'";
+        expandTerms(original, expected);
+    }
+    
+    @Test
+    public void testBoundedNormalizedBoundsCase() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new NumberType()));
+        
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        String original = "((_Bounded_ = true) && (FOO > '1' && FOO < '10'))";
+        String expected = "((_Bounded_ = true) && (FOO > '+aE1' && FOO < '+bE1'))";
         expandTerms(original, expected);
     }
     
@@ -194,7 +209,23 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "FOO > 1 && FOO < 10";
-        String expected = "((FOO > '+aE1' && FOO < '+bE1') || (FOO > '1' && FOO < '10'))";
+        String expected = "(FOO > '1' || FOO > '+aE1') && (FOO < '+bE1' || FOO < '10')";
+        expandTerms(original, expected);
+    }
+    
+    @Test
+    public void testBoundedMultiNormalizedBounds() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new LcNoDiacriticsType()));
+        
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        String original = "((_Bounded_ = true) && (FOO > 1 && FOO < 10))";
+        String expected = "((((_Bounded_ = true) && (FOO > '+aE1' && FOO < '+bE1'))) || (((_Bounded_ = true) && (FOO > '1' && FOO < '10'))))";
         expandTerms(original, expected);
     }
     
@@ -207,7 +238,20 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "NEW == 'boo' && NEW > '1' && NEW < '10'";
-        String expected = "NEW == 'boo' && (NEW > '1' && NEW < '10')";
+        String expected = "NEW == 'boo' && NEW > '1' && NEW < '10'";
+        expandTerms(original, expected);
+    }
+    
+    @Test
+    public void testBoundedUnNormalizedBoundsCase() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.put("NEW", new LcNoDiacriticsType());
+        
+        helper.setIndexedFields(dataTypes.keySet());
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        String original = "NEW == 'boo' && ((_Bounded_ = true) && (NEW > '1' && NEW < '10'))";
+        String expected = "NEW == 'boo' && ((_Bounded_ = true) && (NEW > '1' && NEW < '10'))";
         expandTerms(original, expected);
     }
     
@@ -219,7 +263,19 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "NEW > '0' && NEW < '9' && FOO > 1 && FOO < 10";
-        String expected = "(NEW > '0' && NEW < '9') && FOO > 1 && FOO < 10";
+        String expected = "NEW > '0' && NEW < '9' && FOO > 1 && FOO < 10";
+        expandTerms(original, expected);
+    }
+    
+    @Test
+    public void testBoundedNormalizedAndUnNormalizedBoundsCase() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.put("NEW", new LcNoDiacriticsType());
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        String original = "((_Bounded_ = true) && (NEW > '0' && NEW < '9')) && ((_Bounded_ = true) && (FOO > 1 && FOO < 10))";
+        String expected = "((_Bounded_ = true) && (NEW > '0' && NEW < '9')) && ((_Bounded_ = true) && (FOO > 1 && FOO < 10))";
         expandTerms(original, expected);
     }
     
@@ -304,7 +360,7 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "filter:includeRegex(IP, '1\\.2\\.3\\..*')";
-        String expected = "filter:includeRegex(IP, '1\\.2\\.3\\..*')";
+        String expected = "filter:includeRegex(IP, '1\\\\.2\\\\.3\\\\..*')";
         expandTerms(original, expected);
     }
     
@@ -320,7 +376,7 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "filter:includeRegex(IP, '1\\.2\\.3\\..*')";
-        String expected = "filter:includeRegex(IP, '1\\.2\\.3\\..*')";
+        String expected = "filter:includeRegex(IP, '1\\\\.2\\\\.3\\\\..*')";
         expandTerms(original, expected);
     }
     
@@ -336,7 +392,7 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         String original = "filter:includeRegex(IP, '1\\.2\\.3\\.4')";
-        String expected = "filter:includeRegex(IP, '1\\.2\\.3\\.4')";
+        String expected = "filter:includeRegex(IP, '1\\\\.2\\\\.3\\\\.4')";
         expandTerms(original, expected);
     }
     
@@ -367,27 +423,19 @@ public class ExpandMultiNormalizedTermsTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         
-        String original = "((ExceededValueThresholdMarkerJexlNode = true) && (FOO =~ 'bar.*'))";
+        String original = "((_Value_ = true) && (FOO =~ 'bar.*'))";
         expandTerms(original, original);
     }
     
     @Test
-    public void testMultipleNormalizersForBoundedRangeExceededThreshold() throws ParseException {
+    public void testMultipleNormalizersForBRExceededThreshold() throws ParseException {
         Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new NoOpType()));
         
         config.setQueryFieldsDatatypes(dataTypes);
         
-        String original = "((ExceededValueThresholdMarkerJexlNode = true) && (FOO > '1' && FOO < '10'))";
+        String original = "((_Value_ = true) && (FOO > '1' && FOO < '10'))";
         expandTerms(original, original);
-    }
-    
-    private void expandTerms(String original, String expected) throws ParseException {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(original);
-        ASTJexlScript expanded = ExpandMultiNormalizedTerms.expandTerms(config, helper, script);
-        
-        String expandedQuery = JexlStringBuildingVisitor.buildQuery(expanded);
-        assertEquals(expected, expandedQuery);
     }
     
     @Test
@@ -401,11 +449,18 @@ public class ExpandMultiNormalizedTermsTest {
         ASTJexlScript smashed = TreeFlatteningRebuildingVisitor.flatten(queryTree);
         ASTJexlScript script = ExpandMultiNormalizedTerms.expandTerms(config, helper, smashed);
         
-        String originalRoundTrip = JexlStringBuildingVisitor.buildQuery(queryTree);
-        String smashedRoundTrip = JexlStringBuildingVisitor.buildQuery(smashed);
-        String visitedRountTrip = JexlStringBuildingVisitor.buildQuery(script);
+        JexlNodeAssert.assertThat(script).isEqualTo(smashed).isEqualTo(queryTree).hasValidLineage();
+        JexlNodeAssert.assertThat(queryTree).isEqualTo(query).hasValidLineage();
+    }
+    
+    private void expandTerms(String original, String expected) throws ParseException {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(original);
+        ASTJexlScript expanded = ExpandMultiNormalizedTerms.expandTerms(config, helper, script);
         
-        assertEquals(originalRoundTrip, smashedRoundTrip);
-        assertEquals(smashedRoundTrip, visitedRountTrip);
+        // Verify the script is as expected, and has a valid lineage.
+        JexlNodeAssert.assertThat(expanded).isEqualTo(expected).hasValidLineage();
+        
+        // Verify the original script was not modified, and still has a valid lineage.
+        JexlNodeAssert.assertThat(script).isEqualTo(original).hasValidLineage();
     }
 }

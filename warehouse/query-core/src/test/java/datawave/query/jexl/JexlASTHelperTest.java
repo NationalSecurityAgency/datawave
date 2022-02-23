@@ -1,29 +1,39 @@
 package datawave.query.jexl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
-import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
-
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.PrintingVisitor;
+import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTNumberLiteral;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.runners.Enclosed;
+import org.junit.runner.RunWith;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNull;
+import static junit.framework.TestCase.assertTrue;
 
 public class JexlASTHelperTest {
     
@@ -125,6 +135,18 @@ public class JexlASTHelperTest {
     }
     
     @Test
+    public void testGetLiteralValueSafely() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == FOO2");
+        assertNull(JexlASTHelper.getLiteralValueSafely(query));
+    }
+    
+    @Test(expected = NoSuchElementException.class)
+    public void testGetLiteralValueThrowsNSEE() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == FOO2");
+        assertNull(JexlASTHelper.getLiteralValue(query));
+    }
+    
+    @Test
     public void sameJexlNodeEquality() throws Exception {
         ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == '1'");
         
@@ -199,6 +221,49 @@ public class JexlASTHelperTest {
     }
     
     @Test
+    public void testDereferenceIntersection() throws ParseException {
+        String query = "(FOO == 'a' && FOO == 'b')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        JexlNode child = script.jjtGetChild(0);
+        
+        JexlNode test = JexlASTHelper.dereference(child);
+        Assert.assertEquals("FOO == 'a' && FOO == 'b'", JexlStringBuildingVisitor.buildQueryWithoutParse(test));
+    }
+    
+    @Test
+    public void testDereferenceUnion() throws ParseException {
+        String query = "(FOO == 'a' || FOO == 'b')";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        JexlNode child = script.jjtGetChild(0);
+        
+        JexlNode test = JexlASTHelper.dereference(child);
+        Assert.assertEquals("FOO == 'a' || FOO == 'b'", JexlStringBuildingVisitor.buildQueryWithoutParse(test));
+    }
+    
+    @Test
+    public void testDereferenceMarkerNode() throws ParseException {
+        String query = "(((((_Value_ = true) && (FOO =~ 'a.*')))))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        JexlNode child = script.jjtGetChild(0);
+        
+        JexlNode test = JexlASTHelper.dereference(child);
+        Assert.assertEquals("(_Value_ = true) && (FOO =~ 'a.*')", JexlStringBuildingVisitor.buildQueryWithoutParse(test));
+        // Note: this is bad. In a larger intersection with other terms, we have now effectively lost which term is marked
+        // Example: (_Value_ = true) && (FOO =~ 'a.*') && FOO2 == 'bar' && FOO3 == 'baz'
+    }
+    
+    // dereference marked node while preserving the final wrapper layer
+    @Test
+    public void testDereferenceMarkerNodeSafely() throws ParseException {
+        String query = "(((((_Value_ = true) && (FOO =~ 'a.*')))))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        JexlNode child = script.jjtGetChild(0);
+        
+        JexlNode test = JexlASTHelper.dereferenceSafely(child);
+        Assert.assertEquals("((_Value_ = true) && (FOO =~ 'a.*'))", JexlStringBuildingVisitor.buildQueryWithoutParse(test));
+    }
+    
+    @Test
     public void testNormalizeLiteral() throws Throwable {
         LcNoDiacriticsType normalizer = new LcNoDiacriticsType();
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("F == 'aSTrInG'");
@@ -246,38 +311,381 @@ public class JexlASTHelperTest {
     }
     
     @Test
-    public void testNonRangeNodeNegation() throws Exception {
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery("A < 'b' && A > 'a' && !(FOO == 'bar')");
+    public void testFindRange() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A < 'b' && A > 'a')) && !(FOO == 'bar')");
         
-        List<JexlNode> nonRangeChildNodes = new ArrayList<>();
-        Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper
-                        .getBoundedRangesIndexAgnostic((ASTAndNode) (script.jjtGetChild(0)), nonRangeChildNodes, true);
+        LiteralRange range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
         
-        Assert.assertEquals(1, ranges.size());
-        Assert.assertEquals(2, ranges.values().iterator().next().size());
-        Assert.assertEquals(1, nonRangeChildNodes.size());
-        Assert.assertEquals(ASTNotNode.class, nonRangeChildNodes.get(0).getClass());
+        Assert.assertNull(range);
         
-        script = JexlASTHelper.parseJexlQuery("A < 5 && A > 1 && !(FOO == 'bar' && !(BAR == 'foo') && BAR != 'foo')");
+        script = JexlASTHelper.parseJexlQuery("(A < 5 && A > 1)");
         
-        nonRangeChildNodes.clear();
-        ranges = JexlASTHelper.getBoundedRangesIndexAgnostic((ASTAndNode) (script.jjtGetChild(0)), nonRangeChildNodes, true);
+        range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
         
-        Assert.assertEquals(1, ranges.size());
-        Assert.assertEquals(2, ranges.values().iterator().next().size());
-        Assert.assertEquals(1, nonRangeChildNodes.size());
-        Assert.assertEquals(ASTNotNode.class, nonRangeChildNodes.get(0).getClass());
+        Assert.assertNull(range);
         
-        script = JexlASTHelper
-                        .parseJexlQuery("A < 5 && A > 1 && !(FOO == 'term' && !(BAR =~ 'regex') && BAR !~ 'regex' && (BAR != 'term') && ! (BAR == 'term') && FOO =~ 'regex')");
+        script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A < 5 && A > 1))");
         
-        nonRangeChildNodes.clear();
-        ranges = JexlASTHelper.getBoundedRangesIndexAgnostic((ASTAndNode) (script.jjtGetChild(0)), nonRangeChildNodes, true);
+        range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
         
-        Assert.assertEquals(1, ranges.size());
-        Assert.assertEquals(2, ranges.values().iterator().next().size());
-        Assert.assertEquals(1, nonRangeChildNodes.size());
-        Assert.assertEquals(ASTNotNode.class, nonRangeChildNodes.get(0).getClass());
+        Assert.assertNotNull(range);
+        Assert.assertNotNull(range.getLowerNode());
+        Assert.assertNotNull(range.getUpperNode());
+        Assert.assertEquals(1, range.getLower());
+        Assert.assertEquals(5, range.getUpper());
+        Assert.assertFalse(range.isLowerInclusive());
+        Assert.assertFalse(range.isUpperInclusive());
+        
+        script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A <= 5 && A >= 1))");
+        
+        range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
+        
+        Assert.assertNotNull(range);
+        Assert.assertNotNull(range.getLowerNode());
+        Assert.assertNotNull(range.getUpperNode());
+        Assert.assertEquals(1, range.getLower());
+        Assert.assertEquals(5, range.getUpper());
+        Assert.assertTrue(range.isLowerInclusive());
+        Assert.assertTrue(range.isUpperInclusive());
     }
     
+    @Test
+    public void testFindDelayedRange() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((_Delayed_ = true) && ((_Bounded_ = true) && (A < 'b' && A > 'a'))) && !(FOO == 'bar')");
+        
+        LiteralRange range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
+        
+        Assert.assertNull(range);
+        
+        script = JexlASTHelper.parseJexlQuery("((_Delayed_ = true) && ((_Bounded_ = true) && (A < 'b' && A > 'a')))");
+        
+        range = JexlASTHelper.findRange().getRange(script.jjtGetChild(0));
+        
+        Assert.assertNotNull(range);
+        Assert.assertNotNull(range.getLowerNode());
+        Assert.assertNotNull(range.getUpperNode());
+        Assert.assertEquals("a", range.getLower());
+        Assert.assertEquals("b", range.getUpper());
+        Assert.assertFalse(range.isLowerInclusive());
+        Assert.assertFalse(range.isUpperInclusive());
+    }
+    
+    @Test
+    public void testFindNotDelayedRange() throws Exception {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((_Delayed_ = true) && ((_Bounded_ = true) && (A < 'b' && A > 'a')))");
+        
+        LiteralRange range = JexlASTHelper.findRange().notDelayed().getRange(script.jjtGetChild(0));
+        
+        Assert.assertNull(range);
+        
+        script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A < 5 && A > 1))");
+        
+        range = JexlASTHelper.findRange().notDelayed().getRange(script.jjtGetChild(0));
+        
+        Assert.assertNotNull(range);
+        Assert.assertNotNull(range.getLowerNode());
+        Assert.assertNotNull(range.getUpperNode());
+        Assert.assertEquals(1, range.getLower());
+        Assert.assertEquals(5, range.getUpper());
+        Assert.assertFalse(range.isLowerInclusive());
+        Assert.assertFalse(range.isUpperInclusive());
+    }
+    
+    @Test
+    public void testFindIndexedRange() throws Exception {
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.setIndexedFields(Collections.singleton("A"));
+        
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("((_Bounded_ = true) && (A < 'b' && A > 'a'))");
+        
+        LiteralRange range = JexlASTHelper.findRange().indexedOnly(null, helper).getRange(script.jjtGetChild(0));
+        
+        Assert.assertNotNull(range);
+        Assert.assertNotNull(range.getLowerNode());
+        Assert.assertNotNull(range.getUpperNode());
+        Assert.assertEquals("a", range.getLower());
+        Assert.assertEquals("b", range.getUpper());
+        Assert.assertFalse(range.isLowerInclusive());
+        Assert.assertFalse(range.isUpperInclusive());
+        
+        script = JexlASTHelper.parseJexlQuery("B < 5 && B > 1");
+        
+        range = JexlASTHelper.findRange().indexedOnly(null, helper).getRange(script.jjtGetChild(0));
+        
+        Assert.assertNull(range);
+    }
+    
+    @Test
+    public void parse1TrailingBackslashEquals() throws Exception {
+        String query = "CITY == 'city\\\\'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse1TrailingBackslashRegex() throws Exception {
+        String query = "CITY =~ 'city\\\\'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse2TrailingBackslashesEquals() throws Exception {
+        String query = "CITY == 'city\\\\\\\\'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse2TrailingBackslashesRegex() throws Exception {
+        String query = "CITY =~ 'city\\\\\\\\'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse3TrailingBackslashesEquals() throws Exception {
+        String query = "CITY == 'city\\\\\\\\\\\\'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse3TrailingBackslashesRegex() throws Exception {
+        String query = "CITY =~ 'city\\\\\\\\\\\\'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse1LeadingBackslashEquals() throws Exception {
+        String query = "CITY == '\\\\city'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse1LeadingBackslashRegex() throws Exception {
+        String query = "CITY =~ '\\\\city'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse2LeadingBackslashesEquals() throws Exception {
+        String query = "CITY == '\\\\\\\\city'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse2LeadingBackslashesRegex() throws Exception {
+        String query = "CITY =~ '\\\\\\\\city'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse3LeadingBackslashesEquals() throws Exception {
+        String query = "CITY == '\\\\\\\\\\\\city'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse3LeadingBackslashesRegex() throws Exception {
+        String query = "CITY =~ '\\\\\\\\\\\\city'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse1InteriorBackslashEquals() throws Exception {
+        String query = "CITY == 'ci\\\\ty'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse1InteriorBackslashRegex() throws Exception {
+        String query = "CITY =~ 'ci\\\\ty'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse2InteriorBackslashesEquals() throws Exception {
+        String query = "CITY == 'ci\\\\\\\\ty'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse2InteriorBackslashesRegex() throws Exception {
+        String query = "CITY =~ 'ci\\\\\\\\ty'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse3InteriorBackslashesEquals() throws Exception {
+        String query = "CITY == 'ci\\\\\\\\\\\\ty'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    @Test
+    public void parse3InteriorBackslashesRegex() throws Exception {
+        String query = "CITY =~ 'ci\\\\\\\\\\\\ty'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    // This test is here to ensure that we can freely convert between a jexl tree and
+    // a query string, without impact to the string literal for the regex node.
+    // WEB QUERY: CITY =~ 'ci\\\\\\ty\.blah'
+    // StringLiteral.image: "ci\\\\\\ty\.blah"
+    @Test
+    public void transitiveRegexParseTest() throws Exception {
+        String query = "CITY =~ 'ci\\\\\\\\\\\\ty\\.blah'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        JexlNode newNode = JexlASTHelper.parseJexlQuery(interpretedQuery);
+        String reinterpretedQuery = JexlStringBuildingVisitor.buildQuery(newNode);
+        Assert.assertEquals("CITY =~ 'ci\\\\\\\\\\\\ty\\.blah'", interpretedQuery);
+        Assert.assertEquals(reinterpretedQuery, interpretedQuery);
+        Assert.assertEquals("ci\\\\\\\\\\\\ty\\.blah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+        Assert.assertEquals(node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image, newNode.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+    }
+    
+    // This test is here to ensure that we can freely convert between a jexl tree and
+    // a query string, without impact to the string literal for the regex node.
+    // This also shows that an unescaped backslash (the one before '.blah') will be preserved between conversions.
+    // WEB QUERY: CITY == 'ci\\\\\\ty\.blah'
+    // StringLiteral.image: "ci\\\ty\.blah"
+    @Test
+    public void transitiveEqualsParseWithEscapedRegexTest() throws Exception {
+        String query = "CITY == 'ci\\\\\\\\\\\\ty\\.blah'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        JexlNode newNode = JexlASTHelper.parseJexlQuery(interpretedQuery);
+        String reinterpretedQuery = JexlStringBuildingVisitor.buildQuery(newNode);
+        // note: while this is different from the original query, it produces the same string literal
+        Assert.assertEquals("CITY == 'ci\\\\\\\\\\\\ty\\\\.blah'", interpretedQuery);
+        Assert.assertEquals(reinterpretedQuery, interpretedQuery);
+        Assert.assertEquals("ci\\\\\\ty\\.blah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+        Assert.assertEquals(node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image, newNode.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+    }
+    
+    // This is similar to the last test, but shows the usage of an explicit, escaped backslash before '.blah'
+    // WEB QUERY: CITY == 'ci\\\\\\ty\\.blah'
+    // StringLiteral.image: "ci\\\ty\.blah"
+    @Test
+    public void transitiveEqualsParseTest() throws Exception {
+        String query = "CITY == 'ci\\\\\\\\\\\\ty\\\\.blah'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQuery(node);
+        JexlNode newNode = JexlASTHelper.parseJexlQuery(interpretedQuery);
+        String reinterpretedQuery = JexlStringBuildingVisitor.buildQuery(newNode);
+        // note: while this is different from the original query, it produces the same string literal
+        Assert.assertEquals("CITY == 'ci\\\\\\\\\\\\ty\\\\.blah'", interpretedQuery);
+        Assert.assertEquals(reinterpretedQuery, interpretedQuery);
+        Assert.assertEquals("ci\\\\\\ty\\.blah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+        Assert.assertEquals(node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image, newNode.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+    }
+    
+    // This test ensures that the literal value of a regex node preserves the full number of backslashes as present in the query.
+    // This is also testing that an escaped single quote is handled correctly for a regex node.
+    // WEB QUERY: CITY =~ 'ci\\\\\\ty\\.bl\'ah'
+    // StringLiteral.image: "ci\\\\\\ty\\.bl'ah"
+    @Test
+    public void parseRegexWithEscapedQuoteTest() throws Exception {
+        String query = "CITY =~ 'ci\\\\\\\\\\\\ty\\\\.bl\\'ah'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+        Assert.assertEquals("ci\\\\\\\\\\\\ty\\\\.bl'ah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    // This test is is similar to the previous one, but with multiple backslashes before the embedded single quote.
+    // WEB QUERY: CITY =~ 'ci\\\\\\ty\\.bl\\\'ah'
+    // StringLiteral.image: "ci\\\\\\ty\\.bl\\'ah"
+    @Test
+    public void parseRegexWithEscapedQuoteAndBackslashesTest() throws Exception {
+        String query = "CITY =~ 'ci\\\\\\\\\\\\ty\\\\.bl\\\\\\'ah'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+        Assert.assertEquals("ci\\\\\\\\\\\\ty\\\\.bl\\\\'ah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    // This test ensures that the literal value of an equals node has had the escape characters removed for each backslash.
+    // This is also testing that an escaped single quote is handled correctly for an equals node.
+    // WEB QUERY: CITY == 'ci\\\\\\ty\\.bl\'ah'
+    // StringLiteral.image: "ci\\\ty\.bl'ah"
+    @Test
+    public void parseEqualsWithEscapedQuoteTest() throws Exception {
+        String query = "CITY == 'ci\\\\\\\\\\\\ty\\\\.bl\\'ah'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+        Assert.assertEquals("ci\\\\\\ty\\.bl'ah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    // This test is is similar to the previous one, but with multiple backslashes before the embedded single quote.
+    // WEB QUERY: CITY == 'ci\\\\\\ty\\.bl\\\'ah'
+    // StringLiteral.image: "ci\\\ty\.bl\'ah"
+    @Test
+    public void parseEqualsWithEscapedQuoteAndBackslashesTest() throws Exception {
+        String query = "CITY == 'ci\\\\\\\\\\\\ty\\\\.bl\\\\\\'ah'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
+        Assert.assertEquals("ci\\\\\\ty\\.bl\\'ah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
+        Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    // Verify that true is returned for a query with valid junctions.
+    @Test
+    public void validateJunctionChildrenWithValidTree() throws ParseException {
+        String query = "FOO == 'bar' && FOO == 'baz'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        assertTrue(JexlASTHelper.validateJunctionChildren(node));
+        assertTrue(JexlASTHelper.validateJunctionChildren(node, false));
+    }
+    
+    // Verify that false is returned for a query with invalid junctions when failHard == false.
+    @Test
+    public void validateJunctionChildrenWithInvalidTree() {
+        ASTEQNode eqNode = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "bar");
+        ASTAndNode conjunction = (ASTAndNode) JexlNodeFactory.createAndNode(Collections.singletonList(eqNode));
+        assertFalse(JexlASTHelper.validateJunctionChildren(conjunction));
+        assertFalse(JexlASTHelper.validateJunctionChildren(conjunction, false));
+    }
+    
+    // Verify that an exception is thrown for a query with invalid junctions when failHard == true.
+    @Test
+    public void validateJunctionChildrenWithInvalidTreeAndFailHard() {
+        ASTEQNode eqNode = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "bar");
+        ASTAndNode conjunction = (ASTAndNode) JexlNodeFactory.createAndNode(Collections.singletonList(eqNode));
+        RuntimeException exception = Assert.assertThrows(RuntimeException.class, () -> JexlASTHelper.validateJunctionChildren(conjunction, true));
+        assertEquals("Instance of AND/OR node found with less than 2 children", exception.getMessage());
+    }
 }

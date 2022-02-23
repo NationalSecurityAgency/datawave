@@ -1,7 +1,5 @@
 package datawave.configuration;
 
-import org.xml.sax.InputSource;
-
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.InjectionException;
@@ -12,8 +10,6 @@ import javax.enterprise.inject.spi.InjectionTarget;
 import javax.enterprise.inject.spi.ProcessInjectionTarget;
 import javax.xml.bind.JAXBContext;
 import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.Source;
-import javax.xml.transform.sax.SAXSource;
 import java.io.InputStream;
 import java.util.Set;
 
@@ -44,7 +40,6 @@ public class ConfigExtension implements Extension {
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
             factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
             factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            Source xmlSource = new SAXSource(factory.newSAXParser().getXMLReader(), new InputSource(xmlStream));
             JAXBContext context = JAXBContext.newInstance(at.getJavaClass());
             final T instance = (T) context.createUnmarshaller().unmarshal(xmlStream);
             InjectionTarget<T> wrapped = new InjectionTarget<T>() {

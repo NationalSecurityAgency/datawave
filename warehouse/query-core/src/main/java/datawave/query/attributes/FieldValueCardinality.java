@@ -11,6 +11,8 @@ import com.google.common.base.Preconditions;
 
 public class FieldValueCardinality implements Comparable<FieldValueCardinality> {
     
+    protected String fieldName;
+    
     protected String lower;
     
     protected String upper;
@@ -30,7 +32,7 @@ public class FieldValueCardinality implements Comparable<FieldValueCardinality> 
     }
     
     public long sizeInBytes() {
-        long size = 8 + 16 + Attribute.sizeInBytes(lower) + Attribute.sizeInBytes(upper) + Attribute.sizeInBytes(myValue);
+        long size = 8 + 16 + Attribute.sizeInBytes(fieldName) + Attribute.sizeInBytes(lower) + Attribute.sizeInBytes(upper) + Attribute.sizeInBytes(myValue);
         // 8 is object overhead
         // 16 is 4 object references
         size += ObjectSizeOf.Sizer.getObjectSize(estimate);
@@ -39,7 +41,21 @@ public class FieldValueCardinality implements Comparable<FieldValueCardinality> 
     
     @Override
     public int compareTo(FieldValueCardinality other) {
-        int cmp = lower.compareTo(other.lower);
+        int cmp;
+        
+        if (fieldName == null && other.fieldName == null) {
+            cmp = 0;
+        } else if (fieldName == null) {
+            return -1;
+        } else if (other.fieldName == null) {
+            return 1;
+        } else {
+            cmp = fieldName.compareTo(other.fieldName);
+        }
+        
+        if (cmp == 0) {
+            cmp = lower.compareTo(other.lower);
+        }
         
         if (cmp == 0) {
             cmp = upper.compareTo(other.upper);
@@ -64,9 +80,13 @@ public class FieldValueCardinality implements Comparable<FieldValueCardinality> 
     @Override
     public int hashCode() {
         HashCodeBuilder hcb = new HashCodeBuilder(2099, 2129);
-        hcb.append(lower).append(upper).append(super.hashCode());
+        hcb.append(fieldName).append(lower).append(upper).append(super.hashCode());
         
         return hcb.toHashCode();
+    }
+    
+    public void setFieldName(String fieldName) {
+        this.fieldName = fieldName;
     }
     
     public void setContent(String content) {
@@ -93,6 +113,10 @@ public class FieldValueCardinality implements Comparable<FieldValueCardinality> 
         estimate.offer(docId);
     }
     
+    public String getFieldName() {
+        return fieldName;
+    }
+    
     public String getFloorValue() {
         return lower;
     }
@@ -108,12 +132,19 @@ public class FieldValueCardinality implements Comparable<FieldValueCardinality> 
      * @return
      */
     public boolean isWithin(FieldValueCardinality other) {
+        if (fieldName != null && !fieldName.equals(other.fieldName)) {
+            return false;
+        }
         
         return lower.compareTo(other.lower) <= 0 && upper.compareTo(other.upper) >= 0;
         
     }
     
     public void merge(FieldValueCardinality card) throws CardinalityMergeException {
+        if (fieldName != null && !fieldName.equals(card.fieldName)) {
+            throw new UnsupportedOperationException("It is not possible to merge FieldValueCardinalities with different field names");
+        }
+        
         Preconditions.checkNotNull(card);
         myValue = null;
         this.estimate = estimate.merge(card.estimate);
@@ -126,7 +157,8 @@ public class FieldValueCardinality implements Comparable<FieldValueCardinality> 
     @Override
     public String toString() {
         if (null == myValue)
-            myValue = new StringBuilder().append(lower).append(" -- ").append(upper).append("//").append(estimate.cardinality()).toString();
+            myValue = new StringBuilder().append(fieldName).append("; ").append(lower).append(" -- ").append(upper).append("//").append(estimate.cardinality())
+                            .toString();
         return myValue;
     }
     

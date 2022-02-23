@@ -8,9 +8,9 @@ public class Cost implements Comparable<Cost> {
     
     protected boolean evaluated = false;
     
-    public static Cost UNEVALUATED = new Cost();
+    public static final Cost UNEVALUATED = new Cost();
     
-    public static Cost INFINITE = new Cost(Long.MAX_VALUE, Long.MIN_VALUE);
+    public static final Cost INFINITE = new Cost(Long.MAX_VALUE, Long.MIN_VALUE);
     
     public static final long ER_COST_MULTIPLIER = 2;
     
@@ -85,6 +85,13 @@ public class Cost implements Comparable<Cost> {
         }
         
         return false;
+    }
+    
+    @Override
+    public int hashCode() {
+        int result = (int) (erCost ^ (erCost >>> 32));
+        result = 31 * result + (int) (otherCost ^ (otherCost >>> 32));
+        return result;
     }
     
     /*

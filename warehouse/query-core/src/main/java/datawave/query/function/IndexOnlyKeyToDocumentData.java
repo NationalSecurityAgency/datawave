@@ -160,7 +160,8 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
             Key docKey = getDocKey(from.getKey());
             
             // Ensure that we have a non-empty colqual
-            final Key stopKey = new Key(from.getKey().getRow().toString(), from.getKey().getColumnFamily().toString() + '\uffff');
+            final Key stopKey = new Key(from.getKey().getRow().toString(), from.getKey().getColumnFamily().toString(), from.getKey().getColumnQualifier()
+                            .toString() + '\u0000' + '\uffff');
             
             // Create the primary range
             final Range keyRange = new Range(from.getKey(), true, stopKey, true);
@@ -209,7 +210,7 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
             this.iteratorDocument = from.getValue();
             
             // Create an entry for the initialized Document
-            final DocumentData documentData = new DocumentData(this.iteratorDocumentKey, Collections.singleton(docKey), attrs);
+            final DocumentData documentData = new DocumentData(this.iteratorDocumentKey, Collections.singleton(docKey), attrs, true);
             return Maps.immutableEntry(documentData, this.iteratorDocument);
         } catch (DatawaveFatalQueryException e) {
             throw e;
@@ -482,7 +483,7 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
             final List<Entry<Key,Value>> keyValues = new LinkedList<>();
             keyValues.add(next);
             Key docKey = getDocKey(next.getKey());
-            final DocumentData documentData = new DocumentData(this.iteratorDocumentKey, Collections.singleton(docKey), keyValues);
+            final DocumentData documentData = new DocumentData(this.iteratorDocumentKey, Collections.singleton(docKey), keyValues, true);
             entry = Maps.immutableEntry(documentData, this.iteratorDocument);
         } else if (next == ITERATOR_COMPLETE_KEY) {
             QueryException qe = new QueryException(DatawaveErrorCode.FETCH_NEXT_ELEMENT_ERROR, MessageFormat.format("Fieldname: {0}, Range: {1}",

@@ -1,5 +1,6 @@
 package datawave.query.iterator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -16,6 +17,8 @@ import com.google.common.collect.Sets;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.query.function.JexlEvaluation;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.Type;
 import datawave.ingest.data.config.ingest.CompositeIngest;
@@ -43,8 +46,10 @@ import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
+import datawave.query.tracking.ActiveQueryLog;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.util.TypeMetadata;
-import datawave.query.util.TypeMetadataProvider;
+import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.StringUtils;
 import datawave.util.UniversalSet;
 import org.apache.accumulo.core.data.Key;
@@ -67,6 +72,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -79,6 +85,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -92,7 +99,7 @@ public class QueryOptions implements OptionDescriber {
     
     protected static Cache<String,FileSystem> fileSystemCache = CacheBuilder.newBuilder().concurrencyLevel(10).maximumSize(100).build();
     
-    public static final Charset UTF8 = Charset.forName("utf-8");
+    public static final Charset UTF8 = StandardCharsets.UTF_8;
     
     public static final String DEBUG_MULTITHREADED_SOURCES = "debug.multithreaded.sources";
     
@@ -131,7 +138,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
-    public static final String TYPE_METADATA_IN_HDFS = "type.metadata.in.hdfs";
     public static final String HITS_ONLY = "hits.only";
     public static final String HIT_LIST = "hit.list";
     public static final String START_TIME = "start.time";
@@ -191,7 +197,7 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String ZOOKEEPER_CONFIG = "zookeeper.config";
     
-    public static final String IVARATOR_CACHE_BASE_URI_ALTERNATIVES = "ivarator.cache.base.uri.alternatives";
+    public static final String IVARATOR_CACHE_DIR_CONFIG = "ivarator.cache.dir.config";
     
     public static final String IVARATOR_CACHE_BUFFER_SIZE = "ivarator.cache.buffer.size";
     
@@ -205,7 +211,15 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String MAX_IVARATOR_OPEN_FILES = "max.ivarator.open.files";
     
+    public static final String IVARATOR_NUM_RETRIES = "ivarator.num.retries";
+    
+    public static final String IVARATOR_PERSIST_VERIFY = "ivarator.persist.verify";
+    
+    public static final String IVARATOR_PERSIST_VERIFY_COUNT = "ivarator.persist.verify.count";
+    
     public static final String MAX_IVARATOR_SOURCES = "max.ivarator.sources";
+    
+    public static final String MAX_IVARATOR_RESULTS = "max.ivarator.results";
     
     public static final String COMPRESS_SERVER_SIDE_RESULTS = "compress.server.side.results";
     
@@ -224,6 +238,14 @@ public class QueryOptions implements OptionDescriber {
     public static final String DATE_INDEX_TIME_TRAVEL = "date.index.time.travel";
     
     public static final String SORTED_UIDS = "sorted.uids";
+    
+    public static final String RANGES = "ranges";
+    
+    /**
+     * If a value is set, a separate {@link datawave.query.tracking.ActiveQueryLog} instance will be used instead of the shared default instance. The value is
+     * typically a table name or query logic name.
+     */
+    public static final String ACTIVE_QUERY_LOG_NAME = "active.query.log.name";
     
     protected Map<String,String> options;
     
@@ -254,7 +276,7 @@ public class QueryOptions implements OptionDescriber {
     
     protected Set<String> groupFields = Sets.newHashSet();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
-    protected Set<String> uniqueFields = Sets.newHashSet();
+    protected UniqueFields uniqueFields = new UniqueFields();
     
     protected Set<String> hitsOnlySet = new HashSet<>();
     
@@ -303,15 +325,19 @@ public class QueryOptions implements OptionDescriber {
     
     protected String zookeeperConfig = null;
     
-    protected List<String> ivaratorCacheBaseURIAlternatives = null;
+    protected List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs = Collections.emptyList();
     protected long ivaratorCacheScanPersistThreshold = 100000L;
     protected long ivaratorCacheScanTimeout = 1000L * 60 * 60;
     protected int ivaratorCacheBufferSize = 10000;
     
     protected int maxIndexRangeSplit = 11;
     protected int ivaratorMaxOpenFiles = 100;
+    protected int ivaratorNumRetries = 2;
+    protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
     
     protected int maxIvaratorSources = 33;
+    
+    protected long maxIvaratorResults = -1;
     
     protected long yieldThresholdMs = Long.MAX_VALUE;
     
@@ -347,8 +373,6 @@ public class QueryOptions implements OptionDescriber {
     
     protected Queue<Entry<Range,String>> batchStack;
     
-    protected TypeMetadataProvider typeMetadataProvider;
-    
     protected int batchedQueries = 0;
     
     protected String metadataTableName;
@@ -362,6 +386,11 @@ public class QueryOptions implements OptionDescriber {
      */
     protected boolean trackSizes = true;
     
+    /**
+     * The name of the {@link datawave.query.tracking.ActiveQueryLog} instance to use.
+     */
+    protected String activeQueryLogName;
+    
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -370,7 +399,6 @@ public class QueryOptions implements OptionDescriber {
         this.disableEvaluation = other.disableEvaluation;
         this.disableIndexOnlyDocuments = other.disableIndexOnlyDocuments;
         this.typeMetadata = other.typeMetadata;
-        this.typeMetadataProvider = other.typeMetadataProvider;
         this.typeMetadataAuthsKey = other.typeMetadataAuthsKey;
         this.metadataTableName = other.metadataTableName;
         this.compositeMetadata = other.compositeMetadata;
@@ -419,9 +447,8 @@ public class QueryOptions implements OptionDescriber {
         this.getDocumentKey = other.getDocumentKey;
         this.equality = other.equality;
         this.evaluationFilter = other.evaluationFilter;
-        this.fiAggregator = other.fiAggregator;
         
-        this.ivaratorCacheBaseURIAlternatives = other.ivaratorCacheBaseURIAlternatives;
+        this.ivaratorCacheDirConfigs = (other.ivaratorCacheDirConfigs == null) ? null : new ArrayList<>(other.ivaratorCacheDirConfigs);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
         this.ivaratorCacheBufferSize = other.ivaratorCacheBufferSize;
         this.ivaratorCacheScanPersistThreshold = other.ivaratorCacheScanPersistThreshold;
@@ -430,6 +457,7 @@ public class QueryOptions implements OptionDescriber {
         this.maxIndexRangeSplit = other.maxIndexRangeSplit;
         this.ivaratorMaxOpenFiles = other.ivaratorMaxOpenFiles;
         this.maxIvaratorSources = other.maxIvaratorSources;
+        this.maxIvaratorResults = other.maxIvaratorResults;
         
         this.yieldThresholdMs = other.yieldThresholdMs;
         
@@ -440,21 +468,6 @@ public class QueryOptions implements OptionDescriber {
         this.groupFields = other.groupFields;
         this.groupFieldsBatchSize = other.groupFieldsBatchSize;
         this.hitsOnlySet = other.hitsOnlySet;
-        
-        this.compressedMappings = other.compressedMappings;
-        this.limitOverride = other.limitOverride;
-        
-        this.sortedUIDs = other.sortedUIDs;
-        
-        this.compressedMappings = other.compressedMappings;
-        this.limitOverride = other.limitOverride;
-        
-        this.sortedUIDs = other.sortedUIDs;
-        
-        this.compressedMappings = other.compressedMappings;
-        this.limitOverride = other.limitOverride;
-        
-        this.sortedUIDs = other.sortedUIDs;
         
         this.compressedMappings = other.compressedMappings;
         this.limitOverride = other.limitOverride;
@@ -474,6 +487,7 @@ public class QueryOptions implements OptionDescriber {
         this.debugMultithreadedSources = other.debugMultithreadedSources;
         
         this.trackSizes = other.trackSizes;
+        this.activeQueryLogName = other.activeQueryLogName;
     }
     
     public String getQuery() {
@@ -517,40 +531,10 @@ public class QueryOptions implements OptionDescriber {
     }
     
     public TypeMetadata getTypeMetadata() {
-        
         // first, we will see it the query passed over the serialized TypeMetadata.
         // If it did, use that.
         if (this.typeMetadata != null && !this.typeMetadata.isEmpty()) {
-            
             return this.typeMetadata;
-            
-            // if the query did not contain the TypeMetadata in its options,
-            // (the TypeMetadata class member is empty) we will attempt to
-            // use the hdfs typeMetadata from the TypeMetadataProvider. The query will have sent
-            // us the auths to use as a key:
-        } else if (this.metadataTableName != null && this.typeMetadataAuthsKey != null) {
-            log.debug("the query did not pass the typeMetadata");
-            // lazily create a typeMetadataProvider if we don't already have one
-            if (this.typeMetadataProvider == null) {
-                try {
-                    this.typeMetadataProvider = TypeMetadataProvider.Factory.createTypeMetadataProvider();
-                    if (log.isTraceEnabled()) {
-                        log.trace("made a typeMetadataProvider:" + typeMetadataProvider);
-                    }
-                } catch (Throwable th) {
-                    // for now, do not allow problems with the TypeMetadataProvider to affect instantiation.
-                    log.info("was unable to create a TypeMetadataProvider from its Factory: ", th);
-                }
-            }
-            if (this.typeMetadataProvider != null) {
-                TypeMetadata typeMetadata = this.typeMetadataProvider.getTypeMetadata(this.metadataTableName, this.typeMetadataAuthsKey);
-                if (typeMetadata != null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("got a typeMetadata from hdfs and the bridge uri is " + typeMetadataProvider.getBridge().getUri());
-                    }
-                    return typeMetadata;
-                }
-            }
         }
         log.debug("making a nothing typeMetadata");
         return new TypeMetadata();
@@ -718,14 +702,19 @@ public class QueryOptions implements OptionDescriber {
     public Set<String> getAllIndexOnlyFields() {
         Set<String> allIndexOnlyFields = new HashSet<>();
         // index only fields are by definition not in the event
-        if (indexOnlyFields != null)
+        if (indexOnlyFields != null) {
             allIndexOnlyFields.addAll(indexOnlyFields);
+        }
         // composite fields are index only as well, unless they are overloaded composites
-        if (compositeMetadata != null)
-            for (Multimap<String,String> compositeFieldMap : compositeMetadata.getCompositeFieldMapByType().values())
-                for (String compositeField : compositeFieldMap.keySet())
-                    if (!CompositeIngest.isOverloadedCompositeField(compositeFieldMap, compositeField))
+        if (compositeMetadata != null) {
+            for (Multimap<String,String> compositeFieldMap : compositeMetadata.getCompositeFieldMapByType().values()) {
+                for (String compositeField : compositeFieldMap.keySet()) {
+                    if (!CompositeIngest.isOverloadedCompositeField(compositeFieldMap, compositeField)) {
                         allIndexOnlyFields.add(compositeField);
+                    }
+                }
+            }
+        }
         return allIndexOnlyFields;
     }
     
@@ -737,17 +726,23 @@ public class QueryOptions implements OptionDescriber {
     public Set<String> getNonEventFields() {
         Set<String> nonEventFields = new HashSet<>();
         // index only fields are by definition not in the event
-        if (indexOnlyFields != null)
+        if (indexOnlyFields != null) {
             nonEventFields.addAll(indexOnlyFields);
+        }
         // term frequency fields contain forms of the data (tokens) that are not in the event in the same form
-        if (termFrequencyFields != null)
+        if (termFrequencyFields != null) {
             nonEventFields.addAll(termFrequencyFields);
+        }
         // composite metadata contains combined fields that are not in the event in the same form
-        if (compositeMetadata != null)
-            for (Multimap<String,String> compositeFieldMap : compositeMetadata.getCompositeFieldMapByType().values())
-                for (String compositeField : compositeFieldMap.keySet())
-                    if (!CompositeIngest.isOverloadedCompositeField(compositeFieldMap, compositeField))
+        if (compositeMetadata != null) {
+            for (Multimap<String,String> compositeFieldMap : compositeMetadata.getCompositeFieldMapByType().values()) {
+                for (String compositeField : compositeFieldMap.keySet()) {
+                    if (!CompositeIngest.isOverloadedCompositeField(compositeFieldMap, compositeField)) {
                         nonEventFields.add(compositeField);
+                    }
+                }
+            }
+        }
         return nonEventFields;
     }
     
@@ -791,7 +786,8 @@ public class QueryOptions implements OptionDescriber {
     }
     
     public QueryLock getQueryLock() throws MalformedURLException, ConfigException {
-        return new QueryLock.Builder().forQueryId(getQueryId()).forFSCache(getFileSystemCache()).forIvaratorDirs(getIvaratorCacheBaseURIAlternatives())
+        return new QueryLock.Builder().forQueryId(getQueryId()).forFSCache(getFileSystemCache())
+                        .forIvaratorDirs(ivaratorCacheDirConfigs.stream().map(IvaratorCacheDirConfig::getBasePathURI).collect(Collectors.joining(",")))
                         .forZookeeper(getZookeeperConfig(), HdfsBackedControl.CANCELLED_CHECK_INTERVAL * 2).build();
     }
     
@@ -811,31 +807,12 @@ public class QueryOptions implements OptionDescriber {
         this.zookeeperConfig = zookeeperConfig;
     }
     
-    public List<String> getIvaratorCacheBaseURIsAsList() {
-        return ivaratorCacheBaseURIAlternatives;
+    public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
+        return ivaratorCacheDirConfigs;
     }
     
-    public String getIvaratorCacheBaseURIAlternatives() {
-        if (ivaratorCacheBaseURIAlternatives == null) {
-            return null;
-        } else {
-            StringBuilder builder = new StringBuilder();
-            for (String hdfsCacheBaseURI : ivaratorCacheBaseURIAlternatives) {
-                if (builder.length() > 0) {
-                    builder.append(',');
-                }
-                builder.append(hdfsCacheBaseURI);
-            }
-            return builder.toString();
-        }
-    }
-    
-    public void setIvaratorCacheBaseURIAlternatives(String ivaratorCacheBaseURIAlternatives) {
-        if (ivaratorCacheBaseURIAlternatives == null || ivaratorCacheBaseURIAlternatives.isEmpty()) {
-            this.ivaratorCacheBaseURIAlternatives = null;
-        } else {
-            this.ivaratorCacheBaseURIAlternatives = Arrays.asList(StringUtils.split(ivaratorCacheBaseURIAlternatives, ','));
-        }
+    public void setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
+        this.ivaratorCacheDirConfigs = ivaratorCacheDirConfigs;
     }
     
     public int getIvaratorCacheBufferSize() {
@@ -878,12 +855,36 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
     }
     
+    public int getIvaratorNumRetries() {
+        return ivaratorNumRetries;
+    }
+    
+    public void setIvaratorNumRetries(int ivaratorNumRetries) {
+        this.ivaratorNumRetries = ivaratorNumRetries;
+    }
+    
+    public FileSortedSet.PersistOptions getIvaratorPersistOptions() {
+        return ivaratorPersistOptions;
+    }
+    
+    public void setIvaratorPersistOptions(FileSortedSet.PersistOptions ivaratorPersistOptions) {
+        this.ivaratorPersistOptions = ivaratorPersistOptions;
+    }
+    
     public int getMaxIvaratorSources() {
         return maxIvaratorSources;
     }
     
     public void setMaxIvaratorSources(int maxIvaratorSources) {
         this.maxIvaratorSources = maxIvaratorSources;
+    }
+    
+    public long getMaxIvaratorResults() {
+        return maxIvaratorResults;
+    }
+    
+    public void setMaxIvaratorResults(long maxIvaratorResults) {
+        this.maxIvaratorResults = maxIvaratorResults;
     }
     
     public boolean isCompressResults() {
@@ -934,11 +935,11 @@ public class QueryOptions implements OptionDescriber {
         this.groupFieldsBatchSize = groupFieldsBatchSize;
     }
     
-    public Set<String> getUniqueFields() {
+    public UniqueFields getUniqueFields() {
         return uniqueFields;
     }
     
-    public void setUniqueFields(Set<String> uniqueFields) {
+    public void setUniqueFields(UniqueFields uniqueFields) {
         this.uniqueFields = uniqueFields;
     }
     
@@ -974,6 +975,14 @@ public class QueryOptions implements OptionDescriber {
         this.debugMultithreadedSources = debugMultithreadedSources;
     }
     
+    public String getActiveQueryLogName() {
+        return activeQueryLogName;
+    }
+    
+    public void setActiveQueryLogName(String activeQueryLogName) {
+        this.activeQueryLogName = activeQueryLogName;
+    }
+    
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -987,7 +996,6 @@ public class QueryOptions implements OptionDescriber {
         options.put(QUERY, "The JEXL query to evaluate documents against");
         options.put(QUERY_ID, "The UUID of the query");
         options.put(TYPE_METADATA, "A mapping of field name to a set of DataType class names");
-        options.put(METADATA_TABLE_NAME, "The name of the metadata table");
         options.put(QUERY_MAPPING_COMPRESS, "Boolean value to indicate Normalizer mapping is compressed");
         options.put(REDUCED_RESPONSE, "Whether or not to return visibility markings on each attribute. Default: " + reducedResponse);
         options.put(Constants.RETURN_TYPE, "The method to use to serialize data for return to the client");
@@ -1029,8 +1037,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(CONTENT_EXPANSION_FIELDS, "comma-delimited list of fields used for content function expansions");
         options.put(HDFS_SITE_CONFIG_URLS, "URLs (comma delimited) of where to find the hadoop hdfs and core site configuration files");
         options.put(HDFS_FILE_COMPRESSION_CODEC, "A hadoop compression codec to use for files if supported");
-        options.put(IVARATOR_CACHE_BASE_URI_ALTERNATIVES,
-                        "A list of URIs of where all query's caches are to be located for ivarators (caching field index iterators)");
+        options.put(IVARATOR_CACHE_DIR_CONFIG,
+                        "A JSON-formatted array of ivarator cache config objects.  Each config object MUST specify a pathURI to use when caching field index iterator output.");
         options.put(IVARATOR_CACHE_BUFFER_SIZE, "The size of the hdfs cache buffer size (items held in memory before dumping to hdfs).  Default is 10000.");
         options.put(IVARATOR_SCAN_PERSIST_THRESHOLD,
                         "The number of underlying field index keys scanned before the hdfs cache buffer is forced to persist).  Default is 100000.");
@@ -1039,6 +1047,8 @@ public class QueryOptions implements OptionDescriber {
                         "The maximum number of ranges to split a field index scan (ivarator) range into for multithreading.  Note the thread pool size is controlled via an accumulo property.");
         options.put(MAX_IVARATOR_OPEN_FILES,
                         "The maximum number of files that can be opened at one time during a merge sort.  If more that this number of files are created, then compactions will occur");
+        options.put(IVARATOR_NUM_RETRIES,
+                        "The number of times an ivarator should attempt to persist a sorted set to a given ivarator cache directory.  We will use the specified number of retries for each of the configured ivarator cache directories.");
         options.put(MAX_IVARATOR_SOURCES,
                         " The maximum number of sources to use for ivarators across all ivarated terms within the query.  Note the thread pool size is controlled via an accumulo property.");
         options.put(YIELD_THRESHOLD_MS,
@@ -1052,13 +1062,18 @@ public class QueryOptions implements OptionDescriber {
         options.put(SORTED_UIDS,
                         "Whether the UIDs need to be sorted.  Normally this is true, however in limited circumstances it could be false which allows ivarators to avoid pre-fetching all UIDs and sorting before returning the first one.");
         
+        options.put(RANGES, "The ranges associated with this scan.  Intended to be used for investigative purposes.");
+        
         options.put(DEBUG_MULTITHREADED_SOURCES, "If provided, the SourceThreadTrackingIterator will be used");
         
         options.put(METADATA_TABLE_NAME, this.metadataTableName);
         options.put(LIMIT_FIELDS_PRE_QUERY_EVALUATION, "If true, non-query fields limits will be applied immediately off the iterator");
         options.put(LIMIT_FIELDS_FIELD, "When " + LIMIT_FIELDS_PRE_QUERY_EVALUATION
                         + " is set to true this field will contain all fields that were limited immediately");
-        
+        options.put(ACTIVE_QUERY_LOG_NAME,
+                        "If not provided or set to '"
+                                        + ActiveQueryLog.DEFAULT_NAME
+                                        + "', will use the default shared Active Query Log instance. If provided otherwise, uses a separate distinct Active Query Log that will include the unique name in log messages.");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
     
@@ -1086,7 +1101,7 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(LIMIT_SOURCES)) {
             try {
-                this.sourceLimit = Long.valueOf(options.get(LIMIT_SOURCES));
+                this.sourceLimit = Long.parseLong(options.get(LIMIT_SOURCES));
             } catch (NumberFormatException nfe) {
                 this.sourceLimit = -1;
             }
@@ -1121,8 +1136,9 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(COMPOSITE_METADATA)) {
             String compositeMetadataString = options.get(COMPOSITE_METADATA);
-            if (compositeMetadataString != null && !compositeMetadataString.isEmpty())
+            if (compositeMetadataString != null && !compositeMetadataString.isEmpty()) {
                 this.compositeMetadata = CompositeMetadata.fromBytes(java.util.Base64.getDecoder().decode(compositeMetadataString));
+            }
             
             if (log.isTraceEnabled()) {
                 log.trace("Using compositeMetadata: " + this.compositeMetadata);
@@ -1167,7 +1183,7 @@ public class QueryOptions implements OptionDescriber {
                 Collections.addAll(this.whiteListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
             if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
-                this.whiteListedFields.add("HIT_TERM");
+                this.whiteListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
             }
         }
         
@@ -1201,7 +1217,7 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(INCLUDE_DATATYPE)) {
             this.includeDatatype = Boolean.parseBoolean(options.get(INCLUDE_DATATYPE));
             if (this.includeDatatype) {
-                this.datatypeKey = options.containsKey(DATATYPE_FIELDNAME) ? options.get(DATATYPE_FIELDNAME) : DEFAULT_DATATYPE_FIELDNAME;
+                this.datatypeKey = options.getOrDefault(DATATYPE_FIELDNAME, DEFAULT_DATATYPE_FIELDNAME);
             }
         }
         
@@ -1326,10 +1342,7 @@ public class QueryOptions implements OptionDescriber {
         }
         
         if (options.containsKey(UNIQUE_FIELDS)) {
-            String uniqueFields = options.get(UNIQUE_FIELDS);
-            for (String param : Splitter.on(',').omitEmptyStrings().trimResults().split(uniqueFields)) {
-                this.getUniqueFields().add(param);
-            }
+            this.setUniqueFields(UniqueFields.from(options.get(UNIQUE_FIELDS)));
         }
         
         if (options.containsKey(HIT_LIST)) {
@@ -1393,8 +1406,12 @@ public class QueryOptions implements OptionDescriber {
             this.setZookeeperConfig(options.get(ZOOKEEPER_CONFIG));
         }
         
-        if (options.containsKey(IVARATOR_CACHE_BASE_URI_ALTERNATIVES)) {
-            this.setIvaratorCacheBaseURIAlternatives(options.get(IVARATOR_CACHE_BASE_URI_ALTERNATIVES));
+        if (options.containsKey(IVARATOR_CACHE_DIR_CONFIG)) {
+            try {
+                this.setIvaratorCacheDirConfigs(IvaratorCacheDirConfig.fromJson(options.get(IVARATOR_CACHE_DIR_CONFIG)));
+            } catch (JsonProcessingException e) {
+                log.warn("Unable to parse ivaratorCacheDirConfig.", e);
+            }
         }
         
         if (options.containsKey(IVARATOR_CACHE_BUFFER_SIZE)) {
@@ -1417,8 +1434,28 @@ public class QueryOptions implements OptionDescriber {
             this.setIvaratorMaxOpenFiles(Integer.parseInt(options.get(MAX_IVARATOR_OPEN_FILES)));
         }
         
+        if (options.containsKey(IVARATOR_NUM_RETRIES)) {
+            this.setIvaratorNumRetries(Integer.parseInt(options.get(IVARATOR_NUM_RETRIES)));
+        }
+        
+        if (options.containsKey(IVARATOR_PERSIST_VERIFY)) {
+            boolean verify = Boolean.parseBoolean(options.get(IVARATOR_PERSIST_VERIFY));
+            FileSortedSet.PersistOptions persistOptions = getIvaratorPersistOptions();
+            this.setIvaratorPersistOptions(new FileSortedSet.PersistOptions(verify, verify, persistOptions.getNumElementsToVerify()));
+        }
+        
+        if (options.containsKey(IVARATOR_PERSIST_VERIFY_COUNT)) {
+            int numElements = Integer.parseInt(options.get(IVARATOR_PERSIST_VERIFY_COUNT));
+            FileSortedSet.PersistOptions persistOptions = getIvaratorPersistOptions();
+            this.setIvaratorPersistOptions(new FileSortedSet.PersistOptions(persistOptions.isVerifySize(), persistOptions.isVerifyElements(), numElements));
+        }
+        
         if (options.containsKey(MAX_IVARATOR_SOURCES)) {
             this.setMaxIvaratorSources(Integer.parseInt(options.get(MAX_IVARATOR_SOURCES)));
+        }
+        
+        if (options.containsKey(MAX_IVARATOR_RESULTS)) {
+            this.setMaxIvaratorResults(Long.parseLong(options.get(MAX_IVARATOR_RESULTS)));
         }
         
         if (options.containsKey(YIELD_THRESHOLD_MS)) {
@@ -1454,8 +1491,9 @@ public class QueryOptions implements OptionDescriber {
                 
                 // override query options since this is a mismatch of options
                 // combining is only meant to be used when threading is enabled
-                if (maxEvaluationPipelines == 1)
+                if (maxEvaluationPipelines == 1) {
                     maxEvaluationPipelines = 2;
+                }
                 
                 batchStack = Queues.newArrayDeque();
                 for (int i = 0; i < batchedQueries; i++) {
@@ -1486,6 +1524,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(DEBUG_MULTITHREADED_SOURCES)) {
             this.debugMultithreadedSources = Boolean.parseBoolean(options.get(DEBUG_MULTITHREADED_SOURCES));
+        }
+        
+        if (options.containsKey(ACTIVE_QUERY_LOG_NAME)) {
+            setActiveQueryLogName(activeQueryLogName);
         }
         
         return true;
@@ -1578,8 +1620,9 @@ public class QueryOptions implements OptionDescriber {
                     
                     mapping.put(entrySplits[0], dataTypes);
                     
-                    if (log.isTraceEnabled())
+                    if (log.isTraceEnabled()) {
                         log.trace("Adding " + entrySplits[0] + " " + dataTypes);
+                    }
                 }
             }
         }
@@ -1599,8 +1642,9 @@ public class QueryOptions implements OptionDescriber {
                 } else {
                     keys.add(entrySplits[0]);
                     
-                    if (log.isTraceEnabled())
+                    if (log.isTraceEnabled()) {
                         log.trace("Adding " + entrySplits[0] + " " + keys);
+                    }
                 }
             }
         }

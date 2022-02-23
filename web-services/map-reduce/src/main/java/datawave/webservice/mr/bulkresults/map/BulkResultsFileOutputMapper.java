@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +18,7 @@ import javax.xml.bind.Unmarshaller;
 
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.result.BaseQueryResponse;
@@ -24,10 +26,10 @@ import datawave.webservice.util.ProtostuffMessageBodyWriter;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.log4j.Logger;
-import org.infinispan.commons.util.Base64;
 import org.jboss.weld.environment.se.Weld;
 import org.springframework.util.Assert;
 
@@ -66,7 +68,7 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
         if (System.getProperty("ignore.weld.startMain") == null) {
             System.setProperty("com.sun.jersey.server.impl.cdi.lookupExtensionInBeanManager", "true"); // Disable CDI extensions in Jersey libs
             
-            weld = new Weld();
+            weld = new Weld("STATIC_INSTANCE");
             weld.initialize();
         }
         
@@ -107,29 +109,33 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
         entries.clear();
         entries.put(key, value);
         for (Entry<Key,Value> entry : entries.entrySet()) {
-            Object o = t.transform(entry);
-            BaseQueryResponse response = t.createResponse(new ResultsPage(Collections.singletonList(o)));
-            Class<? extends BaseQueryResponse> responseClass = null;
             try {
-                responseClass = getResponseClass(response.getClass().getName());
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Unable to find response class: " + response.getClass().getName(), e);
-            }
-            
-            try {
-                Value val = serializeResponse(responseClass, response, this.format);
-                // Write out the original key and the new value.
-                if (context.getOutputKeyClass() == null || context.getOutputKeyClass().equals(NullWritable.class)) {
-                    // don't write the key in this case, write only the value
-                    key = null;
-                } else {
-                    key = new Key(key); // to preserve whatever the reason was for this wrapping of the key in the original code
+                Object o = t.transform(entry);
+                BaseQueryResponse response = t.createResponse(new ResultsPage(Collections.singletonList(o)));
+                Class<? extends BaseQueryResponse> responseClass = null;
+                try {
+                    responseClass = getResponseClass(response.getClass().getName());
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException("Unable to find response class: " + response.getClass().getName(), e);
                 }
-                context.write(key, val);
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to serialize response of class: " + response.getClass().getName(), e);
+                
+                try {
+                    Value val = serializeResponse(responseClass, response, this.format);
+                    // Write out the original key and the new value.
+                    if (context.getOutputKeyClass() == null || context.getOutputKeyClass().equals(NullWritable.class)) {
+                        // don't write the key in this case, write only the value
+                        key = null;
+                    } else {
+                        key = new Key(key); // to preserve whatever the reason was for this wrapping of the key in the original code
+                    }
+                    context.write(key, val);
+                } catch (Exception e) {
+                    throw new RuntimeException("Unable to serialize response of class: " + response.getClass().getName(), e);
+                }
+                context.progress();
+            } catch (EmptyObjectException e) {
+                // not yet done, so continue fetching next
             }
-            context.progress();
         }
     }
     
@@ -177,11 +183,11 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
         Marshaller m = ctx.createMarshaller();
         m.marshal(q, writer);
         // Probably need to base64 encode it so that it will not mess up the Hadoop Configuration object
-        return Base64.encodeBytes(writer.toString().getBytes());
+        return new String(Base64.encodeBase64(writer.toString().getBytes()), Charset.forName("UTF-8"));
     }
     
     public static Query deserializeQuery(String base64EncodedQuery, Class<? extends Query> queryImplClass) throws JAXBException {
-        String query = new String(Base64.decode(base64EncodedQuery));
+        String query = new String(Base64.decodeBase64(base64EncodedQuery), Charset.forName("UTF-8"));
         JAXBContext ctx = JAXBContext.newInstance(queryImplClass);
         Unmarshaller u = ctx.createUnmarshaller();
         return (Query) u.unmarshal(new StringReader(query));

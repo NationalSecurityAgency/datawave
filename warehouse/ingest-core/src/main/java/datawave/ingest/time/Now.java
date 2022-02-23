@@ -1,6 +1,7 @@
 package datawave.ingest.time;
 
 import java.util.Date;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicLong;
@@ -63,10 +64,16 @@ public class Now {
         return now.get();
     }
     
+    @Override
     public boolean equals(Object o2) {
         if (o2 instanceof Now) {
             return timer == ((Now) o2).timer && now == ((Now) o2).now;
         }
         return false;
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(timer, now);
     }
 }

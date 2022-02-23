@@ -137,35 +137,36 @@ public class QueryMetricsWriter {
                     }
                 }
                 
-                JMSConsumer consumer = jmsContext.createConsumer(dest);
-                Message message;
-                do {
-                    message = consumer.receive(500);
-                    if (message != null) {
-                        try {
-                            if (message instanceof ObjectMessage) {
-                                ObjectMessage objectMessage = (ObjectMessage) message;
-                                Object o = objectMessage.getObject();
-                                QueryMetricHolder queryMetricHolder = null;
-                                if (o instanceof QueryMetricHolder) {
-                                    queryMetricHolder = (QueryMetricHolder) o;
-                                } else if (o instanceof QueryMetricMessage) {
-                                    queryMetricHolder = ((QueryMetricMessage) o).getMetricHolder();
+                try (JMSConsumer consumer = jmsContext.createConsumer(dest)) {
+                    Message message;
+                    do {
+                        message = consumer.receive(500);
+                        if (message != null) {
+                            try {
+                                if (message instanceof ObjectMessage) {
+                                    ObjectMessage objectMessage = (ObjectMessage) message;
+                                    Object o = objectMessage.getObject();
+                                    QueryMetricHolder queryMetricHolder = null;
+                                    if (o instanceof QueryMetricHolder) {
+                                        queryMetricHolder = (QueryMetricHolder) o;
+                                    } else if (o instanceof QueryMetricMessage) {
+                                        queryMetricHolder = ((QueryMetricMessage) o).getMetricHolder();
+                                    }
+                                    if (queryMetricHolder != null) {
+                                        metricQueue.add(queryMetricHolder);
+                                    }
                                 }
-                                if (queryMetricHolder != null) {
-                                    metricQueue.add(queryMetricHolder);
-                                }
+                            } catch (Exception e) {
+                                log.error(e.getMessage() + " messageID:" + message.getJMSMessageID());
+                                continue;
                             }
-                        } catch (Exception e) {
-                            log.error(e.getMessage() + " messageID:" + message.getJMSMessageID());
-                            continue;
                         }
-                    }
-                    // break out of loop every minute to ensure flush and acknowledge messages
-                    if (metricQueue.size() >= 1000 || (System.currentTimeMillis() - start) > 60000) {
-                        break;
-                    }
-                } while (message != null);
+                        // break out of loop every minute to ensure flush and acknowledge messages
+                        if (metricQueue.size() >= 1000 || (System.currentTimeMillis() - start) > 60000) {
+                            break;
+                        }
+                    } while (message != null);
+                }
                 
                 failedMetrics = writeMetrics(queryMetricHandler, metricQueue);
                 if (log.isTraceEnabled() && (metricQueue.size() - failedMetrics.size()) > 0) {

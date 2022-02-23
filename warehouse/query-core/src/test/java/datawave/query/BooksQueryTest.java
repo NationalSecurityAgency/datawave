@@ -3,7 +3,7 @@ package datawave.query;
 import com.google.common.collect.ImmutableMap;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.BooksDataManager;
 import datawave.query.testframework.BooksDataType;
 import datawave.query.testframework.BooksDataType.BooksEntry;
@@ -11,9 +11,10 @@ import datawave.query.testframework.BooksDataType.BooksField;
 import datawave.query.testframework.ConfigData;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
-import datawave.query.testframework.FileLoaderFactory;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.RawDataManager;
 import org.apache.log4j.Logger;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -31,6 +32,9 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
  */
 public class BooksQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(BooksQueryTest.class);
     
     private static final Map<String,String> QUERY_OPTIONS = ImmutableMap.of(QueryParameters.INCLUDE_GROUPING_CONTEXT, Boolean.TRUE.toString());
@@ -41,13 +45,13 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
             Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
             FieldConfig indexes = new BooksFieldIndex();
             ConfigData cfgData = new ConfigData(BooksField.BOOKS_DATE.name(), BooksField.ISBN_13.name(), BooksField.getHeaders(),
-                            BooksDataType.getVisibility(), BooksField.getFieldsMetadata());
+                            BooksDataType.getDefaultVisibility(), BooksField.getFieldsMetadata());
             
             DataTypeHadoopConfig books = new BooksDataType(BooksEntry.tech.getDataType(), BooksEntry.tech.getIngestFile(), indexes, cfgData);
             dataTypes.add(books);
             
-            final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes, FileLoaderFactory.FileType.GROUPING);
-            connector = helper.loadTables(log);
+            accumuloSetup.setData(FileType.GROUPING, dataTypes);
+            connector = accumuloSetup.loadTables(log);
             BooksDataManager mgr = new BooksDataManager(BooksEntry.tech.getDataType(), connector, indexes, cfgData);
             mgr.loadGroupingData(books.getIngestFile());
             return mgr;
@@ -86,6 +90,16 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
         String doug = "'douG Lea'";
         String joshua = "'NeaL GafTEr'";
         String query = BooksField.AUTHOR.name() + EQ_OP + doug + OR_OP + BooksField.AUTHOR.name() + EQ_OP + joshua;
+        runTest(query, query, QUERY_OPTIONS);
+    }
+    
+    @Test
+    public void testEvaluationOnlyAuthor() throws Exception {
+        log.info("------  testEvaluationOnlyAuthor  ------");
+        String bloch = "'BLOCH'";
+        String authorLastName = "AUTHOR_LAST_NAME";
+        logic.setEvaluationOnlyFields(authorLastName);
+        String query = authorLastName + EQ_OP + bloch + AND_OP + BooksField.LANGUAGE.name() + EQ_OP + "'ENGLISH'";
         runTest(query, query, QUERY_OPTIONS);
     }
     

@@ -5,7 +5,7 @@ public class ArgumentChecker {
     
     public static final void notNull(final Object arg1) {
         if (arg1 == null)
-            throw new IllegalArgumentException(NULL_ARG_MSG + ":Is null- arg1? " + (arg1 == null));
+            throw new IllegalArgumentException(NULL_ARG_MSG + ":Is null- arg1? true");
     }
     
     public static final void notNull(final Object arg1, final Object arg2) {

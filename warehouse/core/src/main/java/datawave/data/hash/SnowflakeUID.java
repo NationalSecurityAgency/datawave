@@ -5,6 +5,7 @@ import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigInteger;
 
 import datawave.util.StringUtils;
@@ -25,6 +26,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
  */
 public class SnowflakeUID extends UID {
     
+    private static final long serialVersionUID = 1856715886248436235L;
     private static final BigInteger TOO_BIG_BIGINT = BigInteger.ONE.shiftLeft(97);
     private static final String[] EMPTY_STRINGS = {};
     private static final BigInteger NID_MASK = BigInteger.valueOf(255L).shiftLeft(36);
@@ -37,37 +39,37 @@ public class SnowflakeUID extends UID {
     /**
      * The default radix (hexadecimal) when outputting as a string value
      */
-    public static int DEFAULT_RADIX = 16;
+    public static final int DEFAULT_RADIX = 16;
     
     /**
      * Max value for the 52-bit timestamp (1st field of the overall Snowflake UID)
      */
-    public static long MAX_TIMESTAMP = 4503599627370495L;
+    public static final long MAX_TIMESTAMP = 4503599627370495L;
     
     /**
      * Max value for the 8-bit node ID (1st portion of the 20-bit machine ID field)
      */
-    public static int MAX_NODE_ID = 255;
+    public static final int MAX_NODE_ID = 255;
     
     /**
      * Max value for the 6-bit process ID (2nd portion of the 20-bit machine ID field)
      */
-    public static int MAX_PROCESS_ID = 63;
+    public static final int MAX_PROCESS_ID = 63;
     
     /**
      * Max value for the 6-bit thread ID (3rd portion of the 20-bit machine ID field)
      */
-    public static int MAX_THREAD_ID = 63;
+    public static final int MAX_THREAD_ID = 63;
     
     /**
      * Max value for the 20-bit machine ID (2nd field of the overall Snowflake UID)
      */
-    public static int MAX_MACHINE_ID = 1048575;
+    public static final int MAX_MACHINE_ID = 1048575;
     
     /**
      * Max value for the 24-bit sequence ID (3rd field of the overall Snowflake UID)
      */
-    public static int MAX_SEQUENCE_ID = 16777215;
+    public static final int MAX_SEQUENCE_ID = 16777215;
     
     private final int radix;
     private BigInteger snowflake;

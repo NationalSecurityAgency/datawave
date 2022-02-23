@@ -1,5 +1,32 @@
 package datawave.webservice.query.runner;
 
+import datawave.security.util.AuthorizationsUtil;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.cache.AbstractRunningQuery;
+import datawave.webservice.query.cache.QueryMetricFactory;
+import datawave.webservice.query.cache.QueryMetricFactoryImpl;
+import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.data.ObjectSizeOf;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.logic.QueryLogic;
+import datawave.webservice.query.logic.WritesQueryMetrics;
+import datawave.webservice.query.logic.WritesResultCardinalities;
+import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
+import datawave.webservice.query.metric.QueryMetric;
+import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.trace.thrift.TInfo;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.log4j.Logger;
+import org.jboss.logging.NDC;
+
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,33 +38,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import datawave.security.util.AuthorizationsUtil;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.AbstractRunningQuery;
-import datawave.webservice.query.cache.QueryMetricFactory;
-import datawave.webservice.query.cache.QueryMetricFactoryImpl;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.data.ObjectSizeOf;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.WritesQueryMetrics;
-import datawave.webservice.query.logic.WritesResultCardinalities;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
-import datawave.webservice.query.metric.QueryMetric;
-import datawave.webservice.query.metric.QueryMetricsBean;
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.trace.thrift.TInfo;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
-import org.jboss.logging.NDC;
 
 /**
  * Object that encapsulates a running query
@@ -65,6 +65,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
     private QueryPredictor predictor = null;
+    private long maxResults = 0;
     
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
@@ -120,6 +121,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         if (null != connection) {
             setConnection(connection);
         }
+        this.maxResults = this.logic.getResultLimit(this.settings.getDnList());
+        if (this.maxResults != this.logic.getMaxResults()) {
+            log.info("Maximum results set to " + this.maxResults + " instead of default " + this.logic.getMaxResults() + ", user " + this.settings.getUserDN()
+                            + " has a DN configured with a different limit");
+        }
     }
     
     public static RunningQuery createQueryWithAuthorizations(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority,
@@ -168,6 +174,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             // TODO: applyPrediction("Plan");
         } catch (Exception e) {
             log.error(e.getMessage(), e);
+            if (this.logic instanceof BaseQueryLogic && this.logic.getCollectQueryMetrics() && null != this.getMetric()) {
+                GenericQueryConfiguration config = ((BaseQueryLogic) this.logic).getConfig();
+                if (null != config) {
+                    this.getMetric().setPlan(config.getQueryString());
+                }
+            }
             this.getMetric().setError(e);
             throw e;
         } finally {
@@ -229,7 +241,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
                         break;
                     }
-                } else if (this.logic.getMaxResults() >= 0 && numResults >= this.logic.getMaxResults()) {
+                } else if (this.maxResults >= 0 && numResults >= this.maxResults) {
                     log.info("Query logic max results has been reached, aborting query.next call");
                     this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
                     break;

@@ -10,43 +10,100 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 
-/**
- * 
- */
 public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
-    protected final QueryData original;
-    protected final CloseableIterable<QueryPlan> ranges;
-    protected final long maxRanges;
-    protected final Query settings;
-    protected ThreadedRangeBundlerIterator iterator = null;
-    protected ASTJexlScript queryTree;
-    protected boolean docSpecificLimitOverride;
-    protected int docsToCombine;
-    private long maxRangeWaitMillis;
-    protected Collection<Comparator<QueryPlan>> queryPlanComparators;
-    protected int numRangesToBuffer;
-    protected long rangeBufferTimeoutMillis;
-    protected long rangeBufferPollMillis;
     
-    private ThreadedRangeBundler(Builder builder) {
-        this.original = builder.getOriginal();
-        this.ranges = builder.getRanges();
-        this.queryTree = builder.getQueryTree();
-        this.maxRanges = builder.getMaxRanges();
-        this.settings = builder.getSettings();
-        this.docSpecificLimitOverride = builder.isDocSpecificLimitOverride();
-        this.docsToCombine = builder.getDocsToCombine();
-        this.maxRangeWaitMillis = builder.getMaxRangeWaitMillis();
-        this.queryPlanComparators = builder.getQueryPlanComparators();
-        this.numRangesToBuffer = builder.getNumRangesToBuffer();
-        this.rangeBufferTimeoutMillis = builder.getRangeBufferTimeoutMillis();
-        this.rangeBufferPollMillis = builder.getRangeBufferPollMillis();
+    private final QueryData original;
+    private final CloseableIterable<QueryPlan> ranges;
+    private final long maxRanges;
+    private final Query settings;
+    private final ASTJexlScript queryTree;
+    private final boolean docSpecificLimitOverride;
+    private final int docsToCombine;
+    private final Collection<Comparator<QueryPlan>> queryPlanComparators;
+    private final int numRangesToBuffer;
+    private final long rangeBufferTimeoutMillis;
+    private final long rangeBufferPollMillis;
+    private final long maxRangeWaitMillis;
+    private ThreadedRangeBundlerIterator iterator;
+    
+    /**
+     * Creates and returns a new {@link Builder}.
+     * 
+     * @return the builder
+     */
+    public static Builder builder() {
+        return new Builder();
     }
     
-    /*
-     * (non-Javadoc)
+    private ThreadedRangeBundler(Builder builder) {
+        this.original = builder.original;
+        this.ranges = builder.ranges;
+        this.queryTree = builder.queryTree;
+        this.maxRanges = builder.maxRanges;
+        this.settings = builder.settings;
+        this.docSpecificLimitOverride = builder.docSpecificLimitOverride;
+        this.docsToCombine = builder.docsToCombine;
+        this.maxRangeWaitMillis = builder.maxRangeWaitMillis;
+        this.queryPlanComparators = builder.queryPlanComparators;
+        this.numRangesToBuffer = builder.numRangesToBuffer;
+        this.rangeBufferTimeoutMillis = builder.rangeBufferTimeoutMillis;
+        this.rangeBufferPollMillis = builder.rangeBufferPollMillis;
+    }
+    
+    public QueryData getOriginal() {
+        return original;
+    }
+    
+    public CloseableIterable<QueryPlan> getRanges() {
+        return ranges;
+    }
+    
+    public long getMaxRanges() {
+        return maxRanges;
+    }
+    
+    public Query getSettings() {
+        return settings;
+    }
+    
+    public ASTJexlScript getQueryTree() {
+        return queryTree;
+    }
+    
+    public boolean isDocSpecificLimitOverride() {
+        return docSpecificLimitOverride;
+    }
+    
+    public int getDocsToCombine() {
+        return docsToCombine;
+    }
+    
+    public Collection<Comparator<QueryPlan>> getQueryPlanComparators() {
+        return queryPlanComparators;
+    }
+    
+    public int getNumRangesToBuffer() {
+        return numRangesToBuffer;
+    }
+    
+    public long getRangeBufferTimeoutMillis() {
+        return rangeBufferTimeoutMillis;
+    }
+    
+    public long getRangeBufferPollMillis() {
+        return rangeBufferPollMillis;
+    }
+    
+    public long getMaxRangeWaitMillis() {
+        return maxRangeWaitMillis;
+    }
+    
+    /**
+     * Builds and returns a new {@link ThreadedRangeBundlerIterator}.
      * 
-     * @see java.lang.Iterable#iterator()
+     * @return the new {@link ThreadedRangeBundlerIterator}
+     * @throws IllegalStateException
+     *             if {@link ThreadedRangeBundler#iterator()} has already been called once
      */
     @Override
     public ThreadedRangeBundlerIterator iterator() {
@@ -75,10 +132,11 @@ public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
         return iterator;
     }
     
-    /*
-     * (non-Javadoc)
+    /**
+     * Closes the underlying iterator.
      * 
-     * @see java.io.Closeable#close()
+     * @throws IOException
+     *             when an error occurs while closing the underlying iterator
      */
     @Override
     public void close() throws IOException {
@@ -87,31 +145,27 @@ public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
         }
     }
     
+    /**
+     * Builder class for {@link ThreadedRangeBundler}.
+     */
     public static class Builder {
-        protected QueryData original;
-        protected CloseableIterable<QueryPlan> ranges;
-        protected long maxRanges;
-        protected Query settings;
-        protected ASTJexlScript queryTree;
-        protected boolean docSpecificLimitOverride = false;
-        protected int docsToCombine = -1;
-        private long maxRangeWaitMillis = 50;
-        protected Collection<Comparator<QueryPlan>> queryPlanComparators = null;
-        protected int numRangesToBuffer = 0;
-        protected long rangeBufferTimeoutMillis = 0;
-        protected long rangeBufferPollMillis = 100;
         
-        public QueryData getOriginal() {
-            return original;
-        }
+        private QueryData original;
+        private CloseableIterable<QueryPlan> ranges;
+        private long maxRanges;
+        private Query settings;
+        private ASTJexlScript queryTree;
+        private boolean docSpecificLimitOverride;
+        private int docsToCombine = -1;
+        private long maxRangeWaitMillis = 50L;
+        private Collection<Comparator<QueryPlan>> queryPlanComparators;
+        private int numRangesToBuffer;
+        private long rangeBufferTimeoutMillis;
+        private long rangeBufferPollMillis = 100L;
         
         public Builder setOriginal(QueryData original) {
             this.original = original;
             return this;
-        }
-        
-        public CloseableIterable<QueryPlan> getRanges() {
-            return ranges;
         }
         
         public Builder setRanges(CloseableIterable<QueryPlan> ranges) {
@@ -119,17 +173,9 @@ public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
             return this;
         }
         
-        public long getMaxRanges() {
-            return maxRanges;
-        }
-        
         public Builder setMaxRanges(long maxRanges) {
             this.maxRanges = maxRanges;
             return this;
-        }
-        
-        public Query getSettings() {
-            return settings;
         }
         
         public Builder setSettings(Query settings) {
@@ -137,17 +183,9 @@ public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
             return this;
         }
         
-        public ASTJexlScript getQueryTree() {
-            return queryTree;
-        }
-        
         public Builder setQueryTree(ASTJexlScript queryTree) {
             this.queryTree = queryTree;
             return this;
-        }
-        
-        public boolean isDocSpecificLimitOverride() {
-            return docSpecificLimitOverride;
         }
         
         public Builder setDocSpecificLimitOverride(boolean docSpecificLimitOverride) {
@@ -155,17 +193,9 @@ public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
             return this;
         }
         
-        public int getDocsToCombine() {
-            return docsToCombine;
-        }
-        
         public Builder setDocsToCombine(int docsToCombine) {
             this.docsToCombine = docsToCombine;
             return this;
-        }
-        
-        public long getMaxRangeWaitMillis() {
-            return maxRangeWaitMillis;
         }
         
         public Builder setMaxRangeWaitMillis(long maxRangeWaitMillis) {
@@ -173,17 +203,9 @@ public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
             return this;
         }
         
-        public Collection<Comparator<QueryPlan>> getQueryPlanComparators() {
-            return queryPlanComparators;
-        }
-        
         public Builder setQueryPlanComparators(Collection<Comparator<QueryPlan>> queryPlanComparators) {
             this.queryPlanComparators = queryPlanComparators;
             return this;
-        }
-        
-        public int getNumRangesToBuffer() {
-            return numRangesToBuffer;
         }
         
         public Builder setNumRangesToBuffer(int numRangesToBuffer) {
@@ -191,17 +213,9 @@ public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
             return this;
         }
         
-        public long getRangeBufferTimeoutMillis() {
-            return rangeBufferTimeoutMillis;
-        }
-        
         public Builder setRangeBufferTimeoutMillis(long rangeBufferTimeoutMillis) {
             this.rangeBufferTimeoutMillis = rangeBufferTimeoutMillis;
             return this;
-        }
-        
-        public long getRangeBufferPollMillis() {
-            return rangeBufferPollMillis;
         }
         
         public Builder setRangeBufferPollMillis(long rangeBufferPollMillis) {
@@ -209,6 +223,20 @@ public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
             return this;
         }
         
+        /**
+         * Builds and returns a new {@link ThreadedRangeBundler}. The following default values will be used unless specified otherwise in the builder.
+         *
+         * <ul>
+         * <li>
+         * {@link ThreadedRangeBundler#docsToCombine}: -1</li>
+         * <li>
+         * {@link ThreadedRangeBundler#maxRangeWaitMillis}: 50</li>
+         * <li>
+         * {@link ThreadedRangeBundler#rangeBufferPollMillis}: 100</li>
+         * </ul>
+         *
+         * @return the new {@link ThreadedRangeBundler}
+         */
         public ThreadedRangeBundler build() {
             return new ThreadedRangeBundler(this);
         }

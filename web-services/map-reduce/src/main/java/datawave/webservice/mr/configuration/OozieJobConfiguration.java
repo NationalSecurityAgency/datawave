@@ -29,11 +29,12 @@ public class OozieJobConfiguration extends MapReduceJobConfiguration {
     
     public void initializeOozieConfiguration(String jobId, Properties oozieConf, MultivaluedMap<String,String> queryParameters) throws Exception {
         
-        Map<String,String> jobProperties = getJobConfigurationProperties();
+        Map<String,Object> jobProperties = getJobConfigurationProperties();
         
-        for (Map.Entry<String,String> entry : jobProperties.entrySet()) {
-            
-            oozieConf.setProperty(entry.getKey(), entry.getValue());
+        for (Map.Entry<String,Object> entry : jobProperties.entrySet()) {
+            if (entry.getValue() instanceof String) {
+                oozieConf.setProperty(entry.getKey(), (String) entry.getValue());
+            }
         }
         
         oozieConf.setProperty(OozieJobConstants.JOB_TRACKER_PARAM, getJobTracker());
@@ -44,8 +45,10 @@ public class OozieJobConfiguration extends MapReduceJobConfiguration {
         String parameters = queryParameters.getFirst(OozieJobConstants.PARAMETERS);
         
         // Add any configuration properties set in the config
-        for (Map.Entry<String,String> entry : this.getJobConfigurationProperties().entrySet()) {
-            oozieConf.setProperty(entry.getKey(), entry.getValue());
+        for (Map.Entry<String,Object> entry : this.getJobConfigurationProperties().entrySet()) {
+            if (entry.getValue() instanceof String) {
+                oozieConf.setProperty(entry.getKey(), (String) entry.getValue());
+            }
         }
         
         // Parse the parameters

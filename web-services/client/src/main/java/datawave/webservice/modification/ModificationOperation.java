@@ -7,7 +7,7 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(ModificationOperationImpl.class)
-public abstract class ModificationOperation<T extends ModificationOperation> {
+public abstract class ModificationOperation<T extends ModificationOperation> implements Cloneable {
     
     @XmlEnum(String.class)
     public enum OPERATIONMODE {

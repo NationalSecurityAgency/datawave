@@ -89,7 +89,12 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
         if (null == obj)
             return false;
         if (obj instanceof IndexMatch) {
-            return uid.equals(((IndexMatch) obj).uid);
+            IndexMatch other = (IndexMatch) obj;
+            
+            if (!uid.equals(other.uid))
+                return false;
+            
+            return nodeSet.equals(other.nodeSet);
         }
         return false;
     }

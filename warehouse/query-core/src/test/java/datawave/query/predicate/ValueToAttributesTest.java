@@ -10,13 +10,15 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.composite.CompositeMetadata;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.edge.BaseEdgeQueryTest;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.CompositeTestingIngest;
 import datawave.query.util.TypeMetadata;
+import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import org.apache.accumulo.core.client.Connector;
@@ -50,10 +52,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import static datawave.query.QueryTestTableHelper.SHARD_INDEX_TABLE_NAME;
-import static datawave.query.QueryTestTableHelper.SHARD_TABLE_NAME;
-import static datawave.query.tables.edge.BaseEdgeQueryTest.MODEL_TABLE_NAME;
-
 /**
   */
 public abstract class ValueToAttributesTest {
@@ -70,9 +68,9 @@ public abstract class ValueToAttributesTest {
             
             CompositeTestingIngest.writeItAll(connector, CompositeTestingIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(connector, auths, TableName.SHARD);
+            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(connector, auths, BaseEdgeQueryTest.MODEL_TABLE_NAME);
         }
         
         @Override
@@ -93,9 +91,9 @@ public abstract class ValueToAttributesTest {
             
             CompositeTestingIngest.writeItAll(connector, CompositeTestingIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
-            PrintUtility.printTable(connector, auths, SHARD_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, SHARD_INDEX_TABLE_NAME);
-            PrintUtility.printTable(connector, auths, MODEL_TABLE_NAME);
+            PrintUtility.printTable(connector, auths, TableName.SHARD);
+            PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
+            PrintUtility.printTable(connector, auths, BaseEdgeQueryTest.MODEL_TABLE_NAME);
         }
         
         @Override
@@ -252,6 +250,6 @@ public abstract class ValueToAttributesTest {
         TypeMetadata typeMetadata = new TypeMetadata(
                         "MAKE:[beep:datawave.data.type.LcNoDiacriticsType];MAKE_COLOR:[beep:datawave.data.type.NoOpType];START_DATE:[beep:datawave.data.type.DateType];TYPE_NOEVAL:[beep:datawave.data.type.LcNoDiacriticsType];IP_ADDR:[beep:datawave.data.type.IpAddressType];WHEELS:[beep:datawave.data.type.LcNoDiacriticsType,datawave.data.type.NumberType];COLOR:[beep:datawave.data.type.LcNoDiacriticsType];COLOR_WHEELS:[beep:datawave.data.type.NoOpType];TYPE:[beep:datawave.data.type.LcNoDiacriticsType]");
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        ValueToAttributes valueToAttributes = new ValueToAttributes(compositeMetadata, typeMetadata, null, markingFunctions);
+        ValueToAttributes valueToAttributes = new ValueToAttributes(compositeMetadata, typeMetadata, null, markingFunctions, true);
     }
 }

@@ -34,24 +34,44 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
     public static final String EXCEEDED_OR_FIELD = "field";
     public static final String EXCEEDED_OR_PARAMS = "params";
     
-    public ExceededOrThresholdMarkerJexlNode(int id) {
-        super(id);
+    private static final String LABEL = "_List_";
+    
+    /**
+     * Return the label this marker type: {@value #LABEL}. Overrides {@link QueryPropertyMarker#label()}.
+     * 
+     * @return the label
+     */
+    public static String label() {
+        return LABEL;
     }
     
     public ExceededOrThresholdMarkerJexlNode() {
         super();
     }
     
+    public ExceededOrThresholdMarkerJexlNode(int id) {
+        super(id);
+    }
+    
     /**
-     * This will create a structure as follows around the specified node: Reference (this node) Reference Expression AND Reference Reference Expression
-     * Assignment Reference Identifier:ExceededOrThresholdMarkerJexlNode True node (the one specified
-     * 
-     * Hence the resulting expression will be ((ExceededOrThresholdMarkerJexlNode = True) AND {specified node})
+     * Returns a new query property marker with the expression <code>(({@value #LABEL} = true) &amp;&amp; ({source}))</code>.
      * 
      * @param node
+     *            the source node
+     * @see QueryPropertyMarker#QueryPropertyMarker(JexlNode) the super constructor for additional information on the tree structure
      */
     public ExceededOrThresholdMarkerJexlNode(JexlNode node) {
         super(node);
+    }
+    
+    /**
+     * Returns {@value #LABEL}.
+     * 
+     * @return the label
+     */
+    @Override
+    public String getLabel() {
+        return LABEL;
     }
     
     public static ExceededOrThresholdMarkerJexlNode createFromFstURI(String fieldName, URI fstPath) throws JsonProcessingException {
@@ -76,27 +96,6 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
         
         // now set the source
         setupSource(JexlNodeFactory.createAndNode(Arrays.asList(idNode, fieldNode, paramsNode)));
-    }
-    
-    /**
-     * A routine to determine whether an and node is actually an exceeded or threshold marker. The reason for this routine is that if the query is serialized
-     * and deserialized, then only the underlying assignment will persist.
-     * 
-     * @param node
-     * @return true if this and node is an exceeded or marker
-     */
-    public static boolean instanceOf(JexlNode node) {
-        return QueryPropertyMarker.instanceOf(node, ExceededOrThresholdMarkerJexlNode.class);
-    }
-    
-    /**
-     * A routine to determine get the node which is the source of the exceeded or threshold (i.e. the underlying regex or range)
-     * 
-     * @param node
-     * @return the source node or null if not an an exceededOrThreshold Marker
-     */
-    public static JexlNode getExceededOrThresholdSource(JexlNode node) {
-        return QueryPropertyMarker.getQueryPropertySource(node, ExceededOrThresholdMarkerJexlNode.class);
     }
     
     /**
@@ -152,9 +151,9 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
         private Set<String> values;
         private Collection<String[]> ranges;
         
-        private ExceededOrParams() {
-            
-        }
+        // Required for deserialization.
+        @SuppressWarnings("unused")
+        private ExceededOrParams() {}
         
         ExceededOrParams(String fstURI) {
             this.fstURI = fstURI;
@@ -183,8 +182,8 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
                     if (mergedRange.getStartKey().getRow().equals(mergedRange.getEndKey().getRow())) {
                         this.ranges.add(new String[] {String.valueOf(mergedRange.getStartKey().getRow())});
                     } else {
-                        this.ranges.add(new String[] {(mergedRange.isStartKeyInclusive() ? "[" : "(") + String.valueOf(mergedRange.getStartKey().getRow()),
-                                String.valueOf(mergedRange.getEndKey().getRow()) + (mergedRange.isEndKeyInclusive() ? "]" : ")")});
+                        this.ranges.add(new String[] {(mergedRange.isStartKeyInclusive() ? "[" : "(") + mergedRange.getStartKey().getRow(),
+                                mergedRange.getEndKey().getRow() + (mergedRange.isEndKeyInclusive() ? "]" : ")")});
                     }
                 }
             }

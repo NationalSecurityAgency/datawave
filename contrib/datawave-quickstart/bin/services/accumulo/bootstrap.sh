@@ -15,7 +15,7 @@ DW_ACCUMULO_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Zookeeper config
 
 # You may override DW_ZOOKEEPER_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-http://archive.cloudera.com/cdh5/cdh/5/zookeeper-3.4.5-cdh5.16.2.tar.gz}"
+DW_ZOOKEEPER_DIST_URI="${DW_ZOOKEEPER_DIST_URI:-https://archive.apache.org/dist/zookeeper/zookeeper-3.4.5/zookeeper-3.4.5.tar.gz}"
 DW_ZOOKEEPER_DIST="$( downloadTarball "${DW_ZOOKEEPER_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
 DW_ZOOKEEPER_BASEDIR="zookeeper-install"
 DW_ZOOKEEPER_SYMLINK="zookeeper"
@@ -81,14 +81,14 @@ export PATH=${ACCUMULO_HOME}/bin:${ZOOKEEPER_HOME}/bin:$PATH
 
 DW_ZOOKEEPER_CMD_START="( cd ${ZOOKEEPER_HOME}/bin && ./zkServer.sh start )"
 DW_ZOOKEEPER_CMD_STOP="( cd ${ZOOKEEPER_HOME}/bin && ./zkServer.sh stop )"
-DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="pgrep -f 'zookeeper.server.quorum.QuorumPeerMain'"
+DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'zookeeper.server.quorum.QuorumPeerMain'"
 
 DW_ACCUMULO_CMD_START="( cd ${ACCUMULO_HOME}/bin && ./start-all.sh )"
 DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./stop-all.sh )"
-DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -f 'o.start.Main master|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
+DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'o.start.Main master|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
 
 function accumuloIsRunning() {
-    DW_ACCUMULO_PID_LIST="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS} -d ' '")"
+    DW_ACCUMULO_PID_LIST="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS}")"
 
     zookeeperIsRunning
 
@@ -225,7 +225,7 @@ function accumuloIsInstalled() {
 }
 
 function zookeeperIsRunning() {
-    DW_ZOOKEEPER_PID_LIST="$(eval "${DW_ZOOKEEPER_CMD_FIND_ALL_PIDS} -d ' '")"
+    DW_ZOOKEEPER_PID_LIST="$(eval "${DW_ZOOKEEPER_CMD_FIND_ALL_PIDS}")"
     [ -z "${DW_ZOOKEEPER_PID_LIST}" ] && return 1 || return 0
 }
 
@@ -256,4 +256,21 @@ function accumuloPidList() {
    if [[ -n "${DW_ACCUMULO_PID_LIST}" || -n "${DW_ZOOKEEPER_PID_LIST}" ]] ; then
       echo "${DW_ACCUMULO_PID_LIST} ${DW_ZOOKEEPER_PID_LIST}"
    fi
+}
+
+function accumuloDisplayBinaryInfo() {
+  echo "Source: ${DW_ACCUMULO_DIST_URI}"
+  local tarballName="$(basename "$DW_ACCUMULO_DIST_URI")"
+  if [[ -f "${DW_ACCUMULO_SERVICE_DIR}/${tarballName}" ]]; then
+     echo " Local: ${DW_ACCUMULO_SERVICE_DIR}/${tarballName}"
+  else
+     echo " Local: Not loaded"
+  fi
+  echo "Source: ${DW_ZOOKEEPER_DIST_URI}"
+  tarballName="$(basename "$DW_ZOOKEEPER_DIST_URI")"
+  if [[ -f "${DW_ACCUMULO_SERVICE_DIR}/${tarballName}" ]]; then
+     echo " Local: ${DW_ACCUMULO_SERVICE_DIR}/${tarballName}"
+  else
+     echo " Local: Not loaded"
+  fi
 }

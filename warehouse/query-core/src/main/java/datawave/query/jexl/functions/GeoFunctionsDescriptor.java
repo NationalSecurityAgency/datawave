@@ -1,11 +1,6 @@
 package datawave.query.jexl.functions;
 
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Envelope;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.MultiPolygon;
-import com.vividsolutions.jts.geom.Polygon;
-import com.vividsolutions.jts.util.GeometricShapeFactory;
+import com.google.common.collect.Lists;
 import datawave.data.normalizer.GeoNormalizer;
 import datawave.data.normalizer.GeoNormalizer.GeoPoint;
 import datawave.data.normalizer.GeoNormalizer.OutOfRangeException;
@@ -21,6 +16,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.functions.arguments.RebuildingJexlArgumentDescriptor;
+import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
@@ -28,10 +24,18 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTNumberLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateXY;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.MultiPolygon;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.util.GeometricShapeFactory;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -82,40 +86,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 if (args.size() == 3) {
                     double[] ll = geoNormalizer.parseLatLon(args.get(1).image);
                     double[] ur = geoNormalizer.parseLatLon(args.get(2).image);
+                    char splitChar = args.get(1).image.charAt(geoNormalizer.findSplit(args.get(1).image));
                     
-                    // is the lower left longitude greater than the upper right longitude?
-                    // if so, we have crossed the anti-meridian and should split
-                    if (ll[1] > ur[1]) {
-                        
-                        char splitChar = args.get(1).image.charAt(geoNormalizer.findSplit(args.get(1).image));
-                        
-                        JexlNode geNode1 = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), Double.toString(ll[0])
-                                        + splitChar + Double.toString(ll[1]));
-                        JexlNode leNode1 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), Double.toString(ur[0])
-                                        + splitChar + "180");
-                        
-                        // now link em up
-                        JexlNode andNode1 = JexlNodeFactory.createAndNode(Arrays.asList(geNode1, leNode1));
-                        
-                        JexlNode geNode2 = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), Double.toString(ll[0])
-                                        + splitChar + "-180");
-                        JexlNode leNode2 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), Double.toString(ur[0])
-                                        + splitChar + Double.toString(ur[1]));
-                        
-                        // now link em up
-                        JexlNode andNode2 = JexlNodeFactory.createAndNode(Arrays.asList(geNode2, leNode2));
-                        
-                        // link em all up
-                        returnNode = JexlNodeFactory.createAndNode(Arrays.asList(andNode1, andNode2));
-                        
-                    } else {
-                        
-                        JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), args.get(1).image);
-                        JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), args.get(2).image);
-                        
-                        // now link em up
-                        returnNode = JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode));
-                    }
+                    returnNode = getIndexNode(args.get(0), ll[1], ur[1], ll[0], ur[0], Character.toString(splitChar));
                 } else {
                     
                     double minLat, maxLat, minLon, maxLon;
@@ -139,8 +112,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         JexlNode leLatNode1 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(1), Double.toString(maxLat));
                         
                         // now link em up
-                        JexlNode andNode1 = JexlNodeFactory.createAndNode(Arrays.asList(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode1, leLonNode1)),
-                                        JexlNodeFactory.createAndNode(Arrays.asList(geLatNode1, leLatNode1))));
+                        JexlNode andNode1 = JexlNodeFactory.createAndNode(Arrays.asList(
+                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode1, leLonNode1))),
+                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLatNode1, leLatNode1)))));
                         
                         JexlNode geLonNode2 = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), "-180");
                         JexlNode leLonNode2 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), Double.toString(maxLon));
@@ -149,8 +123,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         JexlNode leLatNode2 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(1), Double.toString(maxLat));
                         
                         // now link em up
-                        JexlNode andNode2 = JexlNodeFactory.createAndNode(Arrays.asList(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode2, leLonNode2)),
-                                        JexlNodeFactory.createAndNode(Arrays.asList(geLatNode2, leLatNode2))));
+                        JexlNode andNode2 = JexlNodeFactory.createAndNode(Arrays.asList(
+                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode2, leLonNode2))),
+                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLatNode2, leLatNode2)))));
                         
                         // link em up
                         returnNode = JexlNodeFactory.createAndNode(Arrays.asList(andNode1, andNode2));
@@ -163,8 +138,9 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         
                         // now link em up
                         
-                        returnNode = JexlNodeFactory.createAndNode(Arrays.asList(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode, leLonNode)),
-                                        JexlNodeFactory.createAndNode(Arrays.asList(geLatNode, leLatNode))));
+                        returnNode = JexlNodeFactory.createAndNode(Arrays.asList(
+                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLonNode, leLonNode))),
+                                        BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geLatNode, leLatNode)))));
                     }
                 }
             } else if (name.equals("within_circle")) {
@@ -197,17 +173,68 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 double lat = c.getLatitude();
                 double lon = c.getLongitude();
                 
-                String sep = GeoNormalizer.separator;
-                JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), String.valueOf(lat + radius) + sep
-                                + String.valueOf(lon + radius));
-                JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), String.valueOf(lat - radius) + sep
-                                + String.valueOf(lon - radius));
+                returnNode = getIndexNode(args.get(0), lon - radius, lon + radius, lat - radius, lat + radius, GeoNormalizer.separator);
                 
-                // now link em up
-                
-                returnNode = JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode));
             }
             return returnNode;
+        }
+        
+        public static JexlNode getIndexNode(JexlNode fieldsNode, double minLon, double maxLon, double minLat, double maxLat, String splitChar) {
+            JexlNode indexNode;
+            List<JexlNode> indexNodes = Lists.newArrayList();
+            if (fieldsNode.jjtGetNumChildren() > 1) {
+                for (int i = 0; i < fieldsNode.jjtGetNumChildren(); i++) {
+                    JexlNode kid = JexlASTHelper.dereference(fieldsNode.jjtGetChild(i));
+                    if (kid.image != null) {
+                        indexNodes.add(getIndexNode(kid.image, minLon, maxLon, minLat, maxLat, splitChar));
+                    }
+                }
+            } else {
+                indexNodes.add(getIndexNode(fieldsNode.image, minLon, maxLon, minLat, maxLat, splitChar));
+            }
+            
+            if (!indexNodes.isEmpty()) {
+                if (indexNodes.size() > 1) {
+                    indexNode = JexlNodeFactory.createOrNode(indexNodes);
+                } else {
+                    indexNode = indexNodes.get(0);
+                }
+            } else {
+                throw new IllegalArgumentException("Unable to create index node for geo function.");
+            }
+            
+            return indexNode;
+        }
+        
+        public static JexlNode getIndexNode(String fieldName, double minLon, double maxLon, double minLat, double maxLat, String splitChar) {
+            JexlNode indexNode;
+            // is the lower left longitude greater than the upper right longitude?
+            // if so, we have crossed the anti-meridian and should split
+            if (minLon > maxLon) {
+                JexlNode geNode1 = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), fieldName, minLat + splitChar + minLon);
+                JexlNode leNode1 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName, maxLat + splitChar + "180");
+                
+                // now link em up
+                JexlNode andNode1 = BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode1, leNode1)));
+                
+                JexlNode geNode2 = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), fieldName, minLat + splitChar + "-180");
+                JexlNode leNode2 = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName, maxLat + splitChar + maxLon);
+                
+                // now link em up
+                JexlNode andNode2 = BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode2, leNode2)));
+                
+                // link em all up
+                indexNode = JexlNodeFactory.createAndNode(Arrays.asList(andNode1, andNode2));
+                
+            } else {
+                JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), fieldName, minLat + splitChar + minLon);
+                JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName, maxLat + splitChar + maxLon);
+                
+                // now link em up
+                indexNode = BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
+            }
+            
+            return indexNode;
         }
         
         @Override
@@ -298,10 +325,17 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         
                         if (geoWaveNode != null) {
                             
+                            String geoFields = getFieldParam(otherFields);
+                            String arg1 = "'" + args.get(1).image + "'";
+                            
+                            // handle the case where the second argument may be a numeric literal (pt/radius query)
+                            String arg2 = (args.get(2) instanceof ASTNumberLiteral) ? args.get(2).image : "'" + args.get(2).image + "'";
+                            
                             // if there are other fields, recreate the geo function node
                             if (!otherFields.isEmpty()) {
-                                JexlNode geoNode = JexlASTHelper.parseJexlQuery(namespace + ":" + name + "(" + getFieldParam(otherFields) + ", '"
-                                                + args.get(1).image + "', '" + args.get(2).image + "')");
+                                // dereferencing the child node since we do not want the JexlASTScript nor the JexlASTReference parent nodes
+                                JexlNode geoNode = JexlASTHelper.dereference(JexlASTHelper.parseJexlQuery(
+                                                namespace + ":" + name + "(" + geoFields + ", " + arg1 + ", " + arg2 + ")").jjtGetChild(0));
                                 return JexlNodeFactory.createOrNode(Arrays.asList(geoNode, geoWaveNode));
                             } else {
                                 return geoWaveNode;
@@ -353,8 +387,11 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 }
             }
             
-            if (wkt != null)
-                return JexlASTHelper.parseJexlQuery("geowave:intersects(" + getFieldParam(fields) + ", '" + wkt + "')");
+            if (wkt != null) {
+                // dereferencing the child node since we do not want the JexlASTScript nor the JexlASTReference parent nodes
+                return JexlASTHelper.dereference(JexlASTHelper.parseJexlQuery("geowave:intersects(" + getFieldParam(fields) + ", '" + wkt + "')")
+                                .jjtGetChild(0));
+            }
             
             return null;
         }
@@ -373,10 +410,14 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
         }
         
         private Polygon createRectangle(double minLon, double maxLon, double minLat, double maxLat) {
-            GeometricShapeFactory shapeFactory = new GeometricShapeFactory();
-            shapeFactory.setEnvelope(new Envelope(minLon, maxLon, minLat, maxLat));
-            shapeFactory.setNumPoints(4);
-            return shapeFactory.createRectangle();
+            GeometryFactory geomFactory = new GeometryFactory();
+            List<Coordinate> coordinates = new ArrayList<>();
+            coordinates.add(new CoordinateXY(minLon, minLat));
+            coordinates.add(new CoordinateXY(maxLon, minLat));
+            coordinates.add(new CoordinateXY(maxLon, maxLat));
+            coordinates.add(new CoordinateXY(minLon, maxLat));
+            coordinates.add(new CoordinateXY(minLon, minLat));
+            return geomFactory.createPolygon(coordinates.toArray(new Coordinate[0]));
         }
         
         private MultiPolygon createMultiPolygon(Polygon poly1, Polygon poly2) {

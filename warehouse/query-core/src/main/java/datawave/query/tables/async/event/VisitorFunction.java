@@ -2,7 +2,6 @@ package datawave.query.tables.async.event;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -13,21 +12,26 @@ import datawave.query.jexl.visitors.DateIndexCleanupVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
 import datawave.query.jexl.visitors.ExecutableDeterminationVisitor.STATE;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
+import datawave.query.jexl.visitors.TermCountingVisitor;
+import datawave.query.jexl.visitors.TreeEqualityVisitor;
+import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.SessionOptions;
-import datawave.query.tables.async.RangeDefinition;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
 import datawave.util.StringUtils;
+import datawave.util.time.DateHelper;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.fs.FileSystem;
@@ -38,16 +42,25 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Purpose: Perform intermediate transformations on ScannerChunks as they are before being sent to the tablet server.
  *
  * Justification: The benefit of using this Function is that we can perform necessary transformations in the context of a thread about to send a request to
- * tabletservers. This parallelizes requests sent to the tablet servers.
+ * tablet servers. This parallelizes requests sent to the tablet servers.
  */
 public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     
@@ -59,7 +72,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected Set<String> indexOnlyFields;
     protected Set<String> nonEventFields;
     
-    Map<String,String> previouslyExpanded = Maps.newHashMap();
+    Map<String,String> previouslyExpanded = new ConcurrentHashMap<>();
     
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
     
@@ -96,6 +109,26 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         
     }
     
+    private Date getEarliestBeginDate(Collection<Range> ranges) {
+        SimpleDateFormat sdf = new SimpleDateFormat(DateHelper.DATE_FORMAT_STRING_TO_DAY);
+        Date minDate = null;
+        try {
+            for (Range range : ranges) {
+                String stringDate = range.getStartKey().getRow().toString();
+                if (stringDate.length() >= DateHelper.DATE_FORMAT_STRING_TO_DAY.length()) {
+                    stringDate = stringDate.substring(0, DateHelper.DATE_FORMAT_STRING_TO_DAY.length());
+                    Date date = sdf.parse(stringDate);
+                    if (minDate == null || date.compareTo(minDate) < 0) {
+                        minDate = date;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new DatawaveFatalQueryException(e);
+        }
+        return minDate;
+    }
+    
     @Override
     @Nullable
     public ScannerChunk apply(@Nullable ScannerChunk input) {
@@ -122,7 +155,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     boolean madeChange = false;
                     
                     if (!evaluatedPreviously && config.isCleanupShardsAndDaysQueryHints()) {
-                        script = JexlASTHelper.parseJexlQuery(query);
+                        script = JexlASTHelper.parseAndFlattenJexlQuery(query);
                         script = DateIndexCleanupVisitor.cleanup(script);
                         madeChange = true;
                     }
@@ -132,11 +165,28 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     List<String> debug = null;
                     if (log.isTraceEnabled())
                         debug = Lists.newArrayList();
+                    
+                    if (!config.isDisableWhindexFieldMappings() && !evaluatedPreviously) {
+                        if (null == script)
+                            script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                        
+                        // apply the whindex using the shard date
+                        ASTJexlScript rebuiltScript = WhindexVisitor.apply(script, config, getEarliestBeginDate(newSettings.getRanges()), metadataHelper);
+                        
+                        // if the query changed, save it, and mark it as such
+                        if (!TreeEqualityVisitor.isEqual(script, rebuiltScript)) {
+                            log.debug("[" + config.getQuery().getId() + "] The WhindexVisitor updated the query: "
+                                            + JexlStringBuildingVisitor.buildQuery(script));
+                            script = rebuiltScript;
+                            madeChange = true;
+                        }
+                    }
+                    
                     if (!config.isBypassExecutabilityCheck() || !evaluatedPreviously) {
                         if (null == script)
-                            script = JexlASTHelper.parseJexlQuery(query);
+                            script = JexlASTHelper.parseAndFlattenJexlQuery(query);
                         
-                        if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, indexOnlyFields, nonEventFields, debug,
+                        if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
                                         this.metadataHelper)) {
                             
                             if (log.isTraceEnabled()) {
@@ -146,11 +196,11 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                 }
                                 DefaultQueryPlanner.logQuery(script, "Failing query:");
                             }
-                            script = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(script, config, indexedFields, indexOnlyFields,
-                                            nonEventFields, metadataHelper);
+                            script = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(script, true, config, indexedFields,
+                                            indexOnlyFields, nonEventFields, metadataHelper);
                             madeChange = true;
                             
-                            STATE state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, false, debug,
+                            STATE state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
                                             metadataHelper);
                             
                             /**
@@ -165,11 +215,11 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                         log.trace(debugStatement);
                                     }
                                 }
-                                script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, config, indexedFields, indexOnlyFields,
-                                                nonEventFields, metadataHelper);
+                                script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, true, config, indexedFields,
+                                                indexOnlyFields, nonEventFields, metadataHelper);
                             }
                             
-                            state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, false, debug,
+                            state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
                                             metadataHelper);
                             
                             if (state != STATE.EXECUTABLE) {
@@ -206,29 +256,17 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     if (config.getSerializeQueryIterator()) {
                         serializeQuery(newIteratorSetting);
                     } else {
-                        // only expand if we have non doc specific ranges.
-                        if (!RangeDefinition.allDocSpecific(input.getRanges())) {
-                            if (!evaluatedPreviously) {
-                                // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
-                                if (config.getHdfsSiteConfigURLs() != null && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
-                                    if (null == script)
-                                        script = JexlASTHelper.parseJexlQuery(query);
-                                    try {
-                                        script = pushdownLargeFieldedLists(config, script);
-                                        madeChange = true;
-                                    } catch (IOException ioe) {
-                                        log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
-                                    }
+                        if (!evaluatedPreviously) {
+                            // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
+                            if (config.getHdfsSiteConfigURLs() != null && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
+                                if (null == script)
+                                    script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                                try {
+                                    script = pushdownLargeFieldedLists(config, script);
+                                    madeChange = true;
+                                } catch (IOException ioe) {
+                                    log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
                                 }
-                            }
-                            
-                        } else {
-                            if (input.getRanges().size() == 1) {
-                                if (log.isTraceEnabled()) {
-                                    log.trace("Ensuring max pipelines is set to 1");
-                                    
-                                }
-                                serializeQuery(newIteratorSetting);
                             }
                         }
                     }
@@ -237,11 +275,30 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     if (madeChange)
                         newQuery = JexlStringBuildingVisitor.buildQuery(script);
                     
-                    previouslyExpanded.put(query, newQuery);
+                    try {
+                        previouslyExpanded.put(query, newQuery);
+                    } catch (NullPointerException npe) {
+                        throw new DatawaveFatalQueryException(String.format("New query is null! madeChange: %b, qid: %s", madeChange,
+                                        setting.getOptions().get(QueryOptions.QUERY_ID)), npe);
+                    }
+                    
+                    // test the final script for thresholds
+                    DefaultQueryPlanner.validateQuerySize("VisitorFunction", script, config, false);
                     
                     newIteratorSetting.addOption(QueryOptions.QUERY, newQuery);
                     newOptions.removeScanIterator(setting.getName());
                     newOptions.addScanIterator(newIteratorSetting);
+                    
+                    if (log.isDebugEnabled()) {
+                        log.debug("VisitorFunction result: " + newSettings.getRanges());
+                    }
+                    
+                    if (log.isTraceEnabled()) {
+                        DefaultQueryPlanner.logTrace(PrintingVisitor.formattedQueryStringList(script), "VistorFunction::apply method");
+                    } else if (log.isDebugEnabled()) {
+                        DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.maxChildNodesToPrint),
+                                        "VistorFunction::apply method");
+                    }
                     
                 } catch (ParseException e) {
                     throw new DatawaveFatalQueryException(e);
@@ -278,14 +335,79 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         if (config.canHandleExceededValueThreshold()) {
             URI hdfsQueryCacheUri = getFstHdfsQueryCacheUri(config, settings);
             
+            Map<String,Integer> pushdownCapacity = new HashMap<>();
+            ASTJexlScript script;
             if (hdfsQueryCacheUri != null) {
                 FileSystem fs = VisitorFunction.fileSystemCache.getFileSystem(hdfsQueryCacheUri);
-                // Find large lists of values against the same field and push down into
-                // an Ivarator
-                return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, fs, hdfsQueryCacheUri.toString());
+                // Find large lists of values against the same field and push down into an Ivarator
+                script = PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, fs, hdfsQueryCacheUri.toString(), pushdownCapacity);
             } else {
-                return PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, null, null);
+                script = PushdownLargeFieldedListsVisitor.pushdown(config, queryTree, null, null, pushdownCapacity);
             }
+            
+            // check term limits and use the capacity map to reduce further if necessary
+            int termCount = TermCountingVisitor.countTerms(script);
+            if (termCount > config.getMaxTermThreshold()) {
+                // check if the capacity is available to get under the term limit
+                // determine if its possible to reduce enough to meet the threshold
+                int capacitySum = 0;
+                for (Integer capacity : pushdownCapacity.values()) {
+                    capacitySum += capacity;
+                }
+                
+                if (termCount - capacitySum <= config.getMaxTermThreshold()) {
+                    // preserve the original config and set minimum thresholds for creating Value and Range ivarators
+                    int originalMaxOrExpansionThreshold = config.getMaxOrExpansionThreshold();
+                    int originalMaxOrRangeThreshold = config.getMaxOrRangeThreshold();
+                    
+                    config.setMaxOrExpansionThreshold(2);
+                    config.setMaxOrRangeThreshold(2);
+                    
+                    try {
+                        // invert pushdownCapacity to get the largest payoffs first
+                        SortedMap<Integer,List<String>> sortedMap = new TreeMap<>();
+                        for (String fieldName : pushdownCapacity.keySet()) {
+                            Integer reduction = pushdownCapacity.get(fieldName);
+                            List<String> fields = sortedMap.computeIfAbsent(reduction, k -> new ArrayList<>());
+                            fields.add(fieldName);
+                        }
+                        
+                        // sort from largest to smallest reductions and make reductions until under the threshold
+                        Set<String> fieldsToReduce = new HashSet<>();
+                        int toReduce = termCount - config.getMaxTermThreshold();
+                        while (toReduce > 0) {
+                            // get the highest value field out of the map
+                            Integer reduction = sortedMap.lastKey();
+                            List<String> fields = sortedMap.get(reduction);
+                            
+                            // take the first field
+                            String field = fields.remove(0);
+                            fieldsToReduce.add(field);
+                            toReduce -= reduction;
+                            
+                            // if there are no more reductions of this size remove the reduction from pushdown capacity
+                            if (fields.size() == 0) {
+                                sortedMap.remove(reduction);
+                            }
+                        }
+                        
+                        // execute the reduction
+                        if (hdfsQueryCacheUri != null) {
+                            FileSystem fs = VisitorFunction.fileSystemCache.getFileSystem(hdfsQueryCacheUri);
+                            // Find large lists of values against the same field and push down into an Ivarator
+                            script = PushdownLargeFieldedListsVisitor.pushdown(config, script, fs, hdfsQueryCacheUri.toString(), null, fieldsToReduce);
+                        } else {
+                            script = PushdownLargeFieldedListsVisitor.pushdown(config, script, null, null, null, fieldsToReduce);
+                        }
+                    } finally {
+                        // reset config thresholds
+                        config.setMaxOrExpansionThreshold(originalMaxOrExpansionThreshold);
+                        config.setMaxOrRangeThreshold(originalMaxOrRangeThreshold);
+                    }
+                }
+            }
+            
+            return script;
         } else {
             return queryTree;
         }

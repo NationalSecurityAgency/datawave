@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>3.1.0-SNAPSHOT</version>
+    <version>3.15.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -18,7 +18,6 @@
         <module>common-test</module>
         <module>web-services</module>
         <module>warehouse</module>
-        <module>type-metadata-hdfs</module>
     </modules>
     <scm>
         <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
@@ -33,14 +32,15 @@
         <version.accumulo>1.9.2</version.accumulo>
         <version.arquillian>1.4.1.Final</version.arquillian>
         <version.arquillian-weld-ee-embedded>1.0.0.Final</version.arquillian-weld-ee-embedded>
+        <version.assertj>3.20.2</version.assertj>
         <version.avro>1.8.2</version.avro>
         <version.caffeine>2.7.0</version.caffeine>
-        <version.commons-beanutils>1.9.3</version.commons-beanutils>
+        <version.commons-beanutils>1.9.4</version.commons-beanutils>
         <version.commons-cli>1.4</version.commons-cli>
         <version.commons-codec>1.12</version.commons-codec>
         <version.commons-collections>4.3</version.commons-collections>
         <version.commons-configuration>1.10</version.commons-configuration>
-        <version.commons-configuration2>2.3</version.commons-configuration2>
+        <version.commons-configuration2>2.7</version.commons-configuration2>
         <version.commons-io>2.6</version.commons-io>
         <version.commons-jexl>2.1.1</version.commons-jexl>
         <version.commons-lang>2.6</version.commons-lang>
@@ -51,17 +51,17 @@
         <version.easymock>4.0.2</version.easymock>
         <version.geoserver>2.14.2</version.geoserver>
         <version.geotools>20.1</version.geotools>
-        <version.geowave>0.9.5</version.geowave>
+        <version.geowave>1.1.0</version.geowave>
         <version.google-guava>15.0</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
         <!-- Can download cdh binary from https://www.cloudera.com/documentation/enterprise/release-notes/topics/cdh_vd_cdh_package_tarball_59.html#tarball_59x -->
         <version.hadoop>3.0.0-cdh6.2.0</version.hadoop>
         <version.htrace>4.0.1-incubating</version.htrace>
-        <version.httpcomponents-httpclient>4.5.5</version.httpcomponents-httpclient>
+        <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>1.9.2.3</version.in-memory-accumulo>
-        <version.infinispan>9.4.14.Final</version.infinispan>
+        <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.10.0.pr1</version.jackson>
         <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
@@ -70,7 +70,7 @@
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.9.1</version.jjwt>
-        <version.junit>4.12</version.junit>
+        <version.junit>4.13.1</version.junit>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
         <version.log4j>1.2.16</version.log4j>
@@ -78,23 +78,23 @@
         <version.lucene>7.5.0</version.lucene>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.microservice.accumulo-api>1.1</version.microservice.accumulo-api>
-        <version.microservice.accumulo-utils>1.3</version.microservice.accumulo-utils>
+        <version.microservice.accumulo-utils>1.4</version.microservice.accumulo-utils>
         <version.microservice.audit-api>1.4</version.microservice.audit-api>
         <version.microservice.authorization-api>1.4</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>1.2</version.microservice.base-rest-responses>
         <version.microservice.common-utils>1.0</version.microservice.common-utils>
         <version.microservice.dictionary-api>1.0</version.microservice.dictionary-api>
-        <version.microservice.metadata-utils>1.3</version.microservice.metadata-utils>
+        <version.microservice.metadata-utils>1.8.2</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>1.2</version.microservice.metrics-reporter>
-        <version.microservice.type-utils>1.4</version.microservice.type-utils>
+        <version.microservice.type-utils>1.8</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
-        <version.mysql-connector>8.0.15</version.mysql-connector>
+        <version.mysql-connector>8.0.16</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
         <version.powermock>2.0.2</version.powermock>
         <version.protobuf>2.5.0</version.protobuf>
-        <version.protostuff>1.5.5</version.protostuff>
+        <version.protostuff>1.6.2</version.protostuff>
         <version.slf4j>1.7.26</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
         <version.spring>5.1.8.RELEASE</version.spring>
@@ -385,99 +385,6 @@
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
                 <version>${version.log4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>mil.nga.giat</groupId>
-                <artifactId>geowave-adapter-auth</artifactId>
-                <version>${version.geowave}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.springframework.security</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>mil.nga.giat</groupId>
-                <artifactId>geowave-adapter-raster</artifactId>
-                <version>${version.geowave}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>mil.nga.giat</groupId>
-                <artifactId>geowave-adapter-vector</artifactId>
-                <version>${version.geowave}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.commons</groupId>
-                        <artifactId>commons-vfs2</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>mil.nga.giat</groupId>
-                <artifactId>geowave-analytic-mapreduce</artifactId>
-                <version>${version.geowave}</version>
-            </dependency>
-            <dependency>
-                <groupId>mil.nga.giat</groupId>
-                <artifactId>geowave-cli-stats</artifactId>
-                <version>${version.geowave}</version>
-            </dependency>
-            <dependency>
-                <groupId>mil.nga.giat</groupId>
-                <artifactId>geowave-core-geotime</artifactId>
-                <version>${version.geowave}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.accumulo</groupId>
-                        <artifactId>accumulo-minicluster</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.commons</groupId>
-                        <artifactId>commons-lang3</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>mil.nga.giat</groupId>
-                <artifactId>geowave-datastore-accumulo</artifactId>
-                <version>${version.geowave}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.accumulo</groupId>
-                        <artifactId>accumulo-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.accumulo</groupId>
-                        <artifactId>accumulo-minicluster</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.accumulo</groupId>
-                        <artifactId>accumulo-monitor</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.commons</groupId>
-                        <artifactId>commons-lang3</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>
@@ -852,6 +759,11 @@
             </dependency>
             <dependency>
                 <groupId>org.geotools</groupId>
+                <artifactId>gt-geojson</artifactId>
+                <version>${version.geotools}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.geotools</groupId>
                 <artifactId>gt-main</artifactId>
                 <version>${version.geotools}</version>
             </dependency>
@@ -891,6 +803,11 @@
                 <version>${version.geotools}</version>
             </dependency>
             <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-annotations</artifactId>
+                <version>3.4.0.GA</version>
+            </dependency>
+            <dependency>
                 <groupId>org.infinispan</groupId>
                 <artifactId>infinispan-commons</artifactId>
                 <version>${version.infinispan}</version>
@@ -915,6 +832,25 @@
                 <groupId>org.jgroups</groupId>
                 <artifactId>jgroups</artifactId>
                 <version>${version.jgroups}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.locationtech.geowave</groupId>
+                <artifactId>geowave-core-geotime</artifactId>
+                <version>${version.geowave}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.accumulo</groupId>
+                        <artifactId>accumulo-minicluster</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -953,6 +889,12 @@
                 <artifactId>picketbox-infinispan</artifactId>
                 <version>${version.picketbox}</version>
                 <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>dom4j</groupId>
+                        <artifactId>dom4j</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
@@ -1024,6 +966,12 @@
                 <version>${version.curator}</version>
                 <scope>test</scope>
                 <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${version.assertj}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.easymock</groupId>
@@ -1124,23 +1072,9 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-            <id>geowave</id>
-            <url>http://geowave-maven.s3-website-us-east-1.amazonaws.com/release</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>boundless</id>
-            <url>https://repo.boundlessgeo.com/main/</url>
-        </repository>
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>osgeo</id>
+            <id>osgeo-release</id>
             <name>Open Source Geospatial Foundation Repository</name>
-            <url>https://download.osgeo.org/webdav/geotools/</url>
+            <url>https://repo.osgeo.org/repository/release/</url>
         </repository>
     </repositories>
     <pluginRepositories>
@@ -1184,6 +1118,24 @@
                                 <goal>sort</goal>
                             </goals>
                             <phase>process-sources</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>3.1.11</version>
+                    <configuration>
+                        <effort>Max</effort>
+                        <threshold>High</threshold>
+                        <xmlOutput>true</xmlOutput>
+                        <excludeFilterFile>${datawave.root}/spotbugs-exclude.xml</excludeFilterFile>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
                         </execution>
                     </executions>
                 </plugin>
@@ -1268,7 +1220,7 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <version>8.21</version>
+                            <version>8.29</version>
                         </dependency>
                     </dependencies>
                     <executions>
@@ -1350,7 +1302,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>3.0.0-M3</version>
+                    <version>${version.surefire.plugin}</version>
                     <configuration>
                         <reuseForks>false</reuseForks>
                         <forkCount>${surefire.forkCount}</forkCount>
@@ -1892,6 +1844,17 @@
                     <plugin>
                         <groupId>org.eclipse.m2e</groupId>
                         <artifactId>lifecycle-mapping</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>spotbugs</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>

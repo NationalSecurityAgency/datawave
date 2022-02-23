@@ -177,7 +177,7 @@ public class FacetedGrouping implements Function<Entry<Key,Document>,Entry<Key,D
         
         if (fixNewList.size() > config.getMaximumFacetGroupCount()) {
             // we've exceeded, so let's get a minimum adjustment factor
-            final int groupAdjustmentFactor = (int) Math.ceil(fixNewList.size() / config.getMaximumFacetGroupCount());
+            final int groupAdjustmentFactor = (int) Math.ceil((double) fixNewList.size() / config.getMaximumFacetGroupCount());
             
             // partition the list using the previously created adjustment factor.
             // for (List<FieldValueCardinality> list : Iterables.partition(fixNewList, groupAdjustmentFactor)) {

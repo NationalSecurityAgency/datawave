@@ -8,11 +8,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import datawave.query.Constants;
+import datawave.query.language.parser.QueryParser;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.planner.SeekingQueryPlanner;
+import datawave.query.planner.rules.NodeTransformRule;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tld.CreateTLDUidsIterator;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.BaseQueryLogic;
@@ -40,6 +41,10 @@ public class LookupUUIDTune implements Profile {
     protected int reduceFieldCount = -1;
     protected boolean reduceFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
+    protected boolean reduceQuery = false;
+    private boolean enforceUniqueTermsWithinExpressions = false;
+    protected List<NodeTransformRule> transforms = null;
+    protected Map<String,QueryParser> querySyntaxParsers = null;
     
     @Override
     public void configure(BaseQueryLogic<Entry<Key,Value>> logic) {
@@ -49,13 +54,20 @@ public class LookupUUIDTune implements Profile {
             rsq.setSpeculativeScanning(speculativeScanning);
             rsq.setCacheModel(enableCaching);
             rsq.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
+            rsq.setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
+            
+            if (querySyntaxParsers != null) {
+                rsq.setQuerySyntaxParsers(querySyntaxParsers);
+            }
+            
             if (reduceResponse) {
-                rsq.setCreateUidsIteratorClass(CreateTLDUidsIterator.class);
+                rsq.setParseTldUids(true);
                 
                 // setup SeekingQueryPlanner in case the queryIterator requires it
                 SeekingQueryPlanner planner = new SeekingQueryPlanner();
                 planner.setMaxFieldHitsBeforeSeek(maxFieldHitsBeforeSeek);
                 planner.setMaxKeysBeforeSeek(maxKeysBeforeSeek);
+                
                 rsq.setQueryPlanner(planner);
                 
                 if (maxPageSize != -1) {
@@ -74,13 +86,16 @@ public class LookupUUIDTune implements Profile {
         if (planner instanceof DefaultQueryPlanner) {
             DefaultQueryPlanner dqp = DefaultQueryPlanner.class.cast(planner);
             dqp.setCacheDataTypes(enableCaching);
-            dqp.setCondenseUidsInRangeStream(false);
+            
+            if (transforms != null) {
+                dqp.setTransformRules(transforms);
+            }
+            
             if (disableComplexFunctions) {
                 dqp.setDisableAnyFieldLookup(true);
                 dqp.setDisableBoundedLookup(true);
                 dqp.setDisableCompositeFields(true);
                 dqp.setDisableExpandIndexFunction(true);
-                dqp.setDisableRangeCoalescing(true);
                 dqp.setDisableTestNonExistentFields(true);
                 if (reduceResponse)
                     try {
@@ -108,6 +123,7 @@ public class LookupUUIDTune implements Profile {
             if (maxShardsPerDayThreshold != -1) {
                 rsqc.setShardsPerDayThreshold(maxShardsPerDayThreshold);
             }
+            
             // we need this since we've finished the deep copy already
             rsqc.setSpeculativeScanning(speculativeScanning);
             rsqc.setTrackSizes(trackSizes);
@@ -266,5 +282,37 @@ public class LookupUUIDTune implements Profile {
     
     public String getLimitFieldsField() {
         return limitFieldsField;
+    }
+    
+    public boolean isReduceQuery() {
+        return reduceQuery;
+    }
+    
+    public void setReduceQuery(boolean reduceQuery) {
+        this.reduceQuery = reduceQuery;
+    }
+    
+    public boolean isEnforceUniqueTermsWithinExpressions() {
+        return enforceUniqueTermsWithinExpressions;
+    }
+    
+    public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
+        this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
+    }
+    
+    public List<NodeTransformRule> getTransforms() {
+        return transforms;
+    }
+    
+    public void setTransforms(List<NodeTransformRule> transforms) {
+        this.transforms = transforms;
+    }
+    
+    public Map<String,QueryParser> getQuerySyntaxParsers() {
+        return querySyntaxParsers;
+    }
+    
+    public void setQuerySyntaxParsers(Map<String,QueryParser> querySyntaxParsers) {
+        this.querySyntaxParsers = querySyntaxParsers;
     }
 }

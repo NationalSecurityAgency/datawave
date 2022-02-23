@@ -2480,10 +2480,14 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
      * Sets the scanner buffer size in chars
      */
     public final void setBufferSize(int numChars) {
-        ZZ_BUFFERSIZE = numChars;
+        updateBufferSize(numChars);
         char[] newZzBuffer = new char[ZZ_BUFFERSIZE];
         System.arraycopy(zzBuffer, 0, newZzBuffer, 0, Math.min(zzBuffer.length, ZZ_BUFFERSIZE));
         zzBuffer = newZzBuffer;
+    }
+    
+    private static void updateBufferSize(int numChars) {
+        ZZ_BUFFERSIZE = numChars;
     }
     
     /**

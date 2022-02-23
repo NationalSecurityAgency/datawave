@@ -49,7 +49,7 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
     
     protected List<String> contentFieldNames = Collections.emptyList();
     
-    protected static Logger log = Logger.getLogger(EventQueryTransformerSupport.class);
+    protected static final Logger log = Logger.getLogger(EventQueryTransformerSupport.class);
     
     protected QueryModel qm;
     protected String tableName;

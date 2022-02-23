@@ -101,7 +101,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
                     FilterOptions option = new FilterOptions();
                     
                     if (ruleConfig.ttlValue != null) {
-                        option.setTTL(Long.valueOf(ruleConfig.ttlValue));
+                        option.setTTL(Long.parseLong(ruleConfig.ttlValue));
                     }
                     if (ruleConfig.ttlUnits != null) {
                         option.setTTLUnits(ruleConfig.ttlUnits);
@@ -205,9 +205,9 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     
     boolean mergeIfPossible(RuleConfig child, List<RuleConfig> parents) {
         // @formatter:off
-        // find parent with matching label and filter class
+        // find parent with matching label
         List<RuleConfig> candidates = parents.stream()
-            .filter(r -> r.getLabel().equals(child.label) && r.filterClassName.equals(child.filterClassName))
+            .filter(r -> r.getLabel().equals(child.label))
             .collect(Collectors.toList());
         // should we be able to have more than one matching parent?
         for (RuleConfig parent : candidates) {
@@ -218,18 +218,29 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         // @formatter:on
     }
     
-    void mergeChildIntoParent(RuleConfig child, RuleConfig parent) {
-        if (child.isMerge) {
-            if (null != child.ttlValue) {
-                parent.ttlValue = child.ttlValue;
+    /**
+     * combinedRule is expected to be a copy of the parent rule, which will be modified with overrides from additionalRule. The matchPatterns in combinedRule
+     * will also be appended with the matchPatterns from additionalRule. additionalRule is expected to be the child rule.
+     *
+     * @param additionalRule
+     *            contains the modifications that will be introduced into combinedRule
+     * @param combinedRule
+     *            contains the base rule, to be amended with additionalRule
+     */
+    void mergeChildIntoParent(RuleConfig additionalRule, RuleConfig combinedRule) {
+        if (additionalRule.isMerge) {
+            if (null != additionalRule.ttlValue) {
+                combinedRule.ttlValue = additionalRule.ttlValue;
             }
-            if (null != child.ttlUnits) {
-                parent.ttlUnits = child.ttlUnits;
+            if (null != additionalRule.ttlUnits) {
+                combinedRule.ttlUnits = additionalRule.ttlUnits;
             }
-            parent.extendedOptions.putAll(child.extendedOptions);
-            if (null != child.matchPattern && !child.matchPattern.trim().isEmpty()) {
-                parent.matchPattern += "\n" + child.matchPattern;
+            combinedRule.extendedOptions.putAll(additionalRule.extendedOptions);
+            if (null != additionalRule.matchPattern && !additionalRule.matchPattern.trim().isEmpty()) {
+                combinedRule.matchPattern += "\n" + additionalRule.matchPattern;
             }
+            // Override the filterClassName
+            combinedRule.filterClassName = additionalRule.filterClassName;
         }
     }
     
@@ -301,6 +312,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         // @formatter:on
     }
     
+    // Return the RuleConfigs found within the configuration file referenced in the provided Node's text
     private Collection<? extends RuleConfig> loadParentRuleConfigs(Node parent) throws IOException {
         Collection<RuleConfig> rules = new ArrayList<>();
         String parentPathStr = parent.getTextContent();

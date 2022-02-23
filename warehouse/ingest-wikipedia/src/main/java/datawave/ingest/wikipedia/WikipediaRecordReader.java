@@ -137,7 +137,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
         protected static final String WIKI = "wiki-", WIKTIONARY = "wiktionary-";
         protected static final String[] FILE_NAME_PREFIXES = new String[] {WIKI, WIKTIONARY};
         
-        protected static DocumentBuilderFactory factory = configureFactory();
+        protected static final DocumentBuilderFactory FACTORY = configureFactory();
         
         protected WikipediaHelper wikiHelper = new WikipediaHelper();
         protected WikipediaTokenizer wikiTokenizer = null;
@@ -164,7 +164,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
                 factory.setExpandEntityReferences(false);
                 return factory;
             } catch (ParserConfigurationException ex) {
-                log.error("Unable to configure factory", ex);
+                log.error("Unable to configure FACTORY", ex);
                 return null;
             }
         }
@@ -213,7 +213,7 @@ public class WikipediaRecordReader extends AggregatingRecordReader {
             Preconditions.checkNotNull(eventInitializer, "eventInitializer cannot be null");
             eventInitializer.initializeEvent(conf);
             try {
-                this.parser = factory.newDocumentBuilder();
+                this.parser = FACTORY.newDocumentBuilder();
             } catch (ParserConfigurationException e) {
                 throw new IOException("Error instantiating DocumentBuilder", e);
             }

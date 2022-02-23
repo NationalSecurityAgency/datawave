@@ -62,27 +62,70 @@ import org.apache.log4j.Logger;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 /**
- * Determine whether two trees are equivalent, accounting for arbitrary order within subtrees
+ * Determine whether two trees are equivalent, accounting for arbitrary order within subtrees.
  */
 public class TreeEqualityVisitor implements ParserVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(TreeEqualityVisitor.class);
     
     private boolean equal = true;
     
-    public TreeEqualityVisitor() {
-        this.equal = true;
+    public final static class Comparison {
+        
+        private static final Comparison IS_EQUAL = new Comparison(true, null);
+        
+        private static Comparison notEqual(String reason) {
+            return new Comparison(false, reason);
+        }
+        
+        private final boolean equal;
+        private final String reason;
+        
+        private Comparison(boolean equal, String reason) {
+            this.equal = equal;
+            this.reason = reason;
+        }
+        
+        public boolean isEqual() {
+            return equal;
+        }
+        
+        public String getReason() {
+            return reason;
+        }
     }
     
-    public static class Reason {
-        public String reason = null;
+    /**
+     * Return whether or not the provided query trees are considered equivalent.
+     * 
+     * @param first
+     *            the first query tree
+     * @param second
+     *            the second query tree
+     * @return true if the query trees are considered equivalent, or false otherwise
+     */
+    public static boolean isEqual(JexlNode first, JexlNode second) {
+        return checkEquality(first, second).isEqual();
     }
     
-    public static boolean isEqual(ASTJexlScript script1, ASTJexlScript script2, Reason reason) {
-        TreeEqualityVisitor visitor = new TreeEqualityVisitor();
-        
-        reason.reason = (String) (script1.jjtAccept(visitor, script2));
-        
-        return visitor.equal;
+    /**
+     * Compare the provided query trees for equivalency and return the resulting comparison.
+     * 
+     * @param first
+     *            the first query tree
+     * @param second
+     *            the second query tree
+     * @return the comparison result
+     */
+    public static Comparison checkEquality(JexlNode first, JexlNode second) {
+        if (first != null && second != null) {
+            TreeEqualityVisitor visitor = new TreeEqualityVisitor();
+            String reason = (String) first.jjtAccept(visitor, second);
+            return visitor.equal ? Comparison.IS_EQUAL : Comparison.notEqual(reason);
+        } else if (first == null && second == null) {
+            return Comparison.IS_EQUAL;
+        } else {
+            return Comparison.notEqual("One tree is null: " + first + " vs " + second);
+        }
     }
     
     /**
@@ -147,7 +190,8 @@ public class TreeEqualityVisitor implements ParserVisitor {
         while (changed) {
             changed = false;
             for (SimpleNode child : list) {
-                if ((child.getClass().equals(ASTReference.class) && (child.jjtGetNumChildren() == 1))
+                // note the isAssignableFrom is to handle QueryPropertyMarker nodes
+                if (((child.getClass().equals(ASTReference.class) || ASTReference.class.isAssignableFrom(child.getClass())) && (child.jjtGetNumChildren() == 1))
                                 || (child.getClass().equals(ASTReferenceExpression.class) && (child.jjtGetNumChildren() == 1))
                                 || (child.getClass().equals(ASTOrNode.class) && ((child.jjtGetNumChildren() == 1) || node.getClass().equals(ASTOrNode.class)))
                                 || (child.getClass().equals(ASTAndNode.class) && ((child.jjtGetNumChildren() == 1) || node.getClass().equals(ASTAndNode.class)))) {

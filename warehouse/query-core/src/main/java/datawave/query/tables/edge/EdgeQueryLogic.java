@@ -16,6 +16,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EdgeTableRangeBuildingVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.edge.contexts.VisitationContext;
@@ -66,6 +67,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public static final String PRE_FILTER_DISABLE_KEYWORD = "__DISABLE_PREFILTER__";
     private static final int DEFAULT_SKIP_LIMIT = 10;
+    private static final long DEFAULT_SCAN_LIMIT = Long.MAX_VALUE;
     private static final Logger log = Logger.getLogger(EdgeQueryLogic.class);
     
     protected boolean protobufEdgeFormat = true;
@@ -84,6 +86,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     protected int queryThreads = 8;
     
     protected int dateFilterSkipLimit = DEFAULT_SKIP_LIMIT;
+    
+    protected long dateFilterScanLimit = DEFAULT_SCAN_LIMIT;
     
     private Collection<Range> ranges;
     
@@ -115,6 +119,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         setModelName(other.getModelName());
         setModelTableName(other.getModelTableName());
         setMetadataHelperFactory(other.getMetadataHelperFactory());
+        setDateFilterScanLimit(other.getDateFilterScanLimit());
+        setDateFilterSkipLimit(other.getDateFilterSkipLimit());
         visitationContext = other.visitationContext;
     }
     
@@ -189,7 +195,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         ASTJexlScript origScript = null;
         ASTJexlScript script = null;
         try {
-            origScript = JexlASTHelper.parseJexlQuery(queryString);
+            origScript = JexlASTHelper.parseAndFlattenJexlQuery(queryString);
             HashSet<String> allFields = new HashSet<>();
             allFields.addAll(getEdgeQueryModel().getAllInternalFieldNames());
             script = QueryModelVisitor.applyModel(origScript, getEdgeQueryModel(), allFields);
@@ -235,6 +241,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             throw new IllegalArgumentException("Invalid jexl supplied. " + e.getMessage());
         }
         
+        script = TreeFlatteningRebuildingVisitor.flatten(script);
+        
         EdgeTableRangeBuildingVisitor visitor = new EdgeTableRangeBuildingVisitor(config.includeStats(), dataTypes, config.getMaxQueryTerms(), regexDataTypes);
         
         visitationContext = (VisitationContext) script.jjtAccept(visitor, null);
@@ -257,7 +265,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         // These strings are going to be parsed again in the iterator but if there is a problem with
         // normalizing the query we want to fail here instead of over on the server side
-        if (!visitationContext.getNormalizedQuery().equals("")) {
+        if (!visitationContext.getNormalizedQuery().toString().equals("")) {
             try {
                 
                 JexlASTHelper.parseJexlQuery(visitationContext.getNormalizedQuery().toString());
@@ -270,7 +278,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
         }
         
-        if (!visitationContext.getNormalizedStatsQuery().equals("")) {
+        if (!visitationContext.getNormalizedStatsQuery().toString().equals("")) {
             try {
                 JexlASTHelper.parseJexlQuery(visitationContext.getNormalizedStatsQuery().toString());
             } catch (ParseException e) {
@@ -354,7 +362,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * @return created iterator (or null if no iterator needed, i.e. dates not specified)
      */
     public static IteratorSetting getDateFilter(Date beginDate, Date endDate, int priority, EdgeQueryConfiguration.dateType dateFilterType) {
-        return getDateFilter(beginDate, endDate, priority, DEFAULT_SKIP_LIMIT, dateFilterType);
+        return getDateFilter(beginDate, endDate, priority, DEFAULT_SKIP_LIMIT, DEFAULT_SCAN_LIMIT, dateFilterType);
     }
     
     /**
@@ -368,11 +376,14 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      *            priority to associate with this iterator
      * @param skipLimit
      *            amount of keys for the iterator to skip before calling seek
+     * @param scanLimit
+     *            number of keys for the iterator to scan before giving up
      * @param dateFilterType
      *            type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
      * @return created iterator (or null if no iterator needed, i.e. dates not specified)
      */
-    public static IteratorSetting getDateFilter(Date beginDate, Date endDate, int priority, int skipLimit, EdgeQueryConfiguration.dateType dateFilterType) {
+    public static IteratorSetting getDateFilter(Date beginDate, Date endDate, int priority, int skipLimit, long scanLimit,
+                    EdgeQueryConfiguration.dateType dateFilterType) {
         IteratorSetting setting = null;
         if (null != beginDate && null != endDate) {
             log.debug("Creating daterange filter: " + beginDate + " " + endDate);
@@ -394,6 +405,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             try {
                 setting.addOption(ColumnRangeIterator.RANGE_NAME, ColumnRangeIterator.encodeRange(range));
                 setting.addOption(ColumnRangeIterator.SKIP_LIMIT_NAME, Integer.toString(skipLimit));
+                setting.addOption(ColumnRangeIterator.SCAN_LIMIT_NAME, Long.toString(scanLimit));
             } catch (IOException ex) {
                 throw new IllegalStateException("Exception caught attempting to configure encoded range iterator for date filtering.", ex);
             }
@@ -420,14 +432,14 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return setting;
     }
     
-    public static List<IteratorSetting> getDateBasedIterators(Date beginDate, Date endDate, int priority, int skipLimit,
+    public static List<IteratorSetting> getDateBasedIterators(Date beginDate, Date endDate, int priority, int skipLimit, long scanLimit,
                     EdgeQueryConfiguration.dateType dateFilterType) {
         List<IteratorSetting> settings = Lists.newArrayList();
         
         // the following iterator will filter out edges outside of our date range
         // @note only returns an iterator if both beginDate and endDate are non-null
         // @note if a load date iterator is returned then it filters both on date range and date type (whereas the date range iterator only filters on date)
-        IteratorSetting iter = getDateFilter(beginDate, endDate, priority, skipLimit, dateFilterType);
+        IteratorSetting iter = getDateFilter(beginDate, endDate, priority, skipLimit, scanLimit, dateFilterType);
         if (iter != null) {
             settings.add(iter);
             priority++;
@@ -550,7 +562,9 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             throw new IllegalStateException("Query string is empty after initial processing, no ranges or filters can be generated to execute.");
         }
         
-        addIterators(qData, getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, dateFilterSkipLimit, dateFilterType));
+        addIterators(qData,
+                        getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, dateFilterSkipLimit, dateFilterScanLimit,
+                                        dateFilterType));
         
         if (!normalizedQuery.equals("")) {
             log.debug("Query being sent to the filter iterator: " + normalizedQuery);
@@ -771,5 +785,13 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setDateFilterSkipLimit(int dateFilterSkipLimit) {
         this.dateFilterSkipLimit = dateFilterSkipLimit;
+    }
+    
+    public long getDateFilterScanLimit() {
+        return dateFilterScanLimit;
+    }
+    
+    public void setDateFilterScanLimit(long dateFilterScanLimit) {
+        this.dateFilterScanLimit = dateFilterScanLimit;
     }
 }

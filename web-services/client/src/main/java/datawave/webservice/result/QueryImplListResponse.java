@@ -1,9 +1,11 @@
 package datawave.webservice.result;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.exception.QueryExceptionType;
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -12,14 +14,11 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
-
-import datawave.webservice.query.Query;
-import datawave.webservice.query.exception.QueryExceptionType;
-
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 
 @XmlRootElement(name = "QueryImplListResponse")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -218,6 +217,13 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
             return (this.numResults == other.numResults) && (this.query.equals(other.query));
         }
         return false;
+    }
+    
+    @Override
+    public int hashCode() {
+        int result = query != null ? query.hashCode() : 0;
+        result = 31 * result + numResults;
+        return result;
     }
     
     @Override

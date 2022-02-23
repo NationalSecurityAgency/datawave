@@ -95,6 +95,8 @@ public interface IngestHelperInterface extends DataTypeHelper {
     
     void addIndexedField(String fieldName);
     
+    void addShardExclusionField(String fieldName);
+    
     void addReverseIndexedField(String fieldName);
     
     void addIndexOnlyField(String fieldName);

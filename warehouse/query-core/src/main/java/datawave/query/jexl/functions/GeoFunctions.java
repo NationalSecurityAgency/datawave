@@ -64,20 +64,36 @@ public class GeoFunctions {
      * @return
      */
     public static boolean within_bounding_box(Object field, String lowerLeft, String upperRight) {
-        String fieldValue = ValueTuple.getNormalizedStringValue(field);
-        try {
-            GeoPoint ll = GeoNormalizer.isNormalized(lowerLeft) ? normalizedPoints.get(lowerLeft) : unnormalizedPoints.get(lowerLeft);
-            GeoPoint ur = GeoNormalizer.isNormalized(upperRight) ? normalizedPoints.get(upperRight) : unnormalizedPoints.get(upperRight);
-            Set<GeoPoint> pts = GeoFunctions.getGeoPointsFromFieldValue(field);
-            boolean m = pts.stream().anyMatch(geoPt -> geoPt.within(ll, ur));
-            if (log.isTraceEnabled())
-                log.trace("Checking if " + fieldValue + " is within BB " + lowerLeft + ", " + upperRight + ": [" + m + "]");
-            return m;
-        } catch (Exception e) {
-            if (log.isTraceEnabled())
-                log.trace("Could not verify point " + fieldValue + " to be within BB " + lowerLeft + ", " + upperRight, e);
+        if (field != null) {
+            String fieldValue = ValueTuple.getNormalizedStringValue(field);
+            try {
+                GeoPoint ll = GeoNormalizer.isNormalized(lowerLeft) ? normalizedPoints.get(lowerLeft) : unnormalizedPoints.get(lowerLeft);
+                GeoPoint ur = GeoNormalizer.isNormalized(upperRight) ? normalizedPoints.get(upperRight) : unnormalizedPoints.get(upperRight);
+                Set<GeoPoint> pts = GeoFunctions.getGeoPointsFromFieldValue(field);
+                boolean m = pts.stream().anyMatch(geoPt -> evaluate(geoPt, ll, ur));
+                if (log.isTraceEnabled())
+                    log.trace("Checking if " + fieldValue + " is within BB " + lowerLeft + ", " + upperRight + ": [" + m + "]");
+                return m;
+            } catch (Exception e) {
+                if (log.isTraceEnabled())
+                    log.trace("Could not verify point " + fieldValue + " to be within BB " + lowerLeft + ", " + upperRight, e);
+                return false;
+            }
+        } else {
             return false;
         }
+    }
+    
+    public static boolean evaluate(GeoPoint point, GeoPoint boundMin, GeoPoint boundMax) {
+        // if the minLon is greater than maxLon, we have crossed the antimeridian and must split the bounds for evaluation
+        // @formatter:off
+        return (point.getLatitude() >= boundMin.getLatitude() && point.getLatitude() <= boundMax.getLatitude() &&
+                ((boundMin.getLongitude() > boundMax.getLongitude() &&
+                        ((point.getLongitude() >= boundMin.getLongitude() && point.getLongitude() <= 180.0) ||
+                         (point.getLongitude() >= -180 && point.getLongitude() <= boundMax.getLongitude()))) ||
+                 (boundMin.getLongitude() <= boundMax.getLongitude() &&
+                         point.getLongitude() >= boundMin.getLongitude() && point.getLongitude() <= boundMax.getLongitude())));
+        // @formatter:on
     }
     
     public static boolean within_bounding_box(Object lonField, Object latField, String minLon, String minLat, String maxLon, String maxLat) {
@@ -87,21 +103,32 @@ public class GeoFunctions {
     }
     
     public static boolean within_bounding_box(Object lonField, Object latField, double minLon, double minLat, double maxLon, double maxLat) {
-        Set<Double> lonValues = null;
-        Set<Double> latValues = null;
-        try {
-            lonValues = getDoublesFromFieldValue(lonField);
-            latValues = getDoublesFromFieldValue(latField);
-        } catch (IllegalArgumentException e) { // NumberFormatException extends IAE and sometimes IAE is thrown
-            if (log.isTraceEnabled())
-                log.trace("Error parsing lat[" + latField + " or lon[" + lonField + "]", e);
+        if (lonField != null && latField != null) {
+            Set<Double> lonValues;
+            Set<Double> latValues;
+            try {
+                lonValues = getDoublesFromFieldValue(lonField);
+                latValues = getDoublesFromFieldValue(latField);
+            } catch (IllegalArgumentException e) { // NumberFormatException extends IAE and sometimes IAE is thrown
+                if (log.isTraceEnabled())
+                    log.trace("Error parsing lat[" + latField + " or lon[" + lonField + "]", e);
+                return false;
+            }
+            
+            // @formatter:off
+            boolean lonMatch = lonValues.stream().anyMatch(lon ->
+                (minLon > maxLon &&
+                        ((lon >= minLon && lon <= 180.0) || (lon >= -180.0 && lon <= maxLon))) ||
+                (minLon <= maxLon &&
+                        lon >= minLon && lon <= maxLon));
+            // @formatter:on
+            
+            boolean latMatch = latValues.stream().anyMatch(lat -> lat >= minLat && lat <= maxLat);
+            
+            return lonMatch && latMatch;
+        } else {
             return false;
         }
-        
-        boolean lonMatch = lonValues.stream().anyMatch(lon -> lon >= minLon && lon <= maxLon);
-        boolean latMatch = latValues.stream().anyMatch(lat -> lat >= minLat && lat <= maxLat);
-        
-        return lonMatch && latMatch;
     }
     
     /**
@@ -114,22 +141,26 @@ public class GeoFunctions {
      * @return
      */
     public static boolean within_circle(Object field, String center, double radius) {
-        String fieldValue = ValueTuple.getNormalizedStringValue(field);
-        if (log.isTraceEnabled()) {
-            log.trace("Checking if " + fieldValue + " is within circle[center=" + center + ", radius=" + radius + "]");
-        }
-        try {
-            Set<GeoPoint> pts = GeoFunctions.getGeoPointsFromFieldValue(field);
-            GeoPoint c = GeoNormalizer.isNormalized(center) ? normalizedPoints.get(center) : unnormalizedPoints.get(center);
-            boolean m = pts.stream().anyMatch(
-                            geoPt -> (Math.pow(geoPt.getLongitude() - c.getLongitude(), 2) + Math.pow(geoPt.getLatitude() - c.getLatitude(), 2)) <= Math.pow(
-                                            radius, 2));
-            if (log.isTraceEnabled())
-                log.trace("Checking if " + fieldValue + " is within circle[center=" + center + ", radius=" + radius + "]: [" + m + "]");
-            return m;
-        } catch (Exception e) {
-            if (log.isTraceEnabled())
-                log.trace("Could not check point in circle. P=" + fieldValue + ", C=" + center + ", R=" + radius, e);
+        if (field != null) {
+            String fieldValue = ValueTuple.getNormalizedStringValue(field);
+            if (log.isTraceEnabled()) {
+                log.trace("Checking if " + fieldValue + " is within circle[center=" + center + ", radius=" + radius + "]");
+            }
+            try {
+                Set<GeoPoint> pts = GeoFunctions.getGeoPointsFromFieldValue(field);
+                GeoPoint c = GeoNormalizer.isNormalized(center) ? normalizedPoints.get(center) : unnormalizedPoints.get(center);
+                boolean m = pts.stream().anyMatch(
+                                geoPt -> (Math.pow(geoPt.getLongitude() - c.getLongitude(), 2) + Math.pow(geoPt.getLatitude() - c.getLatitude(), 2)) <= Math
+                                                .pow(radius, 2));
+                if (log.isTraceEnabled())
+                    log.trace("Checking if " + fieldValue + " is within circle[center=" + center + ", radius=" + radius + "]: [" + m + "]");
+                return m;
+            } catch (Exception e) {
+                if (log.isTraceEnabled())
+                    log.trace("Could not check point in circle. P=" + fieldValue + ", C=" + center + ", R=" + radius, e);
+                return false;
+            }
+        } else {
             return false;
         }
     }

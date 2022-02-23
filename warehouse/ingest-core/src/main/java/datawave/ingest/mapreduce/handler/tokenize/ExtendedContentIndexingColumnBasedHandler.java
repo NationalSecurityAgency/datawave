@@ -125,7 +125,6 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
     protected static final String SPACE = " ";
     
     protected ExtendedContentIngestHelper ingestHelper = null;
-    protected ExtendedContentDataTypeHelper dataTypeHelper = null;
     
     protected ContentIndexCounters counters = null;
     protected OffsetQueue<Integer> tokenOffsetCache = null;
@@ -158,6 +157,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
         super.setup(context);
         
         conf = context.getConfiguration();
+        ingestHelper = (ExtendedContentIngestHelper) getHelper(null);
         tokenHelper = new TokenizationHelper(helper, conf);
         termTypeBlacklist = new HashSet<>(Arrays.asList(tokenHelper.getTermTypeBlacklist()));
         

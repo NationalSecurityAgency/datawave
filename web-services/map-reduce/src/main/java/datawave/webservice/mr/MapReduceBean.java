@@ -8,6 +8,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.ServerPrincipal;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.audit.AuditBean;
+import datawave.webservice.common.audit.AuditParameters;
 import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.common.audit.PrivateAuditConstants;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
@@ -24,6 +25,7 @@ import datawave.webservice.mr.configuration.NeedCallerDetails;
 import datawave.webservice.mr.configuration.NeedQueryCache;
 import datawave.webservice.mr.configuration.NeedQueryLogicFactory;
 import datawave.webservice.mr.configuration.NeedQueryPersister;
+import datawave.webservice.mr.configuration.NeedSecurityDomain;
 import datawave.webservice.mr.configuration.OozieJobConfiguration;
 import datawave.webservice.mr.configuration.OozieJobConstants;
 import datawave.webservice.mr.state.MapReduceStatePersisterBean;
@@ -62,6 +64,7 @@ import org.apache.log4j.Logger;
 import org.apache.oozie.client.OozieClient;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.jboss.security.JSSESecurityDomain;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -119,6 +122,9 @@ public class MapReduceBean {
     
     @Resource
     private EJBContext ctx;
+    
+    @Inject
+    private JSSESecurityDomain jsseSecurityDomain;
     
     @Inject
     private Persister queryPersister;
@@ -257,7 +263,7 @@ public class MapReduceBean {
         Properties oozieConf = null;
         
         try {
-            oozieClient = new OozieClient(job.getJobConfigurationProperties().get(OozieJobConstants.OOZIE_CLIENT_PROP));
+            oozieClient = new OozieClient((String) job.getJobConfigurationProperties().get(OozieJobConstants.OOZIE_CLIENT_PROP));
             oozieConf = oozieClient.createConfiguration();
             job.initializeOozieConfiguration(id, oozieConf, queryParameters);
             job.validateWorkflowParameter(oozieConf, mapReduceConfiguration);
@@ -283,6 +289,10 @@ public class MapReduceBean {
                     List<String> selectors = job.getSelectors(queryParameters, oozieConf);
                     if (selectors != null && !selectors.isEmpty()) {
                         queryParameters.put(PrivateAuditConstants.SELECTORS, selectors);
+                    }
+                    // if the user didn't set an audit id, use the query id
+                    if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                        queryParameters.putSingle(AuditParameters.AUDIT_ID, id);
                     }
                     auditor.audit(queryParameters);
                 } catch (IllegalArgumentException e) {
@@ -444,6 +454,10 @@ public class MapReduceBean {
             ((NeedQueryCache) job).setQueryCache(cache);
         }
         
+        if (job instanceof NeedSecurityDomain) {
+            ((NeedSecurityDomain) job).setSecurityDomain(this.jsseSecurityDomain);
+        }
+        
         // If this job is being restarted, then the jobId will be the same. The restart method
         // puts the id into the runtime parameters
         String id = runtimeParameters.get(JOB_ID);
@@ -491,7 +505,7 @@ public class MapReduceBean {
             j.submit();
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.MAPREDUCE_JOB_START_ERROR, e);
-            log.error(qe);
+            log.error(qe.getMessage(), qe);
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         }
@@ -587,21 +601,22 @@ public class MapReduceBean {
                 Path resultsDir = new Path(thisJob.getResultsDirectory());
                 hdfs.getConf().set("mapreduce.jobtracker.address", thisJob.getJobTracker());
                 // Create a Job object
-                JobClient job = new JobClient(new JobConf(hdfs.getConf()));
-                for (String killId : jobIdsToKill) {
-                    try {
-                        JobID jid = JobID.forName(killId);
-                        RunningJob rj = job.getJob(new org.apache.hadoop.mapred.JobID(jid.getJtIdentifier(), jid.getId()));
-                        // job.getJob(jid);
-                        if (null != rj)
-                            rj.killJob();
-                        else
-                            mapReduceState.updateState(killId, MapReduceState.KILLED);
-                    } catch (IOException | QueryException e) {
-                        QueryException qe = new QueryException(DatawaveErrorCode.MAPREDUCE_JOB_KILL_ERROR, e, MessageFormat.format("job_id: {0}", killId));
-                        log.error(qe);
-                        response.addException(qe.getBottomQueryException());
-                        throw new DatawaveWebApplicationException(qe, response);
+                try (JobClient job = new JobClient(new JobConf(hdfs.getConf()))) {
+                    for (String killId : jobIdsToKill) {
+                        try {
+                            JobID jid = JobID.forName(killId);
+                            RunningJob rj = job.getJob(new org.apache.hadoop.mapred.JobID(jid.getJtIdentifier(), jid.getId()));
+                            // job.getJob(jid);
+                            if (null != rj)
+                                rj.killJob();
+                            else
+                                mapReduceState.updateState(killId, MapReduceState.KILLED);
+                        } catch (IOException | QueryException e) {
+                            QueryException qe = new QueryException(DatawaveErrorCode.MAPREDUCE_JOB_KILL_ERROR, e, MessageFormat.format("job_id: {0}", killId));
+                            log.error(qe);
+                            response.addException(qe.getBottomQueryException());
+                            throw new DatawaveWebApplicationException(qe, response);
+                        }
                     }
                 }
                 // Delete the contents of the results directory
@@ -695,9 +710,10 @@ public class MapReduceBean {
     @GZIP
     public MapReduceInfoResponseList list(@PathParam("jobId") String jobId) {
         MapReduceInfoResponseList response = mapReduceState.findById(jobId);
-        if (null == response || null == response.getResults() || response.getResults().isEmpty()) {
-            if (null == response)
-                response = new MapReduceInfoResponseList();
+        if (null == response) {
+            response = new MapReduceInfoResponseList();
+        }
+        if (null == response.getResults() || response.getResults().isEmpty()) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_QUERY_OBJECT_MATCH);
             response.addException(qe);
             throw new NotFoundException(qe, response);

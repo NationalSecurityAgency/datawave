@@ -70,9 +70,9 @@ public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRang
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        builder.append("DatawaveFieldIndexFilterIteratorJexl{fName=").append(getFieldName()).append(", filter=").append(filter).append(", lowerBound=")
-                        .append(getFieldValue()).append(", lowerInclusive=").append(lowerInclusive).append(", upperBound=").append(upperBound)
-                        .append(", upperInclusive=").append(upperInclusive).append(", negated=").append(isNegated()).append("}");
+        builder.append("DatawaveFieldIndexFilterIteratorJexl (").append(queryId).append(") fName=").append(getFieldName()).append(", filter=").append(filter)
+                        .append(", lowerBound=").append(getFieldValue()).append(", lowerInclusive=").append(lowerInclusive).append(", upperBound=")
+                        .append(upperBound).append(", upperInclusive=").append(upperInclusive).append(", negated=").append(isNegated()).append("}");
         
         return builder.toString();
     }
@@ -115,7 +115,7 @@ public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRang
         } else {
             String upperString = upperBound.toString();
             this.boundingFiRangeStringBuilder.append(upperString.substring(0, upperString.length() - 1));
-            this.boundingFiRangeStringBuilder.append(upperString.charAt(upperString.length() - 1) - 1);
+            this.boundingFiRangeStringBuilder.append((char) (upperString.charAt(upperString.length() - 1) - 1));
             this.boundingFiRangeStringBuilder.append(Constants.MAX_UNICODE_STRING);
         }
         endKey = new Key(rowId, fiName, new Text(boundingFiRangeStringBuilder.toString()));

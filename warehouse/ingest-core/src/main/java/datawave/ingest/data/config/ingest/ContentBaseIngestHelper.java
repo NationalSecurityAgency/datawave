@@ -1,17 +1,13 @@
 package datawave.ingest.data.config.ingest;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.ingest.data.config.FieldConfigHelper;
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -121,9 +117,9 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     
     @Override
     public boolean isContentIndexField(String field) {
-        if (fieldHelper != null) {
+        if (fieldConfigHelper != null) {
             // tokenization == content indexing (yeah, poor choice of terms)
-            return fieldHelper.isTokenizedField(field);
+            return fieldConfigHelper.isTokenizedField(field);
         }
         
         return contentIndexBlacklist.isEmpty() ? contentIndexWhitelist.contains(field) : !contentIndexBlacklist.contains(field);
@@ -131,9 +127,9 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     
     @Override
     public boolean isReverseContentIndexField(String field) {
-        if (fieldHelper != null) {
+        if (fieldConfigHelper != null) {
             // tokenization == content indexing (yeah, poor choice of terms)
-            return fieldHelper.isReverseTokenizedField(field);
+            return fieldConfigHelper.isReverseTokenizedField(field);
         }
         
         return contentReverseIndexBlacklist.isEmpty() ? contentReverseIndexWhitelist.contains(field) : !contentReverseIndexBlacklist.contains(field);
@@ -151,7 +147,7 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     
     @VisibleForTesting
     public FieldConfigHelper getFieldConfigHelper() {
-        return fieldHelper;
+        return fieldConfigHelper;
     }
     
     @Override

@@ -37,6 +37,12 @@ public class JexlRangeNode extends JexlNode {
         boolean lowerWildcard = beginRange.equals("*");
         boolean upperWildcard = endRange.equals("*");
         
+        boolean isBounded = !lowerWildcard && !upperWildcard;
+        
+        if (isBounded) {
+            sb.append("((_Bounded_ = true) && ");
+        }
+        
         sb.append("(");
         if (!lowerWildcard) {
             sb.append(field);
@@ -60,6 +66,9 @@ public class JexlRangeNode extends JexlNode {
             sb.append("'");
         }
         sb.append(")");
+        if (isBounded) {
+            sb.append(")");
+        }
         return sb.toString();
     }
     

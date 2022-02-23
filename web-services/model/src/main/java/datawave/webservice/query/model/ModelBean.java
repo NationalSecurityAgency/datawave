@@ -149,15 +149,16 @@ public class ModelBean {
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             connector = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.LOW, trackingMap);
-            Scanner scanner = ScannerHelper.createScanner(connector, this.checkModelTableName(modelTableName), cbAuths);
-            for (Entry<Key,Value> entry : scanner) {
-                String colf = entry.getKey().getColumnFamily().toString();
-                if (!RESERVED_COLF_VALUES.contains(colf) && !modelNames.contains(colf)) {
-                    String[] parts = colf.split(ModelKeyParser.NULL_BYTE);
-                    if (parts.length == 1)
-                        modelNames.add(colf);
-                    else if (parts.length == 2)
-                        modelNames.add(parts[0]);
+            try (Scanner scanner = ScannerHelper.createScanner(connector, this.checkModelTableName(modelTableName), cbAuths)) {
+                for (Entry<Key,Value> entry : scanner) {
+                    String colf = entry.getKey().getColumnFamily().toString();
+                    if (!RESERVED_COLF_VALUES.contains(colf) && !modelNames.contains(colf)) {
+                        String[] parts = colf.split(ModelKeyParser.NULL_BYTE);
+                        if (parts.length == 1)
+                            modelNames.add(colf);
+                        else if (parts.length == 2)
+                            modelNames.add(parts[0]);
+                    }
                 }
             }
             
@@ -350,13 +351,14 @@ public class ModelBean {
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             connector = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.LOW, trackingMap);
-            Scanner scanner = ScannerHelper.createScanner(connector, this.checkModelTableName(modelTableName), cbAuths);
-            IteratorSetting cfg = new IteratorSetting(21, "colfRegex", RegExFilter.class.getName());
-            cfg.addOption(RegExFilter.COLF_REGEX, "^" + name + "(\\x00.*)?");
-            scanner.addScanIterator(cfg);
-            for (Entry<Key,Value> entry : scanner) {
-                FieldMapping mapping = ModelKeyParser.parseKey(entry.getKey(), cbAuths);
-                response.getFields().add(mapping);
+            try (Scanner scanner = ScannerHelper.createScanner(connector, this.checkModelTableName(modelTableName), cbAuths)) {
+                IteratorSetting cfg = new IteratorSetting(21, "colfRegex", RegExFilter.class.getName());
+                cfg.addOption(RegExFilter.COLF_REGEX, "^" + name + "(\\x00.*)?");
+                scanner.addScanIterator(cfg);
+                for (Entry<Key,Value> entry : scanner) {
+                    FieldMapping mapping = ModelKeyParser.parseKey(entry.getKey(), cbAuths);
+                    response.getFields().add(mapping);
+                }
             }
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.MODEL_FETCH_ERROR, e);

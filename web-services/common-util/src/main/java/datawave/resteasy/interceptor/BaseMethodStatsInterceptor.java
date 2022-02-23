@@ -28,7 +28,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 public abstract class BaseMethodStatsInterceptor implements ContainerRequestFilter, ContainerResponseFilter, WriterInterceptor {
-    protected static Logger log = Logger.getLogger(BaseMethodStatsInterceptor.class);
+    protected static final Logger log = Logger.getLogger(BaseMethodStatsInterceptor.class);
     
     protected static class RequestMethodStats {
         

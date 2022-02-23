@@ -1,6 +1,7 @@
 package datawave.webservice.query.result.istat;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -20,7 +21,9 @@ import io.protostuff.Schema;
  */
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlType(propOrder = {"field", "unique", "observed", "selectivity"})
-public class FieldStat {
+public class FieldStat implements Serializable {
+    private static final long serialVersionUID = 4172426563796252101L;
+    
     @XmlElement(name = "field")
     public String field;
     

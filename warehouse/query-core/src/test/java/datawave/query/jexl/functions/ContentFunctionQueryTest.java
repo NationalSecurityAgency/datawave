@@ -2,7 +2,6 @@ package datawave.query.jexl.functions;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.configuration.spring.SpringBean;
 import datawave.ingest.config.RawRecordContainerImpl;
@@ -17,6 +16,7 @@ import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexDataTypeHandler;
+import datawave.ingest.mapreduce.handler.shard.Direction;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
@@ -27,12 +27,13 @@ import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryParameters;
@@ -56,24 +57,24 @@ import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -88,13 +89,16 @@ import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
 import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
 import static datawave.webservice.query.QueryParameters.QUERY_END;
 import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
+import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_NAME;
 import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
 import static datawave.webservice.query.QueryParameters.QUERY_STRING;
-import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
 
 @RunWith(Arquillian.class)
 public class ContentFunctionQueryTest {
+    
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
     
     private static final int NUM_SHARDS = 241;
     private static final String DATA_TYPE_NAME = "test";
@@ -120,6 +124,8 @@ public class ContentFunctionQueryTest {
     ShardQueryLogic logic;
     
     private static InMemoryInstance instance;
+    
+    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
     
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
@@ -181,6 +187,8 @@ public class ContentFunctionQueryTest {
         connector.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
         
         writeKeyValues(connector, keyValues);
+        
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
     }
     
     public static void setupConfiguration(Configuration conf) {
@@ -241,8 +249,8 @@ public class ContentFunctionQueryTest {
     public void withinTestWithAlternateDate() throws Exception {
         String query = "ID == 'TEST_ID' && content:within(1,termOffsetMap,'dog','cat')";
         
-        MultivaluedMap<String,String> optionalParams = new MultivaluedMapImpl<>();
-        optionalParams.putSingle(DATE_RANGE_TYPE, "BOGUSDATETYPE");
+        MultiValueMap<String,String> optionalParams = new LinkedMultiValueMap<>();
+        optionalParams.set(DATE_RANGE_TYPE, "BOGUSDATETYPE");
         
         final List<DefaultEvent> events = getQueryResults(query, true, optionalParams);
         Assert.assertEquals(0, events.size());
@@ -280,7 +288,7 @@ public class ContentFunctionQueryTest {
     
     @Test
     public void phraseScoreTest() throws Exception {
-        String query = "ID == 'TEST_ID' && content:phrase(-1.5, termOffsetMap,'boy','car')";
+        String query = "ID == 'TEST_ID' && content:scoredPhrase(-1.5, termOffsetMap,'boy','car')";
         
         final List<DefaultEvent> events = getQueryResults(query, true, null);
         Assert.assertEquals(1, events.size());
@@ -290,7 +298,7 @@ public class ContentFunctionQueryTest {
     
     @Test
     public void phraseScoreFilterTest() throws Exception {
-        String query = "ID == 'TEST_ID' && content:phrase(-1.4, termOffsetMap,'boy','car')";
+        String query = "ID == 'TEST_ID' && content:scoredPhrase(-1.4, termOffsetMap,'boy','car')";
         
         final List<DefaultEvent> events = getQueryResults(query, true, null);
         Assert.assertEquals(0, events.size());
@@ -310,7 +318,7 @@ public class ContentFunctionQueryTest {
         }
     }
     
-    private List<DefaultEvent> getQueryResults(String queryString, boolean useIvarator, MultivaluedMap<String,String> optionalParams) throws Exception {
+    private List<DefaultEvent> getQueryResults(String queryString, boolean useIvarator, MultiValueMap<String,String> optionalParams) throws Exception {
         ShardQueryLogic logic = getShardQueryLogic(useIvarator);
         
         Iterator iter = getResultsIterator(queryString, logic, optionalParams);
@@ -320,16 +328,16 @@ public class ContentFunctionQueryTest {
         return events;
     }
     
-    private Iterator getResultsIterator(String queryString, ShardQueryLogic logic, MultivaluedMap<String,String> optionalParams) throws Exception {
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
-        params.putSingle(QUERY_STRING, queryString);
-        params.putSingle(QUERY_NAME, "contentQuery");
-        params.putSingle(QUERY_LOGIC_NAME, "EventQueryLogic");
-        params.putSingle(QUERY_PERSISTENCE, "PERSISTENT");
-        params.putSingle(QUERY_AUTHORIZATIONS, AUTHS);
-        params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
-        params.putSingle(QUERY_BEGIN, BEGIN_DATE);
-        params.putSingle(QUERY_END, END_DATE);
+    private Iterator getResultsIterator(String queryString, ShardQueryLogic logic, MultiValueMap<String,String> optionalParams) throws Exception {
+        MultiValueMap<String,String> params = new LinkedMultiValueMap<>();
+        params.set(QUERY_STRING, queryString);
+        params.set(QUERY_NAME, "contentQuery");
+        params.set(QUERY_LOGIC_NAME, "EventQueryLogic");
+        params.set(QUERY_PERSISTENCE, "PERSISTENT");
+        params.set(QUERY_AUTHORIZATIONS, AUTHS);
+        params.set(QUERY_EXPIRATION, "20200101 000000.000");
+        params.set(QUERY_BEGIN, BEGIN_DATE);
+        params.set(QUERY_END, END_DATE);
         
         QueryParameters queryParams = new QueryParametersImpl();
         queryParams.validate(params);
@@ -358,11 +366,9 @@ public class ContentFunctionQueryTest {
         // set the pushdown threshold really high to avoid collapsing uids into shards (overrides setCollapseUids if #terms is greater than this threshold)
         ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);
         
-        // lets avoid condensing uids to ensure that shard ranges are not collapsed into day ranges
-        ((DefaultQueryPlanner) (logic.getQueryPlanner())).setCondenseUidsInRangeStream(false);
-        
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
         logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
+        logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
         
         if (useIvarator)
             setupIvarator(logic);
@@ -433,7 +439,7 @@ public class ContentFunctionQueryTest {
         private void getShardIndexFIKey(final NormalizedFieldAndValue nfv, final RawRecordContainer event, final Multimap values) {
             Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID(this.eventUid).build();
             Multimap<BulkIngestKey,Value> termIndex = createTermIndexColumn(event, nfv.getEventFieldName(), nfv.getEventFieldValue(),
-                            getVisibility(event, nfv), null, null, shardId, this.getShardIndexTableName(), new Value(uid.toByteArray()));
+                            getVisibility(event, nfv), null, null, shardId, this.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
             values.putAll(termIndex);
         }
         
@@ -499,12 +505,12 @@ public class ContentFunctionQueryTest {
         @Override
         public boolean isIndexListField(String field) {
             return false;
-        };
+        }
         
         @Override
         public boolean isReverseIndexListField(String field) {
             return false;
-        };
+        }
         
         @Override
         public String getListDelimiter() {

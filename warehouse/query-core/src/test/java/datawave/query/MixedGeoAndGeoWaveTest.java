@@ -25,6 +25,7 @@ import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidQueryException;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.metrics.MockStatusReporter;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -58,8 +59,13 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.util.GeometricShapeFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.MultivaluedMap;
@@ -67,6 +73,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -85,6 +92,10 @@ import static datawave.webservice.query.QueryParameters.QUERY_STRING;
 @RunWith(Arquillian.class)
 public class MixedGeoAndGeoWaveTest {
     
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
+    private static final int NUM_CIRCLE_POINTS = 60;
     private static final int NUM_SHARDS = 100;
     private static final String DATA_TYPE_NAME = "MixedGeo";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
@@ -163,6 +174,8 @@ public class MixedGeoAndGeoWaveTest {
     
     private static InMemoryInstance instance;
     
+    private static List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
+    
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         return ShrinkWrap
@@ -189,6 +202,8 @@ public class MixedGeoAndGeoWaveTest {
         recNum = ingestData(conf, GEO_FIELD, geoData, recNum, BEGIN_DATE);
         recNum = ingestData(conf, POINT_FIELD, pointData, recNum, MID_DATE);
         ingestData(conf, POLY_POINT_FIELD, polyData, recNum, MID_DATE);
+        
+        ivaratorCacheDirConfigs = Collections.singletonList(new IvaratorCacheDirConfig(temporaryFolder.newFolder().toURI().toString()));
     }
     
     public static int ingestData(Configuration conf, String fieldName, String[] data, int startRecNum, String ingestDate) throws Exception {
@@ -311,6 +326,84 @@ public class MixedGeoAndGeoWaveTest {
     }
     
     @Test
+    public void intersectsSmallBoundingBoxTest() throws Exception {
+        String query = "geowave:intersects(" + GEO_FIELD + ", 'POLYGON((0.5 2, 1.5 2, 1.5 10, 0.5 10, 0.5 2))')";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(2, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(GEO_6, POINT_4));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
+    public void withinSmallBoundingBoxEvaluationOnlyTest() throws Exception {
+        String query = "geo:within_bounding_box(" + GEO_FIELD + ", '2_0.5', '10_1.5') && ((_Eval_ = true) && geo:within_bounding_box(" + GEO_FIELD
+                        + ", '2_0.5', '10_1.5'))";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(2, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(GEO_6, POINT_4));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
+    public void intersectsSmallBoundingBoxEvaluationOnlyTest() throws Exception {
+        String query = "geowave:intersects(" + GEO_FIELD
+                        + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))') && ((ASTEvaluationOnly = true) && geowave:intersects(" + GEO_FIELD
+                        + ", 'POLYGON((0.5 2, 0.5 10, 1.5 10, 1.5 2, 0.5 2))'))";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(2, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(GEO_6, POINT_4));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
     public void withinLargeBoundingBoxTest() throws Exception {
         String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_-180', '90_180')";
         
@@ -336,11 +429,258 @@ public class MixedGeoAndGeoWaveTest {
         Assert.assertEquals(0, geoList.size());
     }
     
+    @Test
+    public void intersectsLargeBoundingBoxTest() throws Exception {
+        String query = "geowave:intersects(" + GEO_FIELD + ", 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))')";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(12, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(pointData));
+        geoList.addAll(Arrays.asList(geoData));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
+    public void withinLargeBoundingBoxEvaluationOnlyTest() throws Exception {
+        String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_-180', '90_180') && ((_Eval_ = true) && geo:within_bounding_box(" + GEO_FIELD
+                        + ", '-90_-180', '90_180'))";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(12, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(pointData));
+        geoList.addAll(Arrays.asList(geoData));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
+    public void intersectsLargeBoundingBoxEvaluationOnlyTest() throws Exception {
+        String query = "geowave:intersects(" + GEO_FIELD
+                        + ", 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && ((ASTEvaluationOnly = true) && geowave:intersects(" + GEO_FIELD
+                        + ", 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))'))";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(12, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(pointData));
+        geoList.addAll(Arrays.asList(geoData));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
+    public void withinLargeCircleTest() throws Exception {
+        String query = "geo:within_circle(" + GEO_FIELD + ", '0_0', 90)";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(12, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(pointData));
+        geoList.addAll(Arrays.asList(geoData));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
+    public void intersectsLargeCircleTest() throws Exception {
+        String query = "geowave:intersects(" + GEO_FIELD + ", '" + createCircle(0, 0, 90).toText() + "')";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(12, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(pointData));
+        geoList.addAll(Arrays.asList(geoData));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
+    public void withinLargeCircleEvaluationOnlyTest() throws Exception {
+        String query = "geo:within_circle(" + GEO_FIELD + ", '0_0', 90) && ((_Eval_ = true) && geo:within_circle(" + GEO_FIELD + ", '0_0', 90))";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(12, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(pointData));
+        geoList.addAll(Arrays.asList(geoData));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
+    public void intersectsLargeCircleEvaluationOnlyTest() throws Exception {
+        String query = "geowave:intersects(" + GEO_FIELD + ", '" + createCircle(0, 0, 90).toText() + "') && ((ASTEvaluationOnly = true) && geowave:intersects("
+                        + GEO_FIELD + ", '" + createCircle(0, 0, 90).toText() + "'))";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(12, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(pointData));
+        geoList.addAll(Arrays.asList(geoData));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
+    public void withinLargeBoundingBoxAcrossAntimeridianTest() throws Exception {
+        String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_0.01', '90_-0.01')";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(8, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(pointData));
+        geoList.addAll(Arrays.asList(GEO_5, GEO_6));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
+    @Test
+    public void withinLargeBoundingBoxAcrossAntimeridianEvaluationOnlyTest() throws Exception {
+        String query = "geo:within_bounding_box(" + GEO_FIELD + ", '-90_0.01', '90_-0.01') && ((_Eval_ = true) && geo:within_bounding_box(" + GEO_FIELD
+                        + ", '-90_0.01', '90_-0.01'))";
+        
+        List<DefaultEvent> events = getQueryResults(query);
+        Assert.assertEquals(8, events.size());
+        
+        List<String> geoList = new ArrayList<>();
+        geoList.addAll(Arrays.asList(pointData));
+        geoList.addAll(Arrays.asList(GEO_5, GEO_6));
+        
+        for (DefaultEvent event : events) {
+            String geo = null;
+            
+            for (DefaultField field : event.getFields()) {
+                if (field.getName().equals(GEO_FIELD) || field.getName().equals(POINT_FIELD))
+                    geo = field.getValueString();
+            }
+            
+            // ensure that this is one of the ingested events
+            Assert.assertTrue(geoList.remove(geo));
+        }
+        
+        Assert.assertEquals(0, geoList.size());
+    }
+    
     // Note: Trying to ingest non-point WKT as PointType will not work. PointType can only be used for POINT wkt
     @Test(expected = InvalidQueryException.class)
     public void polyPointTest() throws Exception {
         String query = "geo:within_bounding_box(" + POLY_POINT_FIELD + ", '-1_-1', '1_1')";
         getQueryResults(query);
+    }
+    
+    private Polygon createCircle(double lon, double lat, double radius) {
+        GeometricShapeFactory shapeFactory = new GeometricShapeFactory();
+        shapeFactory.setNumPoints(NUM_CIRCLE_POINTS);
+        shapeFactory.setCentre(new Coordinate(lon, lat));
+        shapeFactory.setSize(radius * 2);
+        return shapeFactory.createCircle();
     }
     
     private List<DefaultEvent> getQueryResults(String queryString) throws Exception {
@@ -396,9 +736,6 @@ public class MixedGeoAndGeoWaveTest {
         // set the pushdown threshold really high to avoid collapsing uids into shards (overrides setCollapseUids if #terms is greater than this threshold)
         ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);
         
-        // lets avoid condensing uids to ensure that shard ranges are not collapsed into day ranges
-        ((DefaultQueryPlanner) (logic.getQueryPlanner())).setCondenseUidsInRangeStream(false);
-        
         URL hdfsSiteConfig = this.getClass().getResource("/testhadoop.config");
         logic.setHdfsSiteConfigURLs(hdfsSiteConfig.toExternalForm());
         
@@ -412,6 +749,7 @@ public class MixedGeoAndGeoWaveTest {
         logic.setMaxUnfieldedExpansionThreshold(1);
         logic.setMaxValueExpansionThreshold(1);
         logic.setIvaratorCacheScanPersistThreshold(1);
+        logic.setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
     }
     
     public static class TestIngestHelper extends ContentBaseIngestHelper {

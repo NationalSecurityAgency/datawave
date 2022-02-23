@@ -18,13 +18,17 @@ import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -212,8 +216,8 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                             String normalizedUpper = type.normalize(range.getUpper().toString());
                             
                             if (normalizedLower != null && normalizedUpper != null) {
-                                normalizedRange.updateLower(normalizedLower, range.isLowerInclusive());
-                                normalizedRange.updateUpper(normalizedUpper, range.isUpperInclusive());
+                                normalizedRange.updateLower(normalizedLower, range.isLowerInclusive(), range.getLowerNode());
+                                normalizedRange.updateUpper(normalizedUpper, range.isUpperInclusive(), range.getUpperNode());
                                 
                                 normalizedRanges.add(normalizedRange);
                             } else {
@@ -353,13 +357,37 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        simpleValueFilter(node);
+        simpleComparisonValueFilter(node, true);
         return super.visit(node, data);
     }
     
     @Override
     public Object visit(ASTNENode node, Object data) {
-        simpleValueFilter(node);
+        simpleComparisonValueFilter(node, true);
+        return super.visit(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTLTNode node, Object data) {
+        simpleComparisonValueFilter(node, false);
+        return super.visit(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTGTNode node, Object data) {
+        simpleComparisonValueFilter(node, false);
+        return super.visit(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTLENode node, Object data) {
+        simpleComparisonValueFilter(node, false);
+        return super.visit(node, data);
+    }
+    
+    @Override
+    public Object visit(ASTGENode node, Object data) {
+        simpleComparisonValueFilter(node, false);
         return super.visit(node, data);
     }
     
@@ -377,10 +405,8 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        List<JexlNode> otherNodes = new ArrayList<>();
-        Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(node, otherNodes, true);
-        if (ranges.size() == 1 && otherNodes.isEmpty()) {
-            LiteralRange<?> range = ranges.keySet().iterator().next();
+        LiteralRange range = JexlASTHelper.findRange().getRange(node);
+        if (range != null) {
             simpleRangeFilter(range);
         } else {
             super.visit(node, data);
@@ -398,9 +424,19 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         return null;
     }
     
-    protected void simpleValueFilter(JexlNode node) {
+    protected void simpleComparisonValueFilter(JexlNode node, boolean isExact) {
         final JexlASTHelper.IdentifierOpLiteral iol = JexlASTHelper.getIdentifierOpLiteral(node);
-        generateValueFilter(iol, false);
+        
+        if (iol != null) {
+            // handle the simple case: FIELD == literal, FIELD != literal
+            generateValueFilter(iol, false, !isExact);
+        } else {
+            // handing non trivial cases: FIELD = FIELD, (FIELD || FIELD) == literal, FIELD - FIELD == literal, FIELD < FIELD...
+            List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
+            for (ASTIdentifier identifier : identifiers) {
+                generateValueFilter(new JexlASTHelper.IdentifierOpLiteral(identifier, null, null), false, true);
+            }
+        }
     }
     
     protected void simplePatternFilter(JexlNode node) {
@@ -418,7 +454,24 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         f.addFieldRange(range);
     }
     
+    /**
+     * generate value filter based on IdentifierOpLiteral
+     *
+     * @param iol
+     * @param isPattern
+     */
     protected void generateValueFilter(JexlASTHelper.IdentifierOpLiteral iol, boolean isPattern) {
+        generateValueFilter(iol, isPattern, false);
+    }
+    
+    /**
+     * conditionally generate value filter based on IdentifierOpLiteral and handle isAcceptAll case
+     *
+     * @param iol
+     * @param isPattern
+     * @param isAcceptAll
+     */
+    protected void generateValueFilter(JexlASTHelper.IdentifierOpLiteral iol, boolean isPattern, boolean isAcceptAll) {
         if (iol != null) {
             final String fieldName = JexlASTHelper.deconstructIdentifier(iol.getIdentifier().image, false);
             ExpressionFilter f = filterMap.get(fieldName);
@@ -426,20 +479,23 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                 filterMap.put(fieldName, f = createExpressionFilter(fieldName));
             }
             
-            final Object fieldValue = iol.getLiteralValue();
-            
-            if (fieldValue != null) {
-                final String fieldStr = fieldValue.toString();
-                
-                if (isPattern) {
-                    f.addFieldPattern(fieldStr);
-                } else {
-                    f.addFieldValue(fieldStr);
-                }
+            if (isAcceptAll) {
+                f.acceptAllValues();
             } else {
-                f.setNullValueFlag();
+                final Object fieldValue = iol.getLiteralValue();
+                
+                if (fieldValue != null) {
+                    final String fieldStr = fieldValue.toString();
+                    
+                    if (isPattern) {
+                        f.addFieldPattern(fieldStr);
+                    } else {
+                        f.addFieldValue(fieldStr);
+                    }
+                } else {
+                    f.setNullValueFlag();
+                }
             }
-            
         } else {
             throw new NullPointerException("Null IdentifierOpLiteral");
         }

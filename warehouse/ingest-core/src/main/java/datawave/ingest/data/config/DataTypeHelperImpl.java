@@ -30,7 +30,7 @@ public class DataTypeHelperImpl implements DataTypeHelper {
     protected final Set<String> fieldsToDowncase = new HashSet<>();
     protected IngestPolicyEnforcer ingestPolicyEnforcer;
     
-    protected FieldNameAliaserNormalizer aliaser;
+    protected FieldNameAliaserNormalizer aliaser = new FieldNameAliaserNormalizer();
     
     @Override
     public void setup(Configuration config) {
@@ -55,7 +55,6 @@ public class DataTypeHelperImpl implements DataTypeHelper {
             throw new RuntimeException(e.getLocalizedMessage());
         }
         
-        aliaser = new FieldNameAliaserNormalizer();
         aliaser.setup(getType(), config);
     }
     

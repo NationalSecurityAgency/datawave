@@ -22,7 +22,7 @@ public class OptionBuilderTest {
     public void testCreate() throws Exception {
         Option option = this.optionBuilder.create("opt", "desc");
         assertEquals(option.getArgs(), 0);
-        assertNull(option.getType());
+        assertEquals(String.class, option.getType());
         assertEquals(option.getOpt(), "opt");
         assertEquals(option.getDescription(), "desc");
         assertNull(option.getLongOpt());

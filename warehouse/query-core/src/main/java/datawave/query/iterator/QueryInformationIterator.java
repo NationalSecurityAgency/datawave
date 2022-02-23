@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 public class QueryInformationIterator extends WrappingIterator {
     private static final Logger log = Logger.getLogger(QueryInformationIterator.class);
     
-    private static final String REPORT_ERRORS_OPT = "REPORT_ERRORS";
+    protected static final String REPORT_ERRORS_OPT = "REPORT_ERRORS";
     
     protected QueryInformation info;
     

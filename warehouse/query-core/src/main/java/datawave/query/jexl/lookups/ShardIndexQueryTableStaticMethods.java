@@ -41,20 +41,18 @@ import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.LongRange;
-import org.apache.commons.lang.time.DateUtils;
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Temporary location for static methods in ShardIndexQueryTable
@@ -70,23 +68,25 @@ public class ShardIndexQueryTableStaticMethods {
      * Create an IndexLookup task to find field names give a JexlNode and a set of Types for that node
      *
      * @param node
+     * @param config
+     * @param scannerFactory
      * @param expansionFields
      * @param dataTypes
-     * @param ingestDataTypes
      * @param helperRef
-     * @return The index lookup instance
+     * @param execService
+     * @return
      * @throws TableNotFoundException
      */
-    public static IndexLookup normalizeQueryTerm(JexlNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
-                    MetadataHelper helperRef) throws TableNotFoundException {
+    public static IndexLookup normalizeQueryTerm(JexlNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
         if (node instanceof ASTEQNode) {
-            return normalizeQueryTerm((ASTEQNode) node, expansionFields, dataTypes, ingestDataTypes, helperRef);
+            return normalizeQueryTerm((ASTEQNode) node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else if (node instanceof ASTNENode) {
-            return normalizeQueryTerm((ASTNENode) node, expansionFields, dataTypes, ingestDataTypes, helperRef);
+            return normalizeQueryTerm((ASTNENode) node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else if (node instanceof ASTERNode) {
-            return expandRegexFieldName((ASTERNode) node, expansionFields, dataTypes, ingestDataTypes, helperRef);
+            return expandRegexFieldName((ASTERNode) node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else if (node instanceof ASTNRNode) {
-            return expandRegexFieldName((ASTNRNode) node, expansionFields, dataTypes, ingestDataTypes, helperRef);
+            return expandRegexFieldName((ASTNRNode) node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else if (node instanceof ASTLENode) {
             throw new UnsupportedOperationException("Cannot expand an unbounded range");
         } else if (node instanceof ASTLTNode) {
@@ -96,12 +96,12 @@ public class ShardIndexQueryTableStaticMethods {
         } else if (node instanceof ASTGTNode) {
             throw new UnsupportedOperationException("Cannot expand an unbounded range");
         } else {
-            return new EmptyIndexLookup();
+            return new EmptyIndexLookup(config);
         }
     }
     
-    public static IndexLookup normalizeQueryTerm(String literal, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
-                    MetadataHelper helperRef) throws TableNotFoundException {
+    public static IndexLookup normalizeQueryTerm(String literal, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
         Set<String> terms = Sets.newHashSet(literal);
         
         for (Type<?> normalizer : dataTypes) {
@@ -117,7 +117,8 @@ public class ShardIndexQueryTableStaticMethods {
             }
         }
         
-        return new FieldNameLookup(getIndexedExpansionFields(expansionFields, false, ingestDataTypes, helperRef), terms);
+        return new FieldNameIndexLookup(config, scannerFactory, getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helperRef),
+                        terms, execService);
     }
     
     /**
@@ -146,42 +147,46 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param config
+     * @param scannerFactory
      * @param expansionFields
      * @param dataTypes
-     * @param ingestDataTypes
      * @param helperRef
+     * @param execService
      * @return The index lookup instance
      * @throws TableNotFoundException
      */
-    public static IndexLookup normalizeQueryTerm(ASTEQNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
-                    MetadataHelper helperRef) throws TableNotFoundException {
-        return _normalizeQueryTerm(node, expansionFields, dataTypes, ingestDataTypes, helperRef);
+    public static IndexLookup normalizeQueryTerm(ASTEQNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
+        return _normalizeQueryTerm(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
     }
     
     /**
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param config
+     * @param scannerFactory
      * @param expansionFields
      * @param dataTypes
-     * @param ingestDataTypes
      * @param helperRef
+     * @param execService
      * @return The index lookup instance
      * @throws TableNotFoundException
      */
-    public static IndexLookup normalizeQueryTerm(ASTNENode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
-                    MetadataHelper helperRef) throws TableNotFoundException {
-        return _normalizeQueryTerm(node, expansionFields, dataTypes, ingestDataTypes, helperRef);
+    public static IndexLookup normalizeQueryTerm(ASTNENode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
+        return _normalizeQueryTerm(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
     }
     
-    protected static IndexLookup _normalizeQueryTerm(JexlNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
-                    MetadataHelper helperRef) throws TableNotFoundException {
+    protected static IndexLookup _normalizeQueryTerm(JexlNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
         Object literal = JexlASTHelper.getLiteralValue(node);
         
         if (literal instanceof String) {
-            return normalizeQueryTerm((String) literal, expansionFields, dataTypes, ingestDataTypes, helperRef);
+            return normalizeQueryTerm((String) literal, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else if (literal instanceof Number) {
-            return normalizeQueryTerm(((Number) literal).toString(), expansionFields, dataTypes, ingestDataTypes, helperRef);
+            return normalizeQueryTerm(((Number) literal).toString(), config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
         } else {
             log.error("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
             throw new IllegalArgumentException("Encountered literal that was not a String nor a Number: " + literal.getClass().getName() + ", " + literal);
@@ -192,47 +197,53 @@ public class ShardIndexQueryTableStaticMethods {
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param config
+     * @param scannerFactory
      * @param expansionFields
      * @param dataTypes
-     * @param ingestDataTypes
      * @param helperRef
+     * @param execService
      * @return The index lookup instance
      * @throws TableNotFoundException
      */
-    public static IndexLookup expandRegexFieldName(ASTERNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
-                    MetadataHelper helperRef) throws TableNotFoundException {
-        return _expandRegexFieldName(node, expansionFields, dataTypes, ingestDataTypes, helperRef);
+    public static IndexLookup expandRegexFieldName(ASTERNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
+        return _expandRegexFieldName(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
     }
     
     /**
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param config
+     * @param scannerFactory
      * @param expansionFields
      * @param dataTypes
-     * @param ingestDataTypes
      * @param helperRef
+     * @param execService
      * @return The index lookup instance
      * @throws TableNotFoundException
      */
-    public static IndexLookup expandRegexFieldName(ASTNRNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
-                    MetadataHelper helperRef) throws TableNotFoundException {
-        return _expandRegexFieldName(node, expansionFields, dataTypes, ingestDataTypes, helperRef);
+    public static IndexLookup expandRegexFieldName(ASTNRNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> expansionFields,
+                    Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
+        return _expandRegexFieldName(node, config, scannerFactory, expansionFields, dataTypes, helperRef, execService);
     }
     
     /**
      * A non-public method that implements the expandRegexFieldName to force clients to actually provide an ASTERNode or ASTNRNode
      *
      * @param node
+     * @param config
+     * @param scannerFactory
      * @param expansionFields
      * @param dataTypes
-     * @param ingestDataTypes
      * @param helperRef
+     * @param execService
      * @return The index lookup instance
      * @throws TableNotFoundException
      */
-    protected static IndexLookup _expandRegexFieldName(JexlNode node, Set<String> expansionFields, Set<Type<?>> dataTypes, Set<String> ingestDataTypes,
-                    MetadataHelper helperRef) throws TableNotFoundException {
+    protected static IndexLookup _expandRegexFieldName(JexlNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory,
+                    Set<String> expansionFields, Set<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) throws TableNotFoundException {
         Set<String> patterns = Sets.newHashSet();
         
         Object literal = JexlASTHelper.getLiteralValue(node);
@@ -266,27 +277,25 @@ public class ShardIndexQueryTableStaticMethods {
             }
         }
         
-        Set<String> fields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, false, ingestDataTypes, helperRef);
-        Set<String> reverseFields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, true, ingestDataTypes, helperRef);
-        return (IndexLookup) new LookupTermsFromRegex(fields, reverseFields, patterns, helperRef, true);
-    }
-    
-    public static IndexLookup expandRegexTerms(ASTERNode node, String fieldName, Set<Type<?>> dataTypes, MetadataHelper helperRef) {
-        return expandRegexTerms(node, fieldName, dataTypes, null, helperRef);
+        Set<String> fields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, false, config.getDatatypeFilter(), helperRef);
+        Set<String> reverseFields = ShardIndexQueryTableStaticMethods.getIndexedExpansionFields(expansionFields, true, config.getDatatypeFilter(), helperRef);
+        return new RegexIndexLookup(config, scannerFactory, fields, reverseFields, patterns, helperRef, true, execService);
     }
     
     /**
      * Build up a task to run against the inverted index tables
      *
      * @param node
+     * @param config
+     * @param scannerFactory
      * @param fieldName
      * @param dataTypes
-     * @param datatypeFilter
      * @param helperRef
+     * @param execService
      * @return The index lookup instance
      */
-    public static IndexLookup expandRegexTerms(ASTERNode node, String fieldName, Collection<Type<?>> dataTypes, Set<String> datatypeFilter,
-                    MetadataHelper helperRef) {
+    public static IndexLookup expandRegexTerms(ASTERNode node, ShardQueryConfiguration config, ScannerFactory scannerFactory, String fieldName,
+                    Collection<Type<?>> dataTypes, MetadataHelper helperRef, ExecutorService execService) {
         Set<String> patterns = Sets.newHashSet();
         
         Object literal = JexlASTHelper.getLiteralValue(node);
@@ -313,12 +322,12 @@ public class ShardIndexQueryTableStaticMethods {
             }
         }
         
-        return (IndexLookup) new LookupTermsFromRegex(fieldName, patterns, helperRef);
+        return new RegexIndexLookup(config, scannerFactory, fieldName, patterns, helperRef, execService);
     }
     
-    public static IndexLookup expandRange(LiteralRange<?> range) {
+    public static IndexLookup expandRange(ShardQueryConfiguration config, ScannerFactory scannerFactory, LiteralRange<?> range, ExecutorService execService) {
         
-        return new LookupBoundedRangeForTerms(range);
+        return new BoundedRangeIndexLookup(config, scannerFactory, range, execService);
     }
     
     /**
@@ -400,15 +409,7 @@ public class ShardIndexQueryTableStaticMethods {
         
         bs.setRanges(ranges);
         
-        // The begin date from the query may be down to the second, for doing lookups in the index we want to use the day because
-        // the times in the index table have been truncated to the day.
-        Date begin = DateUtils.truncate(config.getBeginDate(), Calendar.DAY_OF_MONTH);
-        // we don't need to bump up the end date any more because it's not apart of the range set on the scanner
-        Date end = config.getEndDate();
-        
-        LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
         SessionOptions options = new SessionOptions();
-        // options.addScanIterator(configureGlobalIndexDateRangeFilter(config, dateRange));
         options.addScanIterator(configureDateRangeIterator(config));
         IteratorSetting setting = configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter());
         if (setting != null) {
@@ -563,6 +564,7 @@ public class ShardIndexQueryTableStaticMethods {
      * @param fieldName
      * @param normalizedQueryTerm
      * @param fullTableScanEnabled
+     * @param metadataHelper
      * @param config
      * @return
      * @throws datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException
@@ -740,12 +742,11 @@ public class ShardIndexQueryTableStaticMethods {
     /**
      * Get the accumulo range for a literal query range. Note that it is assumed that the column family set will include the fieldname.
      * 
-     * @param fieldName
      * @param literalRange
      * @return
      * @throws IllegalRangeArgumentException
      */
-    public static Range getBoundedRangeRange(String fieldName, LiteralRange<?> literalRange) throws IllegalRangeArgumentException {
+    public static Range getBoundedRangeRange(LiteralRange<?> literalRange) throws IllegalRangeArgumentException {
         String lower = literalRange.getLower().toString(), upper = literalRange.getUpper().toString();
         
         Key startKey = new Key(new Text(lower));

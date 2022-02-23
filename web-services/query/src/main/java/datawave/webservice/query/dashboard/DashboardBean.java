@@ -1,5 +1,6 @@
 package datawave.webservice.query.dashboard;
 
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.AuthorizationsUtil;
@@ -13,6 +14,7 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
 
@@ -44,6 +46,7 @@ import java.util.Set;
 @LocalBean
 @RolesAllowed("AuthorizedUser")
 @DeclareRoles("AuthorizedUser")
+@Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class DashboardBean {
     
     private static final Logger log = Logger.getLogger(DashboardBean.class);

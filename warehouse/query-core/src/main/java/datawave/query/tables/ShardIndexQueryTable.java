@@ -18,10 +18,10 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
 import datawave.query.jexl.visitors.ExpandMultiNormalizedTerms;
 import datawave.query.jexl.visitors.FetchDataTypesVisitor;
-import datawave.query.jexl.visitors.FixUnfieldedTermsVisitor;
 import datawave.query.jexl.visitors.LiteralNodeVisitor;
 import datawave.query.jexl.visitors.PatternNodeVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
+import datawave.query.jexl.visitors.UnfieldedIndexExpansionVisitor;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.model.QueryModel;
@@ -245,13 +245,12 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> {
             log.debug("JEXL Query = " + node.getOriginalQuery());
         }
         
-        ASTJexlScript origScript = JexlASTHelper.parseJexlQuery(config.getQueryString());
+        // Parse & flatten the query.
+        ASTJexlScript origScript = JexlASTHelper.parseAndFlattenJexlQuery(config.getQueryString());
         
         ASTJexlScript script;
         try {
-            Set<String> expansionFields = metadataHelper.getExpansionFields(config.getDatatypeFilter());
-            script = FixUnfieldedTermsVisitor.fixUnfieldedTree(config, this.scannerFactory, metadataHelper, origScript, expansionFields,
-                            config.isExpandFields(), config.isExpandValues());
+            script = UnfieldedIndexExpansionVisitor.expandUnfielded(config, this.scannerFactory, metadataHelper, origScript);
         } catch (EmptyUnfieldedTermExpansionException e) {
             Multimap<String,String> emptyMap = Multimaps.unmodifiableMultimap(HashMultimap.create());
             config.setNormalizedTerms(emptyMap);

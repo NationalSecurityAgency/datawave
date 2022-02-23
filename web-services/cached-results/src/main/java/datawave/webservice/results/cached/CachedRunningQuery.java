@@ -16,7 +16,8 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import javax.sql.DataSource;
 import javax.sql.rowset.CachedRowSet;
@@ -552,14 +553,14 @@ public class CachedRunningQuery extends AbstractRunningQuery {
     private List<String> getViewColumnNames(Connection connection, String view) throws SQLException {
         CachedResultsParameters.validate(view);
         List<String> columns = new ArrayList<>();
-        Statement s = connection.createStatement();
-        ResultSet rs = s.executeQuery("show columns from " + view);
-        Set<String> fixedColumns = CacheableQueryRow.getFixedColumnSet();
-        
-        while (rs.next()) {
-            String column = rs.getString(1);
-            if (fixedColumns.contains(column) == false) {
-                columns.add(column);
+        try (Statement s = connection.createStatement(); ResultSet rs = s.executeQuery("show columns from " + view)) {
+            Set<String> fixedColumns = CacheableQueryRow.getFixedColumnSet();
+            
+            while (rs.next()) {
+                String column = rs.getString(1);
+                if (fixedColumns.contains(column) == false) {
+                    columns.add(column);
+                }
             }
         }
         
@@ -1063,7 +1064,7 @@ public class CachedRunningQuery extends AbstractRunningQuery {
             else
                 ps.setString(x++, StringUtils.join(this.fixedFieldsInEvent, ","));
             
-            MultivaluedMapImpl<String,String> optionalQueryParameters = (MultivaluedMapImpl<String,String>) query.getOptionalQueryParameters();
+            MultiValueMap<String,String> optionalQueryParameters = new LinkedMultiValueMap<>(query.getOptionalQueryParameters());
             if (optionalQueryParameters == null || optionalQueryParameters.isEmpty())
                 ps.setNull(x++, Types.BLOB);
             else
@@ -1184,8 +1185,8 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                             InputStream istream = optionalQueryParametersBlob.getBinaryStream();
                             ObjectInputStream oistream = new ObjectInputStream(istream);
                             Object optionalQueryParametersObject = oistream.readObject();
-                            if (optionalQueryParametersObject != null && optionalQueryParametersObject instanceof MultivaluedMapImpl) {
-                                MultivaluedMapImpl<String,String> optionalQueryParameters = (MultivaluedMapImpl<String,String>) optionalQueryParametersObject;
+                            if (optionalQueryParametersObject != null && optionalQueryParametersObject instanceof MultiValueMap) {
+                                MultiValueMap<String,String> optionalQueryParameters = (MultiValueMap<String,String>) optionalQueryParametersObject;
                                 query.setOptionalQueryParameters(optionalQueryParameters);
                             }
                         } catch (IOException e) {

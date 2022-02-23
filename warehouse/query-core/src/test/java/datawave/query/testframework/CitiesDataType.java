@@ -7,6 +7,9 @@ import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.data.config.CSVHelper;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
+import datawave.marking.MarkingFunctions;
+
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -58,7 +61,7 @@ public class CitiesDataType extends AbstractDataTypeConfig {
             this.cityName = name;
         }
         
-        private String getIngestFile() {
+        public String getIngestFile() {
             return this.ingestFile;
         }
         
@@ -85,7 +88,8 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         CONTINENT(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         CODE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         ACCESS(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        NUM((Normalizer.NUMBER_NORMALIZER));
+        NUM((Normalizer.NUMBER_NORMALIZER)),
+        GEO(Normalizer.GEO_NORMALIZER);
         
         private static final List<String> Headers;
         
@@ -236,6 +240,28 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         this.hConf.set(this.dataType + "." + CityField.CODE.name() + BaseIngestHelper.FIELD_TYPE, LcNoDiacriticsType.class.getName());
         
         log.debug(this.toString());
+    }
+    
+    private static final String[] AUTH_VALUES = new String[] {"Euro", "NA"};
+    private static final Authorizations TEST_AUTHS = new Authorizations(AUTH_VALUES);
+    private static final Authorizations EXPANSION_AUTHS = new Authorizations("ct-a", "b-ct", "not-b-ct");
+    
+    public static Authorizations getTestAuths() {
+        return TEST_AUTHS;
+    }
+    
+    public static Authorizations getExpansionAuths() {
+        return EXPANSION_AUTHS;
+    }
+    
+    @Override
+    public String getSecurityMarkingFieldNames() {
+        return CityField.ACCESS.name();
+    }
+    
+    @Override
+    public String getSecurityMarkingFieldDomains() {
+        return MarkingFunctions.Default.COLUMN_VISIBILITY;
     }
     
     @Override

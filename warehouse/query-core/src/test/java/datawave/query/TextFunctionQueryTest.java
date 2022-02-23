@@ -1,16 +1,19 @@
 package datawave.query;
 
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.CitiesDataType.CityEntry;
 import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -20,9 +23,11 @@ import java.util.Collections;
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
-import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class TextFunctionQueryTest extends AbstractFunctionalQuery {
+    
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
     
     private static final Logger log = Logger.getLogger(TextFunctionQueryTest.class);
     
@@ -32,8 +37,8 @@ public class TextFunctionQueryTest extends AbstractFunctionalQuery {
         FieldConfig generic = new GenericCityFields();
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        connector = accumuloSetup.loadTables(log);
     }
     
     public TextFunctionQueryTest() {
@@ -56,6 +61,21 @@ public class TextFunctionQueryTest extends AbstractFunctionalQuery {
         query = CityField.CONTINENT.name() + ":\"" + code + "\"" + AND_OP + "#TEXT(" + state + ")";
         // should return the empty set
         runTestQuery(Collections.EMPTY_SET, query);
+    }
+    
+    @Test
+    public void testAnyFieldTextNoHits() throws Exception {
+        log.info("------  testAnyFieldTextNoHits  ------");
+        
+        ((DefaultQueryPlanner) this.logic.getQueryPlanner()).setReduceQuery(true);
+        
+        String code = "europe";
+        // must be same case as original value in event
+        String state = "blah";
+        String phrase = EQ_OP + "'" + state + "'";
+        String query = CityField.CONTINENT.name() + ":\"" + code + "\"" + OR_OP + "#TEXT(" + state + ")";
+        String expect = CityField.CONTINENT.name() + EQ_OP + "'" + code + "'" + OR_OP + this.dataManager.convertAnyField(phrase);
+        runTest(query, expect);
     }
     
     @Test

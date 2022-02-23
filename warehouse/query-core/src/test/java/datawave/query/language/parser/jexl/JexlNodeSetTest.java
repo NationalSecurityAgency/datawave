@@ -4,7 +4,10 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -12,9 +15,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class JexlNodeSetTest {
     
@@ -134,6 +135,20 @@ public class JexlNodeSetTest {
         
         // Try to remove something else
         assertFalse(nodeSet.remove("this other thing"));
+    }
+    
+    @Test
+    public void testRemoveByKey() {
+        JexlNode node = JexlNodeFactory.buildEQNode("FOO", "bar");
+        
+        JexlNodeSet nodeSet = new JexlNodeSet();
+        nodeSet.add(node);
+        assertFalse(nodeSet.isEmpty());
+        
+        String nodeKey = JexlASTHelper.nodeToKey(node);
+        nodeSet.remove(nodeKey);
+        
+        assertTrue(nodeSet.isEmpty());
     }
     
     @Test
@@ -266,5 +281,85 @@ public class JexlNodeSetTest {
         assertFalse(nodeSet.contains(node2));
         assertFalse(nodeSet.contains(node3));
         assertTrue(nodeSet.isEmpty());
+    }
+    
+    @Test
+    public void testAddingDelayedPredicate() throws ParseException {
+        String source = "FOO == 'bar'";
+        JexlNode sourceNode = JexlASTHelper.parseJexlQuery(source);
+        assertEquals(source, JexlStringBuildingVisitor.buildQueryWithoutParse(sourceNode));
+        
+        String delayed = "((_Delayed_ = true) && (FOO == 'bar'))";
+        JexlNode delayedNode = ASTDelayedPredicate.create(sourceNode);
+        assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(delayedNode));
+        
+        JexlNodeSet nodeSet = new JexlNodeSet();
+        nodeSet.add(sourceNode);
+        nodeSet.add(delayedNode);
+        
+        assertEquals(1, nodeSet.size());
+        assertEquals(source, nodeSet.getNodeKeys().iterator().next());
+        assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(nodeSet.getNodes().iterator().next()));
+    }
+    
+    @Test
+    public void testAddingDelayedPredicateFirst() throws ParseException {
+        String source = "FOO == 'bar'";
+        JexlNode sourceNode = JexlASTHelper.parseJexlQuery(source);
+        assertEquals(source, JexlStringBuildingVisitor.buildQueryWithoutParse(sourceNode));
+        
+        String delayed = "((_Delayed_ = true) && (FOO == 'bar'))";
+        JexlNode delayedNode = ASTDelayedPredicate.create(sourceNode);
+        assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(delayedNode));
+        
+        JexlNodeSet nodeSet = new JexlNodeSet();
+        nodeSet.add(delayedNode);
+        nodeSet.add(sourceNode);
+        
+        assertEquals(1, nodeSet.size());
+        assertEquals(source, nodeSet.getNodeKeys().iterator().next());
+        assertEquals(delayed, JexlStringBuildingVisitor.buildQueryWithoutParse(nodeSet.getNodes().iterator().next()));
+    }
+    
+    @Test
+    public void testEquals() {
+        JexlNodeSet prime = new JexlNodeSet();
+        
+        assertFalse(prime.equals(null));
+        assertTrue(prime.equals(prime));
+        
+        JexlNodeSet other = new JexlNodeSet();
+        other.add(JexlNodeFactory.buildEQNode("FOO", "bar"));
+        
+        assertFalse(prime.equals(other));
+        
+        prime.add(JexlNodeFactory.buildEQNode("FOO", "bar"));
+        assertTrue(prime.equals(other));
+    }
+    
+    // Test exercises the directAddAll() codepath found within the addAll() method.
+    @Test
+    public void testDirectAddAll() {
+        JexlNode node1 = JexlNodeFactory.buildEQNode("FOO", "bar");
+        JexlNode node2 = JexlNodeFactory.buildEQNode("FOO2", "bar2");
+        JexlNodeSet nodeSet = new JexlNodeSet();
+        nodeSet.add(node1);
+        nodeSet.add(node2);
+        
+        JexlNode node3 = JexlNodeFactory.buildEQNode("FOO3", "bar3");
+        JexlNode node4 = JexlNodeFactory.buildEQNode("FOO4", "bar4");
+        JexlNodeSet otherSet = new JexlNodeSet();
+        otherSet.add(node3);
+        otherSet.add(node4);
+        
+        assertEquals(2, nodeSet.size());
+        assertEquals(2, otherSet.size());
+        
+        nodeSet.addAll(otherSet);
+        assertEquals(4, nodeSet.size());
+        assertTrue(nodeSet.contains(node1));
+        assertTrue(nodeSet.contains(node2));
+        assertTrue(nodeSet.contains(node3));
+        assertTrue(nodeSet.contains(node4));
     }
 }

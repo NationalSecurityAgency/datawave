@@ -69,15 +69,15 @@ public class SplitSelectorExtractor implements SelectorExtractor {
                 for (String s : split1) {
                     String[] split2 = s.trim().split("-");
                     if (split2.length == 1) {
-                        long v1 = Integer.valueOf(split2[0]);
+                        long v1 = Integer.parseInt(split2[0]);
                         if (s.endsWith("-")) {
                             useSplitsList.add(new IntRange(v1, Integer.MAX_VALUE));
                         } else {
                             useSplitsList.add(new IntRange(v1));
                         }
                     } else if (split2.length == 2) {
-                        long v1 = Long.valueOf(split2[0]);
-                        long v2 = Long.valueOf(split2[1]);
+                        long v1 = Long.parseLong(split2[0]);
+                        long v2 = Long.parseLong(split2[1]);
                         if (v1 > v2) {
                             throw new NumberFormatException(v1 + " > " + v2 + " in range " + s);
                         }

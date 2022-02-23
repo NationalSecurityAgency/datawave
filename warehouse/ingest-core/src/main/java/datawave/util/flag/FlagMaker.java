@@ -3,7 +3,6 @@ package datawave.util.flag;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
-import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
 import datawave.metrics.util.flag.FlagFile;
 import datawave.util.flag.config.ConfigUtil;
 import datawave.util.flag.config.FlagDataTypeConfig;
@@ -45,14 +44,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Pattern;
 
 /**
  * 
@@ -63,9 +60,6 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     private static final CompressionType ct = CompressionType.BLOCK;
     
     private static final Logger log = LoggerFactory.getLogger(FlagMaker.class);
-    // our yyyy/mm/dd pattern for most things.
-    public static final Pattern pattern = Pattern.compile(".*/([0-9]{4}(/[0-9]{2}){2})(?:/.*|$)");
-    private static final String DATE_FORMAT_STRING = "yyyy" + File.separator + "MM" + File.separator + "dd";
     
     private static final String COUNTER_LIMIT_HADOOP_2 = "mapreduce.job.counters.max";
     private static final String COUNTER_LIMIT_HADOOP_1 = "mapreduce.job.counters.limit";
@@ -83,7 +77,6 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     private FlagSocket flagSocket;
     private final DecimalFormat df = new DecimalFormat("#0.00");
     private DateUtils util = new DateUtils();
-    private StandaloneTaskAttemptContext<?,?,?,?> ctx;
     
     protected JobConf config;
     
@@ -150,6 +143,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         String extraIngestArgsOverride = null;
         String flagFileDirectoryOverride = null;
         String flagMakerClass = null;
+        String flagMetricsDirectory = null;
         for (int i = 0; i < args.length; i++) {
             if ("-flagConfig".equals(args[i])) {
                 flagConfig = args[++i];
@@ -166,6 +160,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             } else if ("-flagMakerClass".equals(args[i])) {
                 flagMakerClass = args[++i];
                 log.info("will override flagMakerClass with {}", flagMakerClass);
+            } else if ("-flagMetricsDirectory".equals(args[i])) {
+                flagMetricsDirectory = args[++i];
+                log.info("will override flagMetricsDirectory with {}", flagMetricsDirectory);
             }
         }
         if (flagConfig == null) {
@@ -188,6 +185,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         }
         if (null != flagMakerClass) {
             xmlObject.setFlagMakerClass(flagMakerClass);
+        }
+        if (null != flagMetricsDirectory) {
+            xmlObject.setFlagMetricsDirectory(flagMetricsDirectory);
         }
         log.debug(xmlObject.toString());
         return xmlObject;
@@ -213,7 +213,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     
     @Override
     public void run() {
-        log.info(this.getClass().getSimpleName() + " run() starting");
+        log.trace(this.getClass().getSimpleName() + " run() starting");
         startSocket();
         try {
             while (running) {
@@ -228,7 +228,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         } finally {
             executor.shutdown();
         }
-        log.info(this.getClass().getSimpleName() + " Exiting.");
+        log.trace(this.getClass().getSimpleName() + " Exiting.");
     }
     
     /**
@@ -238,8 +238,8 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     protected void processFlags() throws IOException {
         FileSystem fs = getHadoopFS();
         log.trace("Querying for files on {}", fs.getUri().toString());
+        
         for (FlagDataTypeConfig fc : fmc.getFlagConfigs()) {
-            long startTime = System.currentTimeMillis();
             String dataName = fc.getDataName();
             fd.setup(fc);
             log.trace("Checking for files for {}", dataName);
@@ -254,6 +254,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 }
                 writeFlagFile(fc, inFiles);
             }
+            
         }
     }
     
@@ -269,31 +270,41 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      */
     void loadFilesForDistributor(FlagDataTypeConfig fc, FileSystem fs) throws IOException {
         for (String folder : fc.getFolder()) {
-            String folderPattern = folder + "/" + fmc.getFilePattern();
-            log.debug("searching for " + fc.getDataName() + " files in " + folderPattern);
-            FileStatus[] files = fs.globStatus(new Path(folderPattern));
-            if (files == null || files.length == 0) {
-                continue;
-            }
-            
-            // remove the base directory from the folder
-            if (folder.startsWith(this.fmc.getBaseHDFSDir())) {
-                folder = folder.substring(this.fmc.getBaseHDFSDir().length());
-                if (folder.startsWith(File.separator)) {
-                    folder = folder.substring(File.separator.length());
+            for (String filePattern : fmc.getFilePatterns()) {
+                String folderPattern = folder + "/" + filePattern;
+                if (log.isTraceEnabled()) {
+                    log.trace("searching for " + fc.getDataName() + " files in " + folderPattern);
                 }
-            }
-            
-            // add the files
-            for (FileStatus status : files) {
-                if (status.isDirectory()) {
-                    log.warn("Skipping subdirectory " + status.getPath());
-                } else {
-                    try {
-                        this.fd.addInputFile(new InputFile(folder, status, this.fmc.getBaseHDFSDir(), this.fmc.isUseFolderTimestamp()));
-                        logFileInfo(fc, status);
-                    } catch (UnusableFileException e) {
-                        log.warn("Skipping unusable file " + status.getPath(), e);
+                FileStatus[] files = fs.globStatus(new Path(folderPattern));
+                if (files == null || files.length == 0) {
+                    continue;
+                }
+                
+                // remove the base directory from the folder
+                String inputFolder = folder;
+                if (inputFolder.startsWith(this.fmc.getBaseHDFSDir())) {
+                    inputFolder = inputFolder.substring(this.fmc.getBaseHDFSDir().length());
+                    if (inputFolder.startsWith(File.separator)) {
+                        inputFolder = inputFolder.substring(File.separator.length());
+                    }
+                }
+                
+                // add the files
+                for (FileStatus status : files) {
+                    if (status.isDirectory()) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Skipping subdirectory " + status.getPath());
+                        }
+                    } else {
+                        try {
+                            if (log.isTraceEnabled()) {
+                                log.trace("Adding file " + status.getPath());
+                            }
+                            this.fd.addInputFile(new InputFile(inputFolder, status, this.fmc.getBaseHDFSDir(), this.fmc.isUseFolderTimestamp()));
+                            logFileInfo(fc, status);
+                        } catch (UnusableFileException e) {
+                            log.warn("Skipping unusable file " + status.getPath(), e);
+                        }
                     }
                 }
             }
@@ -301,7 +312,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
     }
     
     protected void logFileInfo(FlagDataTypeConfig fc, FileStatus status) {
-        log.info("File {} : {}", fc.getDataName(), status);
+        log.trace("File {} : {}", fc.getDataName(), status);
     }
     
     private boolean shouldOnlyCreateFullFlags(FlagDataTypeConfig fc) {
@@ -428,10 +439,10 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             Path first = flagging.iterator().next().getCurrentDir();
             String baseName = fmc.getFlagFileDirectory() + File.separator + df.format(now / 1000) + "_" + fc.getIngestPool() + "_" + fc.getDataName() + "_"
                             + first.getName() + "+" + flagging.size();
-            flagFile = write(flagging, fc, baseName);
+            flagFile = write(flagging, fc, baseName, metrics);
             for (InputFile entry : flagging) {
-                long time = entry.getTimestamp();
-                metrics.updateCounter(InputFile.class.getSimpleName(), entry.getFileName(), time);
+                if (fc.isCollectMetrics())
+                    metrics.updateCounter(InputFile.class.getSimpleName(), entry.getFileName(), entry.getTimestamp());
                 latestTime.set(Math.max(entry.getTimestamp(), latestTime.get()));
             }
             
@@ -456,7 +467,8 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             }
             
             for (InputFile entry : flagged) {
-                metrics.updateCounter(FlagFile.class.getSimpleName(), entry.getCurrentDir().getName(), System.currentTimeMillis());
+                if (fc.isCollectMetrics())
+                    metrics.updateCounter(FlagFile.class.getSimpleName(), entry.getCurrentDir().getName(), System.currentTimeMillis());
             }
             
             File f2 = new File(baseName + ".flag");
@@ -468,7 +480,14 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             // after we write a file, set the timeout to the forceInterval
             fc.setLast(now + fc.getTimeoutMilliSecs());
             
-            metrics.writeMetrics(this.fmc.getFlagMetricsDirectory(), new Path(baseName).getName());
+            if (fc.isCollectMetrics()) {
+                try {
+                    metrics.writeMetrics(this.fmc.getFlagMetricsDirectory(), new Path(baseName).getName());
+                } catch (Exception ex) {
+                    log.warn("Non-fatal Exception encountered when writing metrics.", ex);
+                }
+            }
+            
         } catch (IOException ex) {
             log.error("Unable to complete flag file ", ex);
             moveFilesBack(inFiles, futures, fs);
@@ -490,11 +509,13 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      *            data type for ingest
      * @param baseName
      *            base name for flag file
+     * @param metrics
+     *            FlagMetrics object for this source type
      * @return handle for flag file
      * @throws IOException
      *             error creating flag file
      */
-    protected File write(Collection<InputFile> flagging, FlagDataTypeConfig fc, String baseName) throws IOException {
+    protected File write(Collection<InputFile> flagging, FlagDataTypeConfig fc, String baseName, FlagMetrics metrics) throws IOException {
         // create the flag.generating file
         log.debug("Creating flag file" + baseName + ".flag" + " for data type " + fc.getDataName() + " containing " + flagging.size() + " files");
         File f = new File(baseName + ".flag.generating");
@@ -507,8 +528,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             if (fc.getFileListMarker() == null) {
                 String sep = " ";
                 for (InputFile inFile : flagging) {
-                    if (fc.isCollectMetrics())
-                        ctx.getCounter(InputFile.class.getSimpleName(), inFile.getFileName()).setValue(inFile.getTimestamp());
+                    if (fc.isCollectMetrics()) {
+                        metrics.updateCounter(InputFile.class.getSimpleName(), inFile.getFileName(), inFile.getTimestamp());
+                    }
                     sb.append(sep).append(inFile.getFlagged().toUri());
                     sep = ",";
                 }
@@ -528,7 +550,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
                 sb.append(fc.getFileListMarker()).append('\n');
                 for (InputFile inFile : flagging) {
                     if (fc.isCollectMetrics())
-                        ctx.getCounter(InputFile.class.getSimpleName(), inFile.getFileName()).setValue(inFile.getTimestamp());
+                        metrics.updateCounter(InputFile.class.getSimpleName(), inFile.getFileName(), inFile.getTimestamp());
                     sb.append(inFile.getFlagged().toUri()).append('\n');
                 }
             }

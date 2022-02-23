@@ -13,6 +13,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorOrder;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 
 import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -35,14 +36,14 @@ public class QueryMetricsDetailListResponse extends QueryMetricListResponse {
         builder.append("<table>\n");
         builder.append("<tr>");
         builder.append("<th>Visibility</th><th>Query Date</th><th>User</th><th>UserDN</th><th>Proxy Server(s)</th><th>Query ID</th><th>Query Type</th>");
-        builder.append("<th>Query Logic</th><th>Query</th><th>Query Plan</th><th>Query Name</th><th>Begin Date</th><th>End Date</th><th>Parameters</th><th>Query Auths</th>");
+        builder.append("<th>Query Logic</th><th id=\"query-header\">Query</th><th>Query Plan</th><th>Query Name</th><th>Begin Date</th><th>End Date</th><th>Parameters</th><th>Query Auths</th>");
         builder.append("<th>Server</th>");
         builder.append("<th>Predictions</th>");
         builder.append("<th>Login Time (ms)</th>");
         builder.append("<th>Query Setup Time (ms)</th><th>Query Setup Call Time (ms)</th><th>Number Pages</th><th>Number Results</th>");
         
         builder.append("<th>Doc Ranges</th><th>FI Ranges</th>");
-        builder.append("<th>Sources</th><th>Next Calls</th><th>Seek Calls</th>");
+        builder.append("<th>Sources</th><th>Next Calls</th><th>Seek Calls</th><th>Yield Count</th><th>Version</th>");
         
         builder.append("<th>Total Page Time (ms)</th><th>Total Page Call Time (ms)</th><th>Total Page Serialization Time (ms)</th>");
         builder.append("<th>Total Page Bytes Sent (uncompressed)</th><th>Lifecycle</th><th>Elapsed Time</th><th>Error Code</th><th>Error Message</th>");
@@ -120,6 +121,7 @@ public class QueryMetricsDetailListResponse extends QueryMetricListResponse {
             builder.append("<td>").append(metric.getNextCount()).append("</td>");
             builder.append("<td>").append(metric.getSeekCount()).append("</td>");
             builder.append("<td>").append(metric.getYieldCount()).append("</td>");
+            builder.append("<td>").append(metric.getVersion()).append("</td>");
             
             long count = 0l;
             long callTime = 0l;

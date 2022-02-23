@@ -23,7 +23,7 @@ public class TokenizationHelper {
     public static class HeartBeatThread extends Thread {
         private static final Logger log = Logger.getLogger(HeartBeatThread.class);
         
-        public static long INTERVAL = 500; // half second resolution
+        public static final long INTERVAL = 500; // half second resolution
         public static volatile int counter = 0;
         public static long lastRun;
         

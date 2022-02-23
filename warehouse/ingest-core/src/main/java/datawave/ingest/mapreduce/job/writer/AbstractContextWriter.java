@@ -6,7 +6,7 @@ import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.mapreduce.job.BulkIngestCounters;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.ConstraintChecker;
-import datawave.ingest.mapreduce.job.IngestJob;
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import datawave.ingest.mapreduce.job.statsd.StatsDHelper;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -58,7 +58,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
             counters = new BulkIngestCounters(conf);
             boolean deleteMode = conf.getBoolean(BaseIngestHelper.INGEST_MODE_DELETE, false);
             // Get the list of tables that we are bulk ingesting into.
-            Set<String> tables = IngestJob.getTables(conf);
+            Set<String> tables = TableConfigurationUtil.getTables(conf);
             for (String table : tables) {
                 // Create the counters for this table.
                 counters.createCounter(table, deleteMode);

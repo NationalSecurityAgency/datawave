@@ -79,7 +79,7 @@ public class NumShards {
         minNumShards = this.defaultNumShards;
         
         // populating cache with default numShards
-        milliToNumShardsCache.put(0L, this.defaultNumShards);
+        milliToNumShardsCache.put(Long.MIN_VALUE, this.defaultNumShards);
         yyyyMMddToNumShardsCache.put("", this.defaultNumShards);
         
         shardCount++;
@@ -219,13 +219,14 @@ public class NumShards {
         Connector conn = aHelper.getConnector();
         
         ensureTableExists(conn, metadataTableName);
-        Scanner scanner = conn.createScanner(metadataTableName, new Authorizations());
-        scanner.setRange(Range.exact(NUM_SHARDS, NUM_SHARDS_CF));
         
         ArrayList<String> nsEntries = new ArrayList<>();
-        
-        for (Map.Entry<Key,Value> entry : scanner) {
-            nsEntries.add(entry.getKey().getColumnQualifier().toString());
+        try (Scanner scanner = conn.createScanner(metadataTableName, new Authorizations())) {
+            scanner.setRange(Range.exact(NUM_SHARDS, NUM_SHARDS_CF));
+            
+            for (Map.Entry<Key,Value> entry : scanner) {
+                nsEntries.add(entry.getKey().getColumnQualifier().toString());
+            }
         }
         
         // create a new temporary file
@@ -238,8 +239,7 @@ public class NumShards {
         }
         
         // now attempt to write them out
-        try {
-            PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpShardCacheFile)));
+        try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpShardCacheFile)))) {
             
             for (String nsEntry : nsEntries) {
                 out.println(nsEntry);

@@ -86,7 +86,7 @@ public class SpringCDIExtension implements Extension {
         
         String cdiSpringConfigs = System.getProperty("cdi.spring.configs");
         if (cdiSpringConfigs != null) {
-            springContext = new ClassPathXmlApplicationContext(cdiSpringConfigs);
+            springContext = new ClassPathXmlApplicationContext(cdiSpringConfigs.split(","));
         } else {
             String beanRefContext = System.getProperty("cdi.bean.context", "beanRefContext.xml");
             ClassPathXmlApplicationContext bootstrap = new ClassPathXmlApplicationContext("classpath*:" + beanRefContext);

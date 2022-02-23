@@ -13,6 +13,7 @@ import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.JexlNode;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -24,9 +25,9 @@ import java.util.Set;
  */
 public class CompositeTerm extends Composite {
     
-    public static final Set<Class<?>> INVALID_LEAF_NODE_CLASSES = Sets.newHashSet(ASTNENode.class, ASTGTNode.class, ASTGENode.class, ASTLTNode.class,
-                    ASTLENode.class, ASTAndNode.class);
-    public static final Set<Class<?>> VALID_LEAF_NODE_CLASSES = Sets.newHashSet(ASTEQNode.class, ASTERNode.class);
+    public static final Set<Class<?>> INVALID_LEAF_NODE_CLASSES = Collections.unmodifiableSet(Sets.newHashSet(ASTNENode.class, ASTGTNode.class,
+                    ASTGENode.class, ASTLTNode.class, ASTLENode.class, ASTAndNode.class));
+    public static final Set<Class<?>> VALID_LEAF_NODE_CLASSES = Collections.unmodifiableSet(Sets.newHashSet(ASTEQNode.class, ASTERNode.class));
     
     public CompositeTerm(String compositeName, String separator) {
         super(compositeName, separator);

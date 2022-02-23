@@ -1,32 +1,9 @@
 package datawave.webservice.query.factory;
 
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.Resource;
-import javax.annotation.security.DeclareRoles;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.EJBContext;
-import javax.ejb.EJBException;
-import javax.ejb.LocalBean;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
-
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
-
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.marking.SecurityMarking;
 import datawave.query.iterator.QueriesTableAgeOffIterator;
@@ -40,7 +17,6 @@ import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import datawave.webservice.query.util.QueryUtil;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchDeleter;
@@ -61,6 +37,27 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import javax.annotation.Resource;
+import javax.annotation.security.DeclareRoles;
+import javax.annotation.security.RolesAllowed;
+import javax.ejb.EJBContext;
+import javax.ejb.EJBException;
+import javax.ejb.LocalBean;
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+import javax.ws.rs.core.MultivaluedMap;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Object that creates and updates QueryImpl objects using a table structure:
@@ -140,14 +137,15 @@ public class Persister {
      */
     private void create(Query query) {
         Connector c = null;
-        BatchWriter writer = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
             tableCheck(c);
-            writer = c.createBatchWriter(TABLE_NAME, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1));
-            writer.addMutation(QueryUtil.toMutation(query, new ColumnVisibility(query.getColumnVisibility())));
-            writer.flush();
+            try (BatchWriter writer = c.createBatchWriter(TABLE_NAME, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L)
+                            .setMaxWriteThreads(1))) {
+                writer.addMutation(QueryUtil.toMutation(query, new ColumnVisibility(query.getColumnVisibility())));
+            }
+            
         } catch (RuntimeException re) {
             throw re;
         } catch (Exception e) {
@@ -156,8 +154,6 @@ public class Persister {
         } finally {
             try {
                 connectionFactory.returnConnection(c);
-                if (null != writer)
-                    writer.close();
             } catch (Exception e) {
                 log.error("Error creating query", e);
                 c = null;
@@ -262,11 +258,12 @@ public class Persister {
             IteratorSetting regex = new IteratorSetting(21, RegExFilter.class);
             regex.addOption(RegExFilter.COLQ_REGEX, id + "\0.*");
             
-            Scanner scanner = ScannerHelper.createScanner(conn, TABLE_NAME, auths);
-            scanner.setRange(new Range(sid, sid));
-            scanner.addScanIterator(regex);
-            
-            return Lists.newArrayList(Iterables.transform(scanner, resultsTransform));
+            try (Scanner scanner = ScannerHelper.createScanner(conn, TABLE_NAME, auths)) {
+                scanner.setRange(new Range(sid, sid));
+                scanner.addScanIterator(regex);
+                
+                return Lists.newArrayList(Iterables.transform(scanner, resultsTransform));
+            }
         } catch (Exception e) {
             log.error("Error creating query", e);
             throw new EJBException("Error creating query", e);
@@ -300,22 +297,23 @@ public class Persister {
         log.trace(shortName + " has authorizations " + auths);
         
         Connector c = null;
-        Scanner scanner;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
             tableCheck(c);
-            scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths);
-            Range range = new Range(shortName, shortName);
-            scanner.setRange(range);
-            scanner.fetchColumnFamily(new Text(name));
-            List<Query> results = null;
-            for (Entry<Key,Value> entry : scanner) {
-                if (null == results)
-                    results = new ArrayList<>();
-                results.add(QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibility(), entry.getValue()));
+            try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
+                Range range = new Range(shortName, shortName);
+                scanner.setRange(range);
+                scanner.fetchColumnFamily(new Text(name));
+                List<Query> results = null;
+                for (Entry<Key,Value> entry : scanner) {
+                    if (null == results)
+                        results = new ArrayList<>();
+                    results.add(QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibility(), entry.getValue()));
+                }
+                
+                return results;
             }
-            return results;
         } catch (RuntimeException re) {
             throw re;
         } catch (Exception e) {
@@ -345,21 +343,21 @@ public class Persister {
         log.trace(sid + " has authorizations " + auths);
         
         Connector c = null;
-        Scanner scanner;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
             tableCheck(c);
-            scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths);
-            Range range = new Range(sid, sid);
-            scanner.setRange(range);
-            List<Query> results = null;
-            for (Entry<Key,Value> entry : scanner) {
-                if (null == results)
-                    results = new ArrayList<>();
-                results.add(QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibility(), entry.getValue()));
+            try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
+                Range range = new Range(sid, sid);
+                scanner.setRange(range);
+                List<Query> results = null;
+                for (Entry<Key,Value> entry : scanner) {
+                    if (null == results)
+                        results = new ArrayList<>();
+                    results.add(QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibility(), entry.getValue()));
+                }
+                return results;
             }
-            return results;
         } catch (RuntimeException re) {
             throw re;
         } catch (Exception e) {
@@ -396,21 +394,21 @@ public class Persister {
         log.trace(sid + " has authorizations " + auths);
         
         Connector c = null;
-        Scanner scanner = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             c = connectionFactory.getConnection(Priority.ADMIN, trackingMap);
             tableCheck(c);
-            scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths);
-            Range range = new Range(user, user);
-            scanner.setRange(range);
-            List<Query> results = null;
-            for (Entry<Key,Value> entry : scanner) {
-                if (null == results)
-                    results = new ArrayList<>();
-                results.add(QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibility(), entry.getValue()));
+            try (Scanner scanner = ScannerHelper.createScanner(c, TABLE_NAME, auths)) {
+                Range range = new Range(user, user);
+                scanner.setRange(range);
+                List<Query> results = null;
+                for (Entry<Key,Value> entry : scanner) {
+                    if (null == results)
+                        results = new ArrayList<>();
+                    results.add(QueryUtil.deserialize(QueryUtil.getQueryImplClassName(entry.getKey()), entry.getKey().getColumnVisibility(), entry.getValue()));
+                }
+                return results;
             }
-            return results;
         } catch (RuntimeException re) {
             throw re;
         } catch (Exception e) {
@@ -441,10 +439,10 @@ public class Persister {
             final HashSet<Authorizations> auths = new HashSet<>();
             auths.add(conn.securityOperations().getUserAuthorizations(conn.whoami()));
             
-            final Scanner scanner = ScannerHelper.createScanner(conn, TABLE_NAME, auths);
-            scanner.addScanIterator(regex);
-            
-            return Lists.newArrayList(Iterables.transform(scanner, implResultsTransform));
+            try (final Scanner scanner = ScannerHelper.createScanner(conn, TABLE_NAME, auths)) {
+                scanner.addScanIterator(regex);
+                return Lists.newArrayList(Iterables.transform(scanner, implResultsTransform));
+            }
         } catch (Exception ex) {
             log.error("Error finding query", ex);
             throw new EJBException("Error finding query", ex);

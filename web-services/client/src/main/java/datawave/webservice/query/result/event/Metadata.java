@@ -1,8 +1,10 @@
 package datawave.webservice.query.result.event;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.HashMap;
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
+import org.apache.commons.lang.builder.EqualsBuilder;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -10,13 +12,9 @@ import javax.xml.bind.annotation.XmlAccessorOrder;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlTransient;
-
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
-
-import org.apache.commons.lang.builder.EqualsBuilder;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashMap;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
@@ -68,6 +66,7 @@ public class Metadata implements Serializable, Message<Metadata> {
         this.row = row;
     }
     
+    @Override
     public boolean equals(Object o) {
         Metadata om = (Metadata) o;
         EqualsBuilder builder = new EqualsBuilder();
@@ -76,6 +75,15 @@ public class Metadata implements Serializable, Message<Metadata> {
         builder.append(row, om.row);
         builder.append(table, om.table);
         return builder.isEquals();
+    }
+    
+    @Override
+    public int hashCode() {
+        int result = dataType != null ? dataType.hashCode() : 0;
+        result = 31 * result + (internalId != null ? internalId.hashCode() : 0);
+        result = 31 * result + (table != null ? table.hashCode() : 0);
+        result = 31 * result + (row != null ? row.hashCode() : 0);
+        return result;
     }
     
     public static Schema<Metadata> getSchema() {

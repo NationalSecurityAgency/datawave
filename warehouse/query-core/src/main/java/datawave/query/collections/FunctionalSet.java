@@ -3,6 +3,7 @@ package datawave.query.collections;
 import com.google.common.collect.Sets;
 import datawave.data.type.NumberType;
 import datawave.query.attributes.ValueTuple;
+import datawave.util.OperationEvaluator;
 import org.apache.log4j.Logger;
 
 import java.io.Serializable;
@@ -15,7 +16,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
-import com.google.common.base.CharMatcher;
 import datawave.data.type.Type;
 
 public class FunctionalSet<T extends ValueTuple> implements Set<T> {
@@ -31,9 +31,9 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
     @SuppressWarnings("unchecked")
     public static final FunctionalSet EMPTY_SET = new EmptySet<>();
     
-    protected static Logger log = Logger.getLogger(FunctionalSet.class);
+    protected static final Logger log = Logger.getLogger(FunctionalSet.class);
     
-    protected static FunctionalSet EMPTY = new FunctionalSet();
+    protected static final FunctionalSet EMPTY = new FunctionalSet();
     
     public FunctionalSet() {
         delegate = new LinkedHashSet<>();
@@ -362,44 +362,9 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
                 Class typeClass = nextType.getClass();
                 Type referenceType = Type.Factory.createType(typeClass.getName());
                 referenceType.setDelegateFromString(reference.toString());
-                switch (CharMatcher.WHITESPACE.removeFrom(operatorString)) {
-                    case "<":
-                        if (nextType.normalize().compareTo(referenceType.normalize()) < 0) {
-                            values.add(next);
-                        }
-                        break;
-                    case "<=":
-                        if (nextType.normalize().compareTo(referenceType.normalize()) <= 0) {
-                            values.add(next);
-                        }
-                        break;
-                    case "==":
-                        if (nextType.normalize().compareTo(referenceType.normalize()) == 0) {
-                            values.add(next);
-                        }
-                        break;
-                    case "=":
-                        if (nextType.normalize().compareTo(referenceType.normalize()) == 0) {
-                            values.add(next);
-                        }
-                        break;
-                    case ">=":
-                        if (nextType.normalize().compareTo(referenceType.normalize()) >= 0) {
-                            values.add(next);
-                        }
-                        break;
-                    case ">":
-                        if (nextType.normalize().compareTo(referenceType.normalize()) > 0) {
-                            values.add(next);
-                        }
-                        break;
-                    case "!=":
-                        if (nextType.normalize().compareTo(referenceType.normalize()) != 0) {
-                            values.add(next);
-                        }
-                        break;
-                    default:
-                        throw new IllegalArgumentException("cannot use " + operatorString + " in this equation");
+                boolean keep = OperationEvaluator.compare(nextType.normalize(), referenceType.normalize(), operatorString);
+                if (keep) {
+                    values.add(next);
                 }
             }
         }

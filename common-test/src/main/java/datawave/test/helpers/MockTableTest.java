@@ -4,6 +4,7 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -13,6 +14,8 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.After;
 import org.junit.Before;
+
+import java.util.concurrent.TimeUnit;
 
 public abstract class MockTableTest {
     public static final String TABLE_NAME = "test";
@@ -33,11 +36,21 @@ public abstract class MockTableTest {
     
     @After
     public void cleanup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
-        connector.tableOperations().delete(TABLE_NAME);
+        tableOperations.delete(TABLE_NAME);
     }
     
     protected BatchWriter createBatchWriter() throws TableNotFoundException {
-        return connector.createBatchWriter(TABLE_NAME, 10000L, 1000L, 4);
+        //@formatter:off
+        return connector.createBatchWriter(TABLE_NAME, new BatchWriterConfig()
+            .setMaxLatency(1L, TimeUnit.SECONDS)
+            .setMaxMemory(10000L)
+            .setMaxWriteThreads(4)
+        );
+        //@formatter:on
+    }
+    
+    protected BatchWriter getWriter() {
+        return this.writer;
     }
     
     public BatchScanner createBatchScanner(Authorizations authorizations, int threads) throws TableNotFoundException {

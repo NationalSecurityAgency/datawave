@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.attributes.UniqueFields;
 import datawave.util.StringUtils;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.log4j.Logger;
@@ -29,9 +30,6 @@ public class QueryOptionsSwitch {
                     String[] lf = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     config.setLimitFields(Sets.newHashSet(lf));
                     break;
-                case QueryParameters.TYPE_METADATA_IN_HDFS:
-                    config.setTypeMetadataInHdfs(Boolean.parseBoolean(value));
-                    break;
                 case QueryParameters.GROUP_FIELDS:
                     String[] groups = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     config.setGroupFields(Sets.newHashSet(groups));
@@ -45,8 +43,8 @@ public class QueryOptionsSwitch {
                     }
                     break;
                 case QueryParameters.UNIQUE_FIELDS:
-                    String[] uniqueFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
-                    config.setUniqueFields(Sets.newHashSet(uniqueFields));
+                    UniqueFields uniqueFields = UniqueFields.from(value);
+                    config.setUniqueFields(uniqueFields);
             }
         }
     }

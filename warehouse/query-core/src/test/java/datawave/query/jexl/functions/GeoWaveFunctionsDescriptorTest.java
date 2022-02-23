@@ -1,12 +1,10 @@
 package datawave.query.jexl.functions;
 
-import com.vividsolutions.jts.geom.Envelope;
 import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -15,6 +13,7 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.locationtech.jts.geom.Envelope;
 import org.powermock.reflect.Whitebox;
 
 import java.io.BufferedReader;
@@ -98,11 +97,12 @@ public class GeoWaveFunctionsDescriptorTest {
         }
     }
     
-    private String convertFunctionToIndexQuery(String queryStr, ShardQueryConfiguration config) throws ParseException {
+    public static String convertFunctionToIndexQuery(String queryStr, ShardQueryConfiguration config) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryStr);
         ASTFunctionNode func = find(script);
         JexlArgumentDescriptor desc = new GeoWaveFunctionsDescriptor().getArgumentDescriptor(func);
-        MetadataHelper helper = new MockMetadataHelper();
+        MockMetadataHelper helper = new MockMetadataHelper();
+        helper.addField("GEO_FIELD", "datawave.data.type.GeometryType");
         
         JexlNode indexQuery = desc.getIndexQuery(config, helper, null, null);
         return JexlStringBuildingVisitor.buildQuery(indexQuery);

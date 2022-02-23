@@ -9,18 +9,19 @@ import org.apache.hadoop.io.Text;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created on 9/6/16.
  */
 public class ResultCountingIterator implements Iterator<Entry<Key,Value>> {
-    private volatile long resultCount = 0;
+    private AtomicLong resultCount = new AtomicLong(0);
     private Iterator<Entry<Key,Value>> serializedDocuments = null;
     private YieldCallback<Key> yield;
     
     public ResultCountingIterator(Iterator<Entry<Key,Value>> serializedDocuments, long resultCount, YieldCallback<Key> yieldCallback) {
         this.serializedDocuments = serializedDocuments;
-        this.resultCount = resultCount;
+        this.resultCount.set(resultCount);
         this.yield = yieldCallback;
     }
     
@@ -43,9 +44,9 @@ public class ResultCountingIterator implements Iterator<Entry<Key,Value>> {
     }
     
     private Key addKeyCount(Key key) {
-        resultCount++;
-        return new Key(key.getRow(), new Text(NumericalEncoder.encode(Long.toString(resultCount)) + '\0' + key.getColumnFamily()), key.getColumnQualifier(),
-                        key.getColumnVisibility(), key.getTimestamp());
+        resultCount.getAndIncrement();
+        return new Key(key.getRow(), new Text(NumericalEncoder.encode(Long.toString(resultCount.get())) + '\0' + key.getColumnFamily()),
+                        key.getColumnQualifier(), key.getColumnVisibility(), key.getTimestamp());
     }
     
     @Override

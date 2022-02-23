@@ -2,7 +2,7 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
@@ -58,6 +58,8 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -71,28 +73,49 @@ import java.util.Set;
  * tree look like if we reduce it based on everything we know to be TRUE/FALSE about the tree?
  */
 public class QueryPruningVisitor extends BaseVisitor {
+    private static final Logger log = Logger.getLogger(QueryPruningVisitor.class);
+    
     public enum TruthState {
         UNKNOWN, TRUE, FALSE
     }
     
     /**
-     * Given a JexlNode, determine if any children or even the node itself can be replaced by a TrueNode or FalseNode, For any rewritten sub-trees, create an
-     * AND node which combines an assignment showing the section of the pruned tree, and the replacement ASTTrue/ASTFalse result of the prune. The assignment
-     * node is useful for debugging query tree pruning, and functionally is not required.
+     * Given a JexlNode, determine if any children or even the node itself can be replaced by a TrueNode or FalseNode, For any rewritten sub-trees, log the
+     * pruned tree, and the replace with ASTTrue/ASTFalse.
      * 
      * @param node
      *            a non-null query node
      * @param showPrune
-     *            if set to true, ASTAssignmentNode will be generated for each section of pruned tree, otherwise pruning will simply write an ASTTrue/ASTFalse
+     *            if set to true, debug lines will be written showing what was pruned out of each tree
      * @return a rewritten query tree for node
      */
     public static JexlNode reduce(JexlNode node, boolean showPrune) {
         QueryPruningVisitor visitor = new QueryPruningVisitor(true, showPrune);
         
+        String before = null;
+        String after;
+        
+        if (showPrune) {
+            before = JexlStringBuildingVisitor.buildQuery(node);
+        }
+        
         // flatten the tree and create a copy
         JexlNode copy = TreeFlatteningRebuildingVisitor.flatten(node);
         
         copy.jjtAccept(visitor, null);
+        
+        // Now since we could have removed children within AND/OR nodes,
+        // reflatten to remove boolean operators with single children
+        copy = TreeFlatteningRebuildingVisitor.flatten(copy);
+        
+        if (showPrune) {
+            after = JexlStringBuildingVisitor.buildQuery(copy);
+            if (StringUtils.equals(before, after)) {
+                log.debug("Query was not pruned");
+            } else {
+                log.debug("Query before prune: " + before + "\nQuery after prune: " + after);
+            }
+        }
         
         return copy;
     }
@@ -198,16 +221,28 @@ public class QueryPruningVisitor extends BaseVisitor {
         }
         
         Set<TruthState> states = new HashSet<>();
-        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            TruthState state = (TruthState) (node.jjtGetChild(i).jjtAccept(this, data));
+        for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
+            JexlNode child = node.jjtGetChild(i);
+            String originalChild = null;
+            if (rewrite && debugPrune) {
+                originalChild = JexlStringBuildingVisitor.buildQuery(child);
+            }
+            TruthState state = (TruthState) (child.jjtAccept(this, data));
             if (state == TruthState.TRUE) {
                 // short circuit
                 replaceAndAssign(node, originalString, new ASTTrueNode(ParserTreeConstants.JJTTRUENODE));
                 return TruthState.TRUE;
+            } else if (state == TruthState.FALSE) {
+                // drop this node from the OR it can never be satisfied
+                replaceAndAssign(child, null, null);
+                if (debugPrune) {
+                    log.debug("Pruning " + originalChild + " from " + originalString);
+                }
             }
             states.add(state);
         }
         
+        // the node is either UNKNOWN or FALSE at this point since TRUE breaks evaluation early
         if (states.contains(TruthState.UNKNOWN)) {
             return TruthState.UNKNOWN;
         } else {
@@ -218,6 +253,11 @@ public class QueryPruningVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
+        // do not process query property markers
+        if (QueryPropertyMarker.findInstance(node).isAnyType()) {
+            return TruthState.UNKNOWN;
+        }
+        
         // grab the node string before recursion so the original is intact
         String originalString = null;
         if (rewrite && debugPrune) {
@@ -225,16 +265,28 @@ public class QueryPruningVisitor extends BaseVisitor {
         }
         
         Set<TruthState> states = new HashSet<>();
-        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            TruthState state = (TruthState) (node.jjtGetChild(i).jjtAccept(this, data));
+        for (int i = node.jjtGetNumChildren() - 1; i >= 0; i--) {
+            JexlNode child = node.jjtGetChild(i);
+            String originalChild = null;
+            if (rewrite && debugPrune) {
+                originalChild = JexlStringBuildingVisitor.buildQuery(child);
+            }
+            TruthState state = (TruthState) (child.jjtAccept(this, data));
             if (state == TruthState.FALSE) {
                 // short circuit
                 replaceAndAssign(node, originalString, new ASTFalseNode(ParserTreeConstants.JJTFALSENODE));
                 return TruthState.FALSE;
+            } else if (state == TruthState.TRUE) {
+                // drop this node from the AND it will always be satisfied
+                replaceAndAssign(child, null, null);
+                if (debugPrune) {
+                    log.debug("Pruning " + originalChild + " from " + originalString);
+                }
             }
             states.add(state);
         }
         
+        // the node is either UNKNOWN or TRUE at this point since FALSE breaks evaluation early
         if (states.contains(TruthState.UNKNOWN)) {
             return TruthState.UNKNOWN;
         } else {
@@ -246,10 +298,20 @@ public class QueryPruningVisitor extends BaseVisitor {
     // deal with wrappers
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        if (node.jjtGetNumChildren() != 1) {
-            throw new IllegalStateException("ASTJexlScript must only have one child: " + node);
+        // if there are multiple children here there are multiple statements/queries process this as an implicit OR do not reduce across them, but reduce each
+        // individually
+        Set<TruthState> states = new HashSet<>();
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            states.add((TruthState) node.jjtGetChild(i).jjtAccept(this, data));
         }
-        return node.jjtGetChild(0).jjtAccept(this, data);
+        
+        if (states.contains(TruthState.TRUE)) {
+            return TruthState.TRUE;
+        } else if (states.contains(TruthState.UNKNOWN)) {
+            return TruthState.UNKNOWN;
+        } else {
+            return TruthState.FALSE;
+        }
     }
     
     @Override
@@ -319,7 +381,7 @@ public class QueryPruningVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTAssignment node, Object data) {
-        return TruthState.TRUE;
+        return TruthState.UNKNOWN;
     }
     
     @Override
@@ -496,15 +558,28 @@ public class QueryPruningVisitor extends BaseVisitor {
         if (rewrite && toReplace != null) {
             JexlNode parent = toReplace.jjtGetParent();
             if (parent != null && parent != toReplace) {
-                if (queryString != null) {
-                    JexlNode assignment = JexlNodeFactory.createAssignment("pruned", queryString);
-                    List<JexlNode> children = new ArrayList<>(2);
-                    children.add(assignment);
-                    children.add(baseReplacement);
-                    JexlNodes.swap(parent, toReplace, JexlNodeFactory.createAndNode(children));
-                } else {
-                    // just straight up prune the tree
+                if (queryString != null && log.isDebugEnabled()) {
+                    if (this.debugPrune && baseReplacement != null) {
+                        log.debug("Pruning " + queryString + " to " + (baseReplacement instanceof ASTTrueNode ? "true" : "false"));
+                    }
+                }
+                
+                if (baseReplacement != null) {
                     JexlNodes.swap(parent, toReplace, baseReplacement);
+                } else {
+                    // remove the node entirely
+                    List<JexlNode> children = new ArrayList<>(parent.jjtGetNumChildren() - 1);
+                    for (int i = 0; i < parent.jjtGetNumChildren(); i++) {
+                        JexlNode child = parent.jjtGetChild(i);
+                        if (child != toReplace) {
+                            children.add(child);
+                        } else {
+                            // clear the old nodes parentage
+                            child.jjtSetParent(null);
+                        }
+                    }
+                    
+                    JexlNodes.children(parent, children.toArray(new JexlNode[children.size()]));
                 }
             }
         }

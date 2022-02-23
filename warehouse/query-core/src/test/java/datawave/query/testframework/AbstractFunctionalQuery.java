@@ -3,14 +3,13 @@ package datawave.query.testframework;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
-import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions.Default;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
@@ -28,8 +27,10 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
@@ -52,11 +53,14 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ComparisonFailure;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -75,6 +79,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Provides the basic initialization required to initialize and execute queries. This class will initialize the following runtime settings:
@@ -87,7 +92,10 @@ import java.util.UUID;
  */
 public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.TestResultParser {
     
-    protected static final String VALUE_THRESHOLD_JEXL_NODE = ExceededValueThresholdMarkerJexlNode.class.getSimpleName();
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+    
+    protected static final String VALUE_THRESHOLD_JEXL_NODE = ExceededValueThresholdMarkerJexlNode.label();
     protected static final String FILTER_EXCLUDE_REGEX = "filter:excludeRegex";
     
     private static final Logger log = Logger.getLogger(AbstractFunctionalQuery.class);
@@ -106,6 +114,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             Assert.fail();
         }
     }
+    
+    private boolean useRunningQuery = false;
+    private QueryMetricFactory metricFactory;
     
     /**
      * Contains a list of cities that are specified in the test data. Additional cities can be added to the test data and do not specifically need to be added
@@ -137,8 +148,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected QueryLogicTestHarness testHarness;
     protected DatawavePrincipal principal;
     
-    protected Path temporaryFolder;
-    
     private final Set<Authorizations> authSet = new HashSet<>();
     
     protected AbstractFunctionalQuery(final RawDataManager mgr) {
@@ -151,8 +160,6 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     @Before
     public void querySetUp() throws IOException {
-        temporaryFolder = Paths.get(Files.createTempDir().toURI());
-        
         log.debug("---------  querySetUp  ---------");
         
         this.logic = createQueryLogic();
@@ -194,16 +201,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         SubjectIssuerDNPair dn = SubjectIssuerDNPair.of("userDn", "issuerDn");
         DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(this.auths.toString().split(",")), null, null, -1L);
         this.principal = new DatawavePrincipal(Collections.singleton(user));
-        
-        QueryLogicTestHarness.TestResultParser resp = (key, document) -> {
-            return this.parse(key, document);
-        };
         this.testHarness = new QueryLogicTestHarness(this);
-    }
-    
-    @After
-    public void cleanUp() {
-        temporaryFolder.toFile().deleteOnExit();
     }
     
     // ============================================
@@ -213,6 +211,13 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * Performs any instance initialization required for the specific test case.
      */
     protected abstract void testInit();
+    
+    public void debugQuery() {
+        Logger.getRootLogger().setLevel(Level.DEBUG);
+        Logger.getLogger("datawave.query").setLevel(Level.DEBUG);
+        Logger.getLogger("datawave.query.planner").setLevel(Level.DEBUG);
+        Logger.getLogger("datawave.query.planner.DefaultQueryPlanner").setLevel(Level.DEBUG);
+    }
     
     // ============================================
     // implementation interface methods
@@ -252,14 +257,15 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         String plan = config.getQueryString();
         int idx;
         int total = 0;
+        String test = plan;
         do {
-            idx = plan.indexOf(subStr);
+            idx = test.indexOf(subStr);
             if (-1 < idx) {
                 total++;
-                plan = plan.substring(idx + subStr.length());
+                test = test.substring(idx + subStr.length());
             }
         } while (-1 < idx);
-        Assert.assertEquals("marker (" + subStr + ")", expect, total);
+        Assert.assertEquals("marker (" + subStr + ") in plan: " + plan, expect, total);
     }
     
     /**
@@ -385,9 +391,37 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     protected void runTestQuery(Collection<String> expected, String queryStr, Date startDate, Date endDate, Map<String,String> options,
                     List<DocumentChecker> checkers) throws Exception {
+        runTestQuery(expected, queryStr, startDate, endDate, options, checkers, this.authSet);
+    }
+    
+    /**
+     * Executes the query and performs validation of the results.
+     *
+     * @param expected
+     *            expected results from the query
+     * @param queryStr
+     *            execution query string
+     * @param startDate
+     *            start date for query (inclusive)
+     * @param endDate
+     *            end date for query (exclusive)
+     * @param options
+     *            optional parameters to query
+     * @param checkers
+     *            optional list of assert checker methods
+     * @param authSet
+     *            optional set of authorizations to use. If null or empty, will use default auths.
+     */
+    protected void runTestQuery(Collection<String> expected, String queryStr, Date startDate, Date endDate, Map<String,String> options,
+                    List<DocumentChecker> checkers, Set<Authorizations> authSet) throws Exception {
         if (log.isDebugEnabled()) {
             log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startDate) + ")  end(" + YMD_DateFormat.format(endDate) + ")");
         }
+        
+        if (authSet == null || authSet.isEmpty()) {
+            authSet = this.authSet;
+        }
+        
         QueryImpl q = new QueryImpl();
         q.setBeginDate(startDate);
         q.setEndDate(endDate);
@@ -397,11 +431,15 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         q.setId(UUID.randomUUID());
         q.setPagesize(Integer.MAX_VALUE);
         q.setQueryAuthorizations(auths.toString());
-        
-        GenericQueryConfiguration config = this.logic.initialize(connector, q, this.authSet);
-        this.logic.setupQuery(config);
-        if (log.isDebugEnabled()) {
-            log.debug("Plan: " + config.getQueryString());
+        if (useRunningQuery) {
+            QueryMetricFactory queryMetricFactory = (metricFactory == null) ? new QueryMetricFactoryImpl() : metricFactory;
+            new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, this.logic, q, "", principal, queryMetricFactory);
+        } else {
+            GenericQueryConfiguration config = this.logic.initialize(connector, q, authSet);
+            this.logic.setupQuery(config);
+            if (log.isDebugEnabled()) {
+                log.debug("Plan: " + config.getQueryString());
+            }
         }
         testHarness.assertLogicResults(this.logic, expected, checkers);
     }
@@ -515,8 +553,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * @throws IOException
      *             error creating cache
      */
-    protected void ivaratorConfig() throws IOException {
-        ivaratorConfig(1, false);
+    protected List<String> ivaratorConfig() throws IOException {
+        return ivaratorConfig(1, false)[0];
     }
     
     /**
@@ -525,8 +563,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * @throws IOException
      *             error creating cache
      */
-    protected void ivaratorFstConfig() throws IOException {
-        ivaratorConfig(1, true);
+    protected List<String>[] ivaratorFstConfig() throws IOException {
+        return ivaratorConfig(1, true);
     }
     
     /**
@@ -539,7 +577,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      * @throws IOException
      *             error creating HDFS cache directory
      */
-    protected void ivaratorConfig(final int hdfsLocations, final boolean fst) throws IOException {
+    protected List<String>[] ivaratorConfig(final int hdfsLocations, final boolean fst) throws IOException {
         final URL hdfsConfig = this.getClass().getResource("/testhadoop.config");
         Assert.assertNotNull(hdfsConfig);
         this.logic.setHdfsSiteConfigURLs(hdfsConfig.toExternalForm());
@@ -547,21 +585,23 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         final List<String> dirs = new ArrayList<>();
         final List<String> fstDirs = new ArrayList<>();
         for (int d = 1; d <= hdfsLocations; d++) {
-            Path ivCache = Paths.get(Files.createTempDir().toURI());
-            dirs.add(ivCache.toAbsolutePath().toString());
+            Path ivCache = Paths.get(temporaryFolder.newFolder().toURI());
+            dirs.add(ivCache.toUri().toString());
             if (fst) {
-                ivCache = Paths.get(Files.createTempDir().toURI());
+                ivCache = Paths.get(temporaryFolder.newFolder().toURI());
                 fstDirs.add(ivCache.toAbsolutePath().toString());
             }
         }
         String uriList = String.join(",", dirs);
         log.info("hdfs dirs(" + uriList + ")");
-        this.logic.setIvaratorCacheBaseURIs(uriList);
+        this.logic.setIvaratorCacheDirConfigs(dirs.stream().map(IvaratorCacheDirConfig::new).collect(Collectors.toList()));
         if (fst) {
             uriList = String.join(",", fstDirs);
             log.info("fst dirs(" + uriList + ")");
             this.logic.setIvaratorFstHdfsBaseURIs(uriList);
         }
+        
+        return new List[] {dirs, fstDirs};
     }
     
     /**
@@ -582,11 +622,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         expectedTree = TreeFlatteningRebuildingVisitor.flattenAll(expectedTree);
         ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(query);
         queryTree = TreeFlatteningRebuildingVisitor.flattenAll(queryTree);
-        TreeEqualityVisitor.Reason reason = new TreeEqualityVisitor.Reason();
-        boolean equal = TreeEqualityVisitor.isEqual(expectedTree, queryTree, reason);
-        
-        if (!equal) {
-            throw new ComparisonFailure(reason.reason, expected, query);
+        TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedTree, queryTree);
+        if (!comparison.isEqual()) {
+            throw new ComparisonFailure(comparison.getReason(), expected, query);
         }
     }
     
@@ -631,4 +669,20 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         connector.tableOperations().compact(QueryTestTableHelper.METADATA_TABLE_NAME, new Text("\0"), new Text("~"), true, true);
     }
     
+    /**
+     * The test framework typically just calls logic.initialize and logic.setupQuery. The typical code path for a query, as seen in RunningQuery, involves more.
+     * This method will ensure that RunningQuery is used to more fully exercise the query.
+     */
+    protected void useRunningQuery() {
+        this.useRunningQuery = true;
+    }
+    
+    /**
+     * When provided, the QueryMetric object will be used for running the query and so can be later inspected. Also see #useRunningQuery()
+     * 
+     * @param metric
+     */
+    protected void withMetric(BaseQueryMetric metric) {
+        this.metricFactory = () -> metric;
+    }
 }

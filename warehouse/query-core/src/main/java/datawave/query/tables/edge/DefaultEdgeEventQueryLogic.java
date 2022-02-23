@@ -112,7 +112,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
         ASTJexlScript origScript = null;
         ASTJexlScript script = null;
         try {
-            origScript = JexlASTHelper.parseJexlQuery(queryString);
+            origScript = JexlASTHelper.parseAndFlattenJexlQuery(queryString);
             HashSet<String> allFields = new HashSet<>();
             allFields.addAll(getEdgeQueryModel().getAllInternalFieldNames());
             script = QueryModelVisitor.applyModel(origScript, getEdgeQueryModel(), allFields);

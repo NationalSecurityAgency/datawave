@@ -104,6 +104,16 @@ function mavenPrintenv() {
    echo
 }
 
+function mavenDisplayBinaryInfo() {
+  echo "Source: ${DW_MAVEN_DIST_URI}"
+  local tarballName="$(basename "$DW_MAVEN_DIST_URI")"
+  if [[ -f "${DW_MAVEN_SERVICE_DIR}/${tarballName}" ]]; then
+     echo " Local: ${DW_MAVEN_SERVICE_DIR}/${tarballName}"
+  else
+     echo " Local: Not loaded"
+  fi
+}
+
 # Eager-loading here since Maven is required to build DataWave,
 # as opposed to lazy-loading like the other services...
 

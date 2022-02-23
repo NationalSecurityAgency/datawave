@@ -70,7 +70,7 @@ public class ShardedTableMapFile {
         try {
             return new SequenceFile.Reader(conf, SequenceFile.Reader.file(new Path(shardMapFileName)));
         } catch (Exception e) {
-            throw new IOException("Failed to create sequence file reader for " + shardMapFileName, e);
+            throw new IOException("Failed to create sequence file reader for " + shardMapFileName + " for " + tableName, e);
         }
     }
     
@@ -211,10 +211,10 @@ public class ShardedTableMapFile {
         AccumuloHelper accumuloHelper = null;
         Path workDir = new Path(conf.get(SPLIT_WORK_DIR));// todo make sure this is set in ingest job
         String[] tableNames = StringUtils.split(conf.get(TABLE_NAMES), ",");// todo make sure this is set in ingest job
-        
         Map<String,String> shardedTableMapFilePaths = extractShardedTableMapFilePaths(conf);
         // Get a list of "sharded" tables
         String[] shardedTableNames = ConfigurationHelper.isNull(conf, ShardedDataTypeHandler.SHARDED_TNAMES, String[].class);
+        
         Set<String> configuredShardedTableNames = new HashSet<>(Arrays.asList(shardedTableNames));
         
         // Remove all "sharded" tables that we aren't actually outputting to
@@ -386,14 +386,14 @@ public class ShardedTableMapFile {
         long count = 0;
         // reusable value for writing
         Text value = new Text();
-        SequenceFile.Writer writer = SequenceFile.createWriter(conf, SequenceFile.Writer.file(file), SequenceFile.Writer.keyClass(Text.class),
-                        SequenceFile.Writer.valueClass(Text.class));
-        for (Entry<Text,String> entry : splits.entrySet()) {
-            count++;
-            value.set(entry.getValue());
-            writer.append(entry.getKey(), value);
+        try (SequenceFile.Writer writer = SequenceFile.createWriter(conf, SequenceFile.Writer.file(file), SequenceFile.Writer.keyClass(Text.class),
+                        SequenceFile.Writer.valueClass(Text.class))) {
+            for (Entry<Text,String> entry : splits.entrySet()) {
+                count++;
+                value.set(entry.getValue());
+                writer.append(entry.getKey(), value);
+            }
         }
-        writer.close();
         return count;
     }
     

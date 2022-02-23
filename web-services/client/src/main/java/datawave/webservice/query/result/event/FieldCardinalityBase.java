@@ -27,6 +27,10 @@ public abstract class FieldCardinalityBase implements HasMarkings {
         setColumnVisibility(cvString);
     }
     
+    public abstract String getField();
+    
+    public abstract void setField(String field);
+    
     public abstract Long getCardinality();
     
     public abstract void setCardinality(Long cardinality);

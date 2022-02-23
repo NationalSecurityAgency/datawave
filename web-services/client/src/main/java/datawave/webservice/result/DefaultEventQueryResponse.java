@@ -123,12 +123,13 @@ public class DefaultEventQueryResponse extends EventQueryResponseBase implements
     public void setEvents(List<EventBase> entries) {
         if (entries == null) {
             this.events = null;
+        } else {
+            List<DefaultEvent> events = new ArrayList<>(entries.size());
+            for (EventBase event : entries) {
+                events.add((DefaultEvent) event);
+            }
+            this.events = events;
         }
-        List<DefaultEvent> events = new ArrayList<DefaultEvent>(entries.size());
-        for (EventBase event : entries) {
-            events.add((DefaultEvent) event);
-        }
-        this.events = events;
     }
     
     public static Schema<DefaultEventQueryResponse> getSchema() {

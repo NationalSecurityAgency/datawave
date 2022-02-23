@@ -6,6 +6,7 @@ import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -13,6 +14,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.log4j.Logger;
 
+import java.util.Collection;
 import java.util.Map.Entry;
 
 public class SerialIterator extends PipelineIterator {
@@ -25,8 +27,9 @@ public class SerialIterator extends PipelineIterator {
     
     public SerialIterator(NestedIterator<Key> documents, int maxPipelines, int maxCachedResults, QuerySpanCollector querySpanCollector, QuerySpan querySpan,
                     QueryIterator sourceIterator, SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env,
-                    YieldCallback<Key> yieldCallback, long yieldThresholdMs) {
-        super(documents, maxPipelines, maxCachedResults, querySpanCollector, querySpan, sourceIterator, sourceForDeepCopy, env, yieldCallback, yieldThresholdMs);
+                    YieldCallback<Key> yieldCallback, long yieldThresholdMs, Collection<ByteSequence> columnFamilies, boolean include) {
+        super(documents, maxPipelines, maxCachedResults, querySpanCollector, querySpan, sourceIterator, sourceForDeepCopy, env, yieldCallback,
+                        yieldThresholdMs, columnFamilies, include);
     }
     
     @Override
@@ -78,7 +81,7 @@ public class SerialIterator extends PipelineIterator {
     
     public void startPipeline() {
         if (this.docSource.hasNext()) {
-            currentPipeline = pipelines.checkOut(this.docSource.next(), this.docSource.document(), null);
+            currentPipeline = pipelines.checkOut(this.docSource.next(), this.docSource.document(), null, columnFamilies, inclusive);
             currentPipeline.run();
             result = currentPipeline.getResult();
             if (null == result) {

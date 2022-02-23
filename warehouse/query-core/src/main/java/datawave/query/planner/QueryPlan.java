@@ -2,6 +2,7 @@ package datawave.query.planner;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -100,12 +101,11 @@ public class QueryPlan {
     
     /**
      * @param currentQueryData
-     * @throws ParseException
      */
     public QueryPlan(QueryData currentQueryData) throws ParseException {
         this.queryTreeString = currentQueryData.getQuery();
         this.ranges = Lists.newArrayList(currentQueryData.getRanges());
-        settings.addAll(currentQueryData.getSettings());
+        this.settings.addAll(currentQueryData.getSettings());
         this.columnFamilies.addAll(currentQueryData.getColumnFamilies());
         buildHashCode();
     }
@@ -124,7 +124,7 @@ public class QueryPlan {
             newSetting.addOptions(setting.getOptions());
             if (newSetting.getOptions().containsKey(QueryIterator.QUERY)) {
                 newSetting.addOption(QueryIterator.QUERY, JexlStringBuildingVisitor.buildQuery(queryTree));
-                
+                newSetting.addOption(QueryIterator.RANGES, this.ranges.stream().map(Range::toString).collect(Collectors.joining(",", "[", "]")));
             }
             this.settings.add(newSetting);
             
@@ -148,7 +148,7 @@ public class QueryPlan {
             Preconditions.checkNotNull(queryTreeString);
             
             try {
-                queryTree = JexlASTHelper.parseJexlQuery(queryTreeString);
+                queryTree = JexlASTHelper.parseAndFlattenJexlQuery(queryTreeString);
             } catch (ParseException e) {
                 throw new RuntimeException(e);
             }

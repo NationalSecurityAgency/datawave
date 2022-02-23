@@ -22,20 +22,10 @@ import org.apache.log4j.Logger;
  */
 public class ErrorReportingIterator extends QueryInformationIterator {
     
-    private static final String REPORT_ERRORS_OPT = "REPORT_ERRORS";
-    
     private static final Logger log = Logger.getLogger(ErrorReportingIterator.class);
     
-    public ErrorReportingIterator() {}
-    
-    protected ErrorKey errorKey = null;
-    
-    protected volatile boolean returned = false;
-    
-    protected boolean reportErrors = false;
-    
-    public static void setErrorReporting(IteratorSetting cfg) {
-        cfg.addOption(REPORT_ERRORS_OPT, REPORT_ERRORS_OPT);
+    public ErrorReportingIterator() {
+        super();
     }
     
     public ErrorReportingIterator(ErrorReportingIterator other, IteratorEnvironment env) {
@@ -45,15 +35,6 @@ public class ErrorReportingIterator extends QueryInformationIterator {
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
-        if (null != options.get(REPORT_ERRORS_OPT)) {
-            reportErrors = true;
-        }
-        
-    }
-    
-    public void setError(ErrorType type) {
-        errorKey = new ErrorKey(type);
-        
     }
     
     @Override
@@ -95,35 +76,6 @@ public class ErrorReportingIterator extends QueryInformationIterator {
         if (null != exc) {
             log.error("Caught exception on seek: " + info, exc);
             throw new IOException(exc);
-        }
-    }
-    
-    @Override
-    public Key getTopKey() {
-        if (null != errorKey) {
-            returned = true;
-            return errorKey;
-        } else
-            return super.getTopKey();
-    }
-    
-    @Override
-    public Value getTopValue() {
-        if (null != errorKey)
-            return Constants.EMPTY_VALUE;
-        else
-            return super.getTopValue();
-    }
-    
-    @Override
-    public boolean hasTop() {
-        if (null != errorKey)
-            return true;
-        else {
-            if (returned)
-                return false;
-            else
-                return super.hasTop();
         }
     }
     

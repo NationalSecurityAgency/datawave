@@ -1,5 +1,29 @@
 package datawave.webservice.query;
 
+import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.webservice.query.metric.QueryMetric;
+import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
+import io.protostuff.UninitializedMessageException;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.ParseException;
@@ -13,33 +37,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-
-import javax.naming.InvalidNameException;
-import javax.naming.ldap.LdapName;
-import javax.naming.ldap.Rdn;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.QueryMetric;
-import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
-import io.protostuff.UninitializedMessageException;
 
 @XmlRootElement(name = "QueryImpl")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -230,7 +227,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     @XmlElement
     protected String columnVisibility;
     @XmlTransient
-    protected MultivaluedMap<String,String> optionalQueryParameters;
+    protected Map<String,List<String>> optionalQueryParameters;
     
     protected transient QueryUncaughtExceptionHandler uncaughtExceptionHandler;
     
@@ -389,11 +386,11 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         this.endDate = endDate;
     }
     
-    public MultivaluedMap<String,String> getOptionalQueryParameters() {
+    public Map<String,List<String>> getOptionalQueryParameters() {
         return optionalQueryParameters;
     }
     
-    public void setOptionalQueryParameters(MultivaluedMap<String,String> optionalQueryParameters) {
+    public void setOptionalQueryParameters(Map<String,List<String>> optionalQueryParameters) {
         this.optionalQueryParameters = optionalQueryParameters;
     }
     
@@ -709,7 +706,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         this.uncaughtExceptionHandler = uncaughtExceptionHandler;
     }
     
-    public void initialize(String userDN, List<String> dnList, String queryLogicName, QueryParameters qp, MultivaluedMap<String,String> optionalQueryParameters) {
+    public void initialize(String userDN, List<String> dnList, String queryLogicName, QueryParameters qp, Map<String,List<String>> optionalQueryParameters) {
         this.dnList = dnList;
         this.expirationDate = qp.getExpirationDate();
         this.id = UUID.randomUUID().toString();
@@ -775,56 +772,56 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         return this.owner;
     }
     
-    public MultivaluedMap<String,String> toMap() {
+    public Map<String,List<String>> toMap() {
         // TODO: missing variables uuid and owner -- not going into map
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
+        MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         if (this.queryAuthorizations != null) {
-            p.putSingle(QueryParameters.QUERY_AUTHORIZATIONS, this.queryAuthorizations);
+            p.set(QueryParameters.QUERY_AUTHORIZATIONS, this.queryAuthorizations);
         }
         if (this.expirationDate != null) {
             try {
-                p.putSingle(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(this.expirationDate));
+                p.set(QueryParameters.QUERY_EXPIRATION, QueryParametersImpl.formatDate(this.expirationDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Error formatting date", e);
             }
         }
         if (this.queryName != null) {
-            p.putSingle(QueryParameters.QUERY_NAME, this.queryName);
+            p.set(QueryParameters.QUERY_NAME, this.queryName);
         }
         if (this.queryLogicName != null) {
-            p.putSingle(QueryParameters.QUERY_LOGIC_NAME, this.queryLogicName);
+            p.set(QueryParameters.QUERY_LOGIC_NAME, this.queryLogicName);
         }
         // no null check on primitives
-        p.putSingle(QueryParameters.QUERY_PAGESIZE, Integer.toString(this.pagesize));
+        p.set(QueryParameters.QUERY_PAGESIZE, Integer.toString(this.pagesize));
         if (this.query != null) {
-            p.putSingle(QueryParameters.QUERY_STRING, this.query);
+            p.set(QueryParameters.QUERY_STRING, this.query);
         }
         if (this.userDN != null) {
-            p.putSingle("userDN", this.userDN);
+            p.set("userDN", this.userDN);
         }
         if (this.dnList != null) {
-            p.putSingle("dnList", this.dnList.toString());
+            p.set("dnList", this.dnList.toString());
         }
         if (this.columnVisibility != null) {
-            p.putSingle("columnVisibility", this.columnVisibility);
+            p.set("columnVisibility", this.columnVisibility);
         }
         if (this.beginDate != null) {
             try {
-                p.putSingle(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(this.beginDate));
+                p.set(QueryParameters.QUERY_BEGIN, QueryParametersImpl.formatDate(this.beginDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Error formatting date", e);
             }
         }
         if (this.endDate != null) {
             try {
-                p.putSingle(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(this.endDate));
+                p.set(QueryParameters.QUERY_END, QueryParametersImpl.formatDate(this.endDate));
             } catch (ParseException e) {
                 throw new RuntimeException("Error formatting date", e);
             }
         }
         if (this.parameters != null) {
             for (Parameter parameter : parameters) {
-                p.putSingle(parameter.getParameterName(), parameter.getParameterValue());
+                p.set(parameter.getParameterName(), parameter.getParameterValue());
             }
         }
         return p;
@@ -843,6 +840,7 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         qm.setQueryAuthorizations(this.getQueryAuthorizations());
         qm.setQueryName(this.getQueryName());
         qm.setParameters(this.getParameters());
+        qm.setColumnVisibility(this.getColumnVisibility());
     }
     
     @Override

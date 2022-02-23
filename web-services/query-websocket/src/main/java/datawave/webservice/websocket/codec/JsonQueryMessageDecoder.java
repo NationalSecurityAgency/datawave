@@ -4,6 +4,7 @@ import java.io.StringReader;
 
 import javax.json.Json;
 import javax.json.JsonException;
+import javax.json.JsonReader;
 import javax.json.stream.JsonParser;
 import javax.websocket.DecodeException;
 import javax.websocket.Decoder;
@@ -22,11 +23,12 @@ public class JsonQueryMessageDecoder implements Decoder.Text<QueryMessage> {
     @Override
     public QueryMessage decode(String s) throws DecodeException {
         MultivaluedMapImpl<String,String> map = new MultivaluedMapImpl<>();
-        JsonParser parser = Json.createParser(new StringReader(s));
-        while (parser.hasNext()) {
-            if (parser.next() == JsonParser.Event.KEY_NAME) {
-                String key = parser.getString();
-                addValueToMap(key, parser, map);
+        try (JsonParser parser = Json.createParser(new StringReader(s))) {
+            while (parser.hasNext()) {
+                if (parser.next() == JsonParser.Event.KEY_NAME) {
+                    String key = parser.getString();
+                    addValueToMap(key, parser, map);
+                }
             }
         }
         if (map.size() == 1 && map.containsKey("cancel"))
@@ -69,8 +71,8 @@ public class JsonQueryMessageDecoder implements Decoder.Text<QueryMessage> {
     @Override
     public boolean willDecode(String s) {
         // See if it's valid JSON. If so, then we indicate we can read it.
-        try {
-            Json.createReader(new StringReader(s)).read();
+        try (JsonReader reader = Json.createReader(new StringReader(s))) {
+            reader.read();
             return true;
         } catch (JsonException | IllegalStateException e) {
             return false;

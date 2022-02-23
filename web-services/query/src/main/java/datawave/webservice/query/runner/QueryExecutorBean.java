@@ -32,6 +32,7 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NoResultsException;
+import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryImpl.Parameter;
@@ -46,7 +47,6 @@ import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -315,7 +315,6 @@ public class QueryExecutorBean implements QueryExecutor {
         q.setExpirationDate(now);
         q.setQuery("test");
         q.setQueryAuthorizations("ALL");
-        ResultsPage emptyList = new ResultsPage();
         
         for (QueryLogic<?> l : logicList) {
             try {
@@ -490,7 +489,16 @@ public class QueryExecutorBean implements QueryExecutor {
             Arrays.sort(dns);
             qd.dnList = Arrays.asList(dns);
             qd.proxyServers = dp.getProxyServers();
+            
+            // Verify that the calling principal has access to the query logic.
+            if (!qd.logic.containsDNWithAccess(qd.dnList)) {
+                UnauthorizedQueryException qe = new UnauthorizedQueryException("None of the DNs used have access to this query logic: " + qd.dnList, 401);
+                GenericResponse<String> response = new GenericResponse<>();
+                response.addException(qe);
+                throw new UnauthorizedException(qe, response);
+            }
         }
+        
         log.trace(qd.userid + " has authorizations " + ((qd.p instanceof DatawavePrincipal) ? ((DatawavePrincipal) qd.p).getAuthorizations() : ""));
         
         // always check against the max
@@ -552,7 +560,8 @@ public class QueryExecutorBean implements QueryExecutor {
         Span defineSpan = null;
         RunningQuery rq;
         try {
-            MultivaluedMap<String,String> optionalQueryParameters = qp.getUnknownParameters(queryParameters);
+            MultivaluedMap<String,String> optionalQueryParameters = new MultivaluedMapImpl<>();
+            optionalQueryParameters.putAll(qp.getUnknownParameters(queryParameters));
             Query q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
             response.setResult(q.getId().toString());
             
@@ -653,7 +662,8 @@ public class QueryExecutorBean implements QueryExecutor {
             
             AuditType auditType = qd.logic.getAuditType(null);
             try {
-                MultivaluedMap<String,String> optionalQueryParameters = qp.getUnknownParameters(queryParameters);
+                MultivaluedMap<String,String> optionalQueryParameters = new MultivaluedMapImpl<>();
+                optionalQueryParameters.putAll(qp.getUnknownParameters(queryParameters));
                 q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
                 auditType = qd.logic.getAuditType(q);
             } finally {
@@ -669,6 +679,10 @@ public class QueryExecutorBean implements QueryExecutor {
                             }
                         } catch (Exception e) {
                             log.error("Error accessing query selector", e);
+                        }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -831,7 +845,8 @@ public class QueryExecutorBean implements QueryExecutor {
             
             AuditType auditType = qd.logic.getAuditType(null);
             try {
-                MultivaluedMap<String,String> optionalQueryParameters = qp.getUnknownParameters(queryParameters);
+                MultivaluedMap<String,String> optionalQueryParameters = new MultivaluedMapImpl<>();
+                optionalQueryParameters.putAll(qp.getUnknownParameters(queryParameters));
                 q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
                 auditType = qd.logic.getAuditType(q);
             } finally {
@@ -848,6 +863,10 @@ public class QueryExecutorBean implements QueryExecutor {
                             }
                         } catch (Exception e) {
                             log.error("Error accessing query selector", e);
+                        }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -949,7 +968,8 @@ public class QueryExecutorBean implements QueryExecutor {
         if (predictor != null) {
             try {
                 qp.setPersistenceMode(QueryPersistence.TRANSIENT);
-                MultivaluedMap<String,String> optionalQueryParameters = qp.getUnknownParameters(queryParameters);
+                MultivaluedMap<String,String> optionalQueryParameters = new MultivaluedMapImpl<>();
+                optionalQueryParameters.putAll(qp.getUnknownParameters(queryParameters));
                 Query q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
                 
                 BaseQueryMetric metric = metricFactory.createMetric();
@@ -1185,7 +1205,8 @@ public class QueryExecutorBean implements QueryExecutor {
                 query.closeConnection(connectionFactory);
             } else {
                 AuditType auditType = query.getLogic().getAuditType(query.getSettings());
-                MultivaluedMap<String,String> queryParameters = query.getSettings().toMap();
+                MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+                queryParameters.putAll(query.getSettings().toMap());
                 
                 queryParameters.putSingle(PrivateAuditConstants.AUDIT_TYPE, auditType.name());
                 queryParameters.putSingle(PrivateAuditConstants.LOGIC_CLASS, query.getLogic().getLogicName());
@@ -1201,6 +1222,10 @@ public class QueryExecutorBean implements QueryExecutor {
                             }
                         } catch (Exception e) {
                             log.error("Error accessing query selector", e);
+                        }
+                        // if the user didn't set an audit id, use the query id
+                        if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                            queryParameters.putSingle(AuditParameters.AUDIT_ID, id);
                         }
                         auditor.audit(queryParameters);
                     } catch (IllegalArgumentException e) {
@@ -1476,7 +1501,7 @@ public class QueryExecutorBean implements QueryExecutor {
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     @Override
     @Timed(name = "dw.query.lookupContentUUIDBatch", absolute = true)
-    public <T> T lookupContentByUUIDBatch(MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders) {
+    public <T> T lookupContentByUUIDBatch(MultivaluedMap<String,String> queryParameters, @Required("httpHeaders") @Context HttpHeaders httpHeaders) {
         if (!queryParameters.containsKey("uuidPairs")) {
             throw new BadRequestException(new IllegalArgumentException("uuidPairs missing from query parameters"), new VoidResponse());
         }
@@ -2027,6 +2052,11 @@ public class QueryExecutorBean implements QueryExecutor {
                 close(id);
                 closedQueryCache.add(id); // remember that we auto-closed this query
             } else {
+                try {
+                    close(id);
+                } catch (Exception ce) {
+                    log.error(qe, ce);
+                }
                 log.error(qe, e);
                 response.addException(qe.getBottomQueryException());
             }
@@ -2686,7 +2716,8 @@ public class QueryExecutorBean implements QueryExecutor {
                     }
                 }
             }
-            MultivaluedMap<String,String> newSettings = q.toMap();
+            MultivaluedMap<String,String> newSettings = new MultivaluedMapImpl<>();
+            newSettings.putAll(q.toMap());
             newSettings.putSingle(QueryParameters.QUERY_PERSISTENCE, persistence.name());
             return createQuery(q.getQueryLogicName(), newSettings);
         } catch (DatawaveWebApplicationException e) {
@@ -2822,12 +2853,16 @@ public class QueryExecutorBean implements QueryExecutor {
                             maxResultsOverride, parameters);
             
             // Fire off an audit prior to updating
-            Set<String> methodAuths = new HashSet<>(Arrays.asList(q.getQueryAuthorizations().split("\\s*,\\s*")));
-            cbAuths.retainAll(methodAuths);
             AuditType auditType = runningQuery.getLogic().getAuditType(runningQuery.getSettings());
             if (!auditType.equals(AuditType.NONE)) {
                 try {
-                    auditor.audit(duplicate.toMap());
+                    MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
+                    queryParameters.putAll(duplicate.toMap());
+                    // if the user didn't set an audit id, use the query id
+                    if (!queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+                        queryParameters.putSingle(AuditParameters.AUDIT_ID, q.getId().toString());
+                    }
+                    auditor.audit(queryParameters);
                 } catch (IllegalArgumentException e) {
                     log.error("Error validating audit parameters", e);
                     BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.MISSING_REQUIRED_PARAMETER, e);
@@ -3197,8 +3232,9 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         if (null == responseType) {
             QueryException qe = new QueryException(DatawaveErrorCode.UNSUPPORTED_MEDIA_TYPE);
+            response.setHasResults(false);
             response.addException(qe);
-            throw new DatawaveWebApplicationException(qe, response);
+            throw new DatawaveWebApplicationException(qe, response, MediaType.APPLICATION_XML_TYPE);
         }
         
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
@@ -3221,9 +3257,10 @@ public class QueryExecutorBean implements QueryExecutor {
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.QUERY_TRANSFORM_ERROR, e);
             log.error(qe, e);
+            response.setHasResults(false);
             response.addException(qe.getBottomQueryException());
             int statusCode = qe.getBottomQueryException().getStatusCode();
-            throw new DatawaveWebApplicationException(qe, response, statusCode);
+            throw new DatawaveWebApplicationException(qe, response, statusCode, MediaType.APPLICATION_XML_TYPE);
         }
         
         SerializationType s;
@@ -3234,26 +3271,43 @@ public class QueryExecutorBean implements QueryExecutor {
         } else if (responseType.equals(PB_MEDIA_TYPE)) {
             if (!(Message.class.isAssignableFrom(responseClass))) {
                 QueryException qe = new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS, MessageFormat.format("Response  class: {0}", responseClass));
+                response.setHasResults(false);
                 response.addException(qe);
-                throw new DatawaveWebApplicationException(qe, response);
+                throw new DatawaveWebApplicationException(qe, response, MediaType.APPLICATION_XML_TYPE);
             }
             s = SerializationType.PB;
         } else if (responseType.equals(YAML_MEDIA_TYPE)) {
             if (!(Message.class.isAssignableFrom(responseClass))) {
                 QueryException qe = new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS, MessageFormat.format("Response  class: {0}", responseClass));
+                response.setHasResults(false);
                 response.addException(qe);
-                throw new DatawaveWebApplicationException(qe, response);
+                throw new DatawaveWebApplicationException(qe, response, MediaType.APPLICATION_XML_TYPE);
             }
             s = SerializationType.YAML;
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.INVALID_FORMAT, MessageFormat.format("format: {0}", responseType.toString()));
+            response.setHasResults(false);
             response.addException(qe);
-            throw new DatawaveWebApplicationException(qe, response);
+            throw new DatawaveWebApplicationException(qe, response, MediaType.APPLICATION_XML_TYPE);
         }
         
         long start = System.nanoTime();
         GenericResponse<String> createResponse = null;
-        createResponse = this.createQuery(logicName, queryParameters, httpHeaders);
+        
+        try {
+            createResponse = this.createQuery(logicName, queryParameters, httpHeaders);
+        } catch (Throwable t) {
+            if (t instanceof DatawaveWebApplicationException) {
+                QueryException qe = (QueryException) ((DatawaveWebApplicationException) t).getCause();
+                response.setHasResults(false);
+                response.addException(qe.getBottomQueryException());
+                int statusCode = qe.getBottomQueryException().getStatusCode();
+                throw new DatawaveWebApplicationException(qe, response, statusCode, MediaType.APPLICATION_XML_TYPE);
+            } else {
+                throw t;
+            }
+        }
+        
         long createCallTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         final String queryId = createResponse.getResult();
         
@@ -3445,79 +3499,80 @@ public class QueryExecutorBean implements QueryExecutor {
                                 jsonSerializer.getTypeFactory())));
                 // Don't close the output stream
                 jsonSerializer.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
-                JsonGenerator jsonGenerator = jsonSerializer.getFactory().createGenerator(out, JsonEncoding.UTF8);
-                jsonGenerator.enable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
-                
-                boolean sentResults = false;
-                boolean done = false;
-                Span span = null;
-                List<PageMetric> pageMetrics = rq.getMetric().getPageTimes();
-                
-                do {
-                    try {
-                        long callStart = System.nanoTime();
-                        BaseQueryResponse page = _next(rq, queryId, proxies, span);
-                        PageMetric pm = pageMetrics.get(pageMetrics.size() - 1);
-                        
-                        // Wrap the output stream so that we can get a byte count
-                        CountingOutputStream countingStream = new CountingOutputStream(out);
-                        
-                        long serializationStart = System.nanoTime();
-                        switch (serializationType) {
-                            case XML:
-                                xmlSerializer.marshal(page, countingStream);
-                                break;
-                            case JSON:
-                                // First page!
-                                if (!sentResults) {
-                                    jsonGenerator.writeStartObject();
-                                    jsonGenerator.writeArrayFieldStart("Pages");
-                                    jsonGenerator.flush();
-                                } else {
-                                    // Delimiter for subsequent pages...
-                                    countingStream.write(',');
-                                }
-                                jsonSerializer.writeValue(countingStream, page);
-                                break;
-                            case PB:
-                                @SuppressWarnings("unchecked")
-                                Message<Object> pb = (Message<Object>) page;
-                                Schema<Object> pbSchema = pb.cachedSchema();
-                                ProtobufIOUtil.writeTo(countingStream, page, pbSchema, buffer);
-                                buffer.clear();
-                                break;
-                            case YAML:
-                                @SuppressWarnings("unchecked")
-                                Message<Object> yaml = (Message<Object>) page;
-                                Schema<Object> yamlSchema = yaml.cachedSchema();
-                                YamlIOUtil.writeTo(countingStream, page, yamlSchema, buffer);
-                                buffer.clear();
-                                break;
+                try (JsonGenerator jsonGenerator = jsonSerializer.getFactory().createGenerator(out, JsonEncoding.UTF8)) {
+                    jsonGenerator.enable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
+                    
+                    boolean sentResults = false;
+                    boolean done = false;
+                    Span span = null;
+                    List<PageMetric> pageMetrics = rq.getMetric().getPageTimes();
+                    
+                    do {
+                        try {
+                            long callStart = System.nanoTime();
+                            BaseQueryResponse page = _next(rq, queryId, proxies, span);
+                            PageMetric pm = pageMetrics.get(pageMetrics.size() - 1);
+                            
+                            // Wrap the output stream so that we can get a byte count
+                            CountingOutputStream countingStream = new CountingOutputStream(out);
+                            
+                            long serializationStart = System.nanoTime();
+                            switch (serializationType) {
+                                case XML:
+                                    xmlSerializer.marshal(page, countingStream);
+                                    break;
+                                case JSON:
+                                    // First page!
+                                    if (!sentResults) {
+                                        jsonGenerator.writeStartObject();
+                                        jsonGenerator.writeArrayFieldStart("Pages");
+                                        jsonGenerator.flush();
+                                    } else {
+                                        // Delimiter for subsequent pages...
+                                        countingStream.write(',');
+                                    }
+                                    jsonSerializer.writeValue(countingStream, page);
+                                    break;
+                                case PB:
+                                    @SuppressWarnings("unchecked")
+                                    Message<Object> pb = (Message<Object>) page;
+                                    Schema<Object> pbSchema = pb.cachedSchema();
+                                    ProtobufIOUtil.writeTo(countingStream, page, pbSchema, buffer);
+                                    buffer.clear();
+                                    break;
+                                case YAML:
+                                    @SuppressWarnings("unchecked")
+                                    Message<Object> yaml = (Message<Object>) page;
+                                    Schema<Object> yamlSchema = yaml.cachedSchema();
+                                    YamlIOUtil.writeTo(countingStream, page, yamlSchema, buffer);
+                                    buffer.clear();
+                                    break;
+                            }
+                            countingStream.flush();
+                            long serializationTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - serializationStart);
+                            pm.setSerializationTime(serializationTime);
+                            long pageCallTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - callStart);
+                            pm.setCallTime(pageCallTime);
+                            pm.setBytesWritten(countingStream.getCount());
+                            sentResults = true;
+                        } catch (Exception e) {
+                            if (e instanceof NoResultsException || e.getCause() instanceof NoResultsException) {
+                                // No more results, break out of loop
+                                done = true;
+                                break; // probably redundant
+                            } else {
+                                throw e;
+                            }
                         }
-                        countingStream.flush();
-                        long serializationTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - serializationStart);
-                        pm.setSerializationTime(serializationTime);
-                        long pageCallTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - callStart);
-                        pm.setCallTime(pageCallTime);
-                        pm.setBytesWritten(countingStream.getCount());
-                        sentResults = true;
-                    } catch (Exception e) {
-                        if (e instanceof NoResultsException || e.getCause() instanceof NoResultsException) {
-                            // No more results, break out of loop
-                            done = true;
-                            break; // probably redundant
-                        } else {
-                            throw e;
-                        }
+                    } while (!done);
+                    
+                    if (!sentResults)
+                        throw new NoResultsQueryException(DatawaveErrorCode.RESULTS_NOT_SENT);
+                    else if (serializationType == SerializationType.JSON) {
+                        jsonGenerator.writeEndArray();
+                        jsonGenerator.writeEndObject();
+                        jsonGenerator.flush();
                     }
-                } while (!done);
-                
-                if (!sentResults)
-                    throw new NoResultsQueryException(DatawaveErrorCode.RESULTS_NOT_SENT);
-                else if (serializationType == SerializationType.JSON) {
-                    jsonGenerator.writeEndArray();
-                    jsonGenerator.writeEndObject();
-                    jsonGenerator.flush();
                 }
             } catch (DatawaveWebApplicationException e) {
                 throw e;

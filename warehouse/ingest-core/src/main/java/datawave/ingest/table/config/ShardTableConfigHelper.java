@@ -8,6 +8,8 @@ import java.util.Set;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.table.aggregator.CombinerConfiguration;
+import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
+import datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator;
 import datawave.ingest.table.balancer.ShardedTableTabletBalancer;
 import datawave.ingest.table.bloomfilter.ShardKeyFunctor;
 import datawave.ingest.table.bloomfilter.ShardIndexKeyFunctor;
@@ -28,6 +30,8 @@ import org.apache.log4j.Logger;
 public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     
     protected static final String SHARDED_TABLET_BALANCER_CLASS = ShardedTableTabletBalancer.class.getName();
+    
+    public static final String KEEP_COUNT_ONLY_INDEX_ENTRIES = "index.tables.keep.count.only.entries";
     
     public static final String SHARD_TABLE_BALANCER_CONFIG = "shard.table.balancer.class";
     protected String shardTableBalancerClass = SHARDED_TABLET_BALANCER_CLASS;
@@ -73,7 +77,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         markingsSetupIteratorEnabled = conf.getBoolean(MARKINGS_SETUP_ITERATOR_ENABLED, markingsSetupIteratorEnabled);
         markingsSetupIteratorConfig = conf.get(MARKINGS_SETUP_ITERATOR_CONFIG, markingsSetupIteratorConfig);
         
-        if (shardTableName == null && shardGidxTableName == null && shardGridxTableName == null) {
+        if (shardTableName == null && shardGidxTableName == null && shardGridxTableName == null && shardDictionaryTableName == null) {
             throw new IllegalArgumentException("No Shard Tables Defined");
         }
         
@@ -193,7 +197,13 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scope.name(), "UIDAggregator");
             setPropertyIfNecessary(tableName, stem, "19,datawave.iterators.TotalAggregatingIterator", tops, log);
             stem += ".opt.";
-            setPropertyIfNecessary(tableName, stem + "*", "datawave.ingest.table.aggregator.GlobalIndexUidAggregator", tops, log);
+            
+            String aggClass = GlobalIndexUidAggregator.class.getName();
+            if (conf.getBoolean(KEEP_COUNT_ONLY_INDEX_ENTRIES, false)) {
+                aggClass = KeepCountOnlyUidAggregator.class.getName();
+            }
+            
+            setPropertyIfNecessary(tableName, stem + "*", aggClass, tops, log);
             
             if (markingsSetupIteratorEnabled) {
                 // we want the markings setup iterator init method to be called up front
@@ -216,7 +226,13 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scope.name(), "UIDAggregator");
             setPropertyIfNecessary(tableName, stem, "19,datawave.iterators.TotalAggregatingIterator", tops, log);
             stem += ".opt.";
-            setPropertyIfNecessary(tableName, stem + "*", "datawave.ingest.table.aggregator.GlobalIndexUidAggregator", tops, log);
+            
+            String aggClass = GlobalIndexUidAggregator.class.getName();
+            if (conf.getBoolean(KEEP_COUNT_ONLY_INDEX_ENTRIES, false)) {
+                aggClass = KeepCountOnlyUidAggregator.class.getName();
+            }
+            
+            setPropertyIfNecessary(tableName, stem + "*", aggClass, tops, log);
             
             if (markingsSetupIteratorEnabled) {
                 // we want the markings setup iterator init method to be called up front

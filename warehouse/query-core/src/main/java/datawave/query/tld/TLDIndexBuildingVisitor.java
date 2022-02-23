@@ -2,6 +2,7 @@ package datawave.query.tld;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import datawave.data.type.NoOpType;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.data.parsers.DatawaveKey;
@@ -9,6 +10,8 @@ import datawave.query.iterator.builder.AbstractIteratorBuilder;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.functions.EventFieldAggregator;
+import datawave.query.jexl.functions.TLDEventFieldAggregator;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
@@ -31,6 +34,7 @@ import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 
 public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     private static final Logger log = Logger.getLogger(TLDIndexBuildingVisitor.class);
@@ -49,6 +53,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(fiAggregator);
         builder.setTimeFilter(timeFilter);
+        builder.setNode(node);
         node.childrenAccept(this, builder);
         
         // A EQNode may be of the form FIELD == null. The evaluation can
@@ -142,6 +147,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(fiAggregator);
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
+        builder.setNode(node);
         node.childrenAccept(this, builder);
         
         // A EQNode may be of the form FIELD == null. The evaluation can
@@ -182,6 +188,11 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         return null;
     }
     
+    @Override
+    protected EventFieldAggregator getEventFieldAggregator(String field, ChainableEventDataQueryFilter filter) {
+        return new TLDEventFieldAggregator(field, filter, attrFilter != null ? attrFilter.getMaxNextCount() : -1, typeMetadata, NoOpType.class.getName());
+    }
+    
     /**
      * Use fieldsToAggregate instead of indexOnlyFields because this enables TLDs to return non-event tokens as part of the user document
      * 
@@ -190,7 +201,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
      * @return
      */
     @Override
-    protected TermFrequencyAggregator buildTermFrequencyAggregator(ChainableEventDataQueryFilter filter, int maxNextCount) {
+    protected TermFrequencyAggregator buildTermFrequencyAggregator(String identifier, ChainableEventDataQueryFilter filter, int maxNextCount) {
         EventDataQueryFilter rootFilter = new EventDataQueryFilter() {
             @Override
             public void startNewDocument(Key documentKey) {
@@ -239,7 +250,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             
             @Override
             public EventDataQueryFilter clone() {
-                return this.clone();
+                return this;
             }
             
             @Override
@@ -258,7 +269,10 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             }
         };
         filter.addFilter(rootFilter);
-        return new TLDTermFrequencyAggregator(fieldsToAggregate, filter, filter != null ? filter.getMaxNextCount() : -1);
+        
+        Set<String> toAggregate = fieldsToAggregate.contains(identifier) ? Collections.singleton(identifier) : Collections.emptySet();
+        
+        return new TLDTermFrequencyAggregator(toAggregate, filter, filter.getMaxNextCount());
     }
     
     /**

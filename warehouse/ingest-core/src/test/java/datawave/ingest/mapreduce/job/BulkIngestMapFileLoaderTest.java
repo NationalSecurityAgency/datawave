@@ -27,6 +27,7 @@ import datawave.ingest.input.reader.LongLineEventRecordReader;
 
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.client.impl.Credentials;
+import org.apache.commons.vfs2.provider.hdfs.HdfsFileSystem;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -232,6 +233,7 @@ public class BulkIngestMapFileLoaderTest {
             }
             return existsResults.get(f.toString()) != null && existsResults.get(f.toString()) == true;
         }
+        
     }
     
     public static class TestRecordReader extends RecordReader<Text,RawRecordContainer> implements EventRecordReader {
@@ -351,9 +353,18 @@ public class BulkIngestMapFileLoaderTest {
         return new ByteArrayInputStream(baos.toByteArray());
     }
     
-    protected FileStatus createMockFileStatus() {
+    protected FileStatus createMockFileStatus() throws Exception {
         
         FileStatus mocked = PowerMock.createMock(FileStatus.class);
+        PowerMock.replay(mocked);
+        
+        return mocked;
+    }
+    
+    protected FileStatus createMockFileStatus(Path path) throws Exception {
+        
+        FileStatus mocked = PowerMock.createMock(FileStatus.class);
+        PowerMock.expectPrivate(mocked, "getPath").andReturn(path);
         
         PowerMock.replay(mocked);
         
@@ -514,9 +525,6 @@ public class BulkIngestMapFileLoaderTest {
             
             cmdList.add("-destHdfs");
             cmdList.add(".");
-            
-            cmdList.add("-jobCleanupScript");
-            cmdList.add("./cmd.sh");
             
             cmdList.add("-jt");
             cmdList.add("localhost");
@@ -1347,46 +1355,6 @@ public class BulkIngestMapFileLoaderTest {
         } finally {
             
             BulkIngestMapFileLoaderTest.logger.info("testMainWithMissingDestHDFS completed.");
-            
-        }
-    }
-    
-    @Test
-    public void testMainWithBadJobCleanupScript() throws IOException, InterruptedException {
-        
-        BulkIngestMapFileLoaderTest.logger.info("testMainWithBadJobCleanupScript called...");
-        
-        try {
-            
-            List<String> cmdList = ProcessUtils.buildApplicationCommandLine(BulkIngestMapFileLoader.class.getName(), systemProperties, false);
-            
-            for (int counter = 0; counter < 6; counter++) {
-                
-                cmdList.add(String.format("%d", counter));
-            }
-            
-            cmdList.add("-jobCleanupScript");
-            
-            String[] cmdArray = ProcessUtils.convertCommandLine(cmdList);
-            
-            Map<String,String> newEnvironment = new HashMap<>();
-            List<String> dropFromEnvironment = new ArrayList<>();
-            File workingDirectory = new File(System.getProperty("user.dir"));
-            
-            Process proc = ProcessUtils.runInstance(cmdArray, newEnvironment, dropFromEnvironment, workingDirectory);
-            
-            int procResults = proc.waitFor();
-            
-            Assert.assertEquals("BulkIngestMapLoader#main failed to return the expected value.", ProcessUtils.SYSTEM_EXIT_MINUS_TWO, procResults);
-            
-            List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
-            
-            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message",
-                            processOutputContains(stdOut, "-jobCleanupScript must be followed by an absolute file path."));
-            
-        } finally {
-            
-            BulkIngestMapFileLoaderTest.logger.info("testMainWithBadJobCleanupScript completed.");
             
         }
     }
@@ -2695,5 +2663,114 @@ public class BulkIngestMapFileLoaderTest {
             BulkIngestMapFileLoaderTest.logger.info("testMarkJobDirectoryFailedHandlesThrownException completed.");
         }
         
+    }
+    
+    @Test
+    public void testMarkJobCleanup() throws Exception {
+        BulkIngestMapFileLoaderTest.logger.info("testMarkJobCleanup called...");
+        
+        try {
+            
+            URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
+            
+            String workDir = ".";
+            String jobDirPattern = "jobs/";
+            String instanceName = "localhost";
+            String zooKeepers = "localhost";
+            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
+            URI seqFileHdfs = url.toURI();
+            URI srcHdfs = url.toURI();
+            URI destHdfs = url.toURI();
+            String jobtracker = "localhost";
+            Map<String,Integer> tablePriorities = new HashMap<>();
+            Configuration conf = new Configuration();
+            
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            
+            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            
+            Map<String,Boolean> exists = new HashMap<>();
+            String filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.CLEANUP_FILE_MARKER);
+            
+            exists.put(filePath, Boolean.TRUE);
+            filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            exists.put(filePath, Boolean.FALSE);
+            
+            BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
+                            new FileStatus[] {createMockFileStatus()}, false, true, false, false, exists, false, false);
+            
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            
+            Path jobDirectory = new Path(url.toString());
+            
+            boolean results = uut.markDirectoryForCleanup(jobDirectory, srcHdfs);
+            
+            Assert.assertTrue("BulkIngestMapFileLoader#markDirectoryForCleanup failed to return true as expected.", results);
+        } finally {
+            
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            
+            BulkIngestMapFileLoaderTest.logger.info("testMarkJobCleanup completed.");
+        }
+    }
+    
+    @Test
+    public void testJobCleanupOnStartup() throws Exception {
+        BulkIngestMapFileLoaderTest.logger.info("testMarkJobCleanupOnStartup called...");
+        try {
+            
+            URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
+            
+            String workDir = ".";
+            String jobDirPattern = "jobs/";
+            String instanceName = "localhost";
+            String zooKeepers = "localhost";
+            Credentials credentials = new Credentials("user", new PasswordToken("pass"));
+            URI seqFileHdfs = url.toURI();
+            URI srcHdfs = url.toURI();
+            URI destHdfs = url.toURI();
+            String jobtracker = "localhost";
+            Map<String,Integer> tablePriorities = new HashMap<>();
+            Configuration conf = new Configuration();
+            
+            FileSystem mfs = FileSystem.get(conf);
+            
+            mfs.create(new Path(url.toString() + "/job.cleanup"));
+            
+            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, credentials, seqFileHdfs, srcHdfs,
+                            destHdfs, jobtracker, tablePriorities, conf, 0);
+            
+            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
+            
+            Map<String,Boolean> exists = new HashMap<>();
+            String filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.CLEANUP_FILE_MARKER);
+            
+            exists.put(filePath, Boolean.TRUE);
+            filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            exists.put(filePath, Boolean.FALSE);
+            
+            BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
+                            new FileStatus[] {createMockFileStatus(new Path(url.toString() + "/job.cleaning"))}, true, true, true, false, exists, false, false);
+            
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
+            
+            List<String> calls = fs.callsLogs();
+            
+            uut.cleanJobDirectoriesOnStartup();
+            
+            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#mkdirs",
+                            processOutputContains(calls, "FileSystem#mkdirs("));
+            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#rename",
+                            processOutputContains(calls, "FileSystem#rename("));
+            Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#delete",
+                            processOutputContains(calls, "FileSystem#delete("));
+            
+        } finally {
+            
+            Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, null, null);
+            
+            BulkIngestMapFileLoaderTest.logger.info("testMarkJobCleanupOnStartup completed.");
+        }
     }
 }

@@ -1,15 +1,18 @@
 package datawave.query;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
+import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
 import datawave.query.testframework.MaxExpandCityFields;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -23,6 +26,9 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
     
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+    
     private static final Logger log = Logger.getLogger(MaxExpansionRegexQueryTest.class);
     
     @BeforeClass
@@ -34,8 +40,8 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.maxExp, max));
         
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        connector = accumuloSetup.loadTables(log);
     }
     
     public MaxExpansionIndexOnlyQueryTest() {
@@ -103,8 +109,6 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
     }
     
-    // this test case is randomly failing - will fix later
-    @Ignore
     @Test
     public void testMaxValueNegAnyField() throws Exception {
         log.info("------  testMaxValueNegAnyField  ------");
@@ -121,7 +125,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         try {
             runTest(query, expect);
             Assert.fail("exception expected");
-        } catch (RuntimeException re) {
+        } catch (FullTableScansDisallowedException e) {
             // expected
         }
         
@@ -133,7 +137,7 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
     // ============================================
     // implemented abstract methods
     protected void testInit() {
-        this.auths = CitiesDataType.getTestAuths();
+        this.auths = CitiesDataType.getExpansionAuths();
         this.documentKey = CitiesDataType.CityField.EVENT_ID.name();
     }
 }

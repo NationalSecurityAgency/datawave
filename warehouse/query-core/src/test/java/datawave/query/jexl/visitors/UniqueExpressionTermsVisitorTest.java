@@ -1,12 +1,10 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class UniqueExpressionTermsVisitorTest {
     
@@ -236,21 +234,14 @@ public class UniqueExpressionTermsVisitorTest {
     
     private void visitAndValidate(String original, String expected) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
-        ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        
-        // Flatten scripts
-        originalScript = TreeFlatteningRebuildingVisitor.flatten(originalScript);
-        expectedScript = TreeFlatteningRebuildingVisitor.flatten(expectedScript);
-        
-        // Assert that both original and expected query strings parse as expected
-        assertEquals("Original query did not parse cleanly" + original, original, JexlStringBuildingVisitor.buildQuery(originalScript));
-        assertEquals("Expected query did not parse cleanly" + expected, expected, JexlStringBuildingVisitor.buildQuery(expectedScript));
         
         // Remove duplicate terms from within expressions.
         ASTJexlScript visitedScript = UniqueExpressionTermsVisitor.enforce(originalScript);
         
-        // De-duped query should match expected
-        assertEquals(expected, JexlStringBuildingVisitor.buildQuery(visitedScript));
-        assertTrue(TreeEqualityVisitor.isEqual(expectedScript, visitedScript, new TreeEqualityVisitor.Reason()));
+        // Verify the script is as expected, and has a valid lineage.
+        JexlNodeAssert.assertThat(visitedScript).isEqualTo(expected).hasValidLineage();
+        
+        // Verify the original script was not modified, and still has a valid lineage.
+        JexlNodeAssert.assertThat(originalScript).isEqualTo(original).hasValidLineage();
     }
 }

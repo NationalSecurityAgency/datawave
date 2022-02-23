@@ -2,6 +2,7 @@ package datawave.query.jexl.functions;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -145,10 +146,13 @@ public abstract class ContentFunctionEvaluator {
     /**
      * Evaluate whether there is an unordered set of terms that are within the defined distance.
      * 
-     * @return true if found, false otherwise
+     * @return a collection of fields that satisfied the function, or en empty collection if no field hit
      */
-    public boolean evaluate() {
+    public Collection<String> evaluate() {
         if (computable()) {
+            
+            Set<String> hitFields = new HashSet<>();
+            
             // now for each event, lets process the terms
             for (String eventId : eventIds) {
                 ListMultimap<String,List<TermWeightPosition>> offsetsByField = LinkedListMultimap.create();
@@ -180,6 +184,9 @@ public abstract class ContentFunctionEvaluator {
                 
                 // Iterate over each collection of offsets (grouped by field) and try to find one that satisfies the phrase/adjacency
                 for (String field : offsetsByField.keySet()) {
+                    if (!fields.isEmpty() && !fields.contains(field)) {
+                        continue;
+                    }
                     List<List<TermWeightPosition>> offsets = offsetsByField.get(field);
                     if (offsets == null || offsets.isEmpty()) {
                         continue;
@@ -214,16 +221,21 @@ public abstract class ContentFunctionEvaluator {
                         if (log.isTraceEnabled()) {
                             log.trace(logPrefix + " satisfied the content function");
                         }
-                        
-                        return true;
+                        hitFields.add(field);
                     } else if (log.isTraceEnabled()) {
                         log.trace(logPrefix + " did not satisfy the content function");
                     }
                 }
+                // returning on the first event that satisfies the function will potentially miss
+                // other valid hit fields
+            }
+            
+            if (!hitFields.isEmpty()) {
+                return hitFields;
             }
         }
         
-        return false;
+        return Collections.emptySet();
     }
     
     @Override

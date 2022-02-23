@@ -206,8 +206,7 @@ public class MetricsIngester extends Configured implements Tool {
         Collection<Range> ranges = new ArrayList<>();
         
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxLatency(1000L, TimeUnit.MILLISECONDS).setMaxMemory(1024L).setMaxWriteThreads(4);
-        BatchWriter writer = Connections.warehouseConnection(conf).createBatchWriter(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE),
-                        bwConfig);
+        
         // job name is in form
         // IngestJob_yyyyMMddHHmmss.553
         // 20120829134659.
@@ -217,65 +216,69 @@ public class MetricsIngester extends Configured implements Tool {
         String jobNamePrefix = "IngestJob_";
         String date = null;
         Date dateObj;
-        Mutation m = new Mutation("metrics");
-        for (Path path : inPaths) {
+        
+        try (BatchWriter writer = Connections.warehouseConnection(conf).createBatchWriter(
+                        conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE), bwConfig)) {
             
-            String jobName = path.getName();
-            if (jobName.contains(".metrics")) {
-                jobName = jobName.substring(0, jobName.indexOf(".metrics"));
-            }
-            
-            if (jobName.startsWith((jobNamePrefix))) {
-                int end = jobName.lastIndexOf(".");
-                if (end < 0)
-                    end = jobName.length();
-                date = jobName.substring(jobNamePrefix.length(), end);
-            }
-            
-            m.put(new Text(date), new Text(""), emptyValue);
-            
-        }
-        
-        if (m.size() > 0) {
-            writer.addMutation(m);
-        }
-        writer.close();
-        BatchScanner scanner = Connections.metricsConnection(conf).createBatchScanner(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE),
-                        Authorizations.EMPTY, 8);
-        
-        Collection<Key> keysToRemove = new ArrayList<>();
-        
-        scanner.setRanges(Collections.singleton(new Range(new Text("metrics"))));
-        
-        Iterator<Entry<Key,Value>> iter = scanner.iterator();
-        String cf;
-        
-        long oneDay = (24 * 60 * 60 * 1000);
-        
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(System.currentTimeMillis() - oneDay);
-        
-        Key iterKey;
-        while (iter.hasNext()) {
-            iterKey = iter.next().getKey();
-            cf = iterKey.getColumnFamily().toString();
-            try {
-                dateObj = DateHelper.parseTimeExactToSeconds(cf);
-                Date dateObjNext = DateHelper.addHours(dateObj, 1);
-                if (calendar.getTime().compareTo(dateObj) > 0) {
-                    // remove the entries older than 24 hrs. If we are restarting after a long pause,
-                    // then those entries will be removed following successful access.
-                    keysToRemove.add(iterKey);
-                    
+            Mutation m = new Mutation("metrics");
+            for (Path path : inPaths) {
+                
+                String jobName = path.getName();
+                if (jobName.contains(".metrics")) {
+                    jobName = jobName.substring(0, jobName.indexOf(".metrics"));
                 }
                 
-                ranges.add(new Range(new Key(new Text("IngestJob_" + outFormat.format(dateObj))), new Key(
-                                new Text("IngestJob_" + outFormat.format(dateObjNext)))));
+                if (jobName.startsWith((jobNamePrefix))) {
+                    int end = jobName.lastIndexOf(".");
+                    if (end < 0)
+                        end = jobName.length();
+                    date = jobName.substring(jobNamePrefix.length(), end);
+                }
                 
-            } catch (DateTimeParseException e) {
-                log.error(e);
+                m.put(new Text(date), new Text(""), emptyValue);
+                
             }
             
+            if (m.size() > 0) {
+                writer.addMutation(m);
+            }
+        }
+        
+        Collection<Key> keysToRemove = new ArrayList<>();
+        try (BatchScanner scanner = Connections.metricsConnection(conf).createBatchScanner(
+                        conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE), Authorizations.EMPTY, 8)) {
+            scanner.setRanges(Collections.singleton(new Range(new Text("metrics"))));
+            
+            Iterator<Entry<Key,Value>> iter = scanner.iterator();
+            String cf;
+            
+            long oneDay = (24 * 60 * 60 * 1000);
+            
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(System.currentTimeMillis() - oneDay);
+            
+            Key iterKey;
+            while (iter.hasNext()) {
+                iterKey = iter.next().getKey();
+                cf = iterKey.getColumnFamily().toString();
+                try {
+                    dateObj = DateHelper.parseTimeExactToSeconds(cf);
+                    Date dateObjNext = DateHelper.addHours(dateObj, 1);
+                    if (calendar.getTime().compareTo(dateObj) > 0) {
+                        // remove the entries older than 24 hrs. If we are restarting after a long pause,
+                        // then those entries will be removed following successful access.
+                        keysToRemove.add(iterKey);
+                        
+                    }
+                    
+                    ranges.add(new Range(new Key(new Text("IngestJob_" + outFormat.format(dateObj))), new Key(new Text("IngestJob_"
+                                    + outFormat.format(dateObjNext)))));
+                    
+                } catch (DateTimeParseException e) {
+                    log.error(e);
+                }
+                
+            }
         }
         
         Collection<Pair<Text,Text>> columns = new ArrayList<>();
@@ -315,22 +318,20 @@ public class MetricsIngester extends Configured implements Tool {
         if (job.waitForCompletion(true)) {
             if (!keysToRemove.isEmpty()) {
                 bwConfig = new BatchWriterConfig().setMaxLatency(1024L, TimeUnit.MILLISECONDS).setMaxMemory(1024L).setMaxWriteThreads(8);
-                writer = Connections.metricsConnection(conf).createBatchWriter(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE),
-                                bwConfig);
-                
-                m = new Mutation("metrics");
-                for (Key key : keysToRemove) {
+                try (BatchWriter writer = Connections.metricsConnection(conf).createBatchWriter(
+                                conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE), bwConfig)) {
                     
-                    m.putDelete(key.getColumnFamily(), key.getColumnQualifier());
-                    
+                    Mutation m = new Mutation("metrics");
+                    for (Key key : keysToRemove) {
+                        
+                        m.putDelete(key.getColumnFamily(), key.getColumnQualifier());
+                        
+                    }
+                    writer.addMutation(m);
                 }
-                writer.addMutation(m);
-                
-                writer.close();
             }
         }
         return 0;
-        
     }
     
     /*

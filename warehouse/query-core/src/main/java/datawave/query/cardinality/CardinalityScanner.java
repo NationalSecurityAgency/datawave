@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -464,6 +465,11 @@ public class CardinalityScanner {
             builder.append(this.datatype, other.datatype);
             builder.append(this.tuple, other.tuple);
             return builder.isEquals();
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(tuple, date, datatype);
         }
         
         @Override

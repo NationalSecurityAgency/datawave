@@ -2,13 +2,11 @@ package datawave.query.discovery;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.BaseVisitor;
-import datawave.query.jexl.visitors.RangeCoalescingVisitor;
 
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -38,7 +36,6 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
      */
     public static QueryValues find(JexlNode root) {
         root = TreeFlatteningRebuildingVisitor.flatten(root);
-        root = RangeCoalescingVisitor.coalesceRanges(root);
         FindLiteralsAndPatternsVisitor vis = new FindLiteralsAndPatternsVisitor();
         root.jjtAccept(vis, null);
         return vis.values;
@@ -53,7 +50,7 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
             if (log.isTraceEnabled()) {
                 log.trace("Found field " + JexlASTHelper.deconstructIdentifier(field.image) + "==" + node.getLiteral());
             }
-            values.addLiteral(node.getLiteral().toString(), JexlASTHelper.deconstructIdentifier(field.image));
+            values.addLiteral(node.getLiteral(), JexlASTHelper.deconstructIdentifier(field.image));
         } else if (op instanceof ASTERNode) {
             JexlNode field = JexlNodes.otherChild(op, node.jjtGetParent()).jjtGetChild(0);
             values.addPattern(node.getLiteral(), JexlASTHelper.deconstructIdentifier(field.image));
@@ -73,10 +70,8 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        List<JexlNode> otherNodes = new ArrayList<>();
-        Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(node, otherNodes, true);
-        if (ranges.size() == 1 && otherNodes.isEmpty()) {
-            LiteralRange<?> range = ranges.keySet().iterator().next();
+        LiteralRange range = JexlASTHelper.findRange().getRange(node);
+        if (range != null) {
             values.addRange(range.getFieldName(), range);
         } else {
             super.visit(node, data);

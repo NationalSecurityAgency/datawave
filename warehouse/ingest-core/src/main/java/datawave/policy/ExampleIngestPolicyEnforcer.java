@@ -49,7 +49,7 @@ public class ExampleIngestPolicyEnforcer extends IngestPolicyEnforcer {
      * @param event
      */
     private void validateEventDate(RawRecordContainer event) {
-        if (0 >= event.getDate()) {
+        if (event.getDate() == Long.MIN_VALUE) {
             event.addError(RawDataErrorNames.EVENT_DATE_MISSING);
             log.error("Event date missing for Event in raw file: " + event.getRawFileName() + ", record: " + event.getRawRecordNumber());
         }

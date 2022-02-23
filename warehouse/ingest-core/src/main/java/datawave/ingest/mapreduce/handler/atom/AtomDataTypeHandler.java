@@ -51,7 +51,7 @@ public class AtomDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataT
     public static final String ATOM_FIELD_VALUE_OVERRIDES = ATOM_TYPE + ".category.field.value.overrides";
     public static final String ATOM_CATEGORY_SUB_FIELD = ATOM_TYPE + ".category.field.value.sub";
     
-    protected static Value NULL_VALUE = new Value(new byte[0]);
+    protected static final Value NULL_VALUE = new Value(new byte[0]);
     
     protected String tableName = null;
     protected String categoryTableName = null;

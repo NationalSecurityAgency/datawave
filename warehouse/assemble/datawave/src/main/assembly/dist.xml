@@ -131,13 +131,11 @@
                 <include>org.springframework:spring-context-support</include>
                 <include>org.springframework:spring-expression</include>
                 <include>aopalliance:aopalliance</include>
-                <!-- For the NGA Geometry code -->
-                <include>mil.nga.giat:geowave-adapter-vector</include>
-                <include>mil.nga.giat:geowave-core-geotime</include>
-                <include>mil.nga.giat:geowave-core-store</include>
-                <include>mil.nga.giat:geowave-core-index</include>
-                <include>mil.nga.giat:geowave-core-ingest</include>
-                <include>com.vividsolutions:jts</include>
+                <!-- For the Geometry code -->
+                <include>org.locationtech.geowave:geowave-core-geotime</include>
+                <include>org.locationtech.geowave:geowave-core-store</include>
+                <include>org.locationtech.geowave:geowave-core-index</include>
+                <include>org.locationtech.jts:jts-core</include>
                 <include>com.google.uzaygezen:uzaygezen-core</include>
                 <include>com.fasterxml.jackson.core:jackson-databind</include>
                 <include>com.fasterxml.jackson.core:jackson-core</include>

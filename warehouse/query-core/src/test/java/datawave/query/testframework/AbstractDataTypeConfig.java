@@ -1,7 +1,7 @@
 package datawave.query.testframework;
 
 import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NoOpType;
+import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
 import datawave.ingest.csv.mr.input.CSVRecordReader;
 import datawave.ingest.data.TypeRegistry;
@@ -16,7 +16,6 @@ import datawave.ingest.json.mr.input.JsonRecordReader;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.policy.IngestPolicyEnforcer;
-import datawave.query.testframework.FileLoaderFactory.FileType;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.conf.Configuration;
@@ -27,6 +26,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,7 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static datawave.query.testframework.FileLoaderFactory.FileType.CSV;
+import static datawave.query.testframework.FileType.CSV;
 
 /**
  * Abstract base class that contains the configuration settings for test data types.
@@ -48,7 +48,8 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
     // common constants for all data types
     protected static final String DATE_FIELD_FORMAT = "yyyyMMdd";
     public static final SimpleDateFormat YMD_DateFormat = new SimpleDateFormat(DATE_FIELD_FORMAT);
-    private static final String AUTH_VALUES = "public";
+    private static final String TEST_VISIBILITY = "public";
+    private static final String[] AUTH_VALUES = new String[] {"public", "Euro", "NA"};
     private static final Authorizations TEST_AUTHS = new Authorizations(AUTH_VALUES);
     
     /**
@@ -65,8 +66,8 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
      * 
      * @return default column visibility
      */
-    public static ColumnVisibility getVisibility() {
-        return new ColumnVisibility(AUTH_VALUES);
+    public static ColumnVisibility getDefaultVisibility() {
+        return new ColumnVisibility(TEST_VISIBILITY);
     }
     
     private static List<String> mappingToNames(final Collection<Set<String>> mapping) {
@@ -151,8 +152,11 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
                 Set<String> anyFieldIndexes = new HashSet<>(this.fieldConfig.getIndexFields());
                 anyFieldIndexes.addAll(this.fieldConfig.getReverseIndexFields());
                 manager.addTestData(this.ingestPath, this.dataType, anyFieldIndexes);
-                this.hConf.set(this.dataType + TypeRegistry.INGEST_HELPER, ExtendedCSVIngestHelper.class.getName());
+                this.hConf.set(this.dataType + TypeRegistry.INGEST_HELPER, ExtendedTestCSVIngestHelper.class.getName());
                 this.hConf.set(this.dataType + TypeRegistry.RAW_READER, CSVRecordReader.class.getName());
+                
+                this.hConf.set(this.dataType + ExtendedCSVHelper.Properties.EVENT_SECURITY_MARKING_FIELD_NAMES, getSecurityMarkingFieldNames());
+                this.hConf.set(this.dataType + ExtendedCSVHelper.Properties.EVENT_SECURITY_MARKING_FIELD_DOMAINS, getSecurityMarkingFieldDomains());
                 break;
             case JSON:
                 // loading of raw data for JSON is postponed until the Accumulo configuration is complete
@@ -176,7 +180,7 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
         this.hConf.set(this.dataType + ".data.auth.id.mode", "NEVER");
         this.hConf.set(ShardedDataTypeHandler.METADATA_TERM_FREQUENCY, "true");
         
-        this.hConf.set(this.dataType + MarkingsHelper.DEFAULT_MARKING, AUTH_VALUES);
+        this.hConf.set(this.dataType + MarkingsHelper.DEFAULT_MARKING, new String(getDefaultVisibility().getExpression(), StandardCharsets.UTF_8));
         
         // virtual field separator
         this.hConf.set(this.dataType + VirtualIngest.VIRTUAL_FIELD_VALUE_SEPARATOR, "|");
@@ -204,6 +208,14 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
         if (!multi.isEmpty()) {
             this.hConf.set(this.dataType + CSVHelper.MULTI_VALUED_FIELDS, String.join(",", multi));
         }
+    }
+    
+    public String getSecurityMarkingFieldNames() {
+        return "";
+    }
+    
+    public String getSecurityMarkingFieldDomains() {
+        return "";
     }
     
     /**

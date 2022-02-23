@@ -29,6 +29,8 @@ public abstract class BaseQueryMetricListResponse<T extends BaseQueryMetric> ext
     protected int numResults = 0;
     @XmlTransient
     private boolean administratorMode = false;
+    @XmlTransient
+    private boolean isGeoQuery = false;
     
     private static String numToString(long number) {
         return (number == -1 || number == 0) ? "" : Long.toString(number);
@@ -59,6 +61,14 @@ public abstract class BaseQueryMetricListResponse<T extends BaseQueryMetric> ext
         this.administratorMode = administratorMode;
     }
     
+    public boolean isGeoQuery() {
+        return isGeoQuery;
+    }
+    
+    public void setGeoQuery(boolean geoQuery) {
+        isGeoQuery = geoQuery;
+    }
+    
     @Override
     public String getTitle() {
         return TITLE;
@@ -71,7 +81,21 @@ public abstract class BaseQueryMetricListResponse<T extends BaseQueryMetric> ext
     
     @Override
     public String getHeadContent() {
-        return EMPTY;
+        if (isGeoQuery) {
+            // @formatter:off
+            return "<script type='text/javascript' src='/jquery.min.js'></script>" +
+                    "<script type='text/javascript'>" +
+                    "$(document).ready(function() {" +
+                    "   var currentUrl = window.location.href.replace(/\\/+$/, '');" +
+                    "   var queryHeader = document.getElementById(\"query-header\").innerHTML;" +
+                    "   queryHeader = queryHeader + '<br>(<a href=\"' + currentUrl + '/map\">map</a>)';" +
+                    "   document.getElementById(\"query-header\").innerHTML = queryHeader;" +
+                    "});" +
+                    "</script>";
+            // @formatter: on
+        } else {
+            return EMPTY;
+        }
     }
     
     @Override
@@ -81,7 +105,7 @@ public abstract class BaseQueryMetricListResponse<T extends BaseQueryMetric> ext
         builder.append("<table>\n");
         builder.append("<tr>\n");
         builder.append("<th>Visibility</th><th>Query Date</th><th>User</th><th>UserDN</th><th>Proxy Server(s)</th><th>Query ID</th><th>Query Type</th>");
-        builder.append("<th>Query Logic</th><th>Query</th><th>Begin Date</th><th>End Date</th><th>Query Auths</th><th>Server</th>");
+        builder.append("<th>Query Logic</th><th id=\"query-header\">Query</th><th>Begin Date</th><th>End Date</th><th>Query Auths</th><th>Server</th>");
         builder.append("<th>Query Setup Time (ms)</th><th>Query Setup Call Time (ms)</th><th>Number Pages</th><th>Number Results</th>");
         builder.append("<th>Total Page Time (ms)</th><th>Total Page Call Time (ms)</th><th>Total Page Serialization Time (ms)</th>");
         builder.append("<th>Total Page Bytes Sent (uncompressed)</th><th>Lifecycle</th><th>Elapsed Time</th><th>Error Code</th><th>Error Message</th>");

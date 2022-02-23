@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
@@ -119,24 +120,27 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                 
                 ASTJexlScript jexlScript = null;
                 try {
-                    jexlScript = JexlASTHelper.parseJexlQuery(query);
+                    // Parse and flatten here before visitors visit.
+                    jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(query);
                 } catch (Throwable t1) {
                     // not JEXL, try LUCENE
                     try {
                         LuceneToJexlQueryParser luceneToJexlParser = new LuceneToJexlQueryParser();
                         QueryNode node = luceneToJexlParser.parse(query);
                         String jexlQuery = node.getOriginalQuery();
-                        jexlScript = JexlASTHelper.parseJexlQuery(jexlQuery);
+                        jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery);
                     } catch (Throwable t2) {
                         
                     }
                 }
                 
+                jexlScript = TreeFlatteningRebuildingVisitor.flatten(jexlScript);
+                
                 if (jexlScript != null) {
                     List<ASTEQNode> positiveEQNodes = JexlASTHelper.getPositiveEQNodes(jexlScript);
                     for (ASTEQNode pos : positiveEQNodes) {
                         String identifier = JexlASTHelper.getIdentifier(pos);
-                        Object literal = JexlASTHelper.getLiteralValue(pos);
+                        Object literal = JexlASTHelper.getLiteralValueSafely(pos);
                         if (identifier != null && literal != null) {
                             fields.put("POSITIVE_SELECTORS", identifier + ":" + literal);
                         }
@@ -144,7 +148,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                     List<ASTEQNode> negativeEQNodes = JexlASTHelper.getNegativeEQNodes(jexlScript);
                     for (ASTEQNode neg : negativeEQNodes) {
                         String identifier = JexlASTHelper.getIdentifier(neg);
-                        Object literal = JexlASTHelper.getLiteralValue(neg);
+                        Object literal = JexlASTHelper.getLiteralValueSafely(neg);
                         if (identifier != null && literal != null) {
                             fields.put("NEGATIVE_SELECTORS", identifier + ":" + literal);
                         }
@@ -220,9 +224,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             List<PageMetric> pageMetrics = updatedQueryMetric.getPageTimes();
             if (pageMetrics != null && !pageMetrics.isEmpty()) {
                 for (PageMetric p : pageMetrics) {
-                    fields.put("PAGE_METRICS." + p.getPageNumber(),
-                                    p.getPagesize() + "/" + p.getReturnTime() + "/" + p.getCallTime() + "/" + p.getSerializationTime() + "/"
-                                                    + p.getBytesWritten() + "/" + p.getPageRequested() + "/" + p.getPageReturned() + "/" + p.getLoginTime());
+                    fields.put("PAGE_METRICS." + p.getPageNumber(), p.toEventString());
                 }
             }
             fields.put("SOURCE_COUNT", Long.toString(updatedQueryMetric.getSourceCount()));
@@ -231,6 +233,9 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             fields.put("YIELD_COUNT", Long.toString(updatedQueryMetric.getYieldCount()));
             fields.put("DOC_RANGES", Long.toString(updatedQueryMetric.getDocRanges()));
             fields.put("FI_RANGES", Long.toString(updatedQueryMetric.getFiRanges()));
+            if (updatedQueryMetric.getVersion() != null) {
+                fields.put("VERSION", updatedQueryMetric.getVersion());
+            }
             Set<Prediction> predictions = updatedQueryMetric.getPredictions();
             if (predictions != null && !predictions.isEmpty()) {
                 for (Prediction prediction : predictions) {
@@ -303,11 +308,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
                     long pageNum = p.getPageNumber();
                     PageMetric storedPageMetric = storedPageMetricMap.get(pageNum);
                     if (storedPageMetric != null && !storedPageMetric.equals(p)) {
-                        fields.put("PAGE_METRICS." + pageNum,
-                                        storedPageMetric.getPagesize() + "/" + storedPageMetric.getReturnTime() + "/" + storedPageMetric.getCallTime() + "/"
-                                                        + storedPageMetric.getSerializationTime() + "/" + storedPageMetric.getBytesWritten() + "/"
-                                                        + storedPageMetric.getPageRequested() + "/" + storedPageMetric.getPageReturned() + "/"
-                                                        + storedPageMetric.getLoginTime());
+                        fields.put("PAGE_METRICS." + storedPageMetric.getPageNumber(), storedPageMetric.toEventString());
                     }
                 }
             }

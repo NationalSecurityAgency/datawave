@@ -18,6 +18,8 @@ import datawave.query.DocumentSerialization;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.model.QueryModel;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.attributes.UniqueGranularity;
 import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import org.junit.Assert;
@@ -26,6 +28,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -58,6 +61,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals("", config.getAccumuloPassword());
         Assert.assertEquals(Long.MAX_VALUE, config.getMaxIndexScanTimeMillis());
         Assert.assertFalse(config.getCollapseUids());
+        Assert.assertFalse(config.getParseTldUids());
         Assert.assertFalse(config.getSequentialScheduler());
         Assert.assertFalse(config.getCollectTimingDetails());
         Assert.assertFalse(config.getLogTimingDetails());
@@ -77,6 +81,9 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(100, config.getRangeBufferPollMillis());
         Assert.assertEquals(8, config.getGeometryMaxExpansion());
         Assert.assertEquals(32, config.getPointMaxExpansion());
+        Assert.assertEquals(16, config.getGeoWaveRangeSplitThreshold());
+        Assert.assertEquals(0.25, config.getGeoWaveMaxRangeOverlap(), 0.0);
+        Assert.assertTrue(config.isOptimizeGeoWaveRanges());
         Assert.assertEquals(4, config.getGeoWaveMaxEnvelopes());
         Assert.assertEquals(TableName.SHARD, config.getShardTableName());
         Assert.assertEquals(TableName.SHARD_INDEX, config.getIndexTableName());
@@ -122,7 +129,6 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.isLimitFieldsPreQueryEvaluation());
         Assert.assertNull(config.getLimitFieldsField());
         Assert.assertFalse(config.isHitList());
-        Assert.assertFalse(config.isTypeMetadataInHdfs());
         Assert.assertFalse(config.isDateIndexTimeTravel());
         Assert.assertEquals(-1L, config.getBeginDateCap());
         Assert.assertTrue(config.isFailOutsideValidDateRange());
@@ -160,7 +166,10 @@ public class ShardQueryConfigurationTest {
         Assert.assertNull(config.getHdfsSiteConfigURLs());
         Assert.assertNull(config.getHdfsFileCompressionCodec());
         Assert.assertNull(config.getZookeeperConfig());
-        Assert.assertNull(config.getIvaratorCacheBaseURIs());
+        Assert.assertTrue(config.getIvaratorCacheDirConfigs().isEmpty());
+        Assert.assertEquals(2, config.getIvaratorNumRetries());
+        Assert.assertEquals(100, config.getIvaratorPersistVerifyCount());
+        Assert.assertEquals(true, config.isIvaratorPersistVerify());
         Assert.assertNull(config.getIvaratorFstHdfsBaseURIs());
         Assert.assertEquals(10000, config.getIvaratorCacheBufferSize());
         Assert.assertEquals(100000, config.getIvaratorCacheScanPersistThreshold());
@@ -182,10 +191,17 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(0, config.getGroupFieldsBatchSize());
         Assert.assertFalse(config.getAccrueStats());
         Assert.assertEquals(Sets.newHashSet(), config.getGroupFields());
-        Assert.assertEquals(Sets.newHashSet(), config.getUniqueFields());
+        Assert.assertEquals(new UniqueFields(), config.getUniqueFields());
         Assert.assertFalse(config.getCacheModel());
         Assert.assertTrue(config.isTrackSizes());
         Assert.assertEquals(Lists.newArrayList(), config.getContentFieldNames());
+        Assert.assertNull(config.getActiveQueryLogNameSource());
+        Assert.assertEquals("", config.getActiveQueryLogName());
+        Assert.assertFalse(config.isDisableWhindexFieldMappings());
+        Assert.assertEquals(Sets.newHashSet(), config.getWhindexMappingFields());
+        Assert.assertEquals(Maps.newHashMap(), config.getWhindexFieldMappings());
+        Assert.assertEquals(Collections.emptySet(), config.getNoExpansionFields());
+        Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
     }
     
     /**
@@ -235,8 +251,11 @@ public class ShardQueryConfigurationTest {
         QueryModel queryModel = new QueryModel();
         QueryImpl query = new QueryImpl();
         Set<String> groupFields = Sets.newHashSet("groupFieldA");
-        Set<String> uniqueFields = Sets.newHashSet("uniqueFieldA");
+        UniqueFields uniqueFields = new UniqueFields();
+        uniqueFields.put("uniqueFieldA", UniqueGranularity.ALL);
         List<String> contentFieldNames = Lists.newArrayList("fieldA");
+        Set<String> noExpansionFields = Sets.newHashSet("NoExpansionFieldA");
+        Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
         
         // Set collections on 'other' ShardQueryConfiguration
         other.setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
@@ -268,6 +287,8 @@ public class ShardQueryConfigurationTest {
         other.setGroupFields(groupFields);
         other.setUniqueFields(uniqueFields);
         other.setContentFieldNames(contentFieldNames);
+        other.setNoExpansionFields(noExpansionFields);
+        other.setDisallowedRegexPatterns(disallowedRegexPatterns);
         
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
@@ -298,8 +319,9 @@ public class ShardQueryConfigurationTest {
         queryModel.addTermToModel("aliasA", "diskNameA");
         query.setId(UUID.randomUUID());
         groupFields.add("groupFieldB");
-        uniqueFields.add("uniqueFieldB");
+        uniqueFields.put("uniqueFieldB", UniqueGranularity.ALL);
         contentFieldNames.add("fieldB");
+        disallowedRegexPatterns.add("blah");
         
         // Assert that copied collections were deep copied and remain unchanged
         Assert.assertEquals(Lists.newArrayList("somePattern"), config.getRealmSuffixExclusionPatterns());
@@ -349,14 +371,18 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(expectedQueryModel.getForwardQueryMapping(), config.getQueryModel().getForwardQueryMapping());
         Assert.assertEquals(expectedQueryModel.getReverseQueryMapping(), config.getQueryModel().getReverseQueryMapping());
         Assert.assertEquals(expectedQueryModel.getUnevaluatedFields(), config.getQueryModel().getUnevaluatedFields());
+        Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
         
         // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
         QueryImpl expectedQuery = new QueryImpl();
         expectedQuery.setId(config.getQuery().getId());
         Assert.assertEquals(expectedQuery, config.getQuery());
         Assert.assertEquals(Sets.newHashSet("groupFieldA"), config.getGroupFields());
-        Assert.assertEquals(Sets.newHashSet("uniqueFieldA"), config.getUniqueFields());
+        UniqueFields expectedUniqueFields = new UniqueFields();
+        expectedUniqueFields.put("uniqueFieldA", UniqueGranularity.ALL);
+        Assert.assertEquals(expectedUniqueFields, config.getUniqueFields());
         Assert.assertEquals(Lists.newArrayList("fieldA"), config.getContentFieldNames());
+        Assert.assertEquals(Sets.newHashSet("NoExpansionFieldA"), config.getNoExpansionFields());
     }
     
     @Test
@@ -430,7 +456,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 165;
+        int expectedObjectCount = 182;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
@@ -442,5 +468,33 @@ public class ShardQueryConfigurationTest {
         }
         
         Assert.assertEquals("New variable was added to or removed from the ShardQueryConfiguration", expectedObjectCount, objectCount);
+    }
+    
+    @Test
+    public void whenRetrievingActiveQueryLogName_givenTableNameSource_thenReturnsTableName() {
+        ShardQueryConfiguration configuration = new ShardQueryConfiguration();
+        configuration.setTableName("shardTable");
+        configuration.setActiveQueryLogNameSource(ShardQueryConfiguration.TABLE_NAME_SOURCE);
+        Assert.assertEquals("shardTable", configuration.getActiveQueryLogName());
+    }
+    
+    @Test
+    public void whenRetrievingActiveQueryLogName_givenQueryLogicNameSource_thenReturnsQueryLogicName() {
+        ShardQueryConfiguration configuration = new ShardQueryConfiguration();
+        configuration.setActiveQueryLogNameSource(ShardQueryConfiguration.QUERY_LOGIC_NAME_SOURCE);
+        Assert.assertEquals(ShardQueryConfiguration.class.getSimpleName(), configuration.getActiveQueryLogName());
+    }
+    
+    @Test
+    public void whenRetrievingActiveQueryLogName_givenNoActiveQueryLogNameValue_thenReturnsBlankString() {
+        ShardQueryConfiguration configuration = new ShardQueryConfiguration();
+        Assert.assertEquals("", configuration.getActiveQueryLogName());
+    }
+    
+    @Test
+    public void whenRetrievingActiveQueryLogName_givenOtherValue_thenReturnsBlankString() {
+        ShardQueryConfiguration configuration = new ShardQueryConfiguration();
+        configuration.setActiveQueryLogNameSource("nonMatchingValue");
+        Assert.assertEquals("", configuration.getActiveQueryLogName());
     }
 }

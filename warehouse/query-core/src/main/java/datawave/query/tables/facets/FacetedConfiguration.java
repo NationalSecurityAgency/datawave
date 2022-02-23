@@ -26,6 +26,12 @@ public class FacetedConfiguration {
     
     public static final String FACETED_FIELDS = "facet.field.list";
     
+    public static final String FACET_TABLE_NAME = "facet.table.name";
+    
+    public static final String FACET_METADATA_TABLE_NAME = "facet.metadata.table.name";
+    
+    public static final String FACET_HASH_TABLE_NAME = "facet.hash.table.name";
+    
     protected int minimumFacetCount = 1;
     
     protected FacetedSearchType type;
@@ -37,6 +43,12 @@ public class FacetedConfiguration {
     protected boolean isStreaming = true;
     
     protected boolean hasFieldLimits = false;
+    
+    protected String facetTableName;
+    
+    protected String facetMetadataTableName;
+    
+    protected String facetHashTableName;
     
     /**
      * Sets whether or not we have a limited fields
@@ -151,12 +163,34 @@ public class FacetedConfiguration {
         
     }
     
+    public String getFacetTableName() {
+        return facetTableName;
+    }
+    
+    public void setFacetTableName(String facetTableName) {
+        this.facetTableName = facetTableName;
+    }
+    
+    public String getFacetMetadataTableName() {
+        return facetMetadataTableName;
+    }
+    
+    public void setFacetMetadataTableName(String facetMetadataTableName) {
+        this.facetMetadataTableName = facetMetadataTableName;
+    }
+    
+    public String getFacetHashTableName() {
+        return facetHashTableName;
+    }
+    
+    public void setFacetHashTableName(String facetHashTableName) {
+        this.facetHashTableName = facetHashTableName;
+    }
+    
     @Override
     public String toString() {
-        final StringBuilder builder = new StringBuilder();
-        builder.append("Maximum FacetGroupCount : ").append(maximumFacetGroupCount).append("\n");
-        builder.append("Minimum Facet Count : ").append(minimumFacetCount).append("\n");
-        builder.append("Faceted Fields: ").append(facetedFields).append("\n");
-        return builder.toString();
+        return "Maximum FacetGroupCount : " + maximumFacetGroupCount + "\n" + "Minimum Facet Count : " + minimumFacetCount + "\n" + "Faceted Fields: "
+                        + facetedFields + "\n" + "Faceted Table Name: " + facetTableName + "\n" + "Faceted Metadata Table Name: " + facetMetadataTableName
+                        + "\n" + "Faceted Hash Table Name: " + facetHashTableName + "\n";
     }
 }

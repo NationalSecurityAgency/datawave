@@ -1,11 +1,7 @@
 package datawave.query.jexl.visitors;
 
-import java.util.List;
-import java.util.Set;
-
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
-
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
@@ -13,10 +9,8 @@ import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -26,6 +20,9 @@ import org.apache.commons.jexl2.parser.ASTNullLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
+
+import java.util.List;
+import java.util.Set;
 
 public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(RegexFunctionVisitor.class);
@@ -45,7 +42,7 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
     
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        JexlNode returnNode = node;
+        JexlNode returnNode = copy(node);
         FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
         node.jjtAccept(functionMetadata, null);
         
@@ -58,7 +55,7 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                     returnNode = regexNode;
                 }
             } else {
-                JexlNode newParent = null;
+                JexlNode newParent;
                 if (functionMetadata.name().equals("excludeRegex")) {
                     newParent = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
                 } else {
@@ -70,12 +67,12 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                     JexlNode child = node0.jjtGetChild(i);
                     
                     if (child instanceof ASTIdentifier) {
-                        this.adopt(newParent, buildRegexNode((ASTIdentifier) child, functionMetadata.name(), arguments.get(1).image), i);
+                        this.adopt(newParent, buildRegexNode((ASTIdentifier) child, functionMetadata.name(), arguments.get(1).image));
                     } else { // probably a Reference
                         for (int j = 0; j < child.jjtGetNumChildren(); j++) {
                             JexlNode maybeIdentifier = child.jjtGetChild(j);
                             if (maybeIdentifier instanceof ASTIdentifier) {
-                                this.adopt(newParent, buildRegexNode((ASTIdentifier) maybeIdentifier, functionMetadata.name(), arguments.get(1).image), i + j);
+                                this.adopt(newParent, buildRegexNode((ASTIdentifier) maybeIdentifier, functionMetadata.name(), arguments.get(1).image));
                             }
                         }
                     }
@@ -102,10 +99,10 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
         return returnNode;
     }
     
-    private void adopt(JexlNode parent, JexlNode child, int i) {
+    private void adopt(JexlNode parent, JexlNode child) {
         if (child != null && parent != null) {
             child.jjtSetParent(parent);
-            parent.jjtAddChild(child, i);
+            parent.jjtAddChild(child, parent.jjtGetNumChildren());
         }
     }
     
@@ -115,7 +112,6 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
             try {
                 JavaRegexAnalyzer jra = new JavaRegexAnalyzer(regex);
                 if (!jra.isNgram()) {
-                    JexlNode kid = null;
                     if (functionName.equals("includeRegex")) {
                         if (log.isDebugEnabled())
                             log.debug("Building new ER Node");

@@ -53,6 +53,14 @@ public class QueryIteratorTest {
         assertFalse(QueryIterator.isDocumentSpecificRange(shardRange));
     }
     
+    @Test
+    public void testIsDocumentSpecificRange_withRebuiltShardRange() {
+        Key start = new Key("20190314_0", "dataType\0doc0");
+        Key end = new Key("20190314_0\u0000");
+        Range range = new Range(start, false, end, false);
+        assertFalse(QueryIterator.isDocumentSpecificRange(range));
+    }
+    
     /**
      * <pre>
      * Shard key format
@@ -70,10 +78,10 @@ public class QueryIteratorTest {
         Text cq = new Text("FOO\0bar");
         Key key = new Key(row, cf, cq);
         
-        String parsed = QueryIterator.rowColfamToString(key);
+        String parsed = QueryIterator.rowColFamToString(key);
         assertEquals(expected, parsed);
         
         // Test the null case as well
-        assertEquals("null", QueryIterator.rowColfamToString(null));
+        assertEquals("null", QueryIterator.rowColFamToString(null));
     }
 }

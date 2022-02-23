@@ -2,7 +2,6 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
@@ -13,19 +12,16 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
 import org.apache.commons.jexl2.parser.ASTGTNode;
@@ -43,12 +39,9 @@ import org.apache.log4j.Logger;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static org.apache.commons.jexl2.parser.JexlNodes.id;
 
 /**
  * When more than one normalizer exists for a field, we want to transform the single term into a conjunction of the term with each normalizer applied to it. If
@@ -64,7 +57,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ExpandMultiNormalizedTerms.class);
     
     private final ShardQueryConfiguration config;
-    private final HashSet<ASTAndNode> expandedNodes;
+    private final HashSet<JexlNode> expandedNodes;
     private final MetadataHelper helper;
     
     public ExpandMultiNormalizedTerms(ShardQueryConfiguration config, MetadataHelper helper) {
@@ -92,6 +85,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             throw new DatawaveFatalQueryException(qe);
         }
         
+        script = TreeFlatteningRebuildingVisitor.flatten(script);
         return (T) script.jjtAccept(visitor, null);
     }
     
@@ -136,145 +130,76 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     }
     
     @Override
+    public Object visit(ASTFunctionNode node, Object data) {
+        return FunctionNormalizationRebuildingVisitor.normalize(node, config.getQueryFieldsDatatypes(), helper, config.getDatatypeFilter());
+    }
+    
+    @Override
     public Object visit(ASTReference node, Object data) {
         /**
-         * If we have a delayed predicate we can safely assume that expansion has occurred in the unfieldex expansion along with all types
+         * If we have a delayed predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types
          */
-        if (isDelayedPredicate(node)) {
+        if (QueryPropertyMarker.findInstance(node).isDelayedPredicate() || this.expandedNodes.contains(node)) {
             return node;
+        }
+        
+        LiteralRange<?> range = JexlASTHelper.findRange().getRange(node);
+        if (range != null) {
+            return expandRangeForNormalizers(range, node);
         } else {
             return super.visit(node, data);
         }
+    }
+    
+    private Object expandRangeForNormalizers(LiteralRange<?> range, JexlNode node) {
+        List<BoundedRange> aliasedBounds = Lists.newArrayList();
+        String field = range.getFieldName();
         
-    }
-    
-    /**
-     * method to return if the current node is an instance of a delayed predicate
-     * 
-     * @param currNode
-     * @return
-     */
-    protected boolean isDelayedPredicate(JexlNode currNode) {
-        if (ASTDelayedPredicate.instanceOf(currNode) || ExceededOrThresholdMarkerJexlNode.instanceOf(currNode)
-                        || ExceededValueThresholdMarkerJexlNode.instanceOf(currNode) || ExceededTermThresholdMarkerJexlNode.instanceOf(currNode)
-                        || IndexHoleMarkerJexlNode.instanceOf(currNode) || ASTEvaluationOnly.instanceOf(currNode))
-            return true;
-        else
-            return false;
-    }
-    
-    @Override
-    public Object visit(ASTAndNode node, Object data) {
-        if (this.expandedNodes.contains(node)) {
+        // Get all of the indexed or normalized dataTypes for the field name
+        Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(field));
+        dataTypes.addAll(config.getNormalizedFieldsDatatypes().get(field));
+        
+        for (Type<?> normalizer : dataTypes) {
+            JexlNode lowerBound = range.getLowerNode(), upperBound = range.getUpperNode();
+            
+            JexlNode left = null;
+            try {
+                left = JexlASTHelper.applyNormalization(copy(lowerBound), normalizer);
+            } catch (Exception ne) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Could not normalize " + PrintingVisitor.formattedQueryString(lowerBound) + " using " + normalizer.getClass() + ". "
+                                    + ne.getMessage());
+                }
+                continue;
+            }
+            
+            JexlNode right = null;
+            try {
+                right = JexlASTHelper.applyNormalization(copy(upperBound), normalizer);
+            } catch (Exception ne) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Could not normalize " + PrintingVisitor.formattedQueryString(upperBound) + " using " + normalizer.getClass() + ". "
+                                    + ne.getMessage());
+                }
+                continue;
+            }
+            
+            aliasedBounds.add(new BoundedRange(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right)));
+        }
+        
+        if (aliasedBounds.isEmpty()) {
             return node;
-        }
-        
-        ASTAndNode smashed = TreeFlatteningRebuildingVisitor.flatten(node);
-        HashMap<String,JexlNode> lowerBounds = Maps.newHashMap(), upperBounds = Maps.newHashMap();
-        List<JexlNode> others = Lists.newArrayList();
-        for (JexlNode child : JexlNodes.children(smashed)) {
-            // if the child has a method attached, it is not eligible for ranges
-            if (JexlASTHelper.HasMethodVisitor.hasMethod(child)) {
-                others.add(child);
+        } else {
+            this.expandedNodes.addAll(aliasedBounds);
+            
+            // Avoid extra parens around the expansion
+            if (1 == aliasedBounds.size()) {
+                return aliasedBounds.get(0);
             } else {
-                switch (id(child)) {
-                    case ParserTreeConstants.JJTGENODE:
-                    case ParserTreeConstants.JJTGTNODE:
-                        String key = JexlASTHelper.getIdentifier(child);
-                        // if the key is null, this is not eligible for ranges
-                        // it may have model-expanded identifier (FOO|BAR) or it
-                        // may have a method attached
-                        if (key == null) {
-                            others.add(child);
-                        } else {
-                            lowerBounds.put(key, child);
-                        }
-                        break;
-                    case ParserTreeConstants.JJTLENODE:
-                    case ParserTreeConstants.JJTLTNODE:
-                        key = JexlASTHelper.getIdentifier(child);
-                        // if the key is null, this is not eligible for ranges
-                        // it may have model-expanded identifier (FOO|BAR) or it
-                        // may have a method attached
-                        if (key == null) {
-                            others.add(child);
-                        } else {
-                            upperBounds.put(key, child);
-                        }
-                        break;
-                    default:
-                        others.add(child);
-                }
+                List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(aliasedBounds);
+                return JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[var.size()])));
             }
         }
-        
-        if (!lowerBounds.isEmpty() && !upperBounds.isEmpty()) {
-            // this is the set of fields that have an upper and a lower bound operand
-            Set<String> tightBounds = Sets.intersection(lowerBounds.keySet(), upperBounds.keySet()).immutableCopy();
-            
-            if (log.isDebugEnabled()) {
-                log.debug("Found bounds to match: " + tightBounds);
-            }
-            
-            for (String field : tightBounds) {
-                List<ASTAndNode> aliasedBounds = Lists.newArrayList();
-                for (Type<?> normalizer : config.getQueryFieldsDatatypes().get(field)) {
-                    JexlNode lowerBound = lowerBounds.get(field), upperBound = upperBounds.get(field);
-                    
-                    JexlNode left = null;
-                    try {
-                        left = JexlASTHelper.applyNormalization(copy(lowerBound), normalizer);
-                    } catch (Exception ne) {
-                        if (log.isTraceEnabled()) {
-                            log.trace("Could not normalize " + PrintingVisitor.formattedQueryString(lowerBound) + " using " + normalizer.getClass() + ". "
-                                            + ne.getMessage());
-                        }
-                        continue;
-                    }
-                    
-                    JexlNode right = null;
-                    try {
-                        right = JexlASTHelper.applyNormalization(copy(upperBound), normalizer);
-                    } catch (Exception ne) {
-                        if (log.isTraceEnabled()) {
-                            log.trace("Could not normalize " + PrintingVisitor.formattedQueryString(upperBound) + " using " + normalizer.getClass() + ". "
-                                            + ne.getMessage());
-                        }
-                        continue;
-                    }
-                    
-                    aliasedBounds.add(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right));
-                }
-                if (!aliasedBounds.isEmpty()) {
-                    lowerBounds.remove(field);
-                    upperBounds.remove(field);
-                    
-                    this.expandedNodes.addAll(aliasedBounds);
-                    
-                    // Avoid extra parens around the expansion
-                    if (1 == aliasedBounds.size()) {
-                        others.add(JexlNodes.wrap(aliasedBounds.get(0)));
-                    } else {
-                        List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(aliasedBounds);
-                        others.add(JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[var.size()]))));
-                    }
-                }
-            }
-        }
-        // we could have some unmatched bounds left over
-        others.addAll(lowerBounds.values());
-        others.addAll(upperBounds.values());
-        
-        /*
-         * The rebuilding visitor adds whatever {visit()} returns to the parent's child list, so we shouldn't have some weird object graph that means old nodes
-         * never get GC'd because {super.visit()} will reset the parent in the call to {copy()}
-         */
-        return super.visit(JexlNodes.children(smashed, others.toArray(new JexlNode[others.size()])), data);
-    }
-    
-    @Override
-    public Object visit(ASTFunctionNode node, Object data) {
-        return FunctionNormalizationRebuildingVisitor.normalize(node, config.getQueryFieldsDatatypes(), helper, config.getDatatypeFilter());
     }
     
     /**
@@ -320,7 +245,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                 JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName, lowHi[1]);
                                 
                                 // now link em up
-                                return JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode));
+                                return BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
                             } catch (Exception ex) {
                                 if (log.isTraceEnabled()) {
                                     log.trace("Could not normalize " + term + " as cidr notation with: " + normalizer.getClass());
@@ -356,4 +281,5 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
         }
         return nodeToReturn;
     }
+    
 }

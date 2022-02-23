@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import datawave.data.hash.UID;
+import datawave.ingest.config.IngestConfigurationFactory;
 import datawave.ingest.data.RawDataErrorNames;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.TypeRegistry;
@@ -47,7 +48,7 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
     public static final String COLUMN_VISIBILITY = "columnVisibility";
     
     private MarkingsHelper mHelper = null;
-    private byte[] defaultVisibility = null;
+    private ColumnVisibility defaultVisibility = null;
     private Configuration conf = null;
     private ErrorShardedIngestHelper errorHelper = null;
     private MarkingFunctions markingFunctions;
@@ -60,12 +61,6 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
         
         this.conf = context.getConfiguration();
         markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-        try {
-            defaultVisibility = markingFunctions.flatten(markingFunctions.translateToColumnVisibility(mHelper.getDefaultMarkings()));
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Failed to parse security marking configuration", e);
-        }
-        
     }
     
     @Override
@@ -76,6 +71,13 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
         
         if (getHelper(record.getDataType()) == null) {
             return count;
+        }
+        
+        mHelper = IngestConfigurationFactory.getIngestConfiguration().getMarkingsHelper(conf, record.getDataType());
+        try {
+            defaultVisibility = markingFunctions.translateToColumnVisibility(mHelper.getDefaultMarkings());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to parse security marking configuration", e);
         }
         
         // write out the event into a value before we muck with it
@@ -190,7 +192,6 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
                 
             }
         }
-        return visibility;
-        
+        return visibility == null ? defaultVisibility : visibility;
     }
 }

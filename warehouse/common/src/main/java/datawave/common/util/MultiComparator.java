@@ -1,11 +1,14 @@
 package datawave.common.util;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 
-public class MultiComparator<T> implements Comparator<T> {
+public class MultiComparator<T> implements Comparator<T>, Serializable {
+    private static final long serialVersionUID = 7403028374892043690L;
+    
     private final Collection<Comparator<T>> comparators;
     
     public MultiComparator(Collection<Comparator<T>> comparators) {

@@ -70,7 +70,7 @@ public interface MarkingsHelper {
                 defaultMarkings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, marking);
             }
             for (Entry<String,String> property : conf) {
-                if (property.getKey().endsWith(FIELD_MARKING)) {
+                if (property.getKey().startsWith(dataType.typeName()) && property.getKey().endsWith(FIELD_MARKING)) {
                     String fieldName = null;
                     if (null != (fieldName = BaseIngestHelper.getFieldName(dataType, property.getKey(), FIELD_MARKING))) {
                         Map<String,String> fieldMarking = new HashMap<>();
