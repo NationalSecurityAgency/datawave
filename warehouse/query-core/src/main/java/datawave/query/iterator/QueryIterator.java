@@ -3,12 +3,7 @@ package datawave.query.iterator;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import com.google.common.collect.UnmodifiableIterator;
+import com.google.common.collect.*;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
@@ -20,20 +15,7 @@ import datawave.query.attributes.AttributeKeepFilter;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
-import datawave.query.function.Aggregation;
-import datawave.query.function.DataTypeAsField;
-import datawave.query.function.DocumentMetadata;
-import datawave.query.function.DocumentPermutation;
-import datawave.query.function.DocumentProjection;
-import datawave.query.function.IndexOnlyContextCreator;
-import datawave.query.function.IndexOnlyContextCreatorBuilder;
-import datawave.query.function.JexlContextCreator;
-import datawave.query.function.JexlEvaluation;
-import datawave.query.function.KeyToDocumentData;
-import datawave.query.function.LimitFields;
-import datawave.query.function.MaskedValueFilterFactory;
-import datawave.query.function.MaskedValueFilterInterface;
-import datawave.query.function.RemoveGroupingContext;
+import datawave.query.function.*;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
@@ -42,16 +24,7 @@ import datawave.query.iterator.aggregation.DocumentData;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.pipeline.PipelineFactory;
 import datawave.query.iterator.pipeline.PipelineIterator;
-import datawave.query.iterator.profile.EvaluationTrackingFunction;
-import datawave.query.iterator.profile.EvaluationTrackingIterator;
-import datawave.query.iterator.profile.EvaluationTrackingNestedIterator;
-import datawave.query.iterator.profile.EvaluationTrackingPredicate;
-import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
-import datawave.query.iterator.profile.MultiThreadedQuerySpan;
-import datawave.query.iterator.profile.PipelineQuerySpanCollectionIterator;
-import datawave.query.iterator.profile.QuerySpan;
-import datawave.query.iterator.profile.QuerySpanCollector;
-import datawave.query.iterator.profile.SourceTrackingIterator;
+import datawave.query.iterator.profile.*;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
@@ -67,25 +40,14 @@ import datawave.query.predicate.EmptyDocumentFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
-import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.UniqueTransform;
-import datawave.query.util.EmptyContext;
-import datawave.query.util.EntryToTuple;
-import datawave.query.util.TraceIterators;
-import datawave.query.util.Tuple2;
-import datawave.query.util.Tuple3;
-import datawave.query.util.TupleToEntry;
-import datawave.query.util.TypeMetadata;
+import datawave.query.util.*;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IterationInterruptedException;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iterators.YieldCallback;
-import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
+import org.apache.accumulo.core.iterators.*;
 import org.apache.accumulo.core.trace.Span;
 import org.apache.accumulo.core.trace.Trace;
 import org.apache.accumulo.tserver.tablet.TabletClosedException;
@@ -109,15 +71,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.MalformedURLException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
@@ -188,7 +143,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     protected UniqueTransform uniqueTransform = null;
     
-    protected GroupingTransform groupingTransform;
+    protected GroupingIterator groupingIterator;
     
     protected boolean groupingContextAddedByMe = false;
     
@@ -496,10 +451,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             // apply the grouping transform if requested and if the batch size is greater than zero
             // if the batch size is 0, then grouping is computed only on the web server
-            GroupingTransform groupify = getGroupingTransform();
-            if (groupify != null && this.groupFieldsBatchSize > 0) {
-                
-                pipelineDocuments = groupingTransform.getGroupingIterator(pipelineDocuments, this.groupFieldsBatchSize, this.yield);
+            if (this.groupFieldsBatchSize > 0) {
+                pipelineDocuments = getGroupingIteratorInstance(pipelineDocuments);
                 
                 if (log.isTraceEnabled()) {
                     pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
@@ -1595,16 +1548,17 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return uniqueTransform;
     }
     
-    protected GroupingTransform getGroupingTransform() {
-        if (groupingTransform == null && getGroupFields() != null && !getGroupFields().isEmpty()) {
+    protected GroupingIterator getGroupingIteratorInstance(Iterator<Entry<Key,Document>> in) {
+        if (groupingIterator == null && getGroupFields() != null && !getGroupFields().isEmpty()) {
             synchronized (getGroupFields()) {
-                if (groupingTransform == null) {
-                    groupingTransform = new GroupingTransform(null, getGroupFields(), true, this.queryExecutionTimeout, this.allowLongRunningQuery);
-                    groupingTransform.initialize(null, MarkingFunctionsFactory.createMarkingFunctions());
+                if (groupingIterator == null) {
+                    groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(),
+                            getGroupFields(), this.groupFieldsBatchSize, this.yield);
+//                    groupingIterator.initialize(null, MarkingFunctionsFactory.createMarkingFunctions());
                 }
             }
         }
-        return groupingTransform;
+        return groupingIterator;
     }
     
     protected ActiveQueryLog getActiveQueryLog() {

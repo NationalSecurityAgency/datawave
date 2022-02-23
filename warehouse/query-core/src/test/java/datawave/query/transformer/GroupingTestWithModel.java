@@ -14,12 +14,13 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.attributes.Attribute;
+import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
+import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.JexlControlledQueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.query.transformer.GroupingTransform.GroupingTypeAttribute;
 import datawave.query.util.VisibilityWiseGuysIngestWithModel;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
@@ -41,36 +42,16 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import javax.inject.Inject;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
+import java.util.*;
 
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.ALWAYS;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.ALWAYS_SANS_CONSISTENCY;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.NEVER;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.RANDOM;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.RANDOM_SANS_CONSISTENCY;
+import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.*;
 
 /**
  * Applies grouping to queries
@@ -449,7 +430,7 @@ public abstract class GroupingTestWithModel {
     @Test
     public void testCountingMap() {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
+        GroupCountingHashMap map = new GroupCountingHashMap(markingFunctions);
         GroupingTypeAttribute attr1 = new GroupingTypeAttribute(new LcType("FOO"), new Key("FOO"), true);
         attr1.setColumnVisibility(new ColumnVisibility("A"));
         map.add(Collections.singleton(attr1));
@@ -479,7 +460,7 @@ public abstract class GroupingTestWithModel {
     @Test
     public void testCountingMapAgain() {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
+        GroupCountingHashMap map = new GroupCountingHashMap(markingFunctions);
         
         GroupingTypeAttribute<?> attr1a = new GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
         attr1a.setColumnVisibility(new ColumnVisibility("A"));
