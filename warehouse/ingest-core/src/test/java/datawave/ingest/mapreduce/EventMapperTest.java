@@ -12,6 +12,7 @@ import datawave.ingest.mapreduce.job.metrics.Metric;
 import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
 import datawave.ingest.mapreduce.job.metrics.TestEventCountMetricsReceiver;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import datawave.util.TypeRegistryTestSetup;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
@@ -30,6 +31,7 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.util.Map;
 
+// Also see EventMapperSalvageFieldsOnErrorTest
 public class EventMapperTest {
     
     @Rule
@@ -51,12 +53,11 @@ public class EventMapperTest {
         conf = new Configuration();
         conf.setClass(EventMapper.CONTEXT_WRITER_CLASS, TestContextWriter.class, ContextWriter.class);
         
-        Type type = new Type("file", null, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
-        Type errorType = new Type(TypeRegistry.ERROR_PREFIX, null, null, new String[] {SimpleDataTypeHandler.class.getName()}, 20, null);
+        String[] defaultDataTypeHandlers = {SimpleDataTypeHandler.class.getName()};
         
-        TypeRegistry registry = TypeRegistry.getInstance(conf);
-        registry.put(type.typeName(), type);
-        registry.put(errorType.typeName(), errorType);
+        Type type = new Type("file", null, null, defaultDataTypeHandlers, 10, null);
+        Type errorType = new Type(TypeRegistry.ERROR_PREFIX, null, null, defaultDataTypeHandlers, 20, null);
+        TypeRegistryTestSetup.resetTypeRegistryWithTypes(conf, type, errorType);
         
         Multimap<String,NormalizedContentInterface> fields = HashMultimap.create();
         fields.put("fileExtension", new BaseNormalizedContent("fileExtension", "gz"));
@@ -64,25 +65,18 @@ public class EventMapperTest {
         
         SimpleDataTypeHelper.registerFields(fields);
         
-        record = new SimpleRawRecord();
-        record.setRawFileTimestamp(eventTime);
-        record.setDataType(type);
-        record.setDate(eventTime);
-        record.setRawFileName("/some/filename");
-        record.setRawData("some data".getBytes());
-        record.generateId(null);
+        record = IngestTestSetup.createBasicRecord(eventTime, type);
         
-        errorRecord = new SimpleRawRecord();
+        errorRecord = IngestTestSetup.createBasicRecord(eventTime, type);
         errorRecord.setRawFileTimestamp(0);
-        errorRecord.setDataType(type);
-        errorRecord.setDate(eventTime);
-        errorRecord.setRawFileName("/some/filename");
-        errorRecord.setRawData("some data".getBytes());
-        errorRecord.generateId(null);
         errorRecord.setRawFileName("");
         errorRecord.addError("EVENT_DATE_MISSING");
         errorRecord.setFatalError(true);
         
+        EventMapperTest.setupMapContextMock(mapContext, conf);
+    }
+    
+    static void setupMapContextMock(Mapper.Context mapContext, Configuration conf) throws IOException, InterruptedException {
         expect(mapContext.getConfiguration()).andReturn(conf).anyTimes();
         
         mapContext.progress();
@@ -209,7 +203,7 @@ public class EventMapperTest {
     }
     
     private Map.Entry<BulkIngestKey,Value> getRawFileName(Multimap<BulkIngestKey,Value> written) {
-        return getFieldEntry(written, EventMapper.RAW_FILE_FIELDNAME.toString());
+        return getFieldEntry(written, FieldHarvester.RAW_FILE_FIELDNAME.toString());
     }
     
     private Map.Entry<BulkIngestKey,Value> getFieldEntry(Multimap<BulkIngestKey,Value> written, String field) {

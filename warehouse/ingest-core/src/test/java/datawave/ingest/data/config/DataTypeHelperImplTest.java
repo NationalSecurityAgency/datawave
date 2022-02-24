@@ -1,8 +1,7 @@
 package datawave.ingest.data.config;
 
-import datawave.ingest.data.TypeRegistry;
-
 import datawave.policy.IngestPolicyEnforcer;
+import datawave.util.TypeRegistryTestSetup;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Assert;
 import org.junit.Before;
@@ -25,8 +24,7 @@ public class DataTypeHelperImplTest {
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidConfig() {
         DataTypeHelperImpl helper = new DataTypeHelperImpl();
-        TypeRegistry.reset();
-        TypeRegistry.getInstance(conf);
+        TypeRegistryTestSetup.resetTypeRegistry(conf);
         helper.setup(conf);
     }
     
@@ -36,8 +34,7 @@ public class DataTypeHelperImplTest {
         Assert.assertNotNull(configStream);
         conf.addResource(configStream);
         Assert.assertThat(conf.get("data.name"), is("fake"));
-        TypeRegistry.reset();
-        TypeRegistry.getInstance(conf);
+        TypeRegistryTestSetup.resetTypeRegistry(conf);
         DataTypeHelperImpl helper = new DataTypeHelperImpl();
         helper.setup(conf);
         
@@ -54,8 +51,7 @@ public class DataTypeHelperImplTest {
         Assert.assertNotNull(configStream);
         conf.addResource(configStream);
         conf.set("fake" + DataTypeHelper.Properties.DOWNCASE_FIELDS, "one,two,three,FOUR");
-        TypeRegistry.reset();
-        TypeRegistry.getInstance(conf);
+        TypeRegistryTestSetup.resetTypeRegistry(conf);
         DataTypeHelperImpl helper = new DataTypeHelperImpl();
         helper.setup(conf);
         

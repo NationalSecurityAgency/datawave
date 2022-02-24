@@ -3,18 +3,13 @@ package datawave.ingest.mapreduce;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import datawave.data.normalizer.DateNormalizer;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.filter.KeyValueFilter;
-import datawave.ingest.data.config.ingest.CompositeIngest;
-import datawave.ingest.data.config.ingest.FilterIngest;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
-import datawave.ingest.data.config.ingest.VirtualIngest;
 import datawave.ingest.input.reader.event.EventErrorSummary;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
@@ -56,12 +51,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.Stack;
@@ -92,9 +85,6 @@ import java.util.concurrent.TimeUnit;
  *            output value
  */
 public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDEnabledMapper<K1,V1,K2,V2> {
-    
-    private static final String SRC_FILE_DEL = "|";
-    
     private static final Logger log = Logger.getLogger(EventMapper.class);
     
     /**
@@ -106,24 +96,6 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
     public static final String CONTEXT_WRITER_CLASS = "ingest.event.mapper.context.writer.class";
     public static final String CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS = "ingest.event.mapper.context.writer.output.table.counters";
     public static final String FILE_NAME_COUNTERS = "ingest.event.mapper.file.name.counters";
-    
-    protected boolean createSequenceFileName = true;
-    
-    protected boolean trimSequenceFileName = true;
-    
-    protected boolean createRawFileName = true;
-    
-    public static final String LOAD_DATE_FIELDNAME = "LOAD_DATE";
-    
-    public static final String SEQUENCE_FILE_FIELDNAME = "ORIG_FILE";
-    
-    public static final String LOAD_SEQUENCE_FILE_NAME = "ingest.event.mapper.load.seq.filename";
-    
-    public static final String TRIM_SEQUENCE_FILE_NAME = "ingest.event.mapper.trim.sequence.filename";
-    
-    public static final String RAW_FILE_FIELDNAME = "RAW_FILE";
-    
-    public static final String LOAD_RAW_FILE_NAME = "ingest.event.mapper.load.raw.filename";
     
     public static final String ID_FILTER_FSTS = "ingest.event.mapper.id.filter.fsts";
     
@@ -142,8 +114,6 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
     
     private StandaloneStatusReporter reporter = new StandaloneStatusReporter();
     
-    private DateNormalizer dateNormalizer = new DateNormalizer();
-    
     private ContextWriter<K2,V2> contextWriter = null;
     
     protected long offset = 0;
@@ -159,6 +129,8 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
     private boolean metricsEnabled = false;
     private MetricsService<K2,V2> metricsService;
     private ReusableMetricsLabels metricsLabels;
+    
+    private FieldHarvester fieldHarvester;
     
     /**
      * Set up the datatype handlers
@@ -186,12 +158,8 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         
         interval = context.getConfiguration().getLong(DISCARD_INTERVAL, 0l);
         
-        // default to true, but it can be disabled
-        createSequenceFileName = context.getConfiguration().getBoolean(LOAD_SEQUENCE_FILE_NAME, true);
-        
-        trimSequenceFileName = context.getConfiguration().getBoolean(TRIM_SEQUENCE_FILE_NAME, true);
-        
-        createRawFileName = context.getConfiguration().getBoolean(LOAD_RAW_FILE_NAME, true);
+        // FieldHarvester encapsulates the addition of virtual fields, composite fields, LOAD_DATE, etc.
+        fieldHarvester = new FieldHarvester(context.getConfiguration());
         
         Class<? extends KeyValueFilter<K2,V2>> firstFilter = null;
         
@@ -287,7 +255,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
      *
      * @return the data type handlers
      */
-    private List<DataTypeHandler<K1>> loadDataType(String typeStr, Context context) {
+    private List<DataTypeHandler<K1>> loadDataTypeHandlers(String typeStr, Context context) {
         // Do not load the type twice
         if (!typeMap.containsKey(typeStr)) {
             
@@ -388,7 +356,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         }
         
         // ensure this datatype's handlers etc are loaded such that the dataTypeDiscardIntervalCache and validators are filled as well
-        List<DataTypeHandler<K1>> typeHandlers = loadDataType(value.getDataType().typeName(), context);
+        List<DataTypeHandler<K1>> typeHandlers = loadDataTypeHandlers(value.getDataType().typeName(), context);
         
         // This is a little bit fragile, but there is no other way
         // to get the context on a partitioner, and we are only
@@ -432,13 +400,13 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             
             try {
                 // Load error dataType into typeMap
-                loadDataType(TypeRegistry.ERROR_PREFIX, context);
+                loadDataTypeHandlers(TypeRegistry.ERROR_PREFIX, context);
                 
                 // purge event
                 errorSummary.purge(contextWriter, context, value, typeMap);
                 
                 // Set the original file value from the event in the error table
-                Collection<String> origFiles = errorSummary.getEventFields().get(SEQUENCE_FILE_FIELDNAME);
+                Collection<String> origFiles = errorSummary.getEventFields().get(FieldHarvester.SEQUENCE_FILE_FIELDNAME);
                 if (!origFiles.isEmpty()) {
                     NDC.push(origFiles.iterator().next());
                     reprocessedNDCPush = true;
@@ -468,7 +436,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         // Add the list of handlers with the ALL specified handlers
         List<DataTypeHandler<K1>> handlers = new ArrayList<>();
         handlers.addAll(typeHandlers);
-        handlers.addAll(loadDataType(TypeRegistry.ALL_PREFIX, context));
+        handlers.addAll(loadDataTypeHandlers(TypeRegistry.ALL_PREFIX, context));
         
         // Always include any event errors in the counters
         for (String error : value.getErrors()) {
@@ -481,7 +449,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             handlers.clear();
             if (!value.ignorableError()) {
                 // since this is not an ignorable error, lets add the error handlers back into the list
-                handlers.addAll(loadDataType(TypeRegistry.ERROR_PREFIX, context));
+                handlers.addAll(loadDataTypeHandlers(TypeRegistry.ERROR_PREFIX, context));
                 
                 getCounter(context, IngestInput.EVENT_FATAL_ERROR).increment(1);
                 getCounter(context, IngestInput.EVENT_FATAL_ERROR.name(), "ValidationError").increment(1);
@@ -500,42 +468,12 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             // Rollback anything written for this event
             contextWriter.rollback();
             
-            // Fail job on constraint violations
-            if (e instanceof ConstraintChecker.ConstraintViolationException) {
-                throw ((RuntimeException) e);
-            }
+            failJobOnConstraintViolations(e);
             
             // ensure they know we are still working on it
             context.progress();
             
-            // log error
-            log.error("Runtime exception processing event", e);
-            
-            // now lets dump to the errors table
-            // first set the exception on the event if not a field normalization error in which case the fields contain the errors
-            if (!(e instanceof FieldNormalizationError)) {
-                value.setAuxData(e);
-            }
-            for (DataTypeHandler<K1> handler : loadDataType(TypeRegistry.ERROR_PREFIX, context)) {
-                if (log.isTraceEnabled())
-                    log.trace("executing handler: " + handler.getClass().getName());
-                try {
-                    executeHandler(key, value, fields, handler, context);
-                    context.progress();
-                } catch (Exception e2) {
-                    // This is a real bummer, we had a critical exception attempting to throw the event into the error table.
-                    // lets terminate this job
-                    log.error("Failed to process error data handlers for an event", e2);
-                    throw new IOException("Failed to process error data handlers for an event", e2);
-                }
-            }
-            
-            // now create some counters
-            getCounter(context, IngestProcess.RUNTIME_EXCEPTION).increment(1);
-            List<String> exceptions = getExceptionSynopsis(e);
-            for (String exception : exceptions) {
-                getCounter(context, IngestProcess.RUNTIME_EXCEPTION.name(), exception).increment(1);
-            }
+            handleProcessingError(key, value, context, fields, e);
         } finally {
             // Remove ORIG_FILE from NDC that was populated by reprocessing events from the error tables
             if (reprocessedNDCPush) {
@@ -546,10 +484,60 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             context.progress();
         }
         
+        incrementEventCount(value, context);
+        
+        updateMetrics(value, eventMapperTimer, fields);
+    }
+    
+    private void failJobOnConstraintViolations(Exception e) {
+        if (e instanceof ConstraintChecker.ConstraintViolationException) {
+            throw ((RuntimeException) e);
+        }
+    }
+    
+    private void handleProcessingError(K1 key, V1 value, Context context, Multimap<String,NormalizedContentInterface> fields, Exception e) throws IOException {
+        log.error("Runtime exception processing event", e);
+        // first set the exception on the event if not a field normalization error in which case the fields contain the errors
+        if (!(e instanceof FieldHarvester.FieldNormalizationError)) {
+            value.setAuxData(e);
+        }
+        writeToErrorTables(key, value, context, fields);
+        incrementExceptionCounters(context, e);
+    }
+    
+    private void writeToErrorTables(K1 key, V1 value, Context context, Multimap<String,NormalizedContentInterface> fields) throws IOException {
+        // now lets dump to the errors table
+        for (DataTypeHandler<K1> handler : loadDataTypeHandlers(TypeRegistry.ERROR_PREFIX, context)) {
+            if (log.isTraceEnabled())
+                log.trace("executing handler: " + handler.getClass().getName());
+            try {
+                executeHandler(key, value, fields, handler, context);
+                context.progress();
+            } catch (Exception e2) {
+                // This is a real bummer, we had a critical exception attempting to throw the event into the error table.
+                // lets terminate this job
+                log.error("Failed to process error data handlers for an event", e2);
+                throw new IOException("Failed to process error data handlers for an event", e2);
+            }
+        }
+    }
+    
+    private void incrementExceptionCounters(Context context, Exception e) {
+        // now create some counters
+        getCounter(context, IngestProcess.RUNTIME_EXCEPTION).increment(1);
+        List<String> exceptions = getExceptionSynopsis(e);
+        for (String exception : exceptions) {
+            getCounter(context, IngestProcess.RUNTIME_EXCEPTION.name(), exception).increment(1);
+        }
+    }
+    
+    private void incrementEventCount(V1 value, Context context) {
         getCounter(context, IngestOutput.EVENTS_PROCESSED.name(), value.getDataType().typeName().toUpperCase()).increment(1);
         
         offset++;
-        
+    }
+    
+    private void updateMetrics(V1 value, TraceStopwatch eventMapperTimer, Multimap<String,NormalizedContentInterface> fields) {
         if (metricsEnabled && eventMapperTimer != null) {
             eventMapperTimer.stop();
             long timeInEventMapper = eventMapperTimer.elapsed(TimeUnit.MILLISECONDS);
@@ -695,26 +683,14 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             // *should* produce the same result.
             if (null == previousHelper || !previousHelper.getClass().getName().equals(thisHelper.getClass().getName())) {
                 fields.clear();
-                Throwable e = null;
-                for (Map.Entry<String,NormalizedContentInterface> entry : getFields(value, handler).entries()) {
-                    // noinspection ThrowableResultOfMethodCallIgnored
-                    if (entry.getValue().getError() != null) {
-                        e = entry.getValue().getError();
-                    }
-                    fields.put(entry.getKey(), entry.getValue());
-                }
-                if (e != null) {
-                    throw new FieldNormalizationError("Failed getting all fields", e);
+                
+                // populates fields by parsing value and using IngestHelper
+                fieldHarvester.extractFields(fields, thisHelper, value, offset, splitStart);
+                if (fieldHarvester.hasError()) {
+                    throw new Exception(fieldHarvester.getException());
                 }
                 
-                // Event based metrics
-                if (metricsEnabled) {
-                    metricsLabels.clear();
-                    metricsLabels.put("dataType", value.getDataType().typeName());
-                    
-                    metricsService.collect(Metric.EVENT_COUNT, metricsLabels.get(), fields, 1L);
-                    metricsService.collect(Metric.BYTE_COUNT, metricsLabels.get(), fields, (long) value.getRawData().length);
-                }
+                updateMetrics(value, fields);
                 
                 previousHelper = thisHelper;
             }
@@ -730,79 +706,32 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         }
     }
     
-    private static class FieldNormalizationError extends Exception {
-        private static final long serialVersionUID = 1L;
-        
-        public FieldNormalizationError(String message, Throwable cause) {
-            super(message, cause);
+    private void updateMetrics(RawRecordContainer value, Multimap<String,NormalizedContentInterface> fields) {
+        // Event based metrics
+        if (metricsEnabled) {
+            metricsLabels.clear();
+            metricsLabels.put("dataType", value.getDataType().typeName());
+            
+            metricsService.collect(Metric.EVENT_COUNT, metricsLabels.get(), fields, 1L);
+            metricsService.collect(Metric.BYTE_COUNT, metricsLabels.get(), fields, (long) value.getRawData().length);
         }
     }
     
+    /**
+     * Deprecated. Use #fieldHarvester.extractFields()
+     */
+    @Deprecated
+    // After eliminating this method, expand fieldHarvester.extractFields by eliminating faultTolerantGetEventFields and addSupplementalFields
     public Multimap<String,NormalizedContentInterface> getFields(RawRecordContainer value, DataTypeHandler<K1> handler) throws Exception {
-        Multimap<String,NormalizedContentInterface> newFields;
-        // Parse the event into its field names and field values using the DataTypeHandler's BaseIngestHelper object.
-        newFields = handler.getHelper(value.getDataType()).getEventFields(value);
-        
-        // Also get the virtual fields, if applicable.
-        if (handler.getHelper(value.getDataType()) instanceof VirtualIngest) {
-            VirtualIngest vHelper = (VirtualIngest) handler.getHelper(value.getDataType());
-            Multimap<String,NormalizedContentInterface> virtualFields = vHelper.getVirtualFields(newFields);
-            for (Entry<String,NormalizedContentInterface> v : virtualFields.entries())
-                newFields.put(v.getKey(), v.getValue());
+        Multimap<String,NormalizedContentInterface> fields = fieldHarvester.faultTolerantGetEventFields(value, handler.getHelper(value.getDataType()));
+        if (fieldHarvester.hasError()) {
+            throw new Exception(fieldHarvester.getException());
         }
-        // Also get the composite fields, if applicable
-        if (handler.getHelper(value.getDataType()) instanceof CompositeIngest) {
-            CompositeIngest vHelper = (CompositeIngest) handler.getHelper(value.getDataType());
-            Multimap<String,NormalizedContentInterface> compositeFields = vHelper.getCompositeFields(newFields);
-            for (String fieldName : compositeFields.keySet()) {
-                // if this is an overloaded composite field, we are replacing the existing field data
-                if (vHelper.isOverloadedCompositeField(fieldName))
-                    newFields.removeAll(fieldName);
-                newFields.putAll(fieldName, compositeFields.get(fieldName));
-            }
+        fieldHarvester.addSupplementalFields(value, offset, splitStart, handler.getHelper(value.getDataType()), fields);
+        if (fieldHarvester.hasError()) {
+            throw new Exception(fieldHarvester.getException());
         }
-        
-        // Create a LOAD_DATE parameter, which is the current time in milliseconds, for all datatypes
-        long loadDate = now.get();
-        NormalizedFieldAndValue loadDateValue = new NormalizedFieldAndValue(LOAD_DATE_FIELDNAME, Long.toString(loadDate));
-        // set an indexed field value for use by the date index data type handler
-        loadDateValue.setIndexedFieldValue(dateNormalizer.normalizeDelegateType(new Date(loadDate)));
-        newFields.put(LOAD_DATE_FIELDNAME, loadDateValue);
-        
-        String seqFileName = null;
-        
-        // place the sequence filename into the event
-        if (createSequenceFileName) {
-            seqFileName = NDC.peek();
-            
-            if (trimSequenceFileName) {
-                seqFileName = StringUtils.substringAfterLast(seqFileName, "/");
-            }
-            
-            if (null != seqFileName) {
-                StringBuilder seqFile = new StringBuilder(seqFileName);
-                
-                seqFile.append(SRC_FILE_DEL).append(offset);
-                
-                if (null != splitStart) {
-                    seqFile.append(SRC_FILE_DEL).append(splitStart);
-                }
-                
-                newFields.put(SEQUENCE_FILE_FIELDNAME, new NormalizedFieldAndValue(SEQUENCE_FILE_FIELDNAME, seqFile.toString()));
-            }
-        }
-        
-        if (createRawFileName && !value.getRawFileName().isEmpty() && !value.getRawFileName().equals(seqFileName)) {
-            newFields.put(RAW_FILE_FIELDNAME, new NormalizedFieldAndValue(RAW_FILE_FIELDNAME, value.getRawFileName()));
-        }
-        
-        // Also if this helper needs to filter the fields before returning, apply now
-        if (handler.getHelper(value.getDataType()) instanceof FilterIngest) {
-            FilterIngest fHelper = (FilterIngest) handler.getHelper(value.getDataType());
-            fHelper.filter(newFields);
-        }
-        
-        return newFields;
+        return fields;
     }
     
     @SuppressWarnings("unchecked")

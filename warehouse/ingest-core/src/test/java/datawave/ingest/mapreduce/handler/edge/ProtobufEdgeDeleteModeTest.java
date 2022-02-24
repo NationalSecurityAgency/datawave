@@ -8,7 +8,6 @@ import datawave.data.normalizer.DateNormalizer;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
-import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.BaseNormalizedContent;
 import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -26,6 +25,7 @@ import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
 import datawave.ingest.time.Now;
 import datawave.metadata.protobuf.EdgeMetadata;
+import datawave.util.TypeRegistryTestSetup;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
@@ -124,13 +124,11 @@ public class ProtobufEdgeDeleteModeTest {
     
     @Before
     public void setup() {
-        TypeRegistry.reset();
         conf = new Configuration();
         conf.addResource(ClassLoader.getSystemResource("config/all-config.xml"));
         conf.addResource(ClassLoader.getSystemResource("config/edge-ingest-config.xml"));
         conf.addResource(ClassLoader.getSystemResource("config/metadata-config.xml"));
-        TypeRegistry registry = TypeRegistry.getInstance(conf);
-        registry.put(type.typeName(), type);
+        TypeRegistryTestSetup.resetTypeRegistryWithTypes(conf, type);
     }
     
     private RawRecordContainer getEvent(Configuration conf) {

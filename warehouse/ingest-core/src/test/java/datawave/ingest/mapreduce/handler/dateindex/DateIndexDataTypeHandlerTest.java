@@ -16,6 +16,7 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.table.config.DateIndexTableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 
+import datawave.util.TypeRegistryTestSetup;
 import datawave.util.TableName;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -58,8 +59,7 @@ public class DateIndexDataTypeHandlerTest {
         conf.set("testdatatype.date.index.type.to.field.map", "ACTIVITY=ACTIVITY_DATE,LOADED=LOAD_DATE");
         conf.set("all" + Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         
-        TypeRegistry.reset();
-        TypeRegistry.getInstance(conf);
+        TypeRegistryTestSetup.resetTypeRegistry(conf);
         
         handler = new DateIndexDataTypeHandler<>();
         handler.setup(new TaskAttemptContextImpl(conf, new TaskAttemptID()));
