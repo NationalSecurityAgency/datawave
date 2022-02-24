@@ -5,8 +5,10 @@ EXECUTOR_ENDPOINT2=https://localhost:8843/executor/v1
 
 MAX_PAGES=100
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 # use the test user pkcs12 cert
-P12_KEYSTORE=../pki/testUser.p12
+P12_KEYSTORE=${SCRIPT_DIR}/../pki/testUser.p12
 P12_KEYSTORE_PASS=ChangeIt
 
 TMP_DIR=/dev/shm
@@ -35,7 +37,7 @@ opensslexit=$?
 umask $OLD_UMASK
 [ $opensslexit = 0 ] || errormsg "Error creating temporary certificate file"
 
-FOLDER="executor_$(date +%Y%m%d_%I%M%S.%3N)"
+FOLDER="executor_$(date +%Y%m%d_%I%M%S.%N)"
 
 mkdir $FOLDER
 cd $FOLDER

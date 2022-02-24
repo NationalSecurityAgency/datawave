@@ -9,8 +9,10 @@ POOL="${POOL:-pool1}"
 
 MAX_PAGES=100
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 # use the test user pkcs12 cert
-P12_KEYSTORE=../pki/testUser.p12
+P12_KEYSTORE=${SCRIPT_DIR}/../pki/testUser.p12
 P12_KEYSTORE_PASS=ChangeIt
 
 TMP_DIR=/dev/shm
@@ -62,7 +64,7 @@ get_num_events () {
     done
 }
 
-FOLDER="query_$(date +%Y%m%d_%I%M%S.%3N)${1}"
+FOLDER="query_$(date +%Y%m%d_%I%M%S.%N)"
 
 mkdir $FOLDER
 cd $FOLDER
@@ -114,6 +116,7 @@ while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
 done
 
 echo "$(date): Closing $QUERY_ID"
+echo "$(date): Closing $QUERY_ID" > querySummary.txt
 # close the query
 curl -s -q -k -X POST -E ${TMP_PEM} \
     -H "Accept: application/xml" \

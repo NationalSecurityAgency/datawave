@@ -1,5 +1,6 @@
 package datawave.microservice.query.messaging.rabbitmq;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import datawave.microservice.query.messaging.AcknowledgementCallback;
@@ -37,6 +38,7 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
     private final String queryId;
     
     private final LinkedBlockingQueue<Result> resultQueue = new LinkedBlockingQueue<>();
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private boolean stopped = false;
     
     public RabbitMQQueryResultsListener(DirectRabbitListenerContainerFactory listenerContainerFactory, RabbitListenerEndpointRegistry endpointRegistry,
@@ -60,16 +62,17 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
         return listenerId;
     }
     
+    public String getQueryId() {
+        return queryId;
+    }
+    
     @Override
     public void close() {
         stopped = true;
         
-        // synchronizing on the resultQueue to ensure onMessage() does not add anymore results
-        synchronized (resultQueue) {
-            // nack all of the extra messages we have received
-            for (Result result : resultQueue) {
-                result.acknowledge(NACK);
-            }
+        // nack all of the extra messages we have received
+        for (Result result : resultQueue) {
+            result.acknowledge(NACK);
         }
         
         MessageListenerContainer container = endpointRegistry.unregisterListenerContainer(listenerId);
@@ -77,65 +80,6 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
             container.stop();
         } else {
             log.error("Could not find listener container to stop");
-        }
-    }
-    
-    @Override
-    public void onMessage(Message message, final Channel channel) throws Exception {
-        boolean added = false;
-        if (!stopped) {
-            Result result = new ObjectMapper().readerFor(Result.class).readValue(message.getBody());
-            
-            // if the payload is null, setup a claim check
-            if (result.getPayload() == null && claimCheck != null) {
-                result.setClaimCheckCallback(() -> claimCheck.claim(queryId));
-            }
-            
-            final CountDownLatch latch = new CountDownLatch(1);
-            final AtomicReference<AcknowledgementCallback.Status> ackStatus = new AtomicReference<>();
-            result.setAcknowledgementCallback(status -> {
-                ackStatus.set(status);
-                latch.countDown();
-            });
-            
-            // synchronize on resultQueue to ensure we don't add any results if in the close call.
-            synchronized (resultQueue) {
-                if (!stopped) {
-                    resultQueue.add(result);
-                    added = true;
-                }
-            }
-            
-            // if we added the result to the queue, then wait for the ack/nack
-            if (added) {
-                try {
-                    latch.await();
-                    if (ackStatus.get() == ACK) {
-                        channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-                        if (log.isTraceEnabled()) {
-                            log.trace("Acking record {} from queue {}", result.getId(), queryId);
-                        }
-                    } else if (ackStatus.get() == NACK) {
-                        channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
-                        if (log.isTraceEnabled()) {
-                            log.trace("Nacking record {} from queue {} because the record was rejected", result.getId(), queryId);
-                        }
-                    }
-                } catch (InterruptedException e) {
-                    channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
-                    if (log.isTraceEnabled()) {
-                        log.trace("Nacking record {} from queue {} because the latch was interrupted", result.getId(), queryId);
-                    }
-                }
-            }
-        }
-        
-        // if we did not add the result to the queue, then nack it right away.
-        if (!added) {
-            channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
-            if (log.isTraceEnabled()) {
-                log.trace("Nacking record from queue {} because the container was stopped", queryId);
-            }
         }
     }
     
@@ -155,5 +99,78 @@ class RabbitMQQueryResultsListener extends MessageListenerAdapter implements Que
             }
         }
         return result;
+    }
+    
+    @Override
+    public void onMessage(Message message, final Channel channel) throws Exception {
+        if (!stopped) {
+            if (log.isTraceEnabled()) {
+                log.trace("Query " + queryId + " Listener " + getListenerId() + " got a message");
+            }
+            
+            Result result;
+            final CountDownLatch latch = new CountDownLatch(1);
+            final AtomicReference<AcknowledgementCallback.Status> ackStatus = new AtomicReference<>();
+            String resultId = null;
+            try {
+                result = objectMapper.readerFor(Result.class).readValue(message.getBody());
+                resultId = result.getId();
+                
+                // if the payload is null, setup a claim check
+                if (result.getPayload() == null && claimCheck != null) {
+                    result.setClaimCheckCallback(() -> claimCheck.claim(queryId));
+                }
+                
+                if (log.isTraceEnabled()) {
+                    log.trace("Query {} Received record {} from queue {}", queryId, resultId, queryId);
+                }
+                
+                result.setAcknowledgementCallback(status -> {
+                    ackStatus.set(status);
+                    latch.countDown();
+                });
+            } catch (JsonProcessingException e) {
+                channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
+                if (log.isTraceEnabled()) {
+                    log.trace("Query {} Nacking record {} from queue {} because the latch was interrupted", queryId, resultId, queryId);
+                }
+                throw new RuntimeException("Unable to deserialize results for " + queryId, e);
+            }
+            
+            // add the result if we're still running, otherwise nack it right away
+            synchronized (resultQueue) {
+                if (!stopped) {
+                    // synchronize on resultQueue to ensure we don't add any results if in the close call.
+                    resultQueue.add(result);
+                } else {
+                    result.acknowledge(NACK);
+                }
+            }
+            
+            try {
+                latch.await();
+                if (ackStatus.get() == ACK) {
+                    channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+                    if (log.isTraceEnabled()) {
+                        log.trace("Query {} Acking record {} from queue {}", queryId, result.getId(), queryId);
+                    }
+                } else if (ackStatus.get() == NACK) {
+                    channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
+                    if (log.isTraceEnabled()) {
+                        log.trace("Query {} Nacking record {} from queue {} because the record was rejected", queryId, result.getId(), queryId);
+                    }
+                }
+            } catch (InterruptedException e) {
+                channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
+                if (log.isTraceEnabled()) {
+                    log.trace("Query {} Nacking record {} from queue {} because the latch was interrupted", queryId, result.getId(), queryId);
+                }
+            }
+        } else {
+            channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
+            if (log.isTraceEnabled()) {
+                log.trace("Query {} Nacking record from queue {} because the container was stopped", queryId, queryId);
+            }
+        }
     }
 }

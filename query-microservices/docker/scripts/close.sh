@@ -2,8 +2,10 @@
 
 DATAWAVE_ENDPOINT=https://localhost:8443/query/v1
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 # use the test user pkcs12 cert
-P12_KEYSTORE=../pki/testUser.p12
+P12_KEYSTORE=${SCRIPT_DIR}/../pki/testUser.p12
 P12_KEYSTORE_PASS=ChangeIt
 
 TMP_DIR=/dev/shm
