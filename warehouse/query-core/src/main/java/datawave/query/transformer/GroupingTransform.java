@@ -12,7 +12,6 @@ import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.webservice.query.exception.IntermediateResultException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -163,10 +162,12 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
             if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
                 // Reset the queryExecutionForPageStartTime and clear the documents list so that it doesn't contain
-                // duplicates
+                // duplicates. Then return an empty document with the intermediate result flag set to true
                 this.queryExecutionForPageStartTime = System.currentTimeMillis();
                 documents.clear();
-                throw new IntermediateResultException();
+                Document intermediateResult = new Document();
+                intermediateResult.setIsIntermediateResult(true);
+                return Maps.immutableEntry(new Key(), intermediateResult);
             }
         }
 

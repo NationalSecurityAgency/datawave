@@ -6,7 +6,6 @@ import datawave.query.attributes.Document;
 import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.EmptyObjectException;
-import datawave.webservice.query.exception.IntermediateResultException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.Flushable;
 import datawave.webservice.query.logic.WritesQueryMetrics;
@@ -57,7 +56,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
     }
     
     @Override
-    public EventBase flush() throws EmptyObjectException, IntermediateResultException {
+    public EventBase flush() throws EmptyObjectException {
         Entry<Key,Document> documentEntry = null;
         boolean flushedObjectFound = false;
         for (DocumentTransform transform : transforms) {
@@ -84,7 +83,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
     }
     
     @Override
-    public EventBase transform(Entry<Key,Value> entry) throws EmptyObjectException, IntermediateResultException {
+    public EventBase transform(Entry<Key,Value> entry) throws EmptyObjectException {
         
         Entry<Key,Document> documentEntry = deserializer.apply(entry);
         for (DocumentTransform transform : transforms) {
@@ -98,10 +97,16 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         return _transform(documentEntry);
     }
     
-    private EventBase _transform(Entry<Key,Document> documentEntry) throws EmptyObjectException, IntermediateResultException {
+    private EventBase _transform(Entry<Key,Document> documentEntry) throws EmptyObjectException {
         if (documentEntry == null) {
             // buildResponse will return a null object if there was only metadata in the document
             throw new EmptyObjectException();
+        }
+
+        if (documentEntry.getValue().isIntermediateResult()) {
+            DefaultEvent output = new DefaultEvent();
+            output.setIntermediateResult(true);
+            return output;
         }
 
         Key documentKey = correctKey(documentEntry.getKey());

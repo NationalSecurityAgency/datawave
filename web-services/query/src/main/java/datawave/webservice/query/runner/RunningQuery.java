@@ -9,7 +9,6 @@ import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.data.ObjectSizeOf;
-import datawave.webservice.query.exception.IntermediateResultException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
@@ -19,6 +18,7 @@ import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
 import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
@@ -204,8 +204,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
 
             // test for any exceptions prior to loop as hasNext() would likely be false;
             testForUncaughtException(resultList.size());
-            try {
-                while (!hitIntermediateResult && (!this.finished && ((future != null) || this.iter.hasNext()))) {
+                while (!this.finished && ((future != null) || this.iter.hasNext())) {
                     // if we are canceled, then break out
                     if (this.canceled) {
                         log.info("Query has been cancelled, aborting query.next call");
@@ -255,7 +254,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
                         log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
                                 + pageTimeInCall + " " + timing);
-                        hitPageTimeTrigger = true;
                         break;
                     }
 
@@ -281,6 +279,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         o = iter.next();
                     }
 
+                    if (o instanceof DefaultEvent) {
+                         if (((DefaultEvent)o).isIntermediateResult()) {
+                             hitIntermediateResult = true;
+                             break;
+                         }
+                    }
+
                     // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
                     if (iter.getTransformer() instanceof WritesQueryMetrics) {
                         ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
@@ -304,9 +309,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     testForUncaughtException(resultList.size());
 
                 }
-            } catch (IntermediateResultException e) {
-                hitIntermediateResult = true;
-            }
 
             // if the last hasNext() call failed, then we would catch the exception here
             testForUncaughtException(resultList.size());
