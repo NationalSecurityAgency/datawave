@@ -702,7 +702,7 @@ public class JexlASTHelperTest {
         query = "(grouping:getGroupsForMatchesInGroup((NOME || NAME), 'MEADOW', (GENERE || GENDER), 'FEMALE')) == MAGIC";
         testIdentifierParse(query, Sets.newHashSet("GENDER", "GENERE", "MAGIC", "NAME", "NOME"));
         
-        // function output feeds other function
+        // function output feeds method
         query = "((AGE || ETA).getValuesForGroups(grouping:getGroupsForMatchesInGroup((NOME || NAME), 'MEADOW', (GENERE || GENDER), 'FEMALE')) == MAGIC)";
         testIdentifierParse(query, Sets.newHashSet("AGE", "ETA", "GENDER", "GENERE", "MAGIC", "NAME", "NOME"));
         
