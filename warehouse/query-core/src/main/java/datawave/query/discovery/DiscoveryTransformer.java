@@ -89,12 +89,12 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         event.setMetadata(metadata);
         return event;
     }
-
+    
     @Override
     public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
         this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
-
+    
     protected FieldBase<?> makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
         FieldBase<?> field = this.responseObjectFactory.getField();
         field.setName(name);

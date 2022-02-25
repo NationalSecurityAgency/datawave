@@ -15,7 +15,7 @@ import java.util.Map;
 public abstract class EventBase<T,F extends FieldBase<F>> implements HasMarkings, Message<T> {
     
     protected transient Map<String,String> markings;
-
+    
     protected transient boolean intermediateResult;
     
     public abstract Metadata getMetadata();
@@ -57,9 +57,13 @@ public abstract class EventBase<T,F extends FieldBase<F>> implements HasMarkings
     public void setMarkings(Map<String,String> markings) {
         this.markings = markings;
     }
-
-    public boolean isIntermediateResult() { return this.intermediateResult; }
-
-    public void setIntermediateResult(boolean intermediateResult) { this.intermediateResult = intermediateResult; }
+    
+    public boolean isIntermediateResult() {
+        return this.intermediateResult;
+    }
+    
+    public void setIntermediateResult(boolean intermediateResult) {
+        this.intermediateResult = intermediateResult;
+    }
     
 }

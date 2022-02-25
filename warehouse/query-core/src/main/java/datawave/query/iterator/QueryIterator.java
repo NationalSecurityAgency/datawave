@@ -152,6 +152,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected Map<String,Object> exceededOrEvaluationCache = null;
     
     protected ActiveQueryLog activeQueryLog;
+    
     public QueryIterator() {}
     
     public QueryIterator(QueryIterator other, IteratorEnvironment env) {
@@ -452,13 +453,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // apply the grouping transform if requested and if the batch size is greater than zero
             // if the batch size is 0, then grouping is computed only on the web server
             if (this.groupFieldsBatchSize > 0) {
-                pipelineDocuments = getGroupingIteratorInstance(pipelineDocuments);
-                
-                if (log.isTraceEnabled()) {
-                    pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
-                        log.trace("after grouping, keyDocumentEntry:" + keyDocumentEntry);
-                        return true;
-                    });
+                GroupingIterator groupify = getGroupingIteratorInstance(pipelineDocuments);
+                if (groupify != null) {
+                    pipelineDocuments = groupify;
+                    
+                    if (log.isTraceEnabled()) {
+                        pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
+                            log.trace("after grouping, keyDocumentEntry:" + keyDocumentEntry);
+                            return true;
+                        });
+                    }
                 }
             }
             
@@ -1136,7 +1140,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             this.key = entry.getKey();
             this.value = entry.getValue();
-
+            
             if (Trace.isTracing()) {
                 span.data("Key", rowColFamToString(this.key));
             }
@@ -1552,9 +1556,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (groupingIterator == null && getGroupFields() != null && !getGroupFields().isEmpty()) {
             synchronized (getGroupFields()) {
                 if (groupingIterator == null) {
-                    groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(),
-                            getGroupFields(), this.groupFieldsBatchSize, this.yield);
-//                    groupingIterator.initialize(null, MarkingFunctionsFactory.createMarkingFunctions());
+                    groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(), getGroupFields(), this.groupFieldsBatchSize,
+                                    this.yield);
                 }
             }
         }

@@ -142,9 +142,9 @@ public class CompositeQueryLogicTest {
         public TestQueryLogicTransformer(MarkingFunctions markingFunctions) {
             super(markingFunctions);
         }
-
+        
         long queryExecutionForCurrentPageStartTime;
-
+        
         @Override
         public TestQueryResponse transform(Entry<?,?> input) {
             if (input instanceof Entry<?,?>) {
@@ -158,12 +158,12 @@ public class CompositeQueryLogicTest {
                 throw new IllegalArgumentException("Invalid input type: " + input.getClass());
             }
         }
-
+        
         @Override
         public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
             this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
         }
-
+        
         @Override
         public BaseQueryResponse createResponse(List<Object> resultList) {
             TestQueryResponseList response = new TestQueryResponseList();
@@ -181,7 +181,7 @@ public class CompositeQueryLogicTest {
         public DifferentTestQueryLogicTransformer(MarkingFunctions markingFunctions) {
             super(markingFunctions);
         }
-
+        
         long queryExecutionForCurrentPageStartTime;
         
         @Override
@@ -197,12 +197,12 @@ public class CompositeQueryLogicTest {
                 throw new IllegalArgumentException("Invalid input type: " + input.getClass());
             }
         }
-
+        
         @Override
         public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
             this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
         }
-
+        
         @Override
         public BaseQueryResponse createResponse(List<Object> resultList) {
             return new TestEdgeQueryResponse();

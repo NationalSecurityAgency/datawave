@@ -51,10 +51,9 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * should sizes of the documents be tracked
      */
     private boolean trackSizes;
-
+    
     /**
-     * Whether or not this document represents an intermediate result. If true, thie document fields should also be
-     * empty.
+     * Whether or not this document represents an intermediate result. If true, thie document fields should also be empty.
      */
     private boolean isIntermediateResult;
     
@@ -847,11 +846,13 @@ public class Document extends AttributeBag<Document> implements Serializable {
         
         return d;
     }
-
+    
     public void setIsIntermediateResult(boolean isIntermediateResult) {
         this.isIntermediateResult = isIntermediateResult;
     }
-
-    public boolean isIntermediateResult() { return isIntermediateResult; }
-
+    
+    public boolean isIntermediateResult() {
+        return isIntermediateResult;
+    }
+    
 }

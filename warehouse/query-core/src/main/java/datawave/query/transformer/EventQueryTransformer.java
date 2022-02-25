@@ -28,9 +28,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Key,Value>,EventBase> implements CacheableLogic {
-
+    
     protected long queryExecutionForCurrentPageStartTime;
-
+    
     public EventQueryTransformer(String tableName, Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(tableName, settings, markingFunctions, responseObjectFactory);
     }
@@ -150,7 +150,7 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
         
         return event;
     }
-
+    
     @Override
     public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
         this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;

@@ -36,7 +36,7 @@ import java.util.*;
 import static org.junit.Assert.assertEquals;
 
 public class LongRunningQueryTest {
-
+    
     // variables common to all current tests
     private final AccumuloConnectionFactory.Priority connectionPriority = AccumuloConnectionFactory.Priority.NORMAL;
     private String methodAuths = "";
@@ -48,56 +48,53 @@ public class LongRunningQueryTest {
     private DatawavePrincipal datawavePrincipal;
     private static final Logger log = Logger.getLogger(LongRunningQueryTest.class);
     private static Connector connector = null;
-
+    
     @Before
     public void setup() throws Exception {
-
+        
         System.setProperty(DnUtils.NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D,E,I");
         System.setProperty("file.encoding", "UTF-8");
-        DatawaveUser user = new DatawaveUser(userDN, DatawaveUser.UserType.USER,
-                Sets.newHashSet(auths.toString().split(",")), null, null, -1L);
+        DatawaveUser user = new DatawaveUser(userDN, DatawaveUser.UserType.USER, Sets.newHashSet(auths.toString().split(",")), null, null, -1L);
         datawavePrincipal = new DatawavePrincipal((Collections.singleton(user)));
-
+        
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-
+        
         logic.setIncludeGroupingContext(true);
         logic.setIncludeDataTypeAsField(true);
         logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
-
+        
         QueryTestTableHelper testTableHelper = new QueryTestTableHelper(LongRunningQueryTest.class.toString(), log);
         recordWriter = new MockAccumuloRecordWriter();
         testTableHelper.configureTables(recordWriter);
         connector = testTableHelper.connector;
-
+        
         // Load data for the test
         VisibilityWiseGuysIngest.writeItAll(connector, VisibilityWiseGuysIngest.WhatKindaRange.DOCUMENT);
         PrintUtility.printTable(connector, auths, TableName.SHARD);
         PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
-
+    
     /**
-     * A groupBy query is one type of query that is allowed to be "long running", so that type of query is used in this
-     * test.
+     * A groupBy query is one type of query that is allowed to be "long running", so that type of query is used in this test.
      *
-     * A long running query will return a ResultsPage with zero results if it has not completed within the query
-     * execution page timeout. This test expects 2 pages, the first of which should have 0 results and be marked as
-     * PARTIAL. The second page should have 8 results and have a status of COMPLETE.
+     * A long running query will return a ResultsPage with zero results if it has not completed within the query execution page timeout. This test expects 2
+     * pages, the first of which should have 0 results and be marked as PARTIAL. The second page should have 8 results and have a status of COMPLETE.
      *
      * @throws Exception
      */
     @Test
     @Category(IntegrationTest.class)
     public void testAllowLongRunningQueryWithShardQueryLogic() throws Exception {
-
+        
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("group.fields", "AGE,$GENDER");
         extraParameters.put("group.fields.batch.size", "6");
-
+        
         String queryStr = "UUID =~ '^[CS].*'";
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
@@ -110,22 +107,22 @@ public class LongRunningQueryTest {
         query.setPagesize(Integer.MAX_VALUE);
         query.setParameters(extraParameters);
         query.setId(UUID.randomUUID());
-
+        
         // this parameter is what makes the query long running. Failing to set this will let it default to 50 minutes
         // (and not the 1000 milliseconds that it is set to) which will return only 1 page of 8 results, thereby failing this test.
         logic.setQueryExecutionForPageTimeout(1000);
         logic.setLongRunningQuery(true);
-
-        GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths) );
+        
+        GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
-
-        RunningQuery runningQuery = new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, logic,
-            query,"", datawavePrincipal, new QueryMetricFactoryImpl());
-
+        
+        RunningQuery runningQuery = new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal,
+                        new QueryMetricFactoryImpl());
+        
         TransformIterator transItr = runningQuery.getTransformIterator();
-        AbstractQueryLogicTransformer et = (AbstractQueryLogicTransformer)transItr.getTransformer();
+        AbstractQueryLogicTransformer et = (AbstractQueryLogicTransformer) transItr.getTransformer();
         List<ResultsPage> pages = new ArrayList<>();
-
+        
         runningQuery.setActiveCall(true);
         ResultsPage page = runningQuery.next();
         pages.add(page);
@@ -133,7 +130,7 @@ public class LongRunningQueryTest {
             page = runningQuery.next();
             pages.add(page);
         }
-
+        
         assertEquals(2, pages.size());
         assertEquals(0, pages.get(0).getResults().size());
         assertEquals(ResultsPage.Status.PARTIAL, pages.get(0).getStatus());

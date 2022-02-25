@@ -1,24 +1,16 @@
 package datawave.query.tables;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Queues;
+import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.google.common.util.concurrent.MoreExecutors;
 import datawave.query.tables.AccumuloResource.ResourceFactory;
 import datawave.query.tables.stats.ScanSessionStats;
-import datawave.query.tables.stats.StatsListener;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
+import datawave.query.tables.stats.StatsListener;
 import datawave.webservice.query.Query;
-
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -28,12 +20,9 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Queues;
-import com.google.common.util.concurrent.AbstractExecutionThreadService;
-import com.google.common.util.concurrent.MoreExecutors;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.*;
 
 /**
  * This will handles running a scan against a set of ranges. The actual scan is performed in a separate thread which places the results in a result queue. The
@@ -361,7 +350,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * 
      * @see java.util.Iterator#next()
      * 
-     * Note that this method needs to check the uncaught exception handler and propogate any set throwables.
+     * Note that this method needs to check the uncaught exception handler and propagate any set throwables.
      */
     @Override
     public Entry<Key,Value> next() {

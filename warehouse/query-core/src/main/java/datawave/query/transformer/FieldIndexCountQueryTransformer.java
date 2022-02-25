@@ -133,12 +133,12 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
         }
         return event;
     }
-
+    
     @Override
     public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
         this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
-
+    
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         EventQueryResponseBase response = responseObjectFactory.getEventQueryResponse();

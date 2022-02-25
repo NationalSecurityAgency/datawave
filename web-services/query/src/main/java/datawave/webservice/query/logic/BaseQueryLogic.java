@@ -35,16 +35,15 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected Iterator<T> iterator = (Iterator<T>) Collections.emptyList().iterator();
     private int maxPageSize = 0;
     private long pageByteTrigger = 0;
-
+    
     /**
-     * Used to return a blank page to the client after this time period has elapsed and if the query is allowed to be
-     * long running. Defaults to 3000000, which is 50 minutes.
+     * Used to return a blank page to the client after this time period has elapsed and if the query is allowed to be long running. Defaults to 3000000, which
+     * is 50 minutes.
      */
     private long queryExecutionForPageTimeout = 3000000;
-
+    
     /**
-     * Used to denote if a query should be allowed to exceed the overall timeout. If true, the #queryExecutionForPageTimeout
-     * will be used.
+     * Used to denote if a query should be allowed to exceed the overall timeout. If true, the #queryExecutionForPageTimeout will be used.
      */
     private boolean isLongRunningQuery = false;
     
@@ -192,14 +191,22 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public void setPageByteTrigger(long pageByteTrigger) {
         this.pageByteTrigger = pageByteTrigger;
     }
-
-    public long getQueryExecutionForPageTimeout() { return this.queryExecutionForPageTimeout; }
-
-    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) { this.queryExecutionForPageTimeout = queryExecutionForPageTimeout; }
-
-    public boolean isLongRunningQuery() { return this.isLongRunningQuery; }
-
-    public void setLongRunningQuery(boolean isLongRunningQuery) { this.isLongRunningQuery = isLongRunningQuery; }
+    
+    public long getQueryExecutionForPageTimeout() {
+        return this.queryExecutionForPageTimeout;
+    }
+    
+    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
+        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
+    }
+    
+    public boolean isLongRunningQuery() {
+        return this.isLongRunningQuery;
+    }
+    
+    public void setLongRunningQuery(boolean isLongRunningQuery) {
+        this.isLongRunningQuery = isLongRunningQuery;
+    }
     
     @Override
     public int getBaseIteratorPriority() {

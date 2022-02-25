@@ -93,7 +93,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
                 break;
             }
         }
-
+        
         return _transform(documentEntry);
     }
     
@@ -102,13 +102,13 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
             // buildResponse will return a null object if there was only metadata in the document
             throw new EmptyObjectException();
         }
-
+        
         if (documentEntry.getValue().isIntermediateResult()) {
             DefaultEvent output = new DefaultEvent();
             output.setIntermediateResult(true);
             return output;
         }
-
+        
         Key documentKey = correctKey(documentEntry.getKey());
         Document document = documentEntry.getValue();
         
@@ -133,21 +133,21 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         ColumnVisibility eventCV = new ColumnVisibility(documentKey.getColumnVisibility());
         
         EventBase output = null;
-
-            try {
-                // build response method here
-                output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);
-            } catch (Exception ex) {
-                log.error("Error building response document", ex);
-                throw new RuntimeException(ex);
-            }
-
+        
+        try {
+            // build response method here
+            output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);
+        } catch (Exception ex) {
+            log.error("Error building response document", ex);
+            throw new RuntimeException(ex);
+        }
+        
         if (output == null) {
             // buildResponse will return a null object if there was only metadata in the document and a special flag was
             // not found in the document
             throw new EmptyObjectException();
         }
-
+        
         if (cardinalityConfiguration != null) {
             collectCardinalities(document, documentKey, uid, dataType);
         }
@@ -196,10 +196,10 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         
         return event;
     }
-
+    
     @Override
     public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
-        for (DocumentTransform dt: transforms) {
+        for (DocumentTransform dt : transforms) {
             dt.setQueryExecutionForPageStartTime(queryExecutionForCurrentPageStartTime);
         }
         this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;

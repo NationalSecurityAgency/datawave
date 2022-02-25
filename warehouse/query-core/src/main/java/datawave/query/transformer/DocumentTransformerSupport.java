@@ -83,7 +83,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     private Set<String> blacklistedFields = Collections.emptySet();
     
     protected List<DocumentTransform> transforms = new ArrayList<>();
-
+    
     protected long queryExecutionForCurrentPageStartTime;
     
     /*
@@ -504,8 +504,20 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      * @param transform
      */
     public void addTransform(DocumentTransform transform) {
+        int replacementIndex = -1;
+        for (DocumentTransform t : transforms) {
+            if (transform.getClass().toString().equals(t.getClass().toString())) {
+                replacementIndex = transforms.indexOf(t);
+            }
+        }
+        
         transform.initialize(settings, markingFunctions);
-        transforms.add(transform);
+        
+        if (replacementIndex != -1) {
+            transforms.set(replacementIndex, transform);
+        } else {
+            transforms.add(transform);
+        }
     }
     
     @Override

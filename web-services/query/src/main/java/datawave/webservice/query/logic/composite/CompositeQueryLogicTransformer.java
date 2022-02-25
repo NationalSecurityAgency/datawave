@@ -20,7 +20,7 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
     public CompositeQueryLogicTransformer(List<QueryLogicTransformer<I,O>> delegates) {
         this.delegates = delegates;
     }
-
+    
     private long queryExecutionForCurrentPageStartTime;
     
     @Override
@@ -41,12 +41,12 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         }
         return result;
     }
-
+    
     @Override
     public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
         this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
-
+    
     @Override
     public List<CacheableQueryRow> writeToCache(Object o) throws QueryException {
         List<CacheableQueryRow> result = null;

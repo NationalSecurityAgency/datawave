@@ -15,10 +15,10 @@ public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.
     
     // called after the last document is passed through to get any remaining aggregated results.
     Map.Entry<Key,Document> flush();
-
+    
     /**
-     * Some transformers (GroupingTrnasform) have logic that is predicated on knowing when a page of results is starting
-     * to be processed. This sets the time that a page has begun processing (in milliseconds)
+     * Some transformers (GroupingTrnasform) have logic that is predicated on knowing when a page of results is starting to be processed. This sets the time
+     * that a page has begun processing (in milliseconds)
      *
      * @param queryExecutionForPageStartTime
      */
@@ -28,7 +28,7 @@ public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.
         protected Query settings;
         protected MarkingFunctions markingFunctions;
         protected long queryExecutionForPageStartTime;
-
+        
         @Override
         public void initialize(Query settings, MarkingFunctions markingFunctions) {
             this.settings = settings;
@@ -45,7 +45,7 @@ public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.
         public Map.Entry<Key,Document> apply(@Nullable Map.Entry<Key,Document> keyDocumentEntry) {
             return keyDocumentEntry;
         }
-
+        
         @Override
         public void setQueryExecutionForPageStartTime(long queryExecutionForPageStartTime) {
             this.queryExecutionForPageStartTime = queryExecutionForPageStartTime;

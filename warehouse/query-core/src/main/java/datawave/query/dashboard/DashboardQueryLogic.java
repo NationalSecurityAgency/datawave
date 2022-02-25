@@ -19,9 +19,9 @@ import java.util.List;
  * Aggregate a range of query metrics into a single DashboardSummary object.
  */
 public class DashboardQueryLogic extends ShardQueryLogic implements QueryLogicTransformer {
-
+    
     protected long queryExecutionForCurrentPageStartTime;
-
+    
     public DashboardQueryLogic() {}
     
     public DashboardQueryLogic(DashboardQueryLogic logic) {
@@ -68,10 +68,10 @@ public class DashboardQueryLogic extends ShardQueryLogic implements QueryLogicTr
     public Object transform(Object input) {
         return input;
     }
-
+    
     @Override
     public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
         this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
-
+    
 }

@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import datawave.data.type.NumberType;
+import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.common.grouping.GroupingUtil;
@@ -36,12 +37,12 @@ import static org.slf4j.LoggerFactory.getLogger;
 public class GroupingTransform extends DocumentTransform.DefaultDocumentTransform {
     
     private static final Logger log = getLogger(GroupingTransform.class);
-
+    
     /**
      * the fields (user provided) to group by
      */
     private final Set<String> groupFieldsSet;
-
+    
     /**
      * holds the aggregated column visibilities for each grouped event
      */
@@ -51,18 +52,18 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * A map of TypeAttribute collection keys to integer counts This map uses a special key type that ignores the metadata (with visibilities) in its hashCode
      * and equals methods
      */
-    private final GroupCountingHashMap countingMap;
-
+    private GroupCountingHashMap countingMap;
+    
     /**
      * Provides the grouping information (counting map, field visibilities, etc) for grouping documents.
      */
     private final GroupingUtil groupingUtil = new GroupingUtil();
-
+    
     /**
      * list of documents to return, created from the countingMap
      */
     private final LinkedList<Document> documents = new LinkedList<>();
-
+    
     /**
      * mapping used to combine field names that map to different model names
      */
@@ -72,28 +73,33 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * list of keys that have been read, in order to keep track of where we left off when a new iterator is created
      */
     private final List<Key> keys = new ArrayList<>();
-
+    
     /**
-     * how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client
-     * (which indicates the request is still in process and all results will be returned at once at the end)
+     * how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client (which indicates the request is
+     * still in process and all results will be returned at once at the end)
      */
     private final long queryExecutionForPageTimeout;
-
+    
     /**
-     * whether this kind of query (a group by query) is allowed to exceed the standard timeout. If true,
-     * queryExecutionForPageTimeout will be used
+     * whether this kind of query (a group by query) is allowed to exceed the standard timeout. If true, queryExecutionForPageTimeout will be used
      */
     private final boolean allowLongRunningQuery;
-
+    
     /**
      * Constructor
      *
-     * @param logic     the group logic (can be null)
-     * @param groupFieldsSet    the fields (user provided) to group by
-     * @param queryExecutionForPageTimeout  how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client
-     * @param allowLongRunningQuery     whether this kind of query (a group by query) is allowed to exceed the standard timeout.
+     * @param logic
+     *            the group logic (can be null)
+     * @param groupFieldsSet
+     *            the fields (user provided) to group by
+     * @param queryExecutionForPageTimeout
+     *            how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client
+     * @param allowLongRunningQuery
+     *            whether this kind of query (a group by query) is allowed to exceed the standard timeout.
      */
-    public GroupingTransform(BaseQueryLogic<Entry<Key,Value>> logic, Collection<String> groupFieldsSet, long queryExecutionForPageTimeout, boolean allowLongRunningQuery) {
+    public GroupingTransform(BaseQueryLogic<Entry<Key,Value>> logic, Collection<String> groupFieldsSet, MarkingFunctions markingFunctions,
+                    long queryExecutionForPageTimeout, boolean allowLongRunningQuery) {
+        super.initialize(settings, markingFunctions);
         if (logic != null) {
             QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
             if (model != null) {
@@ -103,12 +109,11 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         this.groupFieldsSet = groupFieldsSet.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.allowLongRunningQuery = allowLongRunningQuery;
-
-        this.countingMap =  new GroupCountingHashMap(markingFunctions);
-        super.initialize(settings, markingFunctions);
+        this.countingMap = new GroupCountingHashMap(markingFunctions);
+        
         log.trace("groupFieldsSet: {}", this.groupFieldsSet);
     }
-
+    
     @Nullable
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
@@ -117,17 +122,17 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         if (keyDocumentEntry != null) {
             keys.add(keyDocumentEntry.getKey());
             log.trace("{} get list key counts for: {}", "web-server", keyDocumentEntry);
-            GroupingUtil.GroupingInfo groupingInfo = groupingUtil.getGroupingInfo(keyDocumentEntry, markingFunctions, groupFieldsSet, reverseModelMapping);
-            this.countingMap.putAll(groupingInfo.getCountsMap());
+            GroupingUtil.GroupingInfo groupingInfo = groupingUtil.getGroupingInfo(keyDocumentEntry, groupFieldsSet, countingMap, reverseModelMapping);
+            this.countingMap = groupingInfo.getCountsMap();
             this.fieldVisibilities.putAll(groupingInfo.getFieldVisibilities());
         }
         return null;
     }
-
+    
     @Override
     public Entry<Key,Document> flush() {
         Document document = null;
-
+        
         if (!countingMap.isEmpty()) {
             
             log.trace("flush will use the countingMap: {}", countingMap);
@@ -155,7 +160,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 documents.add(d);
             }
         }
-
+        
         // Handle if the current page has exceeded its execution timeout, but there are still more results to return
         // This must be done BEFORE popping documents from the document stack.
         if (allowLongRunningQuery && this.queryExecutionForPageStartTime > 0) {
@@ -170,21 +175,21 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 return Maps.immutableEntry(new Key(), intermediateResult);
             }
         }
-
+        
         if (!documents.isEmpty()) {
             log.trace("{} will flush first of {} documents: {}", this.hashCode(), documents.size(), documents);
             document = documents.pop();
         }
-
-       if (document != null) {
-           Key key = document.getMetadata();
-           Entry<Key,Document> entry = Maps.immutableEntry(key, document);
-           log.trace("flushing out {}", entry);
-           countingMap.clear();
-           return entry;
+        
+        if (document != null) {
+            Key key = document.getMetadata();
+            Entry<Key,Document> entry = Maps.immutableEntry(key, document);
+            log.trace("flushing out {}", entry);
+            countingMap.clear();
+            return entry;
         }
-
+        
         return null;
     }
-
+    
 }

@@ -25,9 +25,9 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
     
     private Authorizations auths = null;
     private Logger log = Logger.getLogger(ContentQueryTransformer.class);
-//    long queryExecutionForCurrentPageStartTime;
+    // long queryExecutionForCurrentPageStartTime;
     protected long queryExecutionForCurrentPageStartTime;
-
+    
     public ContentQueryTransformer(Query query, MarkingFunctions markingFunctions) {
         super(markingFunctions);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
@@ -73,12 +73,12 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
         return e;
         
     }
-
+    
     @Override
     public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
         this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
-
+    
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         
