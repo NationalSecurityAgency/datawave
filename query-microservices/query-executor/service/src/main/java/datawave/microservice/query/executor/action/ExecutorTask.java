@@ -147,6 +147,7 @@ public abstract class ExecutorTask implements Runnable {
             
             if (taskComplete) {
                 cache.updateTaskState(taskKey, TaskStates.TASK_STATE.COMPLETED);
+                queryTaskUpdater.close();
                 try {
                     cache.deleteTask(taskKey);
                 } catch (IOException e) {
@@ -154,12 +155,14 @@ public abstract class ExecutorTask implements Runnable {
                 }
             } else if (taskFailed) {
                 cache.updateTaskState(taskKey, TaskStates.TASK_STATE.FAILED);
+                queryTaskUpdater.close();
             } else {
                 cache.updateTaskState(taskKey, TaskStates.TASK_STATE.READY);
+                queryTaskUpdater.close();
                 // more work to do on this task, lets notify
                 publishExecutorEvent(QueryRequest.next(queryId), task.getTaskKey().getQueryPool());
             }
-            queryTaskUpdater.close();
+            
         }
     }
     

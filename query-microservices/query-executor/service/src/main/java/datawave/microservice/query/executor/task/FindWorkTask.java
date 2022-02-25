@@ -38,7 +38,9 @@ public class FindWorkTask implements Callable<Void> {
     
     @Override
     public Void call() throws Exception {
-        log.info("Executor status: " + executor.getStatus());
+        if (executor.hasUpdatedThreadPoolStatus()) {
+            log.info("Executor status: " + executor.getThreadPoolStatus());
+        }
         for (QueryStatus queryStatus : cache.getQueryStatus()) {
             String queryId = queryStatus.getQueryKey().getQueryId();
             switch (queryStatus.getQueryState()) {

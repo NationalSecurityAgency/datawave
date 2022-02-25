@@ -96,10 +96,6 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         log.info("Listening to bus id " + busProperties.getId() + " with a destination of " + busProperties.getDestination());
     }
     
-    public String getStatus() {
-        return threadPool.toString();
-    }
-    
     private void removeFromWorkQueue(String queryId) {
         List<Runnable> removals = new ArrayList<Runnable>();
         for (Runnable action : workQueue) {
@@ -300,6 +296,20 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
     
     public QueryMetricClient getMetricClient() {
         return metricClient;
+    }
+    
+    private String lastThreadPoolStatus = "";
+    private volatile long lastThreadPoolStatusUpdate = 0;
+    private static final int TEN_MINUTES = 10 * 60 * 1000;
+    
+    public boolean hasUpdatedThreadPoolStatus() {
+        return (!lastThreadPoolStatus.equals(threadPool.toString()) || ((System.currentTimeMillis() - lastThreadPoolStatusUpdate) > TEN_MINUTES));
+    }
+    
+    public String getThreadPoolStatus() {
+        lastThreadPoolStatus = threadPool.toString();
+        lastThreadPoolStatusUpdate = System.currentTimeMillis();
+        return lastThreadPoolStatus;
     }
     
 }
