@@ -45,11 +45,11 @@ cd $FOLDER
 SYSTEM_FROM=$(hostname)
 
 echo "$(date): polling connection factory for pool1"
-curl -s -D headers_0.txt -k -E ${TMP_PEM} \
+curl -s -D headers_1.txt -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
     ${EXECUTOR_ENDPOINT1}/Common/AccumuloConnectionFactory/stats -o connectionFactory1Response.txt
 echo "$(date): polling connection factory for pool2"
-curl -s -D headers_0.txt -k -E ${TMP_PEM} \
+curl -s -D headers_2.txt -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
     ${EXECUTOR_ENDPOINT2}/Common/AccumuloConnectionFactory/stats -o connectionFactory2Response.txt
 

@@ -11,7 +11,7 @@ datawave:
           instance: '${accumulo.instanceName}'
           username: '${accumulo.username}'
           password: '${accumulo.password}'
-          lowPriorityPoolSize: 10
-          normalPriorityPoolSize: 10
-          highPriorityPoolSize: 10
-          adminPriorityPoolSize: 10
+          lowPriorityPoolSize: 40
+          normalPriorityPoolSize: 40
+          highPriorityPoolSize: 40
+          adminPriorityPoolSize: 40

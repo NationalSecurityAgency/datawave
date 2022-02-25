@@ -444,7 +444,14 @@ public class QueryManagementService implements QueryRequestHandler {
         
         try {
             TaskKey taskKey = storeQuery(queryLogicName, parameters, currentUser, PREDICT);
-            String queryPrediction = queryStorageCache.getQueryStatus(taskKey.getQueryId()).getPredictions().toString();
+            String queryPrediction = "no predictions";
+            QueryStatus status = queryStorageCache.getQueryStatus(taskKey.getQueryId());
+            if (status != null) {
+                Set<BaseQueryMetric.Prediction> predictions = status.getPredictions();
+                if (predictions != null && !predictions.isEmpty()) {
+                    queryPrediction = predictions.toString();
+                }
+            }
             queryStorageCache.deleteQuery(taskKey.getQueryId());
             GenericResponse<String> response = new GenericResponse<>();
             response.setResult(queryPrediction);

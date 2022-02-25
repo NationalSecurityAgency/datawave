@@ -55,13 +55,14 @@ get_query_id () {
     done
 }
 
-get_num_events () {
+get_num_edges () {
+    declare -i count=0
     while read_dom; do
-        if [[ $ENTITY = 'ReturnedEvents' ]]; then
-            echo $CONTENT
-            break
+        if [[ $ENTITY = '/Edge' ]]; then
+            count=$((count + 1))
         fi
     done
+    echo $count
 }
 
 FOLDER="edge_$(date +%Y%m%d_%I%M%S.%N)"
@@ -102,8 +103,8 @@ while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
     if [ -z "$CONTINUE" ]; then
         i=-1
     else
-        NUM_EVENTS=$(get_num_events < nextResponse_$i.xml)
-        echo "$(date): Page $i contained $NUM_EVENTS events"
+        NUM_EVENTS=$(get_num_edges < nextResponse_$i.xml)
+        echo "$(date): Page $i contained $NUM_EVENTS edges"
 
         ((i++))
     fi

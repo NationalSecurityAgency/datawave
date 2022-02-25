@@ -85,6 +85,8 @@ curl -s -D headers_0.txt -X GET -k -E ${TMP_PEM} \
     ${DATAWAVE_ENDPOINT}/lookupContentUUID/PAGE_TITLE/anarchism -o lookupResponse.xml
 
 QUERY_ID=$(get_query_id < lookupResponse.xml)
+NUM_EVENTS=$(get_num_events < lookupResponse.xml)
+echo "$(date): Lookup response contained $NUM_EVENTS events"
 
 echo "$(date): Finished running $QUERY_ID"
 echo "$(date): Finished running $QUERY_ID" >> querySummary.txt
