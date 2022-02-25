@@ -131,9 +131,9 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         
         // validate we actually have such a query
         if (queryStatus == null) {
-            String msg = "Failed to find stored query status for " + queryId;
-            log.error(msg);
-            throw new RuntimeException(msg);
+            String msg = "Failed to find stored query status for " + queryId + ", nothing to execute";
+            log.warn(msg);
+            return;
         }
         
         // validate that we got a request for the correct pool
@@ -141,7 +141,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
             String msg = "Received a request for a query that belongs to a different pool: " + queryStatus.getQueryKey().getQueryPool() + " vs "
                             + executorProperties.getPool();
             log.error(msg);
-            throw new RuntimeException(msg);
+            return;
         }
         
         // A close request waits for the current page to finish

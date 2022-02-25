@@ -105,6 +105,7 @@ while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
     else
         NUM_EVENTS=$(get_num_edges < nextResponse_$i.xml)
         echo "$(date): Page $i contained $NUM_EVENTS edges"
+        echo "$(date): Page $i contained $NUM_EVENTS edges" >> querySummary.txt
 
         ((i++))
     fi

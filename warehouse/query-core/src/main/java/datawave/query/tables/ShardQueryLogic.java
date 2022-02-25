@@ -1035,38 +1035,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         
         log.debug("Closing ShardQueryLogic: " + System.identityHashCode(this));
         
-        if (null == scannerFactory) {
-            log.debug("ScannerFactory was never initialized because, therefore there are no connections to close: " + System.identityHashCode(this));
-        } else {
-            log.debug("Closing ShardQueryLogic scannerFactory: " + System.identityHashCode(this));
-            try {
-                int nClosed = 0;
-                scannerFactory.lockdown();
-                for (ScannerBase bs : Lists.newArrayList(scannerFactory.currentScanners())) {
-                    scannerFactory.close(bs);
-                    ++nClosed;
-                }
-                if (log.isDebugEnabled()) {
-                    log.debug("Cleaned up " + nClosed + " batch scanners associated with this query logic.");
-                }
-                
-                nClosed = 0;
-                
-                for (ScannerSession bs : Lists.newArrayList(scannerFactory.currentSessions())) {
-                    scannerFactory.close(bs);
-                    ++nClosed;
-                }
-                
-                if (log.isDebugEnabled()) {
-                    log.debug("Cleaned up " + nClosed + " scanner sessions.");
-                }
-                
-            } catch (Exception e) {
-                log.error("Caught exception trying to close scannerFactory", e);
-            }
-            
-        }
-        
         if (null != this.planner) {
             try {
                 log.debug("Closing ShardQueryLogic planner: " + System.identityHashCode(this) + '('
@@ -1099,6 +1067,37 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 
             } catch (IOException e) {
                 log.error("Caught exception trying to close Scheduler", e);
+            }
+        }
+        
+        if (null == scannerFactory) {
+            log.debug("ScannerFactory was never initialized because, therefore there are no connections to close: " + System.identityHashCode(this));
+        } else {
+            log.debug("Closing ShardQueryLogic scannerFactory: " + System.identityHashCode(this));
+            try {
+                int nClosed = 0;
+                scannerFactory.lockdown();
+                for (ScannerBase bs : Lists.newArrayList(scannerFactory.currentScanners())) {
+                    scannerFactory.close(bs);
+                    ++nClosed;
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("Cleaned up " + nClosed + " batch scanners associated with this query logic.");
+                }
+                
+                nClosed = 0;
+                
+                for (ScannerSession bs : Lists.newArrayList(scannerFactory.currentSessions())) {
+                    scannerFactory.close(bs);
+                    ++nClosed;
+                }
+                
+                if (log.isDebugEnabled()) {
+                    log.debug("Cleaned up " + nClosed + " scanner sessions.");
+                }
+                
+            } catch (Exception e) {
+                log.error("Caught exception trying to close scannerFactory", e);
             }
         }
         

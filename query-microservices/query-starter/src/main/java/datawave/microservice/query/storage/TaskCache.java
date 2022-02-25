@@ -64,7 +64,7 @@ public class TaskCache {
         }
         QueryTask task = getTask(taskKey);
         if (task == null) {
-            throw new NullPointerException("Could not find a query task for " + taskKey);
+            throw new IllegalStateException("Could not find a query task for " + taskKey);
         }
         task = new QueryTask(taskKey.getTaskId(), task.getAction(), checkpoint);
         logTask("Updating task", task);

@@ -145,9 +145,10 @@ public abstract class ExecutorTask implements Runnable {
                 }
             }
             
+            queryTaskUpdater.close();
+            
             if (taskComplete) {
                 cache.updateTaskState(taskKey, TaskStates.TASK_STATE.COMPLETED);
-                queryTaskUpdater.close();
                 try {
                     cache.deleteTask(taskKey);
                 } catch (IOException e) {
@@ -155,10 +156,8 @@ public abstract class ExecutorTask implements Runnable {
                 }
             } else if (taskFailed) {
                 cache.updateTaskState(taskKey, TaskStates.TASK_STATE.FAILED);
-                queryTaskUpdater.close();
             } else {
                 cache.updateTaskState(taskKey, TaskStates.TASK_STATE.READY);
-                queryTaskUpdater.close();
                 // more work to do on this task, lets notify
                 publishExecutorEvent(QueryRequest.next(queryId), task.getTaskKey().getQueryPool());
             }
@@ -398,7 +397,7 @@ public abstract class ExecutorTask implements Runnable {
                     } catch (InterruptedException e) {
                         // time to potentially refresh and loop
                     }
-                    if (isRefreshTime()) {
+                    if (!closed && isRefreshTime()) {
                         refreshTask();
                         updateCounters();
                     }
@@ -424,12 +423,17 @@ public abstract class ExecutorTask implements Runnable {
         }
         
         protected void refreshTask() {
-            if (queryLogic != null) {
-                // update the task checkpoint and its last update millis
-                task = cache.checkpointTask(task.getTaskKey(), queryLogic.updateCheckpoint(task.getQueryCheckpoint()));
-            } else {
-                // update the task last update millis
-                task = cache.updateTask(task);
+            try {
+                if (queryLogic != null) {
+                    // update the task checkpoint and its last update millis
+                    task = cache.checkpointTask(task.getTaskKey(), queryLogic.updateCheckpoint(task.getQueryCheckpoint()));
+                } else {
+                    // update the task last update millis
+                    task = cache.updateTask(task);
+                }
+            } catch (IllegalStateException e) {
+                // in this case the task no longer exists, probably because the query was deleted
+                log.warn("Attempted to refresh task " + task.getTaskKey() + " but it no longer exists.  Query was probably deleted");
             }
         }
         

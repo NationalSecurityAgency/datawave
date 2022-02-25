@@ -92,7 +92,7 @@ QUERY_ID=$(get_query_id < streamingResponse.xml)
 NUM_EVENTS=$(get_num_events < streamingResponse.xml)
 
 echo "$(date): Streaming results contained $NUM_EVENTS events"
-echo "$(date): Creating query" > querySummary.txt
+echo "$(date): Streaming results contained $NUM_EVENTS events" >> querySummary.txt
 
 cd ../
 
