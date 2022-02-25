@@ -582,20 +582,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         if (this.transformerInstance != null) {
-            // If the configuration didn't exist, OR IT CHANGED, we need to create or replace the transformers that
-            // have been added. Ideally, those transformers would also be singletons, and they themselves would be
-            // updated, not replaced with new objects.
-            if (getConfig() != null) {
-                ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
-                ((DocumentTransformer) this.transformerInstance).setBlacklistedFields(getConfig().getBlacklistedFields());
-                if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
-                }
-                if (getConfig().getGroupFields() != null && !getConfig().getGroupFields().isEmpty()) {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new GroupingTransform(this, getConfig().getGroupFields(),
-                                    this.markingFunctions, this.getQueryExecutionForPageTimeout(), this.isLongRunningQuery()));
-                }
-            }
+            addConfigBasedTransformers();
             return this.transformerInstance;
         }
         
@@ -615,19 +602,27 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         transformer.setCardinalityConfiguration(cardinalityConfiguration);
         transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
         transformer.setQm(queryModel);
+        this.transformerInstance = transformer;
+        addConfigBasedTransformers();
+        return this.transformerInstance;
+    }
+    
+    /**
+     * If the configuration didn't exist, OR IT CHANGED, we need to create or replace the transformers that have been added. Ideally, those transformers would
+     * also be singletons, and they themselves would be updated, not replaced with new objects.
+     */
+    private void addConfigBasedTransformers() {
         if (getConfig() != null) {
-            transformer.setProjectFields(getConfig().getProjectFields());
-            transformer.setBlacklistedFields(getConfig().getBlacklistedFields());
+            ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
+            ((DocumentTransformer) this.transformerInstance).setBlacklistedFields(getConfig().getBlacklistedFields());
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
-                transformer.addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
+                ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
             }
             if (getConfig().getGroupFields() != null && !getConfig().getGroupFields().isEmpty()) {
-                transformer.addTransform(new GroupingTransform(this, getConfig().getGroupFields(), this.markingFunctions, this
-                                .getQueryExecutionForPageTimeout(), this.isLongRunningQuery()));
+                ((DocumentTransformer) this.transformerInstance).addTransform(new GroupingTransform(this, getConfig().getGroupFields(), this.markingFunctions,
+                                this.getQueryExecutionForPageTimeout(), this.isLongRunningQuery()));
             }
         }
-        this.transformerInstance = transformer;
-        return this.transformerInstance;
     }
     
     protected void loadQueryParameters(ShardQueryConfiguration config, Query settings) throws QueryException {
