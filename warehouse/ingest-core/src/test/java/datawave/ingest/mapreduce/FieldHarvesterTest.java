@@ -50,9 +50,9 @@ public class FieldHarvesterTest {
     }
     
     @Test
-    public void reusableFieldHarvester() {
+    public void reusableFieldHarvester() throws Exception {
         // The first call to extractFields produces an error, adding only supplemental fields
-        fieldHarvester.extractFields(fields, null, value, offset, splitStart);
+        exceptionSwallowingExtractFields(fieldHarvester, fields, null, value, offset, splitStart);
         
         // Verify error is captured (NullPointerException because null provided as the IngestHelperInterface param)
         assertExceptionCaptured(fieldHarvester, NullPointerException.class);
@@ -70,17 +70,28 @@ public class FieldHarvesterTest {
         Assert.assertEquals(fields.toString(), NUM_SUPPLEMENTAL_FIELDS + 1, fields.size());
         assertNoErrors(fieldHarvester);
         
-        // The third call is just like the first call
+        // The third call is just like the first call, throwing an exception
         fields.clear();
-        fieldHarvester.extractFields(fields, null, value, offset, splitStart);
+        exceptionSwallowingExtractFields(fieldHarvester, fields, null, value, offset, splitStart);
         
         // Verify error is captured (NullPointerException because null provided as IngestHelperInterface)
         assertExceptionCaptured(fieldHarvester, NullPointerException.class);
         assertContainsOnlySupplementalFields();
     }
     
+    private void exceptionSwallowingExtractFields(FieldHarvester fieldHarvester, Multimap<String,NormalizedContentInterface> fields,
+                    IngestHelperInterface ingestHelper, RawRecordContainer value, long offset, String splitStart) {
+        try {
+            fieldHarvester.extractFields(fields, ingestHelper, value, offset, splitStart);
+        } catch (Exception e) {
+            // expected case
+            return;
+        }
+        Assert.fail("Expected an exception");
+    }
+    
     @Test
-    public void disableSeqFileNameCreation() {
+    public void disableSeqFileNameCreation() throws Exception {
         // Configuration disables seq file name creation
         Configuration config = new Configuration();
         config.setBoolean(FieldHarvester.LOAD_SEQUENCE_FILE_NAME, false);
@@ -102,7 +113,7 @@ public class FieldHarvesterTest {
     }
     
     @Test
-    public void disableTrimmingSeqFileName() {
+    public void disableTrimmingSeqFileName() throws Exception {
         // Configuration disables trimming of seq file name
         Configuration config = new Configuration();
         config.setBoolean(FieldHarvester.TRIM_SEQUENCE_FILE_NAME, false);
@@ -126,7 +137,7 @@ public class FieldHarvesterTest {
     }
     
     @Test
-    public void enableTrimmingSeqFileName() {
+    public void enableTrimmingSeqFileName() throws Exception {
         // Default configuration enables trimming of seq file name
         
         // field map with single field and value
@@ -147,7 +158,7 @@ public class FieldHarvesterTest {
     }
     
     @Test
-    public void disableRawFileName() {
+    public void disableRawFileName() throws Exception {
         // Configuration disables raw file name creation
         Configuration config = new Configuration();
         config.setBoolean(FieldHarvester.LOAD_RAW_FILE_NAME, false);
@@ -169,7 +180,7 @@ public class FieldHarvesterTest {
     }
     
     @Test
-    public void addsVirtualFields() {
+    public void addsVirtualFields() throws Exception {
         // Ensure that a virtual field is added
         Multimap<String,NormalizedContentInterface> fields = createOneFieldMultiMap();
         IngestHelperInterface ingestHelper = new BasicWithVirtualFieldsIngestHelper(fields);
@@ -189,7 +200,7 @@ public class FieldHarvesterTest {
     }
     
     @Test
-    public void addsCompositeFields() {
+    public void addsCompositeFields() throws Exception {
         // cause exception in getEventFields, get salvaged fields and ensure they're used for composite field creation
         Multimap<String,NormalizedContentInterface> salvagableFields = createOneFieldMultiMap();
         IngestHelperInterface ingestHelper = new BasicWithCompositeFieldsIngestHelper(salvagableFields);
@@ -215,7 +226,7 @@ public class FieldHarvesterTest {
         ErroringSalvagableIngestHelper ingestHelper = new ErroringSalvagableIngestHelper(salvagableFields);
         
         // field map with single field and value
-        fieldHarvester.extractFields(fields, ingestHelper, value, offset, splitStart);
+        exceptionSwallowingExtractFields(fieldHarvester, fields, ingestHelper, value, offset, splitStart);
         
         // Verify salvaged fields returned
         // Verify salvaged fields are used for virtual, composite
@@ -237,7 +248,7 @@ public class FieldHarvesterTest {
         ErroringSalvagableIngestHelper ingestHelper = new ErroringSalvagableIngestHelper(HashMultimap.create());
         
         // field map with empty fields
-        fieldHarvester.extractFields(fields, ingestHelper, value, offset, splitStart);
+        exceptionSwallowingExtractFields(fieldHarvester, fields, ingestHelper, value, offset, splitStart);
         
         // empty salvaged fields
         assertContainsOnlySupplementalFields();
@@ -249,7 +260,7 @@ public class FieldHarvesterTest {
     @Test
     public void doubleException() {
         // exception in getEventFields and in salvager
-        fieldHarvester.extractFields(fields, new DoubleErrorIngestHelper(), value, offset, splitStart);
+        exceptionSwallowingExtractFields(fieldHarvester, fields, new DoubleErrorIngestHelper(), value, offset, splitStart);
         
         // Verify it contains expected fields
         assertContainsOnlySupplementalFields();
@@ -259,7 +270,7 @@ public class FieldHarvesterTest {
     }
     
     @Test
-    public void extractFields() {
+    public void extractFields() throws Exception {
         // field map with single field and value
         fieldHarvester.extractFields(fields, new BasicIngestHelper(createOneFieldMultiMap()), value, offset, splitStart);
         
@@ -281,7 +292,7 @@ public class FieldHarvesterTest {
         Multimap<String,NormalizedContentInterface> multiMap = HashMultimap.create();
         multiMap.put(SAMPLE_FIELD_NAME, fieldWithError);
         
-        fieldHarvester.extractFields(fields, new BasicIngestHelper(multiMap), this.value, offset, splitStart);
+        exceptionSwallowingExtractFields(fieldHarvester, fields, new BasicIngestHelper(multiMap), this.value, offset, splitStart);
         
         // Verify fields contains expected fields
         Assert.assertTrue(fields.containsKey(SAMPLE_FIELD_NAME));
@@ -295,7 +306,7 @@ public class FieldHarvesterTest {
     @Test
     public void nullIngestHelper() {
         // field map with single field and value
-        fieldHarvester.extractFields(fields, null, value, offset, splitStart);
+        exceptionSwallowingExtractFields(fieldHarvester, fields, null, value, offset, splitStart);
         
         // Verify it contains expected fields
         assertContainsOnlySupplementalFields();
@@ -305,13 +316,13 @@ public class FieldHarvesterTest {
     }
     
     private void assertNoErrors(FieldHarvester fieldHarvester) {
-        Assert.assertFalse("Unexpected exception: " + fieldHarvester.getException(), fieldHarvester.hasError());
-        Assert.assertNull(fieldHarvester.getException());
+        Assert.assertFalse("Unexpected exception: " + fieldHarvester.getOriginalException(), fieldHarvester.hasError());
+        Assert.assertNull(fieldHarvester.getOriginalException());
     }
     
     private void assertExceptionCaptured(FieldHarvester fieldHarvester, Class exceptionClass) {
         Assert.assertTrue(fieldHarvester.hasError());
-        Assert.assertEquals(exceptionClass, fieldHarvester.getException().getClass());
+        Assert.assertEquals(exceptionClass, fieldHarvester.getOriginalException().getClass());
     }
     
     private Multimap<String,NormalizedContentInterface> createOneFieldMultiMap() {

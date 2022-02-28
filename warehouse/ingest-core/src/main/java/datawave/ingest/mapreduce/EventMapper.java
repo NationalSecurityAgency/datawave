@@ -686,9 +686,6 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                 
                 // populates fields by parsing value and using IngestHelper
                 fieldHarvester.extractFields(fields, thisHelper, value, offset, splitStart);
-                if (fieldHarvester.hasError()) {
-                    throw new Exception(fieldHarvester.getException());
-                }
                 
                 updateMetrics(value, fields);
                 
