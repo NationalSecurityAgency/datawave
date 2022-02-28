@@ -99,7 +99,8 @@ public class FieldHarvester {
         addFieldsAndDetectFieldErrors(fields, candidateFields);
         
         if (null != this.originalException) {
-            throw new Exception("An exception was encountered during field harvesting", originalException);
+            log.error("Rethrowing original exception after completing field extraction.");
+            throw originalException;
         }
     }
     
@@ -244,12 +245,12 @@ public class FieldHarvester {
         Throwable fieldError = null;
         for (Map.Entry<String,NormalizedContentInterface> entry : candidateFields.entries()) {
             // noinspection ThrowableResultOfMethodCallIgnored
-            if (entry.getValue().getError() != null) {
+            if (null != entry.getValue().getError()) {
                 fieldError = entry.getValue().getError();
             }
             fields.put(entry.getKey(), entry.getValue());
         }
-        if (fieldError != null) {
+        if (null != fieldError) {
             if (null == this.originalException) {
                 this.originalException = new FieldNormalizationError("Failed getting all fields", fieldError);
             } else {
