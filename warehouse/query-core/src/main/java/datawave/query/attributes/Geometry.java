@@ -160,17 +160,17 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
         writeMetadata(kryo, output, reducedResponse);
         output.writeBoolean(this.toKeep);
         byte[] wellKnownBinary = write();
-        output.write(wellKnownBinary.length);
-        output.write(wellKnownBinary);
+        output.writeInt(wellKnownBinary.length);
+        output.writeBytes(wellKnownBinary);
     }
     
     @Override
     public void read(Kryo kryo, Input input) {
         readMetadata(kryo, input);
         this.toKeep = input.readBoolean();
-        int wkbLength = input.read();
+        int wkbLength = input.readInt();
         byte[] wellKnownBinary = new byte[wkbLength];
-        input.read(wellKnownBinary);
+        input.readBytes(wellKnownBinary);
         try {
             geometry = new WKBReader().read(wellKnownBinary);
         } catch (ParseException e) {
