@@ -26,9 +26,9 @@ public class FieldHarvester {
     
     public static final String LOAD_DATE_FIELDNAME = "LOAD_DATE";
     public static final String SEQUENCE_FILE_FIELDNAME = "ORIG_FILE";
+    public static final String RAW_FILE_FIELDNAME = "RAW_FILE";
     public static final String LOAD_SEQUENCE_FILE_NAME = "ingest.event.mapper.load.seq.filename";
     public static final String TRIM_SEQUENCE_FILE_NAME = "ingest.event.mapper.trim.sequence.filename";
-    public static final String RAW_FILE_FIELDNAME = "RAW_FILE";
     public static final String LOAD_RAW_FILE_NAME = "ingest.event.mapper.load.raw.filename";
     
     private boolean createSequenceFileName;
@@ -83,7 +83,7 @@ public class FieldHarvester {
         } catch (Exception exception) {
             this.exception = exception;
         } finally {
-            // Add each "candidateFields" field value to "fields" as long as the field value is without error
+            // Add each "candidateFields" entry to "fields" as long as the field value is without error
             addErrorFreeFields(fields, candidateFields);
         }
     }
@@ -91,9 +91,7 @@ public class FieldHarvester {
     /**
      * Calls IngestHelper.getEventFields with value. If an exception is thrown, captures it and attempts to salvage fields from the value.
      */
-    // package method visibility for EventMapper.getFields only
-    @Deprecated
-    Multimap<String,NormalizedContentInterface> faultTolerantGetEventFields(RawRecordContainer value, IngestHelperInterface ingestHelper) {
+    private Multimap<String,NormalizedContentInterface> faultTolerantGetEventFields(RawRecordContainer value, IngestHelperInterface ingestHelper) {
         try {
             // Parse the event into its candidate field names and values using the IngestHelperInterface.
             return ingestHelper.getEventFields(value);
@@ -104,9 +102,7 @@ public class FieldHarvester {
         }
     }
     
-    // todo test case where salvage fields are empty
-    // package method visibility for EventMapper.getFields only
-    void addSupplementalFields(RawRecordContainer value, long offset, String splitStart, IngestHelperInterface ingestHelper,
+    private void addSupplementalFields(RawRecordContainer value, long offset, String splitStart, IngestHelperInterface ingestHelper,
                     Multimap<String,NormalizedContentInterface> fields) {
         addVirtualFields(ingestHelper, fields);
         addCompositeFields(ingestHelper, fields);

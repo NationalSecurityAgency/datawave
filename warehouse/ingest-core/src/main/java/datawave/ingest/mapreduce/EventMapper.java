@@ -717,23 +717,6 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
         }
     }
     
-    /**
-     * Deprecated. Use #fieldHarvester.extractFields()
-     */
-    @Deprecated
-    // After eliminating this method, expand fieldHarvester.extractFields by eliminating faultTolerantGetEventFields and addSupplementalFields
-    public Multimap<String,NormalizedContentInterface> getFields(RawRecordContainer value, DataTypeHandler<K1> handler) throws Exception {
-        Multimap<String,NormalizedContentInterface> fields = fieldHarvester.faultTolerantGetEventFields(value, handler.getHelper(value.getDataType()));
-        if (fieldHarvester.hasError()) {
-            throw new Exception(fieldHarvester.getException());
-        }
-        fieldHarvester.addSupplementalFields(value, offset, splitStart, handler.getHelper(value.getDataType()), fields);
-        if (fieldHarvester.hasError()) {
-            throw new Exception(fieldHarvester.getException());
-        }
-        return fields;
-    }
-    
     @SuppressWarnings("unchecked")
     public void executeHandler(K1 key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, DataTypeHandler<K1> handler,
                     Context context) throws Exception {
