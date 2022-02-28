@@ -210,16 +210,30 @@
 		<li>A special date format of 'e' can be supplied to mean milliseconds since epoch.</li>
 	</ol>
 	<h3>Unique Functions</h3>
-	<p class="left">In addition, there are functions that are available to visit the query tree, and perform operations on the nodes and their
-		children. The extracted parameters will be added to the provided data. Any options function nodes will be subsequently deleted and remaining AND/OR nodes will be optimized to account for the potential removal of their children.
+	<p class="left">In addition, there are functions that are available to find unique results for fields that are
+		specified, to the granularity of DAY, HOUR, MINUTE, or SECOND. The field passed to the function needs to be a
+		dateTime field, or else the original field will be returned as a unique result. Multiple granularity levels can
+		be provided to the same field in multiple ways.
 		Potential function options that the user may use are listed below.</p>
 	<ul>
-		<li>f:options(): Expects a comma-delimited list of key/value pairs, e.g. f:options('hit.list','true','limit.fields','FOO_1_BAR=3)</li>
-		<li>f:groupby(): Expects a comma-delimited list of fields to group by, e.g. f:groupby('field1','field2',field3')</li>
-		<li>f:unique(): Expects a comma-delimited list of fields to be unique and their granularity levels, e.g. f:unique('field1[ALL]','field2[DAY]','field3[MINUTE,SECOND]')</li>
-		<li>f:unique_by_day(): Expects a comma-delimited list of fields to be unique with a granularity level of by DAY, e.g. unique_by_day('field1','field2'). In LUCENE, #unique_by_day() may be used.</li>
-		<li>f:unique_by_minute(): Expects a comma-delimited list of fields to be unique with a granularity level of by MINUTE, e.g. unique_by_minute('field1','field2'). In LUCENE, #unique_by_minute() may be used.</li>
-		<li>f:unique_by_second(): Expects a comma-delimited list of fields to be unique with a granularity level of by SECOND, e.g. unique_by_second('field1','field2'). In LUCENE, #unique_by_second() may be used.</li>
+		<li>#unique(field): Find unique results for every value of <b>field</b>. No restriction on the type of <b>field</b>.</li>
+		<li>#unique(datetimeField[DAY]): Find every unique result of <b>datetimeField</b> to the day.</li>
+		<li>#unique_by_day(datetimefield): Same as above, just a different means of formatting.</li>
+		<li>#unique(datetimeField[HOUR]): Find every unique result of <b>datetimeField</b> to the hour.</li>
+		<li>#unique_by_hour(datetimeField): Same result as above.</li>
+		<li>#unique(datetimeField[MINUTE]): Find every unique result of <b>datetimeField</b> to the minute.</li>
+		<li>#unique_by_minute(datetimeField): Same result as above.</li>
+		<li>#unique(field,datetimeField1[DAY],datetimeField2[HOUR],datetimeField3[MINUTE]): Find every unique result for <b>field</b>, <b>field1</b> to the day, <b>field2</b> to the hour, field3 to the minute.</li>
+		<li>#unique(field,datetimeField[DAY,HOUR]): Consecutive granularities for the same field are supported. Find each unique result for field, and <b>datetimeField</b> to the day, as well as to the hour.</li>
+	</ul>
+	<p class="left">As referenced above, multiple granularity levels can be specified for the same field in different ways. The following queries are equivalent, and will find
+		each unique result for field, to the hour and to the minute specified: </p>
+	<ul>
+		<li>#unique(field[HOUR,MINUTE])</li>
+		<li>#unique(field[HOUR],field[MINUTE])</li>
+		<li>#unique(field[HOUR]) AND #unique(field[MINUTE])</li>
+		<li>#unique(field[HOUR]) AND #unique_by_minute(field)</li>
+		<li>#unique_by_hour(field) AND #unique_by_minute(field)</li>
 	</ul>
 	<br />
 </body>
