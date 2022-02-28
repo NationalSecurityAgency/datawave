@@ -103,13 +103,13 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
     private boolean unfieldedTokenized = false;
     
     /** the list of fields to tokenize */
-    private Set<String> tokenizedFields = new HashSet<>();
+    private final Set<String> tokenizedFields = new HashSet<>();
     
     /**
      * special fields, don't tokenize these if <code>unfieldedTokenized</code> is true, and remove them from the query node so downstream processors treat the
      * node as un-fielded.
      */
-    private Set<String> skipTokenizeUnfieldedFields = new HashSet<>();
+    private final Set<String> skipTokenizeUnfieldedFields = new HashSet<>();
     
     /** treat tokenized test as a phrase (as opposed to a phrase-with-slop) */
     private boolean useSlopForTokenizedTerms = true;
@@ -260,7 +260,8 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
         }
         
         // Skip nodes we've processed already.
-        if (node.getTag(NODE_PROCESSED) != null) {
+        final Object processed = node.getTag(NODE_PROCESSED);
+        if (processed != null && processed.equals(Boolean.TRUE)) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Skipping processed query node: " + node.toString());
             }
@@ -307,11 +308,6 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             String term;
             while (buffer.incrementToken()) {
                 term = termAtt.toString();
-                if (text.equalsIgnoreCase(term)) {
-                    // token is identical to term, return original node.
-                    return node;
-                }
-                
                 b.append(term).append(" ");
                 
                 // increment the slop range for the tokenized text based on the
@@ -328,6 +324,18 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             
             if (b.length() > 0) {
                 final String tokenizedText = b.toString();
+                
+                // Check to see that the tokenizer produced output that was different from the original query node.
+                // If so avoid creating an OR clause. We compare the 'escaped' string of the original query so that we
+                // do not mistreat things like spaces.
+                if (TextableQueryNode.class.isAssignableFrom(node.getClass())) {
+                    final CharSequence c = ((TextableQueryNode) node).getText();
+                    final String cmp = UnescapedCharSequence.class.isAssignableFrom(c.getClass()) ? toStringEscaped((UnescapedCharSequence) c) : c.toString();
+                    if (tokenizedText.equalsIgnoreCase(cmp)) {
+                        return node;
+                    }
+                }
+                
                 QueryNode n = new QuotedFieldQueryNode(field, new UnescapedCharSequence(tokenizedText), -1, -1);
                 // mark the derived node processed so we don't process it again later.
                 n.setTag(NODE_PROCESSED, Boolean.TRUE);
@@ -347,21 +355,6 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                 boolean originalWasQuoted = QuotedFieldQueryNode.class.isAssignableFrom(node.getClass());
                 if ((useSlopForTokenizedTerms && !originalWasQuoted) || originalSlop > 0) {
                     n = new SlopQueryNode(n, slopRange);
-                }
-                
-                // Check to see that the tokenizer produced output that was different from the original query node.
-                // If so avoid creating an OR clause. This can possibly replace the 'phrase' node
-                // with a 'within' node for consistent behavior when useSlopForTokenizedTerms is true.
-                // We compare the 'escaped' string of the original query so we don't mistreat things like
-                // spaces.
-                if (QuotedFieldQueryNode.class.isAssignableFrom(node.getClass())) {
-                    CharSequence c = ((QuotedFieldQueryNode) node).getText();
-                    if (UnescapedCharSequence.class.isAssignableFrom(c.getClass())) {
-                        c = toStringEscaped((UnescapedCharSequence) c);
-                    }
-                    if (tokenizedText.contentEquals(c)) {
-                        return n;
-                    }
                 }
                 
                 // The tokenizer produced output that was different from the original query node, wrap the original
