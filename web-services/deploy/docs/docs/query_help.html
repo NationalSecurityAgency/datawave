@@ -212,7 +212,7 @@
 	<h3>Unique Functions</h3>
 	<p class="left">In addition, there are functions that are available to find unique results for fields that are
 		specified, to the granularity of DAY, HOUR, MINUTE, or SECOND. The field passed to the function needs to be a
-		dateTime field, or else the original field will be returned as a unique result. Multiple granularity levels can
+		dateTime field if using a time granularity, otherwise the original field will be returned as a unique result. Multiple granularity levels can
 		be provided to the same field in multiple ways.
 		Potential function options that the user may use are listed below.</p>
 	<ul>
@@ -223,7 +223,7 @@
 		<li>#unique_by_hour(datetimeField): Same result as above.</li>
 		<li>#unique(datetimeField[MINUTE]): Find every unique result of <b>datetimeField</b> to the minute.</li>
 		<li>#unique_by_minute(datetimeField): Same result as above.</li>
-		<li>#unique(field,datetimeField1[DAY],datetimeField2[HOUR],datetimeField3[MINUTE]): Find every unique result for <b>field</b>, <b>field1</b> to the day, <b>field2</b> to the hour, field3 to the minute.</li>
+		<li>#unique(field,datetimeField1[DAY],datetimeField2[HOUR],datetimeField3[MINUTE]): Find every unique result for <b>field</b>, <b>field1</b> to the day, <b>field2</b> to the hour, <b>field3</b> to the minute.</li>
 		<li>#unique(field,datetimeField[DAY,HOUR]): Consecutive granularities for the same field are supported. Find each unique result for field, and <b>datetimeField</b> to the day, as well as to the hour.</li>
 	</ul>
 	<p class="left">As referenced above, multiple granularity levels can be specified for the same field in different ways. The following queries are equivalent, and will find
