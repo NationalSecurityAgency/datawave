@@ -211,14 +211,14 @@
 	</ol>
 	<h3>Unique Functions</h3>
 	<p class="left">In addition, there are functions that are available to find unique results for fields that are
-		specified, to the granularity of DAY, HOUR, MINUTE, or SECOND. The field passed to the function needs to be a
+		specified, to the granularity of DAY, HOUR, or MINUTE. The field passed to the function needs to be a
 		dateTime field if using a time granularity, otherwise the original field will be returned as a unique result. Multiple granularity levels can
-		be provided to the same field in multiple ways.
+		be provided to the same field in multiple ways, and granularities will be merged across multiple functions if necessary.
 		Potential function options that the user may use are listed below.</p>
 	<ul>
 		<li>#unique(field): Find unique results for every value of <b>field</b>. No restriction on the type of <b>field</b>.</li>
 		<li>#unique(datetimeField[DAY]): Find every unique result of <b>datetimeField</b> to the day.</li>
-		<li>#unique_by_day(datetimefield): Same as above, just a different means of formatting.</li>
+		<li>#unique_by_day(datetimeField): Same as above, just a different means of formatting.</li>
 		<li>#unique(datetimeField[HOUR]): Find every unique result of <b>datetimeField</b> to the hour.</li>
 		<li>#unique_by_hour(datetimeField): Same result as above.</li>
 		<li>#unique(datetimeField[MINUTE]): Find every unique result of <b>datetimeField</b> to the minute.</li>
