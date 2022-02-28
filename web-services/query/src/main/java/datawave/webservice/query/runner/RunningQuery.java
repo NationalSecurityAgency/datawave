@@ -196,6 +196,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         List<Object> resultList = new ArrayList<>();
         boolean hitPageByteTrigger = false;
         boolean hitPageTimeTrigger = false;
+        boolean hitPageSizeTrigger = false;
         boolean hitIntermediateResult = false;
         try {
             addNDC();
@@ -211,17 +212,19 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     this.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
                     break;
                 }
-                // if the number of results has reached out page size, then break out
+                // if the number of results has reached our page size, then break out
                 if (currentPageCount >= this.settings.getPagesize()) {
                     log.info("Query requested page size had been reached, aborting query.next call");
+                    hitPageSizeTrigger = true;
                     break;
                 }
                 // if the logic had a max page size and we have reached that, then break out
                 if (this.logic.getMaxPageSize() > 0 && currentPageCount >= this.logic.getMaxPageSize()) {
                     log.info("Query logic max page size has been reached, aborting query.next call");
+                    hitPageSizeTrigger = true;
                     break;
                 }
-                // if the logic had a page byte trigger and we have readed that, then break out
+                // if the logic had a page byte trigger, and we have reached that, then break out
                 if (this.logic.getPageByteTrigger() > 0 && currentPageBytes >= this.logic.getPageByteTrigger()) {
                     log.info("Query logic max page byte trigger has been reached, aborting query.next call");
                     hitPageByteTrigger = true;
@@ -343,7 +346,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         } else if (resultList.isEmpty()) {
             return new ResultsPage();
         } else {
-            return new ResultsPage(resultList, ((hitPageByteTrigger || hitPageTimeTrigger) ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE));
+            return new ResultsPage(resultList, ((hitPageByteTrigger || hitPageTimeTrigger || hitPageSizeTrigger) ? ResultsPage.Status.PARTIAL
+                            : ResultsPage.Status.COMPLETE));
         }
     }
     

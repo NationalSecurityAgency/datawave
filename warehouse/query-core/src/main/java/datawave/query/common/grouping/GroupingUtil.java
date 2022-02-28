@@ -1,6 +1,10 @@
 package datawave.query.common.grouping;
 
-import com.google.common.collect.*;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.SortedSetMultimap;
+import com.google.common.collect.TreeMultimap;;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Attribute;
@@ -12,7 +16,13 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.slf4j.Logger;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import static org.slf4j.LoggerFactory.getLogger;

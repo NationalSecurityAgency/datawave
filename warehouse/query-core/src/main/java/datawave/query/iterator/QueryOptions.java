@@ -1354,7 +1354,7 @@ public class QueryOptions implements OptionDescriber {
                 this.getGroupFields().add(param);
             }
             
-            this.setAallowLongRunningQuery(true);
+            this.setAllowLongRunningQuery(true);
         }
         
         if (options.containsKey(GROUP_FIELDS_BATCH_SIZE)) {
@@ -1558,7 +1558,7 @@ public class QueryOptions implements OptionDescriber {
         }
         
         if (options.containsKey(QUERY_IS_LONG_RUNNING)) {
-            this.setAallowLongRunningQuery(Boolean.parseBoolean(options.get(QUERY_IS_LONG_RUNNING)));
+            this.setAllowLongRunningQuery(Boolean.parseBoolean(options.get(QUERY_IS_LONG_RUNNING)));
         }
         
         return true;
@@ -1975,7 +1975,7 @@ public class QueryOptions implements OptionDescriber {
         return queryExecutionTimeout;
     }
     
-    public void setAallowLongRunningQuery(boolean allowLongRunningQuery) {
+    public void setAllowLongRunningQuery(boolean allowLongRunningQuery) {
         this.allowLongRunningQuery = allowLongRunningQuery;
     }
     

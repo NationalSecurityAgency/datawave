@@ -583,6 +583,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public QueryLogicTransformer getTransformer(Query settings) {
         if (this.transformerInstance != null) {
             addConfigBasedTransformers();
+            this.transformerInstance.setQueryExecutionForPageStartTime(settings.getQueryExecutionForCurrentPageStartTime());
             return this.transformerInstance;
         }
         

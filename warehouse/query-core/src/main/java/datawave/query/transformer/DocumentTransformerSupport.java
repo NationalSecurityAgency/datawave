@@ -499,8 +499,8 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     }
     
     /**
-     * Add a document transformer. If the type of document transformer is already in the list of transformers, that instance is replaced. This works under hte
-     * assumption that there is only one instance (singleton) of Transformer per query logic
+     * ln Add a document transformer. If the type of document transformer is already in the list of transformers, that instance is replaced. This works under
+     * hte assumption that there is only one instance (singleton) of Transformer per query logic
      * 
      * @param transform
      */
