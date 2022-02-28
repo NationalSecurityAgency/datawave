@@ -6,8 +6,8 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.BaseNormalizedContent;
 import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
+import datawave.ingest.data.config.ingest.MinimalistIngestHelperImpl;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import org.apache.accumulo.core.data.Value;
@@ -36,6 +36,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class EventMapperSalvageFieldsOnErrorTest {
     private static final String[] SALVAGED_FIELDS = {"ISBN", "author", "borrower", "dueDate", "libraryBranch"};
+    private static final String[] SUPPLEMENTAL_FIELDS = {FieldHarvester.LOAD_DATE_FIELDNAME, FieldHarvester.RAW_FILE_FIELDNAME,
+            FieldHarvester.SEQUENCE_FILE_FIELDNAME};
     
     @Rule
     public EasyMockRule easyMockRule = new EasyMockRule(this);
@@ -58,15 +60,10 @@ public class EventMapperSalvageFieldsOnErrorTest {
     }
     
     /**
-     * FakeSalvagingIngestHelper: - always throws an exception when getEventFields is called, to ensure error handling code path is reached within EventMapper.
-     * - allows for anonymous inline helper creation.
+     * FakeSalvagingIngestHelper implements FieldSalvager to allow anonymous test classes to implement that interface. By extending
+     * MinimalistIngestHelperInterfaceImpl, it always throws an exception when getEventFields is called.
      */
-    public static abstract class FakeSalvagingIngestHelper extends ContentBaseIngestHelper implements FieldSalvager {
-        @Override
-        public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer value) {
-            throw new RuntimeException("Simulated exception while getting event fields for value.");
-        }
-    }
+    public static abstract class FakeSalvagingIngestHelper extends MinimalistIngestHelperImpl implements FieldSalvager {}
     
     /**
      * SalvagingDataTypeHandler provides a FieldSalvager implementation that deserializes rawData as a Map&lt;String, String&gt;, then returns a Multimap
@@ -142,9 +139,17 @@ public class EventMapperSalvageFieldsOnErrorTest {
         Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
         
         // Expect only the salvageable fields, each exactly once
-        assertEquals(written.toString(), SALVAGED_FIELDS.length, written.size());
+        assertEquals(written.toString(), SALVAGED_FIELDS.length + SUPPLEMENTAL_FIELDS.length, written.size());
         Map<String,Integer> fieldNameOccurrences = countPersistedFieldsByName(written);
         for (String expectedFieldName : SALVAGED_FIELDS) {
+            assertTrue(fieldNameOccurrences.toString(), fieldNameOccurrences.containsKey(expectedFieldName));
+            assertEquals(1, (int) fieldNameOccurrences.get(expectedFieldName));
+        }
+        verifyContainsSupplementalFields(fieldNameOccurrences);
+    }
+    
+    private void verifyContainsSupplementalFields(Map<String,Integer> fieldNameOccurrences) {
+        for (String expectedFieldName : SUPPLEMENTAL_FIELDS) {
             assertTrue(fieldNameOccurrences.toString(), fieldNameOccurrences.containsKey(expectedFieldName));
             assertEquals(1, (int) fieldNameOccurrences.get(expectedFieldName));
         }
@@ -163,8 +168,10 @@ public class EventMapperSalvageFieldsOnErrorTest {
         runMapper(); // will throw error, calling ErrorDataTypeHandler. See FakeSalvagingIngestHelper.getEventFields
         Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
         
-        // Expect nothing to be salvaged
-        assertEquals(written.toString(), 0, written.size());
+        // Expect all of the salvageable fields to be missing but supplemental fields to appear
+        assertEquals(written.toString(), SUPPLEMENTAL_FIELDS.length, written.size());
+        Map<String,Integer> fieldNameOccurrences = countPersistedFieldsByName(written);
+        verifyContainsSupplementalFields(fieldNameOccurrences);
     }
     
     @Test
@@ -179,8 +186,10 @@ public class EventMapperSalvageFieldsOnErrorTest {
         runMapper(); // will throw error, calling ErrorDataTypeHandler. See FakeSalvagingIngestHelper.getEventFields
         Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
         
-        // Expect all of the salvageable fields to occur once
-        assertEquals(written.toString(), 0, written.size());
+        // Expect all of the salvageable fields to be missing but supplemental fields to appear
+        assertEquals(written.toString(), SUPPLEMENTAL_FIELDS.length, written.size());
+        Map<String,Integer> fieldNameOccurrences = countPersistedFieldsByName(written);
+        verifyContainsSupplementalFields(fieldNameOccurrences);
     }
     
     @Test
@@ -193,8 +202,10 @@ public class EventMapperSalvageFieldsOnErrorTest {
         runMapper(); // will throw error, calling ErrorDataTypeHandler. See FakeSalvagingIngestHelper.getEventFields
         Multimap<BulkIngestKey,Value> written = TestContextWriter.getWritten();
         
-        // Expect all of the salvageable fields to occur once
-        assertEquals(written.toString(), 0, written.size());
+        // Expect all of the salvageable fields to be missing but supplemental fields to appear
+        assertEquals(written.toString(), SUPPLEMENTAL_FIELDS.length, written.size());
+        Map<String,Integer> fieldNameOccurrences = countPersistedFieldsByName(written);
+        verifyContainsSupplementalFields(fieldNameOccurrences);
     }
     
     private void runMapper() throws IOException, InterruptedException {

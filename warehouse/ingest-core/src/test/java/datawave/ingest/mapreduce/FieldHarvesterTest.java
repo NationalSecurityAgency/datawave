@@ -7,7 +7,7 @@ import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValueTest;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
-import datawave.ingest.data.config.ingest.MinimalistIngestHelperInterfaceImpl;
+import datawave.ingest.data.config.ingest.MinimalistIngestHelperImpl;
 import datawave.ingest.data.config.ingest.VirtualIngest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.NDC;
@@ -343,14 +343,14 @@ public class FieldHarvesterTest {
         Assert.assertEquals(fields.toString(), NUM_SUPPLEMENTAL_FIELDS, fields.size());
     }
     
-    private static class DoubleErrorIngestHelper extends MinimalistIngestHelperInterfaceImpl implements FieldSalvager {
+    private static class DoubleErrorIngestHelper extends MinimalistIngestHelperImpl implements FieldSalvager {
         @Override
         public Multimap<String,NormalizedContentInterface> getSalvageableEventFields(RawRecordContainer rawRecordContainer) {
             throw new RuntimeException();
         }
     }
     
-    private static class BasicIngestHelper extends MinimalistIngestHelperInterfaceImpl {
+    private static class BasicIngestHelper extends MinimalistIngestHelperImpl {
         private final Multimap<String,NormalizedContentInterface> multiMap;
         
         public BasicIngestHelper(Multimap<String,NormalizedContentInterface> multiMap) {
@@ -417,7 +417,7 @@ public class FieldHarvesterTest {
         }
     }
     
-    private static class ErroringSalvagableIngestHelper extends MinimalistIngestHelperInterfaceImpl implements VirtualIngest, CompositeIngest, FieldSalvager {
+    private static class ErroringSalvagableIngestHelper extends MinimalistIngestHelperImpl implements VirtualIngest, CompositeIngest, FieldSalvager {
         private final Multimap<String,NormalizedContentInterface> multiMap;
         
         ErroringSalvagableIngestHelper(Multimap<String,NormalizedContentInterface> multiMap) {

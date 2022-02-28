@@ -16,7 +16,7 @@ import java.util.Set;
 
 // For testing only, this implementation fulfills the interface contract with methods that throw UnsupportedOperationException.
 // It is is extendable when implementations are needed for specific tests.
-public class MinimalistIngestHelperInterfaceImpl implements IngestHelperInterface {
+public class MinimalistIngestHelperImpl implements IngestHelperInterface {
     @Override
     public Type getType() {
         // override this method, as needed
