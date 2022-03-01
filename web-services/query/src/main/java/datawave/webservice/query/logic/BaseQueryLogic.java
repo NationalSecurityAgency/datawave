@@ -35,6 +35,18 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected Iterator<T> iterator = (Iterator<T>) Collections.emptyList().iterator();
     private int maxPageSize = 0;
     private long pageByteTrigger = 0;
+    
+    /**
+     * Used to return a blank page to the client after this time period has elapsed and if the query is allowed to be long running. Defaults to 3000000, which
+     * is 50 minutes.
+     */
+    private long queryExecutionForPageTimeout = 3000000;
+    
+    /**
+     * Used to denote if a query should be allowed to exceed the overall timeout. If true, the #queryExecutionForPageTimeout will be used.
+     */
+    private boolean isLongRunningQuery = false;
+    
     private boolean collectQueryMetrics = true;
     private String _connPoolName;
     private Set<String> authorizedDNs;
@@ -70,6 +82,8 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         this.iterator = other.iterator;
         setMaxPageSize(other.getMaxPageSize());
         setPageByteTrigger(other.getPageByteTrigger());
+        setQueryExecutionForPageTimeout((other.getQueryExecutionForPageTimeout()));
+        setLongRunningQuery(other.isLongRunningQuery());
         setCollectQueryMetrics(other.getCollectQueryMetrics());
         setConnPoolName(other.getConnPoolName());
         setPrincipal(other.getPrincipal());
@@ -176,6 +190,22 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     @Override
     public void setPageByteTrigger(long pageByteTrigger) {
         this.pageByteTrigger = pageByteTrigger;
+    }
+    
+    public long getQueryExecutionForPageTimeout() {
+        return this.queryExecutionForPageTimeout;
+    }
+    
+    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
+        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
+    }
+    
+    public boolean isLongRunningQuery() {
+        return this.isLongRunningQuery;
+    }
+    
+    public void setLongRunningQuery(boolean isLongRunningQuery) {
+        this.isLongRunningQuery = isLongRunningQuery;
     }
     
     @Override

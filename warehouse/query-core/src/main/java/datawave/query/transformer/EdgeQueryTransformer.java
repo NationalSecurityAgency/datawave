@@ -24,6 +24,8 @@ import java.util.Map.Entry;
 public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,Value>,EdgeBase> implements CacheableLogic, EdgeModelAware {
     private Logger log = Logger.getLogger(EdgeQueryTransformer.class);
     
+    protected long queryExecutionForCurrentPageStartTime;
+    
     public EdgeQueryTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(settings, markingFunctions, responseObjectFactory);
     }
@@ -120,5 +122,10 @@ public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,
             edge.setEdgeAttribute3(edgeKey.getAttribute3());
         }
         return edge;
+    }
+    
+    @Override
+    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
+        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
 }

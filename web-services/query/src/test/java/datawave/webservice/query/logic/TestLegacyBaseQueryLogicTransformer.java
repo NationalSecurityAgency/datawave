@@ -1,24 +1,23 @@
 package datawave.webservice.query.logic;
 
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertNotNull;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
 import datawave.marking.MarkingFunctions;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.isA;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 @RunWith(PowerMockRunner.class)
 public class TestLegacyBaseQueryLogicTransformer {
@@ -79,6 +78,7 @@ public class TestLegacyBaseQueryLogicTransformer {
     
     private class TestTransformer extends BaseQueryLogicTransformer<Map.Entry<?,?>,EventBase> {
         BaseQueryResponse response;
+        long queryExecutionForCurrentPageStartTime;
         
         public TestTransformer(MarkingFunctions markingFunctions, BaseQueryResponse response) {
             super(markingFunctions);
@@ -88,6 +88,11 @@ public class TestLegacyBaseQueryLogicTransformer {
         @Override
         public EventBase transform(Map.Entry<?,?> arg0) {
             return null;
+        }
+        
+        @Override
+        public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
+            this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
         }
         
         @Override

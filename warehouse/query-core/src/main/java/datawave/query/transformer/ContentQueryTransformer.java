@@ -1,9 +1,5 @@
 package datawave.query.transformer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map.Entry;
-
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
 import datawave.query.table.parser.ContentKeyValueFactory;
@@ -16,16 +12,20 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.Metadata;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+
 public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,DefaultEvent> {
     
     private Authorizations auths = null;
     private Logger log = Logger.getLogger(ContentQueryTransformer.class);
+    protected long queryExecutionForCurrentPageStartTime;
     
     public ContentQueryTransformer(Query query, MarkingFunctions markingFunctions) {
         super(markingFunctions);
@@ -71,6 +71,11 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
         
         return e;
         
+    }
+    
+    @Override
+    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
+        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
     
     @Override

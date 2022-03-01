@@ -63,9 +63,16 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
     public QueryLogicTransformer getTransformer(Query settings) {
         return new AbstractQueryLogicTransformer<Object,Object>() {
             
+            long queryExecutionForCurrentPageStartTime;
+            
             @Override
             public Object transform(Object input) {
                 return input;
+            }
+            
+            @Override
+            public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
+                this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
             }
             
             @Override

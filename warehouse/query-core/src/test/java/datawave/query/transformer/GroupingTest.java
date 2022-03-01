@@ -14,11 +14,12 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.attributes.Attribute;
+import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
+import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.JexlControlledQueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.transformer.GroupingTransform.GroupingTypeAttribute;
 import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
@@ -42,11 +43,7 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
@@ -54,25 +51,9 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
+import java.util.*;
 
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.ALWAYS;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.ALWAYS_SANS_CONSISTENCY;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.NEVER;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.RANDOM;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.RANDOM_SANS_CONSISTENCY;
+import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.*;
 
 /**
  * Applies grouping to queries
@@ -236,6 +217,7 @@ public abstract class GroupingTest {
                     case "AGE":
                     case "AG":
                     case "RECORD":
+                    case "DEPENDENTS":
                         secondKey = fieldBase.getValueString();
                         break;
                 }
@@ -250,7 +232,7 @@ public abstract class GroupingTest {
             } else {
                 key = secondKey;
             }
-            Assert.assertEquals(expected.get(key), value);
+            Assert.assertEquals("key = " + key, expected.get(key), value);
         }
         return response;
     }
@@ -291,7 +273,7 @@ public abstract class GroupingTest {
         log.debug("reponses:" + digested);
         Set<String> responseSet = Sets.newHashSet(digested);
         // if the grouped results from every type of rebuild are the same, there should be only 1 entry in the responseSet
-        Assert.assertEquals(responseSet.size(), 1);
+        Assert.assertEquals(1, responseSet.size());
     }
     
     // grab the relevant stuff from the events and do some formatting
@@ -443,7 +425,7 @@ public abstract class GroupingTest {
     }
     
     @Test
-    public void testGroupingMixedEntriesWithAndWithNoContext() throws Exception {
+    public void testGroupingMixedWithAndWithNoContext() throws Exception {
         // Testing multivalued entries with no grouping context in combination with a grouping context entries
         Map<String,String> extraParameters = new HashMap<>();
         
@@ -470,7 +452,40 @@ public abstract class GroupingTest {
             }
         }
     }
-    
+
+    @Test
+    public void testGroupingWithFieldWithSparseGroupingEntries() throws Exception {
+        // Testing multivalued atoms where not all atoms have every field populated.
+        // This results in entries where the grouping context is sparse;
+        // that is, not all of the grouping contexts have data for a field.
+        // Look at VisibilityWiseGuysIngest and the DEPENDENTS fields in the data
+        Map<String,String> extraParameters = new HashMap<>();
+
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+
+        String queryString = "UUID =~ '^[CS].*'";
+
+        // @formatter:off
+        // The expected counts correspond to the listed UIDs and contexts
+        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+                .put("FEMALE-2", 1) // female w/2 dependents: sopranoUID 1
+                .put("MALE-2", 4) // male w/2 dependents: corleoneUID 1, 5, caponeUID 1, 3
+                .put("MALE-3", 2) // male w/3 dependents: corleoneUID 2, caponeUID 2
+                .put("MALE-4", 3) // male w/4 dependents: corleoneUID 4, sopranoUID 0, caponeUID 0
+                .build();
+        // @formatter:on
+
+        extraParameters.put("group.fields", "GENDER,DEPENDENTS");
+        // extraParameters.put("group.fields.batch.size", "12");
+
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+
     @Test
     public void testGroupingUsingFunction() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
@@ -564,7 +579,7 @@ public abstract class GroupingTest {
     @Test
     public void testCountingMap() {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
+        GroupCountingHashMap map = new GroupCountingHashMap(markingFunctions);
         GroupingTypeAttribute attr1 = new GroupingTypeAttribute(new LcType("FOO"), new Key("FOO"), true);
         attr1.setColumnVisibility(new ColumnVisibility("A"));
         map.add(Collections.singleton(attr1));
@@ -594,7 +609,7 @@ public abstract class GroupingTest {
     @Test
     public void testCountingMapAgain() {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
+        GroupCountingHashMap map = new GroupCountingHashMap(markingFunctions);
         
         GroupingTypeAttribute<?> attr1a = new GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
         attr1a.setColumnVisibility(new ColumnVisibility("A"));

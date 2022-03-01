@@ -34,6 +34,8 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
     
     private static final Logger log = Logger.getLogger(FacetedTransformer.class);
     
+    private long queryExecutionForCurrentPageStartTime;
+    
     /**
      * By default, assume each cell still has the visibility attached to it
      * 
@@ -197,6 +199,11 @@ public class FacetedTransformer extends DocumentTransformerSupport<Entry<Key,Val
         }
         
         return _transform(documentEntry);
+    }
+    
+    @Override
+    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
+        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
     
     private FacetsBase _transform(Entry<Key,Document> documentEntry) throws EmptyObjectException {

@@ -10,10 +10,7 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.Flushable;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.logic.WritesResultCardinalities;
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.FieldBase;
-import datawave.webservice.query.result.event.Metadata;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.result.event.*;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -106,6 +103,12 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
             throw new EmptyObjectException();
         }
         
+        if (documentEntry.getValue().isIntermediateResult()) {
+            DefaultEvent output = new DefaultEvent();
+            output.setIntermediateResult(true);
+            return output;
+        }
+        
         Key documentKey = correctKey(documentEntry.getKey());
         Document document = documentEntry.getValue();
         
@@ -130,6 +133,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         ColumnVisibility eventCV = new ColumnVisibility(documentKey.getColumnVisibility());
         
         EventBase output = null;
+        
         try {
             // build response method here
             output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);
@@ -139,7 +143,8 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         }
         
         if (output == null) {
-            // buildResponse will return a null object if there was only metadata in the document
+            // buildResponse will return a null object if there was only metadata in the document and a special flag was
+            // not found in the document
             throw new EmptyObjectException();
         }
         
@@ -190,6 +195,14 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         }
         
         return event;
+    }
+    
+    @Override
+    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
+        for (DocumentTransform dt : transforms) {
+            dt.setQueryExecutionForPageStartTime(queryExecutionForCurrentPageStartTime);
+        }
+        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
     
 }
