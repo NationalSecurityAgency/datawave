@@ -3,6 +3,7 @@ package datawave.query.planner;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.configuration.spring.SpringBean;
 import datawave.data.type.GeometryType;
 import datawave.data.type.NumberType;
@@ -55,6 +56,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -194,6 +196,11 @@ public class MultiValueCompositeIndexTest {
         // Test Data with 1 wkt and 2 numbers
         testData.add(new TestData(Collections.singletonList("POINT (0 0)"), Arrays.asList(11, 22)));
         
+    }
+    
+    @Before
+    public void setup() {
+        this.logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
     }
     
     @BeforeClass
@@ -417,6 +424,7 @@ public class MultiValueCompositeIndexTest {
         query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
+        config.setLocatorSupplier(InMemoryTabletLocator::new);
         
         logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
         

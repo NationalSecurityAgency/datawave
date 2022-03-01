@@ -3,6 +3,7 @@ package datawave.query;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimap;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.hash.UID;
 import datawave.data.type.LcNoDiacriticsType;
@@ -156,6 +157,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setMaxEvaluationPipelines(1);
+        logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
         deserializer = new KryoDocumentDeserializer();
     }
     

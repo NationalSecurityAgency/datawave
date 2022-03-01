@@ -2,6 +2,7 @@ package datawave.query.cardinality;
 
 import com.google.common.collect.Sets;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
@@ -98,6 +99,7 @@ public class TestCardinalityWithQuery {
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
+        logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
         
         QueryTestTableHelper.configureLogicToScanTables(logic);
         loadData();

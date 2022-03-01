@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.configuration.spring.SpringBean;
 import datawave.data.type.LcType;
 import datawave.data.type.NumberType;
@@ -172,6 +173,7 @@ public abstract class GroupingTest {
         
         logic.setFullTableScanEnabled(true);
         logic.setMaxEvaluationPipelines(1);
+        logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
         deserializer = new KryoDocumentDeserializer();
     }
     

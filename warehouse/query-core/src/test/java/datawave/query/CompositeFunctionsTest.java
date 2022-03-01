@@ -1,5 +1,6 @@
 package datawave.query;
 
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
@@ -182,6 +183,8 @@ public abstract class CompositeFunctionsTest {
         tldEventQueryLogic.setFullTableScanEnabled(true);
         tldEventQueryLogic.setMaxDepthThreshold(6);
         deserializer = new KryoDocumentDeserializer();
+        this.eventQueryLogic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        this.tldEventQueryLogic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
     }
     
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;

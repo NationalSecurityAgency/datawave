@@ -1,6 +1,7 @@
 package datawave.query.tables.facets;
 
 import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.helpers.PrintUtility;
 import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
@@ -106,6 +107,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         this.logic.setMarkingFunctions(new MarkingFunctions.Default());
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        this.logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
         
         // init must set auths
         testInit();

@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
@@ -151,6 +152,7 @@ public abstract class ExecutableExpansionVisitorTest {
         logic.setFullTableScanEnabled(false);
         logic.setMaxDepthThreshold(11);
         logic.setMaxTermThreshold(12);
+        logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
         deserializer = new KryoDocumentDeserializer();
     }
     
@@ -178,8 +180,8 @@ public abstract class ExecutableExpansionVisitorTest {
         
         HashSet<String> expectedSet = new HashSet<String>(expected);
         HashSet<String> resultSet;
-        resultSet = new HashSet<String>();
-        Set<Document> docs = new HashSet<Document>();
+        resultSet = new HashSet<>();
+        Set<Document> docs = new HashSet<>();
         for (Map.Entry<Key,Value> entry : logic) {
             Document d = deserializer.apply(entry).getValue();
             

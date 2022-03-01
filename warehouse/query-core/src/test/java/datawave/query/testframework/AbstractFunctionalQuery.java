@@ -3,6 +3,7 @@ package datawave.query.testframework;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions.Default;
 import datawave.query.QueryTestTableHelper;
@@ -178,6 +179,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         this.logic.setLogTimingDetails(true);
         this.logic.setMinimumSelectivity(0.03D);
         this.logic.setMaxIndexScanTimeMillis(5000);
+        this.logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
         
         // count logic
         countLogic.setIncludeDataTypeAsField(true);
@@ -188,6 +190,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         countLogic.setMetadataHelperFactory(new MetadataHelperFactory());
         countLogic.setQueryPlanner(new DefaultQueryPlanner());
         countLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        countLogic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
         
         QueryTestTableHelper.configureLogicToScanTables(countLogic);
         
@@ -254,6 +257,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     protected void parsePlan(String subStr, int expect) {
         ShardQueryConfiguration config = this.logic.getConfig();
+        
         String plan = config.getQueryString();
         int idx;
         int total = 0;

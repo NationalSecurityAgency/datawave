@@ -2,6 +2,7 @@ package datawave.query.tables;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.QueryTestTableHelper;
@@ -84,6 +85,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
         this.logic.setQueryPlanner(new DefaultQueryPlanner());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        this.logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
         
         // init must set auths
         testInit();

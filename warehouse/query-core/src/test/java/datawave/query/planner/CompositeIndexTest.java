@@ -3,6 +3,7 @@ package datawave.query.planner;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.configuration.spring.SpringBean;
 import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.GeometryType;
@@ -59,6 +60,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -201,6 +203,11 @@ public class CompositeIndexTest {
                         .addAsManifestResource(
                                         new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
                                                         + "</alternatives>"), "beans.xml");
+    }
+    
+    @Before
+    public void setup() {
+        this.logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
     }
     
     @BeforeClass

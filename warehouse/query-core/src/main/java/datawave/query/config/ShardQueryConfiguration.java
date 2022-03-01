@@ -31,8 +31,16 @@ import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.impl.ClientContext;
+import org.apache.accumulo.core.client.impl.Credentials;
+import org.apache.accumulo.core.client.impl.Tables;
+import org.apache.accumulo.core.client.impl.TabletLocator;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.function.FailableSupplier;
 import org.apache.log4j.Logger;
 
 import java.io.Serializable;
@@ -219,6 +227,31 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Map<String,String> compositeFieldSeparators = new HashMap<>();
     private Set<String> evaluationOnlyFields = new HashSet<>(0);
     private Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
+    
+    /**
+     * Abstracts out the method for accessing a TabletLocator
+     */
+    private FailableSupplier<TabletLocator,TableNotFoundException> locatorSupplier = () -> TabletLocator.getLocator(
+                    new ClientContext(this.getConnector().getInstance(), new Credentials(this.getConnector().whoami(), new PasswordToken(this
+                                    .getAccumuloPassword())), AccumuloConfiguration.getDefaultConfiguration()), Tables.getTableId(this.getConnector()
+                                    .getInstance(), this.getShardTableName()));
+    
+    /**
+     *
+     * @param locatorSupplier
+     *            the {@code Supplier} for getting a {@code TableLocator}
+     */
+    public void setLocatorSupplier(FailableSupplier<TabletLocator,TableNotFoundException> locatorSupplier) {
+        this.locatorSupplier = locatorSupplier;
+    }
+    
+    /**
+     *
+     * @return a {@code Supplier} for a {@code TabletLocator}
+     */
+    public FailableSupplier<TabletLocator,TableNotFoundException> getLocatorSupplier() {
+        return this.locatorSupplier;
+    }
     
     /**
      * Disables Whindex (value-specific) field mappings for GeoWave functions.
@@ -554,6 +587,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexMappingFields(other.getWhindexMappingFields());
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
+        this.setLocatorSupplier(other.locatorSupplier);
     }
     
     /**

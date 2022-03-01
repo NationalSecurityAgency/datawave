@@ -3,6 +3,7 @@ package datawave.query.planner;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.configuration.spring.SpringBean;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
@@ -152,6 +153,11 @@ public class GeoSortedQueryDataTest {
                         .addAsManifestResource(
                                         new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
                                                         + "</alternatives>"), "beans.xml");
+    }
+    
+    @Before
+    public void setup() {
+        this.logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
     }
     
     @BeforeClass

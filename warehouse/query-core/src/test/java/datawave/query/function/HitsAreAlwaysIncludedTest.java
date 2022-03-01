@@ -2,6 +2,7 @@ package datawave.query.function;
 
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
@@ -152,6 +153,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         logic.setFullTableScanEnabled(true);
+        logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
         deserializer = new KryoDocumentDeserializer();
     }
     

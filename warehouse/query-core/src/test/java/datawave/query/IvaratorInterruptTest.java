@@ -1,5 +1,6 @@
 package datawave.query;
 
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
@@ -133,7 +134,7 @@ public abstract class IvaratorInterruptTest {
         File tmpDir = temporaryFolder.newFolder();
         IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
-        
+        logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
         deserializer = new KryoDocumentDeserializer();
     }
     
