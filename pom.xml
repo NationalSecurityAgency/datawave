@@ -44,6 +44,7 @@
         <version.commons-io>2.6</version.commons-io>
         <version.commons-jexl>2.1.1</version.commons-jexl>
         <version.commons-lang>2.6</version.commons-lang>
+        <version.commons-lang3>3.11</version.commons-lang3>
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-pool>1.6</version.commons-pool>
         <version.curator>2.13.0</version.curator>
