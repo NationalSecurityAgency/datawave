@@ -93,8 +93,8 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
         } catch (ParseException e) {
             throw new IllegalArgumentException("Cannot parse the geometry", e);
         }
-        validate();
         this.toKeep = WritableUtils.readVInt(in) != 0;
+        validate();
     }
     
     @Override
@@ -173,6 +173,7 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
         input.readBytes(wellKnownBinary);
         try {
             geometry = new WKBReader().read(wellKnownBinary);
+            validate();
         } catch (ParseException e) {
             throw new IllegalArgumentException("Cannot parse the geometry", e);
         }

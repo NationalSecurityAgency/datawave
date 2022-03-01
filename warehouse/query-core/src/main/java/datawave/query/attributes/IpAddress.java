@@ -77,8 +77,8 @@ public class IpAddress extends Attribute<IpAddress> implements Serializable {
         String ipString = WritableUtils.readString(in);
         setValue(ipString);
         setNormalizedValue(ipString);
-        validate();
         this.toKeep = WritableUtils.readVInt(in) != 0;
+        validate();
     }
     
     @Override
@@ -138,8 +138,8 @@ public class IpAddress extends Attribute<IpAddress> implements Serializable {
         String ipAddressString = input.readString();
         setValue(ipAddressString);
         setNormalizedValue(ipAddressString);
-        validate();
         this.toKeep = input.readBoolean();
+        validate();
     }
     
     /*

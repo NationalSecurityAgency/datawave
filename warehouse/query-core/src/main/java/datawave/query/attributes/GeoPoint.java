@@ -74,8 +74,8 @@ public class GeoPoint extends Attribute<GeoPoint> implements Serializable {
     public void readFields(DataInput in) throws IOException {
         readMetadata(in);
         this.point = WritableUtils.readString(in);
-        validate();
         this.toKeep = WritableUtils.readVInt(in) != 0;
+        validate();
     }
     
     @Override
@@ -148,8 +148,8 @@ public class GeoPoint extends Attribute<GeoPoint> implements Serializable {
     public void read(Kryo kryo, Input input) {
         readMetadata(kryo, input);
         this.point = input.readString();
-        validate();
         this.toKeep = input.readBoolean();
+        validate();
     }
     
     /*

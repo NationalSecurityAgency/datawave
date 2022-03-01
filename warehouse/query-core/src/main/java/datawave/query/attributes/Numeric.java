@@ -126,8 +126,8 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
         String stringValue = WritableUtils.readString(in);
         setValue(stringValue);
         setNormalizedValue(stringValue);
-        validate();
         this.toKeep = WritableUtils.readVInt(in) != 0;
+        validate();
     }
     
     @Override
@@ -189,8 +189,8 @@ public class Numeric extends Attribute<Numeric> implements Serializable {
         String stringValue = input.readString();
         setValue(stringValue);
         setNormalizedValue(stringValue);
-        validate();
         this.toKeep = input.readBoolean();
+        validate();
     }
     
     /*

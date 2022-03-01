@@ -75,8 +75,8 @@ public class Latitude extends Attribute<Latitude> implements Serializable {
     public void readFields(DataInput in) throws IOException {
         readMetadata(in);
         this.latitude = WritableUtils.readString(in);
-        validate();
         this.toKeep = WritableUtils.readVInt(in) != 0;
+        validate();
     }
     
     @Override
@@ -148,8 +148,8 @@ public class Latitude extends Attribute<Latitude> implements Serializable {
     public void read(Kryo kryo, Input input) {
         readMetadata(kryo, input);
         this.latitude = input.readString();
-        validate();
         this.toKeep = input.readBoolean();
+        validate();
     }
     
     /*
