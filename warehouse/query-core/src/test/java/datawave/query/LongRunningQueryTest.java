@@ -123,7 +123,7 @@ public class LongRunningQueryTest {
         
         ResultsPage page = runningQuery.next();
         pages.add(page);
-        // guarantee the need for at least a second page.
+        // guarantee the need for at least a second page. (make the wait slightly longer than the page timeout is set to)
         try {
             Thread.sleep(250);
         } catch (InterruptedException e) {
@@ -263,7 +263,7 @@ public class LongRunningQueryTest {
         // this parameter is what makes the query long running. Failing to set this will let it default to 50 minutes
         // (and not the 500 milliseconds that it is set to) which will return only 1 page of 8 results, thereby failing this test.
         // the smaller this timeout, the more pages of results that will be returned.
-        logic.setQueryExecutionForPageTimeout(500);
+        logic.setQueryExecutionForPageTimeout(10);
         logic.setLongRunningQuery(true);
         // We expect 8 results, so this allows us to test getting those results over 2 pages
         logic.setMaxPageSize(4);
@@ -278,11 +278,11 @@ public class LongRunningQueryTest {
         ResultsPage page = runningQuery.next();
         pages.add(page);
         
-        // guarantee the need for at least a second page.
+        // guarantee the need for at least a second page (make the wait slightly longer than the page timeout is set to)
         try {
-            Thread.sleep(250);
+            Thread.sleep(15);
         } catch (InterruptedException e) {
-
+            
         }
         
         while (page.getStatus() != ResultsPage.Status.COMPLETE) {
