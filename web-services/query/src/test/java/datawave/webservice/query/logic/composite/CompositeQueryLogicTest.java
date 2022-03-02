@@ -12,7 +12,11 @@ import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.ResultsPage.Status;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.*;
+import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.logic.BaseQueryLogicTransformer;
+import datawave.webservice.query.logic.DatawaveRoleManager;
+import datawave.webservice.query.logic.EasyRoleManager;
+import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.result.BaseQueryResponse;
@@ -27,8 +31,15 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class CompositeQueryLogicTest {

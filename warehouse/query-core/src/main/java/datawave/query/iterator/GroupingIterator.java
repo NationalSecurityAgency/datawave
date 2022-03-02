@@ -8,9 +8,9 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
+import datawave.query.common.grouping.GroupingUtil;
 import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
 import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
-import datawave.query.common.grouping.GroupingUtil;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.iterators.YieldCallback;
@@ -19,7 +19,15 @@ import org.slf4j.Logger;
 import org.springframework.util.Assert;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.slf4j.LoggerFactory.getLogger;
@@ -84,7 +92,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
             if (previousIterators.hasNext()) {
                 Map.Entry<Key,Document> entry = previousIterators.next();
                 if (entry != null) {
-                    log.trace("{} get list key counts for: {}", "t-server", entry);
+                    log.trace("t-server get list key counts for: {}", entry);
                     
                     keys.add(entry.getKey());
                     GroupingUtil.GroupingInfo groupingInfo = groupingUtil.getGroupingInfo(entry, groupFieldsSet, this.countingMap);
