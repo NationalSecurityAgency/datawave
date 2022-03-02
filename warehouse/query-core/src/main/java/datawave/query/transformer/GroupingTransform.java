@@ -1,10 +1,6 @@
 package datawave.query.transformer;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.SortedSetMultimap;
-import com.google.common.collect.TreeMultimap;
+import com.google.common.collect.*;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
@@ -26,20 +22,8 @@ import org.springframework.util.Assert;
 
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -50,7 +34,7 @@ import static org.slf4j.LoggerFactory.getLogger;
  * to each combination. It is possible that values in a specific group may hold different column visibilities. Because the multiple fields are aggregated into
  * one, it is necessary to combine the column visibilities for the fields and remark the grouped fields. Additionally, the overall document visibility must be
  * computed.
- *
+ * <p>
  * Because the tserver may tear down and start a new iterator at any time after a next() call, there can be no saved state in this class. For that reason, each
  * next call on the tserver will flatten the aggregated data into a single Entry&gt;Key,Document&lt; to return to the web server. The web server will then
  * aggregate these documents by count.
@@ -102,7 +86,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     
     /**
      * tserver calls this CTOR with flatten = true. Called by QueryIterator::seek
-     * 
+     *
      * @param logic
      * @param groupFieldsSet
      * @param flatten
@@ -114,7 +98,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     
     /**
      * web server calls this CTOR (flatten defaults to false) called by ShardQueryLogic::getTransformer(Query)
-     * 
+     *
      * @param logic
      * @param groupFieldsSet
      */
@@ -160,7 +144,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     
     /**
      * Aggregate items from the incoming iterator and supply them via the flush method
-     * 
+     *
      * @param in
      *            an iterator source
      * @return the flushed value that is an aggregation from the source iterator
@@ -307,7 +291,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * AGE.A=34, GENDER.A=MALE, COUNT.A=1,
      * }
      * </pre>
-     *
+     * <p>
      * The Attributes, which have had their visibilities merged, are copied into normal TypeAttributes for serialization to the webserver.
      *
      * @param documents
@@ -467,8 +451,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 // see above comment about the COUNT field
                 log.trace("{} adding {} of {} to counting map", flatten ? "tserver" : "webserver", count, fieldCollection);
                 IntStream.range(0, count).forEach(j -> countingMap.add(fieldCollection));
-                fieldVisibilities.put(fieldCollection, getColumnVisibility(entry));
-                log.trace("put {} to {} into fieldVisibilities {}", fieldCollection, getColumnVisibility(entry), fieldVisibilities);
+                fieldVisibilities.put(fieldCollection, getTopLevelVisibility(entry));
+                log.trace("put {} to {} into fieldVisibilities {}", fieldCollection, getTopLevelVisibility(entry), fieldVisibilities);
             } else {
                 log.trace("fieldList.size() != this.expandedGroupFieldsList.size()");
                 log.trace("fieldList: {}", fieldCollection);
@@ -489,8 +473,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         return new ColumnVisibility();
     }
     
-    private ColumnVisibility getColumnVisibility(Entry<Key,Document> e) {
-        return e.getValue().getColumnVisibility();
+    private ColumnVisibility getTopLevelVisibility(Entry<Key,Document> e) {
+        return e.getKey().getColumnVisibilityParsed();
     }
     
     private ColumnVisibility toColumnVisibility(Collection<ColumnVisibility> visibilities) throws Exception {
@@ -549,7 +533,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     
     /**
      * ignores the metadata for comparison.
-     * 
+     *
      * @param <T>
      */
     static class GroupingTypeAttribute<T extends Comparable<T>> extends TypeAttribute<T> {

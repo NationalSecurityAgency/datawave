@@ -4,8 +4,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.Constants;
+import datawave.query.jexl.DatawaveJexlContext;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -28,7 +28,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     
     /**
      * The metadata for this attribute. Really only the column visibility and timestamp are preserved in this metadata when serializing and deserializing.
-     * However more information (e.g. the document key) can be maintained in this field for use locally.
+     * However, more information (e.g. the document key) can be maintained in this field for use locally.
      */
     protected Key metadata = null;
     protected boolean toKeep = true; // a flag denoting whether this attribute is to be kept in the returned results (transient or not)
@@ -157,49 +157,65 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     }
     
     protected void writeMetadata(DataOutput out, Boolean reducedResponse) throws IOException {
-        out.writeBoolean(isMetadataSet());
-        if (isMetadataSet()) {
-            byte[] cvBytes = getColumnVisibility().getExpression();
-            
-            WritableUtils.writeVInt(out, cvBytes.length);
-            
-            out.write(cvBytes);
-            out.writeLong(getTimestamp());
+        out.writeBoolean(reducedResponse);
+        
+        if (!reducedResponse) {
+            out.writeBoolean(isMetadataSet());
+            if (isMetadataSet()) {
+                byte[] cvBytes = getColumnVisibility().getExpression();
+                WritableUtils.writeVInt(out, cvBytes.length);
+                out.write(cvBytes);
+                out.writeLong(getTimestamp());
+            }
         }
     }
     
     protected void writeMetadata(Kryo kryo, Output output, Boolean reducedResponse) {
-        output.writeBoolean(isMetadataSet());
-        if (isMetadataSet()) {
-            byte[] cvBytes = getColumnVisibility().getExpression();
-            output.writeInt(cvBytes.length, true);
-            output.writeBytes(cvBytes);
-            output.writeLong(getTimestamp());
+        output.writeBoolean(reducedResponse);
+        
+        if (!reducedResponse) {
+            output.writeBoolean(isMetadataSet());
+            if (isMetadataSet()) {
+                byte[] cvBytes = getColumnVisibility().getExpression();
+                output.writeInt(cvBytes.length, true);
+                output.writeBytes(cvBytes);
+                output.writeLong(getTimestamp());
+            }
         }
+        
     }
     
     protected void readMetadata(DataInput in) throws IOException {
-        if (in.readBoolean()) {
-            int cvBytesLength = WritableUtils.readVInt(in);
-            
-            byte[] cvBytes = new byte[cvBytesLength];
-            
-            in.readFully(cvBytes);
-            
-            this.setMetadata(new ColumnVisibility(cvBytes), in.readLong());
-        } else {
-            this.clearMetadata();
+        boolean reducedResponse = in.readBoolean();
+        
+        if (!reducedResponse) {
+            if (in.readBoolean()) {
+                int cvBytesLength = WritableUtils.readVInt(in);
+                
+                byte[] cvBytes = new byte[cvBytesLength];
+                
+                in.readFully(cvBytes);
+                
+                this.setMetadata(new ColumnVisibility(cvBytes), in.readLong());
+            } else {
+                this.clearMetadata();
+            }
         }
     }
     
     protected void readMetadata(Kryo kryo, Input input) {
-        if (input.readBoolean()) {
-            int size = input.readInt(true);
-            
-            this.setMetadata(new ColumnVisibility(input.readBytes(size)), input.readLong());
-        } else {
-            this.clearMetadata();
+        boolean reducedResponse = input.readBoolean();
+        
+        if (!reducedResponse) {
+            if (input.readBoolean()) {
+                int size = input.readInt(true);
+                
+                this.setMetadata(new ColumnVisibility(input.readBytes(size)), input.readLong());
+            } else {
+                this.clearMetadata();
+            }
         }
+        
     }
     
     protected int compareMetadata(Attribute<T> other) {

@@ -42,11 +42,7 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
@@ -54,29 +50,12 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
+import java.util.*;
 
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.ALWAYS;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.ALWAYS_SANS_CONSISTENCY;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.NEVER;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.RANDOM;
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.RANDOM_SANS_CONSISTENCY;
+import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.*;
 
 /**
  * Applies grouping to queries
- * 
  */
 public abstract class GroupingTest {
     
@@ -265,7 +244,7 @@ public abstract class GroupingTest {
         String queryString = "UUID =~ '^[CS].*'";
         
         // @formatter:off
-        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+        Map<String, Integer> expectedMap = ImmutableMap.<String, Integer>builder()
                 .put("FEMALE-18", 2)
                 .put("MALE-30", 1)
                 .put("MALE-34", 1)
@@ -323,7 +302,7 @@ public abstract class GroupingTest {
         String queryString = "UUID =~ '^[CS].*'";
         
         // @formatter:off
-        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+        Map<String, Integer> expectedMap = ImmutableMap.<String, Integer>builder()
                 .put("18", 2)
                 .put("30", 1)
                 .put("34", 1)
@@ -453,7 +432,7 @@ public abstract class GroupingTest {
         String queryString = "UUID =~ '^[CS].*'";
         
         // @formatter:off
-        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+        Map<String, Integer> expectedMap = ImmutableMap.<String, Integer>builder()
                 .put("FEMALE-2", 1)
                 .put("MALE-1", 3)
                 .put("MALE-2", 2)
@@ -482,7 +461,7 @@ public abstract class GroupingTest {
         String queryString = "UUID =~ '^[CS].*' && f:groupby('$AGE','GENDER')";
         
         // @formatter:off
-        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+        Map<String, Integer> expectedMap = ImmutableMap.<String, Integer>builder()
                 .put("FEMALE-18", 2)
                 .put("MALE-30", 1)
                 .put("MALE-34", 1)
@@ -512,7 +491,7 @@ public abstract class GroupingTest {
         String queryString = "(UUID:C* or UUID:S* ) and #GROUPBY('AGE','$GENDER')";
         
         // @formatter:off
-        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+        Map<String, Integer> expectedMap = ImmutableMap.<String, Integer>builder()
                 .put("FEMALE-18", 2)
                 .put("MALE-30", 1)
                 .put("MALE-34", 1)
@@ -543,7 +522,7 @@ public abstract class GroupingTest {
         String queryString = "(UUID:CORLEONE) and #GROUPBY('AGE','BIRTHDAY')";
         
         // @formatter:off
-        Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
+        Map<String, Integer> expectedMap = ImmutableMap.<String, Integer>builder()
                 .put("4-18", 1)
                 .put("5-40", 1)
                 .put("3-20", 1)

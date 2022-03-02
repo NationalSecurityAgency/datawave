@@ -27,14 +27,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.format.DateTimeParseException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
 
 public class Document extends AttributeBag<Document> implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -280,7 +274,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 
                 // When calling put() on a Document which already contains an Attributes
                 // for a given with another Attributes, issue the equivalent of a putAll() on the new Attributes
-                // to not create additional hiearchy inside this Document
+                // to not create additional hierarchy inside this Document
                 //
                 // e.g. Given: {"CONTENT"=>[BODY:foo, HEAD:foo]}.put("CONTENT", [BODY:bar, HEAD:bar, FOOT:bar])
                 // We want to get: {"CONTENT"=>[BODY:foo, HEAD:foo, BODY:bar, HEAD:bar, FOOT:bar]}
@@ -544,6 +538,13 @@ public class Document extends AttributeBag<Document> implements Serializable {
         }
         
         WritableUtils.writeVLong(out, shardTimestamp);
+        
+        // Serialize top level visibility regardless of reducedResponse
+        if (getColumnVisibility() != null && !getColumnVisibility().equals(Constants.EMPTY_VISIBILITY)) {
+            byte[] cvBytes = getColumnVisibility().getExpression();
+            WritableUtils.writeVInt(out, cvBytes.length);
+            WritableUtils.writeCompressedByteArray(out, cvBytes);
+        }
     }
     
     @Override
@@ -594,6 +595,92 @@ public class Document extends AttributeBag<Document> implements Serializable {
         this.shardTimestamp = WritableUtils.readVLong(in);
         
         invalidateMetadata();
+    }
+    
+    @Override
+    public void write(Kryo kryo, Output output) {
+        write(kryo, output, false);
+    }
+    
+    @Override
+    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
+        output.writeInt(this._count, true);
+        output.writeBoolean(trackSizes);
+        output.writeLong(this._bytes, true);
+        
+        output.writeInt(this.dict.size(), true);
+        
+        for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
+            // Write out the field name
+            // writeAscii fails to be read correctly if the value has only one character
+            // need to use writeString here
+            output.writeString(entry.getKey());
+            
+            Attribute<?> attribute = entry.getValue();
+            output.writeString(attribute.getClass().getName());
+            
+            attribute.write(kryo, output, reducedResponse);
+        }
+        
+        output.writeLong(this.shardTimestamp);
+        
+        // Serialize top level visibility regardless of reducedResponse
+        if (getColumnVisibility() != null && !getColumnVisibility().equals(Constants.EMPTY_VISIBILITY)) {
+            byte[] cvBytes = getColumnVisibility().getExpression();
+            output.writeInt(cvBytes.length, true);
+            output.writeBytes(cvBytes);
+        }
+    }
+    
+    @Override
+    public void read(Kryo kryo, Input input) {
+        this._count = input.readInt(true);
+        trackSizes = input.readBoolean();
+        this._bytes = input.readLong(true);
+        
+        int numAttrs = input.readInt(true);
+        
+        this.dict = new TreeMap<>();
+        
+        for (int i = 0; i < numAttrs; i++) {
+            // Get the fieldName
+            String fieldName = input.readString();
+            
+            System.out.println("\nfieldName: " + fieldName);
+            
+            // Get the class name for the concrete Attribute
+            String attrClassName = input.readString();
+            Class<?> clz;
+            
+            // Get the Class for the name of the class of the concrete Attribute
+            try {
+                clz = Class.forName(attrClassName);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            
+            Attribute<?> attr;
+            if (Attribute.class.isAssignableFrom(clz)) {
+                // Get an instance of the concrete Attribute
+                try {
+                    attr = (Attribute<?>) clz.newInstance();
+                } catch (InstantiationException | IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+                
+            } else {
+                throw new ClassCastException("Found class that was not an instance of Attribute");
+            }
+            // Reload the attribute
+            attr.read(kryo, input);
+            
+            // Add the attribute back to the Map
+            this.dict.put(fieldName, attr);
+        }
+        
+        this.shardTimestamp = input.readLong();
+        
+        this.invalidateMetadata();
     }
     
     @SuppressWarnings("unchecked")
@@ -695,7 +782,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         }
         for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
             // For evaluation purposes, all field names have the grouping context
-            // ripped off, regardless of whether or not it's beign return to the client.
+            // ripped off, regardless of whether or not it's being returned to the client.
             // Until grouping-context aware query evaluation is implemented, we always
             // want to remove the grouping-context
             String identifier = JexlASTHelper.rebuildIdentifier(entry.getKey(), false);
@@ -749,82 +836,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
         
         // this probably will not be used by anybody as the side-effect of loading the JEXL context is the real result
         return children;
-    }
-    
-    @Override
-    public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-    
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
-        output.writeInt(this._count, true);
-        output.writeBoolean(trackSizes);
-        output.writeLong(this._bytes, true);
-        
-        output.writeInt(this.dict.size(), true);
-        
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
-            // Write out the field name
-            // writeAscii fails to be read correctly if the value has only one character
-            // need to use writeString here
-            output.writeString(entry.getKey());
-            
-            Attribute<?> attribute = entry.getValue();
-            output.writeString(attribute.getClass().getName());
-            attribute.write(kryo, output, reducedResponse);
-        }
-        
-        output.writeLong(this.shardTimestamp);
-    }
-    
-    @Override
-    public void read(Kryo kryo, Input input) {
-        this._count = input.readInt(true);
-        trackSizes = input.readBoolean();
-        this._bytes = input.readLong(true);
-        
-        int numAttrs = input.readInt(true);
-        
-        this.dict = new TreeMap<>();
-        
-        for (int i = 0; i < numAttrs; i++) {
-            // Get the fieldName
-            String fieldName = input.readString();
-            
-            // Get the class name for the concrete Attribute
-            String attrClassName = input.readString();
-            Class<?> clz;
-            
-            // Get the Class for the name of the class of the concrete Attribute
-            try {
-                clz = Class.forName(attrClassName);
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-            
-            Attribute<?> attr;
-            if (Attribute.class.isAssignableFrom(clz)) {
-                // Get an instance of the concrete Attribute
-                try {
-                    attr = (Attribute<?>) clz.newInstance();
-                } catch (InstantiationException | IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
-                
-            } else {
-                throw new ClassCastException("Found class that was not an instance of Attribute");
-            }
-            // Reload the attribute
-            attr.read(kryo, input);
-            
-            // Add the attribute back to the Map
-            this.dict.put(fieldName, attr);
-        }
-        
-        this.shardTimestamp = input.readLong();
-        
-        this.invalidateMetadata();
     }
     
     @Override
