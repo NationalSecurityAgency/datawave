@@ -43,7 +43,11 @@ import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
@@ -51,9 +55,25 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
 
-import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.*;
+import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.ALWAYS;
+import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.ALWAYS_SANS_CONSISTENCY;
+import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER;
+import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER_SANS_CONSISTENCY;
+import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.NEVER;
+import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.RANDOM;
+import static datawave.query.RebuildingScannerTestHelper.TEARDOWN.RANDOM_SANS_CONSISTENCY;
 
 /**
  * Applies grouping to queries
