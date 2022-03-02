@@ -228,13 +228,25 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Set<String> evaluationOnlyFields = new HashSet<>(0);
     private Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
     
+    private static class TabletLocatorSupplier implements FailableSupplier<TabletLocator,TableNotFoundException> {
+        private ShardQueryConfiguration config;
+        
+        public TabletLocatorSupplier(ShardQueryConfiguration config) {
+            this.config = config;
+        }
+        
+        @Override
+        public TabletLocator get() throws TableNotFoundException {
+            return TabletLocator.getLocator(new ClientContext(config.getConnector().getInstance(), new Credentials(config.getConnector().whoami(),
+                            new PasswordToken(config.getAccumuloPassword())), AccumuloConfiguration.getDefaultConfiguration()), Tables.getTableId(config
+                            .getConnector().getInstance(), config.getShardTableName()));
+        }
+    }
+    
     /**
      * Abstracts out the method for accessing a TabletLocator
      */
-    private FailableSupplier<TabletLocator,TableNotFoundException> locatorSupplier = () -> TabletLocator.getLocator(
-                    new ClientContext(this.getConnector().getInstance(), new Credentials(this.getConnector().whoami(), new PasswordToken(this
-                                    .getAccumuloPassword())), AccumuloConfiguration.getDefaultConfiguration()), Tables.getTableId(this.getConnector()
-                                    .getInstance(), this.getShardTableName()));
+    private FailableSupplier<TabletLocator,TableNotFoundException> locatorSupplier;
     
     /**
      *
@@ -250,6 +262,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * @return a {@code Supplier} for a {@code TabletLocator}
      */
     public FailableSupplier<TabletLocator,TableNotFoundException> getLocatorSupplier() {
+        if (this.locatorSupplier == null) {
+            this.locatorSupplier = new TabletLocatorSupplier(this);
+        }
         return this.locatorSupplier;
     }
     
