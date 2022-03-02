@@ -472,7 +472,7 @@ public abstract class GroupingTest {
             }
         }
     }
-
+    
     @Test
     public void testGroupingWithFieldWithSparseGroupingEntries() throws Exception {
         // Testing multivalued atoms where not all atoms have every field populated.
@@ -480,12 +480,12 @@ public abstract class GroupingTest {
         // that is, not all of the grouping contexts have data for a field.
         // Look at VisibilityWiseGuysIngest and the DEPENDENTS fields in the data
         Map<String,String> extraParameters = new HashMap<>();
-
+        
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
-
+        
         String queryString = "UUID =~ '^[CS].*'";
-
+        
         // @formatter:off
         // The expected counts correspond to the listed UIDs and contexts
         Map<String,Integer> expectedMap = ImmutableMap.<String,Integer> builder()
@@ -495,17 +495,17 @@ public abstract class GroupingTest {
                 .put("MALE-4", 3) // male w/4 dependents: corleoneUID 4, sopranoUID 0, caponeUID 0
                 .build();
         // @formatter:on
-
+        
         extraParameters.put("group.fields", "GENDER,DEPENDENTS");
         // extraParameters.put("group.fields.batch.size", "12");
-
+        
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
                 runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
             }
         }
     }
-
+    
     @Test
     public void testGroupingUsingFunction() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();

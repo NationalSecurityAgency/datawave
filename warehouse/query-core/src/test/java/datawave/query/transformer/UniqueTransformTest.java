@@ -2,7 +2,6 @@ package datawave.query.transformer;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import datawave.query.attributes.Attribute;
@@ -10,21 +9,19 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.DiacriticContent;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TimingMetadata;
-import datawave.query.function.LogTiming;
-import datawave.query.iterator.Util;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
+import datawave.query.common.unique.UniqueUtil;
+import datawave.query.function.LogTiming;
+import datawave.query.iterator.UniqueIterator;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
 import org.apache.commons.lang.RandomStringUtils;
+import org.apache.hadoop.io.Text;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -54,8 +51,9 @@ public class UniqueTransformTest {
     
     private final List<Document> inputDocuments = new ArrayList<>();
     private final List<Document> expectedUniqueDocuments = new ArrayList<>();
-    private final List<UniqueTransform.FieldSet> expectedOrderedFieldSets = new ArrayList<>();
+    private final List<UniqueUtil.FieldSet> expectedOrderedFieldSets = new ArrayList<>();
     private UniqueFields uniqueFields = new UniqueFields();
+    private UniqueUtil uniqueUtil = new UniqueUtil();
     
     @BeforeClass
     public static void setup() {
@@ -77,9 +75,9 @@ public class UniqueTransformTest {
     public void testTransformingNullReturnsNull() {
         givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0");
         
-        UniqueTransform uniqueTransform = getUniqueTransform();
+        UniqueIterator uniqueIterator = new UniqueIterator(uniqueFields);
         
-        assertNull(uniqueTransform.apply(null));
+        assertNull(uniqueIterator.apply(null));
     }
     
     @Test
@@ -507,16 +505,17 @@ public class UniqueTransformTest {
     private List<Document> getUniqueDocuments(List<Document> documents) {
         Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
         TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
-        UniqueTransform uniqueTransform = getUniqueTransform();
+        // UniqueIterator uniqueTransform = new UniqueIterator(uniqueFields);
+        UniqueTransform uniqueTransform = new UniqueTransform(null, uniqueFields, 0L, false);
         Iterator<Map.Entry<Key,Document>> resultIterator = Iterators.transform(inputIterator, uniqueTransform);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultIterator, Spliterator.ORDERED), false).filter(Objects::nonNull)
                         .map(Map.Entry::getValue).collect(Collectors.toList());
     }
     
     private void assertOrderedFieldSets() {
-        UniqueTransform uniqueTransform = getUniqueTransform();
-        List<UniqueTransform.FieldSet> actual = inputDocuments.stream().map(uniqueTransform::getOrderedFieldSets).flatMap(List::stream).sorted()
-                        .collect(Collectors.toList());
+        UniqueUtil uniqueUtil = new UniqueUtil();
+        List<UniqueUtil.FieldSet> actual = inputDocuments.stream().map(doc -> uniqueUtil.getOrderedFieldSets(doc, uniqueFields, null)) // .map(uniqueUtil::getOrderedFieldSets)
+                        .flatMap(List::stream).sorted().collect(Collectors.toList());
         Collections.sort(expectedOrderedFieldSets);
         
         assertEquals("Ordered field sets do not match expected", expectedOrderedFieldSets, actual);
@@ -528,10 +527,6 @@ public class UniqueTransformTest {
     
     private void givenValueTransformersForField(String field, UniqueGranularity... transformers) {
         Arrays.stream(transformers).forEach((transformer) -> uniqueFields.put(field, transformer));
-    }
-    
-    private UniqueTransform getUniqueTransform() {
-        return new UniqueTransform(uniqueFields);
     }
     
     private InputDocumentBuilder givenInputDocument() {
@@ -608,10 +603,10 @@ public class UniqueTransformTest {
     
     private class ExpectedOrderedFieldSetBuilder {
         
-        private final UniqueTransform.FieldSet fieldSet;
+        private final UniqueUtil.FieldSet fieldSet;
         
         ExpectedOrderedFieldSetBuilder() {
-            fieldSet = new UniqueTransform.FieldSet();
+            fieldSet = new UniqueUtil.FieldSet();
             expectedOrderedFieldSets.add(fieldSet);
         }
         

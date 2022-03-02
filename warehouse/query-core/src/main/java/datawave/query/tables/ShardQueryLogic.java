@@ -617,7 +617,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
             ((DocumentTransformer) this.transformerInstance).setBlacklistedFields(getConfig().getBlacklistedFields());
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
-                ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
+                ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields(), this
+                                .getQueryExecutionForPageTimeout(), this.isLongRunningQuery()));
             }
             if (getConfig().getGroupFields() != null && !getConfig().getGroupFields().isEmpty()) {
                 ((DocumentTransformer) this.transformerInstance).addTransform(new GroupingTransform(this, getConfig().getGroupFields(), this.markingFunctions,
