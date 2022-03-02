@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.config.IndexHole;
+import datawave.query.config.FieldIndexHole;
+import datawave.query.config.ValueIndexHole;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
@@ -39,7 +40,8 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     // datatype filter
     protected Set<String> dataTypeFilter;
     // the set of holes known to exist in the index
-    protected SortedSet<IndexHole> indexHoles = new TreeSet<>();
+    protected SortedSet<ValueIndexHole> valueIndexHoles = new TreeSet<>();
+    protected SortedSet<FieldIndexHole> fieldIndexHoles = new TreeSet<>();
     
     /**
      * Construct the visitor
@@ -55,7 +57,8 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         this.beginDate = format.format(config.getBeginDate());
         this.endDate = format.format(config.getEndDate());
         this.dataTypeFilter = config.getDatatypeFilter();
-        this.indexHoles.addAll(config.getIndexHoles());
+        this.valueIndexHoles.addAll(config.getValueIndexHoles());
+        this.fieldIndexHoles.addAll(config.getFieldIndexHoles());
     }
     
     /**
@@ -121,7 +124,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        if (isIndexed(node) && missingIndexRange(node)) {
+        if ((isAnIndexHole(node))) {
             return IndexHoleMarkerJexlNode.create(node);
         }
         return node;
@@ -129,14 +132,40 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        if (isIndexed(node) && missingIndexRange(node)) {
+        if (isAnIndexHole(node)) {
             return IndexHoleMarkerJexlNode.create(node);
         }
         return node;
     }
     
-    public boolean isIndexed(JexlNode node) {
+    public boolean isFieldIndexedInRange(JexlNode node) {
         String field = JexlASTHelper.getIdentifier(node);
+        
+        boolean overlaps = false;
+        boolean foundFieldHole = false;
+        if (field != null) {
+            for (FieldIndexHole indexHole : fieldIndexHoles) {
+                
+                if (indexHole.getStartDate().compareTo(indexHole.getEndDate()) > 0) {
+                    log.error("Bad FieldIndexHole was calculated");
+                    continue;
+                }
+                
+                if (indexHole.getFieldName().equals(field)) {
+                    overlaps = indexHole.overlaps(beginDate, endDate);
+                    foundFieldHole = true;
+                }
+                
+                if (overlaps)
+                    return overlaps;
+                
+            }
+            
+            if (foundFieldHole && !overlaps)
+                return false;
+        }
+        
+        // Not sure this is needed anymore since all indexed fields in the query should be in the fieldIndexHoles list.
         try {
             return (field != null && this.helper.isIndexed(field, this.dataTypeFilter));
         } catch (TableNotFoundException e) {
@@ -148,7 +177,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         Object literal = JexlASTHelper.getLiteralValue(node);
         if (literal != null) {
             String strLiteral = String.valueOf(literal);
-            for (IndexHole hole : this.indexHoles) {
+            for (ValueIndexHole hole : this.valueIndexHoles) {
                 if (hole.overlaps(this.beginDate, this.endDate, strLiteral)) {
                     return true;
                 } else if (hole.after(strLiteral)) {
@@ -177,7 +206,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
                         endRange.append((char) 0);
                     }
                     
-                    for (IndexHole hole : indexHoles) {
+                    for (ValueIndexHole hole : valueIndexHoles) {
                         if (hole.overlaps(this.beginDate, this.endDate, leadingLiteral, endRange.toString())) {
                             return true;
                         } else if (hole.after(strLiteral)) {
@@ -196,7 +225,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     private boolean missingIndexRange(LiteralRange range) {
         String strUpper = String.valueOf(range.getUpper());
         String strLower = String.valueOf(range.getLower());
-        for (IndexHole hole : indexHoles) {
+        for (ValueIndexHole hole : valueIndexHoles) {
             if (hole.overlaps(this.beginDate, this.endDate, strLower, strUpper)) {
                 return true;
             } else if (hole.after(strLower)) {
@@ -204,6 +233,14 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
             }
         }
         return false;
+    }
+    
+    boolean isAnIndexHole(ASTEQNode node) {
+        return !isFieldIndexedInRange(node) || missingIndexRange(node);
+    }
+    
+    boolean isAnIndexHole(ASTERNode node) {
+        return !isFieldIndexedInRange(node) || missingIndexRange(node);
     }
     
 }

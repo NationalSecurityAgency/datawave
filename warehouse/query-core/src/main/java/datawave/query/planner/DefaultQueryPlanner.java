@@ -9,6 +9,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
+import datawave.query.config.FieldIndexHole;
+import datawave.query.config.ValueIndexHole;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.Type;
@@ -38,6 +40,7 @@ import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.CaseSensitivityVisitor;
@@ -91,10 +94,8 @@ import datawave.query.planner.rules.NodeTransformVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.ScannerFactory;
-import datawave.query.util.DateIndexHelper;
-import datawave.query.util.MetadataHelper;
-import datawave.query.util.QueryStopwatch;
-import datawave.query.util.Tuple2;
+import datawave.query.util.*;
+import datawave.util.time.DateHelper;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
@@ -119,10 +120,12 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -1144,7 +1147,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         stopwatch.stop();
         
         // if we have any index holes, then mark em
-        if (!config.getIndexHoles().isEmpty()) {
+        if (!config.getValueIndexHoles().isEmpty() || !config.getFieldIndexHoles().isEmpty()) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Mark Index Holes");
             
             queryTree = PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(queryTree, config, metadataHelper);
@@ -1696,6 +1699,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
             }
         }
+    }
+    
+    private static String previousDay(String day) {
+        return YearMonthDay.previousDay(day).getYyyymmdd();
+    }
+    
+    private static String nextDay(String day) {
+        return YearMonthDay.nextDay(day).getYyyymmdd();
     }
     
     /**

@@ -13,6 +13,8 @@ import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.query.util.IndexedDatesValue;
+import datawave.query.util.YearMonthDay;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
@@ -425,7 +427,11 @@ public class EventMetadata implements RawRecordMetadata {
             }
             Key k = new Key(fieldName, mostRecentDates.getColumnFamily(), colq, mostRecentDate);
             BulkIngestKey bk = new BulkIngestKey(metadataTableName, k);
-            results.put(bk, DataTypeHandler.NULL_VALUE);
+            if (mostRecentDates.getColumnFamily().equals(ColumnFamilyConstants.COLF_I)) {
+                IndexedDatesValue indexedDatesValue = new IndexedDatesValue(new YearMonthDay(DateHelper.format(mostRecentDate)));
+                results.put(bk, indexedDatesValue.serialize());
+            } else
+                results.put(bk, DataTypeHandler.NULL_VALUE);
         }
     }
     
