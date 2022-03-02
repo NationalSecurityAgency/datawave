@@ -144,7 +144,7 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         logic.setFullTableScanEnabled(true);
-        logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        logic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
         deserializer = new KryoDocumentDeserializer();
     }
     

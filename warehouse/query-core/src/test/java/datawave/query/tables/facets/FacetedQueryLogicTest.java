@@ -20,7 +20,6 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.QueryLogicTestHarness.DocumentChecker;
-import datawave.query.testframework.cardata.CarsDataType;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.security.authorization.DatawavePrincipal;
@@ -107,7 +106,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         this.logic.setMarkingFunctions(new MarkingFunctions.Default());
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
-        this.logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        this.logic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
         
         // init must set auths
         testInit();

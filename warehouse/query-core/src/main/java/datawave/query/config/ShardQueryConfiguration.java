@@ -40,7 +40,7 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.function.FailableSupplier;
+import org.apache.commons.lang3.function.FailableFunction;
 import org.apache.log4j.Logger;
 
 import java.io.Serializable;
@@ -228,44 +228,26 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Set<String> evaluationOnlyFields = new HashSet<>(0);
     private Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
     
-    private static class TabletLocatorSupplier implements FailableSupplier<TabletLocator,TableNotFoundException> {
-        private ShardQueryConfiguration config;
-        
-        public TabletLocatorSupplier(ShardQueryConfiguration config) {
-            this.config = config;
-        }
-        
-        @Override
-        public TabletLocator get() throws TableNotFoundException {
-            return TabletLocator.getLocator(new ClientContext(config.getConnector().getInstance(), new Credentials(config.getConnector().whoami(),
-                            new PasswordToken(config.getAccumuloPassword())), AccumuloConfiguration.getDefaultConfiguration()), Tables.getTableId(config
-                            .getConnector().getInstance(), config.getShardTableName()));
-        }
-    }
-    
-    /**
-     * Abstracts out the method for accessing a TabletLocator
-     */
-    private FailableSupplier<TabletLocator,TableNotFoundException> locatorSupplier;
+    private FailableFunction<ShardQueryConfiguration,TabletLocator,TableNotFoundException> tabletLocatorFunction = config -> TabletLocator.getLocator(
+                    new ClientContext(config.getConnector().getInstance(), new Credentials(config.getConnector().whoami(), new PasswordToken(config
+                                    .getAccumuloPassword())), AccumuloConfiguration.getDefaultConfiguration()), Tables.getTableId(config.getConnector()
+                                    .getInstance(), config.getShardTableName()));
     
     /**
      *
-     * @param locatorSupplier
+     * @param tabletLocatorFunction
      *            the {@code Supplier} for getting a {@code TableLocator}
      */
-    public void setLocatorSupplier(FailableSupplier<TabletLocator,TableNotFoundException> locatorSupplier) {
-        this.locatorSupplier = locatorSupplier;
+    public void setTabletLocatorFunction(FailableFunction<ShardQueryConfiguration,TabletLocator,TableNotFoundException> tabletLocatorFunction) {
+        this.tabletLocatorFunction = tabletLocatorFunction;
     }
     
     /**
      *
-     * @return a {@code Supplier} for a {@code TabletLocator}
+     * @return a {@code Function} for a {@code TabletLocator}
      */
-    public FailableSupplier<TabletLocator,TableNotFoundException> getLocatorSupplier() {
-        if (this.locatorSupplier == null) {
-            this.locatorSupplier = new TabletLocatorSupplier(this);
-        }
-        return this.locatorSupplier;
+    public FailableFunction<ShardQueryConfiguration,TabletLocator,TableNotFoundException> getTabletLocatorFunction() {
+        return this.tabletLocatorFunction;
     }
     
     /**
@@ -602,7 +584,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexMappingFields(other.getWhindexMappingFields());
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
-        this.setLocatorSupplier(other.locatorSupplier);
+        this.setTabletLocatorFunction(other.tabletLocatorFunction);
     }
     
     /**

@@ -173,7 +173,7 @@ public abstract class GroupingTest {
         
         logic.setFullTableScanEnabled(true);
         logic.setMaxEvaluationPipelines(1);
-        logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        logic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
         deserializer = new KryoDocumentDeserializer();
     }
     

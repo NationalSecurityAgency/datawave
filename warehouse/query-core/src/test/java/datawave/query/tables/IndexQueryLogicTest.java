@@ -85,7 +85,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
         this.logic.setQueryPlanner(new DefaultQueryPlanner());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
-        this.logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        this.logic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
         
         // init must set auths
         testInit();

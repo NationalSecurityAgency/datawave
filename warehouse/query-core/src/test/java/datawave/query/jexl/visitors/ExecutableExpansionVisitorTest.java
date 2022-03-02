@@ -152,7 +152,7 @@ public abstract class ExecutableExpansionVisitorTest {
         logic.setFullTableScanEnabled(false);
         logic.setMaxDepthThreshold(11);
         logic.setMaxTermThreshold(12);
-        logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        logic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
         deserializer = new KryoDocumentDeserializer();
     }
     

@@ -120,7 +120,7 @@ public class PushdownScheduler extends Scheduler {
         
         Set<Authorizations> auths = config.getAuthorizations();
         
-        TabletLocator tabletLocator = config.getLocatorSupplier().get();
+        TabletLocator tabletLocator = config.getTabletLocatorFunction().apply(config);
         
         Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(tabletLocator, config, settings, tableId));
         

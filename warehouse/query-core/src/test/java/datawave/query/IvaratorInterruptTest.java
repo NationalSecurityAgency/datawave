@@ -134,7 +134,7 @@ public abstract class IvaratorInterruptTest {
         File tmpDir = temporaryFolder.newFolder();
         IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
-        logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        logic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
         deserializer = new KryoDocumentDeserializer();
     }
     

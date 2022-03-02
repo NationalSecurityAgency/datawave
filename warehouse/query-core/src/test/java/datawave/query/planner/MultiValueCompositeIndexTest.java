@@ -200,7 +200,7 @@ public class MultiValueCompositeIndexTest {
     
     @Before
     public void setup() {
-        this.logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        this.logic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
     }
     
     @BeforeClass
@@ -424,7 +424,7 @@ public class MultiValueCompositeIndexTest {
         query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
         
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
-        config.setLocatorSupplier(InMemoryTabletLocator::new);
+        config.setTabletLocatorFunction(c -> new InMemoryTabletLocator());
         
         logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
         

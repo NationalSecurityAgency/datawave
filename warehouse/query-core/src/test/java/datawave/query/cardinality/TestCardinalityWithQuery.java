@@ -99,7 +99,7 @@ public class TestCardinalityWithQuery {
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
-        logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        logic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
         
         QueryTestTableHelper.configureLogicToScanTables(logic);
         loadData();

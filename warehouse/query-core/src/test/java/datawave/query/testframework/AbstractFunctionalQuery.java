@@ -179,7 +179,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         this.logic.setLogTimingDetails(true);
         this.logic.setMinimumSelectivity(0.03D);
         this.logic.setMaxIndexScanTimeMillis(5000);
-        this.logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        this.logic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
         
         // count logic
         countLogic.setIncludeDataTypeAsField(true);
@@ -190,7 +190,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         countLogic.setMetadataHelperFactory(new MetadataHelperFactory());
         countLogic.setQueryPlanner(new DefaultQueryPlanner());
         countLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
-        countLogic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        countLogic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
         
         QueryTestTableHelper.configureLogicToScanTables(countLogic);
         

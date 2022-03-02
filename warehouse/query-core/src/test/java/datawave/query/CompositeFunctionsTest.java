@@ -183,8 +183,8 @@ public abstract class CompositeFunctionsTest {
         tldEventQueryLogic.setFullTableScanEnabled(true);
         tldEventQueryLogic.setMaxDepthThreshold(6);
         deserializer = new KryoDocumentDeserializer();
-        this.eventQueryLogic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
-        this.tldEventQueryLogic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        this.eventQueryLogic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
+        this.tldEventQueryLogic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
     }
     
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;

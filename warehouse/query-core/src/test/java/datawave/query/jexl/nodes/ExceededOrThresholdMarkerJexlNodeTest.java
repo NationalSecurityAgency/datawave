@@ -195,7 +195,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     
     @Before
     public void setup() {
-        this.logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        this.logic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
     }
     
     @BeforeClass
@@ -616,7 +616,7 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     
     private List<String> getQueryRanges(String queryString) throws Exception {
         ShardQueryLogic logic = getShardQueryLogic();
-        logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        logic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
         
         Iterator iter = getQueryRangesIterator(queryString, logic);
         List<String> queryData = new ArrayList<>();

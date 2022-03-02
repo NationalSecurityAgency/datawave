@@ -157,7 +157,7 @@ public class GeoSortedQueryDataTest {
     
     @Before
     public void setup() {
-        this.logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        this.logic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
     }
     
     @BeforeClass

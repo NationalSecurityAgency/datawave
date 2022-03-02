@@ -160,7 +160,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setMaxEvaluationPipelines(1);
-        logic.getConfig().setLocatorSupplier(InMemoryTabletLocator::new);
+        logic.getConfig().setTabletLocatorFunction(c -> new InMemoryTabletLocator());
         deserializer = new KryoDocumentDeserializer();
     }
     
