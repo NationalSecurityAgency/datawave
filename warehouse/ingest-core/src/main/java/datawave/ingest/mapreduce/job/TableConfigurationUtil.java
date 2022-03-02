@@ -509,12 +509,8 @@ public class TableConfigurationUtil {
                     }
                 }
                 
-                if (!aggregatorMap.isEmpty()) {
-                    setTableAggregators(table, aggregatorMap);
-                }
-                if (!combinerMap.isEmpty()) {
-                    setTableCombiners(table, combinerMap);
-                }
+                setTableAggregators(table, aggregatorMap);
+                setTableCombiners(table, combinerMap);
                 
             } catch (ClassNotFoundException e) {
                 throw new IOException("Unable to configure iterators for " + table, e);
