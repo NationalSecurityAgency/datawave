@@ -58,15 +58,15 @@ public class Content extends Attribute<Content> implements Serializable {
     @Override
     public void write(DataOutput out, boolean reducedResponse) throws IOException {
         writeMetadata(out, reducedResponse);
-        
         WritableUtils.writeString(out, content);
+        WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
     
     @Override
     public void readFields(DataInput in) throws IOException {
         readMetadata(in);
-        
         content = WritableUtils.readString(in);
+        toKeep = WritableUtils.readVInt(in) != 0;
     }
     
     @Override
@@ -115,15 +115,15 @@ public class Content extends Attribute<Content> implements Serializable {
     @Override
     public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         super.writeMetadata(kryo, output, reducedResponse);
-        
         output.writeString(this.content);
+        output.writeBoolean(this.toKeep);
     }
     
     @Override
     public void read(Kryo kryo, Input input) {
         super.readMetadata(kryo, input);
-        
         this.content = input.readString();
+        this.toKeep = input.readBoolean();
     }
     
     /*
