@@ -1743,9 +1743,9 @@
             <id>clover</id>
             <dependencies>
                 <dependency>
-                    <groupId>com.cenqua.clover</groupId>
+                    <groupId>com.atlassian.clover</groupId>
                     <artifactId>clover</artifactId>
-                    <version>RELEASE</version>
+                    <version>[4.1.2,)</version>
                 </dependency>
             </dependencies>
         </profile>

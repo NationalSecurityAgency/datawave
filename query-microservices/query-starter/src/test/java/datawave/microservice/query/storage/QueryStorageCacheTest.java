@@ -301,13 +301,17 @@ public abstract class QueryStorageCacheTest {
             // expected
         }
         
+        Exception expectedException = null;
+        
         key = new TaskKey(1, checkpoint.getQueryKey());
         try {
             storageService.checkpointTask(key, checkpoint);
             fail("Expected storage service to fail checkpointing a missing task");
-        } catch (NullPointerException e) {
-            // expected
+        } catch (Exception e) {
+            expectedException = e;
         }
+        
+        assertTrue(expectedException instanceof IllegalStateException, "Expected IllegalStateException to be thrown, but was " + expectedException);
         
         QueryTask task = storageService.createTask(QueryRequest.Method.NEXT, checkpoint);
         

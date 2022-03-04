@@ -54,10 +54,6 @@
             <artifactId>accumulo-tracer</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.accumulo</groupId>
-            <artifactId>accumulo-tracer</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-recipes</artifactId>
         </dependency>
