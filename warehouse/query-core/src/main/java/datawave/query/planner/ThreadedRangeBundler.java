@@ -197,7 +197,6 @@ public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
             this.docsToCombine = docsToCombine;
             return this;
         }
-        
         public Builder setMaxRangeWaitMillis(long maxRangeWaitMillis) {
             this.maxRangeWaitMillis = maxRangeWaitMillis;
             return this;
