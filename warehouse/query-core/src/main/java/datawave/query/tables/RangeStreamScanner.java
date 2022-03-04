@@ -440,7 +440,7 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
             if (log.isTraceEnabled()) {
                 log.trace("Looking for current entry in hasnext with a wait of " + getPollTime());
             }
-            while (null == currentEntry && (!finished || !resultQueue.isEmpty() || flushNeeded())) {
+            while (null == currentEntry && (!finished || !resultQueue.isEmpty())) {
 
                 try {
                     /*
@@ -459,11 +459,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 // we can flush if needed and retry
                 if (currentEntry == null && (!finished && resultQueue.isEmpty())) {
                     submitTask();
-                } else if (flushNeeded()) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Attempting to flush");
-                    }
-                    flush();
                 }
             }
             if (log.isTraceEnabled()) {
@@ -693,29 +688,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
 
     @Override
     protected void flush() {
-        /*writeLock.lock();
-        try {
-            dequeue(false);
-        } finally {
-            writeLock.unlock();
-        }*/
-    }
-
-    protected boolean flushNeeded() {
-        /*
-        try {
-            if (readLock.tryLock(2, TimeUnit.MILLISECONDS)) {
-                try {
-                    return !currentQueue.isEmpty();
-                } finally {
-                    readLock.unlock();
-                }
-            }
-        } catch (InterruptedException e) {
-            log.error(e);
-            throw new RuntimeException(e);
-        }*/
-        return false;
     }
 
     /**
@@ -776,12 +748,6 @@ public class RangeStreamScanner extends ScannerSession implements Callable<Range
                 log.trace("Finished");
             }
             finished = true;
-            if (flushNeeded()) {
-                if (log.isTraceEnabled())
-                    log.trace("flush needed");
-                flush();
-                return;
-            }
             return;
         }
 
