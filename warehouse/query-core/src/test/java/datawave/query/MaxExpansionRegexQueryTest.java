@@ -14,6 +14,7 @@ import java.io.File;
 import java.net.URI;
 import java.util.List;
 
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -367,8 +368,9 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
     
     // ============================================
     // implemented abstract methods
+    @Override
     protected void testInit() {
-        this.auths = CitiesDataType.getTestAuths();
+        this.auths = CitiesDataType.getExpansionAuths();
         this.documentKey = CitiesDataType.CityField.EVENT_ID.name();
     }
 }

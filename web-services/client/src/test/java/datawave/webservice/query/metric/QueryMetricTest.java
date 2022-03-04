@@ -31,48 +31,48 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
 public class QueryMetricTest {
-    
+
     private static QueryMetric queryMetric = null;
     private static Map<String,String> markings = null;
     private static List<String> negativeSelectors = null;
     private static ArrayList<PageMetric> pageTimes = null;
     private static List<String> positiveSelectors = null;
     private static List<String> proxyServers = null;
-    
+
     @BeforeClass
     public static void setup() {
         queryMetric = new QueryMetric();
-        markings = new HashMap<String,String>();
+        markings = new HashMap<>();
         markings.put(MarkingFunctions.Default.COLUMN_VISIBILITY, "PUBLIC");
         queryMetric.setMarkings(markings);
-        negativeSelectors = new ArrayList<String>();
+        negativeSelectors = new ArrayList<>();
         negativeSelectors.add("negativeSelector1");
-        positiveSelectors = new ArrayList<String>();
+        positiveSelectors = new ArrayList<>();
         positiveSelectors.add("positiveSelector1");
-        pageTimes = new ArrayList<PageMetric>();
+        pageTimes = new ArrayList<>();
         PageMetric pageMetric = new PageMetric();
         pageMetric.setCallTime(0);
         pageTimes.add(pageMetric);
-        proxyServers = new ArrayList<String>();
+        proxyServers = new ArrayList<>();
         proxyServers.add("proxyServer1");
     }
-    
+
     @Test
     public void testSetError() {
         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FIELDS_NOT_IN_DATA_DICTIONARY, "test");
         Exception e = new Exception(qe);
-        
+
         queryMetric.setError(e);
         assertEquals("The query contained fields which do not exist in the data dictionary for any specified datatype. test", queryMetric.getErrorMessage());
         assertEquals("400-16", queryMetric.getErrorCode());
-        
+
         queryMetric.setErrorCode("");
         Throwable t = new Throwable("non-datawave error");
         queryMetric.setError(t);
         assertEquals("non-datawave error", queryMetric.getErrorMessage());
         assertEquals("", queryMetric.getErrorCode());
     }
-    
+
     @Test
     public void testSettersGetters() {
         Date d = new Date();
@@ -101,7 +101,7 @@ public class QueryMetricTest {
         queryMetric.setSetupTime(0);
         queryMetric.setUser("user");
         queryMetric.setUserDN("userDN");
-        
+
         assertEquals(d, queryMetric.getBeginDate());
         assertEquals("PUBLIC", queryMetric.getColumnVisibility());
         assertEquals(0, queryMetric.getCreateCallTime());
@@ -116,7 +116,7 @@ public class QueryMetricTest {
         assertEquals(Lifecycle.INITIALIZED, queryMetric.getLifecycle());
         assertEquals("PUBLIC", queryMetric.getMarkings().get(MarkingFunctions.Default.COLUMN_VISIBILITY));
         assertEquals("negativeSelector1", queryMetric.getNegativeSelectors().get(0));
-        assertEquals(0, queryMetric.getNumPages());
+        assertEquals(1, queryMetric.getNumPages());
         assertEquals(0, queryMetric.getNumResults());
         assertEquals(0, queryMetric.getNumUpdates());
         assertEquals(0, queryMetric.getPageTimes().get(0).getCallTime());
@@ -131,7 +131,7 @@ public class QueryMetricTest {
         assertEquals("user", queryMetric.getUser());
         assertEquals("userDN", queryMetric.getUserDN());
     }
-    
+
     @Test
     public void testJsonSerialization() throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -140,7 +140,7 @@ public class QueryMetricTest {
         QueryMetric deserializedMetric = objectMapper.readValue(metricAsBytes, QueryMetric.class);
         assertEquals(queryMetric, deserializedMetric);
     }
-    
+
     @Test
     public void testXmlSerialization() throws Exception {
         JAXBContext jaxbContext = JAXBContext.newInstance(QueryMetric.class);
@@ -151,7 +151,7 @@ public class QueryMetricTest {
         QueryMetric deserializedMetric = (QueryMetric) unmarshaller.unmarshal(new ByteArrayInputStream(baos.toByteArray()));
         assertEquals(queryMetric, deserializedMetric);
     }
-    
+
     @Test
     public void testProtobufSerialization() throws Exception {
         Schema<QueryMetric> schema = (Schema<QueryMetric>) queryMetric.getSchemaInstance();
@@ -161,7 +161,7 @@ public class QueryMetricTest {
         ProtostuffIOUtil.mergeFrom(baos.toByteArray(), deserializedMetric, schema);
         assertEquals(queryMetric, deserializedMetric);
     }
-    
+
     @Test
     public void testVersionSerialization() throws Exception {
         QueryMetric qm = new QueryMetric();
@@ -191,11 +191,11 @@ public class QueryMetricTest {
         qm.setSetupTime(0);
         qm.setUser("user");
         qm.setUserDN("userDN");
-        
+
         // The version is added to queryMetric objects by default through injection, so we can verify
         // the object on creation.
         assertEquals("3.5.1-TEST", qm.getVersion());
-        
+
         Schema<QueryMetric> schema = (Schema<QueryMetric>) qm.getSchemaInstance();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ProtostuffIOUtil.writeTo(baos, qm, schema, LinkedBuffer.allocate());
