@@ -67,15 +67,15 @@ public class Longitude extends Attribute<Longitude> implements Serializable {
     @Override
     public void write(DataOutput out, boolean reducedResponse) throws IOException {
         writeMetadata(out, reducedResponse);
-        
         WritableUtils.writeString(out, this.longitude);
+        WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
     
     @Override
     public void readFields(DataInput in) throws IOException {
         readMetadata(in);
-        
         this.longitude = WritableUtils.readString(in);
+        this.toKeep = WritableUtils.readVInt(in) != 0;
         validate();
     }
     
@@ -140,15 +140,15 @@ public class Longitude extends Attribute<Longitude> implements Serializable {
     @Override
     public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         writeMetadata(kryo, output, reducedResponse);
-        
         output.writeString(this.longitude);
+        output.writeBoolean(this.toKeep);
     }
     
     @Override
     public void read(Kryo kryo, Input input) {
         readMetadata(kryo, input);
-        
         this.longitude = input.readString();
+        this.toKeep = input.readBoolean();
         validate();
     }
     

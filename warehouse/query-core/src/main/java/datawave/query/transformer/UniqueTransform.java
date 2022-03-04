@@ -10,6 +10,7 @@ import com.google.common.hash.PrimitiveSink;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
@@ -42,7 +43,7 @@ import java.util.stream.Collectors;
  */
 public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform {
     
-    private static final Logger log = Logger.getLogger(GroupingTransform.class);
+    private static final Logger log = Logger.getLogger(UniqueTransform.class);
     
     private final BloomFilter<byte[]> bloom;
     private UniqueFields uniqueFields;
@@ -96,6 +97,10 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         if (keyDocumentEntry != null) {
+            if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
+                return keyDocumentEntry;
+            }
+            
             try {
                 if (isDuplicate(keyDocumentEntry.getValue())) {
                     keyDocumentEntry = null;
