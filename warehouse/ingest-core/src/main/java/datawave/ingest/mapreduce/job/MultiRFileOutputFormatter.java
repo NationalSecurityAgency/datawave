@@ -33,6 +33,7 @@ import org.apache.accumulo.core.file.FileSKVIterator;
 import org.apache.accumulo.core.file.FileSKVWriter;
 import org.apache.accumulo.core.file.rfile.RFile;
 import org.apache.accumulo.core.file.rfile.bcfile.Compression;
+import org.apache.accumulo.core.spi.file.rfile.compression.NoCompression;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
@@ -386,7 +387,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             String compressionType = getCompressionType(conf);
             for (String tableName : tableIds.keySet()) {
                 ConfigurationCopy tableConfig = new ConfigurationCopy(client.tableOperations().getProperties(tableName));
-                tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(), (compressionTableBlackList.contains(tableName) ? Compression.COMPRESSION_NONE
+                tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(), (compressionTableBlackList.contains(tableName) ? new NoCompression().getName()
                                 : compressionType));
                 if (Iterables.contains(localityGroupTables, tableName)) {
                     Map<String,Set<Text>> localityGroups = client.tableOperations().getLocalityGroups(tableName);

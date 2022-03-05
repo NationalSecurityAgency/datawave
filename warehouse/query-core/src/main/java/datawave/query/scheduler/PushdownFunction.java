@@ -18,7 +18,6 @@ import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.clientImpl.Tables;
 import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Range;
@@ -185,9 +184,9 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                 // deleted table were not cleared... so
                 // need to always do the check when failures occur
                 if (failures.size() >= lastFailureSize)
-                    if (!Tables.exists(ctx, tableId))
+                    if (!ctx.tableNodeExists(tableId))
                         throw new TableDeletedException(tableId.canonical());
-                    else if (Tables.getTableState(ctx, tableId) == TableState.OFFLINE)
+                    else if (ctx.getTableState(tableId) == TableState.OFFLINE)
                         throw new TableOfflineException("Table " + tableId + " is offline");
                 
                 lastFailureSize = failures.size();

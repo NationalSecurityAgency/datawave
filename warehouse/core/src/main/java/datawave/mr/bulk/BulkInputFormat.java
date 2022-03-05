@@ -19,6 +19,8 @@ import java.util.StringTokenizer;
 import java.util.UUID;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.mr.bulk.split.DefaultLocationStrategy;
 import datawave.mr.bulk.split.DefaultSplitStrategy;
@@ -43,11 +45,8 @@ import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.clientImpl.ClientConfConverter;
 import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.clientImpl.ClientInfo;
-import org.apache.accumulo.core.clientImpl.Tables;
 import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.client.mapreduce.InputFormatBase;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -67,6 +66,7 @@ import datawave.common.util.ArgumentChecker;
 import org.apache.accumulo.core.singletons.SingletonReservation;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.util.TextUtil;
+import org.apache.accumulo.core.util.tables.TableNameUtil;
 import org.apache.accumulo.fate.util.UtilWaitThread;
 import org.apache.accumulo.core.util.format.DefaultFormatter;
 import org.apache.commons.codec.binary.Base64;
@@ -1078,7 +1078,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                         .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
         ClientInfo info = ClientInfo.from(props);
         ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()));
-        return TabletLocator.getLocator(context, Tables.getTableId(context, tableName));
+        return TabletLocator.getLocator(context, context.getTableId(tableName));
     }
     
     /**
@@ -1123,10 +1123,10 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             if (tableId == null)
-                                tableId = Tables.getTableId(context, tableName);
-                            if (!Tables.exists(context, tableId))
+                                tableId = context.getTableId(tableName);
+                            if (!context.tableNodeExists(tableId))
                                 throw new TableDeletedException(tableId.canonical());
-                            if (Tables.getTableState(context, tableId) == TableState.OFFLINE)
+                            if (context.getTableState(tableId) == TableState.OFFLINE)
                                 throw new TableOfflineException("Table (" + tableId.canonical() + ") is offline");
                         }
                         binnedRanges.clear();
