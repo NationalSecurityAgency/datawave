@@ -104,6 +104,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Observer;
 import java.util.Set;
 
@@ -142,7 +143,7 @@ public class IngestJob implements Tool {
     protected String idFilterFsts = null;
     
     protected String workDir = null;
-    protected Set<String> tableNames = null;
+    protected String[] tableNames = null;
     protected String flagFile = null;
     protected String flagFileDir = null;
     protected String flagFilePattern = null;
@@ -305,6 +306,14 @@ public class IngestJob implements Tool {
                 log.info("Created tables: " + tableNames + " successfully!");
         }
         
+        try {
+            tableConfigUtil.serializeAggregatorConfiguration(cbHelper, conf, log);
+        } catch (TableNotFoundException tnf) {
+            log.error("One or more configured DataWave tables are missing in Accumulo. If this is a new system or if new tables have recently been introduced, run a job using the '-createTables' flag before attempting to ingest more data",
+                            tnf);
+            return -1;
+        }
+        
         // get the source and output hadoop file systems
         FileSystem inputFs = getFileSystem(conf, srcHdfs);
         FileSystem outputFs = (writeDirectlyToDest ? getFileSystem(conf, destHdfs) : inputFs);
@@ -352,7 +361,7 @@ public class IngestJob implements Tool {
         
         // Log configuration
         log.info("Types: " + TypeRegistry.getTypeNames());
-        log.info("Tables: " + tableNames);
+        log.info("Tables: " + Arrays.toString(tableNames));
         log.info("InputFormat: " + job.getInputFormatClass().getName());
         log.info("Mapper: " + job.getMapperClass().getName());
         log.info("Reduce tasks: " + (useMapOnly ? 0 : reduceTasks));
@@ -613,10 +622,10 @@ public class IngestJob implements Tool {
             } else if (args[i].equals("-multipleNumShardsCacheDir")) {
                 conf.set(NumShards.MULTIPLE_NUMSHARDS_CACHE_PATH, args[++i]);
             } else if (args[i].equals("-enableAccumuloConfigCache")) {
-                conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, true);
+                conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_CACHE_ENABLE_PROPERTY, true);
             } else if (args[i].equalsIgnoreCase("-accumuloConfigCachePath")) {
                 conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, args[++i]);
-                conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, true);
+                conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_CACHE_ENABLE_PROPERTY, true);
             } else if (args[i].equals("-disableSpeculativeExecution")) {
                 disableSpeculativeExecution = true;
             } else if (args[i].equals("-skipMarkerFileGeneration")) {
@@ -789,8 +798,8 @@ public class IngestJob implements Tool {
         
         conf.setInt(MultiRFileOutputFormatter.EVENT_PARTITION_COUNT, this.reduceTasks * 2);
         configureMultiRFileOutputFormatter(conf, compressionType, compressionTableBlackList, maxRFileEntries, maxRFileSize, generateMapFileRowKeys);
-        String[] tables = tableNames.toArray(new String[tableNames.size()]);
-        DelegatingPartitioner.configurePartitioner(job, conf, tables); // sets the partitioner
+        
+        DelegatingPartitioner.configurePartitioner(job, conf, tableNames); // sets the partitioner
     }
     
     protected void configureInputFormat(Job job, AccumuloHelper cbHelper, Configuration conf) throws Exception {
