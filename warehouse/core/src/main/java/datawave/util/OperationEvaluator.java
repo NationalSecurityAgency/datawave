@@ -48,7 +48,7 @@ public class OperationEvaluator {
      */
     public static int calculate(int left, int right, String operator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
-        operator = CharMatcher.WHITESPACE.removeFrom(operator);
+        operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case ADD:
                 return left + right;
@@ -85,7 +85,7 @@ public class OperationEvaluator {
      */
     public static long calculate(long left, long right, String operator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
-        operator = CharMatcher.WHITESPACE.removeFrom(operator);
+        operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case ADD:
                 return left + right;
@@ -122,7 +122,7 @@ public class OperationEvaluator {
      */
     public static float calculate(float left, float right, String operator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
-        operator = CharMatcher.WHITESPACE.removeFrom(operator);
+        operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case ADD:
                 return left + right;
@@ -159,7 +159,7 @@ public class OperationEvaluator {
      */
     public static double calculate(double left, double right, String operator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
-        operator = CharMatcher.WHITESPACE.removeFrom(operator);
+        operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case ADD:
                 return left + right;
@@ -196,7 +196,7 @@ public class OperationEvaluator {
      */
     public static long calculate(Date left, Date right, String operator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
-        operator = CharMatcher.WHITESPACE.removeFrom(operator);
+        operator = CharMatcher.whitespace().removeFrom(operator);
         return calculate(left.getTime(), right.getTime(), operator);
     }
     
@@ -221,7 +221,7 @@ public class OperationEvaluator {
      */
     public static boolean compare(int left, int right, String operator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
-        operator = CharMatcher.WHITESPACE.removeFrom(operator);
+        operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case EQUALS:
             case DOUBLE_EQUALS:
@@ -262,7 +262,7 @@ public class OperationEvaluator {
      */
     public static boolean compare(long left, long right, String operator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
-        operator = CharMatcher.WHITESPACE.removeFrom(operator);
+        operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case EQUALS:
             case DOUBLE_EQUALS:
@@ -303,7 +303,7 @@ public class OperationEvaluator {
      */
     public static boolean compare(float left, float right, String operator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
-        operator = CharMatcher.WHITESPACE.removeFrom(operator);
+        operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case EQUALS:
             case DOUBLE_EQUALS:
@@ -344,7 +344,7 @@ public class OperationEvaluator {
      */
     public static boolean compare(double left, double right, String operator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
-        operator = CharMatcher.WHITESPACE.removeFrom(operator);
+        operator = CharMatcher.whitespace().removeFrom(operator);
         switch (operator) {
             case EQUALS:
             case DOUBLE_EQUALS:
@@ -385,7 +385,7 @@ public class OperationEvaluator {
      */
     public static boolean compare(Date left, Date right, String operator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
-        operator = CharMatcher.WHITESPACE.removeFrom(operator);
+        operator = CharMatcher.whitespace().removeFrom(operator);
         return compare(left.getTime(), right.getTime(), operator);
     }
     
@@ -410,8 +410,8 @@ public class OperationEvaluator {
      */
     public static <T extends Comparable<T>> boolean compare(T left, T right, String operator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
-        operator = CharMatcher.WHITESPACE.removeFrom(operator);
-        switch (CharMatcher.WHITESPACE.removeFrom(operator)) {
+        operator = CharMatcher.whitespace().removeFrom(operator);
+        switch (CharMatcher.whitespace().removeFrom(operator)) {
             case EQUALS:
             case DOUBLE_EQUALS:
                 return left == right || left.compareTo(right) == 0;
@@ -452,8 +452,8 @@ public class OperationEvaluator {
     public static <T> boolean compare(T left, T right, String operator, Comparator<T> comparator) {
         Preconditions.checkArgument(!StringUtils.isBlank(operator), "operator must not be blank");
         Preconditions.checkNotNull(comparator, "comparator must not be null");
-        operator = CharMatcher.WHITESPACE.removeFrom(operator);
-        switch (CharMatcher.WHITESPACE.removeFrom(operator)) {
+        operator = CharMatcher.whitespace().removeFrom(operator);
+        switch (CharMatcher.whitespace().removeFrom(operator)) {
             case EQUALS:
             case DOUBLE_EQUALS:
                 return left == right || comparator.compare(left, right) == 0;
