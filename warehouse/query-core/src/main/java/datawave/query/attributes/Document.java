@@ -689,7 +689,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         }
         for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
             // For evaluation purposes, all field names have the grouping context
-            // ripped off, regardless of whether or not it's beign return to the client.
+            // ripped off, regardless of whether or not it's being returned to the client.
             // Until grouping-context aware query evaluation is implemented, we always
             // want to remove the grouping-context
             String identifier = JexlASTHelper.rebuildIdentifier(entry.getKey(), false);
