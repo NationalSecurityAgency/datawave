@@ -3,7 +3,6 @@ package datawave.query.iterator;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -68,6 +67,7 @@ import datawave.query.predicate.EmptyDocumentFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
+import datawave.query.transformer.ExcerptTransform;
 import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
@@ -198,6 +198,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected Map<String,Object> exceededOrEvaluationCache = null;
     
     protected ActiveQueryLog activeQueryLog;
+    
+    protected ExcerptTransform excerptTransform = null;
+    private Iterator<Entry<Key,Document>> entryIterator;
     
     public QueryIterator() {}
     
@@ -509,6 +512,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                         return true;
                     });
                 }
+            }
+            
+            // Add phrase excerpts to the documents if requested.
+            ExcerptTransform excerptTransform = getExcerptTransform();
+            if (excerptTransform != null) {
+                pipelineDocuments = excerptTransform.getIterator(pipelineIter);
             }
             
             pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
@@ -1614,5 +1623,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.activeQueryLog = ActiveQueryLog.getInstance(getActiveQueryLogName());
         }
         return this.activeQueryLog;
+    }
+    
+    protected ExcerptTransform getExcerptTransform() {
+        if (excerptTransform == null && getExcerptFields() != null && !getExcerptFields().isEmpty()) {
+            synchronized (getExcerptFields()) {
+                if (excerptTransform == null) {
+                    excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment));
+                }
+            }
+        }
+        return excerptTransform;
     }
 }
