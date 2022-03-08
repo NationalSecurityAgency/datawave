@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors.whindex;
 
 import com.google.common.collect.Multimap;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -73,7 +74,7 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
         Set<JexlNode> fieldValueNodes = new HashSet<>();
         for (WhindexTerm whindexTerm : whindexNodes.values()) {
             if (fieldValueMappings.get(whindexTerm.getNewFieldName()).size() > 1) {
-                fieldValueNodes.add(whindexTerm.getFieldValueNode());
+                fieldValueNodes.add(JexlASTHelper.dereference(whindexTerm.getFieldValueNode()));
             }
         }
         

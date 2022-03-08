@@ -585,6 +585,38 @@ public class WhindexVisitorTest {
     }
     
     @Test
+    public void manyToOneParensFieldValueIntersectsTest() throws ParseException {
+        String query = "geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && (TOPPINGS == 'PEANUT')";
+        
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setWhindexMappingFields(mappingFields);
+        config.setWhindexFieldMappings(manyToOneFieldMapping);
+        
+        ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
+        jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
+        
+        Assert.assertEquals(
+                        "((_Eval_ = true) && (TOPPINGS == 'PEANUT')) && geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')",
+                        JexlStringBuildingVisitor.buildQuery(jexlScript));
+    }
+    
+    @Test
+    public void manyToOneParensGeoIntersectsTest() throws ParseException {
+        String query = "(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) && TOPPINGS == 'PEANUT'";
+        
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setWhindexMappingFields(mappingFields);
+        config.setWhindexFieldMappings(manyToOneFieldMapping);
+        
+        ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
+        jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
+        
+        Assert.assertEquals(
+                        "((_Eval_ = true) && (TOPPINGS == 'PEANUT')) && (geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))'))",
+                        JexlStringBuildingVisitor.buildQuery(jexlScript));
+    }
+    
+    @Test
     public void reverseManyToOneIntersectsTest() throws ParseException {
         String query = "(TOPPINGS == 'PEANUT' || TOPPINGS == 'PISTACHIO' || TOPPINGS == 'CASHEW') && geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')";
         
