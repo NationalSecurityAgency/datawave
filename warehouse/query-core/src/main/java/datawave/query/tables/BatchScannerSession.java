@@ -456,7 +456,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         ListenableFuture<Scan> future = (ListenableFuture<Scan>) service.submit(scan);
         if (increment)
             runnableCount.incrementAndGet();
-        Futures.addCallback(future, this);
+        Futures.addCallback(future, this, service);
     }
     
     /**
