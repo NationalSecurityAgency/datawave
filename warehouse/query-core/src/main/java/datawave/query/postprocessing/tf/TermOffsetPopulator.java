@@ -85,17 +85,17 @@ public class TermOffsetPopulator {
         Map<String,Object> map = new HashMap<>();
         Map<String,TermFrequencyList> termOffsetMap = Maps.newHashMap();
         
-        Map<String,TermFrequencyList> termOffsetMap1 = (Map<String,TermFrequencyList>) (map1.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
-        Map<String,TermFrequencyList> termOffsetMap2 = (Map<String,TermFrequencyList>) (map2.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
+        TermOffsetMap termOffsetMap1 = (TermOffsetMap) map1.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
+        TermOffsetMap termOffsetMap2 = (TermOffsetMap) (map2.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
         
         if (termOffsetMap1 == null) {
             if (termOffsetMap2 != null) {
-                termOffsetMap.putAll(termOffsetMap2);
+                termOffsetMap.putAll(termOffsetMap2.getTermFrequencies());
             }
         } else {
-            termOffsetMap.putAll(termOffsetMap1);
+            termOffsetMap.putAll(termOffsetMap1.getTermFrequencies());
             if (termOffsetMap2 != null) {
-                for (Map.Entry<String,TermFrequencyList> entry : termOffsetMap2.entrySet()) {
+                for (Map.Entry<String,TermFrequencyList> entry : termOffsetMap2.getTermFrequencies().entrySet()) {
                     String key = entry.getKey();
                     TermFrequencyList list1 = termOffsetMap.get(key);
                     TermFrequencyList list2 = entry.getValue();
@@ -109,7 +109,7 @@ public class TermOffsetPopulator {
         }
         
         // Load the actual map into map that will be put into the JexlContext
-        map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffsetMap);
+        map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(termOffsetMap));
         
         return map;
     }
@@ -235,7 +235,7 @@ public class TermOffsetPopulator {
         
         // Load the actual map into map that will be put into the JexlContext
         Map<String,Object> map = new HashMap<>();
-        map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffsetMap);
+        map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(termOffsetMap));
         
         return map;
     }

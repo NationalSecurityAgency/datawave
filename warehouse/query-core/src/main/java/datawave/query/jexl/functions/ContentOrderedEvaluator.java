@@ -1,6 +1,8 @@
 package datawave.query.jexl.functions;
 
 import datawave.ingest.protobuf.TermWeightPosition;
+import datawave.query.Constants;
+import datawave.query.postprocessing.tf.TermOffsetMap;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -43,7 +45,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
     private static final int FORWARD = 1;
     private static final int REVERSE = -1;
     
-    public ContentOrderedEvaluator(Set<String> fields, int distance, float maxScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public ContentOrderedEvaluator(Set<String> fields, int distance, float maxScore, TermOffsetMap termOffsetMap, String... terms) {
         super(fields, distance, maxScore, termOffsetMap, terms);
         if (log.isTraceEnabled()) {
             log.trace("ContentOrderedEvaluatorTreeSet constructor");
@@ -51,7 +53,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
     }
     
     @Override
-    protected boolean evaluate(List<List<TermWeightPosition>> offsets) {
+    protected boolean evaluate(String field, List<List<TermWeightPosition>> offsets) {
         if (offsets.isEmpty() || offsets.size() < terms.length) {
             return false;
         }
@@ -66,12 +68,12 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
             return false;
         }
         
-        while (!isConverged(termPositions, distance)) {
+        while (!isConverged(field, termPositions, distance)) {
             // look for alternatives that also satisfy convergence within each term before rolling forward. Move at most one term one position until there are
             // no alternatives that satisfy the distance left
             List<NavigableSet<EvaluateTermPosition>> alternativeTermPositions = trimAlternatives(termPositions, distance);
             boolean alternativeConverged = false;
-            while (alternativeTermPositions != null && !(alternativeConverged = isConverged(alternativeTermPositions, distance))) {
+            while (alternativeTermPositions != null && !(alternativeConverged = isConverged(field, alternativeTermPositions, distance))) {
                 alternativeTermPositions = trimAlternatives(alternativeTermPositions, distance);
             }
             
@@ -219,12 +221,13 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
     
     /**
      * Test if a set of offsets satisfy a distance requirement
-     * 
+     *
+     * @param field the field where the offsets were found
      * @param offsets
      * @param distance
      * @return true if satisfied, false otherwise
      */
-    private boolean isConverged(List<NavigableSet<EvaluateTermPosition>> offsets, int distance) {
+    private boolean isConverged(String field, List<NavigableSet<EvaluateTermPosition>> offsets, int distance) {
         if (offsets.size() == 1) {
             return true;
         }
@@ -233,6 +236,9 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
         NavigableSet<EvaluateTermPosition> first = offsets.get(0);
         NavigableSet<EvaluateTermPosition> second = offsets.get(secondIndex);
         
+        // The start offset of the phrase if satisfied.
+        int startOffset = first.first().termWeightPosition.getOffset();
+        int endOffset;
         // test that these terms are within distance
         while (first.first().isWithIn(second.first(), distance)) {
             // are there more terms?
@@ -243,6 +249,11 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                 second = offsets.get(secondIndex);
             } else {
                 // nope
+                
+                // Establish the end offset of the phrase.
+                endOffset = second.first().termWeightPosition.getOffset();
+                // Record the phrase offsets to fetch excerpts later if desired.
+                termOffsetMap.putPhraseOffset(field, startOffset, endOffset);
                 return true;
             }
         }
