@@ -35,6 +35,7 @@ import datawave.query.function.MaskedValueFilterFactory;
 import datawave.query.function.MaskedValueFilterInterface;
 import datawave.query.function.RemoveGroupingContext;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.function.serializer.JsonDocumentSerializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
 import datawave.query.function.serializer.WritableDocumentSerializer;
@@ -99,9 +100,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.io.Text;
-// TODO: Fix tracing for Accumulo 2.1-compatibility
-//import org.apache.htrace.Trace;
-//import org.apache.htrace.TraceScope;
 import org.apache.log4j.Logger;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
@@ -398,7 +396,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             } else {
                 this.groupingContextAddedByMe = false;
             }
-            
+
             if (log.isDebugEnabled()) {
                 log.debug("Seek range: " + range + " " + query);
             }
@@ -523,6 +521,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             } else if (this.getReturnType() == ReturnType.writable) {
                 // Use the Writable interface to serialize the Document
                 this.serializedDocuments = Iterators.transform(pipelineDocuments, new WritableDocumentSerializer(isReducedResponse()));
+            } else if (this.getReturnType() == ReturnType.json) {
+                // Use the Writable interface to serialize the Document
+                this.serializedDocuments = Iterators.transform(pipelineDocuments, new JsonDocumentSerializer(isReducedResponse()));
             } else if (this.getReturnType() == ReturnType.tostring) {
                 // Just return a toString() representation of the document
                 this.serializedDocuments = Iterators.transform(pipelineDocuments, new ToStringDocumentSerializer(isReducedResponse()));
