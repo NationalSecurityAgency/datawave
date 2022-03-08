@@ -27,14 +27,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.format.DateTimeParseException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
 
 public class Document extends AttributeBag<Document> implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -225,10 +219,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
         return this.dict.get(key);
     }
     
-    public void put(String key, Attribute<?> value) {
-        put(key, value, false, false);
-    }
-    
     /**
      * Replaces an attribute within a document
      *
@@ -237,6 +227,10 @@ public class Document extends AttributeBag<Document> implements Serializable {
      */
     public void replace(String key, Attribute<?> value, Boolean includeGroupingContext, boolean reducedResponse) {
         dict.put(key, value);
+    }
+    
+    public void put(String key, Attribute<?> value) {
+        put(key, value, false, false);
     }
     
     /**

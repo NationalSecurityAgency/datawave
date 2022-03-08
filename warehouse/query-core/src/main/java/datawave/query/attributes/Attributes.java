@@ -1,27 +1,20 @@
 package datawave.query.attributes;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import datawave.marking.MarkingFunctions;
-import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.collections.FunctionalSet;
-
+import datawave.query.jexl.DatawaveJexlContext;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.*;
 
 public class Attributes extends AttributeBag<Attributes> implements Serializable {
     
@@ -92,6 +85,17 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
             this._count += attr.size();
             if (trackSizes) {
                 this._bytes += attr.sizeInBytes() + 24 + 24;
+            }
+            invalidateMetadata();
+        }
+    }
+    
+    public void remove(Attribute<? extends Comparable<?>> attr) {
+        if (this.attributes.contains(attr)) {
+            this.attributes.remove(attr);
+            this._count -= attr.size();
+            if (trackSizes) {
+                this._bytes -= attr.sizeInBytes() - 24 - 24;
             }
             invalidateMetadata();
         }
