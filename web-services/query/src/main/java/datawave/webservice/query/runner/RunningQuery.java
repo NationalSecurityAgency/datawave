@@ -262,6 +262,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
                     log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
                                     + pageTimeInCall + " " + timing);
+                    hitPageTimeTrigger = true;
                     break;
                 }
                 
