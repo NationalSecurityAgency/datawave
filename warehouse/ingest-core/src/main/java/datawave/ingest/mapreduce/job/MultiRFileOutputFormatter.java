@@ -16,7 +16,12 @@ import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
 
 import org.apache.accumulo.core.client.AccumuloException;
-
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.ClientConfiguration;
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.ZooKeeperInstance;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.conf.Property;
@@ -29,6 +34,7 @@ import org.apache.accumulo.core.file.FileSKVIterator;
 import org.apache.accumulo.core.file.FileSKVWriter;
 import org.apache.accumulo.core.file.rfile.RFile;
 import org.apache.accumulo.core.file.rfile.bcfile.Compression;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -91,7 +97,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected String extension;
     protected Configuration conf;
     protected Map<String,ConfigurationCopy> tableConfigs;
-    protected Set<String> tableIds = null;
+    protected Map<String,String> tableIds = null;
     protected long maxRFileSize = 0;
     protected int maxRFileEntries = 0;
     protected boolean generateMapFileRowKeys = false;
@@ -346,7 +352,6 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected int getSeqFileBlockSize() {
         if (!tableConfigs.isEmpty()) {
             return (int) tableConfigs.values().iterator().next().getMemoryInBytes(Property.TABLE_FILE_COMPRESSED_BLOCK_SIZE);
-            
         } else {
             return 0;
         }
@@ -372,38 +377,41 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     }
     
     protected void setTableIdsAndConfigs() throws IOException {
-        
+        ZooKeeperInstance instance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(conf.get(INSTANCE_NAME))
+                        .withZkHosts(conf.get(ZOOKEEPERS)));
+        Connector connector = null;
         tableConfigs = new HashMap<>();
         Iterable<String> localityGroupTables = Splitter.on(",").split(conf.get(CONFIGURE_LOCALITY_GROUPS, ""));
-        
-        TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
-        
-        tableIds = tcu.getTableNames();
-        Set<String> compressionTableBlackList = getCompressionTableBlackList(conf);
-        String compressionType = getCompressionType(conf);
-        for (String tableName : tableIds) {
-            ConfigurationCopy tableConfig = new ConfigurationCopy(tcu.getTableProperties(tableName));
-            tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(), (compressionTableBlackList.contains(tableName) ? Compression.COMPRESSION_NONE
-                            : compressionType));
+        try {
+            connector = instance.getConnector(conf.get(USERNAME), new PasswordToken(Base64.decodeBase64(conf.get(PASSWORD))));
             
-            // the locality groups feature is broken and will be removed in a future MR
-            if (Iterables.contains(localityGroupTables, tableName)) {
-                Map<String,Set<Text>> localityGroups = tcu.getLocalityGroups(tableName);
-                // pull the locality groups for this table.
-                Map<Text,String> cftlg = Maps.newHashMap();
-                Map<String,Set<ByteSequence>> lgtcf = Maps.newHashMap();
-                for (Entry<String,Set<Text>> locs : localityGroups.entrySet()) {
-                    lgtcf.put(locs.getKey(), new HashSet<>());
-                    for (Text loc : locs.getValue()) {
-                        cftlg.put(loc, locs.getKey());
-                        lgtcf.get(locs.getKey()).add(new ArrayByteSequence(loc.getBytes()));
+            tableIds = connector.tableOperations().tableIdMap();
+            Set<String> compressionTableBlackList = getCompressionTableBlackList(conf);
+            String compressionType = getCompressionType(conf);
+            for (String tableName : tableIds.keySet()) {
+                ConfigurationCopy tableConfig = new ConfigurationCopy(connector.tableOperations().getProperties(tableName));
+                tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(), (compressionTableBlackList.contains(tableName) ? Compression.COMPRESSION_NONE
+                                : compressionType));
+                if (Iterables.contains(localityGroupTables, tableName)) {
+                    Map<String,Set<Text>> localityGroups = connector.tableOperations().getLocalityGroups(tableName);
+                    // pull the locality groups for this table.
+                    Map<Text,String> cftlg = Maps.newHashMap();
+                    Map<String,Set<ByteSequence>> lgtcf = Maps.newHashMap();
+                    for (Entry<String,Set<Text>> locs : localityGroups.entrySet()) {
+                        lgtcf.put(locs.getKey(), new HashSet<>());
+                        for (Text loc : locs.getValue()) {
+                            cftlg.put(loc, locs.getKey());
+                            lgtcf.get(locs.getKey()).add(new ArrayByteSequence(loc.getBytes()));
+                        }
                     }
+                    columnFamilyToLocalityGroup.put(tableName, cftlg);
+                    localityGroupToColumnFamilies.put(tableName, lgtcf);
                 }
-                columnFamilyToLocalityGroup.put(tableName, cftlg);
-                localityGroupToColumnFamilies.put(tableName, lgtcf);
+                tableConfigs.put(tableName, tableConfig);
+                
             }
-            tableConfigs.put(tableName, tableConfig);
-            
+        } catch (AccumuloException | AccumuloSecurityException | TableNotFoundException e) {
+            throw new IOException("Unable to get configuration.  Please call MultiRFileOutput.setAccumuloConfiguration with the proper credentials", e);
         }
     }
     
@@ -480,7 +488,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     shardedTablesConfigured.add(table);
                 }
                 
-                if (!tableIds.contains(table)) {
+                if (tableIds.get(table) == null) {
                     throw new IOException("Unable to determine id for table " + table);
                 }
                 Path tableDir = new Path(workDir, table);
