@@ -11,6 +11,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import datawave.query.function.PrefixEquality;
+import datawave.query.function.serializer.JsonDocumentSerializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
 import datawave.query.iterator.errors.UnindexedException;
@@ -360,6 +361,9 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         } else if (this.getReturnType() == ReturnType.writable) {
             // Use the Writable interface to serialize the Document
             this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new WritableDocumentSerializer(isReducedResponse()));
+        } else if (this.getReturnType() == ReturnType.json) {
+            // Use the Writable interface to serialize the Document
+            this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new JsonDocumentSerializer(isReducedResponse()));
         } else if (this.getReturnType() == ReturnType.tostring) {
             // Just return a toString() representation of the document
             this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new ToStringDocumentSerializer(isReducedResponse()));
