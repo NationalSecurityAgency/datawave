@@ -11,7 +11,8 @@ import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.function.deserializer.DocumentDeserializer;
+import datawave.query.function.deserializer.JsonDeserializer;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
@@ -120,7 +121,7 @@ public abstract class ExecutableExpansionVisitorTest {
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
     
-    protected KryoDocumentDeserializer deserializer;
+    protected DocumentDeserializer deserializer;
     
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     
@@ -151,7 +152,7 @@ public abstract class ExecutableExpansionVisitorTest {
         logic.setFullTableScanEnabled(false);
         logic.setMaxDepthThreshold(11);
         logic.setMaxTermThreshold(12);
-        deserializer = new KryoDocumentDeserializer();
+        deserializer = new JsonDeserializer();
     }
     
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)

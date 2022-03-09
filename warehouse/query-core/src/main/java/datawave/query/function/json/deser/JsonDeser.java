@@ -5,6 +5,7 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import org.apache.accumulo.core.data.Key;
@@ -59,6 +60,16 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
                 jsonDocument.addProperty(name,attr.toString());
             }
         }
+//        if (attr instanceof Attribute) {
+//            Attribute attribute = (Attribute)attr;
+//            jsonDocument.addProperty(name, attr.toString());
+//
+//        }
+//        if (attr instanceof Content) {
+//            Content content = (Content)attr;
+//
+//        }
+
     }
 
     /**
@@ -115,7 +126,7 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
      * @param doc document to emplace the JsonElement attribute.
      */
     private static void populateAttribute(JsonElement element,String name, Document doc){
-        doc.put(name,elementToAttribute(element));
+        doc.put(name,elementToAttribute(element), true, false);
     }
 
     /**
@@ -129,7 +140,7 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
         array.iterator().forEachRemaining( x -> {
             attrs.add(elementToAttribute(x));
         });
-        doc.put(name,attrs);
+        doc.put(name,attrs, true, false);
     }
     @Override
     public Document deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {

@@ -10,6 +10,8 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.function.deserializer.DocumentDeserializer;
+import datawave.query.function.deserializer.JsonDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
@@ -113,7 +115,7 @@ public abstract class ValueToAttributesTest {
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
     
-    protected KryoDocumentDeserializer deserializer;
+    protected DocumentDeserializer deserializer;
     
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     
@@ -144,7 +146,7 @@ public abstract class ValueToAttributesTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         logic.setFullTableScanEnabled(true);
-        deserializer = new KryoDocumentDeserializer();
+        deserializer = new JsonDeserializer();
     }
     
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;

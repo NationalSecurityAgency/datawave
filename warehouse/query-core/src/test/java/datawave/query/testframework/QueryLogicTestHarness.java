@@ -7,6 +7,8 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.TypeAttribute;
+import datawave.query.function.deserializer.DocumentDeserializer;
+import datawave.query.function.deserializer.JsonDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.webservice.query.logic.BaseQueryLogic;
@@ -27,11 +29,11 @@ public class QueryLogicTestHarness {
     private static final Logger log = Logger.getLogger(QueryLogicTestHarness.class);
     
     private final TestResultParser parser;
-    private final KryoDocumentDeserializer deserializer;
+    private final DocumentDeserializer deserializer;
     
     public QueryLogicTestHarness(final TestResultParser testParser) {
         this.parser = testParser;
-        this.deserializer = new KryoDocumentDeserializer();
+        this.deserializer = new JsonDeserializer();
     }
     
     // =============================================

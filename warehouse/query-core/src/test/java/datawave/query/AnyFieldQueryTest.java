@@ -20,6 +20,7 @@ import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.RawDataManager;
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -52,6 +53,13 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
         
         accumuloSetup.setData(FileType.CSV, dataType);
         client = accumuloSetup.loadTables(log);
+    }
+
+    @Before
+    public void setup() {
+        this.logic.getConfig().setReturnType(DocumentSerialization.ReturnType.json);
+        this.logic.getSettings().addParameter(Constants.RETURN_TYPE, "json");
+//        this.logic.getSettings().getPa
     }
     
     public AnyFieldQueryTest() {

@@ -8,6 +8,8 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.function.deserializer.DocumentDeserializer;
+import datawave.query.function.deserializer.JsonDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
@@ -153,7 +155,7 @@ public abstract class CompositeFunctionsTest {
     @SpringBean(name = "TLDEventQuery")
     protected ShardQueryLogic tldEventQueryLogic;
     
-    private KryoDocumentDeserializer deserializer;
+    private DocumentDeserializer deserializer;
     
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     
@@ -181,7 +183,7 @@ public abstract class CompositeFunctionsTest {
         eventQueryLogic.setMaxDepthThreshold(6);
         tldEventQueryLogic.setFullTableScanEnabled(true);
         tldEventQueryLogic.setMaxDepthThreshold(6);
-        deserializer = new KryoDocumentDeserializer();
+        deserializer = new JsonDeserializer();
     }
     
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;

@@ -29,7 +29,9 @@ public class JsonDeserializer extends DocumentDeserializer{
     public Document deserialize(final InputStream inputStream) {
         final Gson gson= gsonBuilder.create();
         try {
-            return gson.fromJson(IOUtils.toString(inputStream, StandardCharsets.UTF_8),Document.class);
+            String ss = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+            Document d = gson.fromJson(ss,Document.class);
+            return d;
         } catch (IOException e) {
             throw new RuntimeException("Could not convert Document through write().", e);
         }

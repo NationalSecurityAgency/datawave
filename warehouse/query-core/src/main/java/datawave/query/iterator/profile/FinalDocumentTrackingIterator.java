@@ -4,6 +4,7 @@ import com.google.common.collect.Iterators;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
 import datawave.query.function.LogTiming;
+import datawave.query.function.serializer.JsonDocumentSerializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
 import datawave.query.function.serializer.WritableDocumentSerializer;
@@ -102,6 +103,8 @@ public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Val
         } else if (returnType == DocumentSerialization.ReturnType.tostring) {
             // Just return a toString() representation of the document
             serializedDocuments = Iterators.transform(emptyDocumentIterator, new ToStringDocumentSerializer(isReducedResponse));
+        } else if (returnType == DocumentSerialization.ReturnType.json) {
+            serializedDocuments = Iterators.transform(emptyDocumentIterator, new JsonDocumentSerializer(isReducedResponse));
         } else {
             throw new IllegalArgumentException("Unknown return type of: " + returnType);
         }

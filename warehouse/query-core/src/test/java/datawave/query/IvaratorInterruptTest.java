@@ -7,6 +7,8 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
+import datawave.query.function.deserializer.DocumentDeserializer;
+import datawave.query.function.deserializer.JsonDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -68,7 +70,7 @@ public abstract class IvaratorInterruptTest {
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
     
-    private KryoDocumentDeserializer deserializer;
+    private DocumentDeserializer deserializer;
     
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     
@@ -134,7 +136,7 @@ public abstract class IvaratorInterruptTest {
         IvaratorCacheDirConfig config = new IvaratorCacheDirConfig(tmpDir.toURI().toString());
         logic.setIvaratorCacheDirConfigs(Collections.singletonList(config));
         
-        deserializer = new KryoDocumentDeserializer();
+        deserializer = new JsonDeserializer();
     }
     
     @RunWith(Arquillian.class)

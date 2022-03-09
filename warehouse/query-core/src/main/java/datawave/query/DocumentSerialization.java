@@ -33,7 +33,7 @@ public class DocumentSerialization {
         writable, json, kryo, tostring, noop
     }
 
-    public static final ReturnType DEFAULT_RETURN_TYPE = ReturnType.kryo;
+    public static final ReturnType DEFAULT_RETURN_TYPE = ReturnType.json;
 
     private static final int DOC_MAGIC = 0x8b2f;
 

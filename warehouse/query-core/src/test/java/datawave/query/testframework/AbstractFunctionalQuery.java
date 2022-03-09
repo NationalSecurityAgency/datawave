@@ -5,6 +5,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions.Default;
+import datawave.query.Constants;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
@@ -178,7 +179,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         this.logic.setLogTimingDetails(true);
         this.logic.setMinimumSelectivity(0.03D);
         this.logic.setMaxIndexScanTimeMillis(5000);
-        
+
         // count logic
         countLogic.setIncludeDataTypeAsField(true);
         countLogic.setFullTableScanEnabled(false);
@@ -414,6 +415,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     protected void runTestQuery(Collection<String> expected, String queryStr, Date startDate, Date endDate, Map<String,String> options,
                     List<DocumentChecker> checkers, Set<Authorizations> authSet) throws Exception {
+
         if (log.isDebugEnabled()) {
             log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startDate) + ")  end(" + YMD_DateFormat.format(endDate) + ")");
         }
@@ -543,6 +545,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         q.setId(UUID.randomUUID());
         q.setPagesize(Integer.MAX_VALUE);
         q.setQueryAuthorizations(auths.toString());
+        q.addParameter(Constants.RETURN_TYPE, "json");
         
         return this.logic.getPlan(client, q, this.authSet, expandFields, expandValues);
     }
