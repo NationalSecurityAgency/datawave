@@ -154,8 +154,6 @@ public class CompositeQueryLogicTest {
             super(markingFunctions);
         }
         
-        long queryExecutionForCurrentPageStartTime;
-        
         @Override
         public TestQueryResponse transform(Entry<?,?> input) {
             if (input instanceof Entry<?,?>) {
@@ -168,11 +166,6 @@ public class CompositeQueryLogicTest {
             } else {
                 throw new IllegalArgumentException("Invalid input type: " + input.getClass());
             }
-        }
-        
-        @Override
-        public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
-            this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
         }
         
         @Override

@@ -33,7 +33,6 @@ public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer<E
     
     private List<String> variableFieldList = null;
     private ResponseObjectFactory responseObjectFactory;
-    protected long queryExecutionForCurrentPageStartTime;
     
     public ShardQueryCountTableTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
@@ -71,11 +70,6 @@ public class ShardQueryCountTableTransformer extends BaseQueryLogicTransformer<E
         e.setMetadata(metadata);
         
         return e;
-    }
-    
-    @Override
-    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
-        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
     
     private FieldBase makeField(String name, Map<String,String> markings, ColumnVisibility columnVisibility, Long timestamp, Object value) {

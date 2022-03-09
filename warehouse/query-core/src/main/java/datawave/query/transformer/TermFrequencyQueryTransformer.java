@@ -26,7 +26,6 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
     
     private Query query = null;
     private Authorizations auths = null;
-    private long queryExecutionForCurrentPageStartTime;
     
     public TermFrequencyQueryTransformer(Query query, MarkingFunctions markingFunctions) {
         super(markingFunctions);
@@ -80,11 +79,6 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
         e.setFields(fields);
         
         return e;
-    }
-    
-    @Override
-    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
-        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
     
     protected DefaultField createField(TermFrequencyKeyValue tfkv, Entry<Key,Value> e, String name, String value) {
