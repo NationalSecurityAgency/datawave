@@ -10,8 +10,6 @@ import com.google.common.collect.Maps;
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import datawave.ingest.mapreduce.job.reduce.AggregatingReducer.CustomColumnToClassMapping;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -32,18 +30,14 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static datawave.ingest.mapreduce.job.TableConfigurationUtil.ITERATOR_CLASS_MARKER;
-
 @RunWith(PowerMockRunner.class)
-// @PrepareForTest({TableConfigurationUtil.class})
-@PrepareForTest({AggregatingReducer.class, TableConfigurationUtil.class})
+@PrepareForTest({TableConfigurationUtil.class})
 public class AggregatingReducerTest {
     private CustomColumnToClassMapping columnToClassMapping;
     private Map<String,String> optMap;
     private Map<String,Entry<Map<String,String>,String>> columnMap;
     private Set<String> tables = ImmutableSet.of("table1", "table2", "table3");
     private Configuration conf;
-    TableConfigurationUtil tcu;
     Map<String,String> confMap;
     
     public AggregatingReducerTest() {
@@ -78,14 +72,13 @@ public class AggregatingReducerTest {
         
         PowerMockito.mockStatic(TableConfigurationUtil.class, new Class[0]);
         PowerMockito.when(TableConfigurationUtil.getTables((Configuration) Mockito.any(Configuration.class))).thenReturn(tables);
-        
-        tcu = PowerMockito.mock(TableConfigurationUtil.class);
-        PowerMockito.whenNew(TableConfigurationUtil.class).withAnyArguments().thenReturn(tcu);
-        PowerMockito.doNothing().when(tcu).setTableItersPrioritiesAndOpts();
     }
     
     @Test
     public void testColumnToClassMappingOptMap() {
+        // optMap.put("fam1:qual1", AggregatingReducerTest.testCombiner1.class.getName());
+        // optMap.put("*", AggregatingReducerTest.testCombiner2.class.getName());
+        // optMap.put("fam3", AggregatingReducerTest.testCombiner3.class.getName());
         setupOptMap();
         columnToClassMapping = new CustomColumnToClassMapping(1, optMap);
         
@@ -150,28 +143,14 @@ public class AggregatingReducerTest {
     
     @Test
     public void testConfigureAggregators() throws Exception {
-        Map<String,String> optMap;
-        
-        Map<Integer,Map<String,String>> table1AggregatorMap = new HashMap<>();
-        optMap = Collections.singletonMap("fam1:qual1", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner1");
-        table1AggregatorMap.put(1, optMap);
-        optMap = Collections.singletonMap("fam1:qual1", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner2");
-        table1AggregatorMap.put(2, optMap);
-        
-        Map<Integer,Map<String,String>> table2AggregatorMap = new HashMap<>();
-        optMap = new HashMap<>();
-        optMap.put("fam1:qual1", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner3");
-        optMap.put("fam2:qual2", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner1");
-        table2AggregatorMap.put(1, optMap);
-        optMap = Collections.singletonMap("fam1:qual1", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner");
-        table2AggregatorMap.put(2, optMap);
-        
+        confMap.put("aggregator.table1.1.fam1:qual1", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner1");
+        confMap.put("aggregator.table1.2.fam1:qual1", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner2");
+        confMap.put("aggregator.table2.1.fam1:qual1", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner3");
+        confMap.put("aggregator.table2.1.fam2:qual2", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner1");
+        confMap.put("aggregator.table2.2.fam1:qual1", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner");
         setupMocks();
-        PowerMockito.when(tcu.getTableAggregators(Mockito.eq("table1"))).thenReturn(table1AggregatorMap);
-        PowerMockito.when(tcu.getTableAggregators(Mockito.eq("table2"))).thenReturn(table2AggregatorMap);
         
         AggregatingReducerTest.TestAggregatingReducer aggregatingReducer = new AggregatingReducerTest.TestAggregatingReducer();
-        aggregatingReducer.tcu = tcu;
         aggregatingReducer.configureAggregators(conf);
         
         assertCombineList(new String[] {"testCombiner1", "testCombiner2"}, aggregatingReducer, new Text("table1"), new Key("", "fam1", "qual1"));
@@ -181,26 +160,14 @@ public class AggregatingReducerTest {
     
     @Test
     public void testConfigureCombiners() throws Exception {
-        Map<String,String> optMap;
-        
-        Map<Integer,Map<String,String>> table1CombinerMap = new HashMap<>();
-        optMap = new HashMap<>();
-        optMap.put("columns", "fam5,fam6");
-        optMap.put(ITERATOR_CLASS_MARKER, "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner3");
-        table1CombinerMap.put(1, optMap);
-        
-        optMap = new HashMap<>();
-        optMap.put("columns", "fam3,fam4");
-        optMap.put(ITERATOR_CLASS_MARKER, "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner");
-        table1CombinerMap.put(2, optMap);
-        optMap = Collections.singletonMap(ITERATOR_CLASS_MARKER, "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner2");
-        table1CombinerMap.put(3, optMap);
-        
+        confMap.put("combiner.table1.1.columns", "fam5,fam6");
+        confMap.put("combiner.table1.2.columns", "fam3,fam4");
+        confMap.put("combiner.table1.1.iterClazz", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner3");
+        confMap.put("combiner.table1.2.iterClazz", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner");
+        confMap.put("combiner.table1.3.iterClazz", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner2");
         setupMocks();
-        PowerMockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
         
         AggregatingReducerTest.TestAggregatingReducer aggregatingReducer = new AggregatingReducerTest.TestAggregatingReducer();
-        aggregatingReducer.tcu = tcu;
         aggregatingReducer.configureCombiners(conf);
         
         this.assertCombineList(new String[] {"testCombiner2"}, aggregatingReducer, new Text("table1"), new Key("", "fam1", "qual1"));
@@ -210,18 +177,10 @@ public class AggregatingReducerTest {
     
     @Test(expected = RuntimeException.class)
     public void testConfigureCombinersMissingIterClazzSetting() throws Exception {
-        Map<Integer,Map<String,String>> table1CombinerMap = new HashMap<>();
-        optMap = new HashMap<>();
-        optMap.put("columns", "fam5,fam6");
-        optMap.put(ITERATOR_CLASS_MARKER, "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner3");
-        table1CombinerMap.put(1, optMap);
-        optMap = Collections.singletonMap("columns", "fam3,fam4");
-        table1CombinerMap.put(2, optMap);
-        
+        confMap.put("combiner.table1.1.columns", "fam5,fam6");
+        confMap.put("combiner.table1.2.columns", "fam3,fam4");
+        confMap.put("combiner.table1.1.iterClazz", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner3");
         setupMocks();
-        PowerMockito.whenNew(TableConfigurationUtil.class).withAnyArguments().thenReturn(tcu);
-        PowerMockito.doNothing().when(tcu).setTableItersPrioritiesAndOpts();
-        PowerMockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
         
         AggregatingReducerTest.TestAggregatingReducer aggregatingReducer = new AggregatingReducerTest.TestAggregatingReducer();
         aggregatingReducer.configureCombiners(conf);
@@ -229,17 +188,9 @@ public class AggregatingReducerTest {
     
     @Test(expected = RuntimeException.class)
     public void testConfigureCombinersInstantiationError() throws Exception {
-        Map<Integer,Map<String,String>> table1CombinerMap = new HashMap<>();
-        optMap = new HashMap<>();
-        optMap.put("columns", "fam5,fam6");
-        optMap.put(ITERATOR_CLASS_MARKER, "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner4");
-        table1CombinerMap.put(1, optMap);
-        
+        confMap.put("combiner.table1.1.columns", "fam5,fam6");
+        confMap.put("combiner.table1.1.iterClazz", "datawave.ingest.mapreduce.job.reduce.AggregatingReducerTest$testCombiner4");
         setupMocks();
-        TableConfigurationUtil tcu = PowerMockito.mock(TableConfigurationUtil.class);
-        PowerMockito.whenNew(TableConfigurationUtil.class).withAnyArguments().thenReturn(tcu);
-        PowerMockito.doNothing().when(tcu).setTableItersPrioritiesAndOpts();
-        PowerMockito.when(tcu.getTableCombiners(Mockito.eq("table1"))).thenReturn(table1CombinerMap);
         
         AggregatingReducerTest.TestAggregatingReducer aggregatingReducer = new AggregatingReducerTest.TestAggregatingReducer();
         aggregatingReducer.configureCombiners(conf);
