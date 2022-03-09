@@ -126,7 +126,7 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
      * @param doc document to emplace the JsonElement attribute.
      */
     private static void populateAttribute(JsonElement element,String name, Document doc){
-        doc.put(name,elementToAttribute(element), true, false);
+        doc.put(name,elementToAttribute(element), true);
     }
 
     /**
@@ -140,7 +140,7 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
         array.iterator().forEachRemaining( x -> {
             attrs.add(elementToAttribute(x));
         });
-        doc.put(name,attrs, true, false);
+        doc.put(name,attrs, true);
     }
     @Override
     public Document deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
