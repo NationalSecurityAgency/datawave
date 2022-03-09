@@ -14,13 +14,9 @@ public class OptionsParser {
     // The intent is to expand upon this class later, but limiting to this set for now to avoid scope creep. Must.... resist...
     
     public static final String instanceFlag = "-instance";
-    public static final String instanceFlag2 = "-i";
     public static final String zookeepersFlag = "-zookeepers";
-    public static final String zookeepersFlag2 = "-zk";
     public static final String userFlag = "-user";
-    public static final String userFlag2 = "-u";
     public static final String passwordFlag = "-pass";
-    public static final String passwordFlag2 = "-p";
     public static final String accCacheDirFlag = "-accCacheDir";
     public static final String configDirFlag = "-cd";
     public static final String additionalResourceFlag = "-";
@@ -31,13 +27,13 @@ public class OptionsParser {
     public static Configuration parseArguments(String[] args, Configuration conf) {
         String configDir = null;
         for (int i = 0; i < args.length; i++) {
-            if (args[i].equals(instanceFlag) || args[i].equals(instanceFlag2)) {
+            if (args[i].equals(instanceFlag)) {
                 AccumuloHelper.setInstanceName(conf, args[++i]);
-            } else if (args[i].equals(zookeepersFlag) || args[i].equals(zookeepersFlag2)) {
+            } else if (args[i].equals(zookeepersFlag)) {
                 AccumuloHelper.setZooKeepers(conf, args[++i]);
-            } else if (args[i].equals(userFlag) || args[i].equals(userFlag2)) {
+            } else if (args[i].equals(userFlag)) {
                 AccumuloHelper.setUsername(conf, args[++i]);
-            } else if (args[i].equals(passwordFlag) || args[i].equals(passwordFlag2)) {
+            } else if (args[i].equals(passwordFlag)) {
                 AccumuloHelper.setPassword(conf, PasswordConverter.parseArg(args[++i]).getBytes());
             } else if (args[i].equals(accCacheDirFlag)) {
                 conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, args[++i]);
