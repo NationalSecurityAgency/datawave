@@ -327,7 +327,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 attribute.setColumnVisibility(entry.getValue().getColumnVisibility());
                 // call copy() on the GroupingTypeAttribute to get a plain TypeAttribute
                 // instead of a GroupingTypeAttribute that is package protected and won't serialize
-                theDocument.put(name + "." + Integer.toHexString(context).toUpperCase(), (TypeAttribute) attribute.copy(), true, false);
+                theDocument.put(name + "." + Integer.toHexString(context).toUpperCase(), (TypeAttribute) attribute.copy(), true);
             }
             context++;
         }

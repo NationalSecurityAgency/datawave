@@ -25,7 +25,7 @@ public class KryoCVAwareSerializableSerializer extends KryoSerializableSerialize
     @Override
     public void write(Kryo kryo, Output output, KryoSerializable object) {
         if (object instanceof Document) {
-            ((Document) object).write(kryo, output, getReducedResponse());
+            ((Document) object).write(kryo, output);
         } else {
             object.write(kryo, output);
         }
