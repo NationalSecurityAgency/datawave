@@ -52,12 +52,7 @@ public class Content extends Attribute<Content> implements Serializable {
     
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-    
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
-        writeMetadata(out, reducedResponse);
+        writeMetadata(out);
         
         WritableUtils.writeString(out, content);
     }
@@ -109,12 +104,7 @@ public class Content extends Attribute<Content> implements Serializable {
     
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-    
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
-        super.writeMetadata(kryo, output, reducedResponse);
+        super.writeMetadata(kryo, output);
         
         output.writeString(this.content);
     }

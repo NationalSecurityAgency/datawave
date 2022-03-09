@@ -34,7 +34,7 @@ public class RemoveGroupingContext implements Function<Entry<Key,Document>,Entry
         }
         // put them all back without the grouping context
         for (Entry<String,Attribute<? extends Comparable<?>>> goner : toRemove) {
-            entry.getValue().put(goner.getKey(), goner.getValue(), false, false);
+            entry.getValue().put(goner.getKey(), goner.getValue(), false);
         }
         return entry;
     }

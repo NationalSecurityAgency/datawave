@@ -251,7 +251,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         if (!limitedFieldCounts.entrySet().isEmpty()) {
             ColumnVisibility docVisibility = doc.getColumnVisibility();
             for (Entry<String,Integer> limitedFieldCountEntry : limitedFieldCounts.entrySet()) {
-                doc.put(limitedFieldCountEntry.getKey(), new Numeric(limitedFieldCountEntry.getValue(), doc.getMetadata(), doc.isToKeep()), true, false);
+                doc.put(limitedFieldCountEntry.getKey(), new Numeric(limitedFieldCountEntry.getValue(), doc.getMetadata(), doc.isToKeep()), true);
             }
         }
     }

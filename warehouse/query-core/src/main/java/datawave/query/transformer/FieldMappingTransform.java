@@ -29,7 +29,7 @@ public class FieldMappingTransform extends DocumentTransform.DefaultDocumentTran
                 if (!document.containsKey(primaryField)) {
                     for (String secondaryField : this.primaryToSecondaryFieldMap.get(primaryField)) {
                         if (document.containsKey(secondaryField)) {
-                            document.put(primaryField, document.get(secondaryField), false, this.reducedResponse);
+                            document.put(primaryField, document.get(secondaryField), false);
                             break;
                         }
                     }

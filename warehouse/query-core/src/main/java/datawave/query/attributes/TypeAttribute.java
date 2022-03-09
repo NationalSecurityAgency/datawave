@@ -57,13 +57,8 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     
     @Override
     public void write(DataOutput out) throws IOException {
-        write(out, false);
-    }
-    
-    @Override
-    public void write(DataOutput out, boolean reducedResponse) throws IOException {
         WritableUtils.writeString(out, datawaveType.getClass().toString());
-        writeMetadata(out, reducedResponse);
+        writeMetadata(out);
         WritableUtils.writeString(out, datawaveType.getDelegateAsString());
     }
     
@@ -127,13 +122,8 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     
     @Override
     public void write(Kryo kryo, Output output) {
-        write(kryo, output, false);
-    }
-    
-    @Override
-    public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         output.writeString(datawaveType.getClass().getName());
-        super.writeMetadata(kryo, output, reducedResponse);
+        super.writeMetadata(kryo, output);
         
         output.writeString(this.datawaveType.getDelegateAsString());
     }

@@ -93,7 +93,7 @@ public class DocumentProjection implements DocumentPermutation {
                         Document newSubDoc = trim((Document) attr);
                         
                         if (0 < newSubDoc.size()) {
-                            newDoc.put(fieldName, newSubDoc.copy(), this.includeGroupingContext, this.reducedResponse);
+                            newDoc.put(fieldName, newSubDoc.copy(), this.includeGroupingContext);
                         }
                         
                         continue;
@@ -101,7 +101,7 @@ public class DocumentProjection implements DocumentPermutation {
                         Attributes subAttrs = trim((Attributes) attr, fieldName);
                         
                         if (0 < subAttrs.size()) {
-                            newDoc.put(fieldName, subAttrs.copy(), this.includeGroupingContext, this.reducedResponse);
+                            newDoc.put(fieldName, subAttrs.copy(), this.includeGroupingContext);
                         }
                         
                         continue;
@@ -109,7 +109,7 @@ public class DocumentProjection implements DocumentPermutation {
                 }
                 
                 // We just want to add this subtree
-                newDoc.put(fieldName, (Attribute<?>) attr.copy(), this.includeGroupingContext, this.reducedResponse);
+                newDoc.put(fieldName, (Attribute<?>) attr.copy(), this.includeGroupingContext);
                 
             } else if (!projection.isUseBlacklist()) {
                 // Blacklist will completely exclude a subtree, whereas a whitelist
@@ -119,7 +119,7 @@ public class DocumentProjection implements DocumentPermutation {
                     Document newSubDoc = trim((Document) attr);
                     
                     if (0 < newSubDoc.size()) {
-                        newDoc.put(fieldName, newSubDoc.copy(), this.includeGroupingContext, this.reducedResponse);
+                        newDoc.put(fieldName, newSubDoc.copy(), this.includeGroupingContext);
                     }
                 } else if (attr instanceof Attributes) {
                     // Since Document instances can be nested under attributes and vice-versa
@@ -128,7 +128,7 @@ public class DocumentProjection implements DocumentPermutation {
                     Attributes subAttrs = trim((Attributes) attr, fieldName);
                     
                     if (0 < subAttrs.size()) {
-                        newDoc.put(fieldName, subAttrs.copy(), this.includeGroupingContext, this.reducedResponse);
+                        newDoc.put(fieldName, subAttrs.copy(), this.includeGroupingContext);
                     }
                 }
             }
