@@ -153,7 +153,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
                     splitsPerTable.put(table, splits.size());
                     log.info("Writing " + splits.size() + " splits.");
                     for (Text split : splits) {
-                        out.println(table + this.delimiter + new String(Base64.encodeBase64(split.getBytes())));
+                        out.println(table + "\t" + new String(Base64.encodeBase64(split.getBytes())));
                     }
                 }
                 if (null != getFileStatus() && exceedsMaxSplitsDeviation(splitsPerTable)) {
@@ -209,13 +209,13 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
      * @throws IOException
      */
     @Override
-    protected void readCache(BufferedReader in) throws IOException {
+    protected void readCache(BufferedReader in, String delimiter) throws IOException {
         this.splits = new HashMap<>();
         String line;
         String tableName = null;
         List<Text> splits = null;
         while ((line = in.readLine()) != null) {
-            String[] parts = StringUtils.split(line, this.delimiter);
+            String[] parts = StringUtils.split(line, delimiter);
             if (tableName == null || !tableName.equals(parts[0])) {
                 tableName = parts[0];
                 splits = new ArrayList<>();
