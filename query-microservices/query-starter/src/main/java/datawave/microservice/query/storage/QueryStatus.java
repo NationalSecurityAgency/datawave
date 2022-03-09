@@ -1,6 +1,7 @@
 package datawave.microservice.query.storage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.QueryKey;
@@ -45,6 +46,7 @@ public class QueryStatus implements Serializable {
     private QueryKey queryKey;
     private QUERY_STATE queryState = QUERY_STATE.DEFINE;
     private CREATE_STAGE createStage = CREATE_STAGE.CREATE;
+    private ProxiedUserDetails currentUser;
     private Query query;
     private GenericQueryConfiguration config;
     private Set<String> calculatedAuths;
@@ -137,6 +139,14 @@ public class QueryStatus implements Serializable {
     
     public void setPredictions(Set<Prediction> predictions) {
         this.predictions = predictions;
+    }
+    
+    public ProxiedUserDetails getCurrentUser() {
+        return currentUser;
+    }
+    
+    public void setCurrentUser(ProxiedUserDetails currentUser) {
+        this.currentUser = currentUser;
     }
     
     public Query getQuery() {
@@ -318,6 +328,7 @@ public class QueryStatus implements Serializable {
                 .append(queryState)
                 .append(createStage)
                 .append(query)
+                .append(currentUser)
                 .append(calculatedAuths)
                 .append(calculatedAuthorizations)
                 .append(plan)
@@ -345,6 +356,7 @@ public class QueryStatus implements Serializable {
                     .append(queryState, other.queryState)
                     .append(createStage, other.createStage)
                     .append(query, other.query)
+                    .append(currentUser, other.currentUser)
                     .append(calculatedAuths, other.calculatedAuths)
                     .append(calculatedAuthorizations, other.calculatedAuthorizations)
                     .append(plan, other.plan)
@@ -372,6 +384,7 @@ public class QueryStatus implements Serializable {
                 .append("queryState", queryState)
                 .append("createStage", createStage)
                 .append("query", query)
+                .append("currentUser", currentUser)
                 .append("calculatedAuths", calculatedAuths)
                 .append("calculatedAuthorizations", calculatedAuthorizations)
                 .append("plan", plan)

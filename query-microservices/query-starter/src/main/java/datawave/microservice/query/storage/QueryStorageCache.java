@@ -1,5 +1,6 @@
 package datawave.microservice.query.storage;
 
+import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.services.query.logic.QueryCheckpoint;
 import datawave.webservice.query.Query;
@@ -20,6 +21,8 @@ public interface QueryStorageCache {
      *            The query pool
      * @param query
      *            The query parameters
+     * @param currentUser
+     *            The current user
      * @param calculatedAuths
      *            The intersection of the user's auths with the requested auths
      * @param count
@@ -28,7 +31,7 @@ public interface QueryStorageCache {
      * @throws IOException
      *             underlying storage error
      */
-    TaskKey defineQuery(String queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
+    TaskKey defineQuery(String queryPool, Query query, ProxiedUserDetails currentUser, Set<Authorizations> calculatedAuths, int count) throws IOException;
     
     /**
      * Store/cache a new query. This will create a query task containing the query with a CREATE query action.
@@ -37,6 +40,8 @@ public interface QueryStorageCache {
      *            The query pool
      * @param query
      *            The query parameters
+     * @param currentUser
+     *            The current user
      * @param calculatedAuths
      *            The intersection of the user's auths with the requested auths
      * @param count
@@ -45,7 +50,7 @@ public interface QueryStorageCache {
      * @throws IOException
      *             underlying storage error
      */
-    TaskKey createQuery(String queryPool, Query query, Set<Authorizations> calculatedAuths, int count) throws IOException;
+    TaskKey createQuery(String queryPool, Query query, ProxiedUserDetails currentUser, Set<Authorizations> calculatedAuths, int count) throws IOException;
     
     /**
      * Store/cache a new query. This will create a query task containing the query with a PLAN query action.
@@ -54,13 +59,15 @@ public interface QueryStorageCache {
      *            The query pool
      * @param query
      *            The query parameters
+     * @param currentUser
+     *            The current user
      * @param calculatedAuths
      *            The intersection of the user's auths with the requested auths
      * @return The plan task key
      * @throws IOException
      *             underlying storage error
      */
-    TaskKey planQuery(String queryPool, Query query, Set<Authorizations> calculatedAuths) throws IOException;
+    TaskKey planQuery(String queryPool, Query query, ProxiedUserDetails currentUser, Set<Authorizations> calculatedAuths) throws IOException;
     
     /**
      * Store/cache a new query. This will create a query task containing the query with a PREDICT query action.
@@ -69,13 +76,15 @@ public interface QueryStorageCache {
      *            The query pool
      * @param query
      *            The query parameters
+     * @param currentUser
+     *            The current user
      * @param calculatedAuths
      *            The intersection of the user's auths with the requested auths
      * @return The predict task key
      * @throws IOException
      *             underlying storage error
      */
-    TaskKey predictQuery(String queryPool, Query query, Set<Authorizations> calculatedAuths) throws IOException;
+    TaskKey predictQuery(String queryPool, Query query, ProxiedUserDetails currentUser, Set<Authorizations> calculatedAuths) throws IOException;
     
     /**
      * Get the current query state. This includes the query status and the task statuses

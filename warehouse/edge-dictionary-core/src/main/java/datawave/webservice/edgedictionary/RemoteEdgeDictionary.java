@@ -9,6 +9,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.services.common.edgedictionary.EdgeDictionaryProvider;
 import datawave.webservice.common.remote.RemoteHttpService;
+import datawave.webservice.query.Query;
 import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
 import datawave.webservice.results.edgedictionary.MetadataBase;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
@@ -98,17 +99,17 @@ public class RemoteEdgeDictionary extends RemoteHttpService implements EdgeDicti
         edgeDictReader = objectMapper.readerFor(edgeDictionaryType);
     }
     
-    public EdgeDictionaryBase<?,? extends MetadataBase<?>> getEdgeDictionary(String metadataTableName, String auths) {
+    public EdgeDictionaryBase<?,? extends MetadataBase<?>> getEdgeDictionary(Query settings, String metadataTableName) {
         final String bearerHeader = "Bearer " + jwtTokenHandler.createTokenFromUsers(callerPrincipal.getName(), callerPrincipal.getProxiedUsers());
         // @formatter:off
         return executeGetMethodWithRuntimeException(
                 uriBuilder -> {
                     uriBuilder.addParameter("metadataTableName", metadataTableName);
-                    uriBuilder.addParameter("auths", auths);
+                    uriBuilder.addParameter("auths", settings.getQueryAuthorizations());
                 },
                 httpGet -> httpGet.setHeader("Authorization", bearerHeader),
                 entity -> edgeDictReader.readValue(entity.getContent()),
-                () -> "getEdgeDictionary [" + metadataTableName + ", " + auths + "]");
+                () -> "getEdgeDictionary [" + metadataTableName + ", " + settings.getQueryAuthorizations() + "]");
         // @formatter:on
     }
     

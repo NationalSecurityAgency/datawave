@@ -363,7 +363,10 @@ datawave:
 
         HitHighlights:
           checkpointable: ${warehouse.defaults.checkpointable}
+          accumuloPassword: ${warehouse.accumulo.password}
           tableName: ${warehouse.tables.shard.name}
+          dateIndexTableName: ${warehouse.tables.dateIndex.name}
+          defaultDateTypeName: "EVENT"
           metadataTableName: ${warehouse.tables.metadata.name}
           indexTableName: ${warehouse.tables.index.name}
           reverseIndexTableName: ${warehouse.tables.reverseIndex.name}

@@ -1,7 +1,6 @@
 package datawave.microservice.query;
 
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Iterators;
 import datawave.microservice.authorization.service.RemoteAuthorizationServiceUserDetailsService;
 import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.remote.QueryRequest;

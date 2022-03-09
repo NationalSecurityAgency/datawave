@@ -1,5 +1,6 @@
 package datawave.microservice.query.storage;
 
+import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.messaging.QueryResultsManager;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.services.query.logic.QueryCheckpoint;
@@ -40,6 +41,8 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *            The query pool
      * @param query
      *            The query parameters
+     * @param currentUser
+     *            The current user
      * @param calculatedAuthorizations
      *            The intersection of the user's auths with the requested auths
      * @param count
@@ -47,8 +50,8 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return The task key
      */
     @Override
-    public TaskKey defineQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) {
-        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.DEFINE);
+    public TaskKey defineQuery(String queryPool, Query query, ProxiedUserDetails currentUser, Set<Authorizations> calculatedAuthorizations, int count) {
+        return storeQuery(queryPool, query, currentUser, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.DEFINE);
     }
     
     /**
@@ -58,6 +61,8 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *            The query pool
      * @param query
      *            The query parameters
+     * @param currentUser
+     *            The current user
      * @param calculatedAuthorizations
      *            The intersection of the user's auths with the requested auths
      * @param count
@@ -65,8 +70,8 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      * @return The task key
      */
     @Override
-    public TaskKey createQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count) {
-        return storeQuery(queryPool, query, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATE);
+    public TaskKey createQuery(String queryPool, Query query, ProxiedUserDetails currentUser, Set<Authorizations> calculatedAuthorizations, int count) {
+        return storeQuery(queryPool, query, currentUser, calculatedAuthorizations, count, QueryStatus.QUERY_STATE.CREATE);
     }
     
     /**
@@ -76,13 +81,15 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *            The query pool
      * @param query
      *            The query parameters
+     * @param currentUser
+     *            The current user
      * @param calculatedAuthorizations
      *            The intersection of the user's auths with the requested auths
      * @return The plan task key
      */
     @Override
-    public TaskKey planQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations) {
-        return storeQuery(queryPool, query, calculatedAuthorizations, 1, QueryStatus.QUERY_STATE.PLAN);
+    public TaskKey planQuery(String queryPool, Query query, ProxiedUserDetails currentUser, Set<Authorizations> calculatedAuthorizations) {
+        return storeQuery(queryPool, query, currentUser, calculatedAuthorizations, 1, QueryStatus.QUERY_STATE.PLAN);
     }
     
     /**
@@ -92,16 +99,19 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
      *            The query pool
      * @param query
      *            The query parameters
+     * @param currentUser
+     *            The current user
      * @param calculatedAuthorizations
      *            The intersection of the user's auths with the requested auths
      * @return The predict task key
      */
     @Override
-    public TaskKey predictQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations) {
-        return storeQuery(queryPool, query, calculatedAuthorizations, 1, QueryStatus.QUERY_STATE.PREDICT);
+    public TaskKey predictQuery(String queryPool, Query query, ProxiedUserDetails currentUser, Set<Authorizations> calculatedAuthorizations) {
+        return storeQuery(queryPool, query, currentUser, calculatedAuthorizations, 1, QueryStatus.QUERY_STATE.PREDICT);
     }
     
-    private TaskKey storeQuery(String queryPool, Query query, Set<Authorizations> calculatedAuthorizations, int count, QueryStatus.QUERY_STATE queryState) {
+    private TaskKey storeQuery(String queryPool, Query query, ProxiedUserDetails currentUser, Set<Authorizations> calculatedAuthorizations, int count,
+                    QueryStatus.QUERY_STATE queryState) {
         UUID queryUuid = query.getId();
         if (queryUuid == null) {
             // create the query String
@@ -117,6 +127,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         
         // store the initial query properties
         QueryStatus queryStatus = new QueryStatus(checkpoint.getQueryKey());
+        queryStatus.setCurrentUser(currentUser);
         queryStatus.setQueryState(queryState);
         queryStatus.setQuery(query);
         queryStatus.setCalculatedAuthorizations(calculatedAuthorizations);

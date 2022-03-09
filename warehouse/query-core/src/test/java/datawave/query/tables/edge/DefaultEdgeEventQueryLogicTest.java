@@ -1,6 +1,17 @@
 package datawave.query.tables.edge;
 
-import static org.junit.Assert.assertEquals;
+import datawave.edge.model.DefaultEdgeModelFieldsFactory;
+import datawave.query.QueryParameters;
+import datawave.query.language.parser.QueryParser;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.model.edge.EdgeQueryModel;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.results.edgedictionary.DefaultEdgeDictionary;
+import datawave.webservice.results.edgedictionary.DefaultMetadata;
+import datawave.webservice.results.edgedictionary.EventField;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -8,20 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import datawave.edge.model.DefaultEdgeModelFieldsFactory;
-import datawave.query.QueryParameters;
-import datawave.query.language.parser.QueryParser;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.model.edge.EdgeQueryModel;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.results.edgedictionary.DefaultEdgeDictionary;
-import datawave.webservice.results.edgedictionary.EventField;
-import datawave.webservice.results.edgedictionary.DefaultMetadata;
+import static org.junit.Assert.assertEquals;
 
 public class DefaultEdgeEventQueryLogicTest {
     

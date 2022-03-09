@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 public abstract class QueryStorageCacheTest {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
     
@@ -78,7 +78,7 @@ public abstract class QueryStorageCacheTest {
             String queryPool = TEST_POOL;
             Set<Authorizations> auths = new HashSet<>();
             auths.add(new Authorizations("FOO", "BAR"));
-            TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
+            TaskKey key = storageService.createQuery(queryPool, query, null, auths, 3);
             QueryStatus queryStatus = storageService.getQueryStatus(key.getQueryId());
             queryStatus.setConfig(new ThisClassIsUnserializableOnPurposeToTestErrorHandling());
             try {
@@ -185,7 +185,7 @@ public abstract class QueryStorageCacheTest {
         String queryPool = TEST_POOL;
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
-        TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
+        TaskKey key = storageService.createQuery(queryPool, query, null, auths, 3);
         createdQueries.add(key.getQueryId());
         assertNotNull(key);
         
@@ -479,7 +479,7 @@ public abstract class QueryStorageCacheTest {
         String queryPool = TEST_POOL;
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
-        TaskKey taskKey = storageService.createQuery(queryPool, query, auths, 2);
+        TaskKey taskKey = storageService.createQuery(queryPool, query, null, auths, 2);
         String queryId = taskKey.getQueryId();
         createdQueries.add(queryId);
         
@@ -499,7 +499,7 @@ public abstract class QueryStorageCacheTest {
         String queryPool = TEST_POOL;
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
-        TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
+        TaskKey key = storageService.createQuery(queryPool, query, null, auths, 3);
         createdQueries.add(key.getQueryId());
         assertNotNull(key);
         

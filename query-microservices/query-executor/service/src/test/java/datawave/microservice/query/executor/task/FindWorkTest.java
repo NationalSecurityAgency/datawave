@@ -77,7 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "FindWorkTest", "use-test"})
 @ContextConfiguration(classes = FindWorkTest.FindWorkTestConfiguration.class)
 public class FindWorkTest {
@@ -195,7 +195,7 @@ public class FindWorkTest {
     
     private void testCreateOrphans(TaskStates.TASK_STATE initialState, QueryStatus.CREATE_STAGE initialStage, TaskStates.TASK_STATE expectedState,
                     QueryRequest.Method expectedAction) throws Exception {
-        TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), null, Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
         
         // now set the initial stage
@@ -256,7 +256,7 @@ public class FindWorkTest {
     
     @Test
     public void testOrphanedNext() throws Exception {
-        TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), null, Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
         
         // Assume the create task is complete
@@ -270,7 +270,7 @@ public class FindWorkTest {
     
     @Test
     public void testOrphanedClose() throws Exception {
-        TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), null, Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
         
         // Set the query status state to close
@@ -281,7 +281,7 @@ public class FindWorkTest {
     
     @Test
     public void testOrphanedCancel() throws Exception {
-        TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), null, Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
         
         // Set the query status state to close
@@ -292,13 +292,13 @@ public class FindWorkTest {
     
     @Test
     public void testOrphanedPlan() throws Exception {
-        TaskKey key = storageService.planQuery(TEST_POOL, getQuery(), Collections.singleton(CitiesDataType.getTestAuths()));
+        TaskKey key = storageService.planQuery(TEST_POOL, getQuery(), null, Collections.singleton(CitiesDataType.getTestAuths()));
         testOrphans(key, TaskStates.TASK_STATE.RUNNING, TaskStates.TASK_STATE.READY, QueryRequest.Method.PLAN);
     }
     
     @Test
     public void testOrphanedPredict() throws Exception {
-        TaskKey key = storageService.predictQuery(TEST_POOL, getQuery(), Collections.singleton(CitiesDataType.getTestAuths()));
+        TaskKey key = storageService.predictQuery(TEST_POOL, getQuery(), null, Collections.singleton(CitiesDataType.getTestAuths()));
         testOrphans(key, TaskStates.TASK_STATE.RUNNING, TaskStates.TASK_STATE.READY, QueryRequest.Method.PREDICT);
     }
     

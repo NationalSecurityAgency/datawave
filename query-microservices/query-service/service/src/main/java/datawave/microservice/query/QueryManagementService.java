@@ -540,6 +540,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 taskKey = queryStorageCache.defineQuery(
                         getPoolName(),
                         query,
+                        currentUser,
                         downgradedAuthorizations,
                         getMaxConcurrentTasks(queryLogic));
                 // @formatter:on
@@ -548,6 +549,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 taskKey = queryStorageCache.createQuery(
                         getPoolName(),
                         query,
+                        currentUser,
                         downgradedAuthorizations,
                         getMaxConcurrentTasks(queryLogic));
                 // @formatter:on
@@ -558,6 +560,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 taskKey = queryStorageCache.planQuery(
                         getPoolName(),
                         query,
+                        currentUser,
                         downgradedAuthorizations);
                 // @formatter:on
                 
@@ -567,6 +570,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 taskKey = queryStorageCache.predictQuery(
                         getPoolName(),
                         query,
+                        currentUser,
                         downgradedAuthorizations);
                 // @formatter:on
                 

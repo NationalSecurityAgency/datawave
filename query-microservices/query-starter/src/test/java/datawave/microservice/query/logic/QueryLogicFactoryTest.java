@@ -3,6 +3,7 @@ package datawave.microservice.query.logic;
 import datawave.services.query.logic.QueryLogic;
 import datawave.services.query.logic.QueryLogicFactory;
 import datawave.webservice.query.exception.QueryException;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles({"QueryStarterDefaults", "QueryLogicFactoryTest"})
 public class QueryLogicFactoryTest {
     
@@ -28,7 +29,7 @@ public class QueryLogicFactoryTest {
     public void createShardQueryLogicTest() throws QueryException, CloneNotSupportedException {
         QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic("EventQuery");
         
-        System.out.println("done!");
+        Assert.assertNotNull(queryLogic);
     }
     
     @ComponentScan(basePackages = "datawave.microservice")

@@ -16,3 +16,6 @@
 **/scripts/errorFieldIndexCount_*
 **/scripts/poundit_*
 **/scripts/executor_*
+**/scripts/termFrequency_*
+**/scripts/hitHighlights_*
+**/scripts/edgeEvent_*

@@ -28,7 +28,7 @@
         <property name="tableName" value="${datawave.query.logic.logics.BaseEventQuery.tableName}" />
         <property name="dateIndexTableName" value="${datawave.query.logic.logics.BaseEventQuery.dateIndexTableName}" />
 
-        <!-- This is injected via MetadataHelperConfiguration.java -->
+        <!-- This is injected via QueryLogicFactory.xml -->
         <property name="dateIndexHelperFactory" ref="dateIndexHelperFactory" />
 
         <property name="defaultDateTypeName" value="${datawave.query.logic.logics.BaseEventQuery.defaultDateTypeName}"/>
@@ -404,8 +404,7 @@
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
     </bean>
 
-    <!-- TODO: Should this be checkpointable? -->
-    <!-- TODO: Test this! -->
+    <!-- TODO: This works, but should this be checkpointable? -->
     <!-- Query Logic that returns document term frequency information -->
     <bean id="TermFrequencyQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.term.TermFrequencyQueryTable">
         <property name="tableName" value="${datawave.query.logic.logics.TermFrequencyQuery.tableName}" />
@@ -456,11 +455,16 @@
         <property name="querySyntaxParsers" ref="facetedQuerySyntaxParsers" />
     </bean>
 
-    <!-- TODO: Should this be checkpointable? -->
-    <!-- TODO: Test this! -->
     <bean id="HitHighlights" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.IndexQueryLogic">
         <property name="checkpointable" value="${datawave.query.logic.logics.HitHighlights.checkpointable}" />
+        <property name="accumuloPassword" value="${datawave.query.logic.logics.HitHighlights.accumuloPassword}" />
         <property name="tableName" value="${datawave.query.logic.logics.HitHighlights.tableName}" />
+        <property name="dateIndexTableName" value="${datawave.query.logic.logics.HitHighlights.dateIndexTableName}" />
+
+        <!-- This is injected via QueryLogicFactory.xml -->
+        <property name="dateIndexHelperFactory" ref="dateIndexHelperFactory" />
+
+        <property name="defaultDateTypeName" value="${datawave.query.logic.logics.HitHighlights.defaultDateTypeName}"/>
         <property name="metadataTableName" value="${datawave.query.logic.logics.HitHighlights.metadataTableName}" />
 
         <!-- This is injected via MetadataHelperConfiguration.java -->
@@ -531,7 +535,6 @@
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
     </bean>
 
-    <!-- TODO: Improve this configuration.  Make it configurable via properties -->
     <bean id="edgeEventQueryModel" class="datawave.query.model.edge.EdgeQueryModel" factory-method="loadModel">
         <constructor-arg value="/DATAWAVE_EDGE.xml" />
         <constructor-arg>
@@ -543,9 +546,6 @@
         </constructor-arg>
     </bean>
 
-    <!-- TODO: Should this be checkpointable? -->
-    <!-- TODO: Test this! -->
-    <!-- TODO: Come up edge dictionary provider for microservices -->
     <bean id="EdgeEventQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.tables.edge.DefaultEdgeEventQueryLogic">
         <property name="checkpointable" value="${datawave.query.logic.logics.EdgeEventQuery.checkpointable}" />
         <property name="logicDescription" value="${datawave.query.logic.logics.EdgeEventQuery.logicDescription}" />
@@ -553,8 +553,13 @@
         <!-- This is injected via QueryLogicFactory.xml -->
         <property name="edgeQueryModel" ref="edgeEventQueryModel" />
 
+        <!-- This is injected via EdgeModelFieldsFactoryImpl.java -->
+        <property name="edgeModelFieldsFactory" ref="edgeModelFieldsFactory" />
+
         <property name="edgeModelName" value="${datawave.query.logic.logics.EdgeEventQuery.edgeModelName}" />
         <property name="modelTableName" value="${datawave.query.logic.logics.EdgeEventQuery.modelTableName}" />
-<!--        <property name="edgeDictionaryProvider" ref="edgeDictionaryProvider" />-->
+
+        <!-- This is injected via DefaultEdgeDictionaryProvider.java -->
+        <property name="edgeDictionaryProvider" ref="edgeDictionaryProvider" />
     </bean>
 </beans>

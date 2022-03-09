@@ -87,7 +87,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 public abstract class QueryExecutorTest {
     private static final Logger log = Logger.getLogger(QueryExecutorTest.class);
     
@@ -226,7 +226,7 @@ public abstract class QueryExecutorTest {
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        TaskKey key = storageService.createQuery(queryPool, query, null, Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
         
         QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
@@ -340,7 +340,7 @@ public abstract class QueryExecutorTest {
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        TaskKey key = storageService.createQuery(queryPool, query, null, Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
         
         QueryResultsListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery[" + key.getQueryId() + "]", key.getQueryId());
@@ -429,7 +429,7 @@ public abstract class QueryExecutorTest {
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.createQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        TaskKey key = storageService.createQuery(queryPool, query, null, Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
         
         QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
@@ -541,7 +541,7 @@ public abstract class QueryExecutorTest {
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.planQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()));
+        TaskKey key = storageService.planQuery(queryPool, query, null, Collections.singleton(CitiesDataType.getTestAuths()));
         assertNotNull(key);
         
         QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
@@ -600,7 +600,7 @@ public abstract class QueryExecutorTest {
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.predictQuery(queryPool, query, Collections.singleton(CitiesDataType.getTestAuths()));
+        TaskKey key = storageService.predictQuery(queryPool, query, null, Collections.singleton(CitiesDataType.getTestAuths()));
         assertNotNull(key);
         
         QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());

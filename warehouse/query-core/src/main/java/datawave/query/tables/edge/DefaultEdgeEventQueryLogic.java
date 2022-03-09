@@ -61,8 +61,8 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     }
     
     @SuppressWarnings("unchecked")
-    protected EdgeDictionaryBase<?,? extends MetadataBase<?>> getEdgeDictionary(String queryAuths) {
-        return edgeDictionaryProvider.getEdgeDictionary(getMetadataTableName(), queryAuths);
+    protected EdgeDictionaryBase<?,? extends MetadataBase<?>> getEdgeDictionary(Query settings) {
+        return edgeDictionaryProvider.getEdgeDictionary(settings, getMetadataTableName());
     }
     
     protected DefaultEventQueryBuilder getEventQueryBuilder() {
@@ -72,7 +72,7 @@ public class DefaultEdgeEventQueryLogic extends ShardQueryLogic {
     @Override
     public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
         
-        setEdgeDictionary(getEdgeDictionary(settings.getQueryAuthorizations())); // TODO grab threads from somewhere
+        setEdgeDictionary(getEdgeDictionary(settings)); // TODO grab threads from somewhere
         
         // Load and apply the configured edge query model
         loadEdgeQueryModel(connection, auths);

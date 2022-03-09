@@ -112,7 +112,7 @@ public class QueryStorageStateServiceTest {
         String queryPool = TEST_POOL;
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations("FOO", "BAR"));
-        TaskKey key = storageService.createQuery(queryPool, query, auths, 3);
+        TaskKey key = storageService.createQuery(queryPool, query, null, auths, 3);
         assertNotNull(key);
         InputBootstrapper stap;
         QueryData queryData = new QueryData("table", "query", Collections.singleton(new Range("shard1")),
