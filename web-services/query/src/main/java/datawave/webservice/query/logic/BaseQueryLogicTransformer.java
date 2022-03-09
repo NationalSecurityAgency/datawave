@@ -12,4 +12,5 @@ public abstract class BaseQueryLogicTransformer<I,O> extends AbstractQueryLogicT
         }
         this.markingFunctions = markingFunctions;
     }
+    
 }

@@ -124,11 +124,7 @@ public class LongRunningQueryTest {
         ResultsPage page = runningQuery.next();
         pages.add(page);
         // guarantee the need for at least a second page. (make the wait slightly longer than the page timeout is set to)
-        try {
-            Thread.sleep(250);
-        } catch (InterruptedException e) {
-            
-        }
+        Thread.sleep(250);
         
         while (page.getStatus() != ResultsPage.Status.COMPLETE) {
             page = runningQuery.next();
@@ -155,10 +151,9 @@ public class LongRunningQueryTest {
      * @throws Exception
      */
     @Test
-    public void testAllowLongRunningQueryOnNoResultsc() throws Exception {
+    public void testAllowLongRunningQueryOnNoResults() throws Exception {
         
         Map<String,String> extraParameters = new HashMap<>();
-        
         extraParameters.put("group.fields", "AGE,$GENDER");
         extraParameters.put("group.fields.batch.size", "6");
         
@@ -200,11 +195,7 @@ public class LongRunningQueryTest {
         pages.add(page);
         
         // guarantee the need for at least a second page.
-        try {
-            Thread.sleep(250);
-        } catch (InterruptedException e) {
-            
-        }
+        Thread.sleep(250);
         
         while (page.getStatus() != ResultsPage.Status.NONE) {
             page = runningQuery.next();
@@ -235,7 +226,6 @@ public class LongRunningQueryTest {
     public void testAllowLongRunningQueryWithSmallPageSize() throws Exception {
         
         Map<String,String> extraParameters = new HashMap<>();
-        
         extraParameters.put("group.fields", "AGE,$GENDER");
         extraParameters.put("group.fields.batch.size", "6");
         
@@ -249,6 +239,7 @@ public class LongRunningQueryTest {
         query.setQueryAuthorizations(auths.serialize());
         query.setColumnVisibility("A&E&I");
         
+        // We expect 8 results, so this allows us to test getting those results over 2 pages
         query.setPagesize(4);
         query.setParameters(extraParameters);
         query.setId(UUID.randomUUID());
@@ -263,10 +254,8 @@ public class LongRunningQueryTest {
         // this parameter is what makes the query long running. Failing to set this will let it default to 50 minutes
         // (and not the 500 milliseconds that it is set to) which will return only 1 page of 8 results, thereby failing this test.
         // the smaller this timeout, the more pages of results that will be returned.
-        logic.setQueryExecutionForPageTimeout(10);
+        logic.setQueryExecutionForPageTimeout(5);
         logic.setLongRunningQuery(true);
-        // We expect 8 results, so this allows us to test getting those results over 2 pages
-        logic.setMaxPageSize(4);
         
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
@@ -279,28 +268,32 @@ public class LongRunningQueryTest {
         pages.add(page);
         
         // guarantee the need for at least a second page (make the wait slightly longer than the page timeout is set to)
-        try {
-            Thread.sleep(15);
-        } catch (InterruptedException e) {
-            
-        }
+        Thread.sleep(150);
         
-        while (page.getStatus() != ResultsPage.Status.COMPLETE) {
+        while (page.getStatus() != ResultsPage.Status.NONE) {
             page = runningQuery.next();
             pages.add(page);
         }
         
-        // There should be at least 2 pages, more depending on cpu speed.
-        assertTrue(pages.size() > 1);
-        for (int i = 0; i < pages.size() - 2; ++i) {
-            // check every page but the last one for 0 results and PARTIAL status
-            assertEquals(0, pages.get(i).getResults().size());
-            assertEquals(ResultsPage.Status.PARTIAL, pages.get(i).getStatus());
+        // There should be at least 4 pages, more depending on cpu speed. AT LEAST 1 of PARTIAL status results indicating it hit the intermediate result,
+        // 2 of COMPLETE results with a results size of 4 which is what we set the page size to, and 1 with NONE status indicating it's done. Order is not
+        // guaranteed, except the last page will definitely be the NONE page.
+        int pagesWithFourResultsFoundCount = 0;
+        assertTrue(pages.size() > 3);
+        for (int i = 0; i < pages.size() - 1; i++) {
+            ResultsPage p = pages.get(i);
+            if (p.getStatus() == ResultsPage.Status.PARTIAL) {
+                assertEquals(0, p.getResults().size());
+            } else if (p.getStatus() == ResultsPage.Status.COMPLETE) {
+                assertEquals(4, p.getResults().size());
+                pagesWithFourResultsFoundCount++;
+            }
         }
-        // check the last page for COMPLETE status and that the total number of results is 8
-        assertEquals(4, pages.get(pages.size() - 2).getResults().size());
-        assertEquals(ResultsPage.Status.PARTIAL, pages.get(pages.size() - 2).getStatus());
-        assertEquals(4, pages.get(pages.size() - 1).getResults().size());
-        assertEquals(ResultsPage.Status.COMPLETE, pages.get(pages.size() - 1).getStatus());
+        
+        // we should have gotten two pages with 4 results among all the PARTIAL, zero result pages
+        assertEquals(2, pagesWithFourResultsFoundCount);
+        // check the last page for NONE status
+        assertEquals(0, pages.get(pages.size() - 1).getResults().size());
+        assertEquals(ResultsPage.Status.NONE, pages.get(pages.size() - 1).getStatus());
     }
 }

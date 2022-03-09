@@ -78,7 +78,6 @@ public class TestLegacyBaseQueryLogicTransformer {
     
     private class TestTransformer extends BaseQueryLogicTransformer<Map.Entry<?,?>,EventBase> {
         BaseQueryResponse response;
-        long queryExecutionForCurrentPageStartTime;
         
         public TestTransformer(MarkingFunctions markingFunctions, BaseQueryResponse response) {
             super(markingFunctions);
@@ -88,11 +87,6 @@ public class TestLegacyBaseQueryLogicTransformer {
         @Override
         public EventBase transform(Map.Entry<?,?> arg0) {
             return null;
-        }
-        
-        @Override
-        public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
-            this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
         }
         
         @Override

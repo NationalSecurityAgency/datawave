@@ -38,7 +38,6 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
     private BaseQueryLogic<Entry<Key,Value>> logic = null;
     private QueryModel myQueryModel = null;
     private ResponseObjectFactory responseObjectFactory;
-    private long queryExecutionForCurrentPageStartTime;
     
     public ShardIndexQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory, QueryModel qm) {
@@ -111,11 +110,6 @@ public class ShardIndexQueryTransformer extends BaseQueryLogicTransformer<Entry<
         metadata.setTable(logic.getTableName());
         event.setMetadata(metadata);
         return event;
-    }
-    
-    @Override
-    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
-        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
     
     private FieldBase makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
