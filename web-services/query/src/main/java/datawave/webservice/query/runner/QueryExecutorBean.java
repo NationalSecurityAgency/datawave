@@ -262,7 +262,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private static class QueryData {
         QueryLogic<?> logic = null;
         Principal p = null;
-        Set<String> proxyServers = null;
+        Collection<String> proxyServers = null;
         String userDn = null;
         String userid = null;
         List<String> dnList = null;

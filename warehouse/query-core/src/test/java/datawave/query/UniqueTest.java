@@ -18,6 +18,7 @@ import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
+import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -197,6 +198,7 @@ public abstract class UniqueTest {
             boolean found = false;
             for (Iterator<Set<String>> it = expected.iterator(); it.hasNext();) {
                 Set<String> expectedSet = it.next();
+                
                 if (expectedSet.contains(event.getMetadata().getInternalId())) {
                     it.remove();
                     found = true;
@@ -234,6 +236,24 @@ public abstract class UniqueTest {
         expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
         extraParameters.put("unique.fields", "death_date,birth_date");
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+    }
+    
+    @Test
+    public void testUniquenessWithMissingField() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        extraParameters.put("unique.fields", "NUMBER");
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+        
     }
     
     @Test

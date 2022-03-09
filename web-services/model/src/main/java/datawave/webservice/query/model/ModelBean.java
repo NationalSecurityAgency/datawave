@@ -57,6 +57,7 @@ import javax.ws.rs.QueryParam;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -551,7 +552,7 @@ public class ModelBean {
     }
     
     public Collection<String> getCurrentProxyServers() {
-        Set<String> currentProxyServers = null;
+        List<String> currentProxyServers = null;
         Principal p = ctx.getCallerPrincipal();
         
         if (p != null && p instanceof DatawavePrincipal) {
