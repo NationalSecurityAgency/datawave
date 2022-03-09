@@ -124,11 +124,7 @@ public class LongRunningQueryTest {
         ResultsPage page = runningQuery.next();
         pages.add(page);
         // guarantee the need for at least a second page. (make the wait slightly longer than the page timeout is set to)
-        try {
-            Thread.sleep(250);
-        } catch (InterruptedException e) {
-            
-        }
+        Thread.sleep(250);
         
         while (page.getStatus() != ResultsPage.Status.COMPLETE) {
             page = runningQuery.next();
@@ -199,11 +195,7 @@ public class LongRunningQueryTest {
         pages.add(page);
         
         // guarantee the need for at least a second page.
-        try {
-            Thread.sleep(250);
-        } catch (InterruptedException e) {
-            
-        }
+        Thread.sleep(250);
         
         while (page.getStatus() != ResultsPage.Status.NONE) {
             page = runningQuery.next();
@@ -276,11 +268,7 @@ public class LongRunningQueryTest {
         pages.add(page);
         
         // guarantee the need for at least a second page (make the wait slightly longer than the page timeout is set to)
-        try {
-            Thread.sleep(150);
-        } catch (InterruptedException e) {
-            
-        }
+        Thread.sleep(150);
         
         while (page.getStatus() != ResultsPage.Status.NONE) {
             page = runningQuery.next();

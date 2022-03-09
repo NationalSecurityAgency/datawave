@@ -31,7 +31,6 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
     private QueryModel myQueryModel = null;
     private MarkingFunctions markingFunctions;
     private ResponseObjectFactory responseObjectFactory;
-    private long queryExecutionForCurrentPageStartTime;
     
     public DiscoveryTransformer(BaseQueryLogic<DiscoveredThing> logic, Query settings, QueryModel qm) {
         super(new MarkingFunctions.Default());
@@ -88,11 +87,6 @@ public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredTh
         metadata.setTable(logic.getTableName());
         event.setMetadata(metadata);
         return event;
-    }
-    
-    @Override
-    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
-        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
     
     protected FieldBase<?> makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {

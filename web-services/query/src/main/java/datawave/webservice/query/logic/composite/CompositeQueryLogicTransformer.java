@@ -21,8 +21,6 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         this.delegates = delegates;
     }
     
-    private long queryExecutionForCurrentPageStartTime;
-    
     @Override
     public O transform(I input) {
         O result = null;
@@ -40,11 +38,6 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
             throw new RuntimeException("Unable to transform result", ex);
         }
         return result;
-    }
-    
-    @Override
-    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
-        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
     
     @Override

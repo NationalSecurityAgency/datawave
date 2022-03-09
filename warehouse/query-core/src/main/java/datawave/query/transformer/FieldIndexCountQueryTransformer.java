@@ -35,7 +35,6 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
     private List<String> variableFieldList = null;
     private BaseQueryLogic<Entry<Key,Value>> logic = null;
     private ResponseObjectFactory responseObjectFactory;
-    private long queryExecutionForCurrentPageStartTime;
     
     public FieldIndexCountQueryTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
@@ -132,11 +131,6 @@ public class FieldIndexCountQueryTransformer extends BaseQueryLogicTransformer<E
             log.trace("\ttimestamp: " + Long.toString(val.getMaxTimestamp()));
         }
         return event;
-    }
-    
-    @Override
-    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
-        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
     
     @Override
