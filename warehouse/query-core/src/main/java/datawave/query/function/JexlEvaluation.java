@@ -1,5 +1,6 @@
 package datawave.query.function;
 
+import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.ArithmeticJexlEngines;
@@ -107,7 +108,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                     
                     if (cv != null) {
                         // unused
-                        long timestamp = document.getTimestamp(); // will force an update to make the metadata valid
+                        long timestamp = document.getTimestamp();
                         Content content = new Content(term, document.getMetadata(), document.isToKeep());
                         content.setColumnVisibility(cv);
                         attributes.add(content);

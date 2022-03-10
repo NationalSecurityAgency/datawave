@@ -9,6 +9,7 @@ import datawave.query.function.KryoCVAwareSerializableSerializer;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
+import org.apache.log4j.Logger;
 
 /**
  * Transform Kryo-serialized bytes back into a Document. Ordering of Attributes is <b>not</b> guaranteed across serialization.
@@ -18,7 +19,7 @@ import com.esotericsoftware.kryo.io.Input;
  */
 public class KryoDocumentDeserializer extends DocumentDeserializer implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+    private static final Logger log = Logger.getLogger(KryoDocumentDeserializer.class);
     final transient Kryo kryo = new Kryo();
     
     public KryoDocumentDeserializer() {
@@ -35,7 +36,7 @@ public class KryoDocumentDeserializer extends DocumentDeserializer implements Se
         }
         
         input.close();
-        
+        log.warn("deserialized to "+document.toString());
         return document;
     }
     

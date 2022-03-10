@@ -9,6 +9,7 @@ import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import org.apache.accumulo.core.data.Key;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.lang.reflect.Type;
@@ -64,7 +65,9 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
         }
        else  if (attr instanceof Attribute) {
             Attribute attribute = (Attribute)attr;
-            jsonDocument.addProperty(name, attr.toString());
+            String attrString = attr.toString();
+            jsonDocument.addProperty(name,attrString.substring(0,
+                    attrString.indexOf(':', attrString.indexOf(':')+1)));
 
         }
 //        if (attr instanceof Content) {

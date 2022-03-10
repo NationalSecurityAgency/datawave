@@ -37,6 +37,7 @@ public class KryoDocumentSerializer extends DocumentSerializer {
     
     @Override
     public byte[] serialize(Document doc) {
+        log.warn("will serialize "+doc.toString());
         baos.reset();
         
         Output output = new Output(baos);
@@ -44,7 +45,9 @@ public class KryoDocumentSerializer extends DocumentSerializer {
         kryo.writeObject(output, doc);
         
         output.close();
-        
+
+        byte[] bytes = baos.toByteArray();
+        log.warn("serialized to "+new String(bytes));
         return baos.toByteArray();
     }
     
