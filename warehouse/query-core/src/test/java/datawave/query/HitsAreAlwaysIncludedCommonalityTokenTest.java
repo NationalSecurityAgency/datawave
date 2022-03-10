@@ -8,6 +8,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.HitTermType;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
@@ -178,14 +179,14 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
             if (hitAttribute instanceof Attributes) {
                 Attributes attributes = (Attributes) hitAttribute;
                 for (Attribute attr : attributes.getAttributes()) {
-                    if (attr instanceof Content) {
-                        Content content = (Content) attr;
-                        Assert.assertTrue(goodResults.contains(content.getContent()));
+                    if (HitTermType.matches.test(attr)) {
+                        String content = attr.toString();
+                        Assert.assertTrue(goodResults.contains(content));
                     }
                 }
-            } else if (hitAttribute instanceof Content) {
-                Content content = (Content) hitAttribute;
-                Assert.assertTrue(goodResults.contains(content.getContent()));
+            } else if (HitTermType.matches.test(hitAttribute)) {
+                // Content content = (Content) hitAttribute;
+                Assert.assertTrue(goodResults.contains(hitAttribute.toString()));
             }
             
             // remove from goodResults as we find the expected return fields

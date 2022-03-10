@@ -14,7 +14,9 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.HitTermType;
 import datawave.query.attributes.Numeric;
+import datawave.query.attributes.TypeAttribute;
 import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -231,10 +233,9 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 for (Attribute<?> at : attrs.getAttributes()) {
                     fillHitTermMap(at, attrMap);
                 }
-            } else if (attr instanceof Content) {
-                Content content = (Content) attr;
+            } else if (HitTermType.matches.test(attr)) {
                 // split the content into its fieldname:value
-                String contentString = content.getContent();
+                String contentString = ((TypeAttribute) attr).getType().toString();
                 attrMap.put(contentString.substring(0, contentString.indexOf(":")), contentString.substring(contentString.indexOf(":") + 1));
             }
         }
