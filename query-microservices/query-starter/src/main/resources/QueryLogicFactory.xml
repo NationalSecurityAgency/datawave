@@ -421,7 +421,6 @@
         <property name="selectorExtractor"><null/></property>
     </bean>
 
-    <!-- TODO: Test this! -->
     <bean id="QueryMetricsQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.metrics.QueryMetricQueryLogic">
         <property name="checkpointable" value="${datawave.query.logic.logics.QueryMetricsQuery.checkpointable}" />
         <property name="logicDescription" value="${datawave.query.logic.logics.QueryMetricsQuery.logicDescription}" />

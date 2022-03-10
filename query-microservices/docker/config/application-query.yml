@@ -45,7 +45,7 @@ warehouse:
     reverseIndex:
       name: "datawave.queryMetrics_r"
     dateIndex:
-      name: "datawave.queryMetrics_di"
+      name: ""
     metadata:
       name: "datawave.queryMetrics_m"
     model:
