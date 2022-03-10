@@ -17,7 +17,7 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor;
-import datawave.query.metrics.MockStatusReporter;
+import datawave.query.testframework.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.util.TableName;
@@ -148,7 +148,6 @@ public class GeoSortedQueryDataTest {
                         .deleteClass(DefaultEdgeEventQueryLogic.class)
                         .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(
                                         new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
                                                         + "</alternatives>"), "beans.xml");

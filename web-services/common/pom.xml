@@ -56,6 +56,10 @@
             <artifactId>metrics-reporter</artifactId>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.microservice</groupId>
+            <artifactId>query-metric-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-common-util</artifactId>
             <version>${project.version}</version>
