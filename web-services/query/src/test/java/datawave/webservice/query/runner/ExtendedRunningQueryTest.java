@@ -1,6 +1,8 @@
 package datawave.webservice.query.runner;
 
 import com.google.common.collect.Lists;
+import datawave.microservice.querymetric.QueryMetric;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -9,11 +11,9 @@ import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.accumulo.core.client.Connector;
@@ -125,6 +125,7 @@ public class ExtendedRunningQueryTest {
         String userSid = "userSid";
         UUID queryId = UUID.randomUUID();
         String methodAuths = "AUTH_1";
+        String columnVisibility = "AUTH_1";
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER, Collections.singleton(methodAuths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         String query = "query";
@@ -143,21 +144,22 @@ public class ExtendedRunningQueryTest {
         
         // Set expectations
         expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
-        this.query.populateMetric(isA(QueryMetric.class));
         expect(this.query.getUncaughtExceptionHandler()).andReturn(exceptionHandler).times(5);
         expect(this.exceptionHandler.getThrowable()).andReturn(null).times(5);
-        expect(this.query.getId()).andReturn(queryId).times(3);
-        expect(this.query.getOwner()).andReturn(userSid);
-        expect(this.query.getQuery()).andReturn(query);
-        expect(this.query.getQueryLogicName()).andReturn(queryLogicName);
-        expect(this.query.getQueryName()).andReturn(queryName);
-        expect(this.query.getBeginDate()).andReturn(beginDate);
-        expect(this.query.getEndDate()).andReturn(endDate);
+        expect(this.query.getId()).andReturn(queryId).times(4);
+        expect(this.query.getOwner()).andReturn(userSid).times(2);
+        expect(this.query.getQuery()).andReturn(query).times(2);
+        expect(this.query.getQueryLogicName()).andReturn(queryLogicName).times(2);
+        expect(this.query.getQueryName()).andReturn(queryName).times(2);
+        
+        expect(this.query.getBeginDate()).andReturn(beginDate).times(2);
+        expect(this.query.getEndDate()).andReturn(endDate).times(2);
         expect(this.query.isMaxResultsOverridden()).andReturn(false).anyTimes();
         expect(this.query.getExpirationDate()).andReturn(expirationDate);
-        expect(this.query.getParameters()).andReturn(new HashSet<>());
-        expect(this.query.getQueryAuthorizations()).andReturn(methodAuths);
-        expect(this.query.getUserDN()).andReturn(userDN).times(2);
+        expect(this.query.getParameters()).andReturn(new HashSet<>()).times(2);
+        expect(this.query.getQueryAuthorizations()).andReturn(methodAuths).times(2);
+        expect(this.query.getColumnVisibility()).andReturn(columnVisibility);
+        expect(this.query.getUserDN()).andReturn(userDN).times(3);
         expect(this.query.getDnList()).andReturn(dnList);
         expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
@@ -207,6 +209,7 @@ public class ExtendedRunningQueryTest {
         String userSid = "userSid";
         UUID queryId = UUID.randomUUID();
         String methodAuths = "AUTH_1";
+        String columnVisibility = "AUTH_1";
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER, Collections.singleton(methodAuths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         String query = "query";
@@ -226,21 +229,21 @@ public class ExtendedRunningQueryTest {
         
         // Set expectations
         expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
-        this.query.populateMetric(isA(QueryMetric.class));
         expect(this.query.getUncaughtExceptionHandler()).andReturn(exceptionHandler).times(7);
         expect(this.exceptionHandler.getThrowable()).andReturn(null).times(7);
-        expect(this.query.getId()).andReturn(queryId).times(3);
-        expect(this.query.getOwner()).andReturn(userSid);
-        expect(this.query.getQuery()).andReturn(query);
-        expect(this.query.getQueryLogicName()).andReturn(queryLogicName);
-        expect(this.query.getQueryName()).andReturn(queryName);
-        expect(this.query.getBeginDate()).andReturn(beginDate);
-        expect(this.query.getEndDate()).andReturn(endDate);
+        expect(this.query.getId()).andReturn(queryId).times(4);
+        expect(this.query.getOwner()).andReturn(userSid).times(2);
+        expect(this.query.getQuery()).andReturn(query).times(2);
+        expect(this.query.getQueryLogicName()).andReturn(queryLogicName).times(2);
+        expect(this.query.getQueryName()).andReturn(queryName).times(2);
+        expect(this.query.getBeginDate()).andReturn(beginDate).times(2);
+        expect(this.query.getEndDate()).andReturn(endDate).times(2);
         expect(this.query.isMaxResultsOverridden()).andReturn(false).anyTimes();
         expect(this.query.getExpirationDate()).andReturn(expirationDate);
-        expect(this.query.getParameters()).andReturn(new HashSet<>());
-        expect(this.query.getQueryAuthorizations()).andReturn(methodAuths);
-        expect(this.query.getUserDN()).andReturn(userDN).times(2);
+        expect(this.query.getParameters()).andReturn(new HashSet<>()).times(2);
+        expect(this.query.getQueryAuthorizations()).andReturn(methodAuths).times(2);
+        expect(this.query.getUserDN()).andReturn(userDN).times(3);
+        expect(this.query.getColumnVisibility()).andReturn(columnVisibility);
         expect(this.query.getDnList()).andReturn(dnList);
         expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
@@ -289,21 +292,37 @@ public class ExtendedRunningQueryTest {
     public void testNext_NoResultsAfterCancellationUsingDeprecatedConstructor() throws Exception {
         // Set local test input
         String userDN = "userDN";
+        String userSid = "userSid";
         List<String> dnList = Lists.newArrayList(userDN);
         UUID queryId = UUID.randomUUID();
+        String query = "query";
+        String queryLogicName = "queryLogicName";
+        String queryName = "queryName";
+        long currentTime = System.currentTimeMillis();
+        Date beginDate = new Date(currentTime - 5000);
+        Date endDate = new Date(currentTime - 1000);
         String methodAuths = "AUTH_1";
+        String columnVisibility = "AUTH_1";
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER, Collections.singleton(methodAuths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         long maxResults = 100L;
         
         // Set expectations
         expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
-        this.query.populateMetric(isA(QueryMetric.class));
         expect(this.query.getUncaughtExceptionHandler()).andReturn(exceptionHandler).times(3);
         expect(this.exceptionHandler.getThrowable()).andReturn(null).times(3);
-        expect(this.query.getId()).andReturn(queryId).times(2);
-        expect(this.query.getUserDN()).andReturn(userDN).times(2);
+        expect(this.query.getId()).andReturn(queryId).times(3);
+        expect(this.query.getUserDN()).andReturn(userDN).times(3);
         expect(this.query.getDnList()).andReturn(dnList);
+        expect(this.query.getOwner()).andReturn(userSid);
+        expect(this.query.getQuery()).andReturn(query);
+        expect(this.query.getQueryLogicName()).andReturn(queryLogicName);
+        expect(this.query.getQueryName()).andReturn(queryName);
+        expect(this.query.getBeginDate()).andReturn(beginDate);
+        expect(this.query.getEndDate()).andReturn(endDate);
+        expect(this.query.getParameters()).andReturn(new HashSet<>());
+        expect(this.query.getQueryAuthorizations()).andReturn(methodAuths);
+        expect(this.query.getColumnVisibility()).andReturn(columnVisibility);
         expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);
         this.queryMetrics.updateMetric(isA(QueryMetric.class));
@@ -347,12 +366,20 @@ public class ExtendedRunningQueryTest {
         // Set expectations
         expect(this.transformIterator.getTransformer()).andReturn(transformer);
         expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
-        this.query.populateMetric(isA(QueryMetric.class));
         expect(this.query.getUncaughtExceptionHandler()).andReturn(exceptionHandler);
         expect(this.exceptionHandler.getThrowable()).andReturn(null);
-        expect(this.query.getId()).andReturn(queryId).times(2);
-        expect(this.query.getUserDN()).andReturn(userDN).times(2);
+        expect(this.query.getId()).andReturn(queryId).times(3);
+        expect(this.query.getUserDN()).andReturn(userDN).times(3);
         expect(this.query.getDnList()).andReturn(dnList);
+        expect(this.query.getOwner()).andReturn(null);
+        expect(this.query.getQuery()).andReturn(null);
+        expect(this.query.getQueryLogicName()).andReturn(null);
+        expect(this.query.getQueryName()).andReturn(null);
+        expect(this.query.getBeginDate()).andReturn(null);
+        expect(this.query.getEndDate()).andReturn(null);
+        expect(this.query.getParameters()).andReturn(new HashSet<>());
+        expect(this.query.getQueryAuthorizations()).andReturn(null);
+        expect(this.query.getColumnVisibility()).andReturn(null);
         expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         expect(this.genericConfiguration.getQueryString()).andReturn("query").once();
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
@@ -384,6 +411,7 @@ public class ExtendedRunningQueryTest {
         String userSid = "userSid";
         UUID queryId = UUID.randomUUID();
         String methodAuths = "AUTH_1";
+        String columnVisibility = "AUTH_1";
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("userDN", "issuerDN"), UserType.USER, Collections.singleton(methodAuths), null, null, 0L);
         DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
         String query = "query";
@@ -404,21 +432,21 @@ public class ExtendedRunningQueryTest {
         
         // Set expectations
         expect(this.queryLogic.getCollectQueryMetrics()).andReturn(true);
-        this.query.populateMetric(isA(QueryMetric.class));
         expect(this.query.getUncaughtExceptionHandler()).andReturn(exceptionHandler).times(5);
         expect(this.exceptionHandler.getThrowable()).andReturn(null).times(5);
-        expect(this.query.getId()).andReturn(queryId).times(3);
-        expect(this.query.getOwner()).andReturn(userSid);
-        expect(this.query.getQuery()).andReturn(query);
-        expect(this.query.getQueryLogicName()).andReturn(queryLogicName);
-        expect(this.query.getQueryName()).andReturn(queryName);
-        expect(this.query.getBeginDate()).andReturn(beginDate);
-        expect(this.query.getEndDate()).andReturn(endDate);
+        expect(this.query.getId()).andReturn(queryId).times(4);
+        expect(this.query.getOwner()).andReturn(userSid).times(2);
+        expect(this.query.getQuery()).andReturn(query).times(2);
+        expect(this.query.getQueryLogicName()).andReturn(queryLogicName).times(2);
+        expect(this.query.getQueryName()).andReturn(queryName).times(2);
+        expect(this.query.getBeginDate()).andReturn(beginDate).times(2);
+        expect(this.query.getEndDate()).andReturn(endDate).times(2);
         expect(this.query.isMaxResultsOverridden()).andReturn(false).anyTimes();
         expect(this.query.getExpirationDate()).andReturn(expirationDate);
-        expect(this.query.getParameters()).andReturn(new HashSet<>());
-        expect(this.query.getQueryAuthorizations()).andReturn(methodAuths);
-        expect(this.query.getUserDN()).andReturn(userDN).times(3);
+        expect(this.query.getParameters()).andReturn(new HashSet<>()).times(2);
+        expect(this.query.getQueryAuthorizations()).andReturn(methodAuths).times(2);
+        expect(this.query.getUserDN()).andReturn(userDN).times(4);
+        expect(this.query.getColumnVisibility()).andReturn(columnVisibility);
         expect(this.query.getDnList()).andReturn(dnList);
         expect(this.queryLogic.initialize(eq(this.connector), eq(this.query), isA(Set.class))).andReturn(this.genericConfiguration);
         this.queryLogic.setupQuery(this.genericConfiguration);

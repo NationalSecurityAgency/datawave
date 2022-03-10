@@ -571,10 +571,6 @@
         <property name="queryLogicFactoryConfiguration" ref="QueryLogicFactoryConfiguration" />
     </bean>
 
-    <bean id="queryMetricHandler" scope="prototype" class="datawave.query.metrics.ShardTableQueryMetricHandler">
-        <property name="queryLogicFactory" ref="queryLogicFactory"/>
-    </bean>
- 
     <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />
     
     <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
