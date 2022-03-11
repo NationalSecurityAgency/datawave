@@ -8,8 +8,9 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.HitTermType;
+import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.function.deserializer.JsonDeserializer;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -189,14 +190,14 @@ public abstract class HitsAreAlwaysIncludedTest {
             if (hitAttribute instanceof Attributes) {
                 Attributes attributes = (Attributes) hitAttribute;
                 for (Attribute attr : attributes.getAttributes()) {
-                    if (attr instanceof Content) {
-                        Content content = (Content) attr;
-                        Assert.assertTrue(expectedHits.remove(content.getContent()));
+                    if (HitTermType.matches.test(attr)) {
+                        TypeAttribute content = (TypeAttribute) attr;
+                        Assert.assertTrue(expectedHits.remove(content.toString()));
                     }
                 }
-            } else if (hitAttribute instanceof Content) {
-                Content content = (Content) hitAttribute;
-                Assert.assertTrue(content.getContent() + " is not an expected hit", expectedHits.remove(content.getContent()));
+            } else if (hitAttribute instanceof TypeAttribute) {
+                TypeAttribute attr = (TypeAttribute) hitAttribute;
+                Assert.assertTrue(attr + " is not an expected hit", expectedHits.remove(attr.toString()));
             } else {
                 Assert.fail("Did not find hit term field");
             }

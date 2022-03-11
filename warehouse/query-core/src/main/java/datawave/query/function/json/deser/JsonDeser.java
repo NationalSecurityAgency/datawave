@@ -63,18 +63,13 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
                 jsonDocument.addProperty(name,attr.toString());
             }
         }
-       else  if (attr instanceof Attribute) {
-            Attribute attribute = (Attribute)attr;
-            String attrString = attr.toString();
-            jsonDocument.addProperty(name,attrString.substring(0,
-                    attrString.indexOf(':', attrString.indexOf(':')+1)));
-
-        }
-//        if (attr instanceof Content) {
-//            Content content = (Content)attr;
+//       else  if (attr instanceof Attribute) {
+//            Attribute attribute = (Attribute)attr;
+//            String attrString = attr.toString();
+//            jsonDocument.addProperty(name,attrString.substring(0,
+//                    attrString.indexOf(':', attrString.indexOf(':')+1)));
 //
 //        }
-
     }
 
     /**
