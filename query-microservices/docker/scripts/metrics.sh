@@ -85,7 +85,7 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "queryName=Developer Test Query" \
     --data-urlencode "pagesize=10" \
     --data-urlencode "pool=$POOL" \
-    ${DATAWAVE_ENDPOINT}/QueryMetricsQuery/create -o createResponse.xml
+    ${DATAWAVE_ENDPOINT}/QueryMetricsQuery/create -o createResponse.xml -w '%{http_code}\n' >> querySummary.txt
 
 i=1
 
@@ -101,7 +101,7 @@ while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
     echo "$(date): Requesting page $i for $QUERY_ID" >> querySummary.txt
     curl -s -D headers_$i.txt -q -k -E ${TMP_PEM} \
         -H "Accept: application/xml" \
-        ${DATAWAVE_ENDPOINT}/$QUERY_ID/next -o nextResponse_$i.xml
+        ${DATAWAVE_ENDPOINT}/$QUERY_ID/next -o nextResponse_$i.xml -w '%{http_code}\n' >> querySummary.txt
 
     CONTINUE=`grep 'HTTP/1.1 200 OK' headers_$i.txt`
 
@@ -117,11 +117,11 @@ while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
 done
 
 echo "$(date): Closing $QUERY_ID"
-echo "$(date): Closing $QUERY_ID" > querySummary.txt
+echo "$(date): Closing $QUERY_ID" >> querySummary.txt
 # close the query
 curl -s -q -k -X POST -E ${TMP_PEM} \
     -H "Accept: application/xml" \
-    ${DATAWAVE_ENDPOINT}/$QUERY_ID/close -o closeResponse.xml
+    ${DATAWAVE_ENDPOINT}/$QUERY_ID/close -o closeResponse.xml -w '%{http_code}\n' >> querySummary.txt
 
 cd ../
 

@@ -35,4 +35,4 @@ umask $OLD_UMASK
 [ $opensslexit = 0 ] || errormsg "Error creating temporary certificate file"
 
 echo "$(date): Closing query"
-curl -X POST -s -k -E ${TMP_PEM} ${DATAWAVE_ENDPOINT}/$1/close
+curl -X POST -s -k -E ${TMP_PEM} ${DATAWAVE_ENDPOINT}/$1/close -w '%{http_code}\n'

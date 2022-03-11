@@ -57,8 +57,14 @@ public class QueryStatusCache {
      * @return The query status
      */
     public QueryStatus getQueryStatus(String queryId) {
-        QueryStatus props = cacheInspector.list(CACHE_NAME, QueryStatus.class, QueryKey.toUUIDKey(queryId));
-        logStatus("Retrieved", props, queryId);
+        QueryStatus props = null;
+        try {
+            props = cacheInspector.list(CACHE_NAME, QueryStatus.class, QueryKey.toUUIDKey(queryId));
+            logStatus("Retrieved", props, queryId);
+        } catch (RuntimeException e) {
+            log.error("Failed to retrieve status for " + queryId, e);
+            throw e;
+        }
         return props;
     }
     

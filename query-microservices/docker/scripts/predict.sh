@@ -71,7 +71,7 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
     --data-urlencode "queryName=Developer Test Query" \
     --data-urlencode "pool=$POOL" \
-    ${DATAWAVE_ENDPOINT}/EventQuery/predict -o predictResponse.txt
+    ${DATAWAVE_ENDPOINT}/EventQuery/predict -o predictResponse.txt -w '%{http_code}\n' >> querySummary.txt
 
 QUERY_PREDICTION=$(get_query_prediction < predictResponse.txt)
 

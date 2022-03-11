@@ -25,7 +25,6 @@ public class FindWorkMonitor {
     private final QueryStorageCache queryStorageCache;
     private final QueryExecutor queryExecutor;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final FindWorkTask.CloseCancelCache closeCancelCache;
     
     private final String originService;
     private final String destinationService;
@@ -33,12 +32,10 @@ public class FindWorkMonitor {
     private long taskStartTime;
     private Future<Void> taskFuture;
     
-    public FindWorkMonitor(ExecutorProperties executorProperties, QueryProperties queryProperties, QueryStorageCache cache, QueryExecutor executor,
-                    FindWorkTask.CloseCancelCache closeCancelCache) {
+    public FindWorkMonitor(ExecutorProperties executorProperties, QueryProperties queryProperties, QueryStorageCache cache, QueryExecutor executor) {
         this.executorProperties = executorProperties;
         this.queryStorageCache = cache;
         this.queryExecutor = executor;
-        this.closeCancelCache = closeCancelCache;
         
         PathDestinationFactory pathDestinationFactory = new PathDestinationFactory();
         this.originService = pathDestinationFactory.getDestination(queryProperties.getQueryServiceName()).getDestinationAsString();
@@ -70,7 +67,7 @@ public class FindWorkMonitor {
         // schedule a new monitor task if the previous one has finished
         if (taskFuture == null) {
             taskStartTime = System.currentTimeMillis();
-            taskFuture = executor.submit(new FindWorkTask(queryStorageCache, queryExecutor, closeCancelCache, originService, destinationService));
+            taskFuture = executor.submit(new FindWorkTask(queryStorageCache, queryExecutor, originService, destinationService));
         }
     }
     

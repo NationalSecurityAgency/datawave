@@ -72,7 +72,7 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "queryName=Developer Test Query" \
     --data-urlencode "pool=$POOL" \
     --data-urlencode "expand.values=true" \
-    ${DATAWAVE_ENDPOINT}/EventQuery/plan -o planResponse.txt
+    ${DATAWAVE_ENDPOINT}/EventQuery/plan -o planResponse.txt -w '%{http_code}\n' >> querySummary.txt
 
 QUERY_PLAN=$(get_query_plan < planResponse.txt)
 

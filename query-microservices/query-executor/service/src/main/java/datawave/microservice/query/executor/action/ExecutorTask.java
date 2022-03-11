@@ -147,21 +147,31 @@ public abstract class ExecutorTask implements Runnable {
             
             queryTaskUpdater.close();
             
-            if (taskComplete) {
-                cache.updateTaskState(taskKey, TaskStates.TASK_STATE.COMPLETED);
-                try {
-                    cache.deleteTask(taskKey);
-                } catch (IOException e) {
-                    log.error("We may be leaving an orphaned task: " + taskKey, e);
-                }
-            } else if (taskFailed) {
-                cache.updateTaskState(taskKey, TaskStates.TASK_STATE.FAILED);
-            } else {
-                cache.updateTaskState(taskKey, TaskStates.TASK_STATE.READY);
-                // more work to do on this task, lets notify
-                publishExecutorEvent(QueryRequest.next(queryId), task.getTaskKey().getQueryPool());
+            completeTask(taskComplete, taskFailed);
+        }
+    }
+    
+    /**
+     * Complete the task by updating its state appropriately
+     * 
+     * @param taskComplete
+     * @param taskFailed
+     */
+    public void completeTask(boolean taskComplete, boolean taskFailed) {
+        TaskKey taskKey = task.getTaskKey();
+        if (taskComplete) {
+            cache.updateTaskState(taskKey, TaskStates.TASK_STATE.COMPLETED);
+            try {
+                cache.deleteTask(taskKey);
+            } catch (IOException e) {
+                log.error("We may be leaving an orphaned task: " + taskKey, e);
             }
-            
+        } else if (taskFailed) {
+            cache.updateTaskState(taskKey, TaskStates.TASK_STATE.FAILED);
+        } else {
+            cache.updateTaskState(taskKey, TaskStates.TASK_STATE.READY);
+            // more work to do on this task, lets notify
+            publishExecutorEvent(QueryRequest.next(taskKey.getQueryId()), taskKey.getQueryPool());
         }
     }
     

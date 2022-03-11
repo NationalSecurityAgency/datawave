@@ -96,6 +96,19 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         log.info("Listening to bus id " + busProperties.getId() + " with a destination of " + busProperties.getDestination());
     }
     
+    /**
+     * Return true if we are working on any tasking for the specified query id
+     * 
+     * @param queryId
+     * @return true if working on query, false otherwise
+     */
+    public boolean isWorkingOn(String queryId) {
+        if (!workQueue.stream().anyMatch(r -> ((ExecutorTask) r).getTaskKey().getQueryId().equals(queryId))) {
+            return working.stream().anyMatch(r -> ((ExecutorTask) r).getTaskKey().getQueryId().equals(queryId));
+        }
+        return false;
+    }
+    
     private void removeFromWorkQueue(String queryId) {
         List<Runnable> removals = new ArrayList<Runnable>();
         for (Runnable action : workQueue) {
@@ -177,7 +190,12 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                             throw new UnsupportedOperationException(task.getTaskKey().toString());
                     }
                     
-                    threadPool.execute(runnable);
+                    try {
+                        threadPool.execute(runnable);
+                    } catch (Exception e) {
+                        // reset the task state so that another executor can grab it
+                        runnable.completeTask(false, false);
+                    }
                 }
             }
         }
@@ -205,9 +223,12 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                 tasksAvailableToRun = Math.min(tasksAvailableToRun,
                                 threadPool.getMaximumPoolSize() - threadPool.getQueue().size() - threadPool.getActiveCount());
                 
-                log.info("Getting up to " + tasksAvailableToRun + " tasks to run for " + queryId + " (" + taskStates.taskStatesString() + ", "
-                                + threadPool.getActiveCount() + '/' + threadPool.getMaximumPoolSize());
+                log.info("Getting up to " + tasksAvailableToRun + " tasks to run for " + queryId + " (" + taskStates.taskStatesString() + ",THREADPOOL:"
+                                + threadPool.getMaximumPoolSize() + " - " + threadPool.getQueue().size() + " - " + threadPool.getActiveCount() + ")");
+                
+                // if we can run any tasks, then get em
                 if (tasksAvailableToRun > 0) {
+                    
                     for (TaskKey taskKey : taskStates.getTasksForState(TaskStates.TASK_STATE.READY, tasksAvailableToRun)) {
                         QueryTask task = cache.getTask(taskKey);
                         

@@ -290,7 +290,7 @@ public class QueryStorageCacheImpl implements QueryStorageCache {
         lock.lock();
         try {
             TaskStates states = taskStatesCache.getTaskStates(taskKey.getQueryId());
-            if (states.setState(taskKey.getTaskId(), state)) {
+            if (states != null && states.setState(taskKey.getTaskId(), state)) {
                 updateTaskStates(states);
                 return true;
             }

@@ -8,30 +8,23 @@ import datawave.microservice.query.storage.QueryStorageLock;
 import datawave.microservice.query.storage.QueryTask;
 import datawave.microservice.query.storage.TaskKey;
 import datawave.microservice.query.storage.TaskStates;
-import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.log4j.Logger;
 
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Spliterator;
 import java.util.concurrent.Callable;
 
 public class FindWorkTask implements Callable<Void> {
     private Logger log = Logger.getLogger(FindWorkTask.class);
     protected final QueryStorageCache cache;
     protected final QueryExecutor executor;
-    // a cache of the last N close cancel queries that we handled to avoid excessive executor executions and subsequent query cache hits
-    protected final CloseCancelCache closeCancelCache;
     
     private final String originService;
     private final String destinationService;
     
-    public FindWorkTask(QueryStorageCache cache, QueryExecutor executor, CloseCancelCache closeCancelCache, String originService, String destinationService) {
+    public FindWorkTask(QueryStorageCache cache, QueryExecutor executor, String originService, String destinationService) {
         this.cache = cache;
         this.executor = executor;
-        this.closeCancelCache = closeCancelCache;
         this.originService = originService;
         this.destinationService = destinationService;
     }
@@ -45,17 +38,15 @@ public class FindWorkTask implements Callable<Void> {
             String queryId = queryStatus.getQueryKey().getQueryId();
             switch (queryStatus.getQueryState()) {
                 case CLOSE:
-                    if (closeCancelCache.add(queryId)) {
+                    if (executor.isWorkingOn(queryId)) {
                         log.debug("Closing " + queryId);
                         executor.handleRemoteRequest(QueryRequest.close(queryId), originService, destinationService);
-                        recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.FAILED, true);
                     }
                     break;
                 case CANCEL:
-                    if (closeCancelCache.add(queryId)) {
+                    if (executor.isWorkingOn(queryId)) {
                         log.debug("Cancelling " + queryId);
                         executor.handleRemoteRequest(QueryRequest.cancel(queryId), originService, destinationService);
-                        recoverOrphanedTasks(queryId, TaskStates.TASK_STATE.FAILED, true);
                     }
                     break;
                 case CREATE:
@@ -186,88 +177,6 @@ public class FindWorkTask implements Callable<Void> {
             }
         } finally {
             lock.unlock();
-        }
-    }
-    
-    /**
-     * A class that provides quick containership test via a hashset and keeps a max size by aging off the oldest elements as new ones are added
-     */
-    public static class CloseCancelCache extends HashSet<String> {
-        private final CircularFifoQueue<String> list;
-        
-        public CloseCancelCache(int maxSize) {
-            list = new CircularFifoQueue<>(maxSize);
-        }
-        
-        @Override
-        public boolean add(String t) {
-            if (super.add(t)) {
-                if (list.size() == list.maxSize()) {
-                    super.remove(list.remove());
-                }
-                list.add(t);
-                return true;
-            } else {
-                return false;
-            }
-        }
-        
-        @Override
-        public Iterator<String> iterator() {
-            return new Iterator<String>() {
-                private final Iterator<String> iterator = list.iterator();
-                private String lastReturned = null;
-                
-                @Override
-                public boolean hasNext() {
-                    return iterator.hasNext();
-                }
-                
-                @Override
-                public String next() {
-                    return iterator.next();
-                }
-                
-                @Override
-                public void remove() {
-                    if (lastReturned == null) {
-                        throw new IllegalStateException();
-                    }
-                    iterator.remove();
-                    CloseCancelCache.this.superRemove(lastReturned);
-                }
-            };
-        }
-        
-        private boolean superRemove(Object o) {
-            return super.remove(o);
-        }
-        
-        @Override
-        public boolean remove(Object o) {
-            if (superRemove(o)) {
-                list.remove(o);
-                return true;
-            }
-            return false;
-        }
-        
-        @Override
-        public void clear() {
-            super.clear();
-            list.clear();
-        }
-        
-        @Override
-        public Object clone() {
-            CloseCancelCache set = new CloseCancelCache(list.maxSize());
-            set.addAll(this);
-            return set;
-        }
-        
-        @Override
-        public Spliterator<String> spliterator() {
-            return list.spliterator();
         }
     }
 }

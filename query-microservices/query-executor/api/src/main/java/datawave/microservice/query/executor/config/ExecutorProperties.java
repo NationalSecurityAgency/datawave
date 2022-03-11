@@ -31,8 +31,6 @@ public class ExecutorProperties {
     private long monitorTaskLease = TimeUnit.MILLISECONDS.toMillis(100);
     @NotNull
     private TimeUnit monitorTaskLeaseTimeUnit = TimeUnit.MILLISECONDS;
-    // the max cache size used by the monitor to avoid excessive close/cancel task executions
-    private int monitorMaxCacheSize = 500;
     
     // The time after which we consider a task orphaned. Note that this must be greater than checkpointFlushMs
     // as that defines how ofter the task timestamp is updated.
@@ -115,14 +113,6 @@ public class ExecutorProperties {
     
     public void setMonitorTaskLeaseTimeUnit(TimeUnit monitorTaskLeaseTimeUnit) {
         this.monitorTaskLeaseTimeUnit = monitorTaskLeaseTimeUnit;
-    }
-    
-    public int getMonitorMaxCacheSize() {
-        return monitorMaxCacheSize;
-    }
-    
-    public void setMonitorMaxCacheSize(int monitorMaxCacheSize) {
-        this.monitorMaxCacheSize = monitorMaxCacheSize;
     }
     
     public int getCheckpointFlushResults() {

@@ -1,6 +1,5 @@
 package datawave.microservice.query.executor.config;
 
-import datawave.microservice.query.executor.task.FindWorkTask;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.services.common.cache.AccumuloTableCache;
@@ -65,13 +64,4 @@ public class QueryExecutorConfig {
     public QueryPredictor queryPredictor() {
         return new NoOpQueryPredictor();
     }
-    
-    /**
-     * A cache of queries cancelled or closed to avoid extra work in the FindWorkTask
-     */
-    @Bean
-    public FindWorkTask.CloseCancelCache closeCancelCache(ExecutorProperties executorProperties) {
-        return new FindWorkTask.CloseCancelCache(executorProperties.getMonitorMaxCacheSize());
-    }
-    
 }

@@ -35,6 +35,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -269,28 +270,6 @@ public class FindWorkTest {
     }
     
     @Test
-    public void testOrphanedClose() throws Exception {
-        TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), null, Collections.singleton(CitiesDataType.getTestAuths()), 20);
-        assertNotNull(key);
-        
-        // Set the query status state to close
-        storageService.updateQueryStatus(key.getQueryId(), QueryStatus.QUERY_STATE.CLOSE);
-        
-        testOrphans(key, TaskStates.TASK_STATE.RUNNING, TaskStates.TASK_STATE.FAILED, QueryRequest.Method.CLOSE);
-    }
-    
-    @Test
-    public void testOrphanedCancel() throws Exception {
-        TaskKey key = storageService.createQuery(TEST_POOL, getQuery(), null, Collections.singleton(CitiesDataType.getTestAuths()), 20);
-        assertNotNull(key);
-        
-        // Set the query status state to close
-        storageService.updateQueryStatus(key.getQueryId(), QueryStatus.QUERY_STATE.CANCEL);
-        
-        testOrphans(key, TaskStates.TASK_STATE.RUNNING, TaskStates.TASK_STATE.FAILED, QueryRequest.Method.CANCEL);
-    }
-    
-    @Test
     public void testOrphanedPlan() throws Exception {
         TaskKey key = storageService.planQuery(TEST_POOL, getQuery(), null, Collections.singleton(CitiesDataType.getTestAuths()));
         testOrphans(key, TaskStates.TASK_STATE.RUNNING, TaskStates.TASK_STATE.READY, QueryRequest.Method.PLAN);
@@ -349,7 +328,7 @@ public class FindWorkTest {
         
         @Bean
         public FindWorkTask findWorkTask(QueryStorageCache cache, QueryExecutor executor) {
-            return new FindWorkTask(cache, executor, new FindWorkTask.CloseCancelCache(10), null, null);
+            return new FindWorkTask(cache, executor, null, null);
         }
         
         @Bean

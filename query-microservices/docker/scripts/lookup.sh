@@ -82,7 +82,7 @@ curl -s -D headers_0.txt -X GET -k -E ${TMP_PEM} \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
     --data-urlencode "queryName=Developer Test Lookup UUID Query" \
     --data-urlencode "pool=$POOL" \
-    ${DATAWAVE_ENDPOINT}/lookupUUID/PAGE_TITLE/anarchism -o lookupResponse.xml
+    ${DATAWAVE_ENDPOINT}/lookupUUID/PAGE_TITLE/anarchism -o lookupResponse.xml -w '%{http_code}\n' >> querySummary.txt
 
 QUERY_ID=$(get_query_id < lookupResponse.xml)
 NUM_EVENTS=$(get_num_events < lookupResponse.xml)
