@@ -117,7 +117,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         this.testHarness = new QueryLogicTestHarness(this);
     }
     
-    @Test
+//    @Test
     public void testQueryPrecomputedFacets() throws Exception {
         log.info("------ Test precomputed facet ------");
         
@@ -153,7 +153,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         runTest(query, Collections.emptyMap(), expected);
     }
     
-    @Test
+//    @Test
     public void testQueryDynamicFacets() throws Exception {
         log.info("------ Test dynamic facet ------");
         
