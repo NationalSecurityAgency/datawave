@@ -1,10 +1,7 @@
 package datawave.query.function;
 
 import com.google.common.base.Function;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
@@ -34,17 +31,14 @@ public class JexlContextCreator implements Function<Tuple3<Key,Document,Map<Stri
     
     @Override
     public Tuple3<Key,Document,DatawaveJexlContext> apply(Tuple3<Key,Document,Map<String,Object>> from) {
-        // dedupe potentially unnecessary Attributes
-        Tuple3<Key,Document,Map<String,Object>> dedupedFrom = dedupeAttributes(from);
-        
-        final DatawaveJexlContext context = this.newDatawaveJexlContext(dedupedFrom);
+        final DatawaveJexlContext context = this.newDatawaveJexlContext(from);
         
         // We can only recurse over Documents to add them into the DatawaveJexlContext because
         // we need to have fielded values to place them into the Map.
-        dedupedFrom.second().visit(variables, context);
+        from.second().visit(variables, context);
         
         // absorb the supplied map into the context
-        for (Entry<String,Object> entry : dedupedFrom.third().entrySet()) {
+        for (Entry<String,Object> entry : from.third().entrySet()) {
             if (context.has(entry.getKey())) {
                 throw new IllegalStateException("Conflict when merging Jexl contexts!");
             } else {
@@ -65,47 +59,7 @@ public class JexlContextCreator implements Function<Tuple3<Key,Document,Map<Stri
             log.trace("Constructed context from index and attribute Documents: " + context);
         }
         
-        return Tuples.tuple(dedupedFrom.first(), dedupedFrom.second(), context);
-    }
-    
-    private Tuple3 dedupeAttributes(Tuple3<Key,Document,Map<String,Object>> rawTuple) {
-        Map<String,Attribute<? extends Comparable<?>>> dict = rawTuple.second().getDictionary();
-        Set<Attribute<? extends Comparable<?>>> dedupedAttributeSet = new HashSet<Attribute<? extends Comparable<?>>>();
-        
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : dict.entrySet()) {
-            if (entry.getKey().equals(BODY_KEY)) {
-                Attributes rawButes = (Attributes) entry.getValue();
-                Set<Attribute<? extends Comparable<?>>> attributeSet = rawButes.getAttributes();
-                List<String> valueList = new ArrayList<String>();
-                
-                // get list of any non-preNormalizedAttributes since those are the ones
-                // we actually care about and want to keep
-                attributeSet.forEach(attribute -> {
-                    if (!(attribute instanceof PreNormalizedAttribute)) {
-                        String value = attribute.getData().toString();
-                        valueList.add(value);
-                        dedupedAttributeSet.add(attribute);
-                    }
-                });
-                
-                // iterate a second time in order to check potential value against the valueList
-                attributeSet.forEach(attribute -> {
-                    if (attribute instanceof PreNormalizedAttribute) {
-                        String questionableValue = ((PreNormalizedAttribute) attribute).getValue();
-                        // no match means a probably unique attribute
-                        // which we still want to keep, otherwise don't save it
-                        if (!valueList.contains(questionableValue)) {
-                            dedupedAttributeSet.add(attribute);
-                        }
-                    }
-                });
-            }
-        }
-        
-        Attributes replacementAttributes = new Attributes(dedupedAttributeSet, true, true);
-        rawTuple.second().replace(BODY_KEY, replacementAttributes, false, false);
-        
-        return Tuples.tuple(rawTuple.first(), rawTuple.second(), rawTuple.third());
+        return Tuples.tuple(from.first(), from.second(), context);
     }
     
     public void addAdditionalEntries(Map<String,Object> additionalEntries) {

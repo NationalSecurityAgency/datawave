@@ -14,6 +14,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ValueToAttributes;
+import datawave.query.util.FuzzyAttributeComparator;
 import datawave.query.util.TypeMetadata;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
@@ -274,77 +275,93 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 
                 // When calling put() on a Document which already contains an Attributes
                 // for a given with another Attributes, issue the equivalent of a putAll() on the new Attributes
-                // to not create additional hiearchy inside this Document
+                // to not create additional hierarchy inside this Document
                 //
                 // e.g. Given: {"CONTENT"=>[BODY:foo, HEAD:foo]}.put("CONTENT", [BODY:bar, HEAD:bar, FOOT:bar])
                 // We want to get: {"CONTENT"=>[BODY:foo, HEAD:foo, BODY:bar, HEAD:bar, FOOT:bar]}
                 // *not*: {"CONTENT"=>[BODY:foo, HEAD:foo, [BODY:bar, HEAD:bar, FOOT:bar]]}
                 
                 if (value instanceof Attributes && existingAttr instanceof Attributes) {
-                    // merge the two sets
-                    attrs = (Attributes) existingAttr;
-                    
-                    _count -= attrs.size();
-                    if (trackSizes) {
-                        _bytes -= attrs.sizeInBytes();
-                    }
-                    
-                    attrs.addAll(((Attributes) value).getAttributes());
-                    
-                    _count += attrs.size();
-                    if (trackSizes) {
-                        _bytes += attrs.sizeInBytes();
+                    // ensure there are no fuzzy matches before merging
+                    if (!FuzzyAttributeComparator.multipleToMultiple((Attributes) existingAttr, (Attributes) value)) {
+                        
+                        // merge the two sets
+                        attrs = (Attributes) existingAttr;
+                        
+                        _count -= attrs.size();
+                        if (trackSizes) {
+                            _bytes -= attrs.sizeInBytes();
+                        }
+                        
+                        attrs.addAll(((Attributes) value).getAttributes());
+                        
+                        _count += attrs.size();
+                        if (trackSizes) {
+                            _bytes += attrs.sizeInBytes();
+                        }
                     }
                 } else if (value instanceof Attributes) {
-                    _count -= existingAttr.size();
-                    if (trackSizes) {
-                        _bytes -= existingAttr.sizeInBytes();
-                    }
-                    
-                    // change the existing attr to an attributes
-                    HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
-                    attrsSet.add(existingAttr);
-                    attrsSet.addAll(((Attributes) value).getAttributes());
-                    attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
-                    dict.put(key, attrs);
-                    
-                    _count += attrs.size();
-                    if (trackSizes) {
-                        _bytes += attrs.sizeInBytes();
+                    // ensure no fuzzy matches before merging
+                    if (!FuzzyAttributeComparator.singleToMultiple((Attributes) value, existingAttr)) {
+                        
+                        _count -= existingAttr.size();
+                        if (trackSizes) {
+                            _bytes -= existingAttr.sizeInBytes();
+                        }
+                        
+                        // change the existing attr to an attributes
+                        HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
+                        attrsSet.add(existingAttr);
+                        attrsSet.addAll(((Attributes) value).getAttributes());
+                        attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
+                        dict.put(key, attrs);
+                        
+                        _count += attrs.size();
+                        if (trackSizes) {
+                            _bytes += attrs.sizeInBytes();
+                        }
                     }
                 } else if (existingAttr instanceof Attributes) {
-                    // add the value to the set
-                    attrs = (Attributes) existingAttr;
-                    
-                    // Account for the case where we add more results to an Attributes, but the Attributes
-                    // ends up being deduped by the underlying Set
-                    // e.g. Adding BODY:term into an Attributes for BODY:[term, term2] should result in a size of 2
-                    _count -= attrs.size();
-                    if (trackSizes) {
-                        _bytes -= attrs.sizeInBytes();
-                    }
-                    
-                    attrs.add(value);
-                    
-                    _count += attrs.size();
-                    if (trackSizes) {
-                        _bytes += attrs.sizeInBytes();
+                    // ensure no fuzzy matches before merging
+                    if (!FuzzyAttributeComparator.singleToMultiple((Attributes) existingAttr, value)) {
+                        
+                        // add the value to the set
+                        attrs = (Attributes) existingAttr;
+                        
+                        // Account for the case where we add more results to an Attributes, but the Attributes
+                        // ends up being deduped by the underlying Set
+                        // e.g. Adding BODY:term into an Attributes for BODY:[term, term2] should result in a size of 2
+                        _count -= attrs.size();
+                        if (trackSizes) {
+                            _bytes -= attrs.sizeInBytes();
+                        }
+                        
+                        attrs.add(value);
+                        
+                        _count += attrs.size();
+                        if (trackSizes) {
+                            _bytes += attrs.sizeInBytes();
+                        }
                     }
                 } else {
-                    // create a set out of the two values
-                    HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
-                    attrsSet.add(existingAttr);
-                    attrsSet.add(value);
-                    attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
-                    dict.put(key, attrs);
-                    
-                    _count += value.size();
-                    if (trackSizes) {
-                        _bytes += value.sizeInBytes();
+                    // ensure no fuzzy matches before merging
+                    if (!FuzzyAttributeComparator.singleToSingle(existingAttr, value)) {
+                        
+                        // create a set out of the two values
+                        HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
+                        attrsSet.add(existingAttr);
+                        attrsSet.add(value);
+                        attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
+                        dict.put(key, attrs);
+                        
+                        _count += value.size();
+                        if (trackSizes) {
+                            _bytes += value.sizeInBytes();
+                        }
                     }
+                    
+                    invalidateMetadata();
                 }
-                
-                invalidateMetadata();
             }
             // else, a Document cannot contain the same Field:Value, thus
             // when we find a duplicate value in the same field, we ignore it.
