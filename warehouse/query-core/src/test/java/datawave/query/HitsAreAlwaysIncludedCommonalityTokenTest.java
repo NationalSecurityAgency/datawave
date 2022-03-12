@@ -181,12 +181,12 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
             if (hitAttribute instanceof Attributes) {
                 Attributes attributes = (Attributes) hitAttribute;
                 for (Attribute attr : attributes.getAttributes()) {
-                    if (HitTermType.matches.test(attr)) {
+                    if (HitTermType.matches(attr)) {
                         String content = attr.toString();
                         Assert.assertTrue(goodResults.contains(content));
                     }
                 }
-            } else if (HitTermType.matches.test(hitAttribute)) {
+            } else if (HitTermType.matches(hitAttribute)) {
 //                Content content = (Content) hitAttribute;
                 Assert.assertTrue(goodResults.contains(hitAttribute.toString()));
             }

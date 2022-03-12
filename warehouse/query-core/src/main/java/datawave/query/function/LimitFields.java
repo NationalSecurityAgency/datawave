@@ -233,7 +233,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 for (Attribute<?> at : attrs.getAttributes()) {
                     fillHitTermMap(at, attrMap);
                 }
-            } else if (HitTermType.matches.test(attr)) {
+            } else if (HitTermType.matches(attr)) {
                 // split the content into its fieldname:value
                 String contentString = ((TypeAttribute)attr).getType().toString();
                 attrMap.put(contentString.substring(0, contentString.indexOf(":")), contentString.substring(contentString.indexOf(":") + 1));

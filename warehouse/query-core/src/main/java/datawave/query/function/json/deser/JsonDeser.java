@@ -30,11 +30,21 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
             if (((TypeAttribute)arrayAttr).getType() instanceof NumberType){
                 JsonObject obj = new JsonObject();
                 obj.addProperty(name,(BigDecimal)((TypeAttribute)arrayAttr).getType().denormalize());
+                if (arrayAttr.isMetadataSet()) {
+                    Gson gson = new Gson();
+                    String keyString = gson.toJson(arrayAttr.getMetadata());
+                    obj.addProperty("key", keyString);
+                            //.addProperty("key", arrayAttr.getMetadata());
+                }
                 jsonDocument.add(obj);
             }
             else{
                 JsonObject obj = new JsonObject();
                 obj.addProperty(name,arrayAttr.toString());
+                Gson gson = new Gson();
+                String keyString = gson.toJson(arrayAttr.getMetadata());
+                obj.addProperty("key", keyString);
+
                 jsonDocument.add(obj);
             }
         }

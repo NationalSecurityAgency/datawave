@@ -190,7 +190,7 @@ public abstract class HitsAreAlwaysIncludedTest {
             if (hitAttribute instanceof Attributes) {
                 Attributes attributes = (Attributes) hitAttribute;
                 for (Attribute attr : attributes.getAttributes()) {
-                    if (HitTermType.matches.test(attr)) {
+                    if (HitTermType.matches(attr)) {
                         TypeAttribute content = (TypeAttribute) attr;
                         Assert.assertTrue(expectedHits.remove(content.toString()));
                     }
