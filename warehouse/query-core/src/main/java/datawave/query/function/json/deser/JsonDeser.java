@@ -5,12 +5,9 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -18,7 +15,47 @@ import java.util.Map;
 
 public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.google.gson.JsonDeserializer<Document>{
 
-    private static final Logger log = Logger.getLogger(JsonDeser.class);
+
+    /**
+     * Add the raw attribute data
+     * @param attr data to add new property to
+     * @param name name of property to add
+     * @param jsonObject json object
+     */
+    private static void addAttributeData(Attribute<?> attr,String name, JsonObject jsonObject) {
+        jsonObject.addProperty(name,attr.toString());
+
+    }
+
+    /**
+     * Add the metadata to the attribute
+     * @param attr data to add new property to
+     * @param name name of property to add
+     * @param jsonObject json object
+     */
+    private static void addAttributeMetadata(Attribute<?> attr,String name, JsonObject jsonObject){
+        if ( attr.isMetadataSet() ){
+            Key metadata = attr.getMetadata();
+            jsonObject.addProperty("row",metadata.getRow().toString());
+            jsonObject.addProperty("cf",metadata.getColumnFamily().toString());
+            jsonObject.addProperty("cq",metadata.getColumnQualifier().toString());
+            jsonObject.addProperty("cv",metadata.getColumnVisibility().toString());
+            jsonObject.addProperty("timestamp",metadata.getTimestamp());
+        }
+    }
+
+    /**
+     * Add the data and metadata to the attribute
+     * @param attr data to add new property to
+     * @param name name of property to add
+     * @param jsonObject json object
+     */
+    private static void addAttribute(Attribute<?> attr,String name, JsonObject jsonObject) {
+        addAttributeData(attr,name,jsonObject);
+        addAttributeMetadata(attr,name,jsonObject);
+    }
+
+
     /**
      * Typed conversion of the JSON array.
      * @param arrayAttr array attribute containing multiple Attribute instances.
@@ -26,28 +63,22 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
      * @param jsonDocument json document in which we emplace the new JsonArray.
      */
     private static void addJsonObject(Attribute<?> arrayAttr,String name, JsonArray jsonDocument){
-        if (arrayAttr instanceof TypeAttribute){
-            if (((TypeAttribute)arrayAttr).getType() instanceof NumberType){
-                JsonObject obj = new JsonObject();
-                obj.addProperty(name,(BigDecimal)((TypeAttribute)arrayAttr).getType().denormalize());
-                if (arrayAttr.isMetadataSet()) {
-                    Gson gson = new Gson();
-                    String keyString = gson.toJson(arrayAttr.getMetadata());
-                    obj.addProperty("key", keyString);
-                            //.addProperty("key", arrayAttr.getMetadata());
-                }
-                jsonDocument.add(obj);
-            }
-            else{
-                JsonObject obj = new JsonObject();
-                obj.addProperty(name,arrayAttr.toString());
-                Gson gson = new Gson();
-                String keyString = gson.toJson(arrayAttr.getMetadata());
-                obj.addProperty("key", keyString);
+        if (arrayAttr instanceof TypeAttribute && ((TypeAttribute)arrayAttr).getType() instanceof NumberType){
 
-                jsonDocument.add(obj);
-            }
+            JsonObject obj = new JsonObject();
+            obj.addProperty(name,(BigDecimal)((TypeAttribute)arrayAttr).getType().denormalize());
+            addAttributeMetadata(arrayAttr,name,obj);
+            jsonDocument.add(obj);
+
+
         }
+        else
+        {
+            JsonObject obj = new JsonObject();
+            addAttribute(arrayAttr,name,obj);
+            jsonDocument.add(obj);
+        }
+
     }
 
     /**
@@ -65,23 +96,15 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
             }
             jsonDocument.add(name,array);
         }
-        else if (attr instanceof TypeAttribute){
-            if (((TypeAttribute)attr).getType() instanceof NumberType){
-                jsonDocument.addProperty(name,(BigDecimal)((TypeAttribute)attr).getType().denormalize());
-            }
-            else{
-                jsonDocument.addProperty(name,attr.toString());
-            }
-        }
-       else  if (attr instanceof Attribute) {
+        if (attr instanceof TypeAttribute && ((TypeAttribute)attr).getType() instanceof NumberType){
 
-           log.warn("ignored attr is a "+attr);
-//            Attribute attribute = (Attribute)attr;
-//            String attrString = attr.toString();
-//            jsonDocument.addProperty(name,attrString.substring(0,
-//                    attrString.indexOf(':', attrString.indexOf(':')+1)));
-
+            jsonDocument.addProperty(name,(BigDecimal)((TypeAttribute)attr).getType().denormalize());
+            addAttributeMetadata(attr,name,jsonDocument);
         }
+        else{
+            addAttribute(attr,name,jsonDocument);
+        }
+
     }
 
     /**
@@ -119,14 +142,27 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
             NoOpType type = null;
             if (element instanceof JsonObject){
                 JsonObject obj = (JsonObject)element;
-                Map.Entry<String,JsonElement> ret = obj.entrySet().iterator().next();
-                type = new NoOpType(ret.getValue().getAsString());
+                if ( obj.has("row") ){ // it has metadata
+                    key = new Key(obj.get("row").getAsString(),obj.get("cf").getAsString(),obj.get("cq").getAsString(),obj.get("cv").getAsString(),obj.get("timestamp").getAsLong());
+                }
+                Map.Entry<String,JsonElement> ret = obj.entrySet().stream().filter( entry ->{
+                    String str = entry.getKey();
+                    return !str.equals("row") && !str.equals("cf") && !str.equals("cq") && !str.equals("cv") && !str.equals("timestamp");
+                }).iterator().next();
+                if (ret.getValue().isJsonPrimitive() && ret.getValue().getAsJsonPrimitive().isNumber()){
+                    NumberType primitiveType = new NumberType(element.getAsString());
+                    attr = new TypeAttribute<>(primitiveType,key,true);
+                }
+                else {
+                    type = new NoOpType(ret.getValue().getAsString());
+                    attr = new TypeAttribute<>(type, key, true);
+                }
             }
             else {
                 type = new NoOpType(element.getAsString());
-
+                attr = new TypeAttribute<>(type, key, true);
             }
-            attr = new TypeAttribute<>(type, key, true);
+
         }
         return attr;
     }
@@ -138,7 +174,7 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
      * @param doc document to emplace the JsonElement attribute.
      */
     private static void populateAttribute(JsonElement element,String name, Document doc){
-        doc.put(name,elementToAttribute(element), true);
+        doc.put(name,elementToAttribute(element));
     }
 
     /**
@@ -152,12 +188,12 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
         array.iterator().forEachRemaining( x -> {
             attrs.add(elementToAttribute(x));
         });
-        doc.put(name,attrs, true);
+        doc.put(name,attrs);
     }
     @Override
     public Document deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
         final Document doc = new Document();
-        log.warn("will deserialize "+jsonElement);
+
         if (jsonElement instanceof JsonObject){
             ((JsonObject)jsonElement).entrySet().stream().forEach(
                     x->{ // Entry<String,JsonElement>
@@ -171,7 +207,7 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
                     }
             );
         }
-        log.warn("deserialized to "+doc.toString());
+
         return doc;
     }
 }
