@@ -1,6 +1,5 @@
 package datawave.query.function;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
@@ -17,7 +16,6 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
