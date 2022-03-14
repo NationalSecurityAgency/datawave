@@ -33,7 +33,18 @@ public final class FuzzyAttributeComparator {
         return containsMatch;
     }
     
-    public static Attribute combineAttributes(Attribute prenormalizedAttribute, Attribute contentAttribute) {
-        return null;
+    public static Attribute combineAttributes(Attributes existingAttributes, Attributes newAttributes) {
+        existingAttributes.getAttributes().forEach(existAttr -> {
+            for (Attribute<? extends Comparable<?>> newAttr : newAttributes.getAttributes()) {
+                if (existAttr.getData().equals(newAttr.getData())) {
+                    newAttr.setMetadata(existAttr.getMetadata());
+                }
+            }
+        });
+        
+        newAttributes.setBytes(existingAttributes.sizeInBytes());
+        newAttributes.setCount(existingAttributes.size());
+        
+        return newAttributes;
     }
 }

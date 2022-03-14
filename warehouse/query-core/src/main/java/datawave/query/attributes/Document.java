@@ -28,8 +28,14 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.format.DateTimeParseException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
 
 public class Document extends AttributeBag<Document> implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -284,7 +290,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 if (value instanceof Attributes && existingAttr instanceof Attributes) {
                     // ensure there are no fuzzy matches before merging
                     if (!FuzzyAttributeComparator.multipleToMultiple((Attributes) existingAttr, (Attributes) value)) {
-                        
                         // merge the two sets
                         attrs = (Attributes) existingAttr;
                         
@@ -301,7 +306,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         }
                     } else {
                         // fuzzy matches found, attempt to combine attributes
-                        
+                        Attributes mergedAttributes = (Attributes) FuzzyAttributeComparator.combineAttributes((Attributes) existingAttr, (Attributes) value);
+                        dict.put(key, mergedAttributes);
                     }
                 } else if (value instanceof Attributes) {
                     // ensure no fuzzy matches before merging
