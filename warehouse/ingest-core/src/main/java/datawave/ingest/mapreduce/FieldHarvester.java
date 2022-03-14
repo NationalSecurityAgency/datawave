@@ -53,6 +53,7 @@ public class FieldHarvester {
     
     /**
      * Updates "fields" with extracted, derived, and automatically generated fields. Will capture
+     * exception along the way and attempt to add salvaged fields before rethrowing the exception.
      *
      * @param fields
      *            the Multimap to modify with extracted and generated fields
@@ -90,7 +91,7 @@ public class FieldHarvester {
                 this.originalException = exception;
             } else {
                 // preserve original exception and log the latest exception
-                log.error(exception);
+                log.error("A secondary exception occurred while adding supplemental fields", exception);
             }
         }
         
@@ -255,7 +256,7 @@ public class FieldHarvester {
                 this.originalException = new FieldNormalizationError("Failed getting all fields", fieldError);
             } else {
                 // preserve original exception
-                log.error(originalException);
+                log.error("A field exception was observed while adding fields", fieldError);
             }
         }
     }
