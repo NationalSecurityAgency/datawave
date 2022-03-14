@@ -33,86 +33,87 @@ import java.util.Map.Entry;
 
 public class Document extends AttributeBag<Document> implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     private static final Logger log = Logger.getLogger(Document.class);
-    
+
     public static final String DOCKEY_FIELD_NAME = "RECORD_ID";
-    
+
     private int _count = 0;
     long _bytes = 0;
-    TreeMap<String,Attribute<? extends Comparable<?>>> dict;
-    
+    TreeMap<String, Attribute<? extends Comparable<?>>> dict;
+
     /**
      * should sizes of the documents be tracked
      */
     private boolean trackSizes;
-    
+
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
-    
+
     public MarkingFunctions getMarkingFunctions() {
         return MarkingFunctions.Factory.createMarkingFunctions();
     }
-    
-    public Map<String,String> getMarkings() {
+
+    public Map<String, String> getMarkings() {
         try {
             MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
             return markingFunctions.translateFromColumnVisibility(getColumnVisibility());
-        } catch (MarkingFunctions.Exception e) {}
+        } catch (MarkingFunctions.Exception e) {
+        }
         return Collections.emptyMap();
     }
-    
+
     public Document() {
         this(null, true);
     }
-    
+
     public Document(Key key, boolean toKeep) {
         this(key, toKeep, true);
     }
-    
+
     public Document(Key key, boolean toKeep, boolean trackSizes) {
         super(key, toKeep);
         dict = new TreeMap<>();
         this.trackSizes = trackSizes;
     }
-    
-    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
+
+    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key, Value>> iter, TypeMetadata typeMetadata,
                     CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter) {
         this(key, docKeys, fromIndex, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter, true);
     }
-    
-    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
+
+    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key, Value>> iter, TypeMetadata typeMetadata,
                     CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter, boolean toKeep) {
         this(key, docKeys, fromIndex, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter, toKeep, true);
     }
-    
-    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
+
+    public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key, Value>> iter, TypeMetadata typeMetadata,
                     CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter, boolean toKeep,
                     boolean trackSizes) {
         this(key, toKeep, trackSizes);
         this.consumeRawData(key, docKeys, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter, fromIndex);
     }
-    
+
     @Override
     public Collection<Attribute<? extends Comparable<?>>> getAttributes() {
         return Collections.unmodifiableCollection(this.dict.values());
     }
-    
-    public Map<String,Attribute<? extends Comparable<?>>> getDictionary() {
+
+    public Map<String, Attribute<? extends Comparable<?>>> getDictionary() {
         return Collections.unmodifiableMap(this.dict);
     }
-    
-    private TreeMap<String,Attribute<? extends Comparable<?>>> _getDictionary() {
+
+    private TreeMap<String, Attribute<? extends Comparable<?>>> _getDictionary() {
         return dict;
     }
-    
-    public Set<Entry<String,Attribute<? extends Comparable<?>>>> entrySet() {
+
+    public Set<Entry<String, Attribute<? extends Comparable<?>>>> entrySet() {
         return getDictionary().entrySet();
     }
-    
-    public Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iterator() {
+
+    public Iterator<Entry<String, Attribute<? extends Comparable<?>>>> iterator() {
         return getDictionary().entrySet().iterator();
     }
-    
+
     /**
      * Given an iterator over {@code Entry<Key, Value>}, and a set of normalizers, this method will merge the attributes scanned over by the supplied iterator
      * into <code>this</code> Document.
@@ -121,9 +122,9 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * @param typeMetadata
      * @return
      */
-    public Document consumeRawData(Key docKey, Set<Key> docKeys, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
-                    CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter,
-                    boolean fromIndex) {
+    public Document consumeRawData(Key docKey, Set<Key> docKeys, Iterator<Entry<Key, Value>> iter, TypeMetadata typeMetadata,
+                                   CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter,
+                                   boolean fromIndex) {
         invalidateMetadata();
         // extract the sharded time from the dockey if possible
         try {
@@ -133,34 +134,34 @@ public class Document extends AttributeBag<Document> implements Serializable {
             // leave the shardTimestamp empty
             this.shardTimestamp = Long.MAX_VALUE;
         }
-        
+
         // Extract the fieldName from the Key
-        Iterator<Entry<Key,String>> extractedFieldNames = Iterators.transform(iter, new KeyToFieldName(includeGroupingContext));
-        
+        Iterator<Entry<Key, String>> extractedFieldNames = Iterators.transform(iter, new KeyToFieldName(includeGroupingContext));
+
         // Transform the remaining entries back into Attributes
-        Iterator<Iterable<Entry<String,Attribute<? extends Comparable<?>>>>> attributes = Iterators.transform(extractedFieldNames, new ValueToAttributes(
-                        compositeMetadata, typeMetadata, attrFilter, MarkingFunctions.Factory.createMarkingFunctions(), fromIndex));
-        
+        Iterator<Iterable<Entry<String, Attribute<? extends Comparable<?>>>>> attributes = Iterators.transform(extractedFieldNames, new ValueToAttributes(
+                compositeMetadata, typeMetadata, attrFilter, MarkingFunctions.Factory.createMarkingFunctions(), fromIndex));
+
         // Add all of the String=>Attribute pairs to this Document
         while (attributes.hasNext()) {
-            Iterable<Entry<String,Attribute<? extends Comparable<?>>>> entries = attributes.next();
-            for (Entry<String,Attribute<? extends Comparable<?>>> entry : entries) {
+            Iterable<Entry<String, Attribute<? extends Comparable<?>>>> entries = attributes.next();
+            for (Entry<String, Attribute<? extends Comparable<?>>> entry : entries) {
                 this.put(entry, includeGroupingContext);
             }
         }
-        
+
         // now add the dockeys as attributes
         Attribute<?> docKeyAttributes = toDocKeyAttributes(docKeys, keepRecordId);
         if (docKeyAttributes != null) {
             this.put(DOCKEY_FIELD_NAME, docKeyAttributes);
         }
-        
+
         // a little debugging here to track large documents
         debugDocumentSize(docKey);
-        
+
         return this;
     }
-    
+
     public Attribute<?> toDocKeyAttributes(Set<Key> docKeys, boolean keepRecordId) {
         Attributes attributes = new Attributes(keepRecordId, trackSizes);
         for (Key docKey : docKeys) {
@@ -175,7 +176,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
             return attributes;
         }
     }
-    
+
     public void debugDocumentSize(Key docKey) {
         long bytes = sizeInBytes();
         // if more than 100M, then error
@@ -199,7 +200,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
             log.trace("Document " + docKey + "; size = " + size() + "; bytes = " + bytes);
         }
     }
-    
+
     /**
      * Returns true if this <code>Document</code> contains the given <code>key</code>
      *
@@ -209,7 +210,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     public boolean containsKey(String key) {
         return this.dict.containsKey(key);
     }
-    
+
     /**
      * Fetch the value for the given <code>key</code>. Will return <code>null</code> if no such mapping exists.
      *
@@ -219,7 +220,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     public Attribute<?> get(String key) {
         return this.dict.get(key);
     }
-    
+
     /**
      * Replaces an attribute within a document
      *
@@ -229,11 +230,11 @@ public class Document extends AttributeBag<Document> implements Serializable {
     public void replace(String key, Attribute<?> value, Boolean includeGroupingContext, boolean reducedResponse) {
         dict.put(key, value);
     }
-    
+
     public void put(String key, Attribute<?> value) {
         put(key, value, false, false);
     }
-    
+
     /**
      * Adds a named attribute to this document. If an attribute already exists under the specified <code>key</code>, then this method will create an
      * <code>Attributes</code> object (if the attribute associated with <code>key</code> isn't already an <code>Attributes</code>), and add the
@@ -243,36 +244,36 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * @param value
      */
     public void put(String key, Attribute<?> value, Boolean includeGroupingContext, boolean reducedResponse) {
-        
+
         if (0 == value.size()) {
             if (log.isTraceEnabled()) {
                 log.trace("Ignoring Attribute for " + key + " which was empty");
             }
-            
+
             return;
         }
-        
+
         key = JexlASTHelper.deconstructIdentifier(key, includeGroupingContext);
-        
+
         if (log.isTraceEnabled()) {
             log.trace("Loading: " + key + "=" + value);
         }
-        
+
         Attribute<?> existingAttr = dict.get(key);
         if (existingAttr == null) {
             dict.put(key, value);
-            
+
             _count += value.size();
             if (trackSizes) {
                 _bytes += value.sizeInBytes();
                 _bytes += Attribute.sizeInBytes(key);
             }
-            
+
             invalidateMetadata();
         } else {
             if (!existingAttr.equals(value)) {
                 Attributes attrs = null;
-                
+
                 // When calling put() on a Document which already contains an Attributes
                 // for a given with another Attributes, issue the equivalent of a putAll() on the new Attributes
                 // to not create additional hierarchy inside this Document
@@ -280,42 +281,45 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 // e.g. Given: {"CONTENT"=>[BODY:foo, HEAD:foo]}.put("CONTENT", [BODY:bar, HEAD:bar, FOOT:bar])
                 // We want to get: {"CONTENT"=>[BODY:foo, HEAD:foo, BODY:bar, HEAD:bar, FOOT:bar]}
                 // *not*: {"CONTENT"=>[BODY:foo, HEAD:foo, [BODY:bar, HEAD:bar, FOOT:bar]]}
-                
+
                 if (value instanceof Attributes && existingAttr instanceof Attributes) {
                     // ensure there are no fuzzy matches before merging
                     if (!FuzzyAttributeComparator.multipleToMultiple((Attributes) existingAttr, (Attributes) value)) {
-                        
+
                         // merge the two sets
                         attrs = (Attributes) existingAttr;
-                        
+
                         _count -= attrs.size();
                         if (trackSizes) {
                             _bytes -= attrs.sizeInBytes();
                         }
-                        
+
                         attrs.addAll(((Attributes) value).getAttributes());
-                        
+
                         _count += attrs.size();
                         if (trackSizes) {
                             _bytes += attrs.sizeInBytes();
                         }
+                    } else {
+                        // fuzzy matches found, attempt to combine attributes
+
                     }
                 } else if (value instanceof Attributes) {
                     // ensure no fuzzy matches before merging
                     if (!FuzzyAttributeComparator.singleToMultiple((Attributes) value, existingAttr)) {
-                        
+
                         _count -= existingAttr.size();
                         if (trackSizes) {
                             _bytes -= existingAttr.sizeInBytes();
                         }
-                        
+
                         // change the existing attr to an attributes
                         HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
                         attrsSet.add(existingAttr);
                         attrsSet.addAll(((Attributes) value).getAttributes());
                         attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
                         dict.put(key, attrs);
-                        
+
                         _count += attrs.size();
                         if (trackSizes) {
                             _bytes += attrs.sizeInBytes();
@@ -324,10 +328,10 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 } else if (existingAttr instanceof Attributes) {
                     // ensure no fuzzy matches before merging
                     if (!FuzzyAttributeComparator.singleToMultiple((Attributes) existingAttr, value)) {
-                        
+
                         // add the value to the set
                         attrs = (Attributes) existingAttr;
-                        
+
                         // Account for the case where we add more results to an Attributes, but the Attributes
                         // ends up being deduped by the underlying Set
                         // e.g. Adding BODY:term into an Attributes for BODY:[term, term2] should result in a size of 2
@@ -335,9 +339,9 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         if (trackSizes) {
                             _bytes -= attrs.sizeInBytes();
                         }
-                        
+
                         attrs.add(value);
-                        
+
                         _count += attrs.size();
                         if (trackSizes) {
                             _bytes += attrs.sizeInBytes();
@@ -346,20 +350,20 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 } else {
                     // ensure no fuzzy matches before merging
                     if (!FuzzyAttributeComparator.singleToSingle(existingAttr, value)) {
-                        
+
                         // create a set out of the two values
                         HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
                         attrsSet.add(existingAttr);
                         attrsSet.add(value);
                         attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
                         dict.put(key, attrs);
-                        
+
                         _count += value.size();
                         if (trackSizes) {
                             _bytes += value.sizeInBytes();
                         }
                     }
-                    
+
                     invalidateMetadata();
                 }
             }
@@ -367,39 +371,39 @@ public class Document extends AttributeBag<Document> implements Serializable {
             // when we find a duplicate value in the same field, we ignore it.
         }
     }
-    
-    public void put(Entry<String,Attribute<? extends Comparable<?>>> entry, Boolean includeGroupingContext) {
+
+    public void put(Entry<String, Attribute<? extends Comparable<?>>> entry, Boolean includeGroupingContext) {
         // No grouping context in the document.
         this.put(entry.getKey(), entry.getValue(), includeGroupingContext, false);
     }
-    
-    public void put(Entry<String,Attribute<? extends Comparable<?>>> entry, Boolean includeGroupingContext, boolean reducedResponse) {
+
+    public void put(Entry<String, Attribute<? extends Comparable<?>>> entry, Boolean includeGroupingContext, boolean reducedResponse) {
         // No grouping context in the document.
         this.put(entry.getKey(), entry.getValue(), includeGroupingContext, reducedResponse);
     }
-    
-    public void putAll(Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iterator, Boolean includeGroupingContext) {
+
+    public void putAll(Iterator<Entry<String, Attribute<? extends Comparable<?>>>> iterator, Boolean includeGroupingContext) {
         putAll(iterator, includeGroupingContext, false);
     }
-    
-    public void putAll(Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iterator, Boolean includeGroupingContext, boolean reducedResponse) {
+
+    public void putAll(Iterator<Entry<String, Attribute<? extends Comparable<?>>>> iterator, Boolean includeGroupingContext, boolean reducedResponse) {
         if (null == iterator) {
             return;
         }
-        
+
         while (iterator.hasNext()) {
             put(iterator.next(), includeGroupingContext, reducedResponse);
         }
     }
-    
+
     public void putAll(Document other, Boolean includeGroupingContext) {
         if (null == other || null == other.dict || other.dict.isEmpty()) {
             return;
         }
-        
+
         putAll(other.dict.entrySet().iterator(), includeGroupingContext);
     }
-    
+
     /**
      * Remove an Attribute, non-recursively, from the internal dictionary
      *
@@ -409,20 +413,20 @@ public class Document extends AttributeBag<Document> implements Serializable {
     public Attribute<?> remove(String key) {
         if (this.getDictionary().containsKey(key)) {
             Attribute<?> attr = this.getDictionary().get(key);
-            
+
             this._count -= attr.size();
             if (trackSizes) {
                 this._bytes -= attr.sizeInBytes();
                 this._bytes -= Attribute.sizeInBytes(key);
             }
             invalidateMetadata();
-            
+
             return this._getDictionary().remove(key);
         }
-        
+
         return null;
     }
-    
+
     /**
      * Remove all Attributes from the Document (recursively) whose field is the provided key.
      *
@@ -431,13 +435,13 @@ public class Document extends AttributeBag<Document> implements Serializable {
     public void removeAll(String key) {
         _removeAll(this._getDictionary(), key);
     }
-    
-    private void _removeAll(Map<String,Attribute<? extends Comparable<?>>> dict, String key) {
-        
-        Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iter = dict.entrySet().iterator();
+
+    private void _removeAll(Map<String, Attribute<? extends Comparable<?>>> dict, String key) {
+
+        Iterator<Entry<String, Attribute<? extends Comparable<?>>>> iter = dict.entrySet().iterator();
         while (iter.hasNext()) {
-            Entry<String,Attribute<? extends Comparable<?>>> entry = iter.next();
-            
+            Entry<String, Attribute<? extends Comparable<?>>> entry = iter.next();
+
             if (entry.getKey().equals(key) || entry.getValue() instanceof Document) {
                 // Remove the Attribute's size
                 this._count -= entry.getValue().size();
@@ -445,7 +449,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                     this._bytes -= entry.getValue().sizeInBytes();
                 }
                 invalidateMetadata();
-                
+
                 if (entry.getKey().equals(key)) {
                     iter.remove();
                     if (trackSizes) {
@@ -455,10 +459,10 @@ public class Document extends AttributeBag<Document> implements Serializable {
                     // Recursively delete if it's a Document
                     Document subDocument = (Document) entry.getValue();
                     subDocument.invalidateMetadata();
-                    
+
                     // Recursive delete
                     subDocument.removeAll(key);
-                    
+
                     // Re-add what's left from this subDocument after
                     // the recursive deletion
                     this._count += subDocument.size();
@@ -469,12 +473,12 @@ public class Document extends AttributeBag<Document> implements Serializable {
             }
         }
     }
-    
+
     @Override
     public int size() {
         return _count;
     }
-    
+
     @Override
     public long sizeInBytes() {
         if (trackSizes) {
@@ -486,22 +490,22 @@ public class Document extends AttributeBag<Document> implements Serializable {
             return 1;
         }
     }
-    
+
     @Override
     public Object getData() {
         return Collections.unmodifiableMap(this.dict);
     }
-    
+
     @Override
     public Attribute<?> reduceToKeep() {
-        for (Iterator<Entry<String,Attribute<? extends Comparable<?>>>> it = dict.entrySet().iterator(); it.hasNext();) {
-            Entry<String,Attribute<? extends Comparable<?>>> entry = it.next();
+        for (Iterator<Entry<String, Attribute<? extends Comparable<?>>>> it = dict.entrySet().iterator(); it.hasNext(); ) {
+            Entry<String, Attribute<? extends Comparable<?>>> entry = it.next();
             Attribute<?> attr = entry.getValue();
             _count -= attr.size();
             if (trackSizes) {
                 _bytes -= attr.sizeInBytes();
             }
-            
+
             if (attr.isToKeep()) {
                 Attribute<?> newAttr = attr.reduceToKeep();
                 if (newAttr == null) {
@@ -528,65 +532,65 @@ public class Document extends AttributeBag<Document> implements Serializable {
         invalidateMetadata();
         return this;
     }
-    
+
     @Override
     public void write(DataOutput out) throws IOException {
         write(out, false);
     }
-    
+
     @Override
     public void write(DataOutput out, boolean reducedResponse) throws IOException {
         WritableUtils.writeVInt(out, _count);
         out.writeBoolean(trackSizes);
         WritableUtils.writeVLong(out, _bytes);
-        
+
         // Write out the number of Attributes we're going to store
         WritableUtils.writeVInt(out, this.dict.size());
-        
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
+
+        for (Entry<String, Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
             // Write out the field name
             WritableUtils.writeString(out, entry.getKey());
-            
+
             // Write out the concrete Attribute class
             WritableUtils.writeString(out, entry.getValue().getClass().getName());
-            
+
             // Defer to the concrete instance to write() itself
             entry.getValue().write(out);
         }
-        
+
         WritableUtils.writeVLong(out, shardTimestamp);
     }
-    
+
     @Override
     public void readFields(DataInput in) throws IOException {
         this._count = WritableUtils.readVInt(in);
         this.trackSizes = in.readBoolean();
         this._bytes = WritableUtils.readVLong(in);
-        
+
         int numAttrs = WritableUtils.readVInt(in);
-        
+
         this.dict = new TreeMap<>();
-        
+
         for (int i = 0; i < numAttrs; i++) {
             // Get the fieldName
             String fieldName = WritableUtils.readString(in);
-            
+
             // Get the class name for the concrete Attribute
             String attrClassName = WritableUtils.readString(in);
             Class<?> clz;
-            
+
             // Get the Class for the name of the class of the concrete Attribute
             try {
                 clz = Class.forName(attrClassName);
             } catch (ClassNotFoundException e) {
                 throw new IOException(e);
             }
-            
+
             // Assert that Attribute is a super class of this Class
             if (!Attribute.class.isAssignableFrom(clz)) {
                 throw new ClassCastException("Found class that was not an instance of Attribute");
             }
-            
+
             // Get an instance of the concrete Attribute
             Attribute<?> attr;
             try {
@@ -594,19 +598,19 @@ public class Document extends AttributeBag<Document> implements Serializable {
             } catch (InstantiationException | IllegalAccessException e) {
                 throw new IOException(e);
             }
-            
+
             // Reload the attribute
             attr.readFields(in);
-            
+
             // Add the attribute back to the Map
             this.dict.put(fieldName, attr);
         }
-        
+
         this.shardTimestamp = WritableUtils.readVLong(in);
-        
+
         invalidateMetadata();
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public int compareTo(Document o) {
@@ -615,30 +619,30 @@ public class Document extends AttributeBag<Document> implements Serializable {
         } else if (size() > o.size()) {
             return 1;
         } else {
-            TreeMap<String,Attribute<? extends Comparable<?>>> map1 = _getDictionary();
-            TreeMap<String,Attribute<? extends Comparable<?>>> map2 = o._getDictionary();
-            Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iter1 = map1.entrySet().iterator();
-            Iterator<Entry<String,Attribute<? extends Comparable<?>>>> iter2 = map2.entrySet().iterator();
-            
+            TreeMap<String, Attribute<? extends Comparable<?>>> map1 = _getDictionary();
+            TreeMap<String, Attribute<? extends Comparable<?>>> map2 = o._getDictionary();
+            Iterator<Entry<String, Attribute<? extends Comparable<?>>>> iter1 = map1.entrySet().iterator();
+            Iterator<Entry<String, Attribute<? extends Comparable<?>>>> iter2 = map2.entrySet().iterator();
+
             // iterate over the Attribute name / Attribute entries
             while (iter1.hasNext() && iter2.hasNext()) {
-                Entry<String,Attribute<? extends Comparable<?>>> entry1 = iter1.next();
-                Entry<String,Attribute<? extends Comparable<?>>> entry2 = iter2.next();
-                
+                Entry<String, Attribute<? extends Comparable<?>>> entry1 = iter1.next();
+                Entry<String, Attribute<? extends Comparable<?>>> entry2 = iter2.next();
+
                 // compare the Attribute names
                 int keyCmp = entry1.getKey().compareTo(entry2.getKey());
                 if (0 == keyCmp) {
                     // the Attribute names are equal, so we must compare the values
                     Attribute<?> v1 = entry1.getValue();
                     Attribute<?> v2 = entry2.getValue();
-                    
+
                     // we can not assume that just because the Attribute names are equal that they are the same subclass of Attribute (and therefore Comparable
                     // with each other)
                     // if the v1 and v2 are different subclasses of Attribute, then we will compare the cannonical names of the respective classes
                     int valCmp;
                     String c1 = v1.getClass().getCanonicalName();
                     String c2 = v2.getClass().getCanonicalName();
-                    
+
                     if (c1.equals(c2)) {
                         // same cannonical class name, so we should be able to call compareTo
                         valCmp = ((Comparable<Attribute<?>>) v1).compareTo(v2);
@@ -647,7 +651,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         // we need to return either a -1 or a 1, so compare the cannonical class names
                         valCmp = c1.compareTo(c2);
                     }
-                    
+
                     // if the entries are non-equal return the value, otherwise continue to the next one
                     if (0 != valCmp) {
                         return valCmp;
@@ -656,7 +660,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                     return keyCmp;
                 }
             }
-            
+
             if (!iter1.hasNext() && iter2.hasNext()) {
                 return -1;
             } else if (iter1.hasNext() && !iter2.hasNext()) {
@@ -666,33 +670,33 @@ public class Document extends AttributeBag<Document> implements Serializable {
             }
         }
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (null == o) {
             return false;
         }
-        
+
         if (o instanceof Document) {
             Document other = (Document) o;
-            
+
             return _getDictionary().equals(other._getDictionary());
         }
-        
+
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         HashCodeBuilder hcb = new HashCodeBuilder(173, 167);
-        
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
+
+        for (Entry<String, Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
             hcb.append(entry.hashCode());
         }
-        
+
         return hcb.toHashCode();
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public Collection<ValueTuple> visit(Collection<String> queryFieldNames, DatawaveJexlContext context) {
@@ -704,7 +708,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         if (queryFieldNames.contains(Constants.ANY_FIELD)) {
             anySet = new HashSet<>();
         }
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
+        for (Entry<String, Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
             // For evaluation purposes, all field names have the grouping context
             // ripped off, regardless of whether or not it's being returned to the client.
             // Until grouping-context aware query evaluation is implemented, we always
@@ -729,7 +733,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
             children.addAll(visitObject);
             if (context.has(identifier)) {
                 Object o = context.get(identifier);
-                
+
                 // If we have a Set already in the Map
                 if (Set.class.isAssignableFrom(o.getClass())) {
                     Set<ValueTuple> set = (Set<ValueTuple>) o;
@@ -757,63 +761,63 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 context.set(Constants.ANY_FIELD, anySet);
             }
         }
-        
+
         // this probably will not be used by anybody as the side-effect of loading the JEXL context is the real result
         return children;
     }
-    
+
     @Override
     public void write(Kryo kryo, Output output) {
         write(kryo, output, false);
     }
-    
+
     @Override
     public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         output.writeInt(this._count, true);
         output.writeBoolean(trackSizes);
         output.writeLong(this._bytes, true);
-        
+
         output.writeInt(this.dict.size(), true);
-        
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
+
+        for (Entry<String, Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
             // Write out the field name
             // writeAscii fails to be read correctly if the value has only one character
             // need to use writeString here
             output.writeString(entry.getKey());
-            
+
             Attribute<?> attribute = entry.getValue();
             output.writeString(attribute.getClass().getName());
             attribute.write(kryo, output, reducedResponse);
         }
-        
+
         output.writeLong(this.shardTimestamp);
     }
-    
+
     @Override
     public void read(Kryo kryo, Input input) {
         this._count = input.readInt(true);
         trackSizes = input.readBoolean();
         this._bytes = input.readLong(true);
-        
+
         int numAttrs = input.readInt(true);
-        
+
         this.dict = new TreeMap<>();
-        
+
         for (int i = 0; i < numAttrs; i++) {
             // Get the fieldName
             String fieldName = input.readString();
-            
+
             // Get the class name for the concrete Attribute
             String attrClassName = input.readString();
             Class<?> clz;
-            
+
             // Get the Class for the name of the class of the concrete Attribute
             try {
                 clz = Class.forName(attrClassName);
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
-            
+
             Attribute<?> attr;
             if (Attribute.class.isAssignableFrom(clz)) {
                 // Get an instance of the concrete Attribute
@@ -822,35 +826,35 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 } catch (InstantiationException | IllegalAccessException e) {
                     throw new RuntimeException(e);
                 }
-                
+
             } else {
                 throw new ClassCastException("Found class that was not an instance of Attribute");
             }
             // Reload the attribute
             attr.read(kryo, input);
-            
+
             // Add the attribute back to the Map
             this.dict.put(fieldName, attr);
         }
-        
+
         this.shardTimestamp = input.readLong();
-        
+
         this.invalidateMetadata();
     }
-    
+
     @Override
     public Document copy() {
         Document d = new Document(this.getMetadata(), this.isToKeep(), trackSizes);
-        
+
         // _count will be set via put operations
-        Set<Entry<String,Attribute<? extends Comparable<?>>>> entries = this._getDictionary().entrySet();
-        for (Entry<String,Attribute<? extends Comparable<?>>> entry : entries) {
+        Set<Entry<String, Attribute<? extends Comparable<?>>>> entries = this._getDictionary().entrySet();
+        for (Entry<String, Attribute<? extends Comparable<?>>> entry : entries) {
             d.put(entry.getKey(), (Attribute<?>) entry.getValue().copy());
         }
-        
+
         d.shardTimestamp = this.shardTimestamp;
-        
+
         return d;
     }
-    
+
 }
