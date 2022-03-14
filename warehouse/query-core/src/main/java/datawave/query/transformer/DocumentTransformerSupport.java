@@ -25,7 +25,7 @@ import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.logic.WritesResultCardinalities;
-import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;

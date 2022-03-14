@@ -1,4 +1,4 @@
-package datawave.query.metrics;
+package datawave.query.testframework;
 
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Counters;

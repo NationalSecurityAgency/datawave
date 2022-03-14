@@ -26,7 +26,7 @@ import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.metrics.MockStatusReporter;
+import datawave.query.testframework.MockStatusReporter;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
@@ -184,7 +184,6 @@ public class MixedGeoAndGeoWaveTest {
                         .deleteClass(DefaultEdgeEventQueryLogic.class)
                         .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(
                                         new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
                                                         + "</alternatives>"), "beans.xml");
