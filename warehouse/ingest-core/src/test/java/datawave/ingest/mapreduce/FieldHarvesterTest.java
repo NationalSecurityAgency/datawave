@@ -186,14 +186,14 @@ public class FieldHarvesterTest {
         IngestHelperInterface ingestHelper = new BasicWithVirtualFieldsIngestHelper(fields);
         
         // field map with single field and value
-        fieldHarvester.extractFields(this.fields, ingestHelper, value, offset, splitStart);
+        fieldHarvester.extractFields(fields, ingestHelper, value, offset, splitStart);
         
         // Verify field returned
-        Assert.assertTrue(this.fields.containsKey(SAMPLE_FIELD_NAME));
+        Assert.assertTrue(fields.containsKey(SAMPLE_FIELD_NAME));
         // Verify field is used for virtual field creation
-        Assert.assertTrue(this.fields.containsKey(SAMPLE_FIELD_NAME + VIRTUAL_FIELD));
+        Assert.assertTrue(fields.containsKey(SAMPLE_FIELD_NAME + VIRTUAL_FIELD));
         assertContainsSupplementalFields(fields);
-        Assert.assertEquals(this.fields.toString(), 5, this.fields.size());
+        Assert.assertEquals(fields.toString(), 5, fields.size());
         
         // Verify there was no exception
         assertNoErrors(fieldHarvester);
@@ -259,8 +259,8 @@ public class FieldHarvesterTest {
     
     @Test
     public void doubleException() {
-        // exception in getEventFields and in salvager
-        exceptionSwallowingExtractFields(fieldHarvester, fields, new DoubleErrorIngestHelper(), value, offset, splitStart);
+        // exception in both getEventFields implementations
+        exceptionSwallowingExtractFields(fieldHarvester, fields, new MinimalistIngestHelperImpl(), value, offset, splitStart);
         
         // Verify it contains expected fields
         assertContainsOnlySupplementalFields();
@@ -332,22 +332,15 @@ public class FieldHarvesterTest {
     }
     
     private void assertContainsSupplementalFields(Multimap<String,NormalizedContentInterface> fields) {
-        Assert.assertTrue(fields.containsKey(LOAD_DATE));
-        Assert.assertTrue(fields.containsKey(ORIG_FILE));
-        Assert.assertTrue(fields.containsKey(RAW_FILE));
+        Assert.assertTrue(fields.toString(), fields.containsKey(LOAD_DATE));
+        Assert.assertTrue(fields.toString(), fields.containsKey(ORIG_FILE));
+        Assert.assertTrue(fields.toString(), fields.containsKey(RAW_FILE));
     }
     
     private void assertContainsOnlySupplementalFields() {
         assertContainsSupplementalFields(fields);
         // and only supplemental
         Assert.assertEquals(fields.toString(), NUM_SUPPLEMENTAL_FIELDS, fields.size());
-    }
-    
-    private static class DoubleErrorIngestHelper extends MinimalistIngestHelperImpl implements FieldSalvager {
-        @Override
-        public Multimap<String,NormalizedContentInterface> getSalvageableEventFields(RawRecordContainer rawRecordContainer) {
-            throw new RuntimeException();
-        }
     }
     
     private static class BasicIngestHelper extends MinimalistIngestHelperImpl {
@@ -357,8 +350,14 @@ public class FieldHarvesterTest {
             this.multiMap = multiMap;
         }
         
+        @Override
         public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer event) {
             return multiMap;
+        }
+        
+        @Override
+        public void getEventFields(RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields) {
+            fields.putAll(getEventFields(event));
         }
     }
     
@@ -417,7 +416,7 @@ public class FieldHarvesterTest {
         }
     }
     
-    private static class ErroringSalvagableIngestHelper extends MinimalistIngestHelperImpl implements VirtualIngest, CompositeIngest, FieldSalvager {
+    private static class ErroringSalvagableIngestHelper extends MinimalistIngestHelperImpl implements VirtualIngest, CompositeIngest {
         private final Multimap<String,NormalizedContentInterface> multiMap;
         
         ErroringSalvagableIngestHelper(Multimap<String,NormalizedContentInterface> multiMap) {
@@ -425,8 +424,13 @@ public class FieldHarvesterTest {
         }
         
         @Override
-        public Multimap<String,NormalizedContentInterface> getSalvageableEventFields(RawRecordContainer rawRecordContainer) {
-            return this.multiMap;
+        public void getEventFields(RawRecordContainer value, Multimap<String,NormalizedContentInterface> fields) {
+            try {
+                fields.putAll(getEventFields(value));
+            } catch (Exception e) {
+                fields.putAll(this.multiMap);
+                throw e;
+            }
         }
         
         @Override

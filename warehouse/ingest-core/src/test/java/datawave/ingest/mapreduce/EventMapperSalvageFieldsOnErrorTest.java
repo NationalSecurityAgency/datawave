@@ -6,6 +6,7 @@ import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.BaseNormalizedContent;
 import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.data.config.ingest.MinimalistIngestHelperImpl;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
@@ -60,46 +61,44 @@ public class EventMapperSalvageFieldsOnErrorTest {
     }
     
     /**
-     * FakeSalvagingIngestHelper implements FieldSalvager to allow anonymous test classes to implement that interface. By extending
-     * MinimalistIngestHelperInterfaceImpl, it always throws an exception when getEventFields is called.
-     */
-    public static abstract class FakeSalvagingIngestHelper extends MinimalistIngestHelperImpl implements FieldSalvager {}
-    
-    /**
      * SalvagingDataTypeHandler provides a FieldSalvager implementation that deserializes rawData as a Map&lt;String, String&gt;, then returns a Multimap
      * containing only the SALVAGED_FIELDS that were encountered, skipping all others.
      */
     public static class SalvagingDataTypeHandler extends SimpleDataTypeHandler {
         @Override
         public IngestHelperInterface getHelper(Type datatype) {
-            FakeSalvagingIngestHelper fakeSalvagingIngestHelper = new FakeSalvagingIngestHelper() {
-                @Override
-                public Multimap<String,NormalizedContentInterface> getSalvageableEventFields(RawRecordContainer value) {
-                    HashMultimap<String,NormalizedContentInterface> fields = HashMultimap.create();
-                    byte[] rawData = value.getRawData();
-                    
-                    try (ByteArrayInputStream bytArrayInputStream = new ByteArrayInputStream(rawData);
-                                    ObjectInputStream objectInputStream = new ObjectInputStream(bytArrayInputStream);) {
-                        Map<String,String> deserializedData = (Map<String,String>) objectInputStream.readObject();
-                        for (String fieldToSalvage : SALVAGED_FIELDS) {
-                            String fieldValue = deserializedData.get(fieldToSalvage);
-                            if (null != fieldValue) {
-                                try {
-                                    fields.put(fieldToSalvage, new BaseNormalizedContent(fieldToSalvage, fieldValue));
-                                } catch (Exception fieldException) {
-                                    // skip this field and proceed to the next
-                                }
-                            }
-                        }
-                    } catch (Exception e) {
-                        return fields;
-                    }
-                    return fields;
-                }
-                
+            MinimalistIngestHelperImpl fakeSalvagingIngestHelper = new MinimalistIngestHelperImpl() {
                 @Override
                 public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer value) {
                     throw new RuntimeException("Simulated exception while getting event fields for value.");
+                }
+                
+                @Override
+                public void getEventFields(RawRecordContainer value, Multimap<String,NormalizedContentInterface> fields) {
+                    try {
+                        fields.putAll(getEventFields(value));
+                    } catch (Exception exception) {
+                        // salvage fields implementation
+                        byte[] rawData = value.getRawData();
+                        
+                        try (ByteArrayInputStream bytArrayInputStream = new ByteArrayInputStream(rawData);
+                                        ObjectInputStream objectInputStream = new ObjectInputStream(bytArrayInputStream);) {
+                            Map<String,String> deserializedData = (Map<String,String>) objectInputStream.readObject();
+                            for (String fieldToSalvage : SALVAGED_FIELDS) {
+                                String fieldValue = deserializedData.get(fieldToSalvage);
+                                if (null != fieldValue) {
+                                    try {
+                                        fields.put(fieldToSalvage, new BaseNormalizedContent(fieldToSalvage, fieldValue));
+                                    } catch (Exception fieldException) {
+                                        // skip this field and proceed to the next
+                                    }
+                                }
+                            }
+                        } catch (IOException | ClassNotFoundException e) {
+                            throw new IllegalStateException(e);
+                        }
+                        throw exception;
+                    }
                 }
             };
             return fakeSalvagingIngestHelper;
@@ -107,16 +106,14 @@ public class EventMapperSalvageFieldsOnErrorTest {
     }
     
     /**
-     * NullSalvagingSimpleDataTypeHandler provides a FieldSalvager implementation that always returns null.
+     * NoopSalvagingSimpleDataTypeHandler provides a MinimalistIngestHelperImpl implementation that does nothing to fields.
      */
-    public static class NullSalvagingSimpleDataTypeHandler extends SimpleDataTypeHandler {
+    public static class NoopSalvagingSimpleDataTypeHandler extends SimpleDataTypeHandler {
         @Override
         public IngestHelperInterface getHelper(Type datatype) {
-            return new FakeSalvagingIngestHelper() {
+            return new MinimalistIngestHelperImpl() {
                 @Override
-                public Multimap<String,NormalizedContentInterface> getSalvageableEventFields(RawRecordContainer value) {
-                    return null;
-                }
+                public void getEventFields(RawRecordContainer value, Multimap<String,NormalizedContentInterface> fields) {}
             };
         }
     }
@@ -158,7 +155,7 @@ public class EventMapperSalvageFieldsOnErrorTest {
     @Test
     public void shouldTolerateNullSalvagedFieldsMap() throws Exception {
         // Use a DataTypeHandler that provides a FieldSalvager that always returns null
-        setupTest(NullSalvagingSimpleDataTypeHandler.class.getName());
+        setupTest(NoopSalvagingSimpleDataTypeHandler.class.getName());
         
         // Create a record with salvageable and unsalvageable fields
         HashMap<String,String> fieldValues = createMapOfSalveagableFieldValues();

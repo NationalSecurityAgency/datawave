@@ -52,8 +52,8 @@ public class FieldHarvester {
     }
     
     /**
-     * Updates "fields" with extracted, derived, and automatically generated fields. Will capture
-     * exception along the way and attempt to add salvaged fields before rethrowing the exception.
+     * Updates "fields" with extracted, derived, and automatically generated fields. Will capture exception along the way and attempt to add salvaged fields
+     * before rethrowing the exception.
      *
      * @param fields
      *            the Multimap to modify with extracted and generated fields
@@ -72,19 +72,18 @@ public class FieldHarvester {
         this.originalException = null;
         
         // "candidateFields" holds the fields that will eventually be added to "fields"
-        Multimap<String,NormalizedContentInterface> candidateFields;
+        Multimap<String,NormalizedContentInterface> candidateFields = HashMultimap.create();
         
         try {
             // parse the record into its candidate field names and values using the IngestHelperInterface.
-            candidateFields = ingestHelper.getEventFields(value);
+            ingestHelper.getEventFields(value, candidateFields);
         } catch (Exception exception) {
             // delay throwing the exception to attempt salvaging
             this.originalException = exception;
-            candidateFields = attemptToSalvageFields(value, ingestHelper);
         }
         
         try {
-            // try adding supplemental fields to candidateFields, whether or not they were salvaged
+            // try adding supplemental fields to candidateFields, whether or not they were complete
             addSupplementalFields(value, offset, splitStart, ingestHelper, candidateFields);
         } catch (Exception exception) {
             if (null == this.originalException) {
@@ -113,32 +112,6 @@ public class FieldHarvester {
     @VisibleForTesting
     Exception getOriginalException() {
         return this.originalException;
-    }
-    
-    /**
-     * If IngestHelper implements FieldSalvager, get the salvageable fields from value. Otherwise, return an empty Multimap.
-     */
-    private Multimap<String,NormalizedContentInterface> attemptToSalvageFields(RawRecordContainer value, IngestHelperInterface ingestHelper) {
-        // If this helper is able, attempt to salvage a subset of the fields
-        if (null != ingestHelper && ingestHelper instanceof FieldSalvager) {
-            FieldSalvager salvager = (FieldSalvager) ingestHelper;
-            try {
-                Multimap<String,NormalizedContentInterface> salvagedFields = salvager.getSalvageableEventFields(value);
-                if (null != salvagedFields) {
-                    return salvagedFields;
-                }
-            } catch (Exception salvagerException) {
-                // Do not overwrite the original exception
-                if (null == this.originalException) {
-                    this.originalException = new IllegalStateException("Unexpected state (FieldExpander.exception should be non-null if salvaging",
-                                    salvagerException);
-                } else {
-                    // allow original exception (this.exception) to be thrown by caller
-                    log.error("Even salvager threw an exception", salvagerException);
-                }
-            }
-        }
-        return HashMultimap.create();
     }
     
     private void addSupplementalFields(RawRecordContainer value, long offset, String splitStart, IngestHelperInterface ingestHelper,

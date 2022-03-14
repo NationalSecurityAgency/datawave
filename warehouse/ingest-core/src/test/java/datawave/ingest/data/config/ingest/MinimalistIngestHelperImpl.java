@@ -54,6 +54,12 @@ public class MinimalistIngestHelperImpl implements IngestHelperInterface {
     }
     
     @Override
+    public void getEventFields(RawRecordContainer value, Multimap<String,NormalizedContentInterface> fields) {
+        // override this method, as needed
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
     public Multimap<String,NormalizedContentInterface> normalizeMap(Multimap<String,NormalizedContentInterface> fields) {
         // override this method, as needed
         throw new UnsupportedOperationException();
