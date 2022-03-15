@@ -37,7 +37,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static datawave.query.util.FuzzyAttributeComparator.combineAttributes;
+import static datawave.query.util.FuzzyAttributeComparator.combineMultipleAttributes;
 
 public class Document extends AttributeBag<Document> implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -308,7 +308,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         }
                     } else {
                         // fuzzy matches found, attempt to combine attributes
-                        Attributes mergedAttributes = (Attributes) combineAttributes((Attributes) existingAttr, (Attributes) value, this.isToKeep(), trackSizes);
+                        Attributes mergedAttributes = (Attributes) combineMultipleAttributes((Attributes) existingAttr, (Attributes) value, this.isToKeep(),
+                                        trackSizes);
                         dict.put(key, mergedAttributes);
                     }
                 } else if (value instanceof Attributes) {
@@ -366,25 +367,24 @@ public class Document extends AttributeBag<Document> implements Serializable {
                     // }
                 } else {
                     // ensure no fuzzy matches before merging
-                    // if (!FuzzyAttributeComparator.singleToSingle(existingAttr, value)) {
-                    
-                    // create a set out of the two values
-                    HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
-                    attrsSet.add(existingAttr);
-                    attrsSet.add(value);
-                    attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
-                    dict.put(key, attrs);
-                    
-                    _count += value.size();
-                    if (trackSizes) {
-                        _bytes += value.sizeInBytes();
+                    if (!FuzzyAttributeComparator.singleToSingle(existingAttr, value)) {
+                        
+                        // create a set out of the two values
+                        HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
+                        attrsSet.add(existingAttr);
+                        attrsSet.add(value);
+                        attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
+                        dict.put(key, attrs);
+                        
+                        _count += value.size();
+                        if (trackSizes) {
+                            _bytes += value.sizeInBytes();
+                        }
+                    } else {
+                        // fuzzy matches found, attempt to combine attributes
+                        Attribute mergedAttribute = (Attribute) FuzzyAttributeComparator.combineSingleAttributes(existingAttr, value);
+                        dict.put(key, mergedAttribute);
                     }
-                    // } else {
-                    // // fuzzy matches found, attempt to combine attributes
-                    // Attributes mergedAttributes = (Attributes) combineAttributes((Attributes) existingAttr, (Attributes) value,
-                    // this.isToKeep(), trackSizes);
-                    // dict.put(key, mergedAttributes);
-                    // }
                     
                     invalidateMetadata();
                 }
