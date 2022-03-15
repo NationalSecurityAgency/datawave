@@ -1,7 +1,10 @@
 package datawave.query.util;
 
+import com.google.common.collect.Sets;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
+
+import java.util.HashSet;
 
 public final class FuzzyAttributeComparator {
     
@@ -33,18 +36,39 @@ public final class FuzzyAttributeComparator {
         return containsMatch;
     }
     
-    public static Attribute combineAttributes(Attributes existingAttributes, Attributes newAttributes) {
-        existingAttributes.getAttributes().forEach(existAttr -> {
+    /**
+     * Performs a basic fuzzy match on the content/data of two given Attributes. If such a match is found, combine the metadata from the two Attributes and
+     * create a new set of deduplicated Attributes to return to the Document.
+     *
+     * @param existingAttributes
+     *            The set of Attributes against which we want to compare
+     * @param newAttributes
+     *            The set of Attributes against which we want to check
+     * @param isToKeep
+     *            Flag set from the overarching Document
+     * @param trackSizes
+     *            Flag set from the overarching Document
+     * @return
+     */
+    public static Attributes combineAttributes(Attributes existingAttributes, Attributes newAttributes, boolean isToKeep, boolean trackSizes) {
+        HashSet<Attribute<? extends Comparable<?>>> combinedSet = Sets.newHashSet();
+        
+        existingAttributes.getAttributes().forEach(existingAttr -> {
+            boolean containsMatch = false;
             for (Attribute<? extends Comparable<?>> newAttr : newAttributes.getAttributes()) {
-                if (existAttr.getData().equals(newAttr.getData())) {
-                    newAttr.setMetadata(existAttr.getMetadata());
+                if (existingAttr.getData().equals(newAttr.getData())) {
+                    newAttr.setMetadata(existingAttr.getMetadata());
+                    combinedSet.add(newAttr);
+                    containsMatch = true;
                 }
+            }
+            if (!containsMatch) {
+                combinedSet.add(existingAttr);
             }
         });
         
-        newAttributes.setBytes(existingAttributes.sizeInBytes());
-        newAttributes.setCount(existingAttributes.size());
+        Attributes mergedAttrs = new Attributes(combinedSet, isToKeep, trackSizes);
         
-        return newAttributes;
+        return mergedAttrs;
     }
 }
