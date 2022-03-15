@@ -3,6 +3,7 @@ package datawave.query;
 import com.google.common.collect.Sets;
 import datawave.helpers.PrintUtility;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
@@ -14,7 +15,6 @@ import datawave.security.util.DnUtils;
 import datawave.util.TableName;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
@@ -254,7 +254,7 @@ public class LongRunningQueryTest {
         // this parameter is what makes the query long running. Failing to set this will let it default to 50 minutes
         // (and not the 500 milliseconds that it is set to) which will return only 1 page of 8 results, thereby failing this test.
         // the smaller this timeout, the more pages of results that will be returned.
-        logic.setQueryExecutionForPageTimeout(5);
+        logic.setQueryExecutionForPageTimeout(100);
         logic.setLongRunningQuery(true);
         
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
