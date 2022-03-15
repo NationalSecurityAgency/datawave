@@ -854,10 +854,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setQueryTree(timedMarkIndexHoles(timers, config.getQueryTree(), config, metadataHelper));
         }
         
-        if (executableExpansion) {
-            config.setQueryTree(timedExecutableExpansion(timers, config.getQueryTree(), config, metadataHelper));
-        }
-        
         // lets precompute the indexed fields and index only fields for the specific datatype if needed below
         Set<String> indexedFields = null;
         Set<String> indexOnlyFields = null;
@@ -919,6 +915,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 // Check if there are functions that can be pushed into exceeded value ranges.
                 if (nodeCount.hasAll(ASTFunctionNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
                     config.setQueryTree(timedPushFunctions(timers, config.getQueryTree(), config, metadataHelper));
+                }
+                
+                if (executableExpansion) {
+                    config.setQueryTree(timedExecutableExpansion(timers, config.getQueryTree(), config, metadataHelper));
                 }
                 
                 List<String> debugOutput = null;
