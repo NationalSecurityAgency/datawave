@@ -84,14 +84,6 @@ public class Attributes extends AttributeBag<Attributes> implements Serializable
         return _bytes;
     }
     
-    public void setBytes(Long bytes) {
-        _bytes = bytes;
-    }
-    
-    public void setCount(int count) {
-        _count = count;
-    }
-    
     public void add(Attribute<? extends Comparable<?>> attr) {
         if (!this.attributes.contains(attr)) {
             this.attributes.add(attr);
