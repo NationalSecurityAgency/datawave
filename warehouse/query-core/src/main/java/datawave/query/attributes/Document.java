@@ -37,8 +37,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static datawave.query.util.FuzzyAttributeComparator.combineMultipleAttributes;
-
 public class Document extends AttributeBag<Document> implements Serializable {
     private static final long serialVersionUID = 1L;
     
@@ -308,7 +306,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         }
                     } else {
                         // fuzzy matches found, attempt to combine attributes
-                        Set<Attribute<? extends Comparable<?>>> combinedSet = combineMultipleAttributes((Attributes) existingAttr, (Attributes) value);
+                        Set<Attribute<? extends Comparable<?>>> combinedSet = FuzzyAttributeComparator.combineMultipleAttributes((Attributes) existingAttr,
+                                        (Attributes) value);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
                     }
@@ -334,8 +333,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         }
                     } else {
                         // fuzzy matches found, attempt to combine attributes
-                        Set<Attribute<? extends Comparable<?>>> combinedSet = combineMultipleAttributes((Attribute) existingAttr, (Attributes) value,
-                                        trackSizes);
+                        Set<Attribute<? extends Comparable<?>>> combinedSet = FuzzyAttributeComparator.combineMultipleAttributes((Attribute) existingAttr,
+                                        (Attributes) value, trackSizes);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
                     }
@@ -362,8 +361,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         }
                     } else {
                         // fuzzy matches found, attempt to combine attributes
-                        Set<Attribute<? extends Comparable<?>>> combinedSet = combineMultipleAttributes((Attributes) existingAttr, (Attribute) value,
-                                        trackSizes);
+                        Set<Attribute<? extends Comparable<?>>> combinedSet = FuzzyAttributeComparator.combineMultipleAttributes((Attributes) existingAttr,
+                                        (Attribute) value, trackSizes);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
                     }
