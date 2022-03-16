@@ -57,7 +57,7 @@ public final class FuzzyAttributeComparator {
                     containsMatch = true;
                 }
             }
-            if (!containsMatch && existingAttr.isToKeep()) {
+            if (!containsMatch) {
                 combinedSet.add(existingAttr);
             }
         });
