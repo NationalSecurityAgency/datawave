@@ -5,6 +5,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 
 import java.util.HashSet;
+import java.util.Set;
 
 public final class FuzzyAttributeComparator {
     
@@ -20,28 +21,15 @@ public final class FuzzyAttributeComparator {
     }
     
     public static boolean singleToMultiple(Attributes multipleAttributes, Attribute singleAttribute) {
-        return multipleAttributes
-                        .getAttributes()
-                        .stream()
-                        .anyMatch(existingAttribute -> {
-                            return (existingAttribute.getData().equals(singleAttribute.getData())
-                                            && existingAttribute.getColumnVisibility().equals(singleAttribute.getColumnVisibility()) && existingAttribute
-                                            .getTimestamp() == singleAttribute.getTimestamp());
-                        });
+        return multipleAttributes.getAttributes().stream().anyMatch(existingAttribute -> {
+            return singleToSingle(existingAttribute, singleAttribute);
+        });
     }
     
     public static boolean multipleToMultiple(Attributes existingAttributes, Attributes newAttributes) {
         boolean containsMatch = false;
         for (Attribute<? extends Comparable<?>> newAttr : newAttributes.getAttributes()) {
-            boolean tempMatch = existingAttributes
-                            .getAttributes()
-                            .stream()
-                            .anyMatch(existingAttribute -> {
-                                return (existingAttribute.getData().equals(newAttr.getData())
-                                                && existingAttribute.getColumnVisibility().equals(newAttr.getColumnVisibility()) && existingAttribute
-                                                .getTimestamp() == newAttr.getTimestamp());
-                            });
-            if (tempMatch) {
+            if (singleToMultiple(existingAttributes, newAttr)) {
                 containsMatch = true;
             }
         }
@@ -56,40 +44,43 @@ public final class FuzzyAttributeComparator {
      *            The set of Attributes against which we want to compare
      * @param newAttributes
      *            The set of Attributes against which we want to check
-     * @param isToKeep
-     *            Flag set from the overarching Document
-     * @param trackSizes
-     *            Flag set from the overarching Document
      * @return
      */
-    public static Attributes combineMultipleAttributes(Attributes existingAttributes, Attributes newAttributes, boolean isToKeep, boolean trackSizes) {
+    public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(Attributes existingAttributes, Attributes newAttributes) {
         HashSet<Attribute<? extends Comparable<?>>> combinedSet = Sets.newHashSet();
         
-        existingAttributes.getAttributes().forEach(
-                        existingAttr -> {
-                            boolean containsMatch = false;
-                            for (Attribute<? extends Comparable<?>> newAttr : newAttributes.getAttributes()) {
-                                if (existingAttr.getData().equals(newAttr.getData())
-                                                && existingAttr.getColumnVisibility().equals(newAttr.getColumnVisibility())
-                                                && existingAttr.getTimestamp() == newAttr.getTimestamp()) {
-                                    newAttr.setMetadata(existingAttr.getMetadata());
-                                    combinedSet.add(newAttr);
-                                    containsMatch = true;
-                                }
-                            }
-                            if (!containsMatch) {
-                                combinedSet.add(existingAttr);
-                            }
-                        });
+        existingAttributes.getAttributes().forEach(existingAttr -> {
+            boolean containsMatch = false;
+            for (Attribute<? extends Comparable<?>> newAttr : newAttributes.getAttributes()) {
+                if (singleToSingle(existingAttr, newAttr) && newAttr.isToKeep()) {
+                    combinedSet.add(combineSingleAttributes(existingAttr, newAttr));
+                    containsMatch = true;
+                }
+            }
+            if (!containsMatch && existingAttr.isToKeep()) {
+                combinedSet.add(existingAttr);
+            }
+        });
         
-        Attributes mergedAttrs = new Attributes(combinedSet, isToKeep, trackSizes);
+        return combinedSet;
+    }
+    
+    public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(Attribute existingAttribute, Attributes newAttributes, boolean trackSizes) {
+        HashSet<Attribute<? extends Comparable<?>>> existAttrSet = Sets.newHashSet();
+        existAttrSet.add(existingAttribute);
         
-        return mergedAttrs;
+        return combineMultipleAttributes(new Attributes(existAttrSet, newAttributes.isToKeep(), trackSizes), newAttributes);
+    }
+    
+    public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(Attributes existingAttributes, Attribute newAttribute, boolean trackSizes) {
+        HashSet<Attribute<? extends Comparable<?>>> newAttrSet = Sets.newHashSet();
+        newAttrSet.add(newAttribute);
+        
+        return combineMultipleAttributes(existingAttributes, new Attributes(newAttrSet, existingAttributes.isToKeep(), trackSizes));
     }
     
     public static Attribute combineSingleAttributes(Attribute existingAttribute, Attribute newAttribute) {
         newAttribute.setMetadata(existingAttribute.getMetadata());
-        
         return newAttribute;
     }
     
