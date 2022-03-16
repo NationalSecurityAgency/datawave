@@ -104,7 +104,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     
     private static final Logger log = Logger.getLogger(ConfigurableAgeOffFilter.class);
 
-    private static final ScheduledThreadPoolExecutor SIMPLE_TIMER = ThreadPools.createScheduledExecutorService(
+    private static final ScheduledThreadPoolExecutor SIMPLE_TIMER = ThreadPools.getServerThreadPools().createScheduledExecutorService(
             1, ConfigurableAgeOffFilter.class.getSimpleName() +"-ruleCache-refresh", false);
     
     public static final String UPDATE_INTERVAL_MS_PROP = "tserver.datawave.ageoff.cache.update.interval.ms";

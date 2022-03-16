@@ -48,7 +48,7 @@ public class IteratorThreadPoolManager {
         }
         final ThreadPoolExecutor service = createExecutorService(getMaxThreads(prop, accumuloConfiguration), name + " (" + instanceId + ')');
         threadPools.put(name, service);
-        ThreadPools.createGeneralScheduledExecutorService(accumuloConfiguration).scheduleWithFixedDelay(() -> {
+        ThreadPools.getServerThreadPools().createGeneralScheduledExecutorService(accumuloConfiguration).scheduleWithFixedDelay(() -> {
             try {
                 int max = getMaxThreads(prop, accumuloConfiguration);
                 if (service.getMaximumPoolSize() != max) {
@@ -64,7 +64,7 @@ public class IteratorThreadPoolManager {
     }
     
     private ThreadPoolExecutor createExecutorService(int maxThreads, String name) {
-        ThreadPoolExecutor pool = ThreadPools.createThreadPool(maxThreads, maxThreads, 5 * 60,
+        ThreadPoolExecutor pool = ThreadPools.getServerThreadPools().createThreadPool(maxThreads, maxThreads, 5 * 60,
                 TimeUnit.SECONDS, name, new LinkedBlockingQueue<>(), false);
         pool.allowCoreThreadTimeOut(true);
         return pool;
