@@ -121,5 +121,4 @@ public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,
         }
         return edge;
     }
-    
 }

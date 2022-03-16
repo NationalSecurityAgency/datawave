@@ -17,7 +17,7 @@ public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.
     Map.Entry<Key,Document> flush();
     
     /**
-     * Some transformers (GroupingTrnasform) have logic that is predicated on knowing when a page of results is starting to be processed. This sets the time
+     * Some transformers (GroupingTransform) have logic that is predicated on knowing when a page of results is starting to be processed. This sets the time
      * that a page has begun processing (in milliseconds)
      *
      * @param queryExecutionForPageStartTime
