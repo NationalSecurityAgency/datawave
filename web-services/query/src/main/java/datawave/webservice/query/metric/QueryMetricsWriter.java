@@ -65,9 +65,7 @@ public class QueryMetricsWriter {
             Message message;
             do {
                 message = consumer.receive(500);
-                if (message == null) {
-                    log.error("received a null message");
-                } else {
+                if (message != null) {
                     try {
                         if (message instanceof ObjectMessage) {
                             ObjectMessage objectMessage = (ObjectMessage) message;
