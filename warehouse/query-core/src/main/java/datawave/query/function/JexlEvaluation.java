@@ -1,10 +1,14 @@
 package datawave.query.function;
 
+import datawave.data.type.StringType;
 import datawave.query.attributes.Attributes;
+import datawave.query.attributes.HitTermType;
+import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.DelayedNonEventIndexContext;
+import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl2.JexlArithmetic;
@@ -108,9 +112,11 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                     if (cv != null) {
                         // unused
                         long timestamp = document.getTimestamp(); // will force an update to make the metadata valid
-                        Content content = new Content(term, document.getMetadata(), document.isToKeep());
-                        content.setColumnVisibility(cv);
-                        attributes.add(content);
+                        HitTermType type = new HitTermType();
+                        type.setDelegate(term);
+                        TypeAttribute typeAttribute = new TypeAttribute(type, document.getMetadata(), document.isToKeep());
+                        typeAttribute.setColumnVisibility(cv);
+                        attributes.add(typeAttribute);
                         
                     }
                 }

@@ -155,7 +155,7 @@ public class JexlEvaluationTest {
         boolean foundPhrase = false;
         Attributes attrs = (Attributes) d.get("HIT_TERM");
         for (Attribute<?> attr : attrs.getAttributes()) {
-            if (attr.getData().equals("TOKFIELD:big red dog")) {
+            if (attr.toString().equals("TOKFIELD:big red dog")) {
                 foundPhrase = true;
             }
         }
