@@ -1,13 +1,13 @@
 package datawave.webservice.query.interceptor;
 
 import com.google.common.io.CountingOutputStream;
+import datawave.microservice.querymetric.QueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.security.util.DnUtils.NpeUtils;
 import datawave.webservice.query.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.interceptor.QueryMetricsEnrichmentInterceptor.QueryCall;
 import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.metric.QueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.BaseQueryResponse;

@@ -155,7 +155,6 @@ public abstract class GroupingTest {
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(
                                         new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
                                                         + "</alternatives>"), "beans.xml");

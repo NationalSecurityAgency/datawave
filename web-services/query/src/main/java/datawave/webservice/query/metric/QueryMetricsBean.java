@@ -1,9 +1,20 @@
 package datawave.webservice.query.metric;
 
-import java.security.Principal;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Iterator;
+import datawave.annotation.DateFormat;
+import datawave.annotation.Required;
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.metrics.remote.RemoteQueryMetricService;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.query.map.QueryGeometryResponse;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -27,23 +38,9 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
-import datawave.annotation.DateFormat;
-import datawave.annotation.Required;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.map.QueryGeometryHandler;
-import datawave.webservice.query.map.QueryGeometryResponse;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
+import java.security.Principal;
+import java.util.Date;
+import java.util.Iterator;
 
 @Path("/Query/Metrics")
 @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})
@@ -59,17 +56,13 @@ public class QueryMetricsBean {
     
     private static final Logger log = Logger.getLogger(QueryMetricsBean.class);
     @Inject
-    private AccumuloConnectionFactory connectionFactory;
-    @Inject
     private JMSContext jmsContext;
     @Resource(mappedName = "java:/queue/QueryMetrics")
     private Destination dest;
     @Resource
     private EJBContext ctx;
     @Inject
-    private QueryMetricHandler<? extends BaseQueryMetric> queryHandler;
-    @Inject
-    private QueryGeometryHandler queryGeometryHandler;
+    private RemoteQueryMetricService remoteQueryMetricService;
     
     /*
      * @PermitAll is necessary because this method is called indirectly from the @PreDestroy method of the QueryExpirationBean and the QueryExpirationBean's
@@ -116,16 +109,7 @@ public class QueryMetricsBean {
     @Path("/id/{id}")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public BaseQueryMetricListResponse query(@PathParam("id") @Required("id") String id) {
-        
-        // Find out who/what called this method
-        DatawavePrincipal dp = null;
-        Principal p = ctx.getCallerPrincipal();
-        String user = p.getName();
-        if (p instanceof DatawavePrincipal) {
-            dp = (DatawavePrincipal) p;
-            user = dp.getShortName();
-        }
-        return queryHandler.query(user, id, dp);
+        return remoteQueryMetricService.id(id);
     }
     
     @GET
@@ -133,17 +117,7 @@ public class QueryMetricsBean {
     @Path("/id/{id}/map")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public QueryGeometryResponse map(@PathParam("id") @Required("id") String id) {
-        
-        // Find out who/what called this method
-        DatawavePrincipal dp = null;
-        Principal p = ctx.getCallerPrincipal();
-        String user = p.getName();
-        if (p instanceof DatawavePrincipal) {
-            dp = (DatawavePrincipal) p;
-            user = dp.getShortName();
-        }
-        
-        return queryGeometryHandler.getQueryGeometryResponse(id, queryHandler.query(user, id, dp).getResult());
+        return remoteQueryMetricService.map(id);
     }
     
     /**
@@ -168,8 +142,7 @@ public class QueryMetricsBean {
     @RolesAllowed({"Administrator", "MetricsAdministrator"})
     public QueryMetricsSummaryResponse getQueryMetricsSummary(@QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
                     @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
-        
-        return queryMetricsSummary(begin, end, false);
+        return remoteQueryMetricService.summaryAll(begin, end);
     }
     
     /**
@@ -196,8 +169,7 @@ public class QueryMetricsBean {
     public QueryMetricsSummaryResponse getQueryMetricsSummaryDeprecated1(
                     @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
                                     defaultTime = "235959", defaultMillisec = "999") Date end) {
-        
-        return queryMetricsSummary(begin, end, false);
+        return remoteQueryMetricService.summaryAll(begin, end);
     }
     
     /**
@@ -221,11 +193,10 @@ public class QueryMetricsBean {
     @Path("/summaryCounts")
     @Interceptors(ResponseInterceptor.class)
     @RolesAllowed({"Administrator", "MetricsAdministrator"})
-    public QueryMetricsSummaryHtmlResponse getQueryMetricsSummaryDeprecated2(
+    public QueryMetricsSummaryResponse getQueryMetricsSummaryDeprecated2(
                     @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
                                     defaultTime = "235959", defaultMillisec = "999") Date end) {
-        
-        return queryMetricsSummary(begin, end, false);
+        return remoteQueryMetricService.summaryAll(begin, end);
     }
     
     /**
@@ -247,11 +218,9 @@ public class QueryMetricsBean {
     @GET
     @Path("/summary/user")
     @Interceptors(ResponseInterceptor.class)
-    public QueryMetricsSummaryHtmlResponse getQueryMetricsUserSummary(
-                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
-                                    defaultTime = "235959", defaultMillisec = "999") Date end) {
-        
-        return queryMetricsSummary(begin, end, true);
+    public QueryMetricsSummaryResponse getQueryMetricsUserSummary(@QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
+                    @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
+        return remoteQueryMetricService.summaryUser(begin, end);
     }
     
     /**
@@ -274,42 +243,10 @@ public class QueryMetricsBean {
     @GET
     @Path("/summaryCounts/user")
     @Interceptors(ResponseInterceptor.class)
-    public QueryMetricsSummaryHtmlResponse getQueryMetricsUserSummaryDeprecated(@QueryParam("begin") @DateFormat(defaultTime = "000000",
-                    defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
-        
-        return queryMetricsSummary(begin, end, true);
-    }
-    
-    private QueryMetricsSummaryHtmlResponse queryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser) {
-        
-        if (null == end) {
-            end = new Date();
-        } else {
-            end = DateUtils.truncate(end, Calendar.SECOND);
-        }
-        Calendar ninetyDaysBeforeEnd = Calendar.getInstance();
-        ninetyDaysBeforeEnd.setTime(end);
-        ninetyDaysBeforeEnd.add(Calendar.DATE, -90);
-        if (null == begin) {
-            // midnight of ninety days before end
-            begin = DateUtils.truncate(ninetyDaysBeforeEnd, Calendar.DATE).getTime();
-        } else {
-            begin = DateUtils.truncate(begin, Calendar.SECOND);
-        }
-        QueryMetricsSummaryHtmlResponse response;
-        if (end.before(begin)) {
-            response = new QueryMetricsSummaryHtmlResponse();
-            String s = "begin date can not be after end date";
-            response.addException(new QueryException(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE, new IllegalArgumentException(s), s));
-        } else {
-            DatawavePrincipal dp = getPrincipal();
-            if (onlyCurrentUser) {
-                response = queryHandler.getUserQueriesSummary(begin, end, dp);
-            } else {
-                response = queryHandler.getTotalQueriesSummary(begin, end, dp);
-            }
-        }
-        return response;
+    public QueryMetricsSummaryResponse getQueryMetricsUserSummaryDeprecated(
+                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
+                                    defaultTime = "235959", defaultMillisec = "999") Date end) {
+        return remoteQueryMetricService.summaryUser(begin, end);
     }
     
     /**
