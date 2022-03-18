@@ -158,14 +158,11 @@ public class TaskCache {
      * @return A list of tasks
      */
     public List<QueryTask> getTasks() {
-        List<QueryTask> tasks = (List<QueryTask>) cacheInspector.listAll(CACHE_NAME, QueryTask.class);
+        List<? extends Object> tasks = cacheInspector.listAll(CACHE_NAME, Object.class);
         if (tasks == null) {
-            tasks = Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Retrieved " + tasks.size() + " tasks");
-        }
-        return tasks;
+        return tasks.stream().filter(o -> o instanceof QueryTask).map(QueryTask.class::cast).collect(Collectors.toList());
     }
     
     /**

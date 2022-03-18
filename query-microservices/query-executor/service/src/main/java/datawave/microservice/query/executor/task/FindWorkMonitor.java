@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -54,12 +55,15 @@ public class FindWorkMonitor {
                     taskFuture.get();
                 } catch (InterruptedException e) {
                     log.warn("Query Monitor task was interrupted");
+                } catch (CancellationException e) {
+                    log.warn("Query Monitor task was cancelled");
                 } catch (Exception e) {
                     log.error("Query Monitor task failed", e);
                 }
                 taskFuture = null;
             } else if (isTaskLeaseExpired()) {
                 // if the lease has expired for the future, cancel it and wait for next scheduled task
+                log.warn("Query Monitor task being cancelled");
                 taskFuture.cancel(true);
             }
         }

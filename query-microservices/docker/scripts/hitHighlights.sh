@@ -9,8 +9,10 @@ POOL="${POOL:-pool1}"
 
 MAX_PAGES=100
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 # use the test user pkcs12 cert
-P12_KEYSTORE=../pki/testUser.p12
+P12_KEYSTORE=${SCRIPT_DIR}/../pki/testUser.p12
 P12_KEYSTORE_PASS=ChangeIt
 
 TMP_DIR=/dev/shm
@@ -34,7 +36,7 @@ umask 0277
 export P12_KEYSTORE_PASS
 openssl pkcs12 \
     -in ${P12_KEYSTORE} -passin env:P12_KEYSTORE_PASS \
-    -out ${TMP_PEM} -nodes
+    -out ${TMP_PEM} -nodes 2>/dev/null
 opensslexit=$?
 umask $OLD_UMASK
 [ $opensslexit = 0 ] || errormsg "Error creating temporary certificate file"

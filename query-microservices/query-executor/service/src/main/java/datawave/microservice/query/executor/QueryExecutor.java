@@ -1,5 +1,8 @@
 package datawave.microservice.query.executor;
 
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import datawave.microservice.query.config.QueryProperties;
 import datawave.microservice.query.executor.action.CreateTask;
 import datawave.microservice.query.executor.action.ExecutorTask;
@@ -29,6 +32,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -48,6 +52,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
     
     protected final BlockingQueue<Runnable> workQueue;
     protected final Set<Runnable> working;
+    protected final Multimap<String,Runnable> queryToTask;
     protected final QueryStorageCache cache;
     protected final QueryResultsManager queues;
     protected final QueryLogicFactory queryLogicFactory;
@@ -78,6 +83,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         this.publisher = publisher;
         this.workQueue = new LinkedBlockingDeque<>(executorProperties.getMaxQueueSize());
         this.working = Collections.synchronizedSet(new HashSet<>());
+        this.queryToTask = Multimaps.synchronizedMultimap(LinkedHashMultimap.create());
         this.metricFactory = metricFactory;
         this.metricClient = metricClient;
         threadPool = new ThreadPoolExecutor(executorProperties.getCoreThreads(), executorProperties.getMaxThreads(), executorProperties.getKeepAliveMs(),
@@ -85,11 +91,13 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
             @Override
             protected void beforeExecute(Thread t, Runnable r) {
                 working.add(r);
+                
             }
             
             @Override
             protected void afterExecute(Runnable r, Throwable t) {
                 working.remove(r);
+                queryToTask.remove(((ExecutorTask) r).getTaskKey().getQueryId(), r);
             }
         };
         log.info("Created QueryExecutor with an application name of " + appCtx.getApplicationName() + " and an id of " + appCtx.getId());
@@ -103,31 +111,33 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
      * @return true if working on query, false otherwise
      */
     public boolean isWorkingOn(String queryId) {
-        if (!workQueue.stream().anyMatch(r -> ((ExecutorTask) r).getTaskKey().getQueryId().equals(queryId))) {
-            return working.stream().anyMatch(r -> ((ExecutorTask) r).getTaskKey().getQueryId().equals(queryId));
-        }
-        return false;
+        return queryToTask.containsKey(queryId);
     }
     
-    private void removeFromWorkQueue(String queryId) {
-        List<Runnable> removals = new ArrayList<Runnable>();
-        for (Runnable action : workQueue) {
-            if (((ExecutorTask) action).getTaskKey().getQueryId().equals(queryId)) {
-                removals.add(action);
-            }
+    private void removePendingTasks(String queryId) {
+        Collection<Runnable> tasks;
+        // synchronize explicitly to avoid mutations during the iteration
+        synchronized (queryToTask) {
+            tasks = new HashSet<>(queryToTask.get(queryId));
         }
-        for (Runnable action : removals) {
+        for (Runnable action : tasks) {
             threadPool.remove(action);
         }
     }
     
-    private void interruptWork(String queryId, String userDn) {
-        // interrupt any working requests
-        synchronized (working) {
-            for (Runnable action : working) {
-                if (((ExecutorTask) action).getTaskKey().getQueryId().equals(queryId)) {
-                    ((ExecutorTask) action).interrupt();
-                }
+    private void stopTasks(String queryId, String userDn) {
+        Collection<Runnable> tasks;
+        // synchronize explicitly to avoid mutations during the iteration
+        synchronized (queryToTask) {
+            tasks = new HashSet<>(queryToTask.get(queryId));
+        }
+        while (!tasks.isEmpty()) {
+            for (Runnable action : tasks) {
+                threadPool.remove(action);
+                ((ExecutorTask) action).interrupt();
+            }
+            synchronized (queryToTask) {
+                tasks = new HashSet<>(queryToTask.get(queryId));
             }
         }
         // interrupt any pending connection requests
@@ -160,11 +170,10 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         // A close request waits for the current page to finish
         switch (requestedAction) {
             case CLOSE:
-                removeFromWorkQueue(queryId);
+                removePendingTasks(queryId);
                 break;
             case CANCEL:
-                removeFromWorkQueue(queryId);
-                interruptWork(queryId, queryStatus.getQuery().getUserDN());
+                stopTasks(queryId, queryStatus.getQuery().getUserDN());
                 break;
             default: {
                 List<QueryTask> tasks = findTasksToExecute(queryStatus, requestedAction);
@@ -191,10 +200,14 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                     }
                     
                     try {
+                        queryToTask.put(queryId, runnable);
                         threadPool.execute(runnable);
                     } catch (Exception e) {
+                        log.error("Failed to execute task " + task.getTaskKey() + ", returning to available tasks to execute", e);
+                        
                         // reset the task state so that another executor can grab it
                         runnable.completeTask(false, false);
+                        queryToTask.remove(queryId, runnable);
                     }
                 }
             }

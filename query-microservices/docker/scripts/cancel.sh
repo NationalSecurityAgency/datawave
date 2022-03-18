@@ -29,7 +29,7 @@ umask 0277
 export P12_KEYSTORE_PASS
 openssl pkcs12 \
     -in ${P12_KEYSTORE} -passin env:P12_KEYSTORE_PASS \
-    -out ${TMP_PEM} -nodes
+    -out ${TMP_PEM} -nodes 2>/dev/null
 opensslexit=$?
 umask $OLD_UMASK
 [ $opensslexit = 0 ] || errormsg "Error creating temporary certificate file"

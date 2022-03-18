@@ -8,6 +8,7 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -74,7 +75,11 @@ public class QueryStatusCache {
      * @return A list of query status
      */
     public List<QueryStatus> getQueryStatus() {
-        return cacheInspector.listAll(CACHE_NAME, QueryStatus.class).stream().map(QueryStatus.class::cast).collect(Collectors.toList());
+        List<? extends Object> queryStatuses = cacheInspector.listAll(CACHE_NAME, Object.class);
+        if (queryStatuses == null) {
+            return Collections.emptyList();
+        }
+        return queryStatuses.stream().filter(o -> o instanceof QueryStatus).map(QueryStatus.class::cast).collect(Collectors.toList());
     }
     
     /**
