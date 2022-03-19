@@ -14,19 +14,19 @@ public final class FuzzyAttributeComparator {
         throw new UnsupportedOperationException();
     }
     
-    public static boolean singleToSingle(Attribute existingAttribute, Attribute newAttribute) {
+    public static boolean singleToSingle(final Attribute existingAttribute, final Attribute newAttribute) {
         return (existingAttribute.getData().equals(newAttribute.getData())
                         && existingAttribute.getColumnVisibility().equals(newAttribute.getColumnVisibility()) && existingAttribute.getTimestamp() == newAttribute
                         .getTimestamp());
     }
     
-    public static boolean singleToMultiple(Attributes multipleAttributes, Attribute singleAttribute) {
+    public static boolean singleToMultiple(final Attributes multipleAttributes, final Attribute singleAttribute) {
         return multipleAttributes.getAttributes().stream().anyMatch(existingAttribute -> {
             return singleToSingle(existingAttribute, singleAttribute);
         });
     }
     
-    public static boolean multipleToMultiple(Attributes existingAttributes, Attributes newAttributes) {
+    public static boolean multipleToMultiple(final Attributes existingAttributes, final Attributes newAttributes) {
         boolean containsMatch = false;
         for (Attribute<? extends Comparable<?>> newAttr : newAttributes.getAttributes()) {
             if (singleToMultiple(existingAttributes, newAttr)) {
@@ -46,7 +46,7 @@ public final class FuzzyAttributeComparator {
      *            The set of Attributes against which we want to check
      * @return
      */
-    public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(Attributes existingAttributes, Attributes newAttributes) {
+    public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(final Attributes existingAttributes, final Attributes newAttributes) {
         HashSet<Attribute<? extends Comparable<?>>> combinedSet = Sets.newHashSet();
         
         existingAttributes.getAttributes().forEach(existingAttr -> {
@@ -65,21 +65,23 @@ public final class FuzzyAttributeComparator {
         return combinedSet;
     }
     
-    public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(Attribute existingAttribute, Attributes newAttributes, boolean trackSizes) {
+    public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(final Attribute existingAttribute, final Attributes newAttributes,
+                    final boolean trackSizes) {
         HashSet<Attribute<? extends Comparable<?>>> existAttrSet = Sets.newHashSet();
         existAttrSet.add(existingAttribute);
         
         return combineMultipleAttributes(new Attributes(existAttrSet, newAttributes.isToKeep(), trackSizes), newAttributes);
     }
     
-    public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(Attributes existingAttributes, Attribute newAttribute, boolean trackSizes) {
+    public static Set<Attribute<? extends Comparable<?>>> combineMultipleAttributes(final Attributes existingAttributes, final Attribute newAttribute,
+                    final boolean trackSizes) {
         HashSet<Attribute<? extends Comparable<?>>> newAttrSet = Sets.newHashSet();
         newAttrSet.add(newAttribute);
         
         return combineMultipleAttributes(existingAttributes, new Attributes(newAttrSet, existingAttributes.isToKeep(), trackSizes));
     }
     
-    public static Attribute combineSingleAttributes(Attribute existingAttribute, Attribute newAttribute) {
+    public static Attribute combineSingleAttributes(final Attribute existingAttribute, final Attribute newAttribute) {
         newAttribute.setMetadata(existingAttribute.getMetadata());
         return newAttribute;
     }

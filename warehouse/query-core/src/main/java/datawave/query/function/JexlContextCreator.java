@@ -18,7 +18,6 @@ import java.util.Map.Entry;
 public class JexlContextCreator implements Function<Tuple3<Key,Document,Map<String,Object>>,Tuple3<Key,Document,DatawaveJexlContext>> {
     
     private static final Logger log = Logger.getLogger(JexlContextCreator.class);
-    private static final String BODY_KEY = "BODY";
     
     protected Collection<String> variables;
     protected JexlContextValueComparator factory;
