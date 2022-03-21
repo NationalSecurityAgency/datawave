@@ -8,7 +8,6 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
-import datawave.query.jexl.functions.ContentFunctions;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
@@ -35,6 +34,7 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
@@ -439,6 +439,7 @@ public class DatawaveInterpreter extends Interpreter {
     }
     
     public Object visit(ASTAndNode node, Object data) {
+        
         // we could have arrived here after the node was dereferenced
         if (QueryPropertyMarker.findInstance(node).isType(ExceededOrThresholdMarkerJexlNode.class)) {
             return visitExceededOrThresholdMarker(node);
@@ -450,53 +451,37 @@ public class DatawaveInterpreter extends Interpreter {
             return evaluation;
         }
         
-        FunctionalSet leftFunctionalSet = null;
-        FunctionalSet rightFunctionalSet = null;
-        Object left = node.jjtGetChild(0).jjtAccept(this, data);
-        if (left == null)
-            left = FunctionalSet.empty();
-        if (left instanceof Collection == false) {
-            try {
-                boolean leftValue = arithmetic.toBoolean(left);
-                if (!leftValue) {
-                    return Boolean.FALSE;
-                }
-            } catch (RuntimeException xrt) {
-                throw new JexlException(node.jjtGetChild(0), "boolean coercion error", xrt);
+        // holds all values for intersection
+        FunctionalSet functionalSet = new FunctionalSet<>();
+        for (JexlNode child : JexlNodes.children(node)) {
+            
+            Object o = child.jjtAccept(this, data);
+            if (o == null) {
+                o = FunctionalSet.empty();
             }
-        } else {
-            if (leftFunctionalSet == null)
-                leftFunctionalSet = new FunctionalSet();
-            leftFunctionalSet.addAll((Collection) left);
-        }
-        Object right = node.jjtGetChild(1).jjtAccept(this, data);
-        if (right == null)
-            right = FunctionalSet.empty();
-        if (right instanceof Collection == false) {
-            try {
-                boolean rightValue = arithmetic.toBoolean(right);
-                if (!rightValue) {
+            if (o instanceof Collection) {
+                if (((Collection<?>) o).isEmpty()) {
                     return Boolean.FALSE;
+                } else {
+                    functionalSet.addAll((Collection<?>) o);
                 }
-            } catch (ArithmeticException xrt) {
-                throw new JexlException(node.jjtGetChild(1), "boolean coercion error", xrt);
-            }
-        } else {
-            if (rightFunctionalSet == null)
-                rightFunctionalSet = new FunctionalSet();
-            rightFunctionalSet.addAll((Collection) right);
-        }
-        // return union of left and right iff they are both non-null & non-empty
-        if (leftFunctionalSet != null && rightFunctionalSet != null) {
-            if (!leftFunctionalSet.isEmpty() && !rightFunctionalSet.isEmpty()) {
-                FunctionalSet functionalSet = new FunctionalSet(leftFunctionalSet);
-                functionalSet.addAll(rightFunctionalSet);
-                return functionalSet;
             } else {
-                return Boolean.FALSE;
+                try {
+                    boolean value = arithmetic.toBoolean(o);
+                    if (!value) {
+                        return Boolean.FALSE;
+                    }
+                } catch (RuntimeException xrt) {
+                    throw new JexlException(child, "boolean coercion error", xrt);
+                }
             }
+        }
+        
+        // the expression evaluated to true. either return the functional set of hits, or boolean true
+        if (!functionalSet.isEmpty()) {
+            return functionalSet;
         } else {
-            return getBooleanAnd(left, right);
+            return Boolean.TRUE;
         }
     }
     
