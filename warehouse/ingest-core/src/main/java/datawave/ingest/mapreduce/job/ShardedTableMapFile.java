@@ -44,7 +44,6 @@ public class ShardedTableMapFile {
     
     private static final Logger log = Logger.getLogger(ShardedTableMapFile.class);
     
-    public static final String TABLE_NAMES = "job.table.names";
     public static final String SHARD_TSERVER_MAP_FILE = PREFIX + ".shardTServerMapFile";
     public static final String SPLIT_WORK_DIR = "split.work.dir";
     
@@ -210,7 +209,7 @@ public class ShardedTableMapFile {
                     AccumuloException {
         AccumuloHelper accumuloHelper = null;
         Path workDir = new Path(conf.get(SPLIT_WORK_DIR));// todo make sure this is set in ingest job
-        String[] tableNames = StringUtils.split(conf.get(TABLE_NAMES), ",");// todo make sure this is set in ingest job
+        String[] tableNames = StringUtils.split(conf.get(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES), ",");// todo make sure this is set in ingest job
         Map<String,String> shardedTableMapFilePaths = extractShardedTableMapFilePaths(conf);
         // Get a list of "sharded" tables
         String[] shardedTableNames = ConfigurationHelper.isNull(conf, ShardedDataTypeHandler.SHARDED_TNAMES, String[].class);

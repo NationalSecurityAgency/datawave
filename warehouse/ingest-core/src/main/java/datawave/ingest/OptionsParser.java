@@ -43,13 +43,20 @@ public class OptionsParser {
                 conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, args[++i]);
             } else if (args[i].equals(configDirFlag)) {
                 configDir = args[++i];
-            } else if (!args[i].startsWith(additionalResourceFlag)) {
+                if (null != configDir) {
+                    ConfigurationFileHelper.setConfigurationFromFiles(conf, configDir, configDirSuffix);
+                }
+            } else if (args[i].startsWith(additionalResourceFlag)) {
+                String configName = args[i].substring(args[i].indexOf(additionalResourceFlag) + 1);
+                String configValue = args[++i];
+                conf.set(configName, configValue);
+            }
+            
+            else if (!args[i].startsWith(additionalResourceFlag)) {
                 conf.addResource(args[i]);
             }
         }
-        if (null != configDir) {
-            ConfigurationFileHelper.setConfigurationFromFiles(conf, configDir, configDirSuffix);
-        }
+        
         return conf;
     }
     
