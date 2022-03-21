@@ -186,4 +186,14 @@ public class DatawavePrincipalTest {
         Assert.assertEquals(Lists.newArrayList(user, server2, server3, server1),
                         DatawavePrincipal.orderProxiedUsers(Lists.newArrayList(server1, server2, server3, user)));
     }
+    
+    @Test
+    public void DuplicateUserPreserved() {
+        // check that duplicate users are preserved
+        DatawavePrincipal dp = new DatawavePrincipal(Lists.newArrayList(server1, server2, server1));
+        Assert.assertEquals(3, dp.getProxiedUsers().size());
+        Assert.assertEquals(server1, dp.getProxiedUsers().stream().findFirst().get());
+        Assert.assertEquals(server2, dp.getProxiedUsers().stream().skip(1).findFirst().get());
+        Assert.assertEquals(server1, dp.getProxiedUsers().stream().skip(2).findFirst().get());
+    }
 }

@@ -13,9 +13,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static datawave.security.authorization.DatawaveUser.ANONYMOUS_USER;
@@ -31,7 +29,7 @@ public class DatawavePrincipal implements Principal, Serializable {
     private final String username;
     private final DatawaveUser primaryUser;
     @XmlElement
-    private final Set<DatawaveUser> proxiedUsers = new LinkedHashSet<>();
+    private final List<DatawaveUser> proxiedUsers = new ArrayList<>();
     @XmlElement
     private final long creationTime;
     
