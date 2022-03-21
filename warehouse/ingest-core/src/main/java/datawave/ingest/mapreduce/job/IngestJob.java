@@ -295,7 +295,8 @@ public class IngestJob implements Tool {
         }
         
         TableConfigurationUtil tableConfigUtil = new TableConfigurationUtil(conf);
-        tableNames = tableConfigUtil.getTableNames();
+        tableNames = tableConfigUtil.getTableNamesFromConf();
+        tableConfigUtil.serializeTableConfgurationIntoConf(conf);
         
         if (createTables) {
             boolean wasConfigureTablesSuccessful = tableConfigUtil.configureTables(conf);

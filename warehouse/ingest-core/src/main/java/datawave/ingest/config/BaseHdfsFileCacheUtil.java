@@ -18,6 +18,7 @@ public abstract class BaseHdfsFileCacheUtil {
     protected final Configuration conf;
     protected AccumuloHelper accumuloHelper;
     protected String delimiter = "\t";
+    protected short cacheReplicas = 3;
     
     private static final Logger log = Logger.getLogger(BaseHdfsFileCacheUtil.class);
     
@@ -83,7 +84,6 @@ public abstract class BaseHdfsFileCacheUtil {
             if (!fs.rename(tmpCacheFile, this.cacheFilePath)) {
                 throw new IOException("Failed to rename temporary cache file");
             }
-            
         } catch (Exception e) {
             log.warn("Unable to rename " + tmpCacheFile + " to " + this.cacheFilePath + "probably because somebody else replaced it ", e);
             cleanup(fs, tmpCacheFile);

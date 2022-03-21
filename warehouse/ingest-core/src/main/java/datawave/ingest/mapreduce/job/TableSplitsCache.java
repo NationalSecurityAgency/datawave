@@ -4,7 +4,6 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -120,7 +119,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     }
     
     private Set<String> getIngestTableNames() {
-        Set<String> tableNames = TableConfigurationUtil.getTables(conf);
+        Set<String> tableNames = TableConfigurationUtil.extractTablesFromConf(conf);
         if (tableNames.isEmpty()) {
             log.error("Missing data types or one of the following helperClass,readerClass,handlerClassNames,filterClassNames");
             throw new IllegalArgumentException("Missing data types or one of the following helperClass,readerClass,handlerClassNames,filterClassNames");
