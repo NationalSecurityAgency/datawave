@@ -23,6 +23,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.io.ProtocolResolver;
 import org.springframework.core.io.Resource;
+import org.springframework.core.metrics.ApplicationStartup;
 
 /**
  * A delegating wrapper around {@link ConfigurableApplicationContext}. This implements all methods of {@link ConfigurableApplicationContext}, delegating each
@@ -110,6 +111,26 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     }
     
     @Override
+    public void setApplicationStartup(ApplicationStartup applicationStartup) {
+        lock.writeLock().lock();
+        try {
+            configurableApplicationContext.setApplicationStartup(applicationStartup);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+    
+    @Override
+    public ApplicationStartup getApplicationStartup() {
+        lock.readLock().lock();
+        try {
+            return configurableApplicationContext.getApplicationStartup();
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+    
+    @Override
     public void setEnvironment(ConfigurableEnvironment environment) {
         lock.writeLock().lock();
         try {
@@ -179,6 +200,16 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
         lock.writeLock().lock();
         try {
             configurableApplicationContext.addApplicationListener(listener);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+    
+    @Override
+    public void setClassLoader(ClassLoader classLoader) {
+        lock.writeLock().lock();
+        try {
+            configurableApplicationContext.setClassLoader(classLoader);
         } finally {
             lock.writeLock().unlock();
         }
@@ -345,6 +376,16 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     }
     
     @Override
+    public Class<?> getType(String s, boolean b) throws NoSuchBeanDefinitionException {
+        lock.readLock().lock();
+        try {
+            return configurableApplicationContext.getType(s, b);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+    
+    @Override
     public String[] getAliases(String name) {
         lock.readLock().lock();
         try {
@@ -385,8 +426,33 @@ public class ThreadSafeClassPathXmlApplicationContext implements ConfigurableApp
     }
     
     @Override
+    public <T> ObjectProvider<T> getBeanProvider(Class<T> aClass, boolean b) {
+        lock.readLock().lock();
+        try {
+            return configurableApplicationContext.getBeanProvider(aClass, b);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+    
+    @Override
+    public <T> ObjectProvider<T> getBeanProvider(ResolvableType resolvableType, boolean b) {
+        lock.readLock().lock();
+        try {
+            return configurableApplicationContext.getBeanProvider(resolvableType, b);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+    
+    @Override
     public String[] getBeanNamesForType(ResolvableType resolvableType) {
         return this.configurableApplicationContext.getBeanNamesForType(resolvableType);
+    }
+    
+    @Override
+    public String[] getBeanNamesForType(ResolvableType resolvableType, boolean b, boolean b1) {
+        return this.configurableApplicationContext.getBeanNamesForType(resolvableType, b, b1);
     }
     
     @Override
