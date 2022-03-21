@@ -10,8 +10,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.collect.Lists;
@@ -107,7 +105,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         configureReductionInterface(conf);
         
         // turn off aggregation for tables so configured
-        for (String table : TableConfigurationUtil.getTables(conf)) {
+        for (String table : TableConfigurationUtil.extractTablesFromConf(conf)) {
             useAggregators.put(new Text(table), conf.getBoolean(table + USE_AGGREGATOR_PROPERTY, true));
         }
         
@@ -133,9 +131,9 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         // to a map of table => priority list of column=>class mappings. Users can just call the
         // method getAggregator with a key, and get back a list of aggregators that should be applied
         // to the corresponding value. The return list aggregators should be applied in order.
-        Set<String> tables = tcu.getTables(conf);
+        Set<String> tables = tcu.getJobTableNames();
         for (String table : tables) {
-            
+            log.info(table);
             Map<Integer,Map<String,String>> priorityOptions = tcu.getTableCombiners(table);
             if (priorityOptions != null) {
                 SortedSet<CustomColumnToClassMapping> list = Sets.newTreeSet();
@@ -145,11 +143,11 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     options.putAll(priorityOptions.get(priority));
                     
                     String clazz = options.get(TableConfigurationUtil.ITERATOR_CLASS_MARKER);
-                    
                     if (null == clazz) {
                         throw new RuntimeException("Unable to instantiate combiner class. Config item 'iterclass' not present " + priority + " "
                                         + options.entrySet());
                     }
+                    log.info("configuring iterator " + clazz);
                     
                     options.remove(TableConfigurationUtil.ITERATOR_CLASS_MARKER);
                     
@@ -197,8 +195,9 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         // to a map of table => priority list of column=>class mappings. Users can just call the
         // method getAggregator with a key, and get back a list of aggregators that should be applied
         // to the corresponding value. The return list aggregators should be applied in order.
-        Set<String> tables = TableConfigurationUtil.getTables(conf);
+        Set<String> tables = tcu.getJobTableNames();
         for (String table : tables) {
+            log.info(table);
             
             Map<Integer,Map<String,String>> priorityOptions = tcu.getTableAggregators(table);
             if (priorityOptions != null) {
@@ -343,6 +342,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                 
                 try {
                     Class<? extends Combiner> clazz = Class.forName(className).asSubclass(Combiner.class);
+                    log.info("configuring iterator " + clazz);
                     
                     agg = clazz.newInstance();
                     

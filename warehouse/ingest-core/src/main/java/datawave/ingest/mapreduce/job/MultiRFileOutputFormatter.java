@@ -354,7 +354,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     
     // Get the table list
     protected Set<String> getTableList() {
-        Set<String> tableList = new HashSet<>(TableConfigurationUtil.getTables(conf));
+        Set<String> tableList = new HashSet<>(TableConfigurationUtil.extractTablesFromConf(conf));
         
         String configNames = conf.get(CONFIGURED_TABLE_NAMES, "");
         if (log.isInfoEnabled())
@@ -378,32 +378,36 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
         
-        tableIds = tcu.getTableNames();
+        tableIds = tcu.getJobTableNames();
         Set<String> compressionTableBlackList = getCompressionTableBlackList(conf);
         String compressionType = getCompressionType(conf);
         for (String tableName : tableIds) {
-            ConfigurationCopy tableConfig = new ConfigurationCopy(tcu.getTableProperties(tableName));
-            tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(), (compressionTableBlackList.contains(tableName) ? Compression.COMPRESSION_NONE
-                            : compressionType));
-            
-            // the locality groups feature is broken and will be removed in a future MR
-            if (Iterables.contains(localityGroupTables, tableName)) {
-                Map<String,Set<Text>> localityGroups = tcu.getLocalityGroups(tableName);
-                // pull the locality groups for this table.
-                Map<Text,String> cftlg = Maps.newHashMap();
-                Map<String,Set<ByteSequence>> lgtcf = Maps.newHashMap();
-                for (Entry<String,Set<Text>> locs : localityGroups.entrySet()) {
-                    lgtcf.put(locs.getKey(), new HashSet<>());
-                    for (Text loc : locs.getValue()) {
-                        cftlg.put(loc, locs.getKey());
-                        lgtcf.get(locs.getKey()).add(new ArrayByteSequence(loc.getBytes()));
+            Map<String,String> properties = tcu.getTableProperties(tableName);
+            if (null == properties || properties.isEmpty()) {
+                log.error("No properties found for table " + tableName);
+            } else {
+                ConfigurationCopy tableConfig = new ConfigurationCopy(tcu.getTableProperties(tableName));
+                tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(), (compressionTableBlackList.contains(tableName) ? Compression.COMPRESSION_NONE
+                                : compressionType));
+                
+                // the locality groups feature is broken and will be removed in a future MR
+                if (Iterables.contains(localityGroupTables, tableName)) {
+                    Map<String,Set<Text>> localityGroups = tcu.getLocalityGroups(tableName);
+                    // pull the locality groups for this table.
+                    Map<Text,String> cftlg = Maps.newHashMap();
+                    Map<String,Set<ByteSequence>> lgtcf = Maps.newHashMap();
+                    for (Entry<String,Set<Text>> locs : localityGroups.entrySet()) {
+                        lgtcf.put(locs.getKey(), new HashSet<>());
+                        for (Text loc : locs.getValue()) {
+                            cftlg.put(loc, locs.getKey());
+                            lgtcf.get(locs.getKey()).add(new ArrayByteSequence(loc.getBytes()));
+                        }
                     }
+                    columnFamilyToLocalityGroup.put(tableName, cftlg);
+                    localityGroupToColumnFamilies.put(tableName, lgtcf);
                 }
-                columnFamilyToLocalityGroup.put(tableName, cftlg);
-                localityGroupToColumnFamilies.put(tableName, lgtcf);
+                tableConfigs.put(tableName, tableConfig);
             }
-            tableConfigs.put(tableName, tableConfig);
-            
         }
     }
     

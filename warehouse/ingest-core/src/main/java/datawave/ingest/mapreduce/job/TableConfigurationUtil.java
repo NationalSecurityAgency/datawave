@@ -7,7 +7,6 @@ import datawave.ingest.data.config.filter.KeyValueFilter;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
-import datawave.ingest.mapreduce.job.reduce.AggregatingReducer;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.iterators.PropogatingIterator;
@@ -28,8 +27,14 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,14 +42,21 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- *
- */
+ * This class serves as the liaison between datawave job configuration and accumulo tables. Most of this was ripped out of IngestJob for more convenient reuse
+ * in other Jobs
+ **/
 public class TableConfigurationUtil {
     
     protected static final Logger log = Logger.getLogger(TableConfigurationUtil.class.getName());
     public static final String ITERATOR_CLASS_MARKER = "iterClass";
+    public static final String TABLES_CONFIGS_TO_CACHE = "tables.configs.to.cache";
+    public static final String TABLE_PROPERTIES_TO_CACHE = "cache.table.properties";
+    public static final String TABLE_CONFIGURATION_PROPERTY = ".table.accumulo.configuration";
+    public static final String JOB_OUTPUT_TABLE_NAMES = "job.output.table.names";
     private Set<String> tableNames = new HashSet<>();
     private AccumuloHelper accumuloHelper;
     private TreeMap<String,Map<Integer,Map<String,String>>> combiners = new TreeMap<>();
@@ -61,8 +73,12 @@ public class TableConfigurationUtil {
         
     }
     
-    public Set<String> getTableNames() {
+    public Set<String> getTableNamesFromConf() {
         return tableNames;
+    }
+    
+    public Set<String> getJobTableNames() {
+        return new HashSet(Arrays.asList(conf.getStrings(JOB_OUTPUT_TABLE_NAMES)));
     }
     
     /**
@@ -71,25 +87,25 @@ public class TableConfigurationUtil {
      * @return true if a non-empty comma separated list of table names was properly set to conf's job table.names property
      */
     private boolean registerTableNames(Configuration conf) {
-        Set<String> tables = getTables(conf);
+        Set<String> tables = extractTablesFromConf(conf);
         
         if (tables.isEmpty()) {
             log.error("Configured tables for configured data types is empty");
             return false;
         }
         tableNames = tables;
-        conf.set("job.table.names", org.apache.hadoop.util.StringUtils.join(",", tableNames));
+        conf.set(JOB_OUTPUT_TABLE_NAMES, org.apache.hadoop.util.StringUtils.join(",", tableNames));
         return true;
     }
     
     /**
-     * Get the table names
+     * Get the table names for the job as specified in DataTypeHandlers, Filters, and conf
      *
      * @param conf
      *            hadoop configuration
      * @return map of table names to priorities
      */
-    public static Set<String> getTables(Configuration conf) throws IllegalArgumentException {
+    public static Set<String> extractTablesFromConf(Configuration conf) throws IllegalArgumentException {
         TypeRegistry.getInstance(conf);
         
         Set<String> tables = new HashSet<>();
@@ -143,7 +159,28 @@ public class TableConfigurationUtil {
             }
         }
         
+        Set<String> extraTables = getTablesToAddToCache(conf);
+        tables.addAll(extraTables);
+        
         return tables;
+    }
+    
+    public static Set<String> getTablesToAddToCache(Configuration conf) {
+        Set<String> tables = new HashSet<>();
+        String[] extraTables = conf.getStrings(TABLES_CONFIGS_TO_CACHE);
+        if (null != extraTables) {
+            for (String t : extraTables) {
+                tables.add(t);
+            }
+        }
+        return tables;
+        
+    }
+    
+    public static String[] getTablePropertiesToCache(Configuration conf) {
+        String[] properties = conf.getStrings(TABLE_PROPERTIES_TO_CACHE);
+        
+        return properties;
     }
     
     /**
@@ -235,7 +272,7 @@ public class TableConfigurationUtil {
     private void configureTablesIfNecessary(Set<String> tableNames, TableOperations tops, Configuration conf, Logger log) throws AccumuloSecurityException,
                     AccumuloException, TableNotFoundException {
         
-        Map<String,TableConfigHelper> tableConfigs = getTableConfigsFromAccumulo(log, conf, tableNames);
+        Map<String,TableConfigHelper> tableConfigs = setupTableConfigHelpers(log, conf, tableNames);
         
         for (String table : tableNames) {
             TableConfigHelper tableHelper = tableConfigs.get(table);
@@ -258,7 +295,7 @@ public class TableConfigurationUtil {
      *            the names of the tables to configure
      * @return Map&lt;String,TableConfigHelper&gt; map from table names to their setup TableConfigHelper classes
      */
-    private Map<String,TableConfigHelper> getTableConfigsFromAccumulo(Logger log, Configuration conf, Set<String> tableNames) {
+    private Map<String,TableConfigHelper> setupTableConfigHelpers(Logger log, Configuration conf, Set<String> tableNames) {
         
         Map<String,TableConfigHelper> helperMap = new HashMap<>(tableNames.size());
         
@@ -359,7 +396,7 @@ public class TableConfigurationUtil {
             }
         }
         try {
-            setTableConfigsFromAccumulo();
+            setTableConfigsFromAccumulo(conf);
         } catch (AccumuloException | TableNotFoundException | AccumuloSecurityException e) {
             log.error("Unable to read desired table properties from accumulo.  Please verify your configuration. ");
             throw new IOException(e);
@@ -372,16 +409,34 @@ public class TableConfigurationUtil {
         
     }
     
-    private void setTableConfigsFromAccumulo() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
-        tableConfigCache.setTableConfigs(getTableConfigsFromAccumulo(accumuloHelper, log, tableNames));
+    private void setTableConfigsFromAccumulo(Configuration conf) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+        tableConfigCache.setTableConfigs(getTablePropertiesFromAccumulo(accumuloHelper, log, conf));
         
     }
     
-    private static Map<String,Map<String,String>> getTableConfigsFromAccumulo(AccumuloHelper accumuloHelper, Logger log, Set<String> tableNames)
+    private void setTableConfigsFromConf(Configuration conf) throws IOException {
+        tableConfigCache.setTableConfigs(deserializeTableConfigs(conf));
+    }
+    
+    private static Map<String,Map<String,String>> getTablePropertiesFromAccumulo(AccumuloHelper accumuloHelper, Logger log, Configuration conf)
                     throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
-        
+        String propertyRegex = null;
+        Pattern pattern = null;
         Map<String,Map<String,String>> configMap = new HashMap<>();
         TableOperations tops = accumuloHelper.getConnector().tableOperations();
+        
+        String[] propertiesToCache = getTablePropertiesToCache(conf);
+        Set<String> tableNames = getTablesToAddToCache(conf);
+        
+        if (null != propertiesToCache && propertiesToCache.length > 0) {
+            propertyRegex = String.join("|", propertiesToCache);
+            pattern = Pattern.compile(propertyRegex);
+        }
+        
+        // if no table names are specified, assume we should cache properties for all of them
+        if (null == tableNames || tableNames.isEmpty()) {
+            tableNames = tops.tableIdMap().keySet();
+        }
         
         for (String table : tableNames) {
             Map<String,String> tempmap = new HashMap<>();
@@ -390,7 +445,16 @@ public class TableConfigurationUtil {
             while (it.hasNext()) {
                 Map.Entry<String,String> entry = (Map.Entry) it.next();
                 if (null != entry.getValue() && !entry.getValue().isEmpty()) {
-                    tempmap.put(entry.getKey(), entry.getValue().replaceAll("\n|\r", ""));
+                    if (null != pattern) {
+                        Matcher m = pattern.matcher(entry.getKey());
+                        if (m.find()) {
+                            tempmap.put(entry.getKey(), entry.getValue().replaceAll("\n|\r", ""));
+                        }
+                    }
+                    // if we haven't limited the properties we want to cache, add them all
+                    else {
+                        tempmap.put(entry.getKey(), entry.getValue().replaceAll("\n|\r", ""));
+                    }
                 }
                 
             }
@@ -418,23 +482,20 @@ public class TableConfigurationUtil {
     
     public void setTableItersPrioritiesAndOpts() throws IOException {
         if (!tableConfigCache.isInitialized()) {
-            setupTableConfigurationsCache(conf);
+            setTableConfigsFromConf(conf);
         }
         
-        // We're arbitrarily choosing the scan scope for gathering aggregator information.
-        // For the aggregators configured in this job, that's ok since they are added to all
-        // scopes. If someone manually added another aggregator and didn't apply it to scan
-        // time, then we wouldn't pick that up here, but the chances of that are very small
-        // since any aggregation we care about in the reducer doesn't make sense unless the
-        // aggregator is a scan aggregator.
-        IteratorUtil.IteratorScope scope = IteratorUtil.IteratorScope.scan;
+        // This used to be set arbitrarily to scan scope. We have since decided it is more appropriate to use the minc scope. Some unsuspecting dev might think
+        // that setting a scan time aggregator would have no effect on data being written into the database, but ingest was being affected in this somewhat
+        // covert manner. We feel this new approach to be much less accident-prone.
+        IteratorUtil.IteratorScope scope = IteratorUtil.IteratorScope.minc;
         
         // Go through all of the configuration properties of this table and figure out which
         // properties represent iterator configuration. For those that do, store the iterator
         // setup and options in a map so that we can group together all of the options for each
         // iterator.
         
-        for (String table : tableNames) {
+        for (String table : conf.getStrings(JOB_OUTPUT_TABLE_NAMES)) {
             Map<Integer,Map<String,String>> aggregatorMap = new HashMap<>();
             Map<Integer,Map<String,String>> combinerMap = new HashMap<>();
             HashMap<String,Map<String,String>> allOptions = new HashMap<>();
@@ -445,7 +506,7 @@ public class TableConfigurationUtil {
                 log.warn("No table properties found for " + table);
                 continue;
             }
-            for (Map.Entry<String,String> entry : tableConfigCache.getTableProperties(table).entrySet()) {
+            for (Map.Entry<String,String> entry : tableProps.entrySet()) {
                 
                 if (entry.getKey().startsWith(Property.TABLE_ITERATOR_PREFIX.getKey())) {
                     
@@ -525,7 +586,7 @@ public class TableConfigurationUtil {
     
     public Map<String,String> getTableProperties(String tableName) throws IOException {
         if (!tableConfigCache.isInitialized()) {
-            setupTableConfigurationsCache(conf);
+            setTableConfigsFromConf(conf);
         }
         return tableConfigCache.getTableProperties(tableName);
         
@@ -555,8 +616,63 @@ public class TableConfigurationUtil {
         
     }
     
+    public void serializeTableConfgurationIntoConf(Configuration conf) throws IOException {
+        
+        String[] tables = conf.getStrings(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES);
+        setupTableConfigurationsCache(conf);
+        
+        if (null == tables) {
+            log.warn("No output tables configured for job");
+        } else {
+            for (String table : tables) {
+                Map<String,String> tableConfig = TableConfigCache.getCurrentCache(conf).getTableProperties(table);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
+                oos.writeObject(tableConfig);
+                oos.close();
+                String encodedTableConfig = Base64.getEncoder().encodeToString(baos.toByteArray());
+                conf.set(table + TABLE_CONFIGURATION_PROPERTY, encodedTableConfig);
+            }
+        }
+    }
+    
+    public static Map<String,Map<String,String>> deserializeTableConfigs(Configuration conf) throws IOException {
+        Long start = System.currentTimeMillis();
+        String[] tables = conf.getStrings(TableConfigurationUtil.JOB_OUTPUT_TABLE_NAMES);
+        Map<String,Map<String,String>> tableConfigMap = new HashMap<>();
+        if (null == tables) {
+            log.warn("No output tables configured for job");
+        } else {
+            for (String tableName : tables) {
+                String tableConfigString = conf.get(tableName + TABLE_CONFIGURATION_PROPERTY);
+                Map<String,String> tableConf = null;
+                
+                if (null != tableConfigString) {
+                    try {
+                        byte[] data = Base64.getDecoder().decode(tableConfigString);
+                        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
+                        Object o = ois.readObject();
+                        ois.close();
+                        tableConf = (HashMap<String,String>) o;
+                        tableConfigMap.put(tableName, tableConf);
+                    } catch (Exception e) {
+                        log.error("Unable to deserialize configuration for table " + tableName);
+                        throw new IOException(e);
+                    }
+                    
+                } else {
+                    log.error("Job has requested a table which was not configured: " + tableName);
+                }
+            }
+        }
+        Long end = System.currentTimeMillis();
+        
+        log.info("Time deserializing table configs:" + (end - start) + "ms");
+        return tableConfigMap;
+    }
+    
     public void updateCacheFile() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
-        setTableConfigsFromAccumulo();
+        setTableConfigsFromAccumulo(conf);
         this.tableConfigCache.update();
     }
 }
