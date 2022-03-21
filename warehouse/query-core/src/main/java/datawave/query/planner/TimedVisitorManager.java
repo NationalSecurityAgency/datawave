@@ -12,7 +12,7 @@ import static datawave.query.planner.DefaultQueryPlanner.logQuery;
 /**
  * Handles boilerplate code execution for operations like timing a visit call, logging the query tree, and eventualy validating the resulting query tree.
  */
-class TimedVisitorManager {
+public class TimedVisitorManager {
     
     private boolean isDebugEnabled; // log query tree after visit?
     private boolean validateAst; // validate the query tree after visit?

@@ -3,9 +3,8 @@ package datawave.query.tables;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import datawave.query.DocumentSerialization;
+import datawave.query.config.DocumentQueryConfiguration;
 import datawave.query.tables.document.batch.DocumentScannerHelper;
-import datawave.security.util.ScannerHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -42,7 +41,7 @@ public class DocumentBatchResource extends DocumentRunningResource {
      * 
      */
     @Override
-    protected void init(final String tableName, final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {
+    protected void init(DocumentQueryConfiguration config, final String tableName, final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {
         Preconditions.checkNotNull(tableName);
         Preconditions.checkArgument(null != currentRange && !currentRange.isEmpty());
         
@@ -62,7 +61,7 @@ public class DocumentBatchResource extends DocumentRunningResource {
         // let's pre-compute the hashcode.
         hashCode += new HashCodeBuilder().append(tableName).append(auths).append(ranges).toHashCode();
 
-        baseScanner = DocumentScannerHelper.createDocumentBatchScanner(getClient(),tableName,auths,12,null,false, DocumentSerialization.ReturnType.json,1000,65,6000);
+        baseScanner = DocumentScannerHelper.createDocumentBatchScanner(getClient(),tableName,auths,12,null,false, config.getReturnType(),config.getQueueCapacity(),config.getMaxTabletsPerRequest(),config.getMaxTabletThreshold());
         //baseScanner = ScannerHelper.createBatchScanner(getClient(), tableName, auths, 12);
         
         if (baseScanner != null) {

@@ -14,6 +14,7 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.config.DocumentQueryConfiguration;
 import datawave.query.config.IndexHole;
@@ -23,6 +24,7 @@ import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.UidIntersector;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.language.functions.jexl.Unique;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
@@ -331,23 +333,6 @@ public class DocumentLogic extends BaseQueryLogic<Document> {
             }
         }
 
-        if (queryPlanner instanceof ParedDownQueryPlanner) {
-            ParedDownQueryPlanner currentQueryPlanner = (ParedDownQueryPlanner) queryPlanner;
-
-            currentQueryPlanner.setMetadataHelper(metadataHelper);
-            currentQueryPlanner.setDateIndexHelper(dateIndexHelper);
-
-            QueryModelProvider queryModelProvider = currentQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
-            if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
-                ((MetadataHelperQueryModelProvider) queryModelProvider).setMetadataHelper(metadataHelper);
-                ((MetadataHelperQueryModelProvider) queryModelProvider).setConfig(config);
-            }
-
-            if (null != queryModelProvider.getQueryModel()) {
-                queryModel = queryModelProvider.getQueryModel();
-
-            }
-        }
 
         if (this.queryModel == null)
             loadQueryModel(metadataHelper, config);
@@ -658,14 +643,13 @@ public class DocumentLogic extends BaseQueryLogic<Document> {
         }
 
         // Get the UNIQUE_FIELDS parameter if given
-        String uniqueFields = settings.findParameter(QueryParameters.UNIQUE_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(uniqueFields)) {
-            List<String> uniqueFieldsList = Arrays.asList(StringUtils.split(uniqueFields, Constants.PARAM_VALUE_SEP));
-
+        String uniqueFieldsParam = settings.findParameter(QueryParameters.UNIQUE_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(uniqueFieldsParam)) {
+            UniqueFields uniqueFields = UniqueFields.from(uniqueFieldsParam);
             // Only set the unique fields if we were actually given some
-            if (!uniqueFieldsList.isEmpty()) {
-                this.setUniqueFields(new HashSet<>(uniqueFieldsList));
-                config.setUniqueFields(new HashSet<>(uniqueFieldsList));
+            if (!uniqueFields.isEmpty()) {
+                this.setUniqueFields(uniqueFields);
+                config.setUniqueFields(uniqueFields);
             }
         }
 
@@ -1095,11 +1079,11 @@ public class DocumentLogic extends BaseQueryLogic<Document> {
         return getConfig().getGroupFieldsBatchSize();
     }
 
-    public Set<String> getUniqueFields() {
+    public UniqueFields getUniqueFields() {
         return getConfig().getUniqueFields();
     }
 
-    public void setUniqueFields(Set<String> uniqueFields) {
+    public void setUniqueFields(UniqueFields uniqueFields) {
         getConfig().setUniqueFields(uniqueFields);
     }
 

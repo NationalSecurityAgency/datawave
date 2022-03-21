@@ -7,20 +7,17 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import datawave.query.attributes.Document;
-import datawave.query.tables.AccumuloResource;
+import datawave.query.config.DocumentQueryConfiguration;
 import datawave.query.tables.DocumentResource;
 import datawave.query.tables.DocumentResourceQueue;
-import datawave.query.tables.ResourceQueue;
 import datawave.query.tables.stats.ScanSessionStats;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -82,9 +79,9 @@ public class SpeculativeDocumentScan extends DocumentScanner implements FutureCa
 
     }
 
-    public SpeculativeDocumentScan(String localTableName, Set<Authorizations> localAuths, ScannerChunk chunk, DocumentResourceQueue delegatorReference,
+    public SpeculativeDocumentScan(DocumentQueryConfiguration config, String localTableName, Set<Authorizations> localAuths, ScannerChunk chunk, DocumentResourceQueue delegatorReference,
                                    Class<? extends DocumentResource> delegatedResourceInitializer, ArrayBlockingQueue<Document> results, ExecutorService callingService) {
-        super(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, results, callingService);
+        super(config, localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, results, callingService);
         scans = Lists.newArrayList();
         scanFutures = Lists.newArrayList();
         myResultQueue = new LinkedBlockingDeque<>();
@@ -104,7 +101,7 @@ public class SpeculativeDocumentScan extends DocumentScanner implements FutureCa
             scans.add(scan);
             ListenableFuture<DocumentScanner> future = (ListenableFuture<DocumentScanner>) service.submit(scan);
             scanFutures.add(future);
-            Futures.addCallback(future, this);
+            Futures.addCallback(future, this, service);
         }
         return true;
     }

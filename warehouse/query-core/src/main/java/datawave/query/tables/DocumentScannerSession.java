@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.MoreExecutors;
 import datawave.query.attributes.Document;
+import datawave.query.config.DocumentQueryConfiguration;
 import datawave.query.tables.DocumentResource.ResourceFactory;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
@@ -38,6 +39,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class DocumentScannerSession extends  BaseScannerSession<Document> {
 
+    protected final DocumentQueryConfiguration config;
     /**
      * last seen key, used for moving across the sliding window of ranges.
      */
@@ -132,18 +134,18 @@ public class DocumentScannerSession extends  BaseScannerSession<Document> {
      *            scanner queue
      * @param maxResults
      */
-    public DocumentScannerSession(String tableName, Set<Authorizations> auths, DocumentResourceQueue delegator, int maxResults, Query settings) {
-        this(tableName, auths, delegator, maxResults, settings, new SessionOptions(), null);
+    public DocumentScannerSession(DocumentQueryConfiguration config, String tableName, Set<Authorizations> auths, DocumentResourceQueue delegator, int maxResults, Query settings) {
+        this(config, tableName, auths, delegator, maxResults, settings, new SessionOptions(), null);
     }
 
-    public DocumentScannerSession(String tableName, Set<Authorizations> auths, DocumentResourceQueue delegator, int maxResults, Query settings, SessionOptions options,
+    public DocumentScannerSession(DocumentQueryConfiguration config, String tableName, Set<Authorizations> auths, DocumentResourceQueue delegator, int maxResults, Query settings, SessionOptions options,
                                   Collection<Range> ranges) {
         
         Preconditions.checkNotNull(options);
         Preconditions.checkNotNull(delegator);
-        
+
         this.options = options;
-        
+        this.config=config;
         // build a stack of ranges
         this.ranges = new ConcurrentLinkedQueue<>();
         
@@ -453,7 +455,7 @@ public class DocumentScannerSession extends  BaseScannerSession<Document> {
                 log.trace(lastSeenKey + ", using current range of " + currentRange);
             }
             
-            delegatedResource = ResourceFactory.initializeResource(delegatedResourceInitializer, delegatedResource, tableName, auths, currentRange).setOptions(
+            delegatedResource = ResourceFactory.initializeResource(delegatedResourceInitializer, delegatedResource,config, tableName, auths, currentRange).setOptions(
                             options);
             
             Iterator<Document> iter = delegatedResource.iterator();

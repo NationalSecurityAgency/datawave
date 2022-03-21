@@ -22,14 +22,10 @@ import org.apache.accumulo.core.client.TimedOutException;
 import org.apache.accumulo.core.clientImpl.AccumuloServerException;
 import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.clientImpl.ScannerOptions;
-import org.apache.accumulo.core.clientImpl.Tables;
 import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.clientImpl.TabletType;
 import org.apache.accumulo.core.clientImpl.ThriftScanner;
-import org.apache.accumulo.core.clientImpl.ThriftTransportPool;
 import org.apache.accumulo.core.clientImpl.TimeoutTabletLocator;
-import org.apache.accumulo.core.clientImpl.Translator;
-import org.apache.accumulo.core.clientImpl.Translators;
 import org.apache.accumulo.core.clientImpl.thrift.ThriftSecurityException;
 import org.apache.accumulo.core.data.Column;
 import org.apache.accumulo.core.data.Key;
@@ -45,7 +41,7 @@ import org.apache.accumulo.core.dataImpl.thrift.TColumn;
 import org.apache.accumulo.core.dataImpl.thrift.TKeyExtent;
 import org.apache.accumulo.core.dataImpl.thrift.TKeyValue;
 import org.apache.accumulo.core.dataImpl.thrift.TRange;
-import org.apache.accumulo.core.master.state.tables.TableState;
+import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.accumulo.core.rpc.ThriftUtil;
 import org.apache.accumulo.core.sample.impl.SamplerConfigurationImpl;
 import org.apache.accumulo.core.security.Authorizations;
@@ -64,10 +60,24 @@ import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
@@ -254,7 +264,7 @@ public class DocumentScan implements Iterator<Document> {
 
         binRanges(locator, ranges, binnedRanges);
 
-        List<TColumn> translatedColumns = Translator.translate(columns, Translators.CT);
+        List<TColumn> translatedColumns = columns.stream().map(Column::toThrift).collect(Collectors.toList());
 
         doLookups(binnedRanges, receiver, translatedColumns);
     }
@@ -279,10 +289,10 @@ public class DocumentScan implements Iterator<Document> {
                 // cleared... so
                 // need to always do the check when failures occur
                 if (failures.size() >= lastFailureSize)
-                    if (!Tables.exists(context, tableId))
+                    if (!context.tableNodeExists(tableId))
                         throw new TableDeletedException(tableId.canonical());
-                    else if (Tables.getTableState(context, tableId) == TableState.OFFLINE)
-                        throw new TableOfflineException(Tables.getTableOfflineMsg(context, tableId));
+                    if (context.getTableState(tableId) == TableState.OFFLINE)
+                        throw new TableOfflineException("Table (" + tableId.canonical() + ") is offline");
 
                 lastFailureSize = failures.size();
 
@@ -353,7 +363,8 @@ public class DocumentScan implements Iterator<Document> {
     }
 
     private String getTableInfo() {
-        return Tables.getPrintableTableInfoFromId(context, tableId);
+
+        return context.getPrintableTableInfoFromId(tableId);
     }
 
     private static class TimeoutTracker {
@@ -468,11 +479,10 @@ public class DocumentScan implements Iterator<Document> {
                 e.setTableInfo(getTableInfo());
                 log.debug("AccumuloSecurityException thrown", e);
 
-                Tables.clearCache(context);
-                if (!Tables.exists(context, tableId))
-                    fatalException = new TableDeletedException(tableId.canonical());
+                if (!context.tableNodeExists(tableId))
+                fatalException = new TableDeletedException(tableId.canonical());
                 else
-                    fatalException = e;
+                fatalException = e;
             } catch (SampleNotPresentException e) {
                 fatalException = e;
             } catch (Throwable t) {
@@ -661,19 +671,21 @@ public class DocumentScan implements Iterator<Document> {
                               Map<KeyExtent,List<Range>> unscanned, MultiScanResult scanResult) {
 
         // translate returned failures, remove them from unscanned, and add them to failures
-        Map<KeyExtent,List<Range>> retFailures = Translator.translate(scanResult.failures,
-                Translators.TKET, new Translator.ListTranslator<>(Translators.TRT));
+        Map<KeyExtent, List<Range>> retFailures = scanResult.failures.entrySet().stream().collect(Collectors.toMap(
+                (entry) -> KeyExtent.fromThrift(entry.getKey()),
+                (entry) -> entry.getValue().stream().map(Range::new).collect(Collectors.toList())
+        ));
         unscanned.keySet().removeAll(retFailures.keySet());
         failures.putAll(retFailures);
 
         // translate full scans and remove them from unscanned
-        HashSet<KeyExtent> fullScans =
-                new HashSet<>(Translator.translate(scanResult.fullScans, Translators.TKET));
+        Set<KeyExtent> fullScans =
+                scanResult.fullScans.stream().map(KeyExtent::fromThrift).collect(Collectors.toSet());
         unscanned.keySet().removeAll(fullScans);
 
         // remove partial scan from unscanned
         if (scanResult.partScan != null) {
-            KeyExtent ke = new KeyExtent(scanResult.partScan);
+            KeyExtent ke = KeyExtent.fromThrift(scanResult.partScan);
             Key nextKey = new Key(scanResult.partNextKey);
 
             ListIterator<Range> iterator = unscanned.get(ke).listIterator();
@@ -729,7 +741,7 @@ public class DocumentScan implements Iterator<Document> {
             for (Range range : entry.getValue()) {
                 ranges.add(new Range(range));
             }
-            unscanned.put(new KeyExtent(entry.getKey()), ranges);
+            unscanned.put(KeyExtent.copyOf(entry.getKey()), ranges);
         }
 
         timeoutTracker.startingScan();
@@ -749,9 +761,10 @@ public class DocumentScan implements Iterator<Document> {
                 TabletType ttype = TabletType.type(requested.keySet());
                 boolean waitForWrites = !ThriftScanner.serversWaitedForWrites.get(ttype).contains(server);
 
-                Map<TKeyExtent,List<TRange>> thriftTabletRanges = Translator.translate(requested,
-                        Translators.KET, new Translator.ListTranslator<>(Translators.RT));
-
+                Map<TKeyExtent, List<TRange>> thriftTabletRanges = requested.entrySet().stream().collect(Collectors.toMap(
+                        (entry) -> entry.getKey().toThrift(),
+                        (entry) -> entry.getValue().stream().map(Range::toThrift).collect(Collectors.toList())
+                ));
                 Map<String,String> execHints = null;
 
                 InitialMultiScan imsr = client.startMultiScan(TraceUtil.traceInfo(), context.rpcCreds(),
@@ -818,7 +831,7 @@ public class DocumentScan implements Iterator<Document> {
                 client.closeMultiScan(TraceUtil.traceInfo(), imsr.scanID);
 
             } finally {
-                ThriftUtil.returnClient(client);
+                ThriftUtil.returnClient(client,context);
             }
         } catch (TTransportException e) {
             log.debug("Server : {} msg : {}", server, e.getMessage());
@@ -836,18 +849,12 @@ public class DocumentScan implements Iterator<Document> {
         } catch (TSampleNotPresentException e) {
             log.debug("Server : " + server + " msg : " + e.getMessage(), e);
             String tableInfo = "?";
-            if (e.getExtent() != null) {
-                TableId tableId = new KeyExtent(e.getExtent()).getTableId();
-                tableInfo = Tables.getPrintableTableInfoFromId(context, tableId);
-            }
             String message = "Table " + tableInfo + " does not have sampling configured or built";
             throw new SampleNotPresentException(message, e);
         } catch (TException e) {
             log.debug("Server : {} msg : {}", server, e.getMessage(), e);
             timeoutTracker.errorOccured();
             throw new IOException(e);
-        } finally {
-            ThriftTransportPool.getInstance().returnTransport(transport);
         }
     }
 
@@ -868,7 +875,7 @@ public class DocumentScan implements Iterator<Document> {
             for (Range range : entry.getValue()) {
                 ranges.add(new Range(range));
             }
-            unscanned.put(new KeyExtent(entry.getKey()), ranges);
+            unscanned.put(KeyExtent.copyOf(entry.getKey()), ranges);
         }
 
         timeoutTracker.startingScan();
@@ -888,20 +895,14 @@ public class DocumentScan implements Iterator<Document> {
                 TabletType ttype = TabletType.type(requested.keySet());
                 boolean waitForWrites = !ThriftScanner.serversWaitedForWrites.get(ttype).contains(server);
 
-                Map<TKeyExtent,List<TRange>> thriftTabletRanges = Translator.translate(requested,
-                        Translators.KET, new Translator.ListTranslator<>(Translators.RT));
-
+                Map<TKeyExtent, List<TRange>> thriftTabletRanges = requested.entrySet().stream().collect(Collectors.toMap(
+                        (entry) -> entry.getKey().toThrift(),
+                        (entry) -> entry.getValue().stream().map(Range::toThrift).collect(Collectors.toList())
+                ));
                 Map<String,String> execHints = null;
 
                 Entry<TKeyExtent,List<TRange>> rng = thriftTabletRanges.entrySet().iterator().next();
-                /**
-                 * org.apache.accumulo.core.trace.thrift.TInfo tinfo, org.apache.accumulo.core.securityImpl.thrift.TCredentials credentials,
-                 * org.apache.accumulo.core.dataImpl.thrift.TKeyExtent extent, org.apache.accumulo.core.dataImpl.thrift.TRange range,
-                 * java.util.List<org.apache.accumulo.core.dataImpl.thrift.TColumn> columns, int batchSize,
-                 * java.util.List<org.apache.accumulo.core.dataImpl.thrift.IterInfo> ssiList, java.util.Map<java.lang.String,java.util.Map<java.lang.String,java.lang.String>> ssio,
-                 * java.util.List<java.nio.ByteBuffer> authorizations, boolean waitForWrites, boolean isolated, long readaheadThreshold, TSamplerConfiguration samplerConfig,
-                 * long batchTimeOut, java.lang.String classLoaderContext, java.util.Map<java.lang.String,java.lang.String> executionHints
-                 */
+
                 InitialScan imsr = client.startScan(TraceUtil.traceInfo(), context.rpcCreds(),
                         rng.getKey(), rng.getValue().get(0), columns,5000,
                         opts.getServerSideIteratorList(), opts.getServerSideIteratorOptions(),
@@ -962,7 +963,7 @@ public class DocumentScan implements Iterator<Document> {
                 client.closeScan(TraceUtil.traceInfo(), imsr.scanID);
 
             } finally {
-                ThriftUtil.returnClient(client);
+                ThriftUtil.returnClient(client,context);
             }
         } catch (TTransportException e) {
             log.debug("Server : {} msg : {}", server, e.getMessage());
@@ -980,18 +981,12 @@ public class DocumentScan implements Iterator<Document> {
         } catch (TSampleNotPresentException e) {
             log.debug("Server : " + server + " msg : " + e.getMessage(), e);
             String tableInfo = "?";
-            if (e.getExtent() != null) {
-                TableId tableId = new KeyExtent(e.getExtent()).getTableId();
-                tableInfo = Tables.getPrintableTableInfoFromId(context, tableId);
-            }
             String message = "Table " + tableInfo + " does not have sampling configured or built";
             throw new SampleNotPresentException(message, e);
         } catch (TException e) {
             log.debug("Server : {} msg : {}", server, e.getMessage(), e);
             timeoutTracker.errorOccured();
             throw new IOException(e);
-        } finally {
-            ThriftTransportPool.getInstance().returnTransport(transport);
         }
     }
 

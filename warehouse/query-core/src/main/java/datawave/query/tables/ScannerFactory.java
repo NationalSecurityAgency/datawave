@@ -6,6 +6,7 @@ import datawave.mr.bulk.BulkInputFormat;
 import datawave.mr.bulk.MultiRfileInputformat;
 import datawave.mr.bulk.RfileScanner;
 import datawave.query.attributes.Document;
+import datawave.query.config.DocumentQueryConfiguration;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.util.QueryScannerHelper;
@@ -156,9 +157,9 @@ public class ScannerFactory {
         return newLimitedScanner(BatchScannerSession.class, tableName, auths, settings).setThreads(scanQueue.getCapacity());
     }
 
-    public synchronized DocumentBatchScannerSession newDocumentQueryScanner(final String tableName, final Set<Authorizations> auths, Query settings) throws Exception {
+    public synchronized DocumentBatchScannerSession newDocumentQueryScanner(DocumentQueryConfiguration config, final String tableName, final Set<Authorizations> auths, Query settings) throws Exception {
 
-        return newLimitedScanner(DocumentBatchScannerSession.class, tableName, auths, settings).setThreads(scanQueue.getCapacity());
+        return newLimitedScanner(config, DocumentBatchScannerSession.class, tableName, auths, settings).setThreads(scanQueue.getCapacity());
     }
     /**
      * Builds a new scanner session using a finalized table name and set of authorizations using the previously defined queue. Note that the number of entries
@@ -174,7 +175,7 @@ public class ScannerFactory {
         Preconditions.checkNotNull(scanQueue);
         Preconditions.checkNotNull(wrapper);
         Preconditions.checkArgument(open, "Factory has been locked. No New scanners can be created");
-        
+
         log.debug("Creating limited scanner whose max threads is is " + scanQueue.getCapacity() + " and max capacity is " + maxQueue);
         
         ScanSessionStats stats = null;
@@ -186,14 +187,10 @@ public class ScannerFactory {
         if (wrapper == ScannerSession.class) {
             session = (T) new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats);
         } else {
-            if (wrapper == DocumentBatchScannerSession.class){
-                session = wrapper.getConstructor(DocumentScannerSession.class).newInstance(
-                        new DocumentScannerSession(tableName, auths, documentScanQueue, maxQueue, settings).applyStats(stats));
-            }
-            else {
+
                 session = wrapper.getConstructor(ScannerSession.class).newInstance(
                         new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats));
-            }
+
         }
         
         log.debug("Created session " + System.identityHashCode(session));
@@ -202,6 +199,47 @@ public class ScannerFactory {
         }
         sessionInstances.add(session);
         
+        return session;
+    }
+
+    /**
+     * Builds a new scanner session using a finalized table name and set of authorizations using the previously defined queue. Note that the number of entries
+     * is hardcoded, below, to 1000, but can be changed
+     *
+     * @param tableName
+     * @param auths
+     * @return
+     * @throws Exception
+     */
+    public synchronized <T extends BaseScannerSession> T newLimitedScanner(DocumentQueryConfiguration config, Class<T> wrapper, final String tableName, final Set<Authorizations> auths,
+                                                                           final Query settings) throws Exception {
+        Preconditions.checkNotNull(scanQueue);
+        Preconditions.checkNotNull(wrapper);
+        Preconditions.checkArgument(open, "Factory has been locked. No New scanners can be created");
+
+        log.debug("Creating limited scanner whose max threads is is " + scanQueue.getCapacity() + " and max capacity is " + maxQueue);
+
+        ScanSessionStats stats = null;
+        if (accrueStats) {
+            stats = new ScanSessionStats();
+        }
+
+        T session = null;
+        if (wrapper == ScannerSession.class) {
+            session = (T) new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats);
+        } else {
+
+            session = wrapper.getConstructor(DocumentScannerSession.class).newInstance(
+                    new DocumentScannerSession(config, tableName, auths, documentScanQueue, maxQueue, settings).applyStats(stats));
+
+        }
+
+        log.debug("Created session " + System.identityHashCode(session));
+        if (log.isTraceEnabled()) {
+            log.trace("Adding instance " + session.hashCode());
+        }
+        sessionInstances.add(session);
+
         return session;
     }
     

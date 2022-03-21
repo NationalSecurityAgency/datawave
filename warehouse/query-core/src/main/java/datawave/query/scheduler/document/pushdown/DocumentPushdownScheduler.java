@@ -30,7 +30,6 @@ import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.clientImpl.Tables;
 import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.TableId;
@@ -139,13 +138,13 @@ public class DocumentPushdownScheduler extends Scheduler<Document> {
             tableId = TableId.of(config.getTableName());
         } else {
             ClientContext ctx = AccumuloConnectionFactory.getClientContext(client);
-            tableId = Tables.getTableId(ctx, tableName);
+            tableId = ctx.getTableId(tableName);
             tl = TabletLocator.getLocator(ctx, tableId);
         }
         Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(tl, config, settings, tableId));
         
         try {
-            session = scannerFactory.newDocumentQueryScanner(tableName, auths, config.getQuery());
+            session = scannerFactory.newDocumentQueryScanner(((DocumentQueryConfiguration) config), tableName, auths, config.getQuery());
 
 
             

@@ -3,6 +3,7 @@ package datawave.query.tables.async;
 import com.google.common.base.Function;
 import com.google.common.eventbus.Subscribe;
 import datawave.query.attributes.Document;
+import datawave.query.config.DocumentQueryConfiguration;
 import datawave.query.tables.DocumentResource.ResourceFactory;
 import datawave.query.tables.DocumentBatchResource;
 import datawave.query.tables.DocumentResource;
@@ -14,14 +15,12 @@ import org.apache.accumulo.core.clientImpl.ThriftScanner.ScanTimedOutException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
 import java.io.InterruptedIOException;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -33,6 +32,7 @@ public class DocumentScanner implements Callable<DocumentScanner> {
 
     private static final Logger log = Logger.getLogger(DocumentScanner.class);
     public static final String SCAN_ID = "scan.id";
+    protected DocumentQueryConfiguration config;
 
     protected ScannerChunk myScan;
 
@@ -72,9 +72,10 @@ public class DocumentScanner implements Callable<DocumentScanner> {
 
     private DocumentResource delegatedResource = null;
 
-    public DocumentScanner(String localTableName, Set<Authorizations> localAuths, ScannerChunk chunk, DocumentResourceQueue delegatorReference,
+    public DocumentScanner(DocumentQueryConfiguration config, String localTableName, Set<Authorizations> localAuths, ScannerChunk chunk, DocumentResourceQueue delegatorReference,
                            Class<? extends DocumentResource> delegatedResourceInitializer, BlockingQueue<Document> results, ExecutorService callingService) {
         myScan = chunk;
+        this.config=config;
         if (log.isTraceEnabled())
             log.trace("Size of ranges:  " + myScan.getRanges().size());
         continueMultiScan = true;
@@ -240,7 +241,7 @@ public class DocumentScanner implements Callable<DocumentScanner> {
                     log.trace("Using " + initializer);
                 }
                 
-                delegatedResource = ResourceFactory.initializeResource(initializer, delegatedResource, localTableName, localAuths, currentRange).setOptions(
+                delegatedResource = ResourceFactory.initializeResource(initializer, delegatedResource, config, localTableName, localAuths, currentRange).setOptions(
                                 myScan.getOptions());
                 
                 Iterator<Document> iter = delegatedResource.iterator();

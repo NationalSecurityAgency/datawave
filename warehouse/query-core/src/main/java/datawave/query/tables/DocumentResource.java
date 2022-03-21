@@ -2,10 +2,12 @@ package datawave.query.tables;
 
 import com.google.common.base.Preconditions;
 import datawave.query.attributes.Document;
+import datawave.query.config.DocumentQueryConfiguration;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -27,7 +29,7 @@ import java.util.Set;
  * 
  */
 public class DocumentResource implements Closeable, Iterable<Document> {
-    
+    private static final Logger log = Logger.getLogger(DocumentResource.class);
     /**
      * Our connector.
      */
@@ -57,7 +59,7 @@ public class DocumentResource implements Closeable, Iterable<Document> {
         // nothing to close.
     }
     
-    protected void init(final String tableName, final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {
+    protected void init(final DocumentQueryConfiguration config, final String tableName, final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {
         // do nothing.
     }
     
@@ -95,18 +97,18 @@ public class DocumentResource implements Closeable, Iterable<Document> {
          * @return
          * @throws TableNotFoundException
          */
-        public static <T> DocumentResource initializeResource(Class<T> clazz, DocumentResource baseResource, final String tableName,
+        public static <T> DocumentResource initializeResource(Class<T> clazz, DocumentResource baseResource, DocumentQueryConfiguration config, final String tableName,
                                                               final Set<Authorizations> auths, Range currentRange) throws TableNotFoundException {
-            return initializeResource(clazz, baseResource, tableName, auths, Collections.singleton(currentRange));
+            return initializeResource(clazz, baseResource,config,  tableName, auths, Collections.singleton(currentRange));
         }
         
-        public static <T> DocumentResource initializeResource(Class<T> clazz, DocumentResource baseResource, final String tableName,
+        public static <T> DocumentResource initializeResource(Class<T> clazz, DocumentResource baseResource, DocumentQueryConfiguration config, final String tableName,
                                                               final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {
             
             DocumentResource newResource = null;
             try {
                 newResource = (DocumentResource) clazz.getConstructor(DocumentResource.class).newInstance(baseResource);
-                newResource.init(tableName, auths, currentRange);
+                newResource.init(config, tableName, auths, currentRange);
             } catch (IllegalArgumentException | NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException
                             | SecurityException e) {
                 throw new RuntimeException(e);

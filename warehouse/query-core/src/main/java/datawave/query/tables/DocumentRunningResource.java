@@ -1,3 +1,4 @@
+
 package datawave.query.tables;
 
 import com.google.common.base.Preconditions;
@@ -5,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
+import datawave.query.config.DocumentQueryConfiguration;
 import datawave.query.tables.document.batch.DocumentScan;
 import datawave.query.tables.document.batch.DocumentScannerHelper;
 import datawave.query.tables.document.batch.DocumentScannerImpl;
@@ -102,7 +104,7 @@ public class DocumentRunningResource extends DocumentResource {
      * 
      */
     @Override
-    protected void init(final String tableName, final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {
+    protected void init(DocumentQueryConfiguration config, final String tableName, final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {
         Preconditions.checkNotNull(tableName);
         Preconditions.checkArgument(null != currentRange && !currentRange.isEmpty());
         
@@ -123,7 +125,7 @@ public class DocumentRunningResource extends DocumentResource {
         hashCode += new HashCodeBuilder().append(tableName).append(auths).append(ranges).toHashCode();
 
 
-        baseScanner = DocumentScannerHelper.createDocumentBatchScanner(getClient(),tableName,auths,2,null,false, DocumentSerialization.ReturnType.json,1000,65,6000);
+        baseScanner = DocumentScannerHelper.createDocumentBatchScanner(getClient(),tableName,auths,2,null,false, config.getReturnType(),config.getQueueCapacity(),config.getMaxTabletsPerRequest(),config.getMaxTabletThreshold());
         //int numQueryThreads, Query query, boolean docRawFields, DocumentSerialization.ReturnType returnType, int queueCapacity, int maxTabletsPerRequest, int maxTabletThreshold
         if (baseScanner != null) {
             if (baseScanner instanceof Scanner) {
@@ -198,7 +200,7 @@ public class DocumentRunningResource extends DocumentResource {
         }
         return false;
     }
-    
+
     /*
      * (non-Javadoc)
      * 

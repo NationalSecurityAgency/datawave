@@ -7,7 +7,7 @@ import org.apache.accumulo.core.clientImpl.thrift.ThriftSecurityException;
 import org.apache.accumulo.core.data.*;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.dataImpl.thrift.*;
-import org.apache.accumulo.core.master.state.tables.TableState;
+import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.accumulo.core.rpc.ThriftUtil;
 import org.apache.accumulo.core.sample.impl.SamplerConfigurationImpl;
 import org.apache.accumulo.core.security.Authorizations;
@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 public class BatchScan implements Iterator<Entry<Key,Value>> {
 
@@ -215,10 +216,10 @@ public class BatchScan implements Iterator<Entry<Key,Value>> {
                 // cleared... so
                 // need to always do the check when failures occur
                 if (failures.size() >= lastFailureSize)
-                    if (!Tables.exists(context, tableId))
+                    if (!context.tableNodeExists(tableId))
                         throw new TableDeletedException(tableId.canonical());
-                    else if (Tables.getTableState(context, tableId) == TableState.OFFLINE)
-                        throw new TableOfflineException(Tables.getTableOfflineMsg(context, tableId));
+                    if (context.getTableState(tableId) == TableState.OFFLINE)
+                        throw new TableOfflineException("Table (" + tableId.canonical() + ") is offline");
 
                 lastFailureSize = failures.size();
 
@@ -289,7 +290,7 @@ public class BatchScan implements Iterator<Entry<Key,Value>> {
     }
 
     private String getTableInfo() {
-        return Tables.getPrintableTableInfoFromId(context, tableId);
+        return context.getPrintableTableInfoFromId(tableId);
     }
 
     private class QueryTask implements Runnable {
@@ -357,8 +358,7 @@ public class BatchScan implements Iterator<Entry<Key,Value>> {
                 e.setTableInfo(getTableInfo());
                 log.debug("AccumuloSecurityException thrown", e);
 
-                Tables.clearCache(context);
-                if (!Tables.exists(context, tableId))
+                if (!context.tableNodeExists(tableId))
                     fatalException = new TableDeletedException(tableId.canonical());
                 else
                     fatalException = e;
@@ -509,19 +509,22 @@ public class BatchScan implements Iterator<Entry<Key,Value>> {
                               Map<KeyExtent,List<Range>> unscanned, MultiScanResult scanResult) {
 
         // translate returned failures, remove them from unscanned, and add them to failures
-        Map<KeyExtent,List<Range>> retFailures = Translator.translate(scanResult.failures,
-                Translators.TKET, new Translator.ListTranslator<>(Translators.TRT));
+        Map<KeyExtent, List<Range>> retFailures = scanResult.failures.entrySet().stream().collect(Collectors.toMap(
+                (entry) -> KeyExtent.fromThrift(entry.getKey()),
+                (entry) -> entry.getValue().stream().map(Range::new).collect(Collectors.toList())
+        ));
         unscanned.keySet().removeAll(retFailures.keySet());
         failures.putAll(retFailures);
 
         // translate full scans and remove them from unscanned
-        HashSet<KeyExtent> fullScans =
-                new HashSet<>(Translator.translate(scanResult.fullScans, Translators.TKET));
+
+        Set<KeyExtent> fullScans =
+                scanResult.fullScans.stream().map(KeyExtent::fromThrift).collect(Collectors.toSet());
         unscanned.keySet().removeAll(fullScans);
 
         // remove partial scan from unscanned
         if (scanResult.partScan != null) {
-            KeyExtent ke = new KeyExtent(scanResult.partScan);
+            KeyExtent ke = KeyExtent.fromThrift(scanResult.partScan);
             Key nextKey = new Key(scanResult.partNextKey);
 
             ListIterator<Range> iterator = unscanned.get(ke).listIterator();
@@ -557,7 +560,7 @@ public class BatchScan implements Iterator<Entry<Key,Value>> {
             for (Range range : entry.getValue()) {
                 ranges.add(new Range(range));
             }
-            unscanned.put(new KeyExtent(entry.getKey()), ranges);
+            unscanned.put(KeyExtent.copyOf(entry.getKey()), ranges);
         }
 
 //        timeoutTracker.startingScan();
@@ -577,13 +580,14 @@ public class BatchScan implements Iterator<Entry<Key,Value>> {
                 TabletType ttype = TabletType.type(requested.keySet());
                 boolean waitForWrites = !ThriftScanner.serversWaitedForWrites.get(ttype).contains(server);
 
-                Map<TKeyExtent,List<TRange>> thriftTabletRanges = Translator.translate(requested,
-                        Translators.KET, new Translator.ListTranslator<>(Translators.RT));
-
+                Map<TKeyExtent, List<TRange>> thriftTabletRanges = requested.entrySet().stream().collect(Collectors.toMap(
+                        (entry) -> entry.getKey().toThrift(),
+                        (entry) -> entry.getValue().stream().map(Range::toThrift).collect(Collectors.toList())
+                ));
                 Map<String,String> execHints = null;
 
                 InitialMultiScan imsr = client.startMultiScan(TraceUtil.traceInfo(), context.rpcCreds(),
-                        thriftTabletRanges, Translator.translate(columns, Translators.CT),
+                        thriftTabletRanges, columns.stream().map(Column::toThrift).collect(Collectors.toList()),
                         opts.getServerSideIteratorList(), opts.getServerSideIteratorOptions(),
                         ByteBufferUtil.toByteBuffers(authorizations.getAuthorizations()), waitForWrites,
                         SamplerConfigurationImpl.toThrift(options.getSamplerConfiguration()),
@@ -652,7 +656,7 @@ public class BatchScan implements Iterator<Entry<Key,Value>> {
                 client.closeMultiScan(TraceUtil.traceInfo(), imsr.scanID);
 
             } finally {
-                ThriftUtil.returnClient(client);
+                ThriftUtil.returnClient(client,context);
             }
         } catch (TTransportException e) {
             log.debug("Server : {} msg : {}", server, e.getMessage());
@@ -670,18 +674,12 @@ public class BatchScan implements Iterator<Entry<Key,Value>> {
         } catch (TSampleNotPresentException e) {
             log.debug("Server : " + server + " msg : " + e.getMessage(), e);
             String tableInfo = "?";
-            if (e.getExtent() != null) {
-                TableId tableId = new KeyExtent(e.getExtent()).getTableId();
-                tableInfo = Tables.getPrintableTableInfoFromId(context, tableId);
-            }
             String message = "Table " + tableInfo + " does not have sampling configured or built";
             throw new SampleNotPresentException(message, e);
         } catch (TException e) {
             log.debug("Server : {} msg : {}", server, e.getMessage(), e);
            // timeoutTracker.errorOccured();
             throw new IOException(e);
-        } finally {
-            ThriftTransportPool.getInstance().returnTransport(transport);
         }
     }
 

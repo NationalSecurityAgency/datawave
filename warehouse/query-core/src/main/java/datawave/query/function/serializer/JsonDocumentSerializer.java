@@ -19,9 +19,10 @@ import java.util.Map;
 public class JsonDocumentSerializer extends DocumentSerializer {
 
     static GsonBuilder gsonBuilder = new GsonBuilder();
-
+    static Gson gson;
     static{
         gsonBuilder.registerTypeAdapter(Document.class,new JsonDeser());
+        gson = gsonBuilder.create();
     }
 
     public JsonDocumentSerializer(boolean reducedResponse) {
@@ -30,7 +31,7 @@ public class JsonDocumentSerializer extends DocumentSerializer {
     
     @Override
     public byte[] serialize(Document doc) {
-        final Gson gson = gsonBuilder.create();
+
         final StringWriter writer = new StringWriter();
         gson.toJson(doc,writer);
         return writer.toString().getBytes();
