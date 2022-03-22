@@ -79,17 +79,17 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
      * @param jsonObject json object
      */
     private static void addAttributeMetadata(Attribute<?> attr,String name, JsonObject jsonObject){
-       /* if ( attr.isMetadataSet() ){
+       if ( attr.isMetadataSet() ){
             Key metadata = attr.getMetadata();
             JsonObject key = new JsonObject();
-            key.addProperty("row",metadata.getRow().toString());
-            key.addProperty("cf",metadata.getColumnFamily().toString());
-            key.addProperty("cq",metadata.getColumnQualifier().toString());
+//            key.addProperty("row",metadata.getRow().toString());
+  //          key.addProperty("cf",metadata.getColumnFamily().toString());
+    //        key.addProperty("cq",metadata.getColumnQualifier().toString());
             key.addProperty("cv",metadata.getColumnVisibility().toString());
             key.addProperty("timestamp",metadata.getTimestamp());
             jsonObject.add("key",key);
 
-        }*/
+        }
     }
 
     /**
@@ -197,7 +197,7 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
                 JsonObject obj = (JsonObject)element;
                 if ( obj.has("key") ){ // it has metadata
                     JsonObject jsonKey = obj.getAsJsonObject("key");
-                    key = new Key(jsonKey.get("row").getAsString(),jsonKey.get("cf").getAsString(),jsonKey.get("cq").getAsString(),jsonKey.get("cv").getAsString(),jsonKey.get("timestamp").getAsLong());
+                    key = new Key("","","",jsonKey.get("cv").getAsString(),jsonKey.get("timestamp").getAsLong());
                 }
                 if (obj.has("type.metadata")){
                     typeString = obj.get("type.metadata").getAsString();
@@ -282,7 +282,6 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
             if (obj.has("key")){
                 JsonObject jsonKey = obj.getAsJsonObject("key");
                 key = new Key(jsonKey.get("row").getAsString(),jsonKey.get("cf").getAsString(),jsonKey.get("cq").getAsString(),jsonKey.get("cv").getAsString(),jsonKey.get("timestamp").getAsLong());
-                obj.remove("key");
             }
         }
         final Document doc = new Document(key,true);
