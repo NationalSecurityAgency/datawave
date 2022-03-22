@@ -327,7 +327,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 attribute.setColumnVisibility(entry.getValue().getColumnVisibility());
                 // call copy() on the GroupingTypeAttribute to get a plain TypeAttribute
                 // instead of a GroupingTypeAttribute that is package protected and won't serialize
-                theDocument.put(name + "." + Integer.toHexString(context).toUpperCase(), (TypeAttribute) attribute.copy(), true, false);
+                theDocument.put(name + "." + convertGroupingContext(context), (TypeAttribute) attribute.copy(), true, false);
             }
             context++;
         }
@@ -437,7 +437,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         int longest = this.longestValueList(fieldToFieldWithContextMap);
         for (int i = 0; i < longest; i++) {
             Collection<GroupingTypeAttribute<?>> fieldCollection = new HashSet<>();
-            String currentGroupingContext = "";
+            String currentGroupingContext = convertGroupingContext(i);
+            
             for (String fieldListItem : expandedGroupFieldsList) {
                 log.trace("fieldListItem: {}", fieldListItem);
                 Collection<String> gtNames = fieldToFieldWithContextMap.get(fieldListItem);
@@ -445,10 +446,10 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                     log.trace("gtNames: {}", gtNames);
                     log.trace("fieldToFieldWithContextMap: {} did not contain: {}", fieldToFieldWithContextMap, fieldListItem);
                 } else {
-                    String gtName = gtNames.iterator().next();
-                    int idx = gtName.indexOf('.');
-                    if (idx != -1) {
-                        currentGroupingContext = gtName.substring(idx + 1);
+                    String nameWithGrouping = fieldListItem + "." + currentGroupingContext;
+                    final String gtName = gtNames.stream().filter(name -> nameWithGrouping.equals(name)).findAny().orElse(null);
+                    if (gtName == null || gtName.isEmpty()) {
+                        continue;
                     }
                     if (!fieldListItem.equals(gtName)) {
                         fieldToFieldWithContextMap.remove(fieldListItem, gtName);
@@ -476,6 +477,10 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             }
         }
         log.trace("countingMap: {}", countingMap);
+    }
+    
+    private String convertGroupingContext(int contextGrouping) {
+        return Integer.toHexString(contextGrouping).toUpperCase();
     }
     
     private ColumnVisibility combine(Collection<ColumnVisibility> in) {
