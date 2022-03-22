@@ -82,8 +82,10 @@ public final class FuzzyAttributeComparator {
     }
     
     public static Attribute combineSingleAttributes(final Attribute existingAttribute, final Attribute newAttribute) {
-        newAttribute.setMetadata(existingAttribute.getMetadata());
-        return newAttribute;
+        Attribute mergedAttribute = (Attribute) newAttribute.copy();
+        mergedAttribute.setMetadata(existingAttribute.getMetadata());
+        
+        return mergedAttribute;
     }
     
 }
