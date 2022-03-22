@@ -1,9 +1,6 @@
 package datawave.query.function.json.deser;
 
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonElement;
@@ -25,33 +22,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 
 public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.google.gson.JsonDeserializer<Document>{
     private static final Logger log = Logger.getLogger(JsonDeser.class);
 
-    public static LoadingCache<String, Constructor> typeConstructorCache = CacheBuilder.newBuilder().build(new CacheLoader<String, Constructor>() {
-        @Override
-        public Constructor load(String typeString) throws Exception {
-            try {
+    private static final ConstuctorCacheMiss constructorMissFx = new ConstuctorCacheMiss();
+    private static final AttributeConstructorCacheMiss attributeMissFx = new AttributeConstructorCacheMiss();
+    private static ConcurrentHashMap<String, Constructor> constructorCache = new ConcurrentHashMap<>();
 
-                return Class.forName(typeString).asSubclass(BaseType.class).getConstructor(String.class);
-            }catch(Exception e){
-                try {
-                    return Class.forName(typeString).asSubclass(BaseType.class).getConstructor();
-                }catch(Exception e1){
-                    throw new RuntimeException(e1);
-                }
-            }
-        }
-    });
-
-    public static LoadingCache<String, Constructor> attributeConstructorCache = CacheBuilder.newBuilder().build(new CacheLoader<String, Constructor>() {
-        @Override
-        public Constructor load(String typeString) throws Exception {
-                return Class.forName(typeString).asSubclass(Attribute.class).getConstructor(String.class, Key.class, boolean.class);
-        }
-    });
     /**
      * Add the raw attribute data
      * @param attr data to add new property to
@@ -214,13 +195,12 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
                     if (typeString.isEmpty())
                         type = new NoOpType(data.getAsString());
                     else{
-                        Constructor constructor = null;
+                        Constructor constructor = constructorCache.computeIfAbsent(typeString,constructorMissFx);;
                         try {
-                            constructor = typeConstructorCache.get(typeString);
+
                             type = (BaseType<?>) constructor.newInstance(data.getAsString());
                         }catch(Exception e){
                             try {
-                                constructor = typeConstructorCache.get(typeString);
                                 type = (BaseType<?>) constructor.newInstance();
                                 type.setDelegateFromString(data.getAsString());
                             }catch(Exception e1){
@@ -231,9 +211,9 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
                     if (!attributeTypeString.isEmpty()){
                         Constructor constructor = null;
                         try {
-                            constructor = attributeConstructorCache.get(attributeTypeString);
+                            constructor = constructorCache.computeIfAbsent(attributeTypeString,attributeMissFx);
                             attr = (Attribute<?>)  constructor.newInstance(data.getAsString(),key,true);
-                        } catch (ExecutionException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                        } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
                             throw new RuntimeException(e);
                         }
 
@@ -300,4 +280,38 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
         }
         return doc;
     }
+
+    private static final class ConstuctorCacheMiss implements
+            Function<String,Constructor>{
+
+        @Override
+        public Constructor apply(String typeString) {
+            try {
+
+                return Class.forName(typeString).asSubclass(BaseType.class).getConstructor(String.class);
+            }catch(Exception e){
+                try {
+                    return Class.forName(typeString).asSubclass(BaseType.class).getConstructor();
+                }catch(Exception e1){
+                    throw new RuntimeException(e1);
+                }
+            }
+        }
+    }
+
+    private static final class AttributeConstructorCacheMiss implements
+            Function<String,Constructor>{
+
+        @Override
+        public Constructor apply(String typeString) {
+            try {
+                return Class.forName(typeString).asSubclass(Attribute.class).getConstructor(String.class, Key.class, boolean.class);
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
 }
