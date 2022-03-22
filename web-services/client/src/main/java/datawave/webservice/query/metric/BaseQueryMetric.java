@@ -578,7 +578,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
     @XmlElement
     protected long yieldCount = 0L;
     @XmlElement
-    protected String version = getVersion();
+    protected String version = generateVersion();
     @XmlElement
     protected long docRanges = 0;
     @XmlElement
@@ -709,7 +709,7 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
         this.host = host;
     }
     
-    public String getVersion() {
+    public String generateVersion() {
         String returnStr = "";
         try {
             final Properties props = new Properties();
@@ -726,6 +726,10 @@ public abstract class BaseQueryMetric implements HasMarkings, Serializable {
             log.warn("IOException encountered, attempting to read in version.properties.");
         }
         return returnStr;
+    }
+    
+    public String getVersion() {
+        return version;
     }
     
     public void setVersion(String version) {

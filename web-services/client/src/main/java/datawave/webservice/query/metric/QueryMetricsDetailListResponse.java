@@ -121,7 +121,7 @@ public class QueryMetricsDetailListResponse extends QueryMetricListResponse {
             builder.append("<td>").append(metric.getNextCount()).append("</td>");
             builder.append("<td>").append(metric.getSeekCount()).append("</td>");
             builder.append("<td>").append(metric.getYieldCount()).append("</td>");
-            builder.append("<td>").append("This is where the version would be generated haHAAA").append("</td>");
+            builder.append("<td>").append(metric.getVersion()).append("</td>");
             
             long count = 0l;
             long callTime = 0l;
