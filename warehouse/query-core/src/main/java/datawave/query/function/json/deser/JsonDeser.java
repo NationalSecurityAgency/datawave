@@ -1,6 +1,13 @@
 package datawave.query.function.json.deser;
 
-import com.google.gson.*;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSerializationContext;
+import datawave.data.type.BaseType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
 import datawave.query.attributes.Attribute;
@@ -8,13 +15,23 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 
 public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.google.gson.JsonDeserializer<Document>{
+    private static final Logger log = Logger.getLogger(JsonDeser.class);
 
+    private static final ConstuctorCacheMiss constructorMissFx = new ConstuctorCacheMiss();
+    private static final AttributeConstructorCacheMiss attributeMissFx = new AttributeConstructorCacheMiss();
+    private static ConcurrentHashMap<String, Constructor> constructorCache = new ConcurrentHashMap<>();
 
     /**
      * Add the raw attribute data
@@ -23,7 +40,16 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
      * @param jsonObject json object
      */
     private static void addAttributeData(Attribute<?> attr,String name, JsonObject jsonObject) {
-        jsonObject.addProperty(name,attr.toString());
+        if (attr instanceof TypeAttribute){
+            datawave.data.type.Type t = ((TypeAttribute)attr).getType();
+            if (t.getClass() != NoOpType.class)
+                jsonObject.addProperty("type.metadata",t.getClass().getCanonicalName());
+        }else{
+            jsonObject.addProperty("type.type",attr.getClass().getCanonicalName());
+        }
+
+
+        jsonObject.addProperty("type.data",attr.getData().toString());
 
     }
 
@@ -34,13 +60,16 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
      * @param jsonObject json object
      */
     private static void addAttributeMetadata(Attribute<?> attr,String name, JsonObject jsonObject){
-        if ( attr.isMetadataSet() ){
+       if ( attr.isMetadataSet() ){
             Key metadata = attr.getMetadata();
-            jsonObject.addProperty("row",metadata.getRow().toString());
-            jsonObject.addProperty("cf",metadata.getColumnFamily().toString());
-            jsonObject.addProperty("cq",metadata.getColumnQualifier().toString());
-            jsonObject.addProperty("cv",metadata.getColumnVisibility().toString());
-            jsonObject.addProperty("timestamp",metadata.getTimestamp());
+            JsonObject key = new JsonObject();
+//            key.addProperty("row",metadata.getRow().toString());
+  //          key.addProperty("cf",metadata.getColumnFamily().toString());
+    //        key.addProperty("cq",metadata.getColumnQualifier().toString());
+            key.addProperty("cv",metadata.getColumnVisibility().toString());
+            key.addProperty("timestamp",metadata.getTimestamp());
+            jsonObject.add("key",key);
+
         }
     }
 
@@ -96,13 +125,15 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
             }
             jsonDocument.add(name,array);
         }
-        if (attr instanceof TypeAttribute && ((TypeAttribute)attr).getType() instanceof NumberType){
+        else if (attr instanceof TypeAttribute && ((TypeAttribute)attr).getType() instanceof NumberType){
 
             jsonDocument.addProperty(name,(BigDecimal)((TypeAttribute)attr).getType().denormalize());
             addAttributeMetadata(attr,name,jsonDocument);
         }
         else{
-            addAttribute(attr,name,jsonDocument);
+            JsonObject newObj = new JsonObject();
+            addAttribute(attr,name,newObj);
+            jsonDocument.add(name,newObj);
         }
 
     }
@@ -121,7 +152,9 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
             Attribute<?> attr = entry.getValue();
             addJsonObject(attr,entry.getKey(),jsonDocument);
         }
-
+        if (document.isMetadataSet()){
+            addAttributeMetadata(document,"key",jsonDocument);
+        }
 
 
         return jsonDocument;
@@ -131,31 +164,62 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
      * Converts the provided element to an attribute with the document
      * @param element json element we are populating into the Document
      */
-    private static TypeAttribute<?> elementToAttribute(JsonElement element){
+    private static Attribute<?> elementToAttribute(JsonElement element) {
         Key key = new Key();
-        TypeAttribute<?> attr = null;
+        Attribute<?> attr = null;
         if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()){
             NumberType type = new NumberType(element.getAsString());
             attr = new TypeAttribute<>(type,key,true);
         }
         else{
-            NoOpType type = null;
+            BaseType<?> type = null;
+            String typeString="", attributeTypeString="";
             if (element instanceof JsonObject){
                 JsonObject obj = (JsonObject)element;
-                if ( obj.has("row") ){ // it has metadata
-                    key = new Key(obj.get("row").getAsString(),obj.get("cf").getAsString(),obj.get("cq").getAsString(),obj.get("cv").getAsString(),obj.get("timestamp").getAsLong());
+                if ( obj.has("key") ){ // it has metadata
+                    JsonObject jsonKey = obj.getAsJsonObject("key");
+                    key = new Key("","","",jsonKey.get("cv").getAsString(),jsonKey.get("timestamp").getAsLong());
                 }
-                Map.Entry<String,JsonElement> ret = obj.entrySet().stream().filter( entry ->{
-                    String str = entry.getKey();
-                    return !str.equals("row") && !str.equals("cf") && !str.equals("cq") && !str.equals("cv") && !str.equals("timestamp");
-                }).iterator().next();
-                if (ret.getValue().isJsonPrimitive() && ret.getValue().getAsJsonPrimitive().isNumber()){
-                    NumberType primitiveType = new NumberType(element.getAsString());
+                if (obj.has("type.metadata")){
+                    typeString = obj.get("type.metadata").getAsString();
+                }
+                if (obj.has("type.type")){
+                    attributeTypeString = obj.get("type.type").getAsString();
+                }
+                JsonElement data = obj.get("type.data");
+                if (data.isJsonPrimitive() && data.getAsJsonPrimitive().isNumber()){
+                    NumberType primitiveType = new NumberType(data.getAsString());
                     attr = new TypeAttribute<>(primitiveType,key,true);
                 }
                 else {
-                    type = new NoOpType(ret.getValue().getAsString());
-                    attr = new TypeAttribute<>(type, key, true);
+                    if (typeString.isEmpty())
+                        type = new NoOpType(data.getAsString());
+                    else{
+                        Constructor constructor = constructorCache.computeIfAbsent(typeString,constructorMissFx);;
+                        try {
+
+                            type = (BaseType<?>) constructor.newInstance(data.getAsString());
+                        }catch(Exception e){
+                            try {
+                                type = (BaseType<?>) constructor.newInstance();
+                                type.setDelegateFromString(data.getAsString());
+                            }catch(Exception e1){
+                                throw new RuntimeException(e1);
+                            }
+                        }
+                    }
+                    if (!attributeTypeString.isEmpty()){
+                        Constructor constructor = null;
+                        try {
+                            constructor = constructorCache.computeIfAbsent(attributeTypeString,attributeMissFx);
+                            attr = (Attribute<?>)  constructor.newInstance(data.getAsString(),key,true);
+                        } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                    }
+                    else
+                        attr = new TypeAttribute<>(type, key, true);
                 }
             }
             else {
@@ -174,7 +238,7 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
      * @param doc document to emplace the JsonElement attribute.
      */
     private static void populateAttribute(JsonElement element,String name, Document doc){
-        doc.put(name,elementToAttribute(element));
+        doc.put(name,elementToAttribute(element),true);
     }
 
     /**
@@ -188,16 +252,23 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
         array.iterator().forEachRemaining( x -> {
             attrs.add(elementToAttribute(x));
         });
-        doc.put(name,attrs);
+        doc.put(name,attrs,true);
     }
     @Override
     public Document deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
-        final Document doc = new Document();
-
+        Key key = null;
+        if (jsonElement.isJsonObject()){
+            JsonObject obj = (JsonObject)jsonElement;
+            if (obj.has("key")){
+                JsonObject jsonKey = obj.getAsJsonObject("key");
+                key = new Key(jsonKey.get("row").getAsString(),jsonKey.get("cf").getAsString(),jsonKey.get("cq").getAsString(),jsonKey.get("cv").getAsString(),jsonKey.get("timestamp").getAsLong());
+            }
+        }
+        final Document doc = new Document(key,true);
         if (jsonElement instanceof JsonObject){
             ((JsonObject)jsonElement).entrySet().stream().forEach(
                     x->{ // Entry<String,JsonElement>
-                        if (x.getValue() instanceof JsonArray){
+                        if (x.getValue().isJsonArray()){
                             // we have Attributes
                             populateAttributes((JsonArray)x.getValue(),x.getKey(),doc);
                         }
@@ -207,7 +278,40 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
                     }
             );
         }
-
         return doc;
     }
+
+    private static final class ConstuctorCacheMiss implements
+            Function<String,Constructor>{
+
+        @Override
+        public Constructor apply(String typeString) {
+            try {
+
+                return Class.forName(typeString).asSubclass(BaseType.class).getConstructor(String.class);
+            }catch(Exception e){
+                try {
+                    return Class.forName(typeString).asSubclass(BaseType.class).getConstructor();
+                }catch(Exception e1){
+                    throw new RuntimeException(e1);
+                }
+            }
+        }
+    }
+
+    private static final class AttributeConstructorCacheMiss implements
+            Function<String,Constructor>{
+
+        @Override
+        public Constructor apply(String typeString) {
+            try {
+                return Class.forName(typeString).asSubclass(Attribute.class).getConstructor(String.class, Key.class, boolean.class);
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
 }

@@ -8,6 +8,7 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -17,9 +18,10 @@ import java.nio.charset.StandardCharsets;
 public class JsonDeserializer extends DocumentDeserializer{
 
     static GsonBuilder gsonBuilder = new GsonBuilder();
-
+    static Gson gson;
     static{
         gsonBuilder.registerTypeAdapter(Document.class,new JsonDeser());
+        gson= gsonBuilder.create();
     }
 
 
@@ -27,14 +29,8 @@ public class JsonDeserializer extends DocumentDeserializer{
     }
     @Override
     public Document deserialize(final InputStream inputStream) {
-        final Gson gson= gsonBuilder.create();
-        try {
-            String ss = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-            Document d = gson.fromJson(ss,Document.class);
-            return d;
-        } catch (IOException e) {
-            throw new RuntimeException("Could not convert Document through write().", e);
-        }
+
+        return gson.fromJson(new InputStreamReader(inputStream),Document.class);
     }
 }
 
