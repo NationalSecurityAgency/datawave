@@ -14,7 +14,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ValueToAttributes;
-import datawave.query.util.FuzzyAttributeComparator;
+import datawave.query.util.AttributeComparator;
 import datawave.query.util.TypeMetadata;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
@@ -289,7 +289,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 
                 if (value instanceof Attributes && existingAttr instanceof Attributes) {
                     // ensure there are no fuzzy matches before merging
-                    if (!FuzzyAttributeComparator.multipleToMultiple((Attributes) existingAttr, (Attributes) value)) {
+                    if (!AttributeComparator.multipleToMultiple((Attributes) existingAttr, (Attributes) value)) {
                         // merge the two sets
                         attrs = (Attributes) existingAttr;
                         
@@ -306,14 +306,14 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         }
                     } else {
                         // fuzzy matches found, attempt to combine attributes
-                        Set<Attribute<? extends Comparable<?>>> combinedSet = FuzzyAttributeComparator.combineMultipleAttributes((Attributes) existingAttr,
+                        Set<Attribute<? extends Comparable<?>>> combinedSet = AttributeComparator.combineMultipleAttributes((Attributes) existingAttr,
                                         (Attributes) value);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
                     }
                 } else if (value instanceof Attributes) {
                     // ensure no fuzzy matches before merging
-                    if (!FuzzyAttributeComparator.singleToMultiple((Attributes) value, existingAttr)) {
+                    if (!AttributeComparator.singleToMultiple(existingAttr, (Attributes) value)) {
                         
                         _count -= existingAttr.size();
                         if (trackSizes) {
@@ -333,14 +333,14 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         }
                     } else {
                         // fuzzy matches found, attempt to combine attributes
-                        Set<Attribute<? extends Comparable<?>>> combinedSet = FuzzyAttributeComparator.combineMultipleAttributes((Attribute) existingAttr,
+                        Set<Attribute<? extends Comparable<?>>> combinedSet = AttributeComparator.combineMultipleAttributes((Attribute) existingAttr,
                                         (Attributes) value, trackSizes);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
                     }
                 } else if (existingAttr instanceof Attributes) {
                     // ensure no fuzzy matches before merging
-                    if (!FuzzyAttributeComparator.singleToMultiple((Attributes) existingAttr, value)) {
+                    if (!AttributeComparator.singleToMultiple(value, (Attributes) existingAttr)) {
                         
                         // add the value to the set
                         attrs = (Attributes) existingAttr;
@@ -361,14 +361,14 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         }
                     } else {
                         // fuzzy matches found, attempt to combine attributes
-                        Set<Attribute<? extends Comparable<?>>> combinedSet = FuzzyAttributeComparator.combineMultipleAttributes((Attributes) existingAttr,
+                        Set<Attribute<? extends Comparable<?>>> combinedSet = AttributeComparator.combineMultipleAttributes((Attributes) existingAttr,
                                         (Attribute) value, trackSizes);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
                     }
                 } else {
                     // ensure no fuzzy matches before merging
-                    if (!FuzzyAttributeComparator.singleToSingle(existingAttr, value)) {
+                    if (!AttributeComparator.singleToSingle(existingAttr, value)) {
                         
                         // create a set out of the two values
                         HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
@@ -383,7 +383,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         }
                     } else {
                         // fuzzy matches found, attempt to combine attributes
-                        Attribute mergedAttribute = (Attribute) FuzzyAttributeComparator.combineSingleAttributes(existingAttr, value);
+                        Attribute mergedAttribute = (Attribute) AttributeComparator.combineSingleAttributes(existingAttr, value);
                         dict.put(key, mergedAttribute);
                     }
                     

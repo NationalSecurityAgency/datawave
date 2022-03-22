@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class FuzzyAttributeComparatorTest {
+public class AttributeComparatorTest {
     
     private final Key testKey1 = new Key(new Text("20000101_69"), new Text("foo%00;d8zay2.-3pnndm.-anolok"), new Text(), new ColumnVisibility("ALL"),
                     946684800000L);
@@ -85,54 +85,54 @@ public class FuzzyAttributeComparatorTest {
     
     @Test
     public void testSingleToSingleAttributeComparison() {
-        assertTrue(FuzzyAttributeComparator.singleToSingle(preNorm1, content1));
-        assertTrue(FuzzyAttributeComparator.singleToSingle(content1, preNorm1));
-        assertFalse(FuzzyAttributeComparator.singleToSingle(preNorm1, ipAddr));
+        assertTrue(AttributeComparator.singleToSingle(preNorm1, content1));
+        assertTrue(AttributeComparator.singleToSingle(content1, preNorm1));
+        assertFalse(AttributeComparator.singleToSingle(preNorm1, ipAddr));
     }
     
     @Test
     public void testSingleToMultipleAttributeComparison() {
-        assertTrue(FuzzyAttributeComparator.singleToMultiple(preNormAttributes, preNorm1));
-        assertTrue(FuzzyAttributeComparator.singleToMultiple(preNormAttributes, content1));
-        assertFalse(FuzzyAttributeComparator.singleToMultiple(preNormAttributes, ipAddr));
+        assertTrue(AttributeComparator.singleToMultiple(preNorm1, preNormAttributes));
+        assertTrue(AttributeComparator.singleToMultiple(content1, preNormAttributes));
+        assertFalse(AttributeComparator.singleToMultiple(ipAddr, preNormAttributes));
         
-        assertTrue(FuzzyAttributeComparator.singleToMultiple(contentAttributes, content1));
-        assertTrue(FuzzyAttributeComparator.singleToMultiple(contentAttributes, preNorm1));
-        assertFalse(FuzzyAttributeComparator.singleToMultiple(contentAttributes, ipAddr));
+        assertTrue(AttributeComparator.singleToMultiple(content1, contentAttributes));
+        assertTrue(AttributeComparator.singleToMultiple(preNorm1, contentAttributes));
+        assertFalse(AttributeComparator.singleToMultiple(ipAddr, contentAttributes));
         
-        assertTrue(FuzzyAttributeComparator.singleToMultiple(mixedUpAttributes, ipAddr));
+        assertTrue(AttributeComparator.singleToMultiple(ipAddr, mixedUpAttributes));
     }
     
     @Test
     public void testMultipleToMultipleAttributeComparison() {
-        assertTrue(FuzzyAttributeComparator.multipleToMultiple(preNormAttributes, contentAttributes));
-        assertTrue(FuzzyAttributeComparator.multipleToMultiple(contentAttributes, preNormAttributes));
-        assertTrue(FuzzyAttributeComparator.multipleToMultiple(preNormAttributes, mixedUpAttributes));
-        assertTrue(FuzzyAttributeComparator.multipleToMultiple(contentAttributes, mixedUpAttributes));
+        assertTrue(AttributeComparator.multipleToMultiple(preNormAttributes, contentAttributes));
+        assertTrue(AttributeComparator.multipleToMultiple(contentAttributes, preNormAttributes));
+        assertTrue(AttributeComparator.multipleToMultiple(preNormAttributes, mixedUpAttributes));
+        assertTrue(AttributeComparator.multipleToMultiple(contentAttributes, mixedUpAttributes));
     }
     
     @Test
     public void testCombineAttributeToAttribute() {
-        assertEquals(FuzzyAttributeComparator.combineSingleAttributes(preNorm1, content1), combinedContent1);
+        assertEquals(AttributeComparator.combineSingleAttributes(preNorm1, content1), combinedContent1);
     }
     
     @Test
     public void testCombineAttributeToAttributes() {
-        Set<Attribute<? extends Comparable<?>>> mergedSet = FuzzyAttributeComparator.combineMultipleAttributes(preNorm1, contentAttributes, true);
+        Set<Attribute<? extends Comparable<?>>> mergedSet = AttributeComparator.combineMultipleAttributes(preNorm1, contentAttributes, true);
         assertThat(mergedSet, CoreMatchers.hasItem(combinedContent1));
         assertEquals(1, mergedSet.size());
     }
     
     @Test
     public void testCombineAttributesToAttribute() {
-        Set<Attribute<? extends Comparable<?>>> mergedSet = FuzzyAttributeComparator.combineMultipleAttributes(preNormAttributes, content1, true);
+        Set<Attribute<? extends Comparable<?>>> mergedSet = AttributeComparator.combineMultipleAttributes(preNormAttributes, content1, true);
         assertThat(mergedSet, CoreMatchers.hasItem(combinedContent1));
         assertEquals(3, mergedSet.size());
     }
     
     @Test
     public void testCombineAttributesToAttributes() {
-        Set<Attribute<? extends Comparable<?>>> mergedSet = FuzzyAttributeComparator.combineMultipleAttributes(preNormAttributes, contentAttributes);
+        Set<Attribute<? extends Comparable<?>>> mergedSet = AttributeComparator.combineMultipleAttributes(preNormAttributes, contentAttributes);
         assertThat(mergedSet, CoreMatchers.hasItem(combinedContent1));
         assertThat(mergedSet, CoreMatchers.hasItem(combinedContent2));
         assertThat(mergedSet, CoreMatchers.hasItem(combinedContent3));
