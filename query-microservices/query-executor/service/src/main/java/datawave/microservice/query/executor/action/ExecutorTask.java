@@ -30,6 +30,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.log4j.Logger;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
@@ -60,6 +61,9 @@ public abstract class ExecutorTask implements Runnable {
     protected QueryTask task;
     protected boolean interrupted = false;
     protected final QueryTaskUpdater queryTaskUpdater;
+    protected boolean running = false;
+    boolean taskComplete = false;
+    boolean taskFailed = false;
     
     public ExecutorTask(QueryExecutor source, QueryTask task) {
         this(source, source.getExecutorProperties(), source.getQueryProperties(), source.getBusProperties(), source.getConnectionRequestMap(),
@@ -112,20 +116,18 @@ public abstract class ExecutorTask implements Runnable {
      */
     @Override
     public void run() {
+        running = true;
         
         queryTaskUpdater.start();
         
-        boolean taskComplete = false;
-        boolean taskFailed = false;
-        
-        TaskKey taskKey = task.getTaskKey();
-        log.debug("Running " + taskKey);
-        
-        String queryId = taskKey.getQueryId();
-        
         Connector connector = null;
+        TaskKey taskKey = task.getTaskKey();
         
         try {
+            log.debug("Running " + taskKey);
+            
+            String queryId = taskKey.getQueryId();
+            
             CachedQueryStatus queryStatus = new CachedQueryStatus(cache, queryId, executorProperties.getQueryStatusExpirationMs());
             log.debug("Getting connector for " + taskKey);
             connector = getConnector(queryStatus, AccumuloConnectionFactory.Priority.LOW);
@@ -148,6 +150,8 @@ public abstract class ExecutorTask implements Runnable {
             queryTaskUpdater.close();
             
             completeTask(taskComplete, taskFailed);
+            
+            running = false;
         }
     }
     
@@ -171,6 +175,7 @@ public abstract class ExecutorTask implements Runnable {
         } else {
             cache.updateTaskState(taskKey, TaskStates.TASK_STATE.READY);
             // more work to do on this task, lets notify
+            // TODO: Create the correct query request
             publishExecutorEvent(QueryRequest.next(taskKey.getQueryId()), taskKey.getQueryPool());
         }
     }
@@ -462,6 +467,31 @@ public abstract class ExecutorTask implements Runnable {
                 }
             }
         }
+    }
+    
+    public boolean isInterrupted() {
+        return interrupted;
+    }
+    
+    public boolean isRunning() {
+        return running;
+    }
+    
+    public boolean isTaskComplete() {
+        return taskComplete;
+    }
+    
+    public boolean isTaskFailed() {
+        return taskFailed;
+    }
+    
+    public QueryTask getTask() {
+        return task;
+    }
+    
+    @Override
+    public String toString() {
+        return new ToStringBuilder(this).append("taskKey", task.getTaskKey()).build();
     }
     
 }

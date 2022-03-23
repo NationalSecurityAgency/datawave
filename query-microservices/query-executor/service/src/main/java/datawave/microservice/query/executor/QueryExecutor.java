@@ -25,6 +25,7 @@ import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.query.logic.QueryLogicFactory;
 import datawave.services.query.predict.QueryPredictor;
 import datawave.services.query.runner.AccumuloConnectionRequestMap;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.log4j.Logger;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.context.ApplicationContext;
@@ -52,7 +53,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
     
     protected final BlockingQueue<Runnable> workQueue;
     protected final Set<Runnable> working;
-    protected final Multimap<String,Runnable> queryToTask;
+    protected final Multimap<String,ExecutorTask> queryToTask;
     protected final QueryStorageCache cache;
     protected final QueryResultsManager queues;
     protected final QueryLogicFactory queryLogicFactory;
@@ -115,26 +116,26 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
     }
     
     private void removePendingTasks(String queryId) {
-        Collection<Runnable> tasks;
+        Collection<ExecutorTask> tasks;
         // synchronize explicitly to avoid mutations during the iteration
         synchronized (queryToTask) {
             tasks = new HashSet<>(queryToTask.get(queryId));
         }
-        for (Runnable action : tasks) {
+        for (ExecutorTask action : tasks) {
             threadPool.remove(action);
         }
     }
     
     private void stopTasks(String queryId, String userDn) {
-        Collection<Runnable> tasks;
+        Collection<ExecutorTask> tasks;
         // synchronize explicitly to avoid mutations during the iteration
         synchronized (queryToTask) {
             tasks = new HashSet<>(queryToTask.get(queryId));
         }
         while (!tasks.isEmpty()) {
-            for (Runnable action : tasks) {
+            for (ExecutorTask action : tasks) {
                 threadPool.remove(action);
-                ((ExecutorTask) action).interrupt();
+                action.interrupt();
             }
             synchronized (queryToTask) {
                 tasks = new HashSet<>(queryToTask.get(queryId));
@@ -332,18 +333,20 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         return metricClient;
     }
     
-    private String lastThreadPoolStatus = "";
-    private volatile long lastThreadPoolStatusUpdate = 0;
-    private static final int TEN_MINUTES = 10 * 60 * 1000;
-    
-    public boolean hasUpdatedThreadPoolStatus() {
-        return (!lastThreadPoolStatus.equals(threadPool.toString()) || ((System.currentTimeMillis() - lastThreadPoolStatusUpdate) > TEN_MINUTES));
+    public ThreadPoolExecutor getThreadPoolExecutor() {
+        return threadPool;
     }
     
-    public String getThreadPoolStatus() {
-        lastThreadPoolStatus = threadPool.toString();
-        lastThreadPoolStatusUpdate = System.currentTimeMillis();
-        return lastThreadPoolStatus;
+    public Multimap<String,ExecutorTask> getQueryToTasks() {
+        synchronized (queryToTask) {
+            return LinkedHashMultimap.create(queryToTask);
+        }
     }
     
+    @Override
+    public String toString() {
+        ToStringBuilder builder = new ToStringBuilder(this);
+        return builder.append("\nthreadPoolExecutor", "\n" + threadPool).append("\nqueryTasks", "\n" + queryToTask)
+                        .append("\nconnectionFactory", "\n" + connectionFactory.report()).build();
+    }
 }

@@ -265,6 +265,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
             for (Entry<Priority,AccumuloConnectionPool> poolEntry : entry.getValue().entrySet()) {
                 if (poolEntry.getValue().connectorCameFromHere(connection)) {
                     poolEntry.getValue().returnObject(connection);
+                    log.info("Returning connection to pool " + entry.getKey() + " for priority " + poolEntry.getKey());
                     return;
                 }
             }

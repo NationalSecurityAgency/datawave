@@ -18,22 +18,22 @@ public class FindWorkTask implements Callable<Void> {
     private Logger log = Logger.getLogger(FindWorkTask.class);
     protected final QueryStorageCache cache;
     protected final QueryExecutor executor;
+    protected final ExecutorStatusLogger statusLogger;
     
     private final String originService;
     private final String destinationService;
     
-    public FindWorkTask(QueryStorageCache cache, QueryExecutor executor, String originService, String destinationService) {
+    public FindWorkTask(QueryStorageCache cache, QueryExecutor executor, String originService, String destinationService, ExecutorStatusLogger statusLogger) {
         this.cache = cache;
         this.executor = executor;
         this.originService = originService;
         this.destinationService = destinationService;
+        this.statusLogger = statusLogger;
     }
     
     @Override
     public Void call() throws Exception {
-        if (executor.hasUpdatedThreadPoolStatus()) {
-            log.info("Executor status: " + executor.getThreadPoolStatus());
-        }
+        statusLogger.logStatus(executor);
         for (QueryStatus queryStatus : cache.getQueryStatus()) {
             String queryId = queryStatus.getQueryKey().getQueryId();
             switch (queryStatus.getQueryState()) {

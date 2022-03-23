@@ -25,6 +25,7 @@ public class FindWorkMonitor {
     private final ExecutorProperties executorProperties;
     private final QueryStorageCache queryStorageCache;
     private final QueryExecutor queryExecutor;
+    private final ExecutorStatusLogger executorStatusLogger = new ExecutorStatusLogger();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     
     private final String originService;
@@ -71,7 +72,7 @@ public class FindWorkMonitor {
         // schedule a new monitor task if the previous one has finished
         if (taskFuture == null) {
             taskStartTime = System.currentTimeMillis();
-            taskFuture = executor.submit(new FindWorkTask(queryStorageCache, queryExecutor, originService, destinationService));
+            taskFuture = executor.submit(new FindWorkTask(queryStorageCache, queryExecutor, originService, destinationService, executorStatusLogger));
         }
     }
     

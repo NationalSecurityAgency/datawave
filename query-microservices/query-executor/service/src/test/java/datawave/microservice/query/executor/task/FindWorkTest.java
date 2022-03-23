@@ -328,7 +328,7 @@ public class FindWorkTest {
         
         @Bean
         public FindWorkTask findWorkTask(QueryStorageCache cache, QueryExecutor executor) {
-            return new FindWorkTask(cache, executor, null, null);
+            return new FindWorkTask(cache, executor, null, null, new ExecutorStatusLogger());
         }
         
         @Bean
