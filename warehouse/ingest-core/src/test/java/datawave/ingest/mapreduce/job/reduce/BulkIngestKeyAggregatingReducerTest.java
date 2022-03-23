@@ -45,7 +45,7 @@ import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReduc
 import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS;
 import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.VERBOSE_COUNTERS;
 import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.VERBOSE_PARTITIONING_COUNTERS;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({TableConfigurationUtil.class})
@@ -133,7 +133,6 @@ public class BulkIngestKeyAggregatingReducerTest {
         PowerMockito.when(context.getCounter(IngestOutput.DUPLICATE_KEY)).thenReturn(duplicateKey);
         
         reducer = new BulkIngestKeyAggregatingReducer<>();
-        // reducer.setupContextWriter(conf);
     }
     
     private void setupVerboseCounters() {
@@ -209,7 +208,6 @@ public class BulkIngestKeyAggregatingReducerTest {
             Iterator<Map.Entry<String,String>> iter = confMap.entrySet().iterator();
             return iter;
         }).when(conf).iterator();
-        
     }
     
     private void checkCounterValues() {

@@ -76,9 +76,6 @@ public class AggregatingReducerTest {
     
     @Test
     public void testColumnToClassMappingOptMap() {
-        // optMap.put("fam1:qual1", AggregatingReducerTest.testCombiner1.class.getName());
-        // optMap.put("*", AggregatingReducerTest.testCombiner2.class.getName());
-        // optMap.put("fam3", AggregatingReducerTest.testCombiner3.class.getName());
         setupOptMap();
         columnToClassMapping = new CustomColumnToClassMapping(1, optMap);
         
