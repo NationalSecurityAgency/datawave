@@ -5,6 +5,8 @@ import datawave.configuration.spring.SpringBean;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.exceptions.InvalidQueryException;
+import datawave.query.function.deserializer.DocumentDeserializer;
+import datawave.query.function.deserializer.JsonDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -122,7 +124,7 @@ public abstract class UniqueTest {
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
     
-    protected KryoDocumentDeserializer deserializer;
+    protected DocumentDeserializer deserializer;
     
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     
@@ -152,7 +154,7 @@ public abstract class UniqueTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         logic.setFullTableScanEnabled(true);
-        deserializer = new KryoDocumentDeserializer();
+        deserializer = new JsonDeserializer();
     }
     
     protected abstract void runTestQueryWithUniqueness(Set<Set<String>> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)

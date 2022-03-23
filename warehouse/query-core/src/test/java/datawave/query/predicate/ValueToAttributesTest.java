@@ -12,7 +12,6 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.function.deserializer.JsonDeserializer;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.BaseEdgeQueryTest;

@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 public class SerializerDeterministicTest {
 
 
-    @Test
+//    @Test
     public void testSimpleQuery() {
         String query = "FOO == 'bar'";
         Document d = new Document();

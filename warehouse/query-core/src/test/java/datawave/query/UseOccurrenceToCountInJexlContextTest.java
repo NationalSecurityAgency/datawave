@@ -17,6 +17,8 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.JexlEvaluation;
+import datawave.query.function.deserializer.DocumentDeserializer;
+import datawave.query.function.deserializer.JsonDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
@@ -121,7 +123,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
     
     protected ShardQueryLogic logic = null;
     
-    protected KryoDocumentDeserializer deserializer;
+    protected DocumentDeserializer deserializer;
     
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     
@@ -159,7 +161,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         logic.setMetadataHelperFactory(new MetadataHelperFactory());
         logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
         logic.setMaxEvaluationPipelines(1);
-        deserializer = new KryoDocumentDeserializer();
+        deserializer = new JsonDeserializer();
     }
     
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,

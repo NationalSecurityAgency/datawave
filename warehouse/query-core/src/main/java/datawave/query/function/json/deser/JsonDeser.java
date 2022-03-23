@@ -43,8 +43,11 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
     private static void addAttributeData(Attribute<?> attr,String name, JsonObject jsonObject) {
         if (attr instanceof TypeAttribute){
             datawave.data.type.Type t = ((TypeAttribute)attr).getType();
-            if (t.getClass() != NoOpType.class)
-                jsonObject.addProperty("type.metadata",t.getClass().getCanonicalName());
+            if (t.getClass() != NoOpType.class) {
+                String str = t.getClass().getName();
+                String str2 = t.getClass().getSimpleName();
+                jsonObject.addProperty("type.metadata", t.getClass().getName());
+            }
         }else{
             jsonObject.addProperty("type.type",attr.getClass().getCanonicalName());
         }
