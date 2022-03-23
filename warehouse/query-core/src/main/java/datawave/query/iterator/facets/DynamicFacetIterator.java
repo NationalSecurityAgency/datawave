@@ -12,6 +12,7 @@ import java.util.SortedSet;
 
 import javax.annotation.Nullable;
 
+import datawave.query.function.serializer.JsonDocumentSerializer;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -261,6 +262,8 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         } else if (this.getReturnType() == ReturnType.tostring) {
             // Just return a toString() representation of the document
             this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new ToStringDocumentSerializer(isReducedResponse()));
+        } else if (this.getReturnType() == ReturnType.json) {
+            this.serializedDocuments = Iterators.transform(fieldIndexDocuments, new JsonDocumentSerializer(isReducedResponse()));
         } else {
             throw new IllegalArgumentException("Unknown return type of: " + this.getReturnType());
         }

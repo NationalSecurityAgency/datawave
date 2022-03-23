@@ -229,10 +229,10 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
                     attr = new TypeAttribute<>(primitiveType,key,true);
                 }
                 else {
-                    if (typeString.isEmpty())
+                    if (typeString.isEmpty() && attributeTypeString.isEmpty())
                         type = new NoOpType(data.getAsString());
                     else{
-                        Constructor constructor = constructorCache.computeIfAbsent(typeString,constructorMissFx);;
+                        Constructor constructor = constructorCache.computeIfAbsent(attributeTypeString,attributeMissFx);;
                         try {
 
                             type = (BaseType<?>) constructor.newInstance(data.getAsString());
