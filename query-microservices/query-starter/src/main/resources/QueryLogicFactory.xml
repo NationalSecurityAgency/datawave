@@ -435,6 +435,14 @@
         <property name="indexTableName" value="${datawave.query.logic.logics.QueryMetricsQuery.indexTableName}" />
         <property name="reverseIndexTableName" value="${datawave.query.logic.logics.QueryMetricsQuery.reverseIndexTableName}" />
         <property name="auditType" value="${datawave.query.logic.logics.QueryMetricsQuery.auditType}" />
+        <property name="collectQueryMetrics" value="${datawave.query.logic.logics.QueryMetricsQuery.collectQueryMetrics}" />
+    </bean>
+
+    <bean id="InternalQueryMetricsQuery" scope="prototype"  parent="QueryMetricsQuery" class="datawave.query.metrics.QueryMetricQueryLogic">
+        <property name="collectQueryMetrics" value="${datawave.query.logic.logics.InternalQueryMetricsQuery.collectQueryMetrics}" />
+
+        <!-- This is injected via InternalQueryMetricsQueryConfiguration.java and configured via configuration properties -->
+        <property name="requiredRoles" ref="internalQueryMetricsQueryRequiredRoles" />
     </bean>
 
     <!-- TODO: Should this be checkpointable? -->

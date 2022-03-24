@@ -72,6 +72,8 @@ hazelcast:
 
 # The default URI for remote authorization
 datawave:
+  npeOuEntries: "EXAMPLE_SERVER_OU1,EXAMPLE_SERVER_OU2"
+  subjectDnPattern: "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)"
   authorization:
     uri: "https://authorization:8443/authorization/v1/authorize"
 

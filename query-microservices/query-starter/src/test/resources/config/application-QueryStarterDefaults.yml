@@ -349,6 +349,12 @@ datawave:
           indexTableName: ${warehouse.metricTables.index.name}
           reverseIndexTableName: ${warehouse.metricTables.reverseIndex.name}
           auditType: "NONE"
+          collectQueryMetrics: true
+
+        InternalQueryMetricsQuery:
+          collectQueryMetrics: false
+          requiredRoles:
+            - "AuthorizedServer"
 
         FacetedQuery:
           checkpointable: true

@@ -38,6 +38,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -219,9 +220,9 @@ public abstract class ExecutorTask implements Runnable {
         }
     }
     
-    protected QueryLogic<?> getQueryLogic(Query query) throws QueryException, CloneNotSupportedException {
+    protected QueryLogic<?> getQueryLogic(Query query, Collection<String> roles) throws QueryException, CloneNotSupportedException {
         log.debug("Getting query logic for " + query.getQueryLogicName());
-        return queryLogicFactory.getQueryLogic(query.getQueryLogicName());
+        return queryLogicFactory.getQueryLogic(query.getQueryLogicName(), roles);
     }
     
     public enum RESULTS_ACTION {
@@ -330,34 +331,39 @@ public abstract class ExecutorTask implements Runnable {
     }
     
     protected void updateMetrics(String queryId, CachedQueryStatus queryStatus, TransformIterator iter) {
-        // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
-        if (iter.getTransformer() instanceof WritesQueryMetrics) {
-            WritesQueryMetrics metrics = ((WritesQueryMetrics) iter.getTransformer());
-            if (metrics.hasMetrics()) {
-                BaseQueryMetric baseQueryMetric = metricFactory.createMetric();
-                baseQueryMetric.setQueryId(queryId);
-                baseQueryMetric.setSourceCount(metrics.getSourceCount());
-                queryStatus.incrementNextCount(metrics.getNextCount());
-                baseQueryMetric.setNextCount(metrics.getNextCount());
-                queryStatus.incrementSeekCount(metrics.getSeekCount());
-                baseQueryMetric.setSeekCount(metrics.getSeekCount());
-                baseQueryMetric.setYieldCount(metrics.getYieldCount());
-                baseQueryMetric.setDocRanges(metrics.getDocRanges());
-                baseQueryMetric.setFiRanges(metrics.getFiRanges());
-                baseQueryMetric.setLastUpdated(new Date(queryStatus.getLastUpdatedMillis()));
-                try {
-                    // @formatter:off
-                    metricClient.submit(
-                            new QueryMetricClient.Request.Builder()
-                                    .withMetric(baseQueryMetric)
-                                    .withMetricType(QueryMetricType.DISTRIBUTED)
-                                    .build());
-                    // @formatter:on
-                    metrics.resetMetrics();
-                } catch (Exception e) {
-                    log.error("Error updating query metric", e);
+        try {
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName());
+            // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
+            if (logic.getCollectQueryMetrics() && iter.getTransformer() instanceof WritesQueryMetrics) {
+                WritesQueryMetrics metrics = ((WritesQueryMetrics) iter.getTransformer());
+                if (metrics.hasMetrics()) {
+                    BaseQueryMetric baseQueryMetric = metricFactory.createMetric();
+                    baseQueryMetric.setQueryId(queryId);
+                    baseQueryMetric.setSourceCount(metrics.getSourceCount());
+                    queryStatus.incrementNextCount(metrics.getNextCount());
+                    baseQueryMetric.setNextCount(metrics.getNextCount());
+                    queryStatus.incrementSeekCount(metrics.getSeekCount());
+                    baseQueryMetric.setSeekCount(metrics.getSeekCount());
+                    baseQueryMetric.setYieldCount(metrics.getYieldCount());
+                    baseQueryMetric.setDocRanges(metrics.getDocRanges());
+                    baseQueryMetric.setFiRanges(metrics.getFiRanges());
+                    baseQueryMetric.setLastUpdated(new Date(queryStatus.getLastUpdatedMillis()));
+                    try {
+                        // @formatter:off
+                        metricClient.submit(
+                                new QueryMetricClient.Request.Builder()
+                                        .withMetric(baseQueryMetric)
+                                        .withMetricType(QueryMetricType.DISTRIBUTED)
+                                        .build());
+                        // @formatter:on
+                        metrics.resetMetrics();
+                    } catch (Exception e) {
+                        log.error("Error updating query metric", e);
+                    }
                 }
             }
+        } catch (QueryException | CloneNotSupportedException e) {
+            log.warn("Could not determine whether the query logic supports metrics");
         }
     }
     

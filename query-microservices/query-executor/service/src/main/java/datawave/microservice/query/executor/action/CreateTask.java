@@ -54,7 +54,7 @@ public class CreateTask extends ExecutorTask {
         TaskKey taskKey = task.getTaskKey();
         String queryId = taskKey.getQueryId();
         
-        QueryLogic<?> queryLogic = getQueryLogic(queryStatus.getQuery());
+        QueryLogic<?> queryLogic = getQueryLogic(queryStatus.getQuery(), queryStatus.getCurrentUser().getPrimaryUser().getRoles());
         try {
             // start with the planning stage
             queryStatus.setCreateStage(QueryStatus.CREATE_STAGE.PLAN);
@@ -73,21 +73,23 @@ public class CreateTask extends ExecutorTask {
                 queryStatus.setConfig(config);
             }
             
-            // update the query metrics with the plan
-            BaseQueryMetric baseQueryMetric = metricFactory.createMetric();
-            baseQueryMetric.setQueryId(taskKey.getQueryId());
-            baseQueryMetric.setPlan(config.getQueryString());
-            baseQueryMetric.setLastUpdated(new Date(queryStatus.getLastUpdatedMillis()));
-            try {
-                // @formatter:off
-                metricClient.submit(
-                        new QueryMetricClient.Request.Builder()
-                                .withMetric(baseQueryMetric)
-                                .withMetricType(QueryMetricType.DISTRIBUTED)
-                                .build());
-                // @formatter:on
-            } catch (Exception e) {
-                log.error("Error updating query metric", e);
+            if (queryLogic.getCollectQueryMetrics()) {
+                // update the query metrics with the plan
+                BaseQueryMetric baseQueryMetric = metricFactory.createMetric();
+                baseQueryMetric.setQueryId(taskKey.getQueryId());
+                baseQueryMetric.setPlan(config.getQueryString());
+                baseQueryMetric.setLastUpdated(new Date(queryStatus.getLastUpdatedMillis()));
+                try {
+                    // @formatter:off
+                    metricClient.submit(
+                            new QueryMetricClient.Request.Builder()
+                                    .withMetric(baseQueryMetric)
+                                    .withMetricType(QueryMetricType.DISTRIBUTED)
+                                    .build());
+                    // @formatter:on
+                } catch (Exception e) {
+                    log.error("Error updating query metric", e);
+                }
             }
             
             // now we move into the tasking stage

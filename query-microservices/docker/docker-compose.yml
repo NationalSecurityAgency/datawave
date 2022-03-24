@@ -179,6 +179,7 @@ services:
         condition: service_healthy
 
   metrics:
+    entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5007","-jar","app.jar"]
     image: datawave/query-metric-service:1.5-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
@@ -196,6 +197,7 @@ services:
     ports:
       - "8180:8080"
       - "8543:8443"
+      - "5007:5007"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs

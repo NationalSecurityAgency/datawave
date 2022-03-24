@@ -55,6 +55,7 @@ datawave:
         defaultMetricMarkings:
           columnVisibility: PUBLIC
         baseMaps: "{}"
+        queryPool: "pool1"
       timely:
         enabled: false
 

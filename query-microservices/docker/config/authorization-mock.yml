@@ -43,6 +43,7 @@ mock:
       "[cn=testserver.example.com, ou=servers, o=example corp, c=us<cn=example corp ca, o=example corp, c=us>]":
         roles-to-auths:
           AuthorizedServer: DW_SERV
+          MetricsAdministrator: METRICS_ADMIN
           FooRole: FOO
           BarRole: BAR
           DefRole: DEF

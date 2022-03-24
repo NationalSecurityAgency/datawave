@@ -1095,21 +1095,28 @@ public class QueryManagementService implements QueryRequestHandler {
             // publish a cancel event to the executor pool
             publishExecutorEvent(cancelRequest, queryStatus.getQueryKey().getQueryPool());
             
-            // update query metrics
-            BaseQueryMetric baseQueryMetric = getBaseQueryMetric();
-            baseQueryMetric.setQueryId(queryId);
-            baseQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.CANCELLED);
-            baseQueryMetric.setLastUpdated(new Date());
             try {
-                // @formatter:off
-                queryMetricClient.submit(
-                        new QueryMetricClient.Request.Builder()
-                                .withMetric(baseQueryMetric.duplicate())
-                                .withMetricType(QueryMetricType.DISTRIBUTED)
-                                .build());
-                // @formatter:on
-            } catch (Exception e) {
-                log.error("Error updating query metric", e);
+                QueryLogic<?> logic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName());
+                if (logic.getCollectQueryMetrics()) {
+                    // update query metrics
+                    BaseQueryMetric baseQueryMetric = getBaseQueryMetric();
+                    baseQueryMetric.setQueryId(queryId);
+                    baseQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.CANCELLED);
+                    baseQueryMetric.setLastUpdated(new Date());
+                    try {
+                        // @formatter:off
+                        queryMetricClient.submit(
+                                new QueryMetricClient.Request.Builder()
+                                        .withMetric(baseQueryMetric.duplicate())
+                                        .withMetricType(QueryMetricType.DISTRIBUTED)
+                                        .build());
+                        // @formatter:on
+                    } catch (Exception e) {
+                        log.error("Error updating query metric", e);
+                    }
+                }
+            } catch (CloneNotSupportedException e) {
+                log.warn("Could not determine whether the query logic supports metrics");
             }
         }
     }
@@ -1294,21 +1301,28 @@ public class QueryManagementService implements QueryRequestHandler {
         // publish a close event to the executor pool
         publishExecutorEvent(QueryRequest.close(queryId), queryStatus.getQueryKey().getQueryPool());
         
-        // update query metrics
-        BaseQueryMetric baseQueryMetric = getBaseQueryMetric();
-        baseQueryMetric.setQueryId(queryId);
-        baseQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.CLOSED);
-        baseQueryMetric.setLastUpdated(new Date());
         try {
-            // @formatter:off
-            queryMetricClient.submit(
-                    new QueryMetricClient.Request.Builder()
-                            .withMetric(baseQueryMetric.duplicate())
-                            .withMetricType(QueryMetricType.DISTRIBUTED)
-                            .build());
-            // @formatter:on
-        } catch (Exception e) {
-            log.error("Error updating query metric", e);
+            QueryLogic<?> logic = queryLogicFactory.getQueryLogic(queryStatus.getQuery().getQueryLogicName());
+            if (logic.getCollectQueryMetrics()) {
+                // update query metrics
+                BaseQueryMetric baseQueryMetric = getBaseQueryMetric();
+                baseQueryMetric.setQueryId(queryId);
+                baseQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.CLOSED);
+                baseQueryMetric.setLastUpdated(new Date());
+                try {
+                    // @formatter:off
+                    queryMetricClient.submit(
+                            new QueryMetricClient.Request.Builder()
+                                    .withMetric(baseQueryMetric.duplicate())
+                                    .withMetricType(QueryMetricType.DISTRIBUTED)
+                                    .build());
+                    // @formatter:on
+                } catch (Exception e) {
+                    log.error("Error updating query metric", e);
+                }
+            }
+        } catch (CloneNotSupportedException e) {
+            log.warn("Could not determine whether the query logic supports metrics");
         }
     }
     

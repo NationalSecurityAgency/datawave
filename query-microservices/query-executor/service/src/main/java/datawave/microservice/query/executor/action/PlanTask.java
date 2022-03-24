@@ -32,7 +32,7 @@ public class PlanTask extends ExecutorTask {
         
         TaskKey taskKey = task.getTaskKey();
         String queryId = taskKey.getQueryId();
-        QueryLogic<?> queryLogic = getQueryLogic(queryStatus.getQuery());
+        QueryLogic<?> queryLogic = getQueryLogic(queryStatus.getQuery(), queryStatus.getCurrentUser().getPrimaryUser().getRoles());
         try {
             // by default we will expand the fields but not the values.
             boolean expandFields = true;

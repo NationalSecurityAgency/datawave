@@ -27,6 +27,8 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.common.result.ConnectionPool;
@@ -80,6 +82,7 @@ import java.util.concurrent.TimeUnit;
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
+import static datawave.security.authorization.DatawaveUser.UserType.USER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -93,6 +96,9 @@ public abstract class QueryExecutorTest {
     
     private static DataTypeHadoopConfig dataType;
     private static List<TestAccumuloSetup> dataToCleanup = new ArrayList<>();
+    
+    protected String userDN = "userDn";
+    protected SubjectIssuerDNPair DN = SubjectIssuerDNPair.of(userDN, "issuerDn");
     
     @Autowired
     public TestAccumuloSetup accumuloSetup;
@@ -226,7 +232,7 @@ public abstract class QueryExecutorTest {
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.createQuery(queryPool, query, null, Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        TaskKey key = storageService.createQuery(queryPool, query, createUserDetails(), Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
         
         QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
@@ -340,7 +346,7 @@ public abstract class QueryExecutorTest {
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.createQuery(queryPool, query, null, Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        TaskKey key = storageService.createQuery(queryPool, query, createUserDetails(), Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
         
         QueryResultsListener listener = queueManager.createListener("QueryExecutorTest.testCheckpointableQuery[" + key.getQueryId() + "]", key.getQueryId());
@@ -429,7 +435,7 @@ public abstract class QueryExecutorTest {
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.createQuery(queryPool, query, null, Collections.singleton(CitiesDataType.getTestAuths()), 20);
+        TaskKey key = storageService.createQuery(queryPool, query, createUserDetails(), Collections.singleton(CitiesDataType.getTestAuths()), 20);
         assertNotNull(key);
         
         QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
@@ -541,7 +547,7 @@ public abstract class QueryExecutorTest {
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.planQuery(queryPool, query, null, Collections.singleton(CitiesDataType.getTestAuths()));
+        TaskKey key = storageService.planQuery(queryPool, query, createUserDetails(), Collections.singleton(CitiesDataType.getTestAuths()));
         assertNotNull(key);
         
         QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
@@ -600,7 +606,7 @@ public abstract class QueryExecutorTest {
         query.setPagesize(100);
         query.addParameter("query.syntax", "LUCENE");
         String queryPool = new String(TEST_POOL);
-        TaskKey key = storageService.predictQuery(queryPool, query, null, Collections.singleton(CitiesDataType.getTestAuths()));
+        TaskKey key = storageService.predictQuery(queryPool, query, createUserDetails(), Collections.singleton(CitiesDataType.getTestAuths()));
         assertNotNull(key);
         
         QueryStatus queryStatusTest = storageService.getQueryStatus(key.getQueryId());
@@ -640,6 +646,17 @@ public abstract class QueryExecutorTest {
         if (status.getQueryState() == QueryStatus.QUERY_STATE.FAIL) {
             throw new RuntimeException(status.getFailureMessage() + " : " + status.getStackTrace());
         }
+    }
+    
+    protected ProxiedUserDetails createUserDetails() {
+        return createUserDetails(null, null);
+    }
+    
+    protected ProxiedUserDetails createUserDetails(Collection<String> roles, Collection<String> auths) {
+        Collection<String> userRoles = roles != null ? roles : Collections.singleton("AuthorizedUser");
+        Collection<String> userAuths = auths != null ? auths : Collections.singleton("ALL");
+        DatawaveUser datawaveUser = new DatawaveUser(DN, USER, userAuths, userRoles, null, System.currentTimeMillis());
+        return new ProxiedUserDetails(Collections.singleton(datawaveUser), datawaveUser.getCreationTime());
     }
     
     public static class TestAccumuloSetup extends AccumuloSetup {
@@ -802,5 +819,4 @@ public abstract class QueryExecutorTest {
             };
         }
     }
-    
 }

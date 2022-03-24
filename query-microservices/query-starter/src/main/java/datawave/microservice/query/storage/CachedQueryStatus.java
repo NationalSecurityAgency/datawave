@@ -1,6 +1,7 @@
 package datawave.microservice.query.storage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.logic.QueryKey;
@@ -223,6 +224,16 @@ public class CachedQueryStatus extends QueryStatus {
     @Override
     public synchronized void setQuery(Query query) {
         updateQueryStatus(() -> queryStatus.setQuery(query));
+    }
+    
+    @Override
+    public ProxiedUserDetails getCurrentUser() {
+        return get().getCurrentUser();
+    }
+    
+    @Override
+    public synchronized void setCurrentUser(ProxiedUserDetails currentUser) {
+        updateQueryStatus(() -> queryStatus.setCurrentUser(currentUser));
     }
     
     @Override
