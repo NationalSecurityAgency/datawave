@@ -136,10 +136,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        /**
-         * If we have a delayed predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types
-         */
-        if (QueryPropertyMarker.findInstance(node).isDelayedPredicate() || this.expandedNodes.contains(node)) {
+        if (this.expandedNodes.contains(node)) {
             return node;
         }
         
