@@ -112,6 +112,8 @@ You will need to build the docker image for this service on your local machine f
 
 ### Prereqs
 
+#### Datawave Quickstart
+
 Prior to starting these services, you need to use the datawave-quickstart to deploy Hadoop, Zookeeper, and Accumulo on your host machine.  This will also ensure that you have some data available for query.
 
 Before running the quickstart setup, you need to edit your ~/.bashrc to include the following export:
@@ -124,15 +126,29 @@ This will ensure that Hadoop binds to all interfaces, and that Accumulo binds to
 
 See the [DataWave Quickstart Readme](../../contrib/datawave-quickstart/README.md) for more details.
 
-After the quickstart is running, be sure to stop the DataWave webservice prior to proceeding.
+After the quickstart is running, be sure to stop the DataWave webservice prior to proceeding.  Alternatively, use `accumuloStart` to start up just the query microservice dependencies.
 
-### /etc/hosts
+#### /etc/hosts
 
 In order for the following bootstrap step to work properly, you should ensure that your /etc/hosts file looks similar to the following:
 
 ```
 <your ip address>    <your fqdn> <your hostname>
 127.0.0.1            localhost
+```
+
+#### Docker
+
+These services have been successfully deployed using the following versions of docker and docker-compose.
+
+```
+$> docker --version
+Docker version 20.10.3, build 48d30b5
+$> docker-compose version
+docker-compose version 1.28.4, build cabd5cfb
+docker-py version: 4.4.3
+CPython version: 3.7.10
+OpenSSL version: OpenSSL 1.1.0l  10 Sep 2019
 ```
 
 ### Bootstrap
