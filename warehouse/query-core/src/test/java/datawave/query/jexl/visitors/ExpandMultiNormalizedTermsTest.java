@@ -475,10 +475,17 @@ public class ExpandMultiNormalizedTermsTest {
         config.setQueryFieldsDatatypes(dataTypes);
         
         List<String> markers = Arrays.asList(new String[] {IndexHoleMarkerJexlNode.label(), ASTDelayedPredicate.label(), ASTEvaluationOnly.label(),
-                ExceededOrThresholdMarkerJexlNode.label(), ExceededTermThresholdMarkerJexlNode.label(), ExceededValueThresholdMarkerJexlNode.label()});
+                ExceededOrThresholdMarkerJexlNode.label()});
         for (String marker : markers) {
             String original = "((" + marker + " = true) && (FOO == 'Bar'))";
             String expected = "((" + marker + " = true) && (FOO == 'bar'))";
+            expandTerms(original, expected);
+        }
+        
+        markers = Arrays.asList(new String[] {ExceededTermThresholdMarkerJexlNode.label(), ExceededValueThresholdMarkerJexlNode.label()});
+        for (String marker : markers) {
+            String original = "((" + marker + " = true) && (FOO == 'Bar'))";
+            String expected = "((" + marker + " = true) && (FOO == 'Bar'))";
             expandTerms(original, expected);
         }
     }
