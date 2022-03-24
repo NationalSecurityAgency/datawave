@@ -462,33 +462,27 @@ public class ExpandMultiNormalizedTermsTest {
         JexlNodeAssert.assertThat(script).isEqualTo(smashed).isEqualTo(queryTree).hasValidLineage();
         JexlNodeAssert.assertThat(queryTree).isEqualTo(query).hasValidLineage();
     }
-
+    
     @Test
     public void testDelayedPredicates() throws ParseException {
         Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
-
+        
         helper.setIndexedFields(dataTypes.keySet());
         helper.setIndexOnlyFields(dataTypes.keySet());
         helper.addTermFrequencyFields(dataTypes.keySet());
-
+        
         config.setQueryFieldsDatatypes(dataTypes);
-
-        List<String> markers = Arrays.asList(new String[] {
-                        IndexHoleMarkerJexlNode.label(),
-                        ASTDelayedPredicate.label(),
-                        ASTEvaluationOnly.label(),
-                        ExceededOrThresholdMarkerJexlNode.label(),
-                        ExceededTermThresholdMarkerJexlNode.label(),
-                        ExceededValueThresholdMarkerJexlNode.label()
-                });
+        
+        List<String> markers = Arrays.asList(new String[] {IndexHoleMarkerJexlNode.label(), ASTDelayedPredicate.label(), ASTEvaluationOnly.label(),
+                ExceededOrThresholdMarkerJexlNode.label(), ExceededTermThresholdMarkerJexlNode.label(), ExceededValueThresholdMarkerJexlNode.label()});
         for (String marker : markers) {
             String original = "((" + marker + " = true) && (FOO == 'Bar'))";
             String expected = "((" + marker + " = true) && (FOO == 'bar'))";
             expandTerms(original, expected);
         }
     }
-
+    
     private void expandTerms(String original, String expected) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(original);
         ASTJexlScript expanded = ExpandMultiNormalizedTerms.expandTerms(config, helper, script);
