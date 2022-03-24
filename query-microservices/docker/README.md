@@ -126,6 +126,15 @@ See the [DataWave Quickstart Readme](../../contrib/datawave-quickstart/README.md
 
 After the quickstart is running, be sure to stop the DataWave webservice prior to proceeding.
 
+### /etc/hosts
+
+In order for the following bootstrap step to work properly, you should ensure that your /etc/hosts file looks similar to the following:
+
+```
+<your ip address>    <your fqdn> <your hostname>
+127.0.0.1            localhost
+```
+
 ### Bootstrap
 
 The audit, dictionary, and query metric services all need to connect to Zookeeper and Accumulo on the host system.  In order to do that, there are some host-specific environment variables which need to be configured.  
