@@ -3,6 +3,7 @@ package datawave.webservice.query.metric;
 import datawave.annotation.DateFormat;
 import datawave.annotation.Required;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.metrics.remote.RemoteQueryMetricService;
@@ -11,7 +12,11 @@ import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.map.QueryGeometryHandler;
 import datawave.webservice.query.map.QueryGeometryResponse;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
@@ -39,6 +44,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
 import java.security.Principal;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -63,6 +69,13 @@ public class QueryMetricsBean {
     private EJBContext ctx;
     @Inject
     private RemoteQueryMetricService remoteQueryMetricService;
+    @Inject
+    private QueryMetricHandler<? extends BaseQueryMetric> queryHandler;
+    @Inject
+    private QueryGeometryHandler queryGeometryHandler;
+    @Inject
+    @SpringBean(name = "QueryMetricsWriterConfiguration", refreshable = true)
+    private QueryMetricsWriterConfiguration queryMetricsWriterConfiguration;
     
     /*
      * @PermitAll is necessary because this method is called indirectly from the @PreDestroy method of the QueryExpirationBean and the QueryExpirationBean's
@@ -109,7 +122,19 @@ public class QueryMetricsBean {
     @Path("/id/{id}")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public BaseQueryMetricListResponse query(@PathParam("id") @Required("id") String id) {
-        return remoteQueryMetricService.id(id);
+        if (queryMetricsWriterConfiguration.getUseRemoteService()) {
+            return remoteQueryMetricService.id(id);
+        } else {
+            // Find out who/what called this method
+            DatawavePrincipal dp = null;
+            Principal p = ctx.getCallerPrincipal();
+            String user = p.getName();
+            if (p instanceof DatawavePrincipal) {
+                dp = (DatawavePrincipal) p;
+                user = dp.getShortName();
+            }
+            return queryHandler.query(user, id, dp);
+        }
     }
     
     @GET
@@ -117,7 +142,19 @@ public class QueryMetricsBean {
     @Path("/id/{id}/map")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public QueryGeometryResponse map(@PathParam("id") @Required("id") String id) {
-        return remoteQueryMetricService.map(id);
+        if (queryMetricsWriterConfiguration.getUseRemoteService()) {
+            return remoteQueryMetricService.map(id);
+        } else {
+            // Find out who/what called this method
+            DatawavePrincipal dp = null;
+            Principal p = ctx.getCallerPrincipal();
+            String user = p.getName();
+            if (p instanceof DatawavePrincipal) {
+                dp = (DatawavePrincipal) p;
+                user = dp.getShortName();
+            }
+            return queryGeometryHandler.getQueryGeometryResponse(id, queryHandler.query(user, id, dp).getResult());
+        }
     }
     
     /**
@@ -142,7 +179,11 @@ public class QueryMetricsBean {
     @RolesAllowed({"Administrator", "MetricsAdministrator"})
     public QueryMetricsSummaryResponse getQueryMetricsSummary(@QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
                     @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
-        return remoteQueryMetricService.summaryAll(begin, end);
+        if (queryMetricsWriterConfiguration.getUseRemoteService()) {
+            return remoteQueryMetricService.summaryAll(begin, end);
+        } else {
+            return queryMetricsSummary(begin, end, false);
+        }
     }
     
     /**
@@ -169,7 +210,11 @@ public class QueryMetricsBean {
     public QueryMetricsSummaryResponse getQueryMetricsSummaryDeprecated1(
                     @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
                                     defaultTime = "235959", defaultMillisec = "999") Date end) {
-        return remoteQueryMetricService.summaryAll(begin, end);
+        if (queryMetricsWriterConfiguration.getUseRemoteService()) {
+            return remoteQueryMetricService.summaryAll(begin, end);
+        } else {
+            return queryMetricsSummary(begin, end, false);
+        }
     }
     
     /**
@@ -196,7 +241,11 @@ public class QueryMetricsBean {
     public QueryMetricsSummaryResponse getQueryMetricsSummaryDeprecated2(
                     @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
                                     defaultTime = "235959", defaultMillisec = "999") Date end) {
-        return remoteQueryMetricService.summaryAll(begin, end);
+        if (queryMetricsWriterConfiguration.getUseRemoteService()) {
+            return remoteQueryMetricService.summaryAll(begin, end);
+        } else {
+            return queryMetricsSummary(begin, end, false);
+        }
     }
     
     /**
@@ -220,7 +269,11 @@ public class QueryMetricsBean {
     @Interceptors(ResponseInterceptor.class)
     public QueryMetricsSummaryResponse getQueryMetricsUserSummary(@QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
                     @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
-        return remoteQueryMetricService.summaryUser(begin, end);
+        if (queryMetricsWriterConfiguration.getUseRemoteService()) {
+            return remoteQueryMetricService.summaryUser(begin, end);
+        } else {
+            return queryMetricsSummary(begin, end, true);
+        }
     }
     
     /**
@@ -246,7 +299,43 @@ public class QueryMetricsBean {
     public QueryMetricsSummaryResponse getQueryMetricsUserSummaryDeprecated(
                     @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
                                     defaultTime = "235959", defaultMillisec = "999") Date end) {
-        return remoteQueryMetricService.summaryUser(begin, end);
+        if (queryMetricsWriterConfiguration.getUseRemoteService()) {
+            return remoteQueryMetricService.summaryUser(begin, end);
+        } else {
+            return queryMetricsSummary(begin, end, true);
+        }
+    }
+    
+    private QueryMetricsSummaryResponse queryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser) {
+        
+        if (null == end) {
+            end = new Date();
+        } else {
+            end = DateUtils.truncate(end, Calendar.SECOND);
+        }
+        Calendar ninetyDaysBeforeEnd = Calendar.getInstance();
+        ninetyDaysBeforeEnd.setTime(end);
+        ninetyDaysBeforeEnd.add(Calendar.DATE, -90);
+        if (null == begin) {
+            // midnight of ninety days before end
+            begin = DateUtils.truncate(ninetyDaysBeforeEnd, Calendar.DATE).getTime();
+        } else {
+            begin = DateUtils.truncate(begin, Calendar.SECOND);
+        }
+        QueryMetricsSummaryResponse response;
+        if (end.before(begin)) {
+            response = new QueryMetricsSummaryResponse();
+            String s = "begin date can not be after end date";
+            response.addException(new QueryException(DatawaveErrorCode.BEGIN_DATE_AFTER_END_DATE, new IllegalArgumentException(s), s));
+        } else {
+            DatawavePrincipal dp = getPrincipal();
+            if (onlyCurrentUser) {
+                response = queryHandler.getUserQueriesSummary(begin, end, dp);
+            } else {
+                response = queryHandler.getTotalQueriesSummary(begin, end, dp);
+            }
+        }
+        return response;
     }
     
     /**
