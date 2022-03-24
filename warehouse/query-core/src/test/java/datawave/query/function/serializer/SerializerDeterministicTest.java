@@ -2,11 +2,14 @@ package datawave.query.function.serializer;
 
 import datawave.data.type.StringType;
 import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Cardinality;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.FieldValueCardinality;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.deserializer.JsonDeserializer;
 import org.apache.accumulo.core.data.Key;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -35,6 +38,18 @@ public class SerializerDeterministicTest {
     }
 
     @Test
+    public void testCardinality() {
+        String field = "FOO";
+        Cardinality cardinality = createCardinalityType(field);
+        Document document = new Document();
+        document.put(field, cardinality);
+
+        Document out = roundTrip(document);
+
+//        Assert.assertEquals(document, out);
+    }
+
+    @Test
     public void testContent() throws Exception {
         String field = "FOO";
         Content content = createContentType(field);
@@ -42,6 +57,8 @@ public class SerializerDeterministicTest {
         document.put(field, content);
 
         Document out = roundTrip(document);
+
+        Assert.assertEquals(document, out);
     }
 
     @Test
@@ -52,7 +69,25 @@ public class SerializerDeterministicTest {
         Document document = new Document();
         document.put(field, typeAttribute);
         Document out = roundTrip(document);
+
+        Assert.assertEquals(document, out);
+
     }
+
+    private Cardinality createCardinalityType(String field) {
+        String uid = "parent.document.id";
+        String datatype = "DATATYPE_A";
+        String value = "foo";
+        String cq = datatype + '\u0000' + uid + '\u0000' + value + '\u0000' + field;
+        FieldValueCardinality fvc = new FieldValueCardinality();
+        fvc.setContent(value);
+        fvc.setCeiling("aaa");
+        fvc.setFloor("zzz");
+        return new Cardinality(fvc,
+                new Key("shard", "datatype\0uid", cq, System.currentTimeMillis()), true);
+    }
+
+
 
     private Content createContentType(String field) {
         String uid = "parent.document.id";
