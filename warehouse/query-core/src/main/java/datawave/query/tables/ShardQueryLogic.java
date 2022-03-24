@@ -624,6 +624,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                                 this.getQueryExecutionForPageTimeout(), this.isLongRunningQuery()));
             }
         }
+        
+        if (queryModel != null) {
+            ((DocumentTransformer) this.transformerInstance).setQm(queryModel);
+        }
     }
     
     protected void loadQueryParameters(ShardQueryConfiguration config, Query settings) throws QueryException {
