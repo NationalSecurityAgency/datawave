@@ -4,8 +4,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Multimap;
 import datawave.microservice.query.executor.action.ExecutorTask;
 import datawave.microservice.query.result.QueryTaskDescription;
-import datawave.services.common.result.ConnectionFactoryResponse;
-import datawave.microservice.query.result.ExecutorThreadPoolResponse;
+import datawave.microservice.query.result.ExecutorMetricsResponse;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -38,11 +37,16 @@ public class QueryExecutorController {
      */
     @Timed(name = "dw.query.executor.getConnectionFactoryMetrics", absolute = true)
     @RolesAllowed({"Administrator", "JBossAdministrator", "InternalUser"})
-    @RequestMapping(path = "Common/AccumuloConnectionFactory/stats", method = {RequestMethod.GET},
+    @RequestMapping(path = "AccumuloConnectionFactory/stats", method = {RequestMethod.GET},
                     produces = {"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})
-    public ConnectionFactoryResponse getConnectionFactoryMetrics() {
-        ConnectionFactoryResponse response = new ConnectionFactoryResponse();
+    public ExecutorMetricsResponse getConnectionFactoryMetrics() {
+        ExecutorMetricsResponse response = new ExecutorMetricsResponse();
+        response.setTitle("Accumulo Connection Factory Metrics");
+        response.setPool(null); // don't specify pool so that we see all of them in the connection factory
+        response.setQueryMetricsUrlPrefix(queryExecutor.getExecutorProperties().getQueryMetricsUrlPrefix());
         response.setConnectionPools(queryExecutor.connectionFactory.getConnectionPools());
+        response.setThreadPoolStatus(null);
+        response.setQueryToTask(null);
         return response;
     }
     
@@ -57,12 +61,62 @@ public class QueryExecutorController {
      */
     @Timed(name = "dw.query.executor.getExecutorThreadPoolMetrics", absolute = true)
     @RolesAllowed({"Administrator", "JBossAdministrator", "InternalUser"})
+    @RequestMapping(path = "ThreadPool/stats", method = {RequestMethod.GET},
+                    produces = {"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})
+    public ExecutorMetricsResponse getExecutorThreadPoolMetrics() {
+        ExecutorMetricsResponse response = new ExecutorMetricsResponse();
+        response.setTitle("Executor Thread Pool Metrics for " + queryExecutor.getExecutorProperties().getPool());
+        response.setPool(queryExecutor.getExecutorProperties().getPool());
+        response.setQueryMetricsUrlPrefix(queryExecutor.getExecutorProperties().getQueryMetricsUrlPrefix());
+        response.setConnectionPools(null);
+        response.setThreadPoolStatus(getThreadPoolStatus(queryExecutor.getThreadPoolExecutor()));
+        response.setQueryToTask(null);
+        return response;
+    }
+    
+    /**
+     * <strong>JBossAdministrator or Administrator credentials required.</strong> Returns queries being serviced
+     *
+     * @return datawave.webservice.common.ExecutorThreadPoolResponse
+     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
+     * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
+     * @HTTP 200 success
+     * @HTTP 500 internal server error
+     */
+    @Timed(name = "dw.query.executor.getExecutorQueries", absolute = true)
+    @RolesAllowed({"Administrator", "JBossAdministrator", "InternalUser"})
+    @RequestMapping(path = "queries", method = {RequestMethod.GET},
+                    produces = {"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})
+    public ExecutorMetricsResponse getExecutorQueries() {
+        ExecutorMetricsResponse response = new ExecutorMetricsResponse();
+        response.setTitle("Executor Queries for " + queryExecutor.getExecutorProperties().getPool());
+        response.setPool(queryExecutor.getExecutorProperties().getPool());
+        response.setQueryMetricsUrlPrefix(queryExecutor.getExecutorProperties().getQueryMetricsUrlPrefix());
+        response.setConnectionPools(null);
+        response.setThreadPoolStatus(null);
+        response.setQueryToTask(getQueryToTask(queryExecutor.getQueryToTasks()));
+        return response;
+    }
+    
+    /**
+     * <strong>JBossAdministrator or Administrator credentials required.</strong> Returns all metrics and queries for the executor
+     *
+     * @return datawave.webservice.common.ExecutorThreadPoolResponse
+     * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
+     * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
+     * @HTTP 200 success
+     * @HTTP 500 internal server error
+     */
+    @Timed(name = "dw.query.executor.getExecutorMetrics", absolute = true)
+    @RolesAllowed({"Administrator", "JBossAdministrator", "InternalUser"})
     @RequestMapping(path = "stats", method = {RequestMethod.GET},
                     produces = {"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})
-    public ExecutorThreadPoolResponse getExecutorThreadPoolMetrics() {
-        ExecutorThreadPoolResponse response = new ExecutorThreadPoolResponse();
+    public ExecutorMetricsResponse getExecutorMetrics() {
+        ExecutorMetricsResponse response = new ExecutorMetricsResponse();
+        response.setTitle("Executor Metrics for " + queryExecutor.getExecutorProperties().getPool());
         response.setPool(queryExecutor.getExecutorProperties().getPool());
-        response.setConnectionPools(queryExecutor.connectionFactory.getConnectionPools());
+        response.setQueryMetricsUrlPrefix(queryExecutor.getExecutorProperties().getQueryMetricsUrlPrefix());
+        response.setConnectionPools(null);
         response.setThreadPoolStatus(getThreadPoolStatus(queryExecutor.getThreadPoolExecutor()));
         response.setQueryToTask(getQueryToTask(queryExecutor.getQueryToTasks()));
         return response;

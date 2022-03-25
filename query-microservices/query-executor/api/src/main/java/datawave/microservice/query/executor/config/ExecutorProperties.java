@@ -27,17 +27,24 @@ public class ExecutorProperties {
     private int checkpointFlushResults = 2;
     // The amount of time for one results task after which we flush the checkpoint
     private long checkpointFlushMs = 1000;
+    
     @PositiveOrZero
     private long monitorTaskLease = TimeUnit.MILLISECONDS.toMillis(100);
     @NotNull
     private TimeUnit monitorTaskLeaseTimeUnit = TimeUnit.MILLISECONDS;
     
+    // how often should executor status be logged regardless of whether there are status changes
+    private long logStatusPeriodMs = 10 * 60 * 1000;
+    // how often should executor status be logged when the status has changed
+    private long logStatusWhenChangedMs = 5 * 60 * 1000;
+    
     // The time after which we consider a task orphaned. Note that this must be greater than checkpointFlushMs
     // as that defines how ofter the task timestamp is updated.
     private long orphanThresholdMs = 60000;
-    
     // The max number of orphaned tasks to check per monitor cycle
     private int maxOrphanedTasksToCheck = 100;
+    
+    private String queryMetricsUrlPrefix = null;
     
     public String getPool() {
         return pool;
@@ -147,4 +154,27 @@ public class ExecutorProperties {
         this.maxOrphanedTasksToCheck = maxOrphanedTasksToCheck;
     }
     
+    public long getLogStatusPeriodMs() {
+        return logStatusPeriodMs;
+    }
+    
+    public void setLogStatusPeriodMs(long logStatusPeriodMs) {
+        this.logStatusPeriodMs = logStatusPeriodMs;
+    }
+    
+    public long getLogStatusWhenChangedMs() {
+        return logStatusWhenChangedMs;
+    }
+    
+    public void setLogStatusWhenChangedMs(long logStatusWhenChangedMs) {
+        this.logStatusWhenChangedMs = logStatusWhenChangedMs;
+    }
+    
+    public String getQueryMetricsUrlPrefix() {
+        return queryMetricsUrlPrefix;
+    }
+    
+    public void setQueryMetricsUrlPrefix(String queryMetricsUrlPrefix) {
+        this.queryMetricsUrlPrefix = queryMetricsUrlPrefix;
+    }
 }

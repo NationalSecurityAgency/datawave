@@ -7,21 +7,27 @@ public class ExecutorStatusLogger {
     private Logger log = Logger.getLogger(ExecutorStatusLogger.class);
     private String lastThreadPoolStatus = "";
     private volatile long lastThreadPoolStatusUpdate = 0;
-    private static final int TEN_MINUTES = 10 * 60 * 1000;
     
-    private boolean hasUpdatedStatus(QueryExecutor executor) {
-        return (!lastThreadPoolStatus.equals(executor.toString()) || ((System.currentTimeMillis() - lastThreadPoolStatusUpdate) > TEN_MINUTES));
-    }
-    
-    public String getStatus(QueryExecutor executor) {
-        lastThreadPoolStatus = executor.toString();
-        lastThreadPoolStatusUpdate = System.currentTimeMillis();
-        return lastThreadPoolStatus;
+    private String getUpdatedStatus(QueryExecutor executor) {
+        String newStatus = executor.toString();
+        if (lastThreadPoolStatus.equals(newStatus)) {
+            if ((System.currentTimeMillis() - lastThreadPoolStatusUpdate) < executor.getExecutorProperties().getLogStatusPeriodMs()) {
+                newStatus = null;
+            }
+        } else {
+            if ((System.currentTimeMillis() - lastThreadPoolStatusUpdate) < executor.getExecutorProperties().getLogStatusWhenChangedMs()) {
+                newStatus = null;
+            }
+        }
+        return newStatus;
     }
     
     public void logStatus(QueryExecutor executor) {
-        if (hasUpdatedStatus(executor)) {
-            log.info("Executor status: " + getStatus(executor));
+        String newStatus = getUpdatedStatus(executor);
+        if (newStatus != null) {
+            lastThreadPoolStatus = newStatus;
+            lastThreadPoolStatusUpdate = System.currentTimeMillis();
+            log.info("Executor status: " + newStatus);
         }
     }
 }

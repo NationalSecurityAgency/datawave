@@ -91,12 +91,14 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                         TimeUnit.MILLISECONDS, workQueue) {
             @Override
             protected void beforeExecute(Thread t, Runnable r) {
+                log.debug("Before execute " + ((ExecutorTask) r).getTaskKey());
                 working.add(r);
                 
             }
             
             @Override
             protected void afterExecute(Runnable r, Throwable t) {
+                log.debug("After execute " + ((ExecutorTask) r).getTaskKey());
                 working.remove(r);
                 queryToTask.remove(((ExecutorTask) r).getTaskKey().getQueryId(), r);
             }
@@ -120,8 +122,10 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         // synchronize explicitly to avoid mutations during the iteration
         synchronized (queryToTask) {
             tasks = new HashSet<>(queryToTask.get(queryId));
+            queryToTask.removeAll(queryId);
         }
         for (ExecutorTask action : tasks) {
+            log.debug("Removing potentially pending task " + action.getTaskKey());
             threadPool.remove(action);
         }
     }
@@ -131,9 +135,11 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
         // synchronize explicitly to avoid mutations during the iteration
         synchronized (queryToTask) {
             tasks = new HashSet<>(queryToTask.get(queryId));
+            queryToTask.removeAll(queryId);
         }
         while (!tasks.isEmpty()) {
             for (ExecutorTask action : tasks) {
+                log.debug("Stopping task " + action.getTaskKey());
                 threadPool.remove(action);
                 action.interrupt();
             }
