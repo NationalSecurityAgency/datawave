@@ -72,7 +72,6 @@ cd $FOLDER
 SYSTEM_FROM=$(hostname)
 
 echo "$(date): Running LookupContentUUID query"
-
 echo "$(date): Running LookupContentUUID query" > querySummary.txt
 curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
