@@ -17,3 +17,4 @@ rm -r -f fieldIndexCount_*
 rm -r -f errorFieldIndexCount_*
 rm -r -f poundit_*
 rm -r -f executor_*
+rm -r -f termFrequency_*
