@@ -176,8 +176,22 @@ public abstract class ExecutorTask implements Runnable {
         } else {
             cache.updateTaskState(taskKey, TaskStates.TASK_STATE.READY);
             // more work to do on this task, lets notify
-            // TODO: Create the correct query request
-            publishExecutorEvent(QueryRequest.next(taskKey.getQueryId()), taskKey.getQueryPool());
+            switch (task.getAction()) {
+                case CREATE:
+                    publishExecutorEvent(QueryRequest.create(taskKey.getQueryId()), taskKey.getQueryPool());
+                    break;
+                case PLAN:
+                    publishExecutorEvent(QueryRequest.plan(taskKey.getQueryId()), taskKey.getQueryPool());
+                    break;
+                case PREDICT:
+                    publishExecutorEvent(QueryRequest.predict(taskKey.getQueryId()), taskKey.getQueryPool());
+                    break;
+                case NEXT:
+                    publishExecutorEvent(QueryRequest.next(taskKey.getQueryId()), taskKey.getQueryPool());
+                    break;
+                default:
+                    throw new UnsupportedOperationException(task.getTaskKey().toString());
+            }
         }
     }
     

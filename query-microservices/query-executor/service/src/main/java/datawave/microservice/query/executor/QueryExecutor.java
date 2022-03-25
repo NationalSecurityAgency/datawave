@@ -187,7 +187,7 @@ public class QueryExecutor implements QueryRequestHandler.QuerySelfRequestHandle
                 
                 // if we have tasks, then run them
                 for (QueryTask task : tasks) {
-                    log.debug("Executing task " + task.getTaskKey() + ": " + task.getQueryCheckpoint());
+                    log.info("Executing task " + task.getTaskKey() + ": " + task.getQueryCheckpoint());
                     ExecutorTask runnable = null;
                     switch (task.getAction()) {
                         case CREATE:
