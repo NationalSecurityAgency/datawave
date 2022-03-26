@@ -30,7 +30,7 @@ import datawave.webservice.query.exception.QueryException;
 public class DocumentSerialization {
     
     public enum ReturnType {
-        writable, json, kryo, tostring, noop
+        writable, json, jsondocument, kryo, tostring, noop
     }
     
     public static final ReturnType DEFAULT_RETURN_TYPE = ReturnType.kryo;
@@ -65,7 +65,7 @@ public class DocumentSerialization {
         if (ReturnType.kryo.equals(rt)) {
             return new KryoDocumentDeserializer();
         } else if (ReturnType.json.equals(rt)) {
-            return new JsonDeserializer();
+            return new DocumentJsonDeserializer();
         } else if (ReturnType.writable.equals(rt)) {
             return new WritableDocumentDeserializer();
         } else if (ReturnType.tostring.equals(rt)) {

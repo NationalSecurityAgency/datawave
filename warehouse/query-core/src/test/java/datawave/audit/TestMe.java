@@ -6,7 +6,7 @@ import datawave.data.type.NoOpType;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
-import datawave.query.function.deserializer.JsonDeserializer;
+import datawave.query.function.deserializer.DocumentJsonDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.JsonDocumentSerializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
@@ -88,7 +88,7 @@ public class TestMe {
 
     QueryStopwatch runGSONTest(int docCount, int attributes) throws IOException {
         JsonDocumentSerializer jsonSerializer = new JsonDocumentSerializer(false);
-        JsonDeserializer deserializer = new JsonDeserializer();
+        DocumentJsonDeserializer deserializer = new DocumentJsonDeserializer();
         return runTest(docCount,attributes,"gson",document ->jsonSerializer.serialize(document), bytes -> deserializer.deserialize(new ByteArrayInputStream(bytes)));
     }
 

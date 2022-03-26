@@ -36,6 +36,7 @@ import datawave.query.function.MaskedValueFilterInterface;
 import datawave.query.function.RemoveGroupingContext;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.JsonDocumentSerializer;
+import datawave.query.function.serializer.JsonObjectSerializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
 import datawave.query.function.serializer.WritableDocumentSerializer;
@@ -525,6 +526,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 // Use the Writable interface to serialize the Document
                 this.serializedDocuments = Iterators.transform(pipelineDocuments, new WritableDocumentSerializer(isReducedResponse()));
             } else if (this.getReturnType() == ReturnType.json) {
+                // Use the Writable interface to serialize the Document
+                this.serializedDocuments = Iterators.transform(pipelineDocuments, new JsonObjectSerializer(isReducedResponse()));
+            } else if (this.getReturnType() == ReturnType.jsondocument) {
                 // Use the Writable interface to serialize the Document
                 this.serializedDocuments = Iterators.transform(pipelineDocuments, new JsonDocumentSerializer(isReducedResponse()));
             } else if (this.getReturnType() == ReturnType.tostring) {

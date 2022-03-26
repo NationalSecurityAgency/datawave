@@ -8,6 +8,7 @@ import datawave.query.tables.DocumentResource.ResourceFactory;
 import datawave.query.tables.DocumentBatchResource;
 import datawave.query.tables.DocumentResource;
 import datawave.query.tables.DocumentResourceQueue;
+import datawave.query.tables.serialization.SerializedDocumentIfc;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -50,7 +51,7 @@ public class DocumentScanner implements Callable<DocumentScanner> {
 
     private DocumentResourceQueue delegatorReference;
 
-    protected BlockingQueue<Document> results;
+    protected BlockingQueue<SerializedDocumentIfc> results;
 
     private String localTableName;
 
@@ -73,7 +74,7 @@ public class DocumentScanner implements Callable<DocumentScanner> {
     private DocumentResource delegatedResource = null;
 
     public DocumentScanner(DocumentQueryConfiguration config, String localTableName, Set<Authorizations> localAuths, ScannerChunk chunk, DocumentResourceQueue delegatorReference,
-                           Class<? extends DocumentResource> delegatedResourceInitializer, BlockingQueue<Document> results, ExecutorService callingService) {
+                           Class<? extends DocumentResource> delegatedResourceInitializer, BlockingQueue<SerializedDocumentIfc> results, ExecutorService callingService) {
         myScan = chunk;
         this.config=config;
         if (log.isTraceEnabled())
@@ -244,7 +245,7 @@ public class DocumentScanner implements Callable<DocumentScanner> {
                 delegatedResource = ResourceFactory.initializeResource(initializer, delegatedResource, config, localTableName, localAuths, currentRange).setOptions(
                                 myScan.getOptions());
                 
-                Iterator<Document> iter = delegatedResource.iterator();
+                Iterator<SerializedDocumentIfc> iter = delegatedResource.iterator();
                 
                 if (null != myStats)
                     myStats.getTimer(TIMERS.SCANNER_START).suspend();
@@ -256,8 +257,8 @@ public class DocumentScanner implements Callable<DocumentScanner> {
                         log.trace("We've started, but we have nothing to do on " + localTableName + " " + localAuths + " " + currentRange);
                     lastSeenKey = null;
                 }
-                
-                Document myEntry = null;
+
+                SerializedDocumentIfc myEntry = null;
                 if (null != myStats)
                     myStats.getTimer(TIMERS.SCANNER_ITERATE).resume();
                 while (iter.hasNext()) {
@@ -276,7 +277,7 @@ public class DocumentScanner implements Callable<DocumentScanner> {
                     if (caller.isShutdown())
                         break;
                     
-                    lastSeenKey = myEntry.getMetadata();
+                    lastSeenKey = myEntry.computeKey();
                     if (log.isTraceEnabled())
                         log.trace("last seen key is " + lastSeenKey);
                 }

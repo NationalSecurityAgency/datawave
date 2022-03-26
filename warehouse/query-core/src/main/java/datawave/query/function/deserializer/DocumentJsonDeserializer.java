@@ -4,18 +4,15 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import datawave.query.attributes.Document;
 import datawave.query.function.json.deser.JsonDeser;
-import org.apache.commons.io.IOUtils;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Json Document Deserializer leveraging JsonDeser to convert the object from JSON to a
  * typed Document Object.
  */
-public class JsonDeserializer extends DocumentDeserializer{
+public class DocumentJsonDeserializer extends DocumentDeserializer{
 
     static GsonBuilder gsonBuilder = new GsonBuilder();
     static Gson gson;
@@ -25,7 +22,7 @@ public class JsonDeserializer extends DocumentDeserializer{
     }
 
 
-    public JsonDeserializer(){
+    public DocumentJsonDeserializer(){
     }
     @Override
     public Document deserialize(final InputStream inputStream) {

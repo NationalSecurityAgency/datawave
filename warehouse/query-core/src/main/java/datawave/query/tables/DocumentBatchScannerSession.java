@@ -16,6 +16,7 @@ import datawave.query.tables.async.DocumentScanner;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.tables.async.SessionArbiter;
 import datawave.query.tables.async.SpeculativeDocumentScan;
+import datawave.query.tables.serialization.SerializedDocumentIfc;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.clientImpl.ScannerOptions;
 import org.apache.accumulo.core.clientImpl.TabletLocator;
@@ -46,7 +47,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * 
  */
-public class DocumentBatchScannerSession extends DocumentScannerSession implements Iterator<Document>, FutureCallback<DocumentScanner>, SessionArbiter, UncaughtExceptionHandler {
+public class DocumentBatchScannerSession extends DocumentScannerSession implements Iterator<SerializedDocumentIfc>, FutureCallback<DocumentScanner>, SessionArbiter, UncaughtExceptionHandler {
 
     private static final int THIRTY_MINUTES = 108000000;
 

@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
-public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.google.gson.JsonDeserializer<Document>{
-    private static final Logger log = Logger.getLogger(JsonDeser.class);
+public class JsonObjectDeser implements com.google.gson.JsonSerializer<Document>,com.google.gson.JsonDeserializer<Document>{
+    private static final Logger log = Logger.getLogger(JsonObjectDeser.class);
 
     private static final ConstuctorCacheMiss constructorMissFx = new ConstuctorCacheMiss();
     private static final AttributeConstructorCacheMiss attributeMissFx = new AttributeConstructorCacheMiss();
@@ -42,15 +42,6 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
      * @param jsonObject json object
      */
     private static void addAttributeData(Attribute<?> attr,String name, JsonObject jsonObject) {
-        if (attr instanceof TypeAttribute){
-            datawave.data.type.Type t = ((TypeAttribute)attr).getType();
-            if (t.getClass() != NoOpType.class)
-                jsonObject.addProperty("type.metadata",t.getClass().getCanonicalName());
-        }else{
-            jsonObject.addProperty("type.type",attr.getClass().getCanonicalName());
-        }
-
-
         jsonObject.addProperty("type.data",attr.getData().toString());
 
     }
@@ -69,12 +60,12 @@ public class JsonDeser implements com.google.gson.JsonSerializer<Document>,com.g
             }
             else {
                 JsonObject key = new JsonObject();
-                key.addProperty("row", metadata.getRow().toString());
-                key.addProperty("cf", metadata.getColumnFamily().toString());
-                key.addProperty("cq", metadata.getColumnQualifier().toString());
+//                key.addProperty("row", metadata.getRow().toString());
+  //              key.addProperty("cf", metadata.getColumnFamily().toString());
+    //            key.addProperty("cq", metadata.getColumnQualifier().toString());
                 key.addProperty("cv", metadata.getColumnVisibility().toString());
                 key.addProperty("timestamp", metadata.getTimestamp());
-                jsonObject.add("key", key);
+                jsonObject.add("doc.key", key);
             }
 
         }

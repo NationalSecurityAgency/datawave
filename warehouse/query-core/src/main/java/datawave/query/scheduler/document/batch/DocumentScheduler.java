@@ -9,6 +9,7 @@ import datawave.query.tables.document.batch.DocumentLogic;
 import datawave.query.tables.document.batch.DocumentScannerImpl;
 import datawave.query.tables.MyScannerFactory;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.serialization.SerializedDocumentIfc;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.configuration.QueryData;
@@ -25,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  *
  */
-public class DocumentScheduler extends Scheduler<Document> {
+public class DocumentScheduler extends Scheduler<SerializedDocumentIfc> {
     private static final Logger log = ThreadConfigurableLogger.getLogger(DocumentScheduler.class);
 
     protected final DocumentQueryConfiguration config;
@@ -50,7 +51,7 @@ public class DocumentScheduler extends Scheduler<Document> {
      * @see java.lang.Iterable#iterator()
      */
     @Override
-    public Iterator<Document> iterator() {
+    public Iterator<SerializedDocumentIfc> iterator() {
         if (null == this.config) {
             throw new IllegalArgumentException("Null configuration provided");
         }
@@ -84,15 +85,15 @@ public class DocumentScheduler extends Scheduler<Document> {
         return DocumentLogic.createDocumentScanner(DocumentQueryConfiguration.class.cast(config), MyScannerFactory.class.cast(scannerFactory), qd, config.getReturnType());
     }
 
-    public class DocumentSchedulerIterator implements Iterator<Document> {
+    public class DocumentSchedulerIterator implements Iterator<SerializedDocumentIfc> {
 
         protected final ShardQueryConfiguration config;
         protected final ScannerFactory scannerFactory;
 
         protected Iterator<QueryData> queries = null;
-        protected Document currentDocument = null;
+        protected SerializedDocumentIfc currentDocument = null;
         protected DocumentScannerImpl currentBS = null;
-        protected Iterator<Document> currentIter = null;
+        protected Iterator<SerializedDocumentIfc> currentIter = null;
 
         protected volatile boolean closed = false;
 
@@ -180,13 +181,13 @@ public class DocumentScheduler extends Scheduler<Document> {
          * @see java.util.Iterator#next()
          */
         @Override
-        public Document next() {
+        public SerializedDocumentIfc next() {
             if (closed) {
                 return null;
             }
             
             if (hasNext()) {
-                Document cur = this.currentDocument;
+                SerializedDocumentIfc cur = this.currentDocument;
                 this.currentDocument = null;
                 return cur;
             }

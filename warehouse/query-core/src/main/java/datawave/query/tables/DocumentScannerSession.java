@@ -8,6 +8,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import datawave.query.attributes.Document;
 import datawave.query.config.DocumentQueryConfiguration;
 import datawave.query.tables.DocumentResource.ResourceFactory;
+import datawave.query.tables.serialization.SerializedDocumentIfc;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 import datawave.query.tables.stats.StatsListener;
@@ -37,13 +38,13 @@ import java.util.concurrent.TimeUnit;
  * result queue is polled in the actual next() and hasNext() calls. Note that the uncaughtExceptionHandler from the Query is used to pass exceptions up which
  * will also fail the overall query if something happens. If this is not desired then a local handler should be set.
  */
-public class DocumentScannerSession extends  BaseScannerSession<Document> {
+public class DocumentScannerSession extends  BaseScannerSession<SerializedDocumentIfc> {
 
     protected final DocumentQueryConfiguration config;
     /**
      * last seen key, used for moving across the sliding window of ranges.
      */
-    protected Document lastSeenKey;
+    protected SerializedDocumentIfc lastSeenKey;
 
     /**
      * Stack of ranges for us to progress through within this scanner queue.
@@ -53,12 +54,12 @@ public class DocumentScannerSession extends  BaseScannerSession<Document> {
     /**
      * Result queue, providing us objects
      */
-    protected ArrayBlockingQueue<Document> resultQueue;
+    protected ArrayBlockingQueue<SerializedDocumentIfc> resultQueue;
 
     /**
      * Current entry to return. this will be popped from the result queue.
      */
-    protected Document currentEntry;
+    protected SerializedDocumentIfc currentEntry;
 
     /**
      * Delegates scanners to us, blocking if none are available or used by other sources.
@@ -369,9 +370,9 @@ public class DocumentScannerSession extends  BaseScannerSession<Document> {
      * Note that this method needs to check the uncaught exception handler and propogate any set throwables.
      */
     @Override
-    public Document next() {
+    public SerializedDocumentIfc next() {
         try {
-            Document retVal = currentEntry;
+            SerializedDocumentIfc retVal = currentEntry;
             currentEntry = null;
             return retVal;
         } finally {
@@ -435,7 +436,7 @@ public class DocumentScannerSession extends  BaseScannerSession<Document> {
             delegatedResource = sessionDelegator.getScannerResource();
             
             // if we have just started or we are at the end of the current range. pop the next range
-            if (lastSeenKey == null || (currentRange != null && currentRange.getEndKey() != null && lastSeenKey.getMetadata().compareTo(currentRange.getEndKey()) >= 0)) {
+            if (lastSeenKey == null || (currentRange != null && currentRange.getEndKey() != null && lastSeenKey.computeKey().compareTo(currentRange.getEndKey()) >= 0)) {
                 currentRange = ranges.poll();
                 // short circuit and exit
                 if (null == currentRange) {
@@ -444,7 +445,7 @@ public class DocumentScannerSession extends  BaseScannerSession<Document> {
                 }
             } else {
                 // adjust the end key range.
-                currentRange = buildNextRange(lastSeenKey.getMetadata(), currentRange);
+                currentRange = buildNextRange(lastSeenKey.computeKey(), currentRange);
                 
                 if (log.isTraceEnabled())
                     log.trace("Building " + currentRange + " from " + lastSeenKey);
@@ -458,7 +459,7 @@ public class DocumentScannerSession extends  BaseScannerSession<Document> {
             delegatedResource = ResourceFactory.initializeResource(delegatedResourceInitializer, delegatedResource,config, tableName, auths, currentRange).setOptions(
                             options);
             
-            Iterator<Document> iter = delegatedResource.iterator();
+            Iterator<SerializedDocumentIfc> iter = delegatedResource.iterator();
             
             // do not continue if we've reached the end of the corpus
             
@@ -522,11 +523,11 @@ public class DocumentScannerSession extends  BaseScannerSession<Document> {
         }
     }
     
-    protected int scannerInvariant(final Iterator<Document> iter) {
+    protected int scannerInvariant(final Iterator<SerializedDocumentIfc> iter) {
         int retrievalCount = 0;
-        
-        Document myEntry = null;
-        Document highest = null;
+
+        SerializedDocumentIfc myEntry = null;
+        SerializedDocumentIfc highest = null;
         while (iter.hasNext()) {
             myEntry = iter.next();
             
@@ -539,7 +540,7 @@ public class DocumentScannerSession extends  BaseScannerSession<Document> {
             boolean accepted = false;
             while (!accepted) {
                 try {
-                    accepted = resultQueue.offer(myEntry, 10, TimeUnit.MILLISECONDS);
+                    accepted = resultQueue.offer((SerializedDocumentIfc)myEntry, 10, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
                     // keep trying
                 }
@@ -548,7 +549,7 @@ public class DocumentScannerSession extends  BaseScannerSession<Document> {
             retrievalCount++;
         }
         
-        lastSeenKey = highest;
+        lastSeenKey = (SerializedDocumentIfc)highest;
         
         return retrievalCount;
     }
@@ -654,7 +655,7 @@ public class DocumentScannerSession extends  BaseScannerSession<Document> {
      * @return
      */
     protected Key getLastKey() {
-        return lastSeenKey.getMetadata();
+        return lastSeenKey.computeKey();
     }
     
     public ScanSessionStats getStatistics() {

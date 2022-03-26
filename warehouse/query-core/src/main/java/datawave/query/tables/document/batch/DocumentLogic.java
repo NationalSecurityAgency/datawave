@@ -9,11 +9,11 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import datawave.data.type.Type;
+import datawave.marking.MarkingFunctions;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
-import datawave.query.attributes.Document;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.config.DocumentQueryConfiguration;
@@ -24,7 +24,6 @@ import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.UidIntersector;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.language.functions.jexl.Unique;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
@@ -33,13 +32,13 @@ import datawave.query.planner.*;
 import datawave.query.planner.document.batch.DocumentQueryPlanner;
 import datawave.query.scheduler.document.batch.DocumentScheduler;
 import datawave.query.scheduler.Scheduler;
-import datawave.query.scheduler.document.pushdown.DocumentPushdownScheduler;
 import datawave.query.tables.BaseScannerSession;
 import datawave.query.tables.MyScannerFactory;
 import datawave.query.tables.ScannerFactory;
-import datawave.query.tables.ScannerSession;
+import datawave.query.tables.serialization.SerializedDocumentIfc;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
+import datawave.query.transformer.JsonDocumentTransformer;
 import datawave.query.util.*;
 import datawave.util.StringUtils;
 import datawave.util.time.TraceStopwatch;
@@ -52,6 +51,7 @@ import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
@@ -72,7 +72,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Extends the premises defined in shard query logic
  */
-public class DocumentLogic extends BaseQueryLogic<Document> {
+public class DocumentLogic extends BaseQueryLogic<SerializedDocumentIfc> {
 
     public static final String NULL_BYTE = "\0";
     public static final Class<? extends DocumentQueryConfiguration> tableConfigurationType = DocumentQueryConfiguration.class;
@@ -85,14 +85,14 @@ public class DocumentLogic extends BaseQueryLogic<Document> {
     protected CloseableIterable<QueryData> queries = null;
     protected QueryModel queryModel = null;
     protected ScannerFactory scannerFactory = null;
-    protected Scheduler<Document> scheduler = null;
+    protected Scheduler<SerializedDocumentIfc> scheduler = null;
     protected EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer = null;
     private DocumentQueryConfiguration config;
     protected MetadataHelperFactory metadataHelperFactory = null;
     protected DateIndexHelperFactory dateIndexHelperFactory = null;
     protected Function<String,String> queryMacroFunction;
     protected Map<String,Profile> configuredProfiles = Maps.newHashMap();
-    protected Profile<Document> selectedProfile = null;
+    protected Profile<SerializedDocumentIfc> selectedProfile = null;
     protected Map<String,List<String>> primaryToSecondaryFieldMap = Collections.emptyMap();
     // Map of syntax names to QueryParser classes
     private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
@@ -440,14 +440,14 @@ public class DocumentLogic extends BaseQueryLogic<Document> {
             log.warn("The given query '" + config + "' could not be run, most likely due to not matching any records in the global index.");
 
             // Stub out an iterator to correctly present "no results"
-            this.iterator = new Iterator<Document>() {
+            this.iterator = new Iterator<SerializedDocumentIfc>() {
                 @Override
                 public boolean hasNext() {
                     return false;
                 }
 
                 @Override
-                public Document next() {
+                public SerializedDocumentIfc next() {
                     return null;
                 }
 
@@ -495,7 +495,34 @@ public class DocumentLogic extends BaseQueryLogic<Document> {
 
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        throw new UnsupportedOperationException("Do not need a transformer");
+        MarkingFunctions markingFunctions = this.getMarkingFunctions();
+        ResponseObjectFactory responseObjectFactory = this.getResponseObjectFactory();
+
+        boolean reducedInSettings = false;
+        String reducedResponseStr = settings.findParameter(QueryOptions.REDUCED_RESPONSE).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(reducedResponseStr)) {
+            reducedInSettings = Boolean.parseBoolean(reducedResponseStr);
+        }
+        boolean reduced = (this.isReducedResponse() || reducedInSettings);
+        JsonDocumentTransformer transformer = new JsonDocumentTransformer(this, settings, markingFunctions, responseObjectFactory, reduced, config.getConvertToDocument());
+        transformer.setEventQueryDataDecoratorTransformer(eventQueryDataDecoratorTransformer);
+        transformer.setContentFieldNames(getConfig().getContentFieldNames());
+        transformer.setLogTimingDetails(this.getLogTimingDetails());
+        transformer.setCardinalityConfiguration(cardinalityConfiguration);
+        transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
+        transformer.setQm(queryModel);
+        if (getConfig() != null) {
+            transformer.setProjectFields(getConfig().getProjectFields());
+            transformer.setBlacklistedFields(getConfig().getBlacklistedFields());
+            /*
+            if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
+                transformer.addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
+            }
+            if (getConfig().getGroupFields() != null && !getConfig().getGroupFields().isEmpty()) {
+                transformer.addTransform(new GroupingTransform(this, getConfig().getGroupFields()));
+            }*/
+        }
+        return transformer;
     }
 
     protected void loadQueryParameters(DocumentQueryConfiguration config, Query settings) throws QueryException {
@@ -868,11 +895,7 @@ public class DocumentLogic extends BaseQueryLogic<Document> {
 
     }
 
-    protected Scheduler<Document> getScheduler(DocumentQueryConfiguration config, ScannerFactory scannerFactory) {
-        if (config.getPushdownLogic()){
-            return new DocumentPushdownScheduler(config, scannerFactory,metadataHelperFactory);
-        }
-        else
+    protected Scheduler<SerializedDocumentIfc> getScheduler(DocumentQueryConfiguration config, ScannerFactory scannerFactory) {
         return new DocumentScheduler(config, scannerFactory);
     }
 
@@ -1663,7 +1686,7 @@ public class DocumentLogic extends BaseQueryLogic<Document> {
         this.scannerFactory = scannerFactory;
     }
 
-    public Scheduler<Document> getScheduler() {
+    public Scheduler<SerializedDocumentIfc> getScheduler() {
         return scheduler;
     }
 

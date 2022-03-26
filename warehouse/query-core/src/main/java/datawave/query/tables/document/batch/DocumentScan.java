@@ -12,6 +12,9 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.KryoCVAwareSerializableSerializer;
 import datawave.query.function.json.deser.JsonDeser;
+import datawave.query.tables.serialization.JsonDocument;
+import datawave.query.tables.serialization.SerializedDocument;
+import datawave.query.tables.serialization.SerializedDocumentIfc;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.SampleNotPresentException;
@@ -86,7 +89,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public class DocumentScan implements Iterator<Document> {
+public class DocumentScan implements Iterator<SerializedDocumentIfc> {
 
     private static final Logger log = LoggerFactory.getLogger(DocumentScan.class);
 
@@ -102,10 +105,10 @@ public class DocumentScan implements Iterator<Document> {
     private final ExecutorService queryThreadPool;
     private final ScannerOptions options;
 
-    private ArrayBlockingQueue<List<Document>> resultsQueue;
-    private Iterator<Document> batchIterator;
-    private List<Document> batch;
-    private static final List<Document> LAST_BATCH = new ArrayList<>();
+    private ArrayBlockingQueue<List<SerializedDocumentIfc>> resultsQueue;
+    private Iterator<SerializedDocumentIfc> batchIterator;
+    private List<SerializedDocumentIfc> batch;
+    private static final List<SerializedDocumentIfc> LAST_BATCH = new ArrayList<>();
     private final Object nextLock = new Object();
     static final transient ThreadLocal<Kryo> kryo = new ThreadLocal<Kryo>();
     static final JsonDeser jsonDeser = new JsonDeser();
@@ -124,7 +127,7 @@ public class DocumentScan implements Iterator<Document> {
 
 
     public interface ResultReceiver {
-        void receive(List<Document> entries);
+        void receive(List<SerializedDocumentIfc> entries);
     }
 
 
@@ -236,7 +239,7 @@ public class DocumentScan implements Iterator<Document> {
     }
 
     @Override
-    public Document next() {
+    public SerializedDocumentIfc next() {
         // if there's one waiting, or hasNext() can get one, return it
         synchronized (nextLock) {
             if (hasNext())
@@ -990,8 +993,8 @@ public class DocumentScan implements Iterator<Document> {
         }
     }
 
-    static Document getDocument(DocumentSerialization.ReturnType returnType,boolean docRawFields, TKeyValue kv){
-        Document document = null;
+    static SerializedDocumentIfc getDocument(DocumentSerialization.ReturnType returnType,boolean docRawFields, TKeyValue kv){
+        SerializedDocumentIfc document = null;
         byte [] array = kv.value.array();
         int offset = 0;
         int size = array.length;
@@ -1006,13 +1009,14 @@ public class DocumentScan implements Iterator<Document> {
             }
 
             Input input = new Input(DocumentSerialization.consumeHeader(array,offset,size));
-            document = kryo.get().readObject(input, Document.class);
+            Document doc  = kryo.get().readObject(input, Document.class);
 
-            if (null == document) {
+            if (null == doc) {
                 throw new RuntimeException("Deserialized null Document");
             }
 
             input.close();
+            document = new SerializedDocument(doc);
 
         }
         else if (DocumentSerialization.ReturnType.json == returnType) {
@@ -1020,15 +1024,34 @@ public class DocumentScan implements Iterator<Document> {
 
             if (!docRawFields) {
                 Reader rdr = new InputStreamReader(jsonStream);
-                //Reader rdr = new InputStreamReader(DocumentSerialization.consumeHeader(kv.value.array()));
                 JsonObject jsonObject = jsonParser.parse(rdr).getAsJsonObject();
-                document = jsonDeser.deserialize(jsonObject, null, null);
+                Document doc = jsonDeser.deserialize(jsonObject, null, null);
+                document = new SerializedDocument(doc);
             }
             else{
-                document = new Document();
-                TypeAttribute<?> attr = new TypeAttribute(new NoOpType(jsonStream.toString()),null,true);
-                document.put("rawjson",attr);
+
+                Reader rdr = new InputStreamReader(jsonStream);
+                JsonObject jsonObject = jsonParser.parse(rdr).getAsJsonObject();
+                document = new JsonDocument(jsonObject,kv.getKey(),size-3);
+
             }
+        } else if (DocumentSerialization.ReturnType.json == returnType) {
+            InputStream jsonStream  = new ByteArrayInputStream(array, offset+3, size - 3);
+
+
+                Reader rdr = new InputStreamReader(jsonStream);
+                JsonObject jsonObject = jsonParser.parse(rdr).getAsJsonObject();
+                document = new JsonDocument(jsonObject,kv.getKey(),size-3);
+
+
+        }
+        else if (DocumentSerialization.ReturnType.jsondocument == returnType) {
+            InputStream jsonStream  = new ByteArrayInputStream(array, offset+3, size - 3);
+
+                Reader rdr = new InputStreamReader(jsonStream);
+                JsonObject jsonObject = jsonParser.parse(rdr).getAsJsonObject();
+                Document doc = jsonDeser.deserialize(jsonObject, null, null);
+                document = new SerializedDocument(doc);
         }
         else{
             throw new UnsupportedOperationException("only kryo and json are supported");

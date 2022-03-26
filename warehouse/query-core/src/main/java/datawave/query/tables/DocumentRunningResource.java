@@ -10,6 +10,7 @@ import datawave.query.config.DocumentQueryConfiguration;
 import datawave.query.tables.document.batch.DocumentScan;
 import datawave.query.tables.document.batch.DocumentScannerHelper;
 import datawave.query.tables.document.batch.DocumentScannerImpl;
+import datawave.query.tables.serialization.SerializedDocumentIfc;
 import datawave.security.util.ScannerHelper;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -169,7 +170,7 @@ public class DocumentRunningResource extends DocumentResource {
      * 
      * @return
      */
-    public Iterator<Document> iterator() {
+    public Iterator<SerializedDocumentIfc> iterator() {
         return baseScanner.getDocumentIterator();
     }
     

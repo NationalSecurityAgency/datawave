@@ -10,6 +10,7 @@ import datawave.query.attributes.Document;
 import datawave.query.config.DocumentQueryConfiguration;
 import datawave.query.tables.DocumentResource;
 import datawave.query.tables.DocumentResourceQueue;
+import datawave.query.tables.serialization.SerializedDocumentIfc;
 import datawave.query.tables.stats.ScanSessionStats;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -49,7 +50,7 @@ public class SpeculativeDocumentScan extends DocumentScanner implements FutureCa
 
     protected ExecutorService service = null;
 
-    protected LinkedBlockingDeque<Document> myResultQueue;
+    protected LinkedBlockingDeque<SerializedDocumentIfc> myResultQueue;
 
     protected ReentrantLock writeControl = new ReentrantLock();
 
@@ -80,7 +81,7 @@ public class SpeculativeDocumentScan extends DocumentScanner implements FutureCa
     }
 
     public SpeculativeDocumentScan(DocumentQueryConfiguration config, String localTableName, Set<Authorizations> localAuths, ScannerChunk chunk, DocumentResourceQueue delegatorReference,
-                                   Class<? extends DocumentResource> delegatedResourceInitializer, ArrayBlockingQueue<Document> results, ExecutorService callingService) {
+                                   Class<? extends DocumentResource> delegatedResourceInitializer, ArrayBlockingQueue< SerializedDocumentIfc> results, ExecutorService callingService) {
         super(config, localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, results, callingService);
         scans = Lists.newArrayList();
         scanFutures = Lists.newArrayList();
@@ -226,7 +227,7 @@ public class SpeculativeDocumentScan extends DocumentScanner implements FutureCa
         
     }
     
-    public LinkedBlockingDeque<Document> getQueue() {
+    public LinkedBlockingDeque<SerializedDocumentIfc> getQueue() {
         return myResultQueue;
     }
     

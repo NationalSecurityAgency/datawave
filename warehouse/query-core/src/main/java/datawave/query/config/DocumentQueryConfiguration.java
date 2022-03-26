@@ -359,6 +359,7 @@ public class DocumentQueryConfiguration extends ShardQueryConfiguration implemen
     private int maxTabletsPerRequest=0;
     private int maxTabletThreshold=5000;
     private boolean pushdownLogic=false;
+    private boolean convertToDocument=true;
 
     /**
      * Default constructor
@@ -2212,5 +2213,13 @@ public class DocumentQueryConfiguration extends ShardQueryConfiguration implemen
 
     public void setPushdownLogic(boolean pushdownLogic){
         this.pushdownLogic=pushdownLogic;
+    }
+
+    public boolean getConvertToDocument() {
+        return this.convertToDocument;
+    }
+
+    public void setConvertToDocument(boolean document){
+        this.convertToDocument=document;
     }
 }

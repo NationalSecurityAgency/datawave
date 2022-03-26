@@ -3,6 +3,7 @@ package datawave.query.tables;
 import com.google.common.base.Preconditions;
 import datawave.query.attributes.Document;
 import datawave.query.config.DocumentQueryConfiguration;
+import datawave.query.tables.serialization.SerializedDocumentIfc;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Range;
@@ -28,7 +29,7 @@ import java.util.Set;
  * this isn't entirely necessary, it does allow us to better inject test code.
  * 
  */
-public class DocumentResource implements Closeable, Iterable<Document> {
+public class DocumentResource implements Closeable, Iterable<SerializedDocumentIfc> {
     private static final Logger log = Logger.getLogger(DocumentResource.class);
     /**
      * Our connector.
@@ -80,7 +81,7 @@ public class DocumentResource implements Closeable, Iterable<Document> {
      * @see java.lang.Iterable#iterator()
      */
     @Override
-    public Iterator<Document> iterator() {
+    public Iterator<SerializedDocumentIfc> iterator() {
         return Collections.emptyIterator();
     }
     

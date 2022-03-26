@@ -3,6 +3,7 @@ package datawave.query.tables.document.batch;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
 import datawave.query.tables.CleanerUtil;
+import datawave.query.tables.serialization.SerializedDocumentIfc;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.clientImpl.ScannerOptions;
@@ -100,7 +101,7 @@ public class DocumentScannerImpl extends ScannerOptions implements BatchScanner 
         throw new UnsupportedOperationException("use getDocumentIterator");
     }
 
-    public Iterator<Document> getDocumentIterator() {
+    public Iterator<SerializedDocumentIfc> getDocumentIterator() {
         if (ranges == null) {
             throw new IllegalStateException("ranges not set");
         }
