@@ -497,7 +497,7 @@ public abstract class JsonDocumentTransformerSupport<I,O> extends EventQueryTran
                 }
             } else {
                 // noinspection RedundantCast
-                FieldBase<?> f = createField(fieldName, (Long) null, attr, EMPTY_MARKINGS, (String) null);
+                FieldBase<?> f = createField(fieldName, (Long) 0L, attr, EMPTY_MARKINGS, (String) null);
                 myFields.add(f);
             }
         }
