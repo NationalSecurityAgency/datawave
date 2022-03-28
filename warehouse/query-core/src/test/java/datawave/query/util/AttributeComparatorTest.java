@@ -46,9 +46,9 @@ public class AttributeComparatorTest {
     private final TypeMetadata typeMetadata = new TypeMetadata();
     private final PreNormalizedAttributeFactory preNormFactory = new PreNormalizedAttributeFactory(typeMetadata);
     
-    private final PreNormalizedAttribute preNorm1 = (PreNormalizedAttribute) preNormFactory.create("", "foo", testKey1, true);
-    private final PreNormalizedAttribute preNorm2 = (PreNormalizedAttribute) preNormFactory.create("", "bar", testKey2, true);
-    private final PreNormalizedAttribute preNorm3 = (PreNormalizedAttribute) preNormFactory.create("", "baz", testKey3, true);
+    private final PreNormalizedAttribute preNorm1 = (PreNormalizedAttribute) preNormFactory.create("", "foo", testKey1, false);
+    private final PreNormalizedAttribute preNorm2 = (PreNormalizedAttribute) preNormFactory.create("", "bar", testKey2, false);
+    private final PreNormalizedAttribute preNorm3 = (PreNormalizedAttribute) preNormFactory.create("", "baz", testKey3, false);
     
     private final IpAddress ipAddr = new IpAddress("192.168.1.1", testKey7, true);
     
@@ -120,7 +120,7 @@ public class AttributeComparatorTest {
     public void testCombineAttributeToAttributes() {
         Set<Attribute<? extends Comparable<?>>> mergedSet = AttributeComparator.combineMultipleAttributes(preNorm1, contentAttributes, true);
         assertThat(mergedSet, CoreMatchers.hasItem(combinedContent1));
-        assertEquals(1, mergedSet.size());
+        assertEquals(3, mergedSet.size());
     }
     
     @Test
