@@ -1724,7 +1724,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setMaxPipelineCachedResults(int maxCachedResults) {
         getConfig().setMaxPipelineCachedResults(maxCachedResults);
     }
-    
+
+    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
+        getConfig().setQueryExecutionForPageTimeout(queryExecutionForPageTimeout);
+    }
+
+    public long getQueryExecutionForPageTimeout() { return getConfig().getQueryExecutionForPageTimeout();}
+
     public double getMinimumSelectivity() {
         return getConfig().getMinSelectivity();
     }

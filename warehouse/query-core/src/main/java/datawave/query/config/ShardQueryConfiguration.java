@@ -371,7 +371,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     // fields exempt from query model expansion
     private Set<String> noExpansionFields = new HashSet<>();
-    
+
+    private long queryExecutionForPageTimeout = 30000L;
+
     /**
      * Default constructor
      */
@@ -2217,4 +2219,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setNoExpansionFields(Set<String> noExpansionFields) {
         this.noExpansionFields = noExpansionFields;
     }
+
+    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
+        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
+    }
+
+    public long getQueryExecutionForPageTimeout() {return this.queryExecutionForPageTimeout; }
 }
