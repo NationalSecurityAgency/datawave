@@ -6,6 +6,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
 import datawave.query.tables.document.batch.DocumentLogic;
 import datawave.query.tables.serialization.JsonDocument;
+import datawave.query.tables.serialization.SerializedDocument;
 import datawave.query.tables.serialization.SerializedDocumentIfc;
 import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
@@ -101,7 +102,7 @@ public class JsonDocumentTransformer extends JsonDocumentTransformerSupport<Seri
     }
 
     private EventBase _transform(SerializedDocumentIfc documentEntry) throws EmptyObjectException {
-            if (asDocument || (!asDocument && documentEntry instanceof JsonDocument)){
+            if (asDocument || (!asDocument && documentEntry instanceof SerializedDocument)){
                 return _transform( documentEntry.computeKey(), (Document)documentEntry.getAs(Document.class) );
             }else{
                 return _transform(documentEntry.computeKey(),documentEntry,  (JsonObject)documentEntry.getAs(JsonObject.class) );

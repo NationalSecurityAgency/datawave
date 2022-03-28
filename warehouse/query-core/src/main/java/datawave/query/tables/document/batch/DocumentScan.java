@@ -1018,23 +1018,6 @@ public class DocumentScan implements Iterator<SerializedDocumentIfc> {
             input.close();
             document = new SerializedDocument(doc);
 
-        }
-        else if (DocumentSerialization.ReturnType.json == returnType) {
-            InputStream jsonStream  = new ByteArrayInputStream(array, offset+3, size - 3);
-
-            if (!docRawFields) {
-                Reader rdr = new InputStreamReader(jsonStream);
-                JsonObject jsonObject = jsonParser.parse(rdr).getAsJsonObject();
-                Document doc = jsonDeser.deserialize(jsonObject, null, null);
-                document = new SerializedDocument(doc);
-            }
-            else{
-
-                Reader rdr = new InputStreamReader(jsonStream);
-                JsonObject jsonObject = jsonParser.parse(rdr).getAsJsonObject();
-                document = new JsonDocument(jsonObject,kv.getKey(),size-3);
-
-            }
         } else if (DocumentSerialization.ReturnType.json == returnType) {
             InputStream jsonStream  = new ByteArrayInputStream(array, offset+3, size - 3);
 

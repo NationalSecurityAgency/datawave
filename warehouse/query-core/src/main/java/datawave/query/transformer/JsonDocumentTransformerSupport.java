@@ -241,6 +241,7 @@ public abstract class JsonDocumentTransformerSupport<I,O> extends EventQueryTran
         String fn = null;
         JsonObject attribute = null;
         //for (Entry<String,Attribute<? extends Comparable<?>>> data : documentData.entrySet()) {
+        System.out.println("for " + document.toString());
         for(Entry<String, JsonElement> element : document.entrySet()){
 
             // skip metadata fields
@@ -251,7 +252,7 @@ public abstract class JsonDocumentTransformerSupport<I,O> extends EventQueryTran
 
             // Some fields were added by the queryPlanner. This will ensure that the original projectFields and blacklistFields are honored
             // remove any grouping context (only return the field up until the first dot)
-            if (!suppressFields.contains(JexlASTHelper.removeGroupingContext(fn))) {
+            if (!element.getKey().equals("doc.key") && !suppressFields.contains(JexlASTHelper.removeGroupingContext(fn))) {
                 // Apply the reverse mapping to make the field name human-readable again
                 if (null != this.getQm()) {
                     fn = this.getQm().aliasFieldNameReverseModel(fn);
@@ -484,6 +485,7 @@ public abstract class JsonDocumentTransformerSupport<I,O> extends EventQueryTran
             if (!this.reducedResponse) {
                 try {
                     JsonObject jsonObject = attr.getAsJsonObject();
+                    JsonObject cvObject = jsonObject.getAsJsonObject("doc.key");
                     ColumnVisibility viz = new ColumnVisibility(jsonObject.get("cv").getAsString().getBytes(StandardCharsets.UTF_8));
                     long ts = jsonObject.get("timestamp").getAsLong();
                     Map<String,String> markings = markingFunctions.translateFromColumnVisibility(viz);
