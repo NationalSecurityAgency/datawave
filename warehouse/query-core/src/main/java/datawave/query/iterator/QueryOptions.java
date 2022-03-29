@@ -99,7 +99,7 @@ public class QueryOptions implements OptionDescriber {
     protected static Cache<String,FileSystem> fileSystemCache = CacheBuilder.newBuilder().concurrencyLevel(10).maximumSize(100).build();
 
 
-    protected static LoadingCache<String, TypeMetadata> metadataLoadingCache = Caffeine.newBuilder()
+    protected static final LoadingCache<String, TypeMetadata> metadataLoadingCache = Caffeine.newBuilder()
             .expireAfterWrite(1, TimeUnit.HOURS)
             .maximumSize(100)
             .build( x -> new TypeMetadata(x));

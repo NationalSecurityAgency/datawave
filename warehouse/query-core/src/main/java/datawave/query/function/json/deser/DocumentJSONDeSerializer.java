@@ -33,7 +33,7 @@ import java.util.Map;
 public class DocumentJSONDeSerializer extends StdDeserializer<Document> {
 
 
-    public static LoadingCache<String, Constructor> constructorCache = CacheBuilder.newBuilder().build(new CacheLoader<String, Constructor>() {
+    public static final LoadingCache<String, Constructor> constructorCache = CacheBuilder.newBuilder().build(new CacheLoader<String, Constructor>() {
         @Override
         public Constructor load(String typeString) throws Exception {
             try {
