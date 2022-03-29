@@ -26,7 +26,6 @@ import datawave.util.time.DateHelper;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.EmptyObjectException;
-import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.logic.WritesResultCardinalities;
 import datawave.webservice.query.metric.BaseQueryMetric;
@@ -36,7 +35,6 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -241,7 +239,6 @@ public abstract class JsonDocumentTransformerSupport<I,O> extends EventQueryTran
         String fn = null;
         JsonObject attribute = null;
         //for (Entry<String,Attribute<? extends Comparable<?>>> data : documentData.entrySet()) {
-        System.out.println("for " + document.toString());
         for(Entry<String, JsonElement> element : document.entrySet()){
 
             // skip metadata fields
@@ -258,7 +255,7 @@ public abstract class JsonDocumentTransformerSupport<I,O> extends EventQueryTran
                     fn = this.getQm().aliasFieldNameReverseModel(fn);
                 }
                 attribute = element.getValue().getAsJsonObject();
-                Fields.addAll(buildDocumentFields(documentKey, fn, attribute, topLevelColumnVisibility, markingFunctions));
+                Fields.addAll(buildAttributeFields(documentKey, fn, attribute, topLevelColumnVisibility, markingFunctions));
             }
         }
         return Fields;
@@ -468,7 +465,7 @@ public abstract class JsonDocumentTransformerSupport<I,O> extends EventQueryTran
      * @param documentKey
      * @return
      */
-    protected Collection<FieldBase<?>> buildDocumentFields(Key documentKey, String fieldName, JsonElement attr, ColumnVisibility topLevelColumnVisibility,
+    protected Collection<FieldBase<?>> buildAttributeFields(Key documentKey, String fieldName, JsonElement attr, ColumnVisibility topLevelColumnVisibility,
                                                            MarkingFunctions markingFunctions) {
 
         final Set<FieldBase<?>> myFields = new HashSet<>();
@@ -477,7 +474,7 @@ public abstract class JsonDocumentTransformerSupport<I,O> extends EventQueryTran
             JsonArray attributeList = attr.getAsJsonArray();
 
              attributeList.iterator().forEachRemaining(embeddedAttr -> {
-                 myFields.addAll(buildDocumentFields(documentKey, fieldName, embeddedAttr, topLevelColumnVisibility, markingFunctions));
+                 myFields.addAll(buildAttributeFields(documentKey, fieldName, embeddedAttr, topLevelColumnVisibility, markingFunctions));
              });
 
         } else {
@@ -485,9 +482,9 @@ public abstract class JsonDocumentTransformerSupport<I,O> extends EventQueryTran
             if (!this.reducedResponse) {
                 try {
                     JsonObject jsonObject = attr.getAsJsonObject();
-                    JsonObject cvObject = jsonObject.getAsJsonObject("doc.key");
-                    ColumnVisibility viz = new ColumnVisibility(jsonObject.get("cv").getAsString().getBytes(StandardCharsets.UTF_8));
-                    long ts = jsonObject.get("timestamp").getAsLong();
+                    JsonObject keyObject = jsonObject.getAsJsonObject("doc.key");
+                    ColumnVisibility viz = new ColumnVisibility(keyObject.get("cv").getAsString().getBytes(StandardCharsets.UTF_8));
+                    long ts = keyObject.get("timestamp").getAsLong();
                     Map<String,String> markings = markingFunctions.translateFromColumnVisibility(viz);
                     JsonElement data = jsonObject.get("type.data");
 
