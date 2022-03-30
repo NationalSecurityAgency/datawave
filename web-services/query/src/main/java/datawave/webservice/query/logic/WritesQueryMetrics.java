@@ -1,6 +1,6 @@
 package datawave.webservice.query.logic;
 
-import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric;
 
 public interface WritesQueryMetrics {
     
