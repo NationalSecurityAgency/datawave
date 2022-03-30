@@ -42,6 +42,7 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -72,6 +73,7 @@ public class WhindexVisitor extends RebuildingVisitor {
     
     private final Set<String> mappingFields;
     private final Map<String,Map<String,String>> valueSpecificFieldMappings;
+    private final Multimap<String,String> fieldValueMappings;
     private final MetadataHelper metadataHelper;
     
     private final HashMap<JexlNode,WhindexTerm> jexlNodeToWhindexMap = new HashMap<>();
@@ -95,6 +97,7 @@ public class WhindexVisitor extends RebuildingVisitor {
     private WhindexVisitor(Set<String> mappingFields, Map<String,Map<String,String>> fieldMappings, Date beginDate, MetadataHelper metadataHelper) {
         this.mappingFields = mappingFields;
         this.metadataHelper = metadataHelper;
+        this.fieldValueMappings = LinkedHashMultimap.create();
         this.valueSpecificFieldMappings = pruneFieldMappings(fieldMappings, beginDate);
     }
     
@@ -164,6 +167,9 @@ public class WhindexVisitor extends RebuildingVisitor {
                     if (fieldPredatesBeginDate(newField, beginDate)) {
                         Map<String,String> newMapping = prunedFieldMappings.computeIfAbsent(fieldValue.toLowerCase(), k -> new HashMap<>());
                         newMapping.put(origField, newField);
+                        
+                        // save the new field-value mappings
+                        fieldValueMappings.put(newField, fieldValue);
                     }
                 }
             }
@@ -272,7 +278,7 @@ public class WhindexVisitor extends RebuildingVisitor {
         }
         
         // if we only have one child, just pass through
-        // this shouldn't ever really happen, but it could/
+        // this shouldn't ever really happen, but it could
         if (node.jjtGetNumChildren() == 1)
             return super.visit(node, data);
         
@@ -291,7 +297,16 @@ public class WhindexVisitor extends RebuildingVisitor {
             JexlNode rebuiltNode = (JexlNode) distributedNode.jjtAccept(this, parentData);
             
             // only return the distributed version of this node if whindexes were found
-            return (parentData.foundWhindex) ? rebuiltNode : node;
+            if (parentData.foundWhindex) {
+                // attempt to reduce the rebuilt node before returning
+                if (rebuiltNode instanceof ASTOrNode) {
+                    rebuiltNode = reduceOrNode((ASTOrNode) rebuiltNode);
+                }
+                
+                return rebuiltNode;
+            } else {
+                return node;
+            }
         } else {
             // if this is a 'leaf' range node, check to see if a whindex can be made
             if (leafNodes.size() == 1 && leafNodes.containsValue(node)) {
@@ -326,11 +341,12 @@ public class WhindexVisitor extends RebuildingVisitor {
                         // remove any leaf nodes that are still present in whindex form
                         List<JexlNode> leafNodesToDistribute = usedLeafNodes.values().stream().map(this::getLeafNode).collect(Collectors.toList());
                         
-                        // remove all of the nodes that were turned into whindex nodes
+                        // remove all of the child leaf nodes converted to whindex nodes. they still belong to this AND node, and don't need to be distributed
                         leafNodesToDistribute.removeAll(whindexTerms.stream().map(x -> JexlASTHelper.dereference(x.getMappableNode()))
                                         .collect(Collectors.toList()));
                         
-                        rebuiltNode = DistributeAndedNodesVisitor.distributeAndedNode(rebuiltNode, leafNodesToDistribute, jexlNodeToWhindexMap);
+                        rebuiltNode = DistributeAndedNodesVisitor.distributeAndedNode(rebuiltNode, leafNodesToDistribute, jexlNodeToWhindexMap,
+                                        fieldValueMappings);
                     }
                     
                     return rebuiltNode;
@@ -385,6 +401,62 @@ public class WhindexVisitor extends RebuildingVisitor {
         }
         
         return createUnwrappedAndNode(newOrNodes);
+    }
+    
+    private JexlNode reduceOrNode(ASTOrNode node) {
+        Multimap<String,JexlNode> grandchildToChildMap = LinkedHashMultimap.create();
+        Multimap<String,JexlNode> stringToGrandchildMap = LinkedHashMultimap.create();
+        
+        Set<JexlNode> children = new LinkedHashSet<>(Arrays.asList(JexlNodes.children(node)));
+        
+        // create a map of grandchildren to children based on the node string
+        for (JexlNode child : children) {
+            if (child instanceof ASTAndNode) {
+                for (JexlNode grandchild : JexlNodes.children(child)) {
+                    String jexlString = JexlStringBuildingVisitor.buildQuery(grandchild);
+                    grandchildToChildMap.put(jexlString, child);
+                    stringToGrandchildMap.put(jexlString, grandchild);
+                }
+            }
+        }
+        
+        // find the shared grandchildren
+        Multimap<String,JexlNode> sharedGrandchildMap = LinkedHashMultimap.create();
+        for (String grandchildString : grandchildToChildMap.keySet()) {
+            // is this grandchild shared by all children?
+            if (grandchildToChildMap.get(grandchildString).containsAll(children)) {
+                sharedGrandchildMap.putAll(grandchildString, stringToGrandchildMap.get(grandchildString));
+            }
+        }
+        
+        // if we have shared grandchildren, reduce to an AND node, or else return the original node
+        if (!sharedGrandchildMap.isEmpty()) {
+            
+            // remove the shared grandchildren from each child
+            List<JexlNode> reducedChildren = new ArrayList<>();
+            for (JexlNode child : children) {
+                Set<JexlNode> grandchildren = new HashSet<>(Arrays.asList(JexlNodes.children(child)));
+                grandchildren.removeAll(sharedGrandchildMap.values());
+                reducedChildren.add(createUnwrappedAndNode(grandchildren));
+            }
+            
+            // OR the reduced children, and AND them with the shared grandchildren
+            List<JexlNode> andedChildren = new ArrayList<>();
+            for (String grandchildString : sharedGrandchildMap.keySet()) {
+                JexlNode sharedGrandchild = sharedGrandchildMap.get(grandchildString).stream().findFirst().orElse(null);
+                if (sharedGrandchild != null) {
+                    andedChildren.add(sharedGrandchild);
+                } else {
+                    // this shouldn't be possible
+                    return node;
+                }
+            }
+            andedChildren.add(createUnwrappedOrNode(reducedChildren));
+            
+            return createUnwrappedAndNode(andedChildren);
+        } else {
+            return node;
+        }
     }
     
     @Override
@@ -558,7 +630,7 @@ public class WhindexVisitor extends RebuildingVisitor {
             if (!whindexNodes.isEmpty()) {
                 parentData.foundWhindex = true;
                 
-                whindexLeafNodes.add(createUnwrappedAndNode(whindexNodes));
+                whindexLeafNodes.addAll(whindexNodes);
             }
         }
         
