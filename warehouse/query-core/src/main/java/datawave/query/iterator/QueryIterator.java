@@ -3,7 +3,6 @@ package datawave.query.iterator;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -1245,10 +1244,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         
         if (this.useWhiteListedFields) {
-            projection.initializeWhitelist(this.whiteListedFields);
+            projection.setIncludes(this.whiteListedFields);
             return projection;
         } else if (this.useBlackListedFields) {
-            projection.initializeBlacklist(this.blackListedFields);
+            projection.setExcludes(this.blackListedFields);
             return projection;
         } else {
             String msg = "Configured to use projection, but no whitelist or blacklist was provided";
@@ -1269,7 +1268,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
             }
         }
-        projection.initializeBlacklist(composites);
+        projection.setExcludes(composites);
         return projection;
     }
     
