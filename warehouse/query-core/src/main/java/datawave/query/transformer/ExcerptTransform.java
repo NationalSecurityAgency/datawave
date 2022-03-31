@@ -35,6 +35,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     public static final String PHRASE_INDEXES_ATTRIBUTE = "PHRASE_INDEXES_ATTRIBUTE";
     public static final String HIT_EXCERPTS = "HIT_EXCERPTS";
     
+    private final TermFrequencyExcerptIterator excerptIterator = new TermFrequencyExcerptIterator();
+    private final Map<String,String> excerptIteratorOptions = new HashMap<>();
     private final ExcerptFields excerptFields;
     private final IteratorEnvironment env;
     private final SortedKeyValueIterator<Key,Value> source;
@@ -137,16 +139,14 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * @return the excerpt
      */
     private String getExcerpt(String field, int start, int end, Range range) {
-        Map<String,String> options = new HashMap<>();
-        options.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
-        options.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
-        options.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end));
-        TermFrequencyExcerptIterator iterator = new TermFrequencyExcerptIterator();
+        excerptIteratorOptions.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
+        excerptIteratorOptions.put(TermFrequencyExcerptIterator.START_OFFSET, String.valueOf(start));
+        excerptIteratorOptions.put(TermFrequencyExcerptIterator.END_OFFSET, String.valueOf(end));
         try {
-            iterator.init(source, options, env);
-            iterator.seek(range, Collections.emptyList(), false);
-            if (iterator.hasTop()) {
-                Key topKey = iterator.getTopKey();
+            excerptIterator.init(source, excerptIteratorOptions, env);
+            excerptIterator.seek(range, Collections.emptyList(), false);
+            if (excerptIterator.hasTop()) {
+                Key topKey = excerptIterator.getTopKey();
                 return topKey.getColumnQualifier().toString().split(Constants.NULL)[1];
             } else {
                 return null;
