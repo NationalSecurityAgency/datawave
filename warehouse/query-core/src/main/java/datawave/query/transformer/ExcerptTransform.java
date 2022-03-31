@@ -1,5 +1,6 @@
 package datawave.query.transformer;
 
+import datawave.query.Constants;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
@@ -119,7 +120,9 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             Collection<Pair<Integer,Integer>> indexes = phraseIndexes.getIndices(field);
             for (Pair<Integer,Integer> indexPair : indexes) {
                 String excerpt = getExcerpt(field, indexPair.getValue0(), indexPair.getValue1(), range);
-                excerpts.add(excerpt);
+                if (excerpt != null) {
+                    excerpts.add(excerpt);
+                }
             }
         }
         return excerpts;
@@ -143,13 +146,14 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             iterator.init(source, options, env);
             iterator.seek(range, Collections.emptyList(), false);
             if (iterator.hasTop()) {
-                iterator.getTopKey();
+                Key topKey = iterator.getTopKey();
+                return topKey.getColumnQualifier().toString().split(Constants.NULL)[1];
+            } else {
+                return null;
             }
-            // TODO - seek to phrase
         } catch (IOException e) {
             throw new RuntimeException("Failed to scan for excerpts", e);
         }
-        return null;
     }
     
     /**
