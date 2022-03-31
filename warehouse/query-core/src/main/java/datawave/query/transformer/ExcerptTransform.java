@@ -109,10 +109,10 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         
         // Construct the required range for this document.
         Key metadata = document.getMetadata();
-        Key startKey = new Key(metadata.getRow(), new Text("datatype\0uid"));
+        Key startKey = new Key(metadata.getRow(), metadata.getColumnFamily());
         Key endKey = startKey.followingKey(PartialKey.ROW_COLFAM);
         Range range = new Range(startKey, true, endKey, false);
-        
+    
         // Fetch the excerpts.
         Set<String> excerpts = new HashSet<>();
         for (String field : phraseIndexes.getFields()) {
@@ -125,6 +125,14 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         return excerpts;
     }
     
+    /**
+     * Get the excerpt for the specified field.
+     * @param field the field
+     * @param start the start index of the excerpt
+     * @param end the end index of the excerpt
+     * @param range the range to use when seeking
+     * @return the excerpt
+     */
     private String getExcerpt(String field, int start, int end, Range range) {
         Map<String,String> options = new HashMap<>();
         options.put(TermFrequencyExcerptIterator.FIELD_NAME, field);
