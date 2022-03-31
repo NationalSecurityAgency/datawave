@@ -56,7 +56,9 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                     Set<String> excerpts = getExcerpts(phraseIndexes, document);
                     addExcerptsToDocument(excerpts, document);
                 } else {
-                    log.debug("Phrase indexes were not added to document " + document.getMetadata() + ", skipping");
+                    if (log.isTraceEnabled()) {
+                        log.trace("Phrase indexes were not added to document " + document.getMetadata() + ", skipping");
+                    }
                 }
             }
         }
