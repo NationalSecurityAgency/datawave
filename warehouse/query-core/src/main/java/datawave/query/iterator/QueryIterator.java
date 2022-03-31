@@ -61,6 +61,7 @@ import datawave.query.jexl.functions.KeyAdjudicator;
 import datawave.query.jexl.visitors.DelayedNonEventSubTreeVisitor;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.predicate.EmptyDocumentFilter;
@@ -212,7 +213,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         this.seekKeySource = other.seekKeySource;
         this.myEnvironment = other.myEnvironment;
         this.myEvaluationFunction = other.myEvaluationFunction;
-        this.script = other.script;
+        this.script = TreeFlatteningRebuildingVisitor.flatten(other.script);
         this.documentOptions = other.documentOptions;
         this.fieldIndexSatisfiesQuery = other.fieldIndexSatisfiesQuery;
         this.groupingContextAddedByMe = other.groupingContextAddedByMe;
@@ -248,7 +249,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         
         // Parse the query
         try {
-            this.script = JexlASTHelper.parseJexlQuery(this.getQuery());
+            this.script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
             this.myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
             
         } catch (Exception e) {

@@ -11,8 +11,9 @@ import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.transformer.ExcerptTransform;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.jexl2.DatawaveJexlScript;
+import org.apache.commons.jexl2.ExpressionImpl;
 import org.apache.commons.jexl2.JexlArithmetic;
-import org.apache.commons.jexl2.Script;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 
@@ -35,9 +36,9 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     private DatawaveJexlEngine engine;
     
     /**
-     * Compiled jexl script
+     * Compiled and flattened jexl script
      */
-    protected Script script;
+    protected DatawaveJexlScript script;
     
     public JexlEvaluation(String query) {
         this(query, new DefaultArithmetic());
@@ -51,7 +52,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         this.engine = ArithmeticJexlEngines.getEngine(arithmetic);
         
         // Evaluate the JexlContext against the Script
-        this.script = this.engine.createScript(this.query);
+        this.script = DatawaveJexlScript.create((ExpressionImpl) this.engine.createScript(this.query));
     }
     
     public JexlArithmetic getArithmetic() {
