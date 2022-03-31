@@ -121,9 +121,15 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         for (String field : phraseIndexes.getFields()) {
             Collection<Pair<Integer,Integer>> indexes = phraseIndexes.getIndices(field);
             for (Pair<Integer,Integer> indexPair : indexes) {
-                String excerpt = getExcerpt(field, indexPair.getValue0(), indexPair.getValue1(), range);
+                int start = indexPair.getValue0();
+                int end = indexPair.getValue1();
+                String excerpt = getExcerpt(field, start, end, range);
                 if (excerpt != null) {
                     excerpts.add(excerpt);
+                } else {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Failed to find excerpt [" + start + "," + end + "] for field " + field + "for document " + metadata);
+                    }
                 }
             }
         }
