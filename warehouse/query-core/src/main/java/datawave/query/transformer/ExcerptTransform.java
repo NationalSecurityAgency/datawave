@@ -13,7 +13,6 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.javatuples.Pair;
 
@@ -35,16 +34,22 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     public static final String PHRASE_INDEXES_ATTRIBUTE = "PHRASE_INDEXES_ATTRIBUTE";
     public static final String HIT_EXCERPTS = "HIT_EXCERPTS";
     
-    private final TermFrequencyExcerptIterator excerptIterator = new TermFrequencyExcerptIterator();
     private final Map<String,String> excerptIteratorOptions = new HashMap<>();
+    private final TermFrequencyExcerptIterator excerptIterator;
     private final ExcerptFields excerptFields;
     private final IteratorEnvironment env;
     private final SortedKeyValueIterator<Key,Value> source;
     
     public ExcerptTransform(ExcerptFields excerptFields, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source) {
+        this(excerptFields, env, source, new TermFrequencyExcerptIterator());
+    }
+    
+    protected ExcerptTransform(ExcerptFields excerptFields, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source,
+                    TermFrequencyExcerptIterator excerptIterator) {
         this.excerptFields = excerptFields;
         this.env = env;
         this.source = source;
+        this.excerptIterator = excerptIterator;
     }
     
     @Nullable
@@ -76,8 +81,12 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * @return the phrase indexes
      */
     private PhraseIndexes getPhraseIndexes(Document document) {
-        Content content = (Content) document.get(PHRASE_INDEXES_ATTRIBUTE);
-        return PhraseIndexes.from(content.getContent());
+        if (document.containsKey(PHRASE_INDEXES_ATTRIBUTE)) {
+            Content content = (Content) document.get(PHRASE_INDEXES_ATTRIBUTE);
+            return PhraseIndexes.from(content.getContent());
+        } else {
+            return null;
+        }
     }
     
     /**
