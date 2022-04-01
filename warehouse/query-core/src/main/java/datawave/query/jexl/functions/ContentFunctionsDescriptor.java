@@ -424,9 +424,12 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             List<JexlNode> components = new LinkedList<>();
             
             JexlNode deref = JexlASTHelper.dereference(indexQuery);
-            if (deref instanceof ASTAndNode) {
-                // single component
+            if (deref instanceof ASTAndNode || deref instanceof ASTEQNode) {
+                
+                // it is possible that an index query contains only a single equality node
+                // i.e., "phrase('foo', 'foo')" would produce a single equality node "FOO == 'bar'"
                 components.add(deref);
+                
             } else if (deref instanceof ASTOrNode) {
                 // multiple components
                 for (JexlNode child : JexlNodes.children(deref)) {
@@ -461,7 +464,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
          * @param function
          *            an arbitrary function
          * @param component
-         *            the component
+         *            an ASTAndNode or ASTEqNode
          * @return nothing
          */
         public static JexlNode distributeFunctionIntoComponent(JexlNode function, JexlNode component) {
@@ -469,7 +472,11 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             String field = findCommonField(component);
             if (field != null) {
                 children.add(updateFunctionWithField(function, field));
-                children.addAll(Arrays.asList(JexlNodes.children(component)));
+                if (component instanceof ASTEQNode) {
+                    children.add(component);
+                } else {
+                    children.addAll(Arrays.asList(JexlNodes.children(component)));
+                }
                 return JexlNodeFactory.createAndNode(children);
             } else {
                 throw new IllegalStateException("Expected index query component to only contain a single field");
