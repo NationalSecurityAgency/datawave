@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import datawave.query.Constants;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -17,7 +18,9 @@ import java.util.TreeMap;
  * retrieve excerpts for hits that were found for a content:phrase or content:within functions. An instance of {@link ExcerptFields} can easily be captured as a
  * parameter string using {@link ExcerptFields#toString()}, and transformed back into a {@link ExcerptFields} instance via {@link ExcerptFields#from(String)}.
  */
-public class ExcerptFields {
+public class ExcerptFields implements Serializable {
+    
+    private static final long serialVersionUID = 5380671489827552579L;
     
     private SortedMap<String,Integer> fieldMap;
     
