@@ -426,8 +426,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             JexlNode deref = JexlASTHelper.dereference(indexQuery);
             if (deref instanceof ASTAndNode || deref instanceof ASTEQNode) {
                 
-                // it is possible that an index query contains only a single equality node
-                // i.e., "phrase('foo', 'foo')" would produce a single equality node "FOO == 'bar'"
+                // the index query may be a single equality node when the phrase is composed of repeated terms
+                // i.e., "phrase(termOffsetMap, 'bar', 'bar')" will produce an index query of "FOO == 'bar'"
                 components.add(deref);
                 
             } else if (deref instanceof ASTOrNode) {
@@ -474,8 +474,10 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 children.add(updateFunctionWithField(function, field));
                 if (component instanceof ASTEQNode) {
                     children.add(component);
-                } else {
+                } else if (component instanceof ASTAndNode) {
                     children.addAll(Arrays.asList(JexlNodes.children(component)));
+                } else {
+                    throw new IllegalStateException("Unexpected component. Expected ASTAndNode or ASTEqNode but was: " + component.getClass().getSimpleName());
                 }
                 return JexlNodeFactory.createAndNode(children);
             } else {
