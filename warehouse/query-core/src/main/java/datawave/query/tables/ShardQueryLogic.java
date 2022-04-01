@@ -613,10 +613,15 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (getConfig() != null) {
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
             ((DocumentTransformer) this.transformerInstance).setBlacklistedFields(getConfig().getBlacklistedFields());
+            
+            // TODO Make the UniqueTransform NOT rely on a new instance being created, presumably because the unique fields from the
+            // config have changed and that's how it's propagated to the transform.
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
                 ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
             }
-            if (getConfig().getGroupFields() != null && !getConfig().getGroupFields().isEmpty()) {
+            
+            if (getConfig().getGroupFields() != null && !getConfig().getGroupFields().isEmpty()
+                            && !((DocumentTransformer) this.transformerInstance).containsTransform(GroupingTransform.class)) {
                 ((DocumentTransformer) this.transformerInstance).addTransform(new GroupingTransform(this, getConfig().getGroupFields(), this.markingFunctions,
                                 this.getQueryExecutionForPageTimeout()));
             }
