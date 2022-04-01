@@ -436,7 +436,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     components.add(JexlASTHelper.dereference(child));
                 }
             } else {
-                throw new IllegalStateException("Expected a dereferenced IndexQuery node to be an AND or OR node, but was " + deref.getClass().getSimpleName());
+                throw new IllegalStateException("Expected a dereferenced IndexQuery node to be an AND, OR, or EQ node, but was "
+                                + deref.getClass().getSimpleName());
             }
             
             // distribute functions into components
