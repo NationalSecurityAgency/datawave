@@ -423,26 +423,33 @@ datawave:
           edgeModelName: "DATAWAVE_EDGE"
           modelTableName: ${warehouse.tables.model.name}
 
+    uuidTypes: &defaultUuidTypes
+      'EVENT_ID':
+        fieldName: 'EVENT_ID'
+        queryLogic: 'LuceneUUIDEventQuery'
+        allowedWildcardAfter: 28
+      'UUID':
+        fieldName: 'UUID'
+        queryLogic: 'LuceneUUIDEventQuery'
+      'PARENT_UUID':
+        fieldName: 'PARENT_UUID'
+        queryLogic: 'LuceneUUIDEventQuery'
+      'PAGE_ID':
+        fieldName: 'PAGE_ID'
+        queryLogic: 'LuceneUUIDEventQuery'
+      'PAGE_TITLE':
+        fieldName: 'PAGE_TITLE'
+        queryLogic: 'LuceneUUIDEventQuery'
+
     lookup:
       columnVisibility: ""
       beginDate: "20100101 000000.000"
-      types:
-        'EVENT_ID':
-          fieldName: 'EVENT_ID'
-          queryLogic: 'LuceneUUIDEventQuery'
-          allowedWildcardAfter: 28
-        'UUID':
-          fieldName: 'UUID'
-          queryLogic: 'LuceneUUIDEventQuery'
-        'PARENT_UUID':
-          fieldName: 'PARENT_UUID'
-          queryLogic: 'LuceneUUIDEventQuery'
-        'PAGE_ID':
-          fieldName: 'PAGE_ID'
-          queryLogic: 'LuceneUUIDEventQuery'
-        'PAGE_TITLE':
-          fieldName: 'PAGE_TITLE'
-          queryLogic: 'LuceneUUIDEventQuery'
+      types: *defaultUuidTypes
+
+    translateid:
+      columnVisibility: ""
+      beginDate: "20100101 000000.000"
+      types: *defaultUuidTypes
 
     edge:
       # Uncomment the following line to override the edge beans to load

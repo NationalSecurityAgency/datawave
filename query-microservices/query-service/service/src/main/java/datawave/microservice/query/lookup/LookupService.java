@@ -39,7 +39,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static datawave.microservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
+import static datawave.microservice.query.QueryParameters.QUERY_BEGIN;
+import static datawave.microservice.query.QueryParameters.QUERY_END;
 import static datawave.microservice.query.QueryParameters.QUERY_LOGIC_NAME;
+import static datawave.microservice.query.QueryParameters.QUERY_NAME;
 import static datawave.microservice.query.QueryParameters.QUERY_STRING;
 import static datawave.query.QueryParameters.QUERY_SYNTAX;
 import static datawave.services.query.logic.lookup.LookupQueryLogic.LOOKUP_KEY_VALUE_DELIMITER;
@@ -315,7 +319,7 @@ public class LookupService {
             parameters.put(QUERY_STRING, Collections.singletonList(lookupQueryLogic.createQueryFromLookupTerms(lookupTermMap)));
             
             // update the parameters for query
-            setEventQueryParameters(parameters, currentUser);
+            setupEventQueryParameters(parameters, currentUser);
             
             // create the query
             queryId = queryManagementService.create(parameters.getFirst(QUERY_LOGIC_NAME), parameters, currentUser).getResult();
@@ -417,33 +421,32 @@ public class LookupService {
     }
     
     @SuppressWarnings("ConstantConditions")
-    protected void setEventQueryParameters(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) {
+    protected void setupEventQueryParameters(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) {
         String user = ProxiedEntityUtils.getShortName(currentUser.getPrimaryUser().getName());
+        final String queryName = user + "-" + UUID.randomUUID().toString();
+        
+        // Override the extraneous query details
+        String userAuths;
+        if (parameters.containsKey(QUERY_AUTHORIZATIONS)) {
+            userAuths = AuthorizationsUtil.downgradeUserAuths(currentUser, parameters.getFirst(QUERY_AUTHORIZATIONS));
+        } else {
+            userAuths = AuthorizationsUtil.buildUserAuthorizationString(currentUser);
+        }
+        
+        final String endDate;
+        try {
+            endDate = DefaultQueryParameters.formatDate(DateUtils.addDays(new Date(), 2));
+        } catch (ParseException e) {
+            throw new RuntimeException("Unable to format new query end date");
+        }
         
         setOptionalQueryParameters(parameters);
         
         parameters.set(QUERY_SYNTAX, LUCENE_UUID_SYNTAX);
-        
-        // Override the extraneous query details
-        String userAuths;
-        if (parameters.containsKey(QueryParameters.QUERY_AUTHORIZATIONS)) {
-            userAuths = AuthorizationsUtil.downgradeUserAuths(currentUser, parameters.getFirst(QueryParameters.QUERY_AUTHORIZATIONS));
-        } else {
-            userAuths = AuthorizationsUtil.buildUserAuthorizationString(currentUser);
-        }
-        parameters.set(QueryParameters.QUERY_AUTHORIZATIONS, userAuths);
-        
-        final String queryName = user + "-" + UUID.randomUUID();
-        parameters.set(QueryParameters.QUERY_NAME, queryName);
-        
-        parameters.set(QueryParameters.QUERY_BEGIN, lookupProperties.getBeginDate());
-        
-        final Date endDate = DateUtils.addDays(new Date(), 2);
-        try {
-            parameters.set(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
-        } catch (ParseException e) {
-            throw new RuntimeException("Unable to format new query end date: " + endDate);
-        }
+        parameters.set(QUERY_NAME, queryName);
+        parameters.set(QUERY_AUTHORIZATIONS, userAuths);
+        parameters.set(QUERY_BEGIN, lookupProperties.getBeginDate());
+        parameters.set(QUERY_END, endDate);
     }
     
     protected void setOptionalQueryParameters(MultiValueMap<String,String> parameters) {
@@ -553,19 +556,19 @@ public class LookupService {
         // all content queries use the same query logic
         parameters.put(QUERY_LOGIC_NAME, Collections.singletonList(lookupProperties.getContentQueryLogicName()));
         
-        parameters.set(QueryParameters.QUERY_NAME, user + '-' + UUID.randomUUID());
+        parameters.set(QUERY_NAME, user + '-' + UUID.randomUUID());
         
-        parameters.set(QueryParameters.QUERY_BEGIN, lookupProperties.getBeginDate());
+        parameters.set(QUERY_BEGIN, lookupProperties.getBeginDate());
         
         final Date endDate = new Date();
         try {
-            parameters.set(QueryParameters.QUERY_END, DefaultQueryParameters.formatDate(endDate));
+            parameters.set(QUERY_END, DefaultQueryParameters.formatDate(endDate));
         } catch (ParseException e1) {
             throw new RuntimeException("Error formatting end date: " + endDate);
         }
         
         final String userAuths = AuthorizationsUtil.buildUserAuthorizationString(currentUser);
-        parameters.set(QueryParameters.QUERY_AUTHORIZATIONS, userAuths);
+        parameters.set(QUERY_AUTHORIZATIONS, userAuths);
     }
     
     protected EventQueryResponseBase runContentQuery(MultiValueMap<String,String> parameters, ProxiedUserDetails currentUser) {

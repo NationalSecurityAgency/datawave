@@ -6,6 +6,7 @@ import datawave.microservice.query.lookup.LookupService;
 import datawave.microservice.query.stream.StreamingProperties;
 import datawave.microservice.query.stream.StreamingService;
 import datawave.microservice.query.stream.listener.CountingResponseBodyEmitterListener;
+import datawave.microservice.query.translateid.TranslateIdService;
 import datawave.microservice.query.web.annotation.EnrichQueryMetrics;
 import datawave.microservice.query.web.filter.BaseMethodStatsFilter;
 import datawave.microservice.query.web.filter.CountingResponseBodyEmitter;
@@ -43,6 +44,7 @@ public class QueryController {
     private final QueryManagementService queryManagementService;
     private final LookupService lookupService;
     private final StreamingService streamingService;
+    private final TranslateIdService translateIdService;
     
     private final StreamingProperties streamingProperties;
     
@@ -52,11 +54,13 @@ public class QueryController {
     private final QueryMetricsEnrichmentFilterAdvice.QueryMetricsEnrichmentContext queryMetricsEnrichmentContext;
     
     public QueryController(QueryManagementService queryManagementService, LookupService lookupService, StreamingService streamingService,
-                    StreamingProperties streamingProperties, BaseMethodStatsFilter.BaseMethodStatsContext baseMethodStatsContext,
+                    TranslateIdService translateIdService, StreamingProperties streamingProperties,
+                    BaseMethodStatsFilter.BaseMethodStatsContext baseMethodStatsContext,
                     QueryMetricsEnrichmentFilterAdvice.QueryMetricsEnrichmentContext queryMetricsEnrichmentContext) {
         this.queryManagementService = queryManagementService;
         this.lookupService = lookupService;
         this.streamingService = streamingService;
+        this.translateIdService = translateIdService;
         this.streamingProperties = streamingProperties;
         this.baseMethodStatsContext = baseMethodStatsContext;
         this.queryMetricsEnrichmentContext = queryMetricsEnrichmentContext;
@@ -167,6 +171,21 @@ public class QueryController {
         } else {
             return lookupService.lookupContentUUID(parameters, currentUser);
         }
+    }
+    
+    @RequestMapping(path = "translateId/{id}", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+            "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public BaseQueryResponse translateId(@PathVariable String id, @RequestParam MultiValueMap<String,String> parameters,
+                    @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
+        return translateIdService.translateId(id, parameters, currentUser);
+    }
+    
+    // TODO: Shouldn't the case for this path be the same as the singular call?
+    @RequestMapping(path = "translateIDs", method = {RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
+            "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
+    public BaseQueryResponse translateIDs(@RequestParam MultiValueMap<String,String> parameters, @AuthenticationPrincipal ProxiedUserDetails currentUser)
+                    throws QueryException {
+        return translateIdService.translateIds(parameters, currentUser);
     }
     
     @Timed(name = "dw.query.createAndNext", absolute = true)
