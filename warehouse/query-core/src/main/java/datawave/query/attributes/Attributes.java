@@ -1,15 +1,5 @@
 package datawave.query.attributes;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import datawave.marking.MarkingFunctions;
-import datawave.query.collections.FunctionalSet;
-import datawave.query.jexl.DatawaveJexlContext;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -20,6 +10,18 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import datawave.marking.MarkingFunctions;
+import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.collections.FunctionalSet;
+
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.hadoop.io.WritableUtils;
+import org.apache.log4j.Logger;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 
 public class Attributes extends AttributeBag<Attributes> implements Serializable {
     

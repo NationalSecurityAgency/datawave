@@ -290,4 +290,18 @@ public class DocumentTest {
         assertTrue(((Attributes) testDoc.get("key1")).getAttributes().contains(ipAddr2));
     }
     
+    @Test
+    public void testPreferFromEvent() {
+        Document testDoc = new Document(testKey8, true, true);
+        
+        content1.setFromIndex(true);
+        preNorm1.setFromIndex(false);
+        
+        testDoc.put("key1", content1);
+        testDoc.put("key1", preNorm1);
+        
+        assertEquals(1, testDoc.get("key1").size());
+        assertEquals(preNorm1, testDoc.get("key1"));
+    }
+    
 }
