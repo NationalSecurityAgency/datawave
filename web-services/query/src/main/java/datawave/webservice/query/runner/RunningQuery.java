@@ -201,6 +201,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         // update AbstractRunningQuery.lastUsed
         touch();
         long pageStartTime = System.currentTimeMillis();
+        this.logic.getTransformer(getSettings()).setQueryExecutionForPageStartTime(pageStartTime);
         List<Object> resultList = new ArrayList<>();
         boolean hitPageByteTrigger = false;
         boolean hitPageTimeTrigger = false;

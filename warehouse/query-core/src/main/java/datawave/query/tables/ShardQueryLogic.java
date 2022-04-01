@@ -456,10 +456,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         config.setQueryString(getQueryPlanner().getPlannedScript());
         
-        // Now that the query has been started, update the transformers used by the client with the start time that was set on the settings
-        // by the call to process()
-        getTransformer(settings).setQueryExecutionForPageStartTime(settings.getQueryExecutionForCurrentPageStartTime());
-        
         stopwatch.stop();
     }
     
@@ -585,7 +581,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public QueryLogicTransformer getTransformer(Query settings) {
         if (this.transformerInstance != null) {
             addConfigBasedTransformers();
-            this.transformerInstance.setQueryExecutionForPageStartTime(settings.getQueryExecutionForCurrentPageStartTime());
             return this.transformerInstance;
         }
         
@@ -623,10 +618,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
             if (getConfig().getGroupFields() != null && !getConfig().getGroupFields().isEmpty()) {
                 ((DocumentTransformer) this.transformerInstance).addTransform(new GroupingTransform(this, getConfig().getGroupFields(), this.markingFunctions,
-                                this.getQueryExecutionForPageTimeout(), this.isLongRunningQuery()));
+                                this.getQueryExecutionForPageTimeout()));
             }
         }
-        
         if (queryModel != null) {
             ((DocumentTransformer) this.transformerInstance).setQm(queryModel);
         }

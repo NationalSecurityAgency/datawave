@@ -58,8 +58,6 @@ public class TestBaseQueryLogic {
         expect(this.copy.getRoleManager()).andReturn(roleManager);
         expect(this.copy.getSelectorExtractor()).andReturn(null);
         expect(this.copy.getBypassAccumulo()).andReturn(false);
-        expect(this.copy.getQueryExecutionForPageTimeout()).andReturn(500000L);
-        expect(this.copy.isLongRunningQuery()).andReturn(false);
         
         // Run the test
         PowerMock.replayAll();

@@ -173,6 +173,7 @@ public abstract class GroupingTest {
         
         logic.setFullTableScanEnabled(true);
         logic.setMaxEvaluationPipelines(1);
+        logic.setQueryExecutionForPageTimeout(30000000L);
         deserializer = new KryoDocumentDeserializer();
     }
     

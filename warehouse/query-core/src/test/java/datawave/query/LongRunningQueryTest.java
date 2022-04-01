@@ -112,7 +112,6 @@ public class LongRunningQueryTest {
         // (and not the 200 milliseconds that it is set to) which will return only 1 page of 8 results, thereby failing this test.
         // the smaller this timeout, the more pages of results that will be returned.
         logic.setQueryExecutionForPageTimeout(200);
-        logic.setLongRunningQuery(true);
         
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
@@ -182,7 +181,6 @@ public class LongRunningQueryTest {
         // (and not the 10 milliseconds that it is set to) Set to just 10 ms because since there will be no results,
         // we have to make sure we hit the timeout before no results are returned.
         logic.setQueryExecutionForPageTimeout(10);
-        logic.setLongRunningQuery(true);
         
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
@@ -255,7 +253,6 @@ public class LongRunningQueryTest {
         // (and not the 500 milliseconds that it is set to) which will return only 1 page of 8 results, thereby failing this test.
         // the smaller this timeout, the more pages of results that will be returned.
         logic.setQueryExecutionForPageTimeout(100);
-        logic.setLongRunningQuery(true);
         
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
