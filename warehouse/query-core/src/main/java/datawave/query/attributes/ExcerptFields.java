@@ -2,7 +2,9 @@ package datawave.query.attributes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.collect.Multimap;
 import datawave.query.Constants;
+import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
@@ -119,6 +121,42 @@ public class ExcerptFields implements Serializable {
      */
     public boolean isEmpty() {
         return fieldMap.isEmpty();
+    }
+    
+    /**
+     * Replaces any field within this {@link ExcerptFields} with their deconstructed version.
+     */
+    public void deconstructFields() {
+        SortedMap<String,Integer> deconstructedMap = new TreeMap<>();
+        for (Map.Entry<String,Integer> entry : fieldMap.entrySet()) {
+            String deconstructedField = JexlASTHelper.deconstructIdentifier(entry.getKey());
+            deconstructedMap.put(deconstructedField, entry.getValue());
+        }
+        this.fieldMap = deconstructedMap;
+    }
+    
+    /**
+     * Expands this {@link ExcerptFields} to include any matching fields from the provided model. Original fields will be retained, but all fields will be
+     * uppercase as a result of calling this method.
+     * 
+     * @param model
+     *            the model to find mappings from
+     */
+    public void expandFields(Multimap<String,String> model) {
+        SortedMap<String,Integer> expandedMap = new TreeMap<>();
+        for (String field : fieldMap.keySet()) {
+            int offset = fieldMap.get(field);
+            field = field.toUpperCase();
+            // Add the expanded fields.
+            if (model.containsKey(field)) {
+                for (String expandedField : model.get(field)) {
+                    expandedMap.put(expandedField, offset);
+                }
+            }
+            // Ensure original fields are retained.
+            expandedMap.put(field, offset);
+        }
+        this.fieldMap = expandedMap;
     }
     
     /**

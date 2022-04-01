@@ -2,7 +2,12 @@ package datawave.query.attributes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 import org.junit.Test;
+
+import java.util.SortedSet;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -103,6 +108,50 @@ public class ExcerptFieldsTest {
         
         String json = "\"BODY/10,CONTENT/5\"";
         ExcerptFields actual = objectMapper.readValue(json, ExcerptFields.class);
+        
+        assertEquals(expected, actual);
+    }
+    
+    /**
+     * Verify that when deconstructing the fields of an {@link ExcerptFields}, that they are replaced correctly.
+     */
+    @Test
+    public void testDeconstructFields() {
+        ExcerptFields actual = new ExcerptFields();
+        actual.put("$FIELDA", 10);
+        actual.put("$FIELDB", 5);
+        actual.put("FIELDC", 1);
+        
+        ExcerptFields expected = new ExcerptFields();
+        expected.put("FIELDA", 10);
+        expected.put("FIELDB", 5);
+        expected.put("FIELDC", 1);
+        
+        actual.deconstructFields();
+        
+        assertEquals(expected, actual);
+    }
+    
+    /**
+     * Verify that when expanding the fields of a {@link ExcerptFields}, that they are replaced correctly.
+     */
+    @Test
+    public void testExpandFields() {
+        ExcerptFields actual = new ExcerptFields();
+        actual.put("fielda", 10);
+        actual.put("fieldc", 1);
+        
+        ExcerptFields expected = new ExcerptFields();
+        expected.put("FIELDA", 10);
+        expected.put("FIELDAA", 10);
+        expected.put("FIELDBB", 10);
+        expected.put("FIELDC", 1);
+        
+        Multimap<String,String> model = HashMultimap.create();
+        model.put("FIELDA", "FIELDAA");
+        model.put("FIELDA", "FIELDBB");
+        
+        actual.expandFields(model);
         
         assertEquals(expected, actual);
     }

@@ -2229,14 +2229,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setExcerptFields(ExcerptFields excerptFields) {
         if (excerptFields != null) {
-            ExcerptFields deconstructed = new ExcerptFields();
-            for (String field : excerptFields.getFields()) {
-                String deconstructedField = JexlASTHelper.deconstructIdentifier(field);
-                deconstructed.put(deconstructedField, excerptFields.getOffset(field));
-            }
-            this.excerptFields = deconstructed;
-        } else {
-            this.excerptFields = null;
+            excerptFields.deconstructFields();
         }
+        this.excerptFields = excerptFields;
     }
 }
