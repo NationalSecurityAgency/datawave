@@ -252,4 +252,31 @@ public class JexlNodes {
     public static boolean isNotChildless(JexlNode node) {
         return node != null && node.jjtGetNumChildren() > 0;
     }
+    
+    /**
+     * Ascends the Jexl tree searching for a negation. Search defaults to four nodes
+     *
+     * @param node
+     * @return
+     */
+    public static boolean isNodeNegated(JexlNode node) {
+        return isNodeNegated(node, 4);
+    }
+    
+    /**
+     * Ascends the JexlTree searching for negations according to the specified maximum number of
+     *
+     * @param node
+     * @return
+     */
+    public static boolean isNodeNegated(JexlNode node, int max) {
+        int count = 0;
+        while (count < max && node.jjtGetParent() != null) {
+            count++;
+            if (node instanceof ASTNotNode)
+                return true;
+            node = node.jjtGetParent();
+        }
+        return false;
+    }
 }
