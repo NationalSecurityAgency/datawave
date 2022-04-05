@@ -526,13 +526,13 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
      *            the transform (type) to determine if an instance is already in the list of transforms.
      * @return
      */
-    public boolean containsTransform(Class transform) {
+    public DocumentTransform containsTransform(Class transform) {
         for (DocumentTransform t : transforms) {
             if (transform.toString().equals(t.getClass().toString())) {
-                return true;
+                return t;
             }
         }
-        return false;
+        return null;
     }
     
     @Override

@@ -12,10 +12,7 @@ import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
 import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.slf4j.Logger;
 import org.springframework.util.Assert;
@@ -26,8 +23,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -46,7 +43,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     /**
      * the fields (user provided) to group by
      */
-    private final Set<String> groupFieldsSet;
+    private Set<String> groupFieldsSet;
     
     /**
      * holds the aggregated column visibilities for each grouped event
@@ -88,27 +85,26 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     /**
      * Constructor
      *
-     * @param logic
-     *            the group logic (can be null)
+     * @param model
+     *            the query model (can be null)
      * @param groupFieldsSet
      *            the fields (user provided) to group by
      * @param queryExecutionForPageTimeout
      *            how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client
      */
-    public GroupingTransform(BaseQueryLogic<Entry<Key,Value>> logic, Collection<String> groupFieldsSet, MarkingFunctions markingFunctions,
-                    long queryExecutionForPageTimeout) {
+    public GroupingTransform(QueryModel model, Collection<String> groupFieldsSet, MarkingFunctions markingFunctions, long queryExecutionForPageTimeout) {
         super.initialize(settings, markingFunctions);
-        if (logic != null) {
-            QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
-            if (model != null) {
-                reverseModelMapping = model.getReverseQueryMapping();
-            }
-        }
-        this.groupFieldsSet = groupFieldsSet.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.countingMap = new GroupCountingHashMap(markingFunctions);
-        
+        updateConfig(groupFieldsSet, model);
         log.trace("groupFieldsSet: {}", this.groupFieldsSet);
+    }
+    
+    public void updateConfig(Collection<String> groupFieldSet, QueryModel model) {
+        this.groupFieldsSet = groupFieldSet.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
+        if (model != null) {
+            reverseModelMapping = model.getReverseQueryMapping();
+        }
     }
     
     @Nullable
