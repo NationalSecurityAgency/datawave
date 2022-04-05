@@ -69,7 +69,6 @@ import datawave.security.util.AuthorizationsUtil;
 public class BasicQueryBean {
     
     private static final String PRIVILEGED_USER = "PrivilegedUser";
-    private static final String UNLIMITED_QUERY_RESULTS_USER = "UnlimitedQueryResultsUser";
     
     /**
      * Used when getting a plan prior to creating a query
