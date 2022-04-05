@@ -110,6 +110,9 @@ public class ExcerptTransformTest extends EasyMockSupport {
         verifyAll();
     }
     
+    /**
+     * Verify that excerpts are retrieved with the expected inputs.
+     */
     @Test
     public void testExcerpts() throws IOException {
         givenExcerptField("BODY", 2);
@@ -117,6 +120,32 @@ public class ExcerptTransformTest extends EasyMockSupport {
         
         givenMockDocument();
         givenMatchingPhrase("BODY", 8, 16, "the quick brown fox jumped over the lazy dog");
+        
+        Capture<Attributes> capturedArg = Capture.newInstance();
+        document.put(eq(ExcerptTransform.HIT_EXCERPTS), and(capture(capturedArg), isA(Attributes.class)));
+        
+        initTransform();
+        replayAll();
+        
+        applyTransform();
+        verifyAll();
+        
+        Attributes arg = capturedArg.getValue();
+        assertEquals(1, arg.size());
+        Attribute<?>[] attributes = arg.getAttributes().toArray(new Attribute[0]);
+        assertEquals("the quick brown fox jumped over the lazy dog", ((Content) attributes[0]).getContent());
+    }
+    
+    /**
+     * Verify that when a start index is less than the specified excerpt offset, that the excerpt start defaults to 0.
+     */
+    @Test
+    public void testOffsetGreaterThanStartIndex() throws IOException {
+        givenExcerptField("CONTENT", 2);
+        givenPhraseIndex("CONTENT", 1, 5);
+        
+        givenMockDocument();
+        givenMatchingPhrase("CONTENT", 0, 7, "the quick brown fox jumped over the lazy dog");
         
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPTS), and(capture(capturedArg), isA(Attributes.class)));
