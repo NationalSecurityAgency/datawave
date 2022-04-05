@@ -84,17 +84,26 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
         return node;
     }
     
+    /**
+     * Prune 'is not null' terms that share a common field with other terms in this intersection
+     *
+     * @param node
+     *            an intersection
+     * @param data
+     *            null object
+     * @return the same ASTAnd node
+     */
     @Override
     public Object visit(ASTAndNode node, Object data) {
         
         // make a single pass over the children
-        List<JexlNode> notNulls = new LinkedList<>();
+        List<JexlNode> isNotNulls = new LinkedList<>();
         Set<String> equalityFields = new HashSet<>();
         JexlNode deref;
         for (JexlNode child : JexlNodes.children(node)) {
             deref = JexlASTHelper.dereferenceSafely(child);
             if (isChildNotNullFunction(deref)) {
-                notNulls.add(child);
+                isNotNulls.add(child);
             } else if (deref instanceof ASTEQNode || deref instanceof ASTERNode) {
                 String field = fieldForChild(deref);
                 if (field != null)
@@ -103,13 +112,13 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
         }
         
         // only rebuild if it's possible
-        if (!notNulls.isEmpty() && !equalityFields.isEmpty()) {
+        if (!isNotNulls.isEmpty() && !equalityFields.isEmpty()) {
             List<JexlNode> next = new ArrayList<>();
             for (JexlNode child : JexlNodes.children(node)) {
-                if (notNulls.contains(child)) {
+                if (isNotNulls.contains(child)) {
                     String field = fieldForChild(child);
                     if (field != null && equalityFields.contains(field)) {
-                        continue; // skip
+                        continue; // skip the is not null term if it shares a common field
                     }
                 }
                 next.add(child);
@@ -292,7 +301,6 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTLENode node, Object data) {
-        node.childrenAccept(this, data);
         return data;
     }
     
