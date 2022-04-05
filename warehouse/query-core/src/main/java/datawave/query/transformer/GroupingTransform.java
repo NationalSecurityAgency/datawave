@@ -155,7 +155,6 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         
         // Handle if the current page has exceeded its execution timeout, but there are still more results to return
         // This must be done BEFORE popping documents from the document stack.
-        // The first page queryExecutionForPageStartTime will be 0
         long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
         if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
             // Reset the queryExecutionForPageStartTime and clear the documents list so that it doesn't contain
