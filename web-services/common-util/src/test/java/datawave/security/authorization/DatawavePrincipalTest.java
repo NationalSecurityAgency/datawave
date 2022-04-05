@@ -52,15 +52,15 @@ public class DatawavePrincipalTest {
         Assert.assertEquals(userSubjectDn, dp.getPrimaryUser().getDn().subjectDN());
         
         // call from finalConnectionServer proxying initial caller server1
-        dp = new DatawavePrincipal(Lists.newArrayList(finalServer, server1));
+        dp = new DatawavePrincipal(Lists.newArrayList(server1, finalServer));
         Assert.assertEquals(server1SubjectDn, dp.getPrimaryUser().getDn().subjectDN());
         
         // call from finalConnectionServer proxying initial caller server1 through server2
-        dp = new DatawavePrincipal(Lists.newArrayList(finalServer, server1, server2));
+        dp = new DatawavePrincipal(Lists.newArrayList(server1, server2, finalServer));
         Assert.assertEquals(server1SubjectDn, dp.getPrimaryUser().getDn().subjectDN());
         
         // call from finalConnectionServer proxying initial caller server1 through server2 and server3
-        dp = new DatawavePrincipal(Lists.newArrayList(finalServer, server1, server2, server3));
+        dp = new DatawavePrincipal(Lists.newArrayList(server1, server2, server3, finalServer));
         Assert.assertEquals(server1SubjectDn, dp.getPrimaryUser().getDn().subjectDN());
         
         // these tests are for case where a UserType.USER appears anywhere in the proxiedUsers collection
@@ -88,31 +88,31 @@ public class DatawavePrincipalTest {
         Assert.assertEquals(null, dp.getProxyServers());
         
         // call from finalServer proxying initial caller server1
-        dp = new DatawavePrincipal(Lists.newArrayList(finalServer, server1));
+        dp = new DatawavePrincipal(Lists.newArrayList(server1, finalServer));
         Assert.assertEquals(Arrays.asList(finalConnectionServerSubjectDn), dp.getProxyServers());
         
         // call from finalServer proxying initial caller server1 through server2
-        dp = new DatawavePrincipal(Lists.newArrayList(finalServer, server1, server2));
+        dp = new DatawavePrincipal(Lists.newArrayList(server1, server2, finalServer));
         Assert.assertEquals(Arrays.asList(server2SubjectDn, finalConnectionServerSubjectDn), dp.getProxyServers());
         
         // call from finalServer proxying initial caller server1 through server2 and server3
-        dp = new DatawavePrincipal(Lists.newArrayList(finalServer, server1, server2, server3));
+        dp = new DatawavePrincipal(Lists.newArrayList(server1, server2, server3, finalServer));
         Assert.assertEquals(Arrays.asList(server2SubjectDn, server3SubjectDn, finalConnectionServerSubjectDn), dp.getProxyServers());
         
         // these tests are for cases where a UserType.USER appears anywhere in the proxiedUsers collection
         
-        // this first case would be very odd -- call from user proxying initial caller server1 through server2 through server3
         dp = new DatawavePrincipal(Lists.newArrayList(user, server1, server2, server3));
         Assert.assertEquals(Arrays.asList(server1SubjectDn, server2SubjectDn, server3SubjectDn), dp.getProxyServers());
         
         dp = new DatawavePrincipal(Lists.newArrayList(server1, user, server2, server3));
-        Assert.assertEquals(Arrays.asList(server2SubjectDn, server3SubjectDn, server1SubjectDn), dp.getProxyServers());
+        Assert.assertEquals(Arrays.asList(server1SubjectDn, server2SubjectDn, server3SubjectDn), dp.getProxyServers());
         
         dp = new DatawavePrincipal(Lists.newArrayList(server1, server2, user, server3));
-        Assert.assertEquals(Arrays.asList(server2SubjectDn, server3SubjectDn, server1SubjectDn), dp.getProxyServers());
+        Assert.assertEquals(Arrays.asList(server1SubjectDn, server2SubjectDn, server3SubjectDn), dp.getProxyServers());
         
+        // this case would be very odd -- call from user proxying initial caller server1 through server2 through server3
         dp = new DatawavePrincipal(Lists.newArrayList(server1, server2, server3, user));
-        Assert.assertEquals(Arrays.asList(server2SubjectDn, server3SubjectDn, server1SubjectDn), dp.getProxyServers());
+        Assert.assertEquals(Arrays.asList(server1SubjectDn, server2SubjectDn, server3SubjectDn), dp.getProxyServers());
     }
     
     private String joinNames(Collection<DatawaveUser> datawaveUsers) {
@@ -130,15 +130,15 @@ public class DatawavePrincipalTest {
         Assert.assertEquals(joinNames(Lists.newArrayList(user)), dp.getName());
         
         // call from finalServer proxying initial caller server1
-        dp = new DatawavePrincipal(Lists.newArrayList(finalServer, server1));
+        dp = new DatawavePrincipal(Lists.newArrayList(server1, finalServer));
         Assert.assertEquals(joinNames(Lists.newArrayList(server1, finalServer)), dp.getName());
         
         // call from finalServer proxying initial caller server1 through server2
-        dp = new DatawavePrincipal(Lists.newArrayList(finalServer, server1, server2));
+        dp = new DatawavePrincipal(Lists.newArrayList(server1, server2, finalServer));
         Assert.assertEquals(joinNames(Lists.newArrayList(server1, server2, finalServer)), dp.getName());
         
         // call from finalServer proxying initial caller server1 through server2 and server3
-        dp = new DatawavePrincipal(Lists.newArrayList(finalServer, server1, server2, server3));
+        dp = new DatawavePrincipal(Lists.newArrayList(server1, server2, server3, finalServer));
         Assert.assertEquals(joinNames(Lists.newArrayList(server1, server2, server3, finalServer)), dp.getName());
         
         // these tests are for cases where a UserType.USER appears anywhere in the proxiedUsers collection
@@ -148,28 +148,28 @@ public class DatawavePrincipalTest {
         Assert.assertEquals(joinNames(Lists.newArrayList(user, server1, server2, server3)), dp.getName());
         
         dp = new DatawavePrincipal(Lists.newArrayList(server1, user, server2, server3));
-        Assert.assertEquals(joinNames(Lists.newArrayList(user, server2, server3, server1)), dp.getName());
+        Assert.assertEquals(joinNames(Lists.newArrayList(user, server1, server2, server3)), dp.getName());
         
         dp = new DatawavePrincipal(Lists.newArrayList(server1, server2, user, server3));
-        Assert.assertEquals(joinNames(Lists.newArrayList(user, server2, server3, server1)), dp.getName());
+        Assert.assertEquals(joinNames(Lists.newArrayList(user, server1, server2, server3)), dp.getName());
         
         dp = new DatawavePrincipal(Lists.newArrayList(server1, server2, server3, user));
-        Assert.assertEquals(joinNames(Lists.newArrayList(user, server2, server3, server1)), dp.getName());
+        Assert.assertEquals(joinNames(Lists.newArrayList(user, server1, server2, server3)), dp.getName());
     }
     
     @Test
     public void OrderProxiedUsers() {
         
         // call from finalServer proxying initial caller server1
-        Assert.assertEquals(Lists.newArrayList(server1, finalServer), DatawavePrincipal.orderProxiedUsers(Lists.newArrayList(finalServer, server1)));
+        Assert.assertEquals(Lists.newArrayList(server1, finalServer), DatawavePrincipal.orderProxiedUsers(Lists.newArrayList(server1, finalServer)));
         
         // call from finalServer proxying initial caller server1 through server2
         Assert.assertEquals(Lists.newArrayList(server1, server2, finalServer),
-                        DatawavePrincipal.orderProxiedUsers(Lists.newArrayList(finalServer, server1, server2)));
+                        DatawavePrincipal.orderProxiedUsers(Lists.newArrayList(server1, server2, finalServer)));
         
         // call from finalServer proxying initial caller server1 through server2 and server3
         Assert.assertEquals(Lists.newArrayList(server1, server2, server3, finalServer),
-                        DatawavePrincipal.orderProxiedUsers(Lists.newArrayList(finalServer, server1, server2, server3)));
+                        DatawavePrincipal.orderProxiedUsers(Lists.newArrayList(server1, server2, server3, finalServer)));
         
         // these tests are for cases where a UserType.USER appears anywhere in the proxiedUsers collection
         
@@ -177,13 +177,13 @@ public class DatawavePrincipalTest {
         Assert.assertEquals(Lists.newArrayList(user, server1, server2, server3),
                         DatawavePrincipal.orderProxiedUsers(Lists.newArrayList(user, server1, server2, server3)));
         
-        Assert.assertEquals(Lists.newArrayList(user, server2, server3, server1),
+        Assert.assertEquals(Lists.newArrayList(user, server1, server2, server3),
                         DatawavePrincipal.orderProxiedUsers(Lists.newArrayList(server1, user, server2, server3)));
         
-        Assert.assertEquals(Lists.newArrayList(user, server2, server3, server1),
+        Assert.assertEquals(Lists.newArrayList(user, server1, server2, server3),
                         DatawavePrincipal.orderProxiedUsers(Lists.newArrayList(server1, server2, user, server3)));
         
-        Assert.assertEquals(Lists.newArrayList(user, server2, server3, server1),
+        Assert.assertEquals(Lists.newArrayList(user, server1, server2, server3),
                         DatawavePrincipal.orderProxiedUsers(Lists.newArrayList(server1, server2, server3, user)));
     }
     
