@@ -168,8 +168,8 @@ import static datawave.webservice.query.cache.QueryTraceCache.CacheListener;
 import static datawave.webservice.query.cache.QueryTraceCache.PatternWrapper;
 
 @Path("/Query")
-@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})
-@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})
+@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "UnlimitedQueryResultsUser", "InternalUser", "Administrator", "JBossAdministrator"})
+@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "UnlimitedQueryResultsUser", "InternalUser", "Administrator", "JBossAdministrator"})
 @Stateless
 @LocalBean
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
@@ -178,6 +178,7 @@ import static datawave.webservice.query.cache.QueryTraceCache.PatternWrapper;
 public class QueryExecutorBean implements QueryExecutor {
     
     private static final String PRIVILEGED_USER = "PrivilegedUser";
+    private static final String UNLIMITED_QUERY_RESULTS_USER = "UnlimitedQueryResultsUser";
     
     /**
      * Used when getting a plan prior to creating a query
@@ -512,9 +513,9 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         // validate the max results override relative to the max results on a query logic
-        // privileged users however can set whatever they want
+        // privileged users however can set whatever they want, or unlimited max results users.
         if (qp.isMaxResultsOverridden() && qd.logic.getMaxResults() >= 0) {
-            if (!ctx.isCallerInRole(PRIVILEGED_USER)) {
+            if (!ctx.isCallerInRole(PRIVILEGED_USER) || !ctx.isCallerInRole(UNLIMITED_QUERY_RESULTS_USER)) {
                 if (qp.getMaxResultsOverride() < 0 || (qd.logic.getMaxResults() < qp.getMaxResultsOverride())) {
                     log.error("Invalid max results override: " + qp.getMaxResultsOverride() + " vs " + qd.logic.getMaxResults());
                     GenericResponse<String> response = new GenericResponse<>();
