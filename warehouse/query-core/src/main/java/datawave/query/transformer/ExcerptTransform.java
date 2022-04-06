@@ -133,7 +133,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 int start = indexPair.getValue0();
                 int end = indexPair.getValue1();
                 String excerpt = getExcerpt(field, start, end, range);
-                if (excerpt != null) {
+                // Only retain non-blank excerpts.
+                if (excerpt != null && !excerpt.isEmpty()) {
                     excerpts.add(excerpt);
                 } else {
                     if (log.isTraceEnabled()) {
