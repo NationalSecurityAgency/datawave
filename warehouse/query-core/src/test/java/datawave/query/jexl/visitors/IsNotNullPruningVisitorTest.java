@@ -54,6 +54,30 @@ public class IsNotNullPruningVisitorTest {
         test(query, query);
     }
     
+    // code that handles producing a flattened query tree with respect to wrapped single terms
+    // should not modify marked nodes
+    @Test
+    public void testNoOpQueryPropertyMarkers() {
+        String query = "EVENT_FIELD1 =='a' && ((_Value_ = true) && (TF_FIELD1 =~ '.*r'))";
+        test(query, query);
+        
+        query = "((_List_ = true) && (FOO_USER >= '09021f44' && FOO_USER <= '09021f47'))";
+        test(query, query);
+        
+        query = "((_Term_ = true) && (FOO == 'bar'))";
+        test(query, query);
+        
+        query = "((_Delayed_ = true) && (!(F1 == 'v1') || !((_Term_ = true) && (F2 == 'v2'))))";
+        test(query, query);
+    }
+    
+    // there's no realistic code path to delaying a subtree like this, but let's document expected behavior anyway
+    @Test
+    public void testContrivedEdgeCase() {
+        String query = "((_Delayed_ = true) && (!(FOO == null) && FOO == 'bar'))";
+        test(query, query);
+    }
+    
     @Test
     public void testNestedCase() {
         String query = "(!(FOO == null) && FOO == 'bar') || (FOO2 == 'bar2' && FOO3 == 'bar3')";

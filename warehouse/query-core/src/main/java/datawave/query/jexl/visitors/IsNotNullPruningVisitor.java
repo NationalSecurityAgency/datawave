@@ -101,7 +101,7 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
         Set<String> equalityFields = new HashSet<>();
         JexlNode deref;
         for (JexlNode child : JexlNodes.children(node)) {
-            deref = JexlASTHelper.dereferenceSafely(child);
+            deref = JexlASTHelper.dereference(child);
             if (isChildNotNullFunction(deref)) {
                 isNotNulls.add(child);
             } else if (deref instanceof ASTEQNode || deref instanceof ASTERNode) {
@@ -190,7 +190,10 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        node.childrenAccept(this, data);
+        // do not descend into marker nodes
+        if (!QueryPropertyMarkerVisitor.getInstance(node).isAnyType()) {
+            node.childrenAccept(this, data);
+        }
         return data;
     }
     
