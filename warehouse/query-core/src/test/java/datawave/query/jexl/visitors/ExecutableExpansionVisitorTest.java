@@ -26,8 +26,11 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
@@ -411,465 +414,528 @@ public abstract class ExecutableExpansionVisitorTest {
     
     @Test
     public void testMinimumExpansionParse() throws Exception {
-        ASTJexlScript queryTree = JexlASTHelper
+        // make sure this works when references/referenceExpressions are/aren't included
+        ASTJexlScript origQueryTree = JexlASTHelper
                         .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
-        ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-        MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+        ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
-        HashSet<String> indexedFields = new HashSet<>();
-        indexedFields.add("UUID");
-        indexedFields.add("QUOTE");
-        
-        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-        
-        EasyMock.replay(config, helper);
-        
-        ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-        
-        EasyMock.verify(config, helper);
-        
-        Assert.assertFalse(JexlStringBuildingVisitor.buildQuery(queryTree).equals(JexlStringBuildingVisitor.buildQuery(newTree)));
-        String expected = "(QUOTE == 'kind' && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')";
-        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(newTree));
+        for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
+            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            
+            HashSet<String> indexedFields = new HashSet<>();
+            indexedFields.add("UUID");
+            indexedFields.add("QUOTE");
+            
+            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            
+            EasyMock.replay(config, helper);
+            
+            ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
+            
+            EasyMock.verify(config, helper);
+            
+            Assert.assertFalse(JexlStringBuildingVisitor.buildQuery(queryTree).equals(JexlStringBuildingVisitor.buildQuery(newTree)));
+            String expected = "(QUOTE == 'kind' && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')";
+            Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(newTree));
+        }
     }
     
     @Test
     public void testArbitraryNodeExpansionFailNoFlatten() throws Exception {
-        ASTJexlScript queryTree = JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
-        ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-        MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+        // make sure this works when references/referenceExpressions are/aren't included
+        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+        ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
-        HashSet<String> indexedFields = new HashSet<>();
-        indexedFields.add("UUID");
-        indexedFields.add("QUOTE");
-        
-        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-        
-        EasyMock.replay(config, helper);
-        
-        // find an orNode in the tree
-        ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
-        Object data = visitor.visit(queryTree.jjtGetChild(0), null);
-        
-        EasyMock.verify(config, helper);
-        
-        Assert.assertFalse(data instanceof ExecutableExpansionVisitor.ExpansionTracker);
+        for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
+            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            
+            HashSet<String> indexedFields = new HashSet<>();
+            indexedFields.add("UUID");
+            indexedFields.add("QUOTE");
+            
+            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            
+            EasyMock.replay(config, helper);
+            
+            // find an orNode in the tree
+            ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
+            Object data = visitor.visit(queryTree.jjtGetChild(0), null);
+            
+            EasyMock.verify(config, helper);
+            
+            Assert.assertFalse(data instanceof ExecutableExpansionVisitor.ExpansionTracker);
+        }
     }
     
     @Test
     public void testArbitraryNodeExpansionFlatten() throws Exception {
-        ASTJexlScript queryTree = JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
-        ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-        MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+        // make sure this works when references/referenceExpressions are/aren't included
+        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+        ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
-        HashSet<String> indexedFields = new HashSet<>();
-        indexedFields.add("UUID");
-        indexedFields.add("QUOTE");
-        
-        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-        
-        EasyMock.replay(config, helper);
-        
-        // find an orNode in the tree
-        ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
-        ASTJexlScript rebuilt = TreeFlatteningRebuildingVisitor.flatten(queryTree);
-        visitor.visit(rebuilt.jjtGetChild(0), null);
-        
-        EasyMock.verify(config, helper);
-        
-        String expected = "(QUOTE == 'kind' && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')";
-        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(rebuilt));
+        for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
+            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            
+            HashSet<String> indexedFields = new HashSet<>();
+            indexedFields.add("UUID");
+            indexedFields.add("QUOTE");
+            
+            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            
+            EasyMock.replay(config, helper);
+            
+            // find an orNode in the tree
+            ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
+            ASTJexlScript rebuilt = TreeFlatteningRebuildingVisitor.flatten(queryTree);
+            visitor.visit(rebuilt.jjtGetChild(0), null);
+            
+            EasyMock.verify(config, helper);
+            
+            String expected = "(QUOTE == 'kind' && UUID == 'capone') || ((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')";
+            Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQuery(rebuilt));
+        }
     }
     
     @Test
     public void testNestedExpansionWithFailures() throws Exception {
-        ASTJexlScript queryTree = JexlASTHelper
-                        .parseJexlQuery("UUID == 'A' && (QUOTE == 'kind' || BIRTH_DATE == '234'|| (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE =='555' )))");
-        ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-        MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+        // make sure this works when references/referenceExpressions are/aren't included
+        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor
+                        .dereference(JexlASTHelper
+                                        .parseJexlQuery("UUID == 'A' && (QUOTE == 'kind' || BIRTH_DATE == '234'|| (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE =='555' )))"));
+        ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
-        HashSet<String> indexedFields = new HashSet<>();
-        indexedFields.add("UUID");
-        indexedFields.add("QUOTE");
-        
-        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-        
-        EasyMock.replay(config, helper);
-        
-        // find an orNode in the tree
-        ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
-        ASTJexlScript rebuilt = TreeFlatteningRebuildingVisitor.flatten(queryTree);
-        visitor.visit(rebuilt.jjtGetChild(0), null);
-        
-        EasyMock.verify(config, helper);
-        
-        Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(rebuilt, config, helper));
-        String expected = "(QUOTE == 'kind' && UUID == 'A') || (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE == '555') && UUID == 'A') || (BIRTH_DATE == '234' && UUID == 'A')";
-        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(rebuilt));
+        for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
+            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            
+            HashSet<String> indexedFields = new HashSet<>();
+            indexedFields.add("UUID");
+            indexedFields.add("QUOTE");
+            
+            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            
+            EasyMock.replay(config, helper);
+            
+            // find an orNode in the tree
+            ExecutableExpansionVisitor visitor = new ExecutableExpansionVisitor(config, helper);
+            ASTJexlScript rebuilt = TreeFlatteningRebuildingVisitor.flatten(queryTree);
+            visitor.visit(rebuilt.jjtGetChild(0), null);
+            
+            EasyMock.verify(config, helper);
+            
+            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(rebuilt, config, helper));
+            String expected = "(QUOTE == 'kind' && UUID == 'A') || (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE == '555') && UUID == 'A') || (BIRTH_DATE == '234' && UUID == 'A')";
+            Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(rebuilt));
+        }
     }
     
     @Test
     public void testExceededThresholdExpansionExternal() throws Exception {
-        ASTJexlScript queryTree = JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
+        // make sure this works when references/referenceExpressions are/aren't included
+        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+        ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
-        // update the generated queryTree to have an ExceededThreshold marker
-        JexlNode child = new ExceededValueThresholdMarkerJexlNode(queryTree.jjtGetChild(0).jjtGetChild(0));
-        // unlink the old node
-        queryTree.jjtGetChild(0).jjtGetChild(0).jjtSetParent(null);
-        // overwrite the old UUID==capone with the ExceededThreshold marker
-        queryTree.jjtGetChild(0).jjtAddChild(child, 0);
-        
-        ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-        MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
-        
-        HashSet<String> indexedFields = new HashSet<>();
-        indexedFields.add("UUID");
-        indexedFields.add("QUOTE");
-        
-        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-        
-        EasyMock.replay(config, helper);
-        
-        ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-        
-        EasyMock.verify(config, helper);
-        
-        // included ExceededValueThresholdMarker before
-        Assert.assertTrue(
-                        JexlStringBuildingVisitor.buildQuery(queryTree),
-                        JexlStringBuildingVisitor
-                                        .buildQuery(queryTree)
-                                        .equals("((_Value_ = true) && (UUID == 'capone')) && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
-        
-        // not executable
-        Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
-        // what came out is executable
-        Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
-        // it looks like what we'd expect
-        String expected = "(QUOTE == 'kind' && ((_Value_ = true) && (UUID == 'capone'))) || "
-                        + "((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && ((_Value_ = true) && (UUID == 'capone')))";
-        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
+        for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            // update the generated queryTree to have an ExceededThreshold marker
+            JexlNode child = new ExceededValueThresholdMarkerJexlNode(queryTree.jjtGetChild(0).jjtGetChild(0));
+            // unlink the old node
+            queryTree.jjtGetChild(0).jjtGetChild(0).jjtSetParent(null);
+            // overwrite the old UUID==capone with the ExceededThreshold marker
+            queryTree.jjtGetChild(0).jjtAddChild(child, 0);
+            
+            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
+            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            
+            HashSet<String> indexedFields = new HashSet<>();
+            indexedFields.add("UUID");
+            indexedFields.add("QUOTE");
+            
+            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            
+            EasyMock.replay(config, helper);
+            
+            ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
+            
+            EasyMock.verify(config, helper);
+            
+            // included ExceededValueThresholdMarker before
+            Assert.assertTrue(
+                            JexlStringBuildingVisitor.buildQuery(queryTree),
+                            JexlStringBuildingVisitor
+                                            .buildQuery(queryTree)
+                                            .equals("((_Value_ = true) && (UUID == 'capone')) && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+            
+            // not executable
+            Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            // what came out is executable
+            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            // it looks like what we'd expect
+            String expected = "(QUOTE == 'kind' && ((_Value_ = true) && (UUID == 'capone'))) || "
+                            + "((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && ((_Value_ = true) && (UUID == 'capone')))";
+            Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
+        }
     }
     
     @Test
     public void testExceededThresholdExpansionInternal() throws Exception {
-        ASTJexlScript queryTree = JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
+        // make sure this works when references/referenceExpressions are/aren't included
+        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+        ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
-        // update the generated queryTree to have an ExceededThreshold marker for BIRTH_DATE
-        JexlNode child = new ExceededValueThresholdMarkerJexlNode(queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1));
-        // unlink the old node
-        queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
-        // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
-        queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtAddChild(child, 1);
-        
-        ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-        MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
-        
-        HashSet<String> indexedFields = new HashSet<>();
-        indexedFields.add("UUID");
-        indexedFields.add("QUOTE");
-        
-        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-        
-        EasyMock.replay(config, helper);
-        
-        ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-        
-        EasyMock.verify(config, helper);
-        
-        // included ExceededValueThresholdMarker before
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
-                        "UUID == 'capone' && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || " + "((_Value_ = true) && (BIRTH_DATE == '123')))"));
-        
-        // not executable
-        Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
-        // what came out is executable
-        Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
-        // it looks like what we'd expect
-        String expected = "(QUOTE == 'kind' && UUID == 'capone') || " + "(((_Value_ = true) && (BIRTH_DATE == '123')) && UUID == 'capone') || "
-                        + "(filter:includeRegex(QUOTE, '.*kind.*') && UUID == 'capone')";
-        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
+        for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            // update the generated queryTree to have an ExceededThreshold marker for BIRTH_DATE
+            JexlNode child = new ExceededValueThresholdMarkerJexlNode(queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1));
+            // unlink the old node
+            queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
+            // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
+            queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtAddChild(child, 1);
+            
+            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
+            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            
+            HashSet<String> indexedFields = new HashSet<>();
+            indexedFields.add("UUID");
+            indexedFields.add("QUOTE");
+            
+            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            
+            EasyMock.replay(config, helper);
+            
+            ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
+            
+            EasyMock.verify(config, helper);
+            
+            // included ExceededValueThresholdMarker before
+            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
+                            "UUID == 'capone' && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || "
+                                            + "((_Value_ = true) && (BIRTH_DATE == '123')))"));
+            
+            // not executable
+            Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            // what came out is executable
+            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            // it looks like what we'd expect
+            String expected = "(QUOTE == 'kind' && UUID == 'capone') || " + "(((_Value_ = true) && (BIRTH_DATE == '123')) && UUID == 'capone') || "
+                            + "(filter:includeRegex(QUOTE, '.*kind.*') && UUID == 'capone')";
+            Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
+        }
     }
     
     @Test
     public void testExceededOrThresholdExpansion() throws Exception {
-        ASTJexlScript queryTree = JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
+        // make sure this works when references/referenceExpressions are/aren't included
+        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+        ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
-        // update the generated queryTree to have an ExceededOrThreshold marker for BIRTH_DATE
-        Set<String> birthdates = new HashSet<>();
-        birthdates.add("123");
-        birthdates.add("234");
-        birthdates.add("345");
-        JexlNode child = ExceededOrThresholdMarkerJexlNode.createFromValues("BIRTH_DATE", birthdates);
-        // unlink the old node
-        queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
-        // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
-        queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtAddChild(child, 1);
-        
-        ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-        MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
-        
-        HashSet<String> indexedFields = new HashSet<>();
-        indexedFields.add("UUID");
-        indexedFields.add("QUOTE");
-        
-        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-        
-        EasyMock.replay(config, helper);
-        
-        ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-        
-        EasyMock.verify(config, helper);
-        
-        String queryString = JexlStringBuildingVisitor.buildQuery(queryTree);
-        String id = queryString.substring(queryString.indexOf("id = '") + 6, queryString.indexOf("') && (field"));
-        
-        // included ExceededValueThresholdMarker before
-        Assert.assertTrue(
-                        queryString,
-                        queryString.equals("UUID == 'capone' && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || "
-                                        + "((_List_ = true) && ((id = '" + id
-                                        + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}'))))"));
-        
-        // not executable
-        Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
-        // what came out is executable
-        Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
-        
-        queryString = JexlStringBuildingVisitor.buildQuery(newTree);
-        id = queryString.substring(queryString.indexOf("id = '") + 6, queryString.indexOf("') && (field"));
-        
-        // it looks like what we'd expect
-        
-        String expected = "(QUOTE == 'kind' && UUID == 'capone') || " + "(((_List_ = true) && ((id = '" + id
-                        + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}'))) && UUID == 'capone') || "
-                        + "(filter:includeRegex(QUOTE, '.*kind.*') && UUID == 'capone')";
-        Assert.assertEquals(expected, queryString);
+        for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            // update the generated queryTree to have an ExceededOrThreshold marker for BIRTH_DATE
+            Set<String> birthdates = new HashSet<>();
+            birthdates.add("123");
+            birthdates.add("234");
+            birthdates.add("345");
+            JexlNode child = ExceededOrThresholdMarkerJexlNode.createFromValues("BIRTH_DATE", birthdates);
+            // unlink the old node
+            queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
+            // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
+            queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtAddChild(child, 1);
+            
+            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
+            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            
+            HashSet<String> indexedFields = new HashSet<>();
+            indexedFields.add("UUID");
+            indexedFields.add("QUOTE");
+            
+            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            
+            EasyMock.replay(config, helper);
+            
+            ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
+            
+            EasyMock.verify(config, helper);
+            
+            String queryString = JexlStringBuildingVisitor.buildQuery(queryTree);
+            String id = queryString.substring(queryString.indexOf("id = '") + 6, queryString.indexOf("') && (field"));
+            
+            // included ExceededValueThresholdMarker before
+            Assert.assertTrue(
+                            queryString,
+                            queryString.equals("UUID == 'capone' && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || "
+                                            + "((_List_ = true) && ((id = '" + id
+                                            + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}'))))"));
+            
+            // not executable
+            Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            // what came out is executable
+            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            
+            queryString = JexlStringBuildingVisitor.buildQuery(newTree);
+            id = queryString.substring(queryString.indexOf("id = '") + 6, queryString.indexOf("') && (field"));
+            
+            // it looks like what we'd expect
+            
+            String expected = "(QUOTE == 'kind' && UUID == 'capone') || " + "(((_List_ = true) && ((id = '" + id
+                            + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}'))) && UUID == 'capone') || "
+                            + "(filter:includeRegex(QUOTE, '.*kind.*') && UUID == 'capone')";
+            Assert.assertEquals(expected, queryString);
+        }
     }
     
     @Test
     public void testExceededOrThresholdCannotExpand() throws Exception {
-        ASTJexlScript queryTree = JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))");
+        // make sure this works when references/referenceExpressions are/aren't included
+        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor
+                        .dereference(JexlASTHelper
+                                        .parseJexlQuery("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))"));
+        ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
-        ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-        MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
-        
-        HashSet<String> indexedFields = new HashSet<>();
-        indexedFields.add("UUID");
-        indexedFields.add("QUOTE");
-        
-        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-        
-        EasyMock.replay(config, helper);
-        
-        ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-        
-        EasyMock.verify(config, helper);
-        
-        // included ExceededValueThresholdMarker before
-        Assert.assertTrue(
-                        JexlStringBuildingVisitor.buildQuery(queryTree),
-                        JexlStringBuildingVisitor
-                                        .buildQuery(queryTree)
-                                        .equals("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))"));
-        
-        // starts off executable
-        Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
-        // what came out is executable
-        Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
-        // the visitor changed nothing
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree),
-                        JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)));
+        for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
+            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            
+            HashSet<String> indexedFields = new HashSet<>();
+            indexedFields.add("UUID");
+            indexedFields.add("QUOTE");
+            
+            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            
+            EasyMock.replay(config, helper);
+            
+            ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
+            
+            EasyMock.verify(config, helper);
+            
+            // included ExceededValueThresholdMarker before
+            Assert.assertTrue(
+                            JexlStringBuildingVisitor.buildQuery(queryTree),
+                            JexlStringBuildingVisitor
+                                            .buildQuery(queryTree)
+                                            .equals("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))"));
+            
+            // starts off executable
+            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            // what came out is executable
+            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            // the visitor changed nothing
+            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree),
+                            JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)));
+        }
     }
     
     @Test
     public void testDelayed() throws Exception {
-        ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery("UUID == 'capone' && (QUOTE == 'kind' || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))");
+        // make sure this works when references/referenceExpressions are/aren't included
+        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper.parseJexlQuery("UUID == 'capone' && (QUOTE == 'kind' || "
+                        + "((_Delayed_ = true) && BIRTH_DATE == '123'))"));
+        ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
-        ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-        MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
-        
-        HashSet<String> indexedFields = new HashSet<>();
-        indexedFields.add("UUID");
-        indexedFields.add("QUOTE");
-        
-        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-        Set<String> dataTypes = new HashSet<>();
-        dataTypes.add("test");
-        Set<String> nonEventFields = new HashSet<>();
-        nonEventFields.add("QUOTE");
-        EasyMock.expect(config.getDatatypeFilter()).andReturn(dataTypes).anyTimes();
-        EasyMock.expect(helper.getNonEventFields(dataTypes)).andReturn(nonEventFields).anyTimes();
-        EasyMock.replay(config, helper);
-        
-        ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-        
-        EasyMock.verify(config, helper);
-        
-        // included ExceededValueThresholdMarker before
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
-                        "UUID == 'capone' && (QUOTE == 'kind' || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"));
-        
-        // starts off executable
-        Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
-        // what came out is executable
-        Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
-        // the visitor changed nothing
-        String expected = "(QUOTE == 'kind' && UUID == 'capone') || (((_Delayed_ = true) && BIRTH_DATE == '123') && UUID == 'capone')";
-        Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
+        for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
+            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            
+            HashSet<String> indexedFields = new HashSet<>();
+            indexedFields.add("UUID");
+            indexedFields.add("QUOTE");
+            
+            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            Set<String> dataTypes = new HashSet<>();
+            dataTypes.add("test");
+            Set<String> nonEventFields = new HashSet<>();
+            nonEventFields.add("QUOTE");
+            EasyMock.expect(config.getDatatypeFilter()).andReturn(dataTypes).anyTimes();
+            EasyMock.expect(helper.getNonEventFields(dataTypes)).andReturn(nonEventFields).anyTimes();
+            EasyMock.replay(config, helper);
+            
+            ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
+            
+            EasyMock.verify(config, helper);
+            
+            // included ExceededValueThresholdMarker before
+            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
+                            "UUID == 'capone' && (QUOTE == 'kind' || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"));
+            
+            // starts off executable
+            Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            // what came out is executable
+            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            // the visitor changed nothing
+            String expected = "(QUOTE == 'kind' && UUID == 'capone') || (((_Delayed_ = true) && BIRTH_DATE == '123') && UUID == 'capone')";
+            Assert.assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(newTree));
+        }
     }
     
     @Test
     public void testDelayedDoubleExpansion() throws Exception {
-        ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery("UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || "
-                        + "((_Delayed_ = true) && BIRTH_DATE == '123'))");
+        // make sure this works when references/referenceExpressions are/aren't included
+        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"));
+        ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
-        ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-        MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
-        
-        HashSet<String> indexedFields = new HashSet<>();
-        indexedFields.add("UUID");
-        indexedFields.add("QUOTE");
-        
-        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-        Set<String> dataTypes = new HashSet<>();
-        dataTypes.add("test");
-        // QUOTE being delayed creates a query that is non-executable we cannot delay a field which is nonEvent
-        Set<String> nonEventFields = new HashSet<>();
-        nonEventFields.add("QUOTE");
-        EasyMock.expect(config.getDatatypeFilter()).andReturn(dataTypes).anyTimes();
-        EasyMock.expect(helper.getNonEventFields(dataTypes)).andReturn(nonEventFields).anyTimes();
-        EasyMock.replay(config, helper);
-        
-        ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-        
-        EasyMock.verify(config, helper);
-        
-        // included ExceededValueThresholdMarker before
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
-                        "UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"));
-        
-        // starts off executable
-        Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
-        // what came out is executable
-        Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
-        // the visitor changed nothing
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree),
-                        JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)));
+        for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
+            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            
+            HashSet<String> indexedFields = new HashSet<>();
+            indexedFields.add("UUID");
+            indexedFields.add("QUOTE");
+            
+            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            Set<String> dataTypes = new HashSet<>();
+            dataTypes.add("test");
+            // QUOTE being delayed creates a query that is non-executable we cannot delay a field which is nonEvent
+            Set<String> nonEventFields = new HashSet<>();
+            nonEventFields.add("QUOTE");
+            EasyMock.expect(config.getDatatypeFilter()).andReturn(dataTypes).anyTimes();
+            EasyMock.expect(helper.getNonEventFields(dataTypes)).andReturn(nonEventFields).anyTimes();
+            EasyMock.replay(config, helper);
+            
+            ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
+            
+            EasyMock.verify(config, helper);
+            
+            // included ExceededValueThresholdMarker before
+            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
+                            "UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"));
+            
+            // starts off executable
+            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            // what came out is executable
+            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            // the visitor changed nothing
+            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree),
+                            JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)));
+        }
     }
     
     @Test
     public void testSingleOr() throws Exception {
-        ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery("UUID == 'capone' && (QUOTE =='kind' || BIRTH_DATE == '123')");
+        // make sure this works when references/referenceExpressions are/aren't included
+        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (QUOTE =='kind' || BIRTH_DATE == '123')"));
+        ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
-        // grab the reference to the QUOTE=='kind' eqnode
-        JexlNode quoteNode = queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(0);
-        ASTOrNode newOr = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-        newOr.jjtAddChild(quoteNode, 0);
-        quoteNode.jjtSetParent(newOr);
-        
-        // attach the new or node
-        queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtAddChild(newOr, 0);
-        newOr.jjtSetParent(queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0));
-        
-        ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-        MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
-        
-        HashSet<String> indexedFields = new HashSet<>();
-        indexedFields.add("UUID");
-        indexedFields.add("QUOTE");
-        
-        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-        
-        EasyMock.replay(config, helper);
-        
-        ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-        
-        EasyMock.verify(config, helper);
-        
-        // starts executable
-        Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
-        // what came out is executable
-        Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
-        // the visitor changed nothing
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree),
-                        JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)));
+        for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            // grab the reference to the QUOTE=='kind' eqnode
+            JexlNode quoteNode = queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(0);
+            ASTOrNode newOr = new ASTOrNode(ParserTreeConstants.JJTORNODE);
+            newOr.jjtAddChild(quoteNode, 0);
+            quoteNode.jjtSetParent(newOr);
+            
+            // attach the new or node
+            queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtAddChild(newOr, 0);
+            newOr.jjtSetParent(queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0));
+            
+            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
+            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            
+            HashSet<String> indexedFields = new HashSet<>();
+            indexedFields.add("UUID");
+            indexedFields.add("QUOTE");
+            
+            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            
+            EasyMock.replay(config, helper);
+            
+            ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
+            
+            EasyMock.verify(config, helper);
+            
+            // starts executable
+            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            // what came out is executable
+            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            // the visitor changed nothing
+            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree),
+                            JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)));
+        }
     }
     
     @Test
     public void testSingleOrNonExecutableCantFix() throws Exception {
-        ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery("BIRTH_DATE =='123' && (filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '234')");
+        // make sure this works when references/referenceExpressions are/aren't included
+        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
+                        .parseJexlQuery("BIRTH_DATE =='123' && (filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '234')"));
+        ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
-        // grab the reference to the QUOTE=='kind' eqnode
-        JexlNode quoteNode = queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(0);
-        ASTOrNode newOr = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-        newOr.jjtAddChild(quoteNode, 0);
-        quoteNode.jjtSetParent(newOr);
-        
-        // attach the new or node
-        queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtAddChild(newOr, 0);
-        newOr.jjtSetParent(queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0));
-        
-        ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-        MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
-        
-        HashSet<String> indexedFields = new HashSet<>();
-        indexedFields.add("UUID");
-        indexedFields.add("QUOTE");
-        
-        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-        
-        EasyMock.replay(config, helper);
-        
-        ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-        
-        EasyMock.verify(config, helper);
-        
-        // starts executable
-        Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
-        // what came out is executable
-        Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
-        // the visitor changed nothing
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree),
-                        JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)));
+        for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            // grab the reference to the QUOTE=='kind' eqnode
+            JexlNode quoteNode = queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(0);
+            ASTOrNode newOr = new ASTOrNode(ParserTreeConstants.JJTORNODE);
+            newOr.jjtAddChild(quoteNode, 0);
+            quoteNode.jjtSetParent(newOr);
+            
+            // attach the new or node
+            queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtAddChild(newOr, 0);
+            newOr.jjtSetParent(queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0));
+            
+            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
+            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            
+            HashSet<String> indexedFields = new HashSet<>();
+            indexedFields.add("UUID");
+            indexedFields.add("QUOTE");
+            
+            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            
+            EasyMock.replay(config, helper);
+            
+            ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
+            
+            EasyMock.verify(config, helper);
+            
+            // starts executable
+            Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            // what came out is executable
+            Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            // the visitor changed nothing
+            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree),
+                            JexlStringBuildingVisitor.buildQuery(newTree).equals(JexlStringBuildingVisitor.buildQuery(queryTree)));
+        }
     }
     
     @Test
     public void testNoReferenceOrReferenceExpressions() throws Exception {
-        ASTJexlScript queryTree = JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
+        // make sure this works when references/referenceExpressions are/aren't included
+        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+        ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
-        // strip reference/referenceExpressions
-        queryTree = TreeFlatteningRebuildingVisitor.flattenAll(queryTree);
-        
-        ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
-        MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
-        
-        HashSet<String> indexedFields = new HashSet<>();
-        indexedFields.add("UUID");
-        indexedFields.add("QUOTE");
-        
-        EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
-        
-        EasyMock.replay(config, helper);
-        
-        ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
-        
-        EasyMock.verify(config, helper);
-        
-        // starts executable
-        Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
-        // what came out is executable
-        Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
-        // the visitor changed nothing
-        Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree), JexlStringBuildingVisitor.buildQuery(newTree).equals(
-                        "(QUOTE == 'kind' && UUID == 'capone') || " + "((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')"));
+        for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
+            // strip reference/referenceExpressions
+            queryTree = TreeFlatteningRebuildingVisitor.flattenAll(queryTree);
+            
+            ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
+            MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
+            
+            HashSet<String> indexedFields = new HashSet<>();
+            indexedFields.add("UUID");
+            indexedFields.add("QUOTE");
+            
+            EasyMock.expect(config.getIndexedFields()).andReturn(indexedFields).anyTimes();
+            
+            EasyMock.replay(config, helper);
+            
+            ASTJexlScript newTree = ExecutableExpansionVisitor.expand(queryTree, config, helper);
+            
+            EasyMock.verify(config, helper);
+            
+            // starts executable
+            Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
+            // what came out is executable
+            Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
+            // the visitor changed nothing
+            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree), JexlStringBuildingVisitor.buildQuery(newTree).equals(
+                            "(QUOTE == 'kind' && UUID == 'capone') || "
+                                            + "((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')"));
+        }
     }
     
     @Test
@@ -900,4 +966,78 @@ public abstract class ExecutableExpansionVisitorTest {
         }
     }
     
+    private static class DereferencingVisitor extends RebuildingVisitor {
+        
+        private boolean derefExprOrs = true;
+        private boolean derefExprAnds = true;
+        private boolean derefOrs = true;
+        private boolean derefAnds = true;
+        
+        private DereferencingVisitor() {
+            
+        }
+        
+        private DereferencingVisitor(boolean derefExprOrs, boolean derefExprAnds, boolean derefOrs, boolean derefAnds) {
+            this.derefExprOrs = derefExprOrs;
+            this.derefExprAnds = derefExprAnds;
+            this.derefOrs = derefOrs;
+            this.derefAnds = derefAnds;
+        }
+        
+        public static JexlNode dereference(JexlNode node) {
+            DereferencingVisitor visitor = new DereferencingVisitor();
+            return (JexlNode) node.jjtAccept(visitor, null);
+        }
+        
+        public static JexlNode dereference(JexlNode node, boolean derefExprOrs, boolean derefExprAnds, boolean derefOrs, boolean derefAnds) {
+            DereferencingVisitor visitor = new DereferencingVisitor(derefExprOrs, derefExprAnds, derefOrs, derefAnds);
+            return (JexlNode) node.jjtAccept(visitor, null);
+        }
+        
+        @Override
+        public Object visit(ASTReference node, Object data) {
+            JexlNode finalNode = node;
+            if (node.jjtGetNumChildren() == 1) {
+                JexlNode child = node.jjtGetChild(0);
+                
+                if ((derefOrs && child instanceof ASTOrNode) || (derefAnds && child instanceof ASTAndNode)) {
+                    finalNode = child;
+                } else if (child instanceof ASTReferenceExpression && child.jjtGetNumChildren() == 1) {
+                    JexlNode grandchild = child.jjtGetChild(0);
+                    JexlNode derefGrandchild = JexlASTHelper.dereference(grandchild);
+                    if ((derefOrs && derefGrandchild instanceof ASTOrNode) || (derefAnds && derefGrandchild instanceof ASTAndNode)) {
+                        finalNode = child;
+                    }
+                }
+            }
+            
+            if (finalNode != node) {
+                finalNode = (JexlNode) finalNode.jjtAccept(this, data);
+            } else {
+                finalNode = (JexlNode) super.visit(node, data);
+            }
+            
+            return finalNode;
+        }
+        
+        @Override
+        public Object visit(ASTReferenceExpression node, Object data) {
+            JexlNode finalNode = node;
+            if (node.jjtGetNumChildren() == 1) {
+                JexlNode child = node.jjtGetChild(0);
+                JexlNode derefChild = JexlASTHelper.dereference(child);
+                if ((derefExprOrs && derefChild instanceof ASTOrNode) || (derefExprAnds && derefChild instanceof ASTAndNode)) {
+                    finalNode = child;
+                }
+            }
+            
+            if (finalNode != node) {
+                finalNode = (JexlNode) finalNode.jjtAccept(this, data);
+            } else {
+                finalNode = (JexlNode) super.visit(node, data);
+            }
+            
+            return finalNode;
+        }
+    }
 }
