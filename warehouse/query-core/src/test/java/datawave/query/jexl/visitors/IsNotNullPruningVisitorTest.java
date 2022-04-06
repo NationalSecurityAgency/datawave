@@ -34,8 +34,23 @@ public class IsNotNullPruningVisitorTest {
     }
     
     @Test
-    public void testNoOpCase() {
+    public void testNoOpCases() {
         String query = "!(FOO == null) || FOO == 'bar'";
+        test(query, query);
+        
+        query = "!(FOO == null)"; // single IsNotNull term
+        test(query, query);
+        
+        query = "!(FOO == null) || !(FOO == null)"; // union of repeated IsNotNull term
+        test(query, query);
+        
+        query = "!(FOO == null) && !(FOO == null)"; // intersection of repeated IsNotNull term
+        test(query, query);
+        
+        query = "!(FOO == null) || !(FOO2 == null)"; // union of different IsNotNull terms
+        test(query, query);
+        
+        query = "!(FOO == null) && !(FOO2 == null)"; // intersection of different IsNotNull terms
         test(query, query);
     }
     
