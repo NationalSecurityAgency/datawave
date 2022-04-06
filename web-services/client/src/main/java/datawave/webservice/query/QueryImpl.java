@@ -231,9 +231,6 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     
     protected transient HashMap<String,Parameter> paramLookup = new HashMap<String,Parameter>();
     
-    // Assume that we don't want to serialize the query execution for the current page start time.
-    protected transient long queryExecutionForCurrentPageStartTime = 0L;
-    
     public String getQueryLogicName() {
         return queryLogicName;
     }
@@ -284,11 +281,6 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         return parameters == null ? null : Collections.unmodifiableSet(parameters);
     }
     
-    @Override
-    public long getQueryExecutionForCurrentPageStartTime() {
-        return this.queryExecutionForCurrentPageStartTime;
-    }
-    
     public void setQueryLogicName(String name) {
         this.queryLogicName = name;
     }
@@ -337,11 +329,6 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         for (Parameter p : this.parameters) {
             this.paramLookup.put(p.getParameterName(), p);
         }
-    }
-    
-    @Override
-    public void setQueryExecutionForCurrentPageStartTime(long queryExecutionForCurrentPageStartTime) {
-        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
     
     public void addParameter(String key, String val) {
