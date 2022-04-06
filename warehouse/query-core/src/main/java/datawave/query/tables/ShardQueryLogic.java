@@ -995,10 +995,23 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
     }
     
+    /**
+     * Sets the {@code SchedulerProducer} type
+     * 
+     * @param schedulerProducer
+     */
     public void setSchedulerProducer(SchedulerProducer schedulerProducer) {
         this.schedulerProducer = schedulerProducer;
     }
     
+    /**
+     * uses the {@code SchedulerProducer} to supply the configured type of {@code Scheduler}
+     * 
+     * @param config
+     * @param scannerFactory
+     * @return
+     * @throws TableNotFoundException
+     */
     protected Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) throws TableNotFoundException {
         return schedulerProducer.getScheduler(config, scannerFactory, metadataHelperFactory);
     }
@@ -1923,14 +1936,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setLimitTermExpansionToModel(boolean shouldLimitTermExpansionToModel) {
         getConfig().setLimitTermExpansionToModel(shouldLimitTermExpansionToModel);
-    }
-    
-    public boolean getSequentialScheduler() {
-        return getConfig().getSequentialScheduler();
-    }
-    
-    public void setSequentialScheduler(boolean sequentialScheduler) {
-        getConfig().setSequentialScheduler(sequentialScheduler);
     }
     
     public boolean getParseTldUids() {

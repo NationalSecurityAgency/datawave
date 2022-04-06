@@ -93,7 +93,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int collapseUidsThreshold = -1;
     // Should this query dedupe terms within ANDs and ORs
     private boolean enforceUniqueTermsWithinExpressions = false;
-    private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
     private boolean sendTimingToStatsd = true;
@@ -404,7 +403,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
         this.setParseTldUids(other.getParseTldUids());
-        this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
         this.setLogTimingDetails(other.getLogTimingDetails());
         this.setSendTimingToStatsd(other.getSendTimingToStatsd());
@@ -1921,14 +1919,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
         this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
-    }
-    
-    public boolean getSequentialScheduler() {
-        return sequentialScheduler;
-    }
-    
-    public void setSequentialScheduler(boolean sequentialScheduler) {
-        this.sequentialScheduler = sequentialScheduler;
     }
     
     public boolean getLimitAnyFieldLookups() {
