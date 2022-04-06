@@ -1,5 +1,6 @@
 package datawave.query.iterator.logic;
 
+import com.google.common.base.Joiner;
 import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.query.Constants;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
  */
 public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
     private static final Logger log = Logger.getLogger(TermFrequencyExcerptIterator.class);
+    private static final Joiner joiner = Joiner.on(" ").skipNulls();
     
     // The field name option
     public static final String FIELD_NAME = "field.name";
@@ -305,21 +307,11 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
      * Generate a phrase from the given list of terms
      *
      * @param terms
+     *            the terms to create a phrase from
      * @return the phrase
      */
     private String generatePhrase(String[] terms) {
-        StringBuilder phrase = new StringBuilder();
-        String separator = "";
-        for (int i = 0; i < terms.length; i++) {
-            phrase.append(separator);
-            if (terms[i] != null) {
-                phrase.append(terms[i]);
-                separator = " ";
-            } else {
-                separator = "";
-            }
-        }
-        return phrase.toString();
+        return joiner.join(terms);
     }
     
     /**
