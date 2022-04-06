@@ -66,45 +66,46 @@ import java.util.Set;
  * Example: {@code (foo == 'bar') -> (FOO == 'bar')}
  */
 public class CaseSensitivityVisitor extends BaseVisitor {
-
+    
     private ShardQueryConfiguration config;
     private MetadataHelper helper;
-
+    
     public CaseSensitivityVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
         this.config = config;
         this.helper = helper;
     }
-
+    
     /**
      * Ensure that all ReferenceNode's are upper-cased. Modifies the provided ASTJexlScript in-place.
      *
-     * @param script An ASTJexlScript
+     * @param script
+     *            An ASTJexlScript
      * @return
      */
     public static <T extends JexlNode> T upperCaseIdentifiers(ShardQueryConfiguration config, MetadataHelper helper, T script) {
         CaseSensitivityVisitor visitor = new CaseSensitivityVisitor(config, helper);
-
+        
         script.jjtAccept(visitor, null);
-
+        
         return script;
     }
-
+    
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         // lets determine which of the arguments are actually field name identifiers (e.g. termFrequencyMap is not)
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
-
+        
         Set<String> fields = desc.fields(helper, config.getDatatypeFilter());
-
+        
         return super.visit(node, fields);
     }
-
+    
     @Override
     public Object visit(ASTAssignment node, Object data) {
         // we do not want to touch assignment identifiers
         return data;
     }
-
+    
     @Override
     @SuppressWarnings("unchecked")
     public Object visit(ASTIdentifier node, Object data) {
@@ -116,259 +117,263 @@ public class CaseSensitivityVisitor extends BaseVisitor {
             }
         }
         node.childrenAccept(this, data);
-
+        
         return data;
     }
-
+    
     // Descend through these nodes
-
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-
+    
     @Override
     public Object visit(ASTAndNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-
+    
     @Override
     public Object visit(ASTEQNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-
+    
+    @Override
+    public Object visit(ASTERNode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTNENode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTOrNode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
     @Override
     public Object visit(ASTReference node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-
+    
+    @Override
+    public Object visit(ASTReferenceExpression node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
     // Short Circuit these nodes
-
     @Override
     public Object visit(SimpleNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTBlock node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTAmbiguous node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTIfStatement node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTForeachStatement node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTTernaryNode node, Object data) {
         return data;
     }
-
-    @Override
-    public Object visit(ASTOrNode node, Object data) {
-        return data;
-    }
-
+    
     @Override
     public Object visit(ASTBitwiseOrNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTBitwiseXorNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTBitwiseAndNode node, Object data) {
         return data;
     }
-
-    @Override
-    public Object visit(ASTNENode node, Object data) {
-        return data;
-    }
-
+    
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTLENode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTGENode node, Object data) {
         return data;
     }
-
-    @Override
-    public Object visit(ASTERNode node, Object data) {
-        return data;
-    }
-
+    
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTAdditiveNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTAdditiveOperator node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTMulNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTDivNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTModNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTUnaryMinusNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTNotNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTNullLiteral node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTTrueNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTFalseNode node, Object data) {
         return data;
     }
-
+    
+    @Override
     public Object visit(ASTIntegerLiteral node, Object data) {
         return data;
     }
-
+    
+    @Override
     public Object visit(ASTFloatLiteral node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTArrayLiteral node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTMapLiteral node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTMapEntry node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTEmptyFunction node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTSizeFunction node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTMethodNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTSizeMethod node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTConstructorNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTArrayAccess node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTReturnStatement node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTVar node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
         return data;
     }
-
-    @Override
-    public Object visit(ASTReferenceExpression node, Object data) {
-        return data;
-    }
-
+    
 }
