@@ -6,6 +6,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.Constants;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.scheduler.TestSchedulerProducer;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -84,7 +85,7 @@ public class IndexQueryLogicTest extends AbstractFunctionalQuery {
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
         this.logic.setQueryPlanner(new DefaultQueryPlanner());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
-        
+        this.logic.setSchedulerProducer(new TestSchedulerProducer.Pushdown());
         // init must set auths
         testInit();
         

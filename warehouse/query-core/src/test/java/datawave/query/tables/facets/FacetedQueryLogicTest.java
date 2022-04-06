@@ -9,6 +9,7 @@ import datawave.query.RebuildingScannerTestHelper.TEARDOWN;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
+import datawave.query.scheduler.TestSchedulerProducer;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -96,6 +97,7 @@ public class FacetedQueryLogicTest extends AbstractFunctionalQuery {
         facetLogic.setMinimumFacet(1);
         
         this.logic = facetLogic;
+        this.logic.setSchedulerProducer(new TestSchedulerProducer.Pushdown());
         QueryTestTableHelper.configureLogicToScanTables(this.logic);
         
         this.logic.setFullTableScanEnabled(false);

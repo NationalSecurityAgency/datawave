@@ -19,6 +19,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.scheduler.TestSchedulerProducer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
@@ -146,6 +147,7 @@ public abstract class UseOccurrenceToCountInJexlContextTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         logic = new ShardQueryLogic();
+        logic.setSchedulerProducer(new TestSchedulerProducer.Pushdown());
         logic.setMetadataTableName(QueryTestTableHelper.METADATA_TABLE_NAME);
         logic.setTableName(TableName.SHARD);
         logic.setIndexTableName(TableName.SHARD_INDEX);

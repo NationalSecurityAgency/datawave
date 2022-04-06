@@ -26,6 +26,7 @@ import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.scheduler.TestSchedulerProducer;
 import datawave.query.testframework.MockStatusReporter;
 import datawave.query.model.QueryModel;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -58,6 +59,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -188,6 +190,11 @@ public class MixedGeoAndGeoWaveTest {
                         .addAsManifestResource(
                                         new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
                                                         + "</alternatives>"), "beans.xml");
+    }
+    
+    @Before
+    public void setup() {
+        this.logic.setSchedulerProducer(new TestSchedulerProducer.Pushdown());
     }
     
     @BeforeClass

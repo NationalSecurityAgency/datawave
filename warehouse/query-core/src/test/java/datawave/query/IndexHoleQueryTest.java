@@ -2,6 +2,7 @@ package datawave.query;
 
 import datawave.query.config.IndexHole;
 import datawave.query.exceptions.FullTableScansDisallowedException;
+import datawave.query.scheduler.TestSchedulerProducer;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -14,6 +15,7 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.ShardIdValues;
 import org.apache.log4j.Logger;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -43,6 +45,11 @@ public class IndexHoleQueryTest extends AbstractFunctionalQuery {
         String[] dateHole = new String[] {BaseShardIdRange.DATE_2015_0404.getDateStr(), BaseShardIdRange.DATE_2015_0505.getDateStr()};
         IndexHole hole = new IndexHole(dateHole, new String[] {"us", "ut"});
         INDEX_HOLE.add(hole);
+    }
+    
+    @Before
+    public void setup() {
+        this.logic.setSchedulerProducer(new TestSchedulerProducer.Pushdown());
     }
     
     @BeforeClass

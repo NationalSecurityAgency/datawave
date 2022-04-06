@@ -1,5 +1,6 @@
 package datawave.query;
 
+import datawave.query.scheduler.TestSchedulerProducer;
 import datawave.query.tables.CountingShardQueryLogic;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;

@@ -101,7 +101,9 @@
         <property name="roleManager" ref="easyRoleManager" />
         <property name="markingFunctions" ref="markingFunctions" />
     </bean>
-    
+
+    <bean id="testSchedulerProducer" scope="prototype" class="datawave.query.scheduler.TestSchedulerProducer$Pushdown"/>
+
     <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ShardQueryLogic" abstract="true">
         <property name="tableName" value="shard" />
         <property name="dateIndexTableName" value="dateIndex" />
@@ -119,6 +121,7 @@
         <!-- property name="accumuloPassword" value="${accumulo.user.password}" />	 -->
         <property name="collapseUids" value="true" />	<!-- was ${query.collapse.uids} -->
         <property name="useEnrichers" value="true" />
+        <property name="schedulerProducer" ref="testSchedulerProducer" />
         <property name="contentFieldNames">
             <list value-type="java.lang.String">
                 <value>CONTENT</value>

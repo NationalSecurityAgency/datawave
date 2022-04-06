@@ -1,6 +1,7 @@
 package datawave.query;
 
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.scheduler.TestSchedulerProducer;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.BaseRawData;
@@ -12,6 +13,7 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import org.apache.log4j.Logger;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -41,6 +43,11 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
     private static final List<String> TEST_NUMS = Arrays.asList("100", "110", "120");
     private static final List<CityEntry> TEST_DATATYPES = Arrays.asList(CityEntry.generic, CityEntry.usa, CityEntry.dup_usa);
     private static final List<String> INVALID_DATATYPES = Arrays.asList("invalid-one", "invalid-two");
+    
+    @Before
+    public void setup() {
+        this.logic.setSchedulerProducer(new TestSchedulerProducer.Pushdown());
+    }
     
     @BeforeClass
     public static void filterSetup() throws Exception {

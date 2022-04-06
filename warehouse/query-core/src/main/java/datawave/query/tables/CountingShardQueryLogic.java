@@ -10,6 +10,7 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 
 import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
@@ -46,10 +47,10 @@ public class CountingShardQueryLogic extends ShardQueryLogic {
     }
     
     @Override
-    public Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
-        PushdownScheduler scheduler = new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
+    public Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) throws TableNotFoundException {
+        
+        PushdownScheduler scheduler = (PushdownScheduler) schedulerProducer.getScheduler(config, scannerFactory, metadataHelperFactory);
         scheduler.addSetting(new IteratorSetting(config.getBaseIteratorPriority() + 50, "counter", ResultCountingIterator.class.getName()));
         return scheduler;
     }
-    
 }

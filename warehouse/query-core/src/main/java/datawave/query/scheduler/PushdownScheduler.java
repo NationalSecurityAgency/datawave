@@ -1,42 +1,14 @@
 package datawave.query.scheduler;
 
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.tables.ShardQueryLogic;
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Instance;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.impl.ClientContext;
-import org.apache.accumulo.core.client.impl.Credentials;
-import org.apache.accumulo.core.client.impl.Tables;
-import org.apache.accumulo.core.client.impl.TabletLocator;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Logger;
-
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
-
 import datawave.mr.bulk.RfileResource;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.BatchScannerSession;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.tables.async.event.VisitorFunction;
 import datawave.query.tables.stats.ScanSessionStats;
@@ -44,6 +16,24 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.configuration.QueryData;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.impl.TabletLocator;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.log4j.Logger;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Purpose: Pushes down individual queries to the Tservers. Is aware that each server may have a different query, thus bins ranges per tserver and keeps the
@@ -78,6 +68,8 @@ public class PushdownScheduler extends Scheduler {
      * Local instance of the table ID
      */
     protected String tableId;
+    
+    protected TabletLocator tabletLocator;
     
     protected MetadataHelper metadataHelper;
     
@@ -130,18 +122,7 @@ public class PushdownScheduler extends Scheduler {
         
         Set<Authorizations> auths = config.getAuthorizations();
         
-        TabletLocator tl;
-        
-        Instance instance = config.getConnector().getInstance();
-        if (instance instanceof InMemoryInstance) {
-            tl = new InMemoryTabletLocator();
-            tableId = config.getTableName();
-        } else {
-            tableId = Tables.getTableId(instance, tableName);
-            Credentials credentials = new Credentials(config.getConnector().whoami(), new PasswordToken(config.getAccumuloPassword()));
-            tl = TabletLocator.getLocator(new ClientContext(instance, credentials, AccumuloConfiguration.getDefaultConfiguration()), tableId);
-        }
-        Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(tl, config, settings, tableId));
+        Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(tabletLocator, config, settings, tableId));
         
         try {
             session = scannerFactory.newQueryScanner(tableName, auths, config.getQuery());
@@ -167,7 +148,7 @@ public class PushdownScheduler extends Scheduler {
         
         session.setChunkIter(chunkIter);
         
-        session.setTabletLocator(tl);
+        session.setTabletLocator(tabletLocator);
         
         session.updateIdentifier(config.getQuery().getId().toString());
         
@@ -211,4 +192,11 @@ public class PushdownScheduler extends Scheduler {
         return stats;
     }
     
+    public void setTableId(String tableId) {
+        this.tableId = tableId;
+    }
+    
+    public void setTabletLocator(TabletLocator tabletLocator) {
+        this.tabletLocator = tabletLocator;
+    }
 }
