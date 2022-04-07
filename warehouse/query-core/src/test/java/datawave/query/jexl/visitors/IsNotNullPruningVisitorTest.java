@@ -134,6 +134,28 @@ public class IsNotNullPruningVisitorTest {
         test(query, expected);
     }
     
+    // every field of the middle union matches the IsNotNull term's field (FOO). Thus, we can still prune.
+    @Test
+    public void testSuperFunEdgeCase() {
+        String query = "!(FOO == null) && (FOO == 'bar' || FOO == 'baz')";
+        String expected = "(FOO == 'bar' || FOO == 'baz')";
+        test(query, expected);
+        
+        // with extras
+        query = "!(FOO == null) && (FOO == 'bar' || FOO == 'baz') && (FEE == 'fi' || FO == 'fum')";
+        expected = "(FOO == 'bar' || FOO == 'baz') && (FEE == 'fi' || FO == 'fum')";
+        test(query, expected);
+        
+        // union of same field, different node type (EQ and ER)
+        query = "!(FOO == null) && (FOO == 'bar' || FOO =~ 'baz.*') && (FEE == 'fi' || FO == 'fum')";
+        expected = "(FOO == 'bar' || FOO =~ 'baz.*') && (FEE == 'fi' || FO == 'fum')";
+        test(query, expected);
+        
+        // union of same field, contains invalid node type (NR)
+        query = "!(FOO == null) && (FOO == 'bar' || FOO !~ 'baz.*') && (FEE == 'fi' || FO == 'fum')";
+        test(query, query);
+    }
+    
     private void test(String query, String expected) {
         try {
             ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);

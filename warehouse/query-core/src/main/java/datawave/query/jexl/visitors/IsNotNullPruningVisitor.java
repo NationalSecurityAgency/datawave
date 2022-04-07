@@ -108,6 +108,11 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
                 String field = fieldForChild(deref);
                 if (field != null)
                     equalityFields.add(field);
+            } else if (deref instanceof ASTOrNode) {
+                // in addition to single term children, we may have a union comprised of a single field
+                String field = fieldForUnion(deref);
+                if (field != null)
+                    equalityFields.add(field);
             }
         }
         
@@ -170,6 +175,33 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
             }
         }
         return null;
+    }
+    
+    /**
+     * Determine if the provided union contains children that share a singular field
+     *
+     * @param node
+     *            an ASTOrNode
+     * @return a singular field if it exists, or null
+     */
+    protected String fieldForUnion(JexlNode node) {
+        Set<String> fields = new HashSet<>(node.jjtGetNumChildren());
+        for (JexlNode child : JexlNodes.children(node)) {
+            child = JexlASTHelper.dereference(child);
+            if (child instanceof ASTEQNode || child instanceof ASTERNode) {
+                Set<String> names = JexlASTHelper.getIdentifierNames(child);
+                if (names.size() == 1) {
+                    fields.add(names.iterator().next());
+                } else {
+                    return null; // EQ or ER node had more than one identifier...this is not correct
+                }
+            } else {
+                // encountered an unexpected node type, the union cannot have a single shared field
+                return null;
+            }
+        }
+        
+        return fields.size() == 1 ? fields.iterator().next() : null;
     }
     
     // +-----------------------------+
