@@ -121,7 +121,7 @@ public class EventMetadataTest {
         assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_TO_COUNT, eventMetadata);
         assertFieldNameCountEquals(1L, INDEX_TABLE_NAME, FIELD_WITH_TOKEN_TO_COUNT, eventMetadata);
         assertTfCountEquals(0L, FIELD_WITH_TOKEN_TO_COUNT, eventMetadata);
-        Assert.assertFalse(assertTExists(FIELD_WITH_TOKEN_TO_COUNT, eventMetadata));
+        Assert.assertTrue(assertTExists(FIELD_WITH_TOKEN_TO_COUNT, eventMetadata));
         Assert.assertFalse(assertContainsKey(eventMetadata, RINDEX_TABLE_NAME, FIELD_TO_COUNT));
         assertNonIndexedFieldNameIsMissing(eventMetadata);
         

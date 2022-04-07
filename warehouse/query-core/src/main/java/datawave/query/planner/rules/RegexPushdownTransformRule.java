@@ -9,6 +9,7 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
@@ -23,7 +24,7 @@ public class RegexPushdownTransformRule implements NodeTransformRule {
     @Override
     public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
         try {
-            if (node instanceof ASTERNode) {
+            if (node instanceof ASTERNode || node instanceof ASTNRNode) {
                 final String regex = String.valueOf(JexlASTHelper.getLiteralValue(node));
                 if (patterns.stream().anyMatch(p -> p.matcher(regex).matches())) {
                     String identifier = JexlASTHelper.getIdentifier(node);

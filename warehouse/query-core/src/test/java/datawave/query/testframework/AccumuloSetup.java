@@ -15,6 +15,7 @@ import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -65,6 +66,7 @@ public class AccumuloSetup extends ExternalResource {
     private Collection<DataTypeHadoopConfig> dataTypes;
     private Set<String> shardIds;
     private FileType fileFormat;
+    private Authorizations auths = AbstractDataTypeConfig.getTestAuths();
     
     public AccumuloSetup() {
         this(false);
@@ -137,6 +139,11 @@ public class AccumuloSetup extends ExternalResource {
         }
     }
     
+    /** Override the default authorizations used for printing the contents of tables */
+    public void setAuthorizations(Authorizations auths) {
+        this.auths = auths;
+    }
+    
     /**
      * Creates the Accumulo shard ids and ingests the data into the tables. Uses a CSV file for loading test data.
      *
@@ -183,15 +190,15 @@ public class AccumuloSetup extends ExternalResource {
             }
         }
         
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_INDEX);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_RINDEX);
+        PrintUtility.printTable(connector, auths, QueryTestTableHelper.METADATA_TABLE_NAME);
+        PrintUtility.printTable(connector, auths, TableName.SHARD);
+        PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(connector, auths, TableName.SHARD_RINDEX);
         
         // TODO: elsewhere?
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_TABLE_NAME);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_METADATA_TABLE_NAME);
-        PrintUtility.printTable(connector, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.FACET_HASH_TABLE_NAME);
+        PrintUtility.printTable(connector, auths, QueryTestTableHelper.FACET_TABLE_NAME);
+        PrintUtility.printTable(connector, auths, QueryTestTableHelper.FACET_METADATA_TABLE_NAME);
+        PrintUtility.printTable(connector, auths, QueryTestTableHelper.FACET_HASH_TABLE_NAME);
         
         return connector;
     }

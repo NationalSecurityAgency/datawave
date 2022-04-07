@@ -181,6 +181,12 @@ public class Union extends BaseIndexStream {
             log.trace("advancing " + pointers.getNode() + " " + children.peek().context());
         
         boolean childrenAdded = false;
+        /**
+         * Since children is a PriorityQueue sorted by shard and its possible for a day_shard to call next() and then return a day. That iterator will sort to
+         * the front. This may cause a break in the end loop condition before all iterators have had a chance to be evaluated. Until all iterators have been
+         * evaluated or the end condition is reached don't evaluate an iterator a second time.
+         */
+        List<IndexStream> processedChildren = new ArrayList<>();
         while (!children.isEmpty()) {
             String streamDayOrShard = children.peek().peek().first();
             if (log.isTraceEnabled())
@@ -189,7 +195,14 @@ public class Union extends BaseIndexStream {
             if (!streamDayOrShard.equals(dayOrShard)) {
                 // additional test if dayOrShard is a day
                 if (!(isDay(dayOrShard) && streamDayOrShard.startsWith(dayOrShard))) {
-                    break;
+                    // if there were children we previously processed, add them back in
+                    if (processedChildren.size() > 0) {
+                        children.addAll(processedChildren);
+                        processedChildren.clear();
+                        continue;
+                    } else {
+                        break;
+                    }
                 }
             }
             
@@ -198,13 +211,20 @@ public class Union extends BaseIndexStream {
             pointers = pointers.union(itr.peek().second(), Lists.newArrayList(delayedNodes.getNodes()));
             itr.next();
             if (itr.hasNext()) {
-                children.add(itr);
+                // add this to the processed list so other iterators have a chance to be first even if this one comes back earlier in the stack
+                processedChildren.add(itr);
             } else {
                 if (log.isTraceEnabled()) {
                     log.trace("IndexStream exhausted for " + itr.getContextDebug());
                 }
             }
             childrenAdded = true;
+            
+            // repopulate children with all processed children
+            if (children.isEmpty() && !processedChildren.isEmpty()) {
+                children.addAll(processedChildren);
+                processedChildren.clear();
+            }
         }
         
         JexlNodeSet nodeSet = new JexlNodeSet();

@@ -91,20 +91,20 @@ public class DocumentKey extends Attribute<DocumentKey> implements Serializable 
     @Override
     public void write(DataOutput out, boolean reducedResponse) throws IOException {
         writeMetadata(out, reducedResponse);
-        
         WritableUtils.writeString(out, getShardId());
         WritableUtils.writeString(out, getDataType());
         WritableUtils.writeString(out, getUid());
+        WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
     
     @Override
     public void readFields(DataInput in) throws IOException {
         readMetadata(in);
-        
         String shardId = WritableUtils.readString(in);
         String dataType = WritableUtils.readString(in);
         String uid = WritableUtils.readString(in);
         setKey(shardId, dataType, uid);
+        this.toKeep = WritableUtils.readVInt(in) != 0;
     }
     
     @Override
@@ -139,20 +139,20 @@ public class DocumentKey extends Attribute<DocumentKey> implements Serializable 
     @Override
     public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         super.writeMetadata(kryo, output, reducedResponse);
-        
         output.writeString(this.getShardId());
         output.writeString(this.getDataType());
         output.writeString(this.getUid());
+        output.writeBoolean(this.isToKeep());
     }
     
     @Override
     public void read(Kryo kryo, Input input) {
         super.readMetadata(kryo, input);
-        
         String shardId = input.readString();
         String dataType = input.readString();
         String uid = input.readString();
         setKey(shardId, dataType, uid);
+        setToKeep(input.readBoolean());
     }
     
     /*

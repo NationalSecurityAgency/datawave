@@ -76,6 +76,7 @@ import datawave.query.jexl.visitors.PushdownMissingIndexRangeNodesVisitor;
 import datawave.query.jexl.visitors.PushdownUnexecutableNodesVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
+import datawave.query.jexl.visitors.QueryPropertyMarkerSourceConsolidator;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
 import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
@@ -703,6 +704,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         if (optionsMap.containsKey(QueryParameters.SHARDS_AND_DAYS)) {
             config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
+        } else {
+            // look for the shards and days hint in the query settings
+            // the shards and days hint cannot always be specified in the query string when using certain query parsers
+            Parameter parameter = settings.findParameter(QueryParameters.SHARDS_AND_DAYS);
+            if (StringUtils.isNotBlank(parameter.getParameterValue())) {
+                optionsMap.put(QueryParameters.SHARDS_AND_DAYS, parameter.getParameterValue());
+                config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
+            }
         }
         
         // extract #NO_EXPANSION function, if it exists
@@ -716,6 +725,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setQueryTree(timedApplyRules(timers, config.getQueryTree(), config, metadataHelper, scannerFactory));
         
         config.setQueryTree(timedFixNegativeNumbers(timers, config.getQueryTree()));
+        
+        // Fix any query property markers that have multiple unwrapped sources.
+        config.setQueryTree(timedFixQueryPropertyMarkers(timers, config.getQueryTree()));
         
         // Ensure that all ASTIdentifier nodes (field names) are upper-case to be consistent with what is enforced at ingest time
         config.setQueryTree(timedUpperCaseIdentifiers(timers, config.getQueryTree(), config, metadataHelper));
@@ -791,7 +803,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         if (!disableWhindexFieldMappings) {
             // apply the value-specific field mappings for GeoWave functions
-            timedApplyWhindexFieldMappings(timers, config.getQueryTree(), config, metadataHelper, settings);
+            config.setQueryTree(timedApplyWhindexFieldMappings(timers, config.getQueryTree(), config, metadataHelper, settings));
         }
         
         if (!disableExpandIndexFunction) {
@@ -836,10 +848,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // if we have any index holes, then mark em
         if (!config.getIndexHoles().isEmpty()) {
             config.setQueryTree(timedMarkIndexHoles(timers, config.getQueryTree(), config, metadataHelper));
-        }
-        
-        if (executableExpansion) {
-            config.setQueryTree(timedExecutableExpansion(timers, config.getQueryTree(), config, metadataHelper));
         }
         
         // lets precompute the indexed fields and index only fields for the specific datatype if needed below
@@ -890,15 +898,23 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     config.setQueryTree(timedExpandRanges(timers, "Expand Ranges", config.getQueryTree(), config, metadataHelper, scannerFactory));
                 }
                 
+                // NOTE: GeoWavePruningVisitor should run before QueryPruningVisitor. If it runs after, there is a chance
+                // that GeoWavePruningVisitor will prune all of the remaining indexed terms, which would leave a GeoWave
+                // function without any indexed terms or ranges, which should evaluate to false. That case won't be handled
+                // properly if we run GeoWavePruningVisitor after QueryPruningVisitor.
+                config.setQueryTree(timedPruneGeoWaveTerms(timers, config.getQueryTree(), metadataHelper));
+                
                 if (reduceQuery) {
                     config.setQueryTree(timedReduce(timers, "Reduce Query After Range Expansion", config.getQueryTree()));
                 }
                 
-                config.setQueryTree(timedPruneGeoWaveTerms(timers, config.getQueryTree(), metadataHelper));
-                
                 // Check if there are functions that can be pushed into exceeded value ranges.
                 if (nodeCount.hasAll(ASTFunctionNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
                     config.setQueryTree(timedPushFunctions(timers, config.getQueryTree(), config, metadataHelper));
+                }
+                
+                if (executableExpansion) {
+                    config.setQueryTree(timedExecutableExpansion(timers, config.getQueryTree(), config, metadataHelper));
                 }
                 
                 List<String> debugOutput = null;
@@ -1286,7 +1302,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // Verify that the query does not contain fields we've never seen
         // before
         Set<String> specialFields = Sets.newHashSet(QueryOptions.DEFAULT_DATATYPE_FIELDNAME, Constants.ANY_FIELD, Constants.NO_FIELD);
-        specialFields.addAll(config.getEvaluationOnlyFields());
         Set<String> nonexistentFields = FieldMissingFromSchemaVisitor.getNonExistentFields(metadataHelper, script, config.getDatatypeFilter(), specialFields);
         
         if (log.isDebugEnabled()) {
@@ -1570,6 +1585,21 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         config.setExpandAllTerms(expandAllTerms);
         stopwatch.stop();
         return config.getQueryTree();
+    }
+    
+    protected ASTJexlScript timedFixQueryPropertyMarkers(QueryStopwatch timers, ASTJexlScript script) throws DatawaveQueryException {
+        // Fix query property markers with multiple sources.
+        TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - fix query property markers with multiple sources");
+        try {
+            script = QueryPropertyMarkerSourceConsolidator.consolidate(script);
+        } catch (Exception e) {
+            throw new DatawaveQueryException("Failed to fix query property markers with multiple sources", e);
+        }
+        if (log.isDebugEnabled()) {
+            logQuery(script, "Query after fixing query property markers with multiple sources");
+        }
+        stopwatch.stop();
+        return script;
     }
     
     /*
