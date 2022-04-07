@@ -62,103 +62,104 @@ import java.util.Collection;
  * the supplied geoFields.
  */
 public class GeoWaveQueryInfoVisitor extends BaseVisitor {
-
+    
     private final Collection<String> geoFields;
-
+    
     public GeoWaveQueryInfoVisitor(Collection<String> geoFields) {
         this.geoFields = geoFields;
     }
-
+    
     /**
-     * @param script Jexl node
+     * @param script
+     *            Jexl node
      * @return null if the query does not contain GeoWave terms associated with the supplied geoFields, otherwise returns GeoWaveQueryInfo which contains the
-     * highest and lowest granularity tiers for the query
+     *         highest and lowest granularity tiers for the query
      */
     public GeoWaveQueryInfo parseGeoWaveQueryInfo(JexlNode script) {
         GeoWaveQueryInfo queryInfo = new GeoWaveQueryInfo();
         script.childrenAccept(this, queryInfo);
         return queryInfo;
     }
-
+    
     @Override
     public Object visit(ASTEQNode node, Object data) {
         addTierInfo(node, data);
         return node.childrenAccept(this, data);
     }
-
+    
     @Override
     public Object visit(ASTLENode node, Object data) {
         addTierInfo(node, data);
         return node.childrenAccept(this, data);
     }
-
+    
     @Override
     public Object visit(ASTGENode node, Object data) {
         addTierInfo(node, data);
         return node.childrenAccept(this, data);
     }
-
+    
     @Override
     public Object visit(ASTLTNode node, Object data) {
         addTierInfo(node, data);
         return node.childrenAccept(this, data);
     }
-
+    
     @Override
     public Object visit(ASTGTNode node, Object data) {
         addTierInfo(node, data);
         return node.childrenAccept(this, data);
     }
-
+    
     private void addTierInfo(JexlNode node, Object data) {
         GeoWaveQueryInfo queryInfo = (GeoWaveQueryInfo) data;
-
+        
         JexlASTHelper.IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
         if (op == null)
             return;
-
+        
         final String fieldName = op.deconstructIdentifier();
-
+        
         if (op.getLiteralValue() == null)
             return;
-
+        
         String literal = op.getLiteralValue().toString();
-
+        
         // GeoWave terms are hex encoded strings, where the
         // first two characters represent the numeric tier
         if (geoFields.contains(fieldName) && literal.length() >= 2)
             queryInfo.addTier(Integer.parseInt(literal.substring(0, 2), 16));
     }
-
+    
     public static class GeoWaveQueryInfo implements Comparable<GeoWaveQueryInfo> {
         // the lowest granularity tier
         private int minTier;
-
+        
         // the highest granularity tier
         private int maxTier;
-
+        
         public GeoWaveQueryInfo() {
             this(Integer.MAX_VALUE, Integer.MIN_VALUE);
         }
-
+        
         public GeoWaveQueryInfo(int minTier, int maxTier) {
             this.minTier = minTier;
             this.maxTier = maxTier;
         }
-
+        
         public void addTier(int tier) {
             minTier = Math.min(minTier, tier);
             maxTier = Math.max(maxTier, tier);
         }
-
+        
         public int getMinTier() {
             return minTier;
         }
-
+        
         public int getMaxTier() {
             return maxTier;
         }
-
+        
         /**
          * Sort by low granularity tier first, and by high granularity tier second
          */
@@ -169,247 +170,246 @@ public class GeoWaveQueryInfoVisitor extends BaseVisitor {
             return -(this.minTier - o.minTier);
         }
     }
-
+    
     // Recurse through these nodes
     @Override
     public Object visit(ASTOrNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-
+    
     @Override
     public Object visit(ASTAndNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-
+    
     @Override
     public Object visit(ASTReference node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-
+    
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-
+    
     // Do not descend into these nodes
     @Override
     public Object visit(SimpleNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTBlock node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTAmbiguous node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTIfStatement node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTForeachStatement node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTAssignment node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTTernaryNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTBitwiseOrNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTBitwiseXorNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTBitwiseAndNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTNENode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTERNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTAdditiveNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTAdditiveOperator node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTMulNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTDivNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTModNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTUnaryMinusNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTNotNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTIdentifier node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTNullLiteral node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTTrueNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTFalseNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTIntegerLiteral node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTFloatLiteral node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTArrayLiteral node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTMapLiteral node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTMapEntry node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTEmptyFunction node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTSizeFunction node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTMethodNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTSizeMethod node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTConstructorNode node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTArrayAccess node, Object data) {
         return data;
     }
-
-
+    
     @Override
     public Object visit(ASTReturnStatement node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTVar node, Object data) {
         return data;
     }
-
+    
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
         return data;
     }
-
+    
 }
