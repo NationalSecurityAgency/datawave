@@ -444,8 +444,8 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testArbitraryNodeExpansionFailNoFlatten() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+        ASTJexlScript origQueryTree = JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
@@ -473,8 +473,8 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testArbitraryNodeExpansionFlatten() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+        ASTJexlScript origQueryTree = JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
@@ -504,9 +504,8 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testNestedExpansionWithFailures() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor
-                        .dereference(JexlASTHelper
-                                        .parseJexlQuery("UUID == 'A' && (QUOTE == 'kind' || BIRTH_DATE == '234'|| (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE =='555' )))"));
+        ASTJexlScript origQueryTree = JexlASTHelper
+                        .parseJexlQuery("UUID == 'A' && (QUOTE == 'kind' || BIRTH_DATE == '234'|| (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE =='555' )))");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
@@ -537,8 +536,8 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testExceededThresholdExpansionExternal() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+        ASTJexlScript origQueryTree = JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
@@ -585,18 +584,25 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testExceededThresholdExpansionInternal() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+        ASTJexlScript origQueryTree = JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
+        // update the generated queryTree to have an ExceededThreshold marker for BIRTH_DATE
+        JexlNode child = new ExceededValueThresholdMarkerJexlNode(origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1));
+        // unlink the old node
+        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
+        // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
+        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtAddChild(child, 1);
+        
+        // update the generated queryTree to have an ExceededThreshold marker for BIRTH_DATE
+        child = new ExceededValueThresholdMarkerJexlNode(derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(1));
+        // unlink the old node
+        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
+        // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
+        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtAddChild(child, 1);
+        
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            // update the generated queryTree to have an ExceededThreshold marker for BIRTH_DATE
-            JexlNode child = new ExceededValueThresholdMarkerJexlNode(queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1));
-            // unlink the old node
-            queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
-            // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
-            queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtAddChild(child, 1);
-            
             ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
             MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
             
@@ -631,22 +637,28 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testExceededOrThresholdExpansion() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+        ASTJexlScript origQueryTree = JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
+        // update the generated queryTree to have an ExceededOrThreshold marker for BIRTH_DATE
+        Set<String> birthdates = new HashSet<>();
+        birthdates.add("123");
+        birthdates.add("234");
+        birthdates.add("345");
+        JexlNode child = ExceededOrThresholdMarkerJexlNode.createFromValues("BIRTH_DATE", birthdates);
+        
+        // unlink the old node
+        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
+        // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
+        origQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtAddChild(child, 1);
+        
+        // unlink the old node
+        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
+        // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
+        derefQueryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtAddChild(child, 1);
+        
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
-            // update the generated queryTree to have an ExceededOrThreshold marker for BIRTH_DATE
-            Set<String> birthdates = new HashSet<>();
-            birthdates.add("123");
-            birthdates.add("234");
-            birthdates.add("345");
-            JexlNode child = ExceededOrThresholdMarkerJexlNode.createFromValues("BIRTH_DATE", birthdates);
-            // unlink the old node
-            queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtGetChild(1).jjtSetParent(null);
-            // overwrite the old BIRTH_DATE==123 with the ExceededThreshold marker
-            queryTree.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).jjtGetChild(0).jjtAddChild(child, 1);
-            
             ShardQueryConfiguration config = EasyMock.createMock(ShardQueryConfiguration.class);
             MetadataHelper helper = EasyMock.createMock(MetadataHelper.class);
             
@@ -692,9 +704,8 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testExceededOrThresholdCannotExpand() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor
-                        .dereference(JexlASTHelper
-                                        .parseJexlQuery("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))"));
+        ASTJexlScript origQueryTree = JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
@@ -713,12 +724,21 @@ public abstract class ExecutableExpansionVisitorTest {
             
             EasyMock.verify(config, helper);
             
-            // included ExceededValueThresholdMarker before
-            Assert.assertTrue(
-                            JexlStringBuildingVisitor.buildQuery(queryTree),
-                            JexlStringBuildingVisitor
-                                            .buildQuery(queryTree)
-                                            .equals("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))"));
+            if (queryTree == origQueryTree) {
+                // included ExceededValueThresholdMarker before
+                Assert.assertTrue(
+                                JexlStringBuildingVisitor.buildQuery(queryTree),
+                                JexlStringBuildingVisitor
+                                                .buildQuery(queryTree)
+                                                .equals("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))"));
+            } else {
+                // included ExceededValueThresholdMarker before
+                Assert.assertTrue(
+                                JexlStringBuildingVisitor.buildQuery(queryTree),
+                                JexlStringBuildingVisitor
+                                                .buildQuery(queryTree)
+                                                .equals("UUID == 'capone' && ((_List_ = true) && ((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))"));
+            }
             
             // starts off executable
             Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
@@ -733,8 +753,7 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testDelayed() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper.parseJexlQuery("UUID == 'capone' && (QUOTE == 'kind' || "
-                        + "((_Delayed_ = true) && BIRTH_DATE == '123'))"));
+        ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery("UUID == 'capone' && (QUOTE == 'kind' || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
@@ -775,8 +794,8 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testDelayedDoubleExpansion() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"));
+        ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery("UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || "
+                        + "((_Delayed_ = true) && BIRTH_DATE == '123'))");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
@@ -818,8 +837,7 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testSingleOr() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (QUOTE =='kind' || BIRTH_DATE == '123')"));
+        ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery("UUID == 'capone' && (QUOTE =='kind' || BIRTH_DATE == '123')");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
@@ -861,8 +879,7 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testSingleOrNonExecutableCantFix() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
-                        .parseJexlQuery("BIRTH_DATE =='123' && (filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '234')"));
+        ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery("BIRTH_DATE =='123' && (filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '234')");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
@@ -904,8 +921,8 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testNoReferenceOrReferenceExpressions() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+        ASTJexlScript origQueryTree = JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (filter:includeRegex(QUOTE,'.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
@@ -970,8 +987,8 @@ public abstract class ExecutableExpansionVisitorTest {
         
         private boolean derefExprOrs = true;
         private boolean derefExprAnds = true;
-        private boolean derefOrs = true;
-        private boolean derefAnds = true;
+        private boolean derefOrs = false;
+        private boolean derefAnds = false;
         
         private DereferencingVisitor() {
             
