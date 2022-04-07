@@ -1,7 +1,5 @@
 package datawave.webservice.query;
 
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import io.protostuff.Input;
@@ -233,9 +231,6 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
     
     protected transient HashMap<String,Parameter> paramLookup = new HashMap<String,Parameter>();
     
-    // Assume that we don't want to serialize the query execution for the current page start time.
-    protected transient long queryExecutionForCurrentPageStartTime = 0L;
-    
     public String getQueryLogicName() {
         return queryLogicName;
     }
@@ -286,11 +281,6 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         return parameters == null ? null : Collections.unmodifiableSet(parameters);
     }
     
-    @Override
-    public long getQueryExecutionForCurrentPageStartTime() {
-        return this.queryExecutionForCurrentPageStartTime;
-    }
-    
     public void setQueryLogicName(String name) {
         this.queryLogicName = name;
     }
@@ -339,11 +329,6 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
         for (Parameter p : this.parameters) {
             this.paramLookup.put(p.getParameterName(), p);
         }
-    }
-    
-    @Override
-    public void setQueryExecutionForCurrentPageStartTime(long queryExecutionForCurrentPageStartTime) {
-        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
     
     public void addParameter(String key, String val) {
@@ -838,22 +823,6 @@ public class QueryImpl extends Query implements Serializable, Message<QueryImpl>
             }
         }
         return p;
-    }
-    
-    public void populateMetric(BaseQueryMetric metric) {
-        QueryMetric qm = (QueryMetric) metric;
-        qm.setQueryType(this.getClass());
-        qm.setQueryId(this.getId().toString());
-        qm.setUser(this.getOwner());
-        qm.setUserDN(this.getUserDN());
-        qm.setQuery(this.getQuery());
-        qm.setQueryLogic(this.getQueryLogicName());
-        qm.setBeginDate(this.getBeginDate());
-        qm.setEndDate(this.getEndDate());
-        qm.setQueryAuthorizations(this.getQueryAuthorizations());
-        qm.setQueryName(this.getQueryName());
-        qm.setParameters(this.getParameters());
-        qm.setColumnVisibility(this.getColumnVisibility());
     }
     
     @Override

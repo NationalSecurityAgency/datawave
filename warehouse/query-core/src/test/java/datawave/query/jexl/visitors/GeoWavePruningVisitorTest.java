@@ -26,7 +26,7 @@ public class GeoWavePruningVisitorTest {
         
         // Add a term that should be pruned.
         String query = function + " && (GEO_FIELD == '0100' || " + indexQuery + ")";
-        String expected = function + " && (" + indexQuery + ")";
+        String expected = function + " && (false || " + indexQuery + ")";
         
         Multimap<String,String> expectedPrunedTerms = HashMultimap.create();
         expectedPrunedTerms.put("GEO_FIELD", "0100");
@@ -42,7 +42,7 @@ public class GeoWavePruningVisitorTest {
         
         // Add a wrapped term that should be pruned.
         String query = function + " && ((GEO_FIELD == '0100') || " + indexQuery + ")";
-        String expected = function + " && (" + indexQuery + ")";
+        String expected = function + " && (false || " + indexQuery + ")";
         
         Multimap<String,String> expectedPrunedTerms = HashMultimap.create();
         expectedPrunedTerms.put("GEO_FIELD", "0100");
