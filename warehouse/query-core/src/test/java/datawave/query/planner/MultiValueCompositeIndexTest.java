@@ -24,6 +24,7 @@ import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.scheduler.TestSchedulerProducer;
 import datawave.query.testframework.MockStatusReporter;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -55,6 +56,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -194,6 +196,11 @@ public class MultiValueCompositeIndexTest {
         // Test Data with 1 wkt and 2 numbers
         testData.add(new TestData(Collections.singletonList("POINT (0 0)"), Arrays.asList(11, 22)));
         
+    }
+    
+    @Before
+    public void setup() {
+        this.logic.setSchedulerProducer(new TestSchedulerProducer.Pushdown());
     }
     
     @BeforeClass

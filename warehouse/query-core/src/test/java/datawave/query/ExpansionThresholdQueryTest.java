@@ -2,6 +2,7 @@ package datawave.query;
 
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.planner.QueryPlanner;
+import datawave.query.scheduler.TestSchedulerProducer;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -12,6 +13,7 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import org.apache.log4j.Logger;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -34,6 +36,11 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
     
     private static final Logger log = Logger.getLogger(ExpansionThresholdQueryTest.class);
+    
+    @Before
+    public void setup() {
+        this.logic.setSchedulerProducer(new TestSchedulerProducer.Pushdown());
+    }
     
     @BeforeClass
     public static void filterSetup() throws Exception {

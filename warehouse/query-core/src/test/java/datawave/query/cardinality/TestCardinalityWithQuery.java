@@ -6,6 +6,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.QueryTestTableHelper;
+import datawave.query.scheduler.TestSchedulerProducer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.util.DateIndexHelperFactory;
@@ -94,6 +95,7 @@ public class TestCardinalityWithQuery {
         temporaryFolder = tempDir.newFolder().toPath();
         
         logic = new ShardQueryLogic();
+        logic.setSchedulerProducer(new TestSchedulerProducer.Pushdown());
         logic.setMarkingFunctions(new MarkingFunctions.Default());
         logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         logic.setMetadataHelperFactory(new MetadataHelperFactory());

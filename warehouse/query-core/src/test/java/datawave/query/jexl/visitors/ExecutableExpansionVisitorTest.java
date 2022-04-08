@@ -16,6 +16,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.scheduler.TestSchedulerProducer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.WiseGuysIngest;
@@ -151,6 +152,7 @@ public abstract class ExecutableExpansionVisitorTest {
         logic.setFullTableScanEnabled(false);
         logic.setMaxDepthThreshold(11);
         logic.setMaxTermThreshold(12);
+        logic.setSchedulerProducer(new TestSchedulerProducer.Pushdown());
         deserializer = new KryoDocumentDeserializer();
     }
     

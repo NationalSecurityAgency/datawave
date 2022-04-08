@@ -12,6 +12,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.ParseException;
+import datawave.query.scheduler.TestSchedulerProducer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.BaseEdgeQueryTest;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -144,6 +145,7 @@ public abstract class ValueToAttributesTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         logic.setFullTableScanEnabled(true);
+        logic.setSchedulerProducer(new TestSchedulerProducer.Pushdown());
         deserializer = new KryoDocumentDeserializer();
     }
     

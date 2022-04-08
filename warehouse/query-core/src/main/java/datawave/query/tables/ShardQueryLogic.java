@@ -33,9 +33,8 @@ import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.MetadataHelperQueryModelProvider;
 import datawave.query.planner.QueryModelProvider;
 import datawave.query.planner.QueryPlanner;
-import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
-import datawave.query.scheduler.SequentialScheduler;
+import datawave.query.scheduler.SchedulerProducer;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
@@ -168,6 +167,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     protected CloseableIterable<QueryData> queries = null;
     protected QueryModel queryModel = null;
     protected ScannerFactory scannerFactory = null;
+    protected SchedulerProducer schedulerProducer = new SchedulerProducer.Pushdown();
     protected Scheduler scheduler = null;
     protected EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer = null;
     private ShardQueryConfiguration config;
@@ -219,6 +219,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setQueryModel(other.getQueryModel());
         this.setScannerFactory(other.getScannerFactory());
         this.setScheduler(other.getScheduler());
+        this.setSchedulerProducer(other.schedulerProducer);
         this.setEventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer());
         
         log.trace("copy CTOR setting metadataHelperFactory to " + other.getMetadataHelperFactory());
@@ -994,12 +995,25 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
     }
     
-    protected Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
-        if (config.getSequentialScheduler()) {
-            return new SequentialScheduler(config, scannerFactory);
-        } else {
-            return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
-        }
+    /**
+     * Sets the {@code SchedulerProducer} type
+     * 
+     * @param schedulerProducer
+     */
+    public void setSchedulerProducer(SchedulerProducer schedulerProducer) {
+        this.schedulerProducer = schedulerProducer;
+    }
+    
+    /**
+     * uses the {@code SchedulerProducer} to supply the configured type of {@code Scheduler}
+     * 
+     * @param config
+     * @param scannerFactory
+     * @return
+     * @throws TableNotFoundException
+     */
+    protected Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) throws TableNotFoundException {
+        return schedulerProducer.getScheduler(config, scannerFactory, metadataHelperFactory);
     }
     
     public EventQueryDataDecoratorTransformer getEventQueryDataDecoratorTransformer() {
@@ -1922,14 +1936,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setLimitTermExpansionToModel(boolean shouldLimitTermExpansionToModel) {
         getConfig().setLimitTermExpansionToModel(shouldLimitTermExpansionToModel);
-    }
-    
-    public boolean getSequentialScheduler() {
-        return getConfig().getSequentialScheduler();
-    }
-    
-    public void setSequentialScheduler(boolean sequentialScheduler) {
-        getConfig().setSequentialScheduler(sequentialScheduler);
     }
     
     public boolean getParseTldUids() {

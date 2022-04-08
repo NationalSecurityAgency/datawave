@@ -18,6 +18,7 @@ import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.scheduler.TestSchedulerProducer;
 import datawave.query.tables.CountingShardQueryLogic;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.testframework.QueryLogicTestHarness.DocumentChecker;
@@ -178,6 +179,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         this.logic.setLogTimingDetails(true);
         this.logic.setMinimumSelectivity(0.03D);
         this.logic.setMaxIndexScanTimeMillis(5000);
+        this.logic.setSchedulerProducer(new TestSchedulerProducer.Pushdown());
         
         // count logic
         countLogic.setIncludeDataTypeAsField(true);
@@ -188,6 +190,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         countLogic.setMetadataHelperFactory(new MetadataHelperFactory());
         countLogic.setQueryPlanner(new DefaultQueryPlanner());
         countLogic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        countLogic.setSchedulerProducer(new TestSchedulerProducer.Pushdown());
         
         QueryTestTableHelper.configureLogicToScanTables(countLogic);
         

@@ -14,6 +14,7 @@ import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.scheduler.TestSchedulerProducer;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor;
@@ -152,6 +153,11 @@ public class GeoSortedQueryDataTest {
                         .addAsManifestResource(
                                         new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
                                                         + "</alternatives>"), "beans.xml");
+    }
+    
+    @Before
+    public void setup() {
+        this.logic.setSchedulerProducer(new TestSchedulerProducer.Pushdown());
     }
     
     @BeforeClass
