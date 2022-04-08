@@ -63,9 +63,20 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Prune #IS_NOT_NULL functions that share a field with a positive inclusive node
+ * This visitor prunes unnecessary 'is not null' functions from the query tree.
  * <p>
- * Assumes the tree is flattened
+ * Lucene instances take the form <code>filter:isNotNull(field)</code> or <code>filter:not(isNull(field))</code> and are rewritten into Jexl to look like
+ * <code>!(FIELD == null)</code>.
+ * <p>
+ * An example of an unnecessary 'is not null' function is the query <code>!(FOO == null) && FOO == 'bar'</code>. By definition, this query will only match
+ * documents where FOO is not null. Thus, we can safely prune out the 'is not null' term.
+ * <p>
+ * In addition to reducing the number of nodes in the query, this pruning also stop negations from pushing into large subtrees. For example,
+ * <p>
+ * <code>!(FOO == null) && FOO == 'bar' && (F1 == 'v1' || F2 == 'v2' ... Fn == 'vn')</code>
+ * </p>
+ * In this case the two 'FOO' terms would be distributed into each component of the union, increasing the query node count considerably. Pruning the negated
+ * term prevents this.
  */
 public class IsNotNullPruningVisitor extends BaseVisitor {
     
@@ -280,7 +291,6 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
-        node.childrenAccept(this, data);
         return data;
     }
     
