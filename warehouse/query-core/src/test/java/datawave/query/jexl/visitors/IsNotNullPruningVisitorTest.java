@@ -52,6 +52,9 @@ public class IsNotNullPruningVisitorTest {
         
         query = "!(FOO == null) && !(FOO2 == null)"; // intersection of different IsNotNull terms
         test(query, query);
+        
+        query = "!(FOO == null) && (FOO == 'bar' || FOO2 == 'baz')";
+        test(query, query);
     }
     
     // code that handles producing a flattened query tree with respect to wrapped single terms

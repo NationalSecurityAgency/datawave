@@ -254,28 +254,17 @@ public class JexlNodes {
     }
     
     /**
-     * Ascends the Jexl tree searching for a negation. Search defaults to four nodes
+     * Ascends the entire Jexl tree searching for a negation. In the case of an unflattened tree this may be an expensive operation
      *
      * @param node
-     * @return
+     *            an arbitrary JexlNode
+     * @return true if an ASTNotNode exists in this node's ancestry
      */
     public static boolean isNodeNegated(JexlNode node) {
-        return isNodeNegated(node, 4);
-    }
-    
-    /**
-     * Ascends the JexlTree searching for negations according to the specified maximum number of
-     *
-     * @param node
-     * @return
-     */
-    public static boolean isNodeNegated(JexlNode node, int max) {
-        int count = 0;
-        while (count < max && node.jjtGetParent() != null) {
-            count++;
+        while (node.jjtGetParent() != null) {
+            node = node.jjtGetParent();
             if (node instanceof ASTNotNode)
                 return true;
-            node = node.jjtGetParent();
         }
         return false;
     }
