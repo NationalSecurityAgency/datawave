@@ -85,7 +85,7 @@ Query flow:
 |Yes|HudBean|/Query/queryhud|Drop| | |As far as I know, this is not used.  Seems droppable to me.|
 |Yes|QueryMetricsBean|/Query/Metrics|Keep|QueryMetricOperations|Query Metric Service|Just need to add a route in HAProxy for this.|
 |No|BasicQueryBean|/BasicQuery|Shelve| | |Query wizard stuff.  Do we need this?  Does anyone use this?|
-|No|IdTranslatorBean|/Query|Keep|?|?|JWO - Similar implementation to UUID lookup. |
+|Yes|IdTranslatorBean|/Query|Keep|QueryController|Query Service| |
 |No|MapReduceBean|/MapReduce|?|?|?|Might still be needed?  Query Microservices might work as a substitute.  |
 |No|MapReduceStatusUpdateBean|/MapReduceStatus|?|?|?|Looks like this is a callback handler for BulkResults jobs which updates the internal state of the job.  Is this still needed?|
 |Yes|CredentialsCacheBean|/Security/Admin/Credentials|Keep|AuthorizationOperations|Authorization Service|Add remote auth profile and add a route in HAProxy.  The listAccumuloAuths and reloadAccumuloAuths endpoints will probably be left behind.  |
