@@ -1273,12 +1273,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setShardsPerDayThreshold(shardsPerDayThreshold);
     }
     
-    public int getMaxTermThreshold() {
-        return getConfig().getMaxTermThreshold();
+    public int getInitialMaxTermThreshold() {
+        return getConfig().getInitialMaxTermThreshold();
     }
     
-    public void setMaxTermThreshold(int maxTermThreshold) {
-        getConfig().setMaxTermThreshold(maxTermThreshold);
+    public void setInitialMaxTermThreshold(int initialMaxTermThreshold) {
+        getConfig().setInitialMaxTermThreshold(initialMaxTermThreshold);
+    }
+    
+    public int getFinalMaxTermThreshold() {
+        return getConfig().getFinalMaxTermThreshold();
+    }
+    
+    public void setFinalMaxTermThreshold(int finalMaxTermThreshold) {
+        getConfig().setFinalMaxTermThreshold(finalMaxTermThreshold);
     }
     
     public int getMaxDepthThreshold() {
