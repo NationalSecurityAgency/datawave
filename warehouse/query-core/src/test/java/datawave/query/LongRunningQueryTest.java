@@ -8,6 +8,7 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.VisibilityWiseGuysIngest;
+import datawave.query.util.WiseGuysIngest;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
@@ -72,6 +73,64 @@ public class LongRunningQueryTest {
         PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
     
+    @Test
+    public void testLongRunningUniqueQuery() throws Exception {
+        // this is data specific for testing the unique query (because we already know what we should expect for this
+        // query/dataset from #UniqueTest
+        WiseGuysIngest.writeItAll(connector, WiseGuysIngest.WhatKindaRange.DOCUMENT);
+        Authorizations auths = new Authorizations("ALL");
+        PrintUtility.printTable(connector, auths, TableName.SHARD);
+        PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("unique.fields", "$DEATH_DATE,BIRTH_DATE");
+        
+        String queryStr = "UUID =~ '^[CS].*'";
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        QueryImpl query = new QueryImpl();
+        query.setQuery(queryStr);
+        query.setBeginDate(startDate);
+        query.setEndDate(endDate);
+        query.setQueryAuthorizations(auths.serialize());
+        query.setColumnVisibility("A&E&I");
+        query.setPagesize(Integer.MAX_VALUE);
+        query.setParameters(extraParameters);
+        query.setId(UUID.randomUUID());
+        
+        ShardQueryLogic logic = new ShardQueryLogic();
+        logic.setIncludeGroupingContext(true);
+        logic.setIncludeDataTypeAsField(true);
+        logic.setMarkingFunctions(new MarkingFunctions.Default());
+        logic.setMetadataHelperFactory(new MetadataHelperFactory());
+        logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
+        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        logic.setQueryExecutionForPageTimeout(200);
+        
+        GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
+        logic.setupQuery(config);
+        
+        RunningQuery runningQuery = new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal,
+                        new QueryMetricFactoryImpl());
+        List<ResultsPage> pages = new ArrayList<>();
+        
+        ResultsPage page = runningQuery.next();
+        pages.add(page);
+        
+        Thread.sleep(250);
+        
+//        while (page.getStatus() != ResultsPage.Status.COMPLETE) {
+//            page = runningQuery.next();
+//            pages.add(page);
+//        }
+        
+        // Set<Set<String>> expected = new HashSet<>();
+        // expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
+    }
+    
     /**
      * A groupBy query is one type of query that is allowed to be "long running", so that type of query is used in this test.
      *
@@ -82,7 +141,7 @@ public class LongRunningQueryTest {
      * @throws Exception
      */
     @Test
-    public void testAllowLongRunningQueryWithShardQueryLogic() throws Exception {
+    public void testAllowLongRunningGroupByQuery() throws Exception {
         
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("group.fields", "AGE,$GENDER");

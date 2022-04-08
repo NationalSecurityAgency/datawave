@@ -472,7 +472,7 @@ public abstract class GroupingTest {
             }
         }
     }
-
+    
     @Test
     public void testGroupingUsingFunction() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();

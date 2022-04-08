@@ -505,7 +505,8 @@ public class UniqueTransformTest {
     private List<Document> getUniqueDocuments(List<Document> documents) {
         Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
         TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
-        UniqueTransform uniqueTransform = new UniqueTransform(uniqueFields);
+        UniqueTransform uniqueTransform = new UniqueTransform(null, uniqueFields, 300000000000000L);
+        uniqueTransform.setQueryExecutionForPageStartTime(System.currentTimeMillis());
         Iterator<Map.Entry<Key,Document>> resultIterator = Iterators.transform(inputIterator, uniqueTransform);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultIterator, Spliterator.ORDERED), false).filter(Objects::nonNull)
                         .map(Map.Entry::getValue).collect(Collectors.toList());

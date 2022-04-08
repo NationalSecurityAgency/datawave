@@ -619,7 +619,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 if (alreadyExists != null) {
                     ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
                 } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(getQueryModel(), getConfig().getUniqueFields()));
+                    ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(getQueryModel(), getConfig().getUniqueFields(), this
+                                    .getQueryExecutionForPageTimeout()));
                 }
             }
             
@@ -636,6 +637,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (getQueryModel() != null) {
             ((DocumentTransformer) this.transformerInstance).setQm(getQueryModel());
         }
+    }
+    
+    // @Override
+    public void setPageProcessingStartTime(long pageProcessingStartTime) {
+        getTransformer(getSettings()).setQueryExecutionForPageStartTime(pageProcessingStartTime);
     }
     
     protected void loadQueryParameters(ShardQueryConfiguration config, Query settings) throws QueryException {

@@ -35,6 +35,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected Iterator<T> iterator = (Iterator<T>) Collections.emptyList().iterator();
     private int maxPageSize = 0;
     private long pageByteTrigger = 0;
+    private long pageProcessingStartTime = 0;
     
     private boolean collectQueryMetrics = true;
     private String _connPoolName;
@@ -345,5 +346,10 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     @Override
     public Map<String,Long> getDnResultLimits() {
         return dnResultLimits;
+    }
+    
+    @Override
+    public void setPageProcessingStartTime(long pageProcessingStartTime) {
+        // no op
     }
 }

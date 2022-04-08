@@ -1,6 +1,7 @@
 package datawave.query.transformer;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.hash.BloomFilter;
 import datawave.query.attributes.Document;
@@ -23,16 +24,22 @@ import java.util.Map.Entry;
 public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform {
     
     private static final Logger log = Logger.getLogger(UniqueTransform.class);
-
+    
     private UniqueUtil uniqueUtil = new UniqueUtil();
     private BloomFilter<byte[]> bloom;
     private UniqueFields uniqueFields;
     private Multimap<String,String> modelMapping;
     
+    /**
+     * how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client (which indicates the request is
+     * still in process and all results will be returned at once at the end)
+     */
+    private final long queryExecutionForPageTimeout;
+    
     public UniqueTransform(UniqueFields uniqueFields) {
-        this(null, uniqueFields);
+        this(null, uniqueFields, 0L);
     }
-
+    
     /**
      * Create a new {@link UniqueTransform} that will capture the reverse field mapping defined within the model being used by the logic (if present).
      * 
@@ -41,7 +48,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * @param uniqueFields
      *            the set of fields to find unique values for
      */
-    public UniqueTransform(QueryModel model, UniqueFields uniqueFields) {
+    public UniqueTransform(QueryModel model, UniqueFields uniqueFields, long queryExecutionForPageTimeout) {
+        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         updateConfig(uniqueFields, model);
     }
     
@@ -70,6 +78,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     @Nullable
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
+        long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
+        if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
+            Document intermediateResult = new Document();
+            intermediateResult.setIsIntermediateResult(true);
+            return Maps.immutableEntry(new Key(), intermediateResult);
+        }
+        
         if (keyDocumentEntry != null) {
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
                 return keyDocumentEntry;
