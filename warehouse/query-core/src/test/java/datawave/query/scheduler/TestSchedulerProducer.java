@@ -21,7 +21,7 @@ public abstract class TestSchedulerProducer extends SchedulerProducer {
         public Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metadataHelperFactory) {
             
             PushdownScheduler scheduler = new PushdownScheduler(config, scannerFactory, metadataHelperFactory);
-            scheduler.setTableId(config.getIndexTableName());
+            scheduler.setTableId(config.getTableName());
             scheduler.setTabletLocator(new InMemoryTabletLocator());
             return scheduler;
         }
