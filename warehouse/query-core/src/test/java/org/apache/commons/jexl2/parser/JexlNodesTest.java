@@ -20,11 +20,11 @@ public class JexlNodesTest {
         JexlNode textNode = intersection.jjtGetChild(1);
         JexlNode ageNode = union.jjtGetChild(1);
         
-        assertFalse(JexlNodes.isNodeNegated(union));
-        assertFalse(JexlNodes.isNodeNegated(intersection));
-        assertFalse(JexlNodes.isNodeNegated(fooNode));
-        assertFalse(JexlNodes.isNodeNegated(textNode));
-        assertFalse(JexlNodes.isNodeNegated(ageNode));
+        assertFalse(JexlNodes.findNegatedParent(union));
+        assertFalse(JexlNodes.findNegatedParent(intersection));
+        assertFalse(JexlNodes.findNegatedParent(fooNode));
+        assertFalse(JexlNodes.findNegatedParent(textNode));
+        assertFalse(JexlNodes.findNegatedParent(ageNode));
     }
     
     @Test
@@ -38,11 +38,11 @@ public class JexlNodesTest {
         JexlNode textNode = intersection.jjtGetChild(1);
         JexlNode ageNode = union.jjtGetChild(1);
         
-        assertTrue(JexlNodes.isNodeNegated(union));
-        assertTrue(JexlNodes.isNodeNegated(intersection));
-        assertTrue(JexlNodes.isNodeNegated(fooNode));
-        assertTrue(JexlNodes.isNodeNegated(textNode));
-        assertTrue(JexlNodes.isNodeNegated(ageNode));
+        assertTrue(JexlNodes.findNegatedParent(union));
+        assertTrue(JexlNodes.findNegatedParent(intersection));
+        assertTrue(JexlNodes.findNegatedParent(fooNode));
+        assertTrue(JexlNodes.findNegatedParent(textNode));
+        assertTrue(JexlNodes.findNegatedParent(ageNode));
     }
     
     @Test
@@ -56,10 +56,10 @@ public class JexlNodesTest {
         JexlNode textNode = intersection.jjtGetChild(1);
         JexlNode ageNode = union.jjtGetChild(1);
         
-        assertFalse(JexlNodes.isNodeNegated(union));
-        assertTrue(JexlNodes.isNodeNegated(intersection));
-        assertTrue(JexlNodes.isNodeNegated(fooNode));
-        assertTrue(JexlNodes.isNodeNegated(textNode));
-        assertFalse(JexlNodes.isNodeNegated(ageNode));
+        assertFalse(JexlNodes.findNegatedParent(union));
+        assertTrue(JexlNodes.findNegatedParent(intersection));
+        assertTrue(JexlNodes.findNegatedParent(fooNode));
+        assertTrue(JexlNodes.findNegatedParent(textNode));
+        assertFalse(JexlNodes.findNegatedParent(ageNode));
     }
 }

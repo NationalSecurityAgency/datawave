@@ -260,7 +260,7 @@ public class JexlNodes {
      *            an arbitrary JexlNode
      * @return true if an ASTNotNode exists in this node's ancestry
      */
-    public static boolean isNodeNegated(JexlNode node) {
+    public static boolean findNegatedParent(JexlNode node) {
         while (node.jjtGetParent() != null) {
             node = node.jjtGetParent();
             if (node instanceof ASTNotNode)
