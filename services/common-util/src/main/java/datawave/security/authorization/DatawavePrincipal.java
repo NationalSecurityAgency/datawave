@@ -1,7 +1,7 @@
 package datawave.security.authorization;
 
 import datawave.security.authorization.DatawaveUser.UserType;
-import datawave.security.util.DnUtils;
+import datawave.security.util.ProxiedEntityUtils;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -138,7 +138,7 @@ public class DatawavePrincipal implements Principal, Serializable {
     }
     
     public String getShortName() {
-        return DnUtils.getShortName(getPrimaryUser().getName());
+        return ProxiedEntityUtils.getShortName(getPrimaryUser().getName());
     }
     
     public SubjectIssuerDNPair getUserDN() {

@@ -20,3 +20,9 @@ spring:
 logging:
   level:
     datawave.microservice.authorization: DEBUG
+
+datawave:
+  security:
+    util:
+      subjectDnPattern: "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)"
+      npeOuList: "EXAMPLE_SERVER_OU1,EXAMPLE_SERVER_OU2"
