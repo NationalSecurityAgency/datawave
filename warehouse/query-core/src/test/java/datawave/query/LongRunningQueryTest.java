@@ -193,7 +193,7 @@ public class LongRunningQueryTest {
         pages.add(page);
         
         // guarantee the need for at least a second page.
-        Thread.sleep(20);
+        Thread.sleep(5);
         
         while (page.getStatus() != ResultsPage.Status.NONE) {
             page = runningQuery.next();
