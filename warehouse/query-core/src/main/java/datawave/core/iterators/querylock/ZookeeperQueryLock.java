@@ -1,6 +1,7 @@
 package datawave.core.iterators.querylock;
 
 import java.io.File;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -15,6 +16,7 @@ import org.apache.curator.framework.recipes.atomic.PromotedToLock;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.server.quorum.MultipleAddresses;
 import org.apache.zookeeper.server.quorum.QuorumPeer.QuorumServer;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
@@ -50,7 +52,14 @@ public class ZookeeperQueryLock implements QueryLock {
                     if (builder.length() > 0) {
                         builder.append(',');
                     }
-                    builder.append(server.addr.getHostName()).append(':').append(zooConfig.getClientPortAddress().getPort());
+                    StringBuilder addrBuilder = new StringBuilder();
+                    for (InetSocketAddress addr : server.addr.getAllAddresses()) {
+                        if (addrBuilder.length() > 0) {
+                            addrBuilder.append(',');
+                        }
+                        addrBuilder.append(addr.getHostName()).append(':').append(zooConfig.getClientPortAddress().getPort());
+                    }
+                    builder.append(addrBuilder);
                 }
                 if (builder.length() == 0) {
                     builder.append(zooConfig.getClientPortAddress().getHostName()).append(':').append(zooConfig.getClientPortAddress().getPort());
