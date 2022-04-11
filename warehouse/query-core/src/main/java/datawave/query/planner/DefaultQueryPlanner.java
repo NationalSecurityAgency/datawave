@@ -623,7 +623,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * @param config
      */
     public static void validateQuerySize(String lastOperation, final JexlNode queryTree, ShardQueryConfiguration config) {
-        validateQuerySize(lastOperation, queryTree, config, true);
+        validateQuerySize(lastOperation, queryTree, config.getMaxDepthThreshold(), config.getInitialMaxTermThreshold(), config.getTimers());
+    }
+    
+    public static void validateQuerySize(String lastOperation, final JexlNode queryTree, int maxDepthThreshold, int maxTermThreshold) {
+        validateQuerySize(lastOperation, queryTree, maxDepthThreshold, maxTermThreshold, null);
     }
     
     /**
@@ -631,34 +635,34 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      *
      * @param lastOperation
      * @param queryTree
-     * @param config
-     * @param timed
+     * @param maxDepthThreshold
+     * @param maxTermThreshold
+     * @param timers
      */
-    public static void validateQuerySize(String lastOperation, final JexlNode queryTree, ShardQueryConfiguration config, boolean timed) {
+    public static void validateQuerySize(String lastOperation, final JexlNode queryTree, int maxDepthThreshold, int maxTermThreshold, QueryStopwatch timers) {
         TraceStopwatch stopwatch = null;
         
-        if (timed) {
-            final QueryStopwatch timers = config.getTimers();
+        if (timers != null) {
             stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Validate against term and depth thresholds");
         }
         
         // check the query depth (up to config.getMaxDepthThreshold() + 1)
-        int depth = DepthVisitor.getDepth(queryTree, config.getMaxDepthThreshold());
-        if (depth > config.getMaxDepthThreshold()) {
+        int depth = DepthVisitor.getDepth(queryTree, maxDepthThreshold);
+        if (depth > maxDepthThreshold) {
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_THRESHOLD_EXCEEDED, MessageFormat.format(
-                            "{0} > {1}, last operation: {2}", depth, config.getMaxDepthThreshold(), lastOperation));
+                            "{0} > {1}, last operation: {2}", depth, maxDepthThreshold, lastOperation));
             throw new DatawaveFatalQueryException(qe);
         }
         
         // count the terms
         int termCount = TermCountingVisitor.countTerms(queryTree);
-        if (termCount > config.getMaxTermThreshold()) {
+        if (termCount > maxTermThreshold) {
             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TERM_THRESHOLD_EXCEEDED, MessageFormat.format(
-                            "{0} > {1}, last operation: {2}", termCount, config.getMaxTermThreshold(), lastOperation));
+                            "{0} > {1}, last operation: {2}", termCount, maxTermThreshold, lastOperation));
             throw new DatawaveFatalQueryException(qe);
         }
         
-        if (timed) {
+        if (stopwatch != null) {
             stopwatch.stop();
         }
     }
