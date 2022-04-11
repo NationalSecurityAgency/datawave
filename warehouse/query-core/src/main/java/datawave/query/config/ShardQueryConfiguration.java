@@ -295,7 +295,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private ReturnType returnType = DocumentSerialization.DEFAULT_RETURN_TYPE;
     private int eventPerDayThreshold = 10000;
     private int shardsPerDayThreshold = 10;
-    private int maxTermThreshold = 2500;
+    private int initialMaxTermThreshold = 2500;
+    private int finalMaxTermThreshold = 2500;
     private int maxDepthThreshold = 2500;
     private boolean expandFields = true;
     private int maxUnfieldedExpansionThreshold = 500;
@@ -504,7 +505,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setReturnType(other.getReturnType());
         this.setEventPerDayThreshold(other.getEventPerDayThreshold());
         this.setShardsPerDayThreshold(other.getShardsPerDayThreshold());
-        this.setMaxTermThreshold(other.getMaxTermThreshold());
+        this.setInitialMaxTermThreshold(other.getInitialMaxTermThreshold());
+        this.setFinalMaxTermThreshold(other.getFinalMaxTermThreshold());
         this.setMaxDepthThreshold(other.getMaxDepthThreshold());
         this.setMaxUnfieldedExpansionThreshold(other.getMaxUnfieldedExpansionThreshold());
         this.setExpandFields(other.isExpandFields());
@@ -1098,12 +1100,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.shardsPerDayThreshold = shardsPerDayThreshold;
     }
     
-    public int getMaxTermThreshold() {
-        return maxTermThreshold;
+    public int getInitialMaxTermThreshold() {
+        return initialMaxTermThreshold;
     }
     
-    public void setMaxTermThreshold(int maxTermThreshold) {
-        this.maxTermThreshold = maxTermThreshold;
+    public void setInitialMaxTermThreshold(int initialMaxTermThreshold) {
+        this.initialMaxTermThreshold = initialMaxTermThreshold;
+    }
+    
+    public int getFinalMaxTermThreshold() {
+        return finalMaxTermThreshold;
+    }
+    
+    public void setFinalMaxTermThreshold(int finalMaxTermThreshold) {
+        this.finalMaxTermThreshold = finalMaxTermThreshold;
     }
     
     public int getMaxDepthThreshold() {
