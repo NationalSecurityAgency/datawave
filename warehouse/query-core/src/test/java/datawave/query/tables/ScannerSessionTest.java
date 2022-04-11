@@ -16,6 +16,8 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
+import org.apache.accumulo.minicluster.MiniAccumuloConfig;
+import org.apache.curator.test.TestingServer;
 import org.apache.hadoop.io.Text;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -25,6 +27,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -50,13 +53,15 @@ public class ScannerSessionTest {
     private static MiniAccumuloCluster instance;
     private static AccumuloClient client;
     private static ResourceQueue resourceQueue;
-    
+
     @BeforeClass
-    public static void setupClass() throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException, IOException,
-                    InterruptedException {
-        instance = new MiniAccumuloCluster(temporaryFolder.newFolder(), PASSWORD);
+    public static void setupClass() throws Exception {
+        File clusterDir = temporaryFolder.newFolder();
+        MiniAccumuloConfig config = new MiniAccumuloConfig(clusterDir, PASSWORD);
+        TestingServer zookeeper = new TestingServer();
+        instance = new MiniAccumuloCluster(config.setExistingZooKeepers(zookeeper.getConnectString()));
         instance.start();
-        
+
         client = instance.createAccumuloClient("root", new PasswordToken(PASSWORD));
         
         setupTable();
