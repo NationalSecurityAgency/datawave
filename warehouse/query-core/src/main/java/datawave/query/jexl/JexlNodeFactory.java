@@ -1,5 +1,6 @@
 package datawave.query.jexl;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -48,6 +49,7 @@ import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -1672,61 +1674,63 @@ public class JexlNodeFactory {
     }
     
     /**
-     * Create an assignment node
+     * Create an assignment node wth the given field name and value.
      * 
-     * @param name
-     * @param value
+     * @param name the field name
+     * @param value the value
      * @return the assignment node
+     * @throws IllegalArgumentException if the name is blank
      */
     public static ASTAssignment createAssignment(String name, boolean value) {
-        ASTAssignment assignNode = new ASTAssignment(ParserTreeConstants.JJTASSIGNMENT);
-        
-        ASTReference refNode2 = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        refNode2.jjtSetParent(assignNode);
-        assignNode.jjtAddChild(refNode2, 0);
-        
-        ASTIdentifier idNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
-        idNode.image = name;
-        idNode.jjtSetParent(refNode2);
-        refNode2.jjtAddChild(idNode, 0);
-        
+        JexlNode valueNode;
         if (value) {
-            ASTTrueNode trueNode = new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
-            trueNode.jjtSetParent(assignNode);
-            assignNode.jjtAddChild(trueNode, 1);
+            valueNode = new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
         } else {
-            ASTFalseNode falseNode = new ASTFalseNode(ParserTreeConstants.JJTFALSENODE);
-            falseNode.jjtSetParent(assignNode);
-            assignNode.jjtAddChild(falseNode, 1);
+            valueNode = new ASTFalseNode(ParserTreeConstants.JJTFALSENODE);
         }
-        
-        return assignNode;
+        return createAssignment(name, valueNode);
     }
     
     /**
-     * Create an assignment node
+     * Create an assignment node with the given field name and value.
      * 
-     * @param name
-     * @param value
+     * @param name the field name
+     * @param value the value
      * @return the assignment node
+     * @throws IllegalArgumentException if the name is blank
+     * @throws NullPointerException if the value is null
      */
     public static ASTAssignment createAssignment(String name, String value) {
-        ASTAssignment assignNode = new ASTAssignment(ParserTreeConstants.JJTASSIGNMENT);
+        Preconditions.checkNotNull(value, "value string must not be null");
         
-        ASTReference refNode2 = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        refNode2.jjtSetParent(assignNode);
-        assignNode.jjtAddChild(refNode2, 0);
+        ASTStringLiteral valueNode = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
+        valueNode.image = value;
+        return createAssignment(name, valueNode);
+    }
+    
+    /**
+     * Create and return a new assignment node with the given field name and value.
+     * @param name the field name
+     * @param value the value node
+     * @return the assignment node
+     */
+    private static ASTAssignment createAssignment(String name, JexlNode value) {
+        Preconditions.checkArgument(StringUtils.isNotBlank(name), "field name must not be blank");
+        
+        ASTAssignment assignNode = new ASTAssignment(ParserTreeConstants.JJTASSIGNMENT);
+    
+        ASTReference refNode = new ASTReference(ParserTreeConstants.JJTREFERENCE);
+        refNode.jjtSetParent(assignNode);
+        assignNode.jjtAddChild(refNode, 0);
         
         ASTIdentifier idNode = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
         idNode.image = name;
-        idNode.jjtSetParent(refNode2);
-        refNode2.jjtAddChild(idNode, 0);
-        
-        ASTStringLiteral literalNode = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
-        literalNode.jjtSetParent(assignNode);
-        literalNode.image = value;
-        assignNode.jjtAddChild(literalNode, 1);
-        
+        idNode.jjtSetParent(refNode);
+        refNode.jjtAddChild(idNode, 0);
+    
+        value.jjtSetParent(assignNode);
+        assignNode.jjtAddChild(value, 1);
+    
         return assignNode;
     }
 }
