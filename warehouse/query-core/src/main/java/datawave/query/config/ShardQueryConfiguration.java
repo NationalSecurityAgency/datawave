@@ -377,6 +377,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public ExcerptFields excerptFields = new ExcerptFields();
     
     /**
+     * The max execution time per page of results - after it has elapsed, an intermediate result page will be returned.
+     */
+    private long queryExecutionForPageTimeout = 3000000L;
+    
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -560,6 +565,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
+        this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
     }
     
     /**
@@ -2242,5 +2248,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
             excerptFields.deconstructFields();
         }
         this.excerptFields = excerptFields;
+    }
+    
+    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
+        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
+    }
+    
+    public long getQueryExecutionForPageTimeout() {
+        return this.queryExecutionForPageTimeout;
     }
 }
