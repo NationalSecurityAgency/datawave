@@ -241,6 +241,7 @@
         <property name="statsdPort" value="8125" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
         <property name="evaluationOnlyFields" value="${evaluation.only.fields}" />
+        <property name="lazySetMechanismEnabled" value="false" />
     </bean>
 
     <util:list id="IvaratorCacheDirConfigs">
