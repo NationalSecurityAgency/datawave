@@ -1656,22 +1656,19 @@ public class JexlNodeFactory {
         Preconditions.checkNotNull(childContainer, "child container must not be null");
         Preconditions.checkNotNull(wrappingContainer, "wrapping container must not be null");
     
-        PrintingVisitor.printQuery(childContainer);
-        
-        ASTReference ref = new ASTReference(ParserTreeConstants.JJTREFERENCE);
         ASTReferenceExpression exp = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
-        
+    
         for (int i = 0; i < childContainer.jjtGetNumChildren(); i++) {
             JexlNode child = childContainer.jjtGetChild(i);
             child.jjtSetParent(exp);
             exp.jjtAddChild(child, i);
         }
-        
-        exp.jjtSetParent(ref);
+    
+        ASTReference ref = new ASTReference(ParserTreeConstants.JJTREFERENCE);
         ref.jjtAddChild(exp, 0);
+        exp.jjtSetParent(ref);
         
         JexlNode newWrapper = shallowCopy(wrappingContainer);
-        
         ref.jjtSetParent(newWrapper);
         newWrapper.jjtAddChild(ref, 0);
         

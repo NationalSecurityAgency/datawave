@@ -169,8 +169,6 @@ public class JexlNodeFactoryTest {
     
             JexlNode node = JexlNodeFactory.createExpression(childContainer, wrappingContainer);
     
-            PrintingVisitor.printQuery(node);
-            
             // @formatter:off
             JexlNodeAssert refExpressionAssert = JexlNodeAssert.assertThat(node)
                             .isInstanceOf(ASTAndNode.class)
