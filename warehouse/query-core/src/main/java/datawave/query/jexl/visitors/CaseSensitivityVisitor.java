@@ -9,10 +9,15 @@ import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTMethodNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
@@ -134,6 +139,31 @@ public class CaseSensitivityVisitor extends ShortCircuitBaseVisitor {
     // Do not descend through these nodes
     @Override
     public Object visit(ASTNotNode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTLTNode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTGTNode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTLENode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTGENode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTNRNode node, Object data) {
         return data;
     }
     

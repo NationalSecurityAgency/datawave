@@ -16,19 +16,14 @@ import org.apache.commons.jexl2.parser.ASTEmptyFunction;
 import org.apache.commons.jexl2.parser.ASTFalseNode;
 import org.apache.commons.jexl2.parser.ASTFloatLiteral;
 import org.apache.commons.jexl2.parser.ASTForeachStatement;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTIfStatement;
 import org.apache.commons.jexl2.parser.ASTIntegerLiteral;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTMapEntry;
 import org.apache.commons.jexl2.parser.ASTMapLiteral;
 import org.apache.commons.jexl2.parser.ASTMethodNode;
 import org.apache.commons.jexl2.parser.ASTModNode;
 import org.apache.commons.jexl2.parser.ASTMulNode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTNullLiteral;
 import org.apache.commons.jexl2.parser.ASTNumberLiteral;
 import org.apache.commons.jexl2.parser.ASTReturnStatement;
@@ -90,31 +85,6 @@ public class ShortCircuitBaseVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTBitwiseAndNode node, Object data) {
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTLTNode node, Object data) {
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTGTNode node, Object data) {
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTLENode node, Object data) {
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTGENode node, Object data) {
-        return data;
-    }
-
-    @Override
-    public Object visit(ASTNRNode node, Object data) {
         return data;
     }
 
