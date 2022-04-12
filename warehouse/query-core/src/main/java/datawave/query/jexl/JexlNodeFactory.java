@@ -5,6 +5,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.query.Constants;
+import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.lookups.IndexLookupMap;
@@ -1612,12 +1613,15 @@ public class JexlNodeFactory {
     }
     
     /**
-     * Creates a reference expression fro a child node
+     * Creates a reference expression for a given child.
      * 
-     * @param child
-     * @return
+     * @param child the child node
+     * @return the resulting expression node
+     * @throws NullPointerException if the child is null
      */
     public static JexlNode createExpression(JexlNode child) {
+        Preconditions.checkNotNull(child, "child must not be null");
+        
         if (child instanceof ASTReference && child.jjtGetChild(0) instanceof ASTReferenceExpression) {
             return child;
         }
@@ -1642,23 +1646,25 @@ public class JexlNodeFactory {
     }
     
     /**
-     * Creates a reference expression fro a child node
+     * Creates a reference expression for a child node.
      * 
      * @param childContainer
      * @param wrappingContainer
      * @return
      */
     public static JexlNode createExpression(JexlNode childContainer, JexlNode wrappingContainer) {
+        Preconditions.checkNotNull(childContainer, "child container must not be null");
+        Preconditions.checkNotNull(wrappingContainer, "wrapping container must not be null");
+    
+        PrintingVisitor.printQuery(childContainer);
         
         ASTReference ref = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        
         ASTReferenceExpression exp = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
         
         for (int i = 0; i < childContainer.jjtGetNumChildren(); i++) {
             JexlNode child = childContainer.jjtGetChild(i);
-            child.jjtSetParent(ref);
+            child.jjtSetParent(exp);
             exp.jjtAddChild(child, i);
-            i++;
         }
         
         exp.jjtSetParent(ref);
@@ -1667,7 +1673,6 @@ public class JexlNodeFactory {
         JexlNode newWrapper = shallowCopy(wrappingContainer);
         
         ref.jjtSetParent(newWrapper);
-        
         newWrapper.jjtAddChild(ref, 0);
         
         return newWrapper;

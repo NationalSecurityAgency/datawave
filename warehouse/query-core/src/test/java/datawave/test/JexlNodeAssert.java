@@ -150,7 +150,7 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
      * 
      * @return the new {@link JexlNodeAssert} for the parent
      */
-    public JexlNodeAssert parent() {
+    public JexlNodeAssert assertParent() {
         isNotNull();
         return assertThat(actual.jjtGetParent());
     }
@@ -189,7 +189,7 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
      *            the child
      * @return the new {@link JexlNodeAssert} for the child
      */
-    public JexlNodeAssert child(int child) {
+    public JexlNodeAssert assertChild(int child) {
         isNotNull();
         return assertThat(actual.jjtGetChild(child));
     }
