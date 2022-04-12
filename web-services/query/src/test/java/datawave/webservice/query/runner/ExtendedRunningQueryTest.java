@@ -22,6 +22,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.functors.NOPTransformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
+import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -272,7 +273,12 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
+<<<<<<< HEAD
         this.queryLogic.setPageProcessingStartTime(anyLong());
+=======
+        expect(this.queryLogic.getTransformer(this.query)).andReturn(documentTransformer);
+        this.documentTransformer.setQueryExecutionForPageStartTime(EasyMock.anyLong());
+>>>>>>> integration
         
         // Run the test
         PowerMock.replayAll();
@@ -339,7 +345,12 @@ public class ExtendedRunningQueryTest {
         expect(this.genericConfiguration.getQueryString()).andReturn("query").once();
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
+<<<<<<< HEAD
         this.queryLogic.setPageProcessingStartTime(anyLong());
+=======
+        expect(this.queryLogic.getTransformer(this.query)).andReturn(documentTransformer);
+        this.documentTransformer.setQueryExecutionForPageStartTime(EasyMock.anyLong());
+>>>>>>> integration
         
         // Run the test
         PowerMock.replayAll();
@@ -477,7 +488,12 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
+<<<<<<< HEAD
         this.queryLogic.setPageProcessingStartTime(anyLong());
+=======
+        expect(this.queryLogic.getTransformer(this.query)).andReturn(documentTransformer);
+        this.documentTransformer.setQueryExecutionForPageStartTime(EasyMock.anyLong());
+>>>>>>> integration
         
         // Run the test
         PowerMock.replayAll();
