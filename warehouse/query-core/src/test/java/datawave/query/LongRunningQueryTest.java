@@ -8,10 +8,7 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.VisibilityWiseGuysIngest;
-<<<<<<< HEAD
 import datawave.query.util.WiseGuysIngest;
-=======
->>>>>>> integration
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
@@ -76,7 +73,6 @@ public class LongRunningQueryTest {
         PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
     }
     
-<<<<<<< HEAD
     @Test
     public void testLongRunningUniqueQuery() throws Exception {
         // this is data specific for testing the unique query (because we already know what we should expect for this
@@ -126,17 +122,15 @@ public class LongRunningQueryTest {
         
         Thread.sleep(250);
         
-//        while (page.getStatus() != ResultsPage.Status.COMPLETE) {
-//            page = runningQuery.next();
-//            pages.add(page);
-//        }
+        // while (page.getStatus() != ResultsPage.Status.COMPLETE) {
+        // page = runningQuery.next();
+        // pages.add(page);
+        // }
         
         // Set<Set<String>> expected = new HashSet<>();
         // expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID, WiseGuysIngest.corleoneUID, WiseGuysIngest.caponeUID));
     }
     
-=======
->>>>>>> integration
     /**
      * A groupBy query is one type of query that is allowed to be "long running", so that type of query is used in this test.
      *
@@ -147,11 +141,7 @@ public class LongRunningQueryTest {
      * @throws Exception
      */
     @Test
-<<<<<<< HEAD
     public void testAllowLongRunningGroupByQuery() throws Exception {
-=======
-    public void testAllowLongRunningQueryWithShardQueryLogic() throws Exception {
->>>>>>> integration
         
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("group.fields", "AGE,$GENDER");
