@@ -145,7 +145,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
      * <p>
      * Form A: content:phrase(FIELD, tfmap, Field A, Field B)
      * <p>
-     * Form B: content:phrase(tfmap, Field A, Field B) && ...
+     * Form B: content:phrase(tfmap, Field A, Field B) &amp;&amp; ...
      *
      * @param node
      *            an ASTFunctionNode

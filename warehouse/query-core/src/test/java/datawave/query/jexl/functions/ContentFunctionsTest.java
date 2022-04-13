@@ -6,7 +6,6 @@ import com.google.common.collect.TreeMultimap;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
 import datawave.query.jexl.DatawaveJexlEngine;
-import datawave.query.jexl.DatawavePartialInterpreter;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyList.Zone;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
