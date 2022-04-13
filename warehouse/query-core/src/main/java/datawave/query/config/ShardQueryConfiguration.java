@@ -374,6 +374,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Set<String> noExpansionFields = new HashSet<>();
     
     /**
+     * The max execution time per page of results - after it has elapsed, an intermediate result page will be returned.
+     */
+    private long queryExecutionForPageTimeout = 3000000L;
+    
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -556,6 +561,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexMappingFields(other.getWhindexMappingFields());
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
+        this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
     }
     
     /**
@@ -2226,5 +2232,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setNoExpansionFields(Set<String> noExpansionFields) {
         this.noExpansionFields = noExpansionFields;
+    }
+    
+    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
+        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
+    }
+    
+    public long getQueryExecutionForPageTimeout() {
+        return this.queryExecutionForPageTimeout;
     }
 }
