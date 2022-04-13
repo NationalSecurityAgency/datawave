@@ -13,6 +13,7 @@ import datawave.query.function.KeyToFieldName;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyList;
+import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ValueToAttributes;
 import datawave.query.util.TypeMetadata;
@@ -20,7 +21,6 @@ import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
@@ -54,7 +54,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     TreeMap<String,Attribute<? extends Comparable<?>>> dict;
     
     // optional store for term weight positions
-    private Map<String,Object> offsetMap;
+    private Map<String,TermFrequencyList> offsetMap;
     
     /**
      * should sizes of the documents be tracked
@@ -65,8 +65,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * Whether or not this document represents an intermediate result. If true, thie document fields should also be empty.
      */
     private boolean isIntermediateResult;
-    
-    private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
     
     public MarkingFunctions getMarkingFunctions() {
         return MarkingFunctions.Factory.createMarkingFunctions();
@@ -402,7 +400,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         putAll(other.dict.entrySet().iterator(), includeGroupingContext);
         
         if (offsetMap != null && other.offsetMap != null) {
-            throw new IllegalStateException("Need to add logic to merge offset maps");
+            offsetMap = TermOffsetPopulator.mergeTermFrequencyLists(offsetMap, other.offsetMap);
         } else if (offsetMap == null && other.offsetMap != null) {
             offsetMap = other.offsetMap;
         }
@@ -741,7 +739,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         }
         for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
             // For evaluation purposes, all field names have the grouping context
-            // ripped off, regardless of whether or not it's being return to the client.
+            // ripped off, regardless of whether it's being return to the client.
             // Until grouping-context aware query evaluation is implemented, we always
             // want to remove the grouping-context
             String identifier = JexlASTHelper.rebuildIdentifier(entry.getKey(), false);
@@ -793,7 +791,10 @@ public class Document extends AttributeBag<Document> implements Serializable {
             }
         }
         
-        // TODO -- also do the term offset map
+        // Note: this will overwrite an existing termOffsetMap
+        if (offsetMap != null && !offsetMap.isEmpty()) {
+            context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, offsetMap);
+        }
         
         // this probably will not be used by anybody as the side-effect of loading the JEXL context is the real result
         return children;
@@ -928,10 +929,10 @@ public class Document extends AttributeBag<Document> implements Serializable {
         return null;
     }
     
-    private Map<String,Object> getOffsetMapFromBytes(byte[] data) {
+    private Map<String,TermFrequencyList> getOffsetMapFromBytes(byte[] data) {
         try (ByteArrayInputStream bais = new ByteArrayInputStream(data)) {
             try (ObjectInputStream ois = new ObjectInputStream(bais)) {
-                return (Map<String,Object>) ois.readObject();
+                return (Map<String,TermFrequencyList>) ois.readObject();
             }
         } catch (Exception e) {
             log.error("failed to deserialize offset map from byte array");
@@ -939,11 +940,11 @@ public class Document extends AttributeBag<Document> implements Serializable {
         return null;
     }
     
-    public Map<String,Object> getOffsetMap() {
+    public Map<String,TermFrequencyList> getOffsetMap() {
         return this.offsetMap;
     }
     
-    public void setOffsetMap(Map<String,Object> offsetMap) {
+    public void setOffsetMap(Map<String,TermFrequencyList> offsetMap) {
         this.offsetMap = offsetMap;
     }
 }

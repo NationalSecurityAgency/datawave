@@ -1,6 +1,7 @@
 package datawave.query.attributes;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -107,9 +109,31 @@ public class DocumentTest {
         assertTrue(d2.getOffsetMap().containsKey("dog"));
     }
     
+    @Test
+    public void testMergeDocumentsWithTermOffsetMaps() {
+        Document d1 = buildDefaultDocument();
+        Document d2 = buildDefaultDocument();
+        
+        Map<String,TermFrequencyList> firstOffsetMap = getTermOffsetMap();
+        
+        Map<String,TermFrequencyList> secondOffsetMap = new HashMap<>();
+        secondOffsetMap.put("see", buildTfList("TEXT", 4));
+        secondOffsetMap.put("spot", buildTfList("TEXT", 5));
+        secondOffsetMap.put("run", buildTfList("TEXT", 6));
+        
+        d1.setOffsetMap(firstOffsetMap);
+        d2.setOffsetMap(secondOffsetMap);
+        
+        d1.putAll(d2, false);
+        
+        Map<String,TermFrequencyList> merged = d1.getOffsetMap();
+        assertEquals(6, merged.keySet().size());
+        assertEquals(Sets.newHashSet("see", "spot", "run", "big", "red", "dog"), merged.keySet());
+    }
+    
     protected Document buildDefaultDocument() {
         Document d = new Document();
-        d.put("FOO", new Content("vale", new Key("datatype\0uid"), true));
+        d.put("FOO", new Content("value", new Key("datatype\0uid"), true));
         return d;
     }
     
@@ -120,8 +144,8 @@ public class DocumentTest {
         return d;
     }
     
-    protected Map<String,Object> getTermOffsetMap() {
-        Map<String,Object> offsets = new HashMap<>();
+    protected Map<String,TermFrequencyList> getTermOffsetMap() {
+        Map<String,TermFrequencyList> offsets = new HashMap<>();
         offsets.put("big", buildTfList("TEXT", 1));
         offsets.put("red", buildTfList("TEXT", 2));
         offsets.put("dog", buildTfList("TEXT", 3));

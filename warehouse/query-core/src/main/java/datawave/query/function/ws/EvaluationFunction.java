@@ -111,7 +111,7 @@ public class EvaluationFunction implements Function<Map.Entry<Key,Document>,Map.
         Document d = input.getValue();
         d.visit(queryFields, context);
         if (d.getOffsetMap() != null && !d.getOffsetMap().isEmpty()) {
-            context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, d.getOffsetMap().get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
+            context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, d.getOffsetMap());
         }
         return context;
     }
