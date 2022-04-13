@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -25,20 +26,17 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     
     private static final Logger log = Logger.getLogger(UniqueTransform.class);
     
-    private UniqueUtil uniqueUtil = new UniqueUtil();
+    private final UniqueUtil uniqueUtil = new UniqueUtil();
     private BloomFilter<byte[]> bloom;
     private UniqueFields uniqueFields;
     private Multimap<String,String> modelMapping;
+    private LinkedList<Entry<Key,Document>> documents;
     
     /**
      * how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client (which indicates the request is
      * still in process and all results will be returned at once at the end)
      */
     private final long queryExecutionForPageTimeout;
-    
-    public UniqueTransform(UniqueFields uniqueFields) {
-        this(null, uniqueFields, 0L);
-    }
     
     /**
      * Create a new {@link UniqueTransform} that will capture the reverse field mapping defined within the model being used by the logic (if present).
@@ -50,6 +48,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      */
     public UniqueTransform(QueryModel model, UniqueFields uniqueFields, long queryExecutionForPageTimeout) {
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
+        this.documents = new LinkedList<Entry<Key,Document>>();
         updateConfig(uniqueFields, model);
     }
     
@@ -78,27 +77,34 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     @Nullable
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
-        long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
-        if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
-            Document intermediateResult = new Document();
-            intermediateResult.setIsIntermediateResult(true);
-            return Maps.immutableEntry(new Key(), intermediateResult);
-        }
-        
         if (keyDocumentEntry != null) {
-            if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
-                return keyDocumentEntry;
-            }
-            
             try {
-                if (uniqueUtil.isDuplicate(keyDocumentEntry.getValue(), uniqueFields, modelMapping)) {
-                    keyDocumentEntry = null;
+                if (!FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())
+                                && uniqueUtil.isDuplicate(keyDocumentEntry.getValue(), uniqueFields, modelMapping)) {
+                    return null;
                 }
             } catch (IOException ioe) {
                 log.error("Failed to convert document to bytes.  Returning document as unique.", ioe);
             }
+            documents.add(keyDocumentEntry);
         }
-        return keyDocumentEntry;
+        return null;
     }
     
+    @Override
+    public Entry<Key,Document> flush() {
+        long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
+        if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
+            Document document = new Document();
+            document.setIsIntermediateResult(true);
+            return Maps.immutableEntry(new Key(), document);
+        }
+        
+        Entry<Key,Document> entry = null;
+        if (!documents.isEmpty()) {
+            entry = documents.pop();
+        }
+        
+        return entry;
+    }
 }

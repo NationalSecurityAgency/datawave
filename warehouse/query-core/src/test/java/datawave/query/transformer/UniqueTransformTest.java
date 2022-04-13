@@ -1,7 +1,6 @@
 package datawave.query.transformer;
 
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import datawave.query.attributes.Attribute;
@@ -30,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -505,11 +503,12 @@ public class UniqueTransformTest {
     private List<Document> getUniqueDocuments(List<Document> documents) {
         Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
         TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
+        List<Map.Entry<Key,Document>> docs = StreamSupport.stream(Spliterators.spliteratorUnknownSize(inputIterator, Spliterator.ORDERED), false).collect(
+                        Collectors.toList());
         UniqueTransform uniqueTransform = new UniqueTransform(null, uniqueFields, 300000000000000L);
         uniqueTransform.setQueryExecutionForPageStartTime(System.currentTimeMillis());
-        Iterator<Map.Entry<Key,Document>> resultIterator = Iterators.transform(inputIterator, uniqueTransform);
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultIterator, Spliterator.ORDERED), false).filter(Objects::nonNull)
-                        .map(Map.Entry::getValue).collect(Collectors.toList());
+        docs.forEach(uniqueTransform::apply);
+        return docs.stream().map(d -> uniqueTransform.flush()).filter(Objects::nonNull).map(d -> d.getValue()).collect(Collectors.toList());
     }
     
     private void assertOrderedFieldSets() {
