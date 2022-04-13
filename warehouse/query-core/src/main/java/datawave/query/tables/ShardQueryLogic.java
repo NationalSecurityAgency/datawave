@@ -639,7 +639,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
     }
     
-    // @Override
     public void setPageProcessingStartTime(long pageProcessingStartTime) {
         getTransformer(getSettings()).setQueryExecutionForPageStartTime(pageProcessingStartTime);
     }

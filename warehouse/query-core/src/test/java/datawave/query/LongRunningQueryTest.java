@@ -41,9 +41,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Controlling the execution order via the @FixMethodOrder because the testExecuesFirstLongRunningQueryWithNoResults MUST execute first. Otherwise, it seems
- * that our accumulo instance "remembers" and executes the query faster than the test can sleep and results in intermittent failures. Therefore, ensure that the
- * test name always comes first alphabetically.
+ * Controlling the execution order via the @FixMethodOrder. Otherwise, it seems that our accumulo instance "remembers" and executes the query faster than the
+ * test can sleep and results in intermittent failures. Therefore, ensure that the test names alphabetically follow the order shortest to longest running
+ * keeping in mind that queries that have been seen before will execute quicker.
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LongRunningQueryTest {
@@ -149,7 +149,7 @@ public class LongRunningQueryTest {
      * @throws Exception
      */
     @Test
-    public void testLongRunningGroupByQuery() throws Exception {
+    public void testExecutesSecondLongRunningGroupByQuery() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("group.fields", "AGE,$GENDER");
         extraParameters.put("group.fields.batch.size", "6");
@@ -272,7 +272,7 @@ public class LongRunningQueryTest {
      * @throws Exception
      */
     @Test
-    public void testLongRunningQueryWithSmallPageSize() throws Exception {
+    public void testExecutesThirdLongRunningQueryWithSmallPageSize() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("group.fields", "AGE,$GENDER");
         extraParameters.put("group.fields.batch.size", "6");

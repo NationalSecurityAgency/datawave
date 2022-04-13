@@ -488,7 +488,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 });
             }
             
-            // now apply the unique transform if requested
+            // now apply the unique iterator if requested
             UniqueIterator uniquify = getUniqueIteratorInstance();
             if (uniquify != null) {
                 // pipelineDocuments = uniquify;
