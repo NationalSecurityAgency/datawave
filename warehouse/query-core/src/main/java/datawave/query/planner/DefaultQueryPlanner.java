@@ -390,14 +390,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         builderThread = Executors.newSingleThreadExecutor();
         
         ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
-        
-        // lets mark the query as started (used by ivarators at a minimum)
         try {
             markQueryStarted(config, settings);
         } catch (Exception e) {
             throw new DatawaveQueryException("Failed to mark query as started" + settings.getId(), e);
         }
-        
         return process(scannerFactory, getMetadataHelper(config), getDateIndexHelper(config), config, query, settings);
     }
     

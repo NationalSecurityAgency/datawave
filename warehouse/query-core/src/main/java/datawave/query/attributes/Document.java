@@ -52,6 +52,11 @@ public class Document extends AttributeBag<Document> implements Serializable {
      */
     private boolean trackSizes;
     
+    /**
+     * Whether or not this document represents an intermediate result. If true, thie document fields should also be empty.
+     */
+    private boolean isIntermediateResult;
+    
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
     
     public MarkingFunctions getMarkingFunctions() {
@@ -840,6 +845,14 @@ public class Document extends AttributeBag<Document> implements Serializable {
         d.shardTimestamp = this.shardTimestamp;
         
         return d;
+    }
+    
+    public void setIsIntermediateResult(boolean isIntermediateResult) {
+        this.isIntermediateResult = isIntermediateResult;
+    }
+    
+    public boolean isIntermediateResult() {
+        return isIntermediateResult;
     }
     
 }

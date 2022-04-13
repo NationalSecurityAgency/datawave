@@ -148,4 +148,5 @@ public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Ke
         
         return event;
     }
+    
 }
