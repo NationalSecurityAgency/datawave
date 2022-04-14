@@ -13,14 +13,16 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * Query iterator that runs on the t-server for unique queries. Most of hte logic is located in the #UniqueUtil, which essentially applies a bloom filter to
+ * determine uniqueness.
+ */
 public class UniqueIterator {
     
     private static final Logger log = Logger.getLogger(UniqueTransform.class);
     
     private UniqueFields uniqueFields;
     private UniqueUtil uniqueUtil = new UniqueUtil();
-    
-    // private Multimap<String,String> modelMapping;
     
     public UniqueIterator(UniqueFields uniqueFields) {
         this.uniqueFields = uniqueFields;

@@ -77,8 +77,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     private final List<Key> keys = new ArrayList<>();
     
     /**
-     * how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client (which indicates the request is
-     * still in process and all results will be returned at once at the end)
+     * Length of time in milliseconds that a client will wait while results are collected. If a full page is not collected before the timeout, a blank page will
+     * be returned to signal the request is still in progress.
      */
     private final long queryExecutionForPageTimeout;
     

@@ -201,7 +201,7 @@ public class LongRunningQueryTest {
     }
     
     /**
-     * ALWAYS ENSURE THAT HTE NAME OF THIS TEST IS SUCH THAT IT COMES ALPHABETICALLY FIRST IN THIS CLASS.
+     * ALWAYS ENSURE THAT THE NAME OF THIS TEST IS SUCH THAT IT COMES ALPHABETICALLY FIRST IN THIS CLASS.
      *
      * Tests that the code path that allows long running queries does not interfere or create a never ending query if a query legitimately doesn't have results.
      * Set the queryExecutionForPageTimeout to an extremely small value (10ms) so that we still hit the timeout per page, even though there will be no results.

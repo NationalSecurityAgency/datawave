@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * This iterator will filter documents based on uniqueness across a set of configured fields. Only the first instance of an event with a unique set of those
+ * This transform will filter documents based on uniqueness across a set of configured fields. Only the first instance of an event with a unique set of those
  * fields will be returned. This transform is thread safe.
  */
 public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform {
@@ -33,8 +33,8 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private LinkedList<Entry<Key,Document>> documents;
     
     /**
-     * how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client (which indicates the request is
-     * still in process and all results will be returned at once at the end)
+     * Length of time in milliseconds that a client will wait while results are collected. If a full page is not collected before the timeout, a blank page will
+     * be returned to signal the request is still in progress.
      */
     private final long queryExecutionForPageTimeout;
     
@@ -69,10 +69,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
     
     /**
-     * Apply uniqueness to a document.
+     * Apply uniqueness to a document and if it is unique, stores it in the internal list. Null is returned from this method. #flush() should be called in order
+     * to retrieve the next .
      * 
      * @param keyDocumentEntry
-     * @return The document if unique per the configured fields, null otherwise.
+     * @return null
      */
     @Nullable
     @Override
@@ -91,6 +92,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         return null;
     }
     
+    /**
+     * Returns the next unique document in the pipeline, if there is one. Also checks to see if the timeout for the page has exceeded and interjects an
+     * intermediate result instead of hte next unique document if so.
+     *
+     * @return The next unique document per the configured fields, or an intermediate result (blank document) if the page execution time has elapsed, or null if
+     *         there isn't one and the timeout hasn't elapsed.
+     */
     @Override
     public Entry<Key,Document> flush() {
         long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;

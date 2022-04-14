@@ -42,7 +42,7 @@ import java.util.stream.StreamSupport;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class UniqueTransformTest {
+public class UniqueIteratorTest {
     
     private static final Random random = new Random(1000);
     private static final List<String> randomValues = new ArrayList<>();
@@ -505,16 +505,14 @@ public class UniqueTransformTest {
         TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
         List<Map.Entry<Key,Document>> docs = StreamSupport.stream(Spliterators.spliteratorUnknownSize(inputIterator, Spliterator.ORDERED), false).collect(
                         Collectors.toList());
-        UniqueTransform uniqueTransform = new UniqueTransform(null, uniqueFields, 300000000000000L);
-        uniqueTransform.setQueryExecutionForPageStartTime(System.currentTimeMillis());
-        docs.forEach(uniqueTransform::apply);
-        return docs.stream().map(d -> uniqueTransform.flush()).filter(Objects::nonNull).map(d -> d.getValue()).collect(Collectors.toList());
+        UniqueIterator uniqueIterator = new UniqueIterator(uniqueFields);
+        return docs.stream().map(d -> uniqueIterator.apply(d)).filter(Objects::nonNull).map(d -> d.getValue()).collect(Collectors.toList());
     }
     
     private void assertOrderedFieldSets() {
         UniqueUtil uniqueUtil = new UniqueUtil();
-        List<UniqueUtil.FieldSet> actual = inputDocuments.stream().map(doc -> uniqueUtil.getOrderedFieldSets(doc, uniqueFields, null)) // .map(uniqueUtil::getOrderedFieldSets)
-                        .flatMap(List::stream).sorted().collect(Collectors.toList());
+        List<UniqueUtil.FieldSet> actual = inputDocuments.stream().map(doc -> uniqueUtil.getOrderedFieldSets(doc, uniqueFields, null)).flatMap(List::stream)
+                        .sorted().collect(Collectors.toList());
         Collections.sort(expectedOrderedFieldSets);
         
         assertEquals("Ordered field sets do not match expected", expectedOrderedFieldSets, actual);
