@@ -202,7 +202,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 // Ensure the offset is modified to encompass the target excerpt range.
                 for (Pair<Integer,Integer> indexPair : indexes) {
                     int start = indexPair.getValue0() <= offset ? 0 : indexPair.getValue0() - offset;
-                    int end = indexPair.getValue1() + offset;
+                    int end = indexPair.getValue1() + offset + 1; // Add 1 here to offset the non-inclusive end of the range that will be used when scanning.
                     offsetPhraseIndexes.addIndexPair(field, start, end);
                 }
             }

@@ -119,7 +119,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenPhraseIndex("BODY", 10, 14);
         
         givenMockDocument();
-        givenMatchingPhrase("BODY", 8, 16, "the quick brown fox jumped over the lazy dog");
+        givenMatchingPhrase("BODY", 8, 17, "the quick brown fox jumped over the lazy dog");
         
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
@@ -145,7 +145,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenPhraseIndex("CONTENT", 1, 5);
         
         givenMockDocument();
-        givenMatchingPhrase("CONTENT", 0, 7, "the quick brown fox jumped over the lazy dog");
+        givenMatchingPhrase("CONTENT", 0, 8, "the quick brown fox jumped over the lazy dog");
         
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
