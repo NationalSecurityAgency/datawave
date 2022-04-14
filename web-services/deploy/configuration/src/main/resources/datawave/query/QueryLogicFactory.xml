@@ -133,6 +133,7 @@
         <property name="indexTableName" value="${index.table.name}" />
         <property name="reverseIndexTableName" value="${rindex.table.name}" />
         <property name="maxResults" value="${event.query.max.results}" />
+        <property name="queryExecutionForPageTimeout" value="${query.execution.for.page.timeout}"/>
         <property name="queryThreads" value="${shard.query.threads}" />
         <property name="indexLookupThreads" value="${index.query.threads}" />
         <property name="dateIndexThreads" value="${date.index.threads}" />
@@ -178,8 +179,10 @@
         <!-- Determines how many shards in the global index lookup will be
         aggregated into a day range -->
         <property name="shardsPerDayThreshold" value="${beq.shardsPerDayThreshold}" />
+        <!-- The max number of terms BEFORE all expansions -->
+        <property name="initialMaxTermThreshold" value="${beq.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->
-        <property name="maxTermThreshold" value="${beq.maxTermThreshold}" />
+        <property name="finalMaxTermThreshold" value="${beq.finalMaxTermThreshold}" />
         <!-- The max query depth -->
         <property name="maxDepthThreshold" value="${beq.maxDepthThreshold}" />
         <!-- The max unfielded (_ANYFIELD_) expansion per term -->
@@ -513,8 +516,10 @@
         <!-- Determines how many shards in the global index lookup will be
         aggregated into a day range -->
         <property name="shardsPerDayThreshold" value="${beq.shardsPerDayThreshold}" />
+        <!-- The max number of terms BEFORE all expansions -->
+        <property name="initialMaxTermThreshold" value="${beq.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->
-        <property name="maxTermThreshold" value="${beq.maxTermThreshold}" />
+        <property name="finalMaxTermThreshold" value="${beq.finalMaxTermThreshold}" />
         <!-- The max query depth -->
         <property name="maxDepthThreshold" value="${beq.maxDepthThreshold}" />
         <!-- The max unfielded (_ANYFIELD_) expansion per term -->

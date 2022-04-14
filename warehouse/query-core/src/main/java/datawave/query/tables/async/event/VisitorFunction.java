@@ -283,7 +283,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     }
                     
                     // test the final script for thresholds
-                    DefaultQueryPlanner.validateQuerySize("VisitorFunction", script, config, false);
+                    DefaultQueryPlanner.validateQuerySize("VisitorFunction", script, config.getMaxDepthThreshold(), config.getFinalMaxTermThreshold());
                     
                     newIteratorSetting.addOption(QueryOptions.QUERY, newQuery);
                     newOptions.removeScanIterator(setting.getName());
@@ -347,7 +347,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
             
             // check term limits and use the capacity map to reduce further if necessary
             int termCount = TermCountingVisitor.countTerms(script);
-            if (termCount > config.getMaxTermThreshold()) {
+            if (termCount > config.getFinalMaxTermThreshold()) {
                 // check if the capacity is available to get under the term limit
                 // determine if its possible to reduce enough to meet the threshold
                 int capacitySum = 0;
@@ -355,7 +355,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     capacitySum += capacity;
                 }
                 
-                if (termCount - capacitySum <= config.getMaxTermThreshold()) {
+                if (termCount - capacitySum <= config.getFinalMaxTermThreshold()) {
                     // preserve the original config and set minimum thresholds for creating Value and Range ivarators
                     int originalMaxOrExpansionThreshold = config.getMaxOrExpansionThreshold();
                     int originalMaxOrRangeThreshold = config.getMaxOrRangeThreshold();
@@ -374,7 +374,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         
                         // sort from largest to smallest reductions and make reductions until under the threshold
                         Set<String> fieldsToReduce = new HashSet<>();
-                        int toReduce = termCount - config.getMaxTermThreshold();
+                        int toReduce = termCount - config.getFinalMaxTermThreshold();
                         while (toReduce > 0) {
                             // get the highest value field out of the map
                             Integer reduction = sortedMap.lastKey();
