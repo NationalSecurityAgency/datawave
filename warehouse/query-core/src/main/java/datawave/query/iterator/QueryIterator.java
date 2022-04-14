@@ -923,7 +923,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                             inclusive);
         }
         
-        documents = excerptTransform.getIterator(documents);
+        ExcerptTransform excerptTransform = getExcerptTransform();
+        if (excerptTransform != null) {
+            documents = excerptTransform.getIterator(documents);
+        }
         
         // a hook to allow mapping the document such as with the TLD or Parent
         // query logics
