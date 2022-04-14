@@ -61,7 +61,7 @@
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>1.9.2.3</version.in-memory-accumulo>
-        <version.infinispan>9.4.21.Final</version.infinispan>
+        <version.infinispan>11.0.6.Final</version.infinispan>
         <version.jackson>2.10.0.pr1</version.jackson>
         <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
