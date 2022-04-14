@@ -1,6 +1,10 @@
 package datawave.query.jexl.visitors;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import datawave.configuration.spring.SpringBean;
+import datawave.data.type.GeometryType;
+import datawave.data.type.Type;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
 import datawave.query.CompositeFunctionsTest;
@@ -18,6 +22,7 @@ import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
@@ -254,6 +259,43 @@ public abstract class ExecutableExpansionVisitorTest {
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
+    }
+    
+    @Test
+    public void testGeowaveExpansion() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put("hit.list", "true");
+        
+        if (log.isDebugEnabled()) {
+            log.debug("testGeowaveExpansion");
+        }
+        
+        MockMetadataHelper helper = new MockMetadataHelper();
+        Multimap<String,Type<?>> dataTypes = ArrayListMultimap.create();
+        dataTypes.put("GEO", new GeometryType());
+        helper.setDataTypes(dataTypes);
+        
+        logic.setMaxDepthThreshold(30);
+        logic.setMaxTermThreshold(10000);
+        
+        String query = "( (((_Bounded_ = true) && (NUMBER >= 0 && NUMBER <= 1000)) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))')) || (((_Bounded_ = true) && (NUMBER >= 0 && NUMBER <= 1000)) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))')) ) && (GENDER == 'MALE') && (NOME == 'THIS' || NOME == 'THAT') && !filter:isNull((LOCATION || POSIZIONE)) && !filter:includeRegex(ETA, 'blah') && ( LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey' )";
+        String expandedQuery = JexlStringBuildingVisitor.buildQuery(FunctionIndexQueryExpansionVisitor.expandFunctions(logic.getConfig(), helper, null,
+                        JexlASTHelper.parseJexlQuery(query)));
+        String[] queryStrings = {expandedQuery};
+        @SuppressWarnings("unchecked")
+        List<String>[] expectedLists = new List[] {Arrays.asList(), Arrays.asList()};
+        for (int i = 0; i < queryStrings.length; i++) {
+            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+        }
+        
+        String finalQuery = JexlStringBuildingVisitor.buildQuery(logic.getConfig().getQueryTree());
+        Assert.assertNotEquals(
+                        "(GENDER == 'male') && (NOME == 'this' || NOME == 'that') && !filter:isNull((LOCATION || POSIZIONE)) && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey')",
+                        finalQuery);
+        Assert.assertEquals(
+                        "((((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a')) || (((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a'))) && (GENDER == 'male') && (NOME == 'this' || NOME == 'that') && !filter:isNull((LOCATION || POSIZIONE)) && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey')",
+                        finalQuery);
     }
     
     @Test
