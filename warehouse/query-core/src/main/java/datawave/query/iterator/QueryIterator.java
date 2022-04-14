@@ -516,18 +516,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
             }
             
-            // Add phrase excerpts to the documents if requested.
-            ExcerptTransform excerptTransform = getExcerptTransform();
-            if (excerptTransform != null) {
-                pipelineDocuments = excerptTransform.getIterator(pipelineIter);
-                if (log.isTraceEnabled()) {
-                    pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
-                        log.trace("after grouping, keyDocumentEntry:" + keyDocumentEntry);
-                        return true;
-                    });
-                }
-            }
-            
             pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
                 // last chance before the documents are serialized
                             getActiveQueryLog().get(getQueryId()).recordStats(keyDocumentEntry.getValue(), querySpanCollector.getCombinedQuerySpan(null));
@@ -934,6 +922,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             documents = getEvaluation(documentSpecificSource, deepSourceCopy, documents, compositeMetadata, typeMetadataWithNonIndexed, columnFamilies,
                             inclusive);
         }
+        
+        documents = excerptTransform.getIterator(documents);
         
         // a hook to allow mapping the document such as with the TLD or Parent
         // query logics
