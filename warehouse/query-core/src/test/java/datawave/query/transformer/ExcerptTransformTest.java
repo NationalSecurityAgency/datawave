@@ -91,7 +91,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         
         applyTransform();
         
-        assertFalse(document.containsKey(ExcerptTransform.HIT_EXCERPTS));
+        assertFalse(document.containsKey(ExcerptTransform.HIT_EXCERPT));
         verifyAll();
     }
     
@@ -106,7 +106,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         
         applyTransform();
         
-        assertFalse(document.containsKey(ExcerptTransform.HIT_EXCERPTS));
+        assertFalse(document.containsKey(ExcerptTransform.HIT_EXCERPT));
         verifyAll();
     }
     
@@ -122,7 +122,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMatchingPhrase("BODY", 8, 16, "the quick brown fox jumped over the lazy dog");
         
         Capture<Attributes> capturedArg = Capture.newInstance();
-        document.put(eq(ExcerptTransform.HIT_EXCERPTS), and(capture(capturedArg), isA(Attributes.class)));
+        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
         
         initTransform();
         replayAll();
@@ -148,7 +148,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenMatchingPhrase("CONTENT", 0, 7, "the quick brown fox jumped over the lazy dog");
         
         Capture<Attributes> capturedArg = Capture.newInstance();
-        document.put(eq(ExcerptTransform.HIT_EXCERPTS), and(capture(capturedArg), isA(Attributes.class)));
+        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
         
         initTransform();
         replayAll();

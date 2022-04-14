@@ -32,7 +32,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     private static final Logger log = Logger.getLogger(ExcerptTransform.class);
     
     public static final String PHRASE_INDEXES_ATTRIBUTE = "PHRASE_INDEXES_ATTRIBUTE";
-    public static final String HIT_EXCERPTS = "HIT_EXCERPTS";
+    public static final String HIT_EXCERPT = "HIT_EXCERPT";
     
     private final Map<String,String> excerptIteratorOptions = new HashMap<>();
     private final TermFrequencyExcerptIterator excerptIterator;
@@ -93,7 +93,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     }
     
     /**
-     * Add the excerpts to the document as part of {@value #HIT_EXCERPTS}.
+     * Add the excerpts to the document as part of {@value #HIT_EXCERPT}.
      * 
      * @param excerpts
      *            the excerpts to add
@@ -106,7 +106,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             Content content = new Content(excerpt, document.getMetadata(), true);
             attributes.add(content);
         }
-        document.put(HIT_EXCERPTS, attributes);
+        document.put(HIT_EXCERPT, attributes);
     }
     
     /**
