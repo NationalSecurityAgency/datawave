@@ -20,3 +20,5 @@
 **/scripts/hitHighlights_*
 **/scripts/edgeEvent_*
 **/scripts/metrics_*
+**/scripts/shutdown_*
+**/scripts/health_*
