@@ -220,7 +220,12 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
                 
                 if (maxOffset.get().getLowOffset() - o.getMinOffset().getOffset() <= distance) {
                     // Track the start and end offset for the phrase.
-                    termOffsetMap.addPhraseIndexPair(field, o.getMinOffset().getOffset(), maxOffset.get().getLowOffset());
+                    int startOffset = o.getMinOffset().getOffset();
+                    int endOffset = maxOffset.get().getLowOffset();
+                    termOffsetMap.addPhraseIndexPair(field, startOffset, endOffset);
+                    if (log.isTraceEnabled()) {
+                        log.trace("Adding phrase indexes [" + startOffset + "," + endOffset + "] for field " + field + " to jexl context");
+                    }
                     return true;
                 }
                 

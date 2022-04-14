@@ -253,6 +253,9 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                 endOffset = second.first().termWeightPosition.getOffset();
                 // Record the phrase offsets to fetch excerpts later if desired.
                 termOffsetMap.addPhraseIndexPair(field, startOffset, endOffset);
+                if (log.isTraceEnabled()) {
+                    log.trace("Adding phrase indexes [" + startOffset + "," + endOffset + "] for field " + field + " to jexl context");
+                }
                 return true;
             }
         }

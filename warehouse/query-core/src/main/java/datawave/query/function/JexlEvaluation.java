@@ -129,6 +129,10 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                     PhraseIndexes phraseIndexes = termOffsetMap.getPhraseIndexes();
                     Content phraseIndexesAttribute = new Content(phraseIndexes.toString(), document.getMetadata(), false);
                     document.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, phraseIndexesAttribute);
+                    if (log.isTraceEnabled()) {
+                        log.trace("Added phrase-indexes " + phraseIndexes + " as attribute " + ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE + " to document "
+                                        + document.getMetadata());
+                    }
                 }
             }
             hitListArithmetic.clear();

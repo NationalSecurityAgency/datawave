@@ -61,6 +61,9 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             if (document.isToKeep()) {
                 PhraseIndexes phraseIndexes = getPhraseIndexes(document);
                 if (phraseIndexes != null) {
+                    if (log.isTraceEnabled()) {
+                        log.trace("Fetching phrase excerpts " + excerptFields + " for document " + document.getMetadata());
+                    }
                     Set<String> excerpts = getExcerpts(phraseIndexes, document);
                     addExcerptsToDocument(excerpts, document);
                 } else {
@@ -132,6 +135,10 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             for (Pair<Integer,Integer> indexPair : indexes) {
                 int start = indexPair.getValue0();
                 int end = indexPair.getValue1();
+                if (log.isTraceEnabled()) {
+                    log.trace("Fetching excerpt [" + start + "," + end + "] for field " + field + " for document " + metadata);
+                }
+                
                 String excerpt = getExcerpt(field, start, end, range);
                 // Only retain non-blank excerpts.
                 if (excerpt != null && !excerpt.isEmpty()) {
@@ -173,7 +180,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 return null;
             }
         } catch (IOException e) {
-            throw new RuntimeException("Failed to scan for excerpts", e);
+            throw new RuntimeException("Failed to scan for excerpt [" + start + "," + end + "] for field " + field + " within range " + range, e);
         }
     }
     

@@ -520,6 +520,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             ExcerptTransform excerptTransform = getExcerptTransform();
             if (excerptTransform != null) {
                 pipelineDocuments = excerptTransform.getIterator(pipelineIter);
+                if (log.isTraceEnabled()) {
+                    pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
+                        log.trace("after grouping, keyDocumentEntry:" + keyDocumentEntry);
+                        return true;
+                    });
+                }
             }
             
             pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
