@@ -174,16 +174,10 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
             Set<String> fields = descriptor.fields(null, null);
             
-            boolean incomplete = false;
             for (String field : fields) {
                 if (context.has(field) && incompleteFields.contains(field)) {
-                    incomplete = true;
-                    break;
+                    return MATCH.UNKNOWN;
                 }
-            }
-            
-            if (incomplete) {
-                return MATCH.UNKNOWN;
             }
         }
         

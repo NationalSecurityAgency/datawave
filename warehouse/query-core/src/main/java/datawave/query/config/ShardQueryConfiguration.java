@@ -283,7 +283,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // a partial interpreter will evaluate 'incomplete fields' as true when more work is required for a full evaluation
     private boolean usePartialInterpreter = false;
     private Set<String> incompleteFields = Collections.emptySet();
-    private EvaluationFunction evaluationFunction = null;
+    private transient EvaluationFunction evaluationFunction = null;
     
     private boolean containsIndexOnlyTerms = false;
     private boolean containsCompositeTerms = false;
