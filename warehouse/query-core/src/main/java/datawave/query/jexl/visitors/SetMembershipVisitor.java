@@ -8,6 +8,7 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.IndexOnlyJexlContext;
 import datawave.query.jexl.JexlASTHelper;
 
+import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -40,7 +41,6 @@ public class SetMembershipVisitor extends BaseVisitor {
      * dev branch was merged into version2.x. It has since been reapplied in conjunction with the two internal helper classes.
      */
     public static final String INDEX_ONLY_FUNCTION_SUFFIX = "@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION";
-    public static final String FILTER_FUNCTION_NAME = "filter";
     private static final int FUNCTION_SEARCH_DEPTH_LIMIT = 7;
     
     private final Set<String> fields;
@@ -207,14 +207,15 @@ public class SetMembershipVisitor extends BaseVisitor {
     }
     
     /**
-     * Return whether the node is a function node whose first child has the image {@value FILTER_FUNCTION_NAME}.
+     * Return whether the node is a function node whose first child has the image {@value EvaluationPhaseFilterFunctions#EVAL_PHASE_FUNCTION_NAMESPACE}.
      * 
      * @param node
      *            the node
      * @return true if the node is a filter function or false otherwise
      */
     private boolean filterFunction(JexlNode node) {
-        return node instanceof ASTFunctionNode && node.jjtGetNumChildren() > 0 && node.jjtGetChild(0).image.equals(FILTER_FUNCTION_NAME);
+        return node instanceof ASTFunctionNode && node.jjtGetNumChildren() > 0
+                        && node.jjtGetChild(0).image.equals(EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE);
     }
     
     @Override
