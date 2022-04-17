@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.Sets;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
@@ -8,13 +7,27 @@ import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.assertj.core.api.Assertions;
+import org.junit.After;
 import org.junit.Test;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SetMembershipVisitorTest {
+    
+    private final ShardQueryConfiguration config = new ShardQueryConfiguration();
+    private final Set<String> fields = new HashSet<>();
+    private JexlNode query;
+    
+    @After
+    public void tearDown() throws Exception {
+        config.setLazySetMechanismEnabled(false);
+        query = null;
+        fields.clear();
+    }
     
     /**
      * Verify that {@link SetMembershipVisitor#contains(Set, ShardQueryConfiguration, JexlNode)} returns false for a query that does not contain any of the
@@ -22,12 +35,10 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testContainsForQueryWithoutMatchingFields() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
-        JexlNode query = JexlASTHelper.parseJexlQuery("(FOO == 'bar') && (BAT == 'aaa')");
+        givenFields("CITY", "NAME", "COUNTY");
+        givenQuery("(FOO == 'bar') && (BAT == 'aaa')");
         
-        boolean contains = SetMembershipVisitor.contains(fields, config, query);
-        assertThat(contains).isFalse();
+        assertContains(false);
     }
     
     /**
@@ -36,44 +47,43 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testContainsForQueryWithMatchingFields() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
+        givenFields("CITY", "NAME", "COUNTY");
         
         // Test EQ identifiers.
-        JexlNode query = JexlASTHelper.parseJexlQuery("(CITY == 'bar')");
-        assertThat(SetMembershipVisitor.contains(fields, config, query)).isTrue();
+        givenQuery("(CITY == 'bar')");
+        assertContains(true);
         
         // Test NE identifiers.
-        query = JexlASTHelper.parseJexlQuery("(CITY != 'bar')");
-        assertThat(SetMembershipVisitor.contains(fields, config, query)).isTrue();
+        givenQuery("(CITY != 'bar')");
+        assertContains(true);
         
         // Test LT identifiers.
-        query = JexlASTHelper.parseJexlQuery("(CITY < 'bar')");
-        assertThat(SetMembershipVisitor.contains(fields, config, query)).isTrue();
+        givenQuery("(CITY < 'bar')");
+        assertContains(true);
         
         // Test GT identifiers.
-        query = JexlASTHelper.parseJexlQuery("(CITY > 'bar')");
-        assertThat(SetMembershipVisitor.contains(fields, config, query)).isTrue();
+        givenQuery("(CITY > 'bar')");
+        assertContains(true);
         
         // Test LE identifiers.
-        query = JexlASTHelper.parseJexlQuery("(CITY <= 'bar')");
-        assertThat(SetMembershipVisitor.contains(fields, config, query)).isTrue();
+        givenQuery("(CITY <= 'bar')");
+        assertContains(true);
         
         // Test GE identifiers.
-        query = JexlASTHelper.parseJexlQuery("(CITY >= 'bar')");
-        assertThat(SetMembershipVisitor.contains(fields, config, query)).isTrue();
+        givenQuery("(CITY >= 'bar')");
+        assertContains(true);
         
         // Test ER identifiers.
-        query = JexlASTHelper.parseJexlQuery("(CITY =~ 'bar')");
-        assertThat(SetMembershipVisitor.contains(fields, config, query)).isTrue();
+        givenQuery("(CITY =~ 'bar')");
+        assertContains(true);
         
         // Test NR identifiers.
-        query = JexlASTHelper.parseJexlQuery("(CITY !~ 'bar')");
-        assertThat(SetMembershipVisitor.contains(fields, config, query)).isTrue();
+        givenQuery("(CITY !~ 'bar')");
+        assertContains(true);
         
         // Test function identifiers.
-        query = JexlASTHelper.parseJexlQuery("filter:isNull(CITY)");
-        assertThat(SetMembershipVisitor.contains(fields, config, query)).isTrue();
+        givenQuery("filter:isNull(CITY)");
+        assertContains(true);
     }
     
     /**
@@ -82,12 +92,10 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testGetMembersWithoutMatchingFields() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
-        JexlNode query = JexlASTHelper.parseJexlQuery("(FOO == 'bar') && (BAT == 'aaa')");
+        givenFields("CITY", "NAME", "COUNTY");
+        givenQuery("(FOO == 'bar') && (BAT == 'aaa')");
         
-        Set<String> discoveredFields = SetMembershipVisitor.getMembers(fields, config, query);
-        assertThat(discoveredFields).isEmpty();
+        assertMembership();
     }
     
     /**
@@ -96,12 +104,10 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testGetMembersWithMatchingFields() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
-        JexlNode query = JexlASTHelper.parseJexlQuery("(CITY == 'bar') && (NAME == 'aaa' || BAR == 'bbb')");
+        givenFields("CITY", "NAME", "COUNTY");
+        givenQuery("(CITY == 'bar') && (NAME == 'aaa' || BAR == 'bbb')");
         
-        Set<String> discoveredFields = SetMembershipVisitor.getMembers(fields, config, query);
-        assertThat(discoveredFields).containsExactly("CITY", "NAME");
+        assertMembership("CITY", "NAME");
     }
     
     /**
@@ -110,12 +116,10 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testGetMembersWithIndexOnlyFieldTaggingDisabledWithoutMatches() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
-        JexlNode query = JexlASTHelper.parseJexlQuery("(FOO == 'bar') && (BAT == 'aaa')");
+        givenFields("CITY", "NAME", "COUNTY");
+        givenQuery("(FOO == 'bar') && (BAT == 'aaa')");
         
-        Set<String> discoveredFields = SetMembershipVisitor.getMembers(fields, config, query, false);
-        assertThat(discoveredFields).isEmpty();
+        assertMembership();
     }
     
     /**
@@ -124,12 +128,10 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testGetMembersWithIndexOnlyFieldTaggingDisabledWithMatches() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
-        JexlNode query = JexlASTHelper.parseJexlQuery("(CITY == 'bar') && (NAME == 'aaa' || BAR == 'bbb')");
+        givenFields("CITY", "NAME", "COUNTY");
+        givenQuery("(CITY == 'bar') && (NAME == 'aaa' || BAR == 'bbb')");
         
-        Set<String> discoveredFields = SetMembershipVisitor.getMembers(fields, config, query, false);
-        assertThat(discoveredFields).containsExactly("CITY", "NAME");
+        assertMembership("CITY", "NAME");
     }
     
     /**
@@ -138,12 +140,10 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testIndexOnlyFieldInFilterFunctionsWithTaggingDisabled() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
-        JexlNode query = JexlASTHelper.parseJexlQuery("filter:includeRegex(NAME, 'aaa|bbb')");
+        givenFields("CITY", "NAME", "COUNTY");
+        givenQuery("filter:includeRegex(NAME, 'aaa|bbb')");
         
-        Set<String> discoveredFields = SetMembershipVisitor.getMembers(fields, config, query, false);
-        assertThat(discoveredFields).containsExactly("NAME");
+        assertMembership("NAME");
     }
     
     /**
@@ -153,13 +153,11 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testGetMembersWithIndexOnlyFieldTaggingEnabledWithoutMatches() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
-        JexlNode query = JexlASTHelper.parseJexlQuery("(FOO == 'bar') && (BAT == 'aaa')");
+        givenFields("CITY", "NAME", "COUNTY");
+        givenQuery("(FOO == 'bar') && (BAT == 'aaa')");
         
-        Set<String> discoveredFields = SetMembershipVisitor.getMembers(fields, config, query, true);
-        assertThat(discoveredFields).isEmpty();
-        JexlNodeAssert.assertThat(query).hasExactQueryString("(FOO == 'bar') && (BAT == 'aaa')");
+        assertMembershipWithTagging();
+        assertQuery("(FOO == 'bar') && (BAT == 'aaa')");
     }
     
     /**
@@ -169,13 +167,11 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testMatchingIndexOnlyFieldsNotInFilterFunctions() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
-        JexlNode query = JexlASTHelper.parseJexlQuery("(CITY == 'bar') && (NAME == 'aaa' || BAR == 'bbb')");
+        givenFields("CITY", "NAME", "COUNTY");
+        givenQuery("(CITY == 'bar') && (NAME == 'aaa' || BAR == 'bbb')");
         
-        Set<String> discoveredFields = SetMembershipVisitor.getMembers(fields, config, query, true);
-        assertThat(discoveredFields).containsExactly("CITY", "NAME");
-        JexlNodeAssert.assertThat(query).hasExactQueryString("(CITY == 'bar') && (NAME == 'aaa' || BAR == 'bbb')");
+        assertMembershipWithTagging("CITY", "NAME");
+        assertQuery("(CITY == 'bar') && (NAME == 'aaa' || BAR == 'bbb')");
     }
     
     /**
@@ -185,16 +181,12 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testTaggingIndexOnlyInFilterFunctions() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        config.setLazySetMechanismEnabled(true);
+        givenLazySetMechanismEnabled();
+        givenFields("CITY", "NAME", "COUNTY");
+        givenQuery("CITY == 'bar' && filter:includeRegex(NAME, 'aaa|bbb')");
         
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
-        JexlNode query = JexlASTHelper.parseJexlQuery("CITY == 'bar' && filter:includeRegex(NAME, 'aaa|bbb')");
-        
-        Set<String> discoveredFields = SetMembershipVisitor.getMembers(fields, config, query, true);
-        assertThat(discoveredFields).containsExactly("CITY", "NAME");
-        JexlNodeAssert.assertThat(query).hasExactQueryString(
-                        "CITY == 'bar' && filter:includeRegex(NAME@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION, 'aaa|bbb')");
+        assertMembershipWithTagging("CITY", "NAME");
+        assertQuery("CITY == 'bar' && filter:includeRegex(NAME@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION, 'aaa|bbb')");
     }
     
     /**
@@ -204,15 +196,12 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testTaggingIndexOnlyInNonFilterFunctions() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        config.setLazySetMechanismEnabled(true);
+        givenLazySetMechanismEnabled();
+        givenFields("CITY", "NAME", "COUNTY");
+        givenQuery("CITY == 'bar' && f:unique(NAME, BAR)");
         
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
-        JexlNode query = JexlASTHelper.parseJexlQuery("CITY == 'bar' && f:unique(NAME, BAR)");
-        
-        Set<String> discoveredFields = SetMembershipVisitor.getMembers(fields, config, query, true);
-        assertThat(discoveredFields).containsExactly("CITY", "NAME");
-        JexlNodeAssert.assertThat(query).hasExactQueryString("CITY == 'bar' && f:unique(NAME, BAR)");
+        assertMembershipWithTagging("CITY", "NAME");
+        assertQuery("CITY == 'bar' && f:unique(NAME, BAR)");
     }
     
     /**
@@ -222,16 +211,12 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testPreviouslyTaggedIndexOnlyFunctions() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        config.setLazySetMechanismEnabled(true);
+        givenLazySetMechanismEnabled();
+        givenFields("CITY", "NAME", "COUNTY");
+        givenQuery("CITY == 'bar' && filter:includeRegex(NAME@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION, 'aaa|bbb')");
         
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
-        JexlNode query = JexlASTHelper.parseJexlQuery("CITY == 'bar' && filter:includeRegex(NAME@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION, 'aaa|bbb')");
-        
-        Set<String> discoveredFields = SetMembershipVisitor.getMembers(fields, config, query, true);
-        assertThat(discoveredFields).containsExactly("CITY", "NAME");
-        JexlNodeAssert.assertThat(query).hasExactQueryString(
-                        "CITY == 'bar' && filter:includeRegex(NAME@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION, 'aaa|bbb')");
+        assertMembershipWithTagging("CITY", "NAME");
+        assertQuery("CITY == 'bar' && filter:includeRegex(NAME@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION, 'aaa|bbb')");
     }
     
     /**
@@ -240,11 +225,8 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testIndexOnlyFieldTaggingWhenLazySetMechanismIsDisabled() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        config.setLazySetMechanismEnabled(false);
-        
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
-        JexlNode query = JexlASTHelper.parseJexlQuery("CITY == 'bar' && filter:includeRegex(NAME, 'aaa|bbb')");
+        givenFields("CITY", "NAME", "COUNTY");
+        givenQuery("CITY == 'bar' && filter:includeRegex(NAME, 'aaa|bbb')");
         
         Assertions.assertThatExceptionOfType(DatawaveFatalQueryException.class).isThrownBy(() -> SetMembershipVisitor.getMembers(fields, config, query, true))
                         .withMessage("LAZY_SET mechanism is disabled for index-only fields");
@@ -256,11 +238,8 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testPreviouslyTaggedIndexOnlyFieldWhenLazySetMechanismIsDisabled() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        config.setLazySetMechanismEnabled(false);
-        
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
-        JexlNode query = JexlASTHelper.parseJexlQuery("CITY == 'bar' && filter:includeRegex(NAME@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION, 'aaa|bbb')");
+        givenFields("CITY", "NAME", "COUNTY");
+        givenQuery("CITY == 'bar' && filter:includeRegex(NAME@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION, 'aaa|bbb')");
         
         Assertions.assertThatExceptionOfType(DatawaveFatalQueryException.class).isThrownBy(() -> SetMembershipVisitor.getMembers(fields, config, query, true))
                         .withMessage("LAZY_SET mechanism is disabled for index-only fields");
@@ -272,13 +251,38 @@ public class SetMembershipVisitorTest {
      */
     @Test
     public void testPreviouslyTaggedNonMatchingFieldWhenLazySetMechanismIsDisabled() throws ParseException {
-        ShardQueryConfiguration config = new ShardQueryConfiguration();
-        config.setLazySetMechanismEnabled(false);
-        
-        Set<String> fields = Sets.newHashSet("CITY", "NAME", "COUNTY");
-        JexlNode query = JexlASTHelper.parseJexlQuery("NON_MATCH@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION == 'aaa'");
+        givenFields("CITY", "NAME", "COUNTY");
+        givenQuery("NON_MATCH@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION == 'aaa'");
         
         Assertions.assertThatExceptionOfType(DatawaveFatalQueryException.class).isThrownBy(() -> SetMembershipVisitor.getMembers(fields, config, query, false))
                         .withMessage("LAZY_SET mechanism is disabled for index-only fields");
+    }
+    
+    private void givenLazySetMechanismEnabled() {
+        config.setLazySetMechanismEnabled(true);
+    }
+    
+    private void givenQuery(String queryString) throws ParseException {
+        query = JexlASTHelper.parseJexlQuery(queryString);
+    }
+    
+    private void givenFields(String... fields) {
+        Collections.addAll(this.fields, fields);
+    }
+    
+    private void assertContains(boolean expected) {
+        assertThat(SetMembershipVisitor.contains(fields, config, query)).isEqualTo(expected);
+    }
+    
+    private void assertMembership(String... expected) {
+        assertThat(SetMembershipVisitor.getMembers(fields, config, query)).containsExactly(expected);
+    }
+    
+    private void assertMembershipWithTagging(String... expected) {
+        assertThat(SetMembershipVisitor.getMembers(fields, config, query, true)).containsExactly(expected);
+    }
+    
+    private void assertQuery(String expected) {
+        JexlNodeAssert.assertThat(query).hasExactQueryString(expected);
     }
 }
