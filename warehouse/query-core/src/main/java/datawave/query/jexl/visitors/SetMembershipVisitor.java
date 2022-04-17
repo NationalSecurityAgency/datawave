@@ -28,8 +28,8 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 
 /**
- * This visitor provides methods for determining whether a query tree contains any fields from a given query tree, and retrieving those matching fields if
- * desired. Optionally, this visitor will also tag index-only fields within filter functions for lazily-handled fetching and evaluation if specified.
+ * This visitor provides methods for determining if a query tree contains any of the provided fields, and retrieving those matching fields if desired.
+ * Optionally, this visitor will also tag index-only fields within filter functions for lazily-handled fetching and evaluation if specified.
  */
 public class SetMembershipVisitor extends BaseVisitor {
     
