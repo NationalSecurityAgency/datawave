@@ -669,71 +669,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
     }
     
-    protected DocumentEvaluation buildDocumentEvaluation() {
-        DocumentEvaluation documentEvaluation = new DocumentEvaluation();
-        documentEvaluation.setSerDe(config.getReturnType());
-        documentEvaluation.addFunction(evaluationFunction);
-        
-        boolean includeGroupingContext = config.getIncludeGroupingContext() || (config.getGroupFields() != null && !config.getGroupFields().isEmpty());
-        
-        documentEvaluation.addFunction(new MaskedValueFilterFunction(includeGroupingContext, isReducedResponse()));
-        documentEvaluation.addFunction(new AttributeKeepFunction());
-        // sort out include/whitelist/projection fields
-        Set<String> includeFields;
-        if (getConfig().getProjectFieldsAsString().equals(QueryOptions.EVERYTHING)) {
-            includeFields = UniversalSet.instance();
-        } else {
-            includeFields = getConfig().getProjectFields();
-        }
-        Set<String> excludeFields = getBlacklistedFields();
-        
-        if (!includeFields.isEmpty()) {
-            documentEvaluation.addFunction(new ProjectionFunction(includeGroupingContext, isReducedResponse(), includeFields, Collections.emptySet()));
-        } else {
-            documentEvaluation.addFunction(new ProjectionFunction(includeGroupingContext, isReducedResponse(), Collections.emptySet(), excludeFields));
-        }
-        
-        try {
-            if (scannerFactory.config.getConnector() != null) {
-                MetadataHelper metadataHelper = prepareMetadataHelper(scannerFactory.config.getConnector(), getConfig().getMetadataTableName(), getConfig()
-                                .getAuthorizations());
-                CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
-                Collection<Multimap<String,String>> compositeMaps = compositeMetadata.getCompositeFieldMapByType().values();
-                documentEvaluation.addFunction(new CompositeProjectionFunction(includeGroupingContext, isReducedResponse(), compositeMaps));
-            }
-        } catch (TableNotFoundException e) {
-            log.error("Could not add CompositeProjectionTransform, error was: ", e);
-        }
-        
-        documentEvaluation.addFunction(new EmptyDocumentFunction());
-        documentEvaluation.addFunction(new DocumentMetadataFunction());
-        
-        // configure limit fields
-        String limitFieldsString = getConfig().getLimitFieldsAsString();
-        if (org.apache.commons.lang3.StringUtils.isNotBlank(limitFieldsString)) {
-            Map<String,Integer> limitFieldsMap = new HashMap<>();
-            for (String paramGroup : Splitter.on(',').omitEmptyStrings().trimResults().split(limitFieldsString)) {
-                String[] keyAndValue = Iterables.toArray(Splitter.on('=').omitEmptyStrings().trimResults().split(paramGroup), String.class);
-                if (keyAndValue != null && keyAndValue.length > 1) {
-                    limitFieldsMap.put(keyAndValue[0], Integer.parseInt(keyAndValue[1]));
-                }
-            }
-            documentEvaluation.addFunction(new LimitFieldsTransform(limitFieldsMap));
-        }
-        
-        // remove grouping context, if it was added by QueryIterator
-        // we only drop into this block if the evaluating transform was provided with an updated query tree.
-        String query = evaluationFunction.getUpdatedQueryString();
-        if (!includeGroupingContext
-                        && query != null
-                        && (query.contains("grouping:") || query.contains("matchesInGroup") || query.contains("MatchesInGroup") || query
-                                        .contains("atomValuesMatch"))) {
-            documentEvaluation.addFunction(new RemoveGroupingContextFunction());
-        }
-        
-        return documentEvaluation;
-    }
-    
     protected void loadQueryParameters(ShardQueryConfiguration config, Query settings) throws QueryException {
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Parse query parameters");
         boolean rawDataOnly = false;
@@ -1073,6 +1008,71 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             selectedProfile.configure(config);
             selectedProfile.configure(planner);
         }
+    }
+    
+    protected DocumentEvaluation buildDocumentEvaluation() {
+        DocumentEvaluation documentEvaluation = new DocumentEvaluation();
+        documentEvaluation.setSerDe(config.getReturnType());
+        documentEvaluation.addFunction(evaluationFunction);
+        
+        boolean includeGroupingContext = config.getIncludeGroupingContext() || (config.getGroupFields() != null && !config.getGroupFields().isEmpty());
+        
+        documentEvaluation.addFunction(new MaskedValueFilterFunction(includeGroupingContext, isReducedResponse()));
+        documentEvaluation.addFunction(new AttributeKeepFunction());
+        // sort out include/whitelist/projection fields
+        Set<String> includeFields;
+        if (getConfig().getProjectFieldsAsString().equals(QueryOptions.EVERYTHING)) {
+            includeFields = UniversalSet.instance();
+        } else {
+            includeFields = getConfig().getProjectFields();
+        }
+        Set<String> excludeFields = getBlacklistedFields();
+        
+        if (!includeFields.isEmpty()) {
+            documentEvaluation.addFunction(new ProjectionFunction(includeGroupingContext, isReducedResponse(), includeFields, Collections.emptySet()));
+        } else {
+            documentEvaluation.addFunction(new ProjectionFunction(includeGroupingContext, isReducedResponse(), Collections.emptySet(), excludeFields));
+        }
+        
+        try {
+            if (scannerFactory.config.getConnector() != null) {
+                MetadataHelper metadataHelper = prepareMetadataHelper(scannerFactory.config.getConnector(), getConfig().getMetadataTableName(), getConfig()
+                                .getAuthorizations());
+                CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
+                Collection<Multimap<String,String>> compositeMaps = compositeMetadata.getCompositeFieldMapByType().values();
+                documentEvaluation.addFunction(new CompositeProjectionFunction(includeGroupingContext, isReducedResponse(), compositeMaps));
+            }
+        } catch (TableNotFoundException e) {
+            log.error("Could not add CompositeProjectionTransform, error was: ", e);
+        }
+        
+        documentEvaluation.addFunction(new EmptyDocumentFunction());
+        documentEvaluation.addFunction(new DocumentMetadataFunction());
+        
+        // configure limit fields
+        String limitFieldsString = getConfig().getLimitFieldsAsString();
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(limitFieldsString)) {
+            Map<String,Integer> limitFieldsMap = new HashMap<>();
+            for (String paramGroup : Splitter.on(',').omitEmptyStrings().trimResults().split(limitFieldsString)) {
+                String[] keyAndValue = Iterables.toArray(Splitter.on('=').omitEmptyStrings().trimResults().split(paramGroup), String.class);
+                if (keyAndValue != null && keyAndValue.length > 1) {
+                    limitFieldsMap.put(keyAndValue[0], Integer.parseInt(keyAndValue[1]));
+                }
+            }
+            documentEvaluation.addFunction(new LimitFieldsTransform(limitFieldsMap));
+        }
+        
+        // remove grouping context, if it was added by QueryIterator
+        // we only drop into this block if the evaluating transform was provided with an updated query tree.
+        String query = evaluationFunction.getUpdatedQueryString();
+        if (!includeGroupingContext
+                        && query != null
+                        && (query.contains("grouping:") || query.contains("matchesInGroup") || query.contains("MatchesInGroup") || query
+                                        .contains("atomValuesMatch"))) {
+            documentEvaluation.addFunction(new RemoveGroupingContextFunction());
+        }
+        
+        return documentEvaluation;
     }
     
     void configureDocumentAggregation(Query settings) {
