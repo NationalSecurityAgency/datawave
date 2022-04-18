@@ -1,6 +1,10 @@
 package datawave.query;
 
 import com.google.common.collect.ImmutableMap;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Content;
+import datawave.query.attributes.Document;
+import datawave.query.function.DocumentPermutation;
 import datawave.query.testframework.AbstractFields;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
@@ -13,12 +17,17 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.RawDataManager;
+import org.apache.accumulo.core.data.Key;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +35,7 @@ import java.util.Set;
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
+import static datawave.query.testframework.RawDataManager.RE_OP;
 
 /**
  * Tests for grouping data. The {@link BooksDataManager} will create the valid grouping entries.
@@ -96,11 +106,45 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testEvaluationOnlyAuthor() throws Exception {
         log.info("------  testEvaluationOnlyAuthor  ------");
-        String bloch = "'BLOCH'";
-        String authorLastName = "AUTHOR_LAST_NAME";
-        logic.setEvaluationOnlyFields(authorLastName);
-        String query = authorLastName + EQ_OP + bloch + AND_OP + BooksField.LANGUAGE.name() + EQ_OP + "'ENGLISH'";
-        runTest(query, query, QUERY_OPTIONS);
+        String bloch = "BLOCH";
+        logic.setEvaluationOnlyFields(AUTHOR_FIRST_NAME + ',' + AUTHOR_LAST_NAME);
+        logic.setDocumentPermutations(Collections.singletonList(AuthorNameParts.class.getName()));
+        String query = AUTHOR_LAST_NAME + EQ_OP + '\'' + bloch + '\'' + AND_OP + BooksField.LANGUAGE.name() + EQ_OP + "'ENGLISH'";
+        String expectedQuery = BooksField.AUTHOR + RE_OP + "'.*" + bloch + '\'' + AND_OP + BooksField.LANGUAGE.name() + EQ_OP + "'ENGLISH'";
+        runTest(query, expectedQuery, QUERY_OPTIONS);
+    }
+    
+    public static String AUTHOR_LAST_NAME = "AUTHOR_LAST_NAME";
+    public static String AUTHOR_FIRST_NAME = "AUTHOR_FIRST_NAME";
+    
+    public static class AuthorNameParts implements DocumentPermutation {
+        
+        @Nullable
+        @Override
+        public Map.Entry<Key,Document> apply(@Nullable Map.Entry<Key,Document> keyDocumentEntry) {
+            if (keyDocumentEntry != null) {
+                Document doc = keyDocumentEntry.getValue();
+                if (doc != null) {
+                    Map<String,Attribute<? extends Comparable<?>>> attrs = new HashMap<>();
+                    for (Map.Entry<String,Attribute<? extends Comparable<?>>> entry : doc.getDictionary().entrySet()) {
+                        if (entry.getKey().equals(BooksField.AUTHOR.name()) || entry.getKey().startsWith(BooksField.AUTHOR.name() + '.')) {
+                            String attrExtra = entry.getKey().substring(BooksField.AUTHOR.name().length());
+                            Attribute attr = entry.getValue();
+                            String name = attr.getData().toString();
+                            String[] parts = StringUtils.split(name, ' ');
+                            if (parts.length > 1) {
+                                attrs.put(AUTHOR_FIRST_NAME + attrExtra, new Content(parts[0], attr.getMetadata(), false));
+                            }
+                            attrs.put(AUTHOR_LAST_NAME + attrExtra, new Content(parts[parts.length - 1], attr.getMetadata(), false));
+                        }
+                    }
+                    for (Map.Entry<String,Attribute<? extends Comparable<?>>> entry : attrs.entrySet()) {
+                        doc.put(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+            return keyDocumentEntry;
+        }
     }
     
     @Test

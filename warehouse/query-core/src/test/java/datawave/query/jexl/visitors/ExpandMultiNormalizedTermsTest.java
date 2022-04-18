@@ -11,14 +11,24 @@ import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 public class ExpandMultiNormalizedTermsTest {
     
@@ -451,6 +461,33 @@ public class ExpandMultiNormalizedTermsTest {
         
         JexlNodeAssert.assertThat(script).isEqualTo(smashed).isEqualTo(queryTree).hasValidLineage();
         JexlNodeAssert.assertThat(queryTree).isEqualTo(query).hasValidLineage();
+    }
+    
+    @Test
+    public void testDelayedPredicates() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
+        
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        List<String> markers = Arrays.asList(new String[] {IndexHoleMarkerJexlNode.label(), ASTDelayedPredicate.label(), ASTEvaluationOnly.label(),
+                ExceededOrThresholdMarkerJexlNode.label()});
+        for (String marker : markers) {
+            String original = "((" + marker + " = true) && (FOO == 'Bar'))";
+            String expected = "((" + marker + " = true) && (FOO == 'bar'))";
+            expandTerms(original, expected);
+        }
+        
+        markers = Arrays.asList(new String[] {ExceededTermThresholdMarkerJexlNode.label(), ExceededValueThresholdMarkerJexlNode.label()});
+        for (String marker : markers) {
+            String original = "((" + marker + " = true) && (FOO == 'Bar'))";
+            String expected = "((" + marker + " = true) && (FOO == 'Bar'))";
+            expandTerms(original, expected);
+        }
     }
     
     private void expandTerms(String original, String expected) throws ParseException {

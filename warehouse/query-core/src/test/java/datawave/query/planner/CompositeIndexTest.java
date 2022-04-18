@@ -197,6 +197,7 @@ public class CompositeIndexTest {
                         .deleteClass(DefaultEdgeEventQueryLogic.class)
                         .deleteClass(RemoteEdgeDictionary.class)
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
+                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .addAsManifestResource(
                                         new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
                                                         + "</alternatives>"), "beans.xml");
@@ -519,7 +520,8 @@ public class CompositeIndexTest {
         
         // increase the depth threshold
         logic.setMaxDepthThreshold(20);
-        logic.setMaxTermThreshold(15);
+        logic.setInitialMaxTermThreshold(15);
+        logic.setFinalMaxTermThreshold(15);
         
         // set the pushdown threshold really high to avoid collapsing uids into shards (overrides setCollapseUids if #terms is greater than this threshold)
         ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);

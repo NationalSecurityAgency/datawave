@@ -132,6 +132,7 @@ public abstract class ExecutableExpansionVisitorTest {
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "nsa.datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
                         .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
+                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
                         .deleteClass(datawave.query.tables.edge.DefaultEdgeEventQueryLogic.class)
                         .addAsManifestResource(
                                         new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
@@ -149,7 +150,8 @@ public abstract class ExecutableExpansionVisitorTest {
         
         logic.setFullTableScanEnabled(false);
         logic.setMaxDepthThreshold(11);
-        logic.setMaxTermThreshold(12);
+        logic.setInitialMaxTermThreshold(12);
+        logic.setFinalMaxTermThreshold(12);
         deserializer = new KryoDocumentDeserializer();
     }
     
