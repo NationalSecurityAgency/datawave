@@ -89,6 +89,14 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
             documents.add(keyDocumentEntry);
         }
+        
+        long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
+        if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
+            Document document = new Document();
+            document.setIsIntermediateResult(true);
+            return Maps.immutableEntry(new Key(), document);
+        }
+        
         return null;
     }
     
@@ -101,13 +109,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      */
     @Override
     public Entry<Key,Document> flush() {
-        long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
-        if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
-            Document document = new Document();
-            document.setIsIntermediateResult(true);
-            return Maps.immutableEntry(new Key(), document);
-        }
-        
         Entry<Key,Document> entry = null;
         if (!documents.isEmpty()) {
             entry = documents.pop();
