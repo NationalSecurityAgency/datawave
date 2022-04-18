@@ -119,6 +119,14 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             this.countingMap = groupingInfo.getCountsMap();
             this.fieldVisibilities.putAll(groupingInfo.getFieldVisibilities());
         }
+        
+        long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
+        if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
+            Document intermediateResult = new Document();
+            intermediateResult.setIsIntermediateResult(true);
+            return Maps.immutableEntry(new Key(), intermediateResult);
+        }
+        
         return null;
     }
     
@@ -151,18 +159,6 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 d.put("COUNT", attr);
                 documents.add(d);
             }
-        }
-        
-        // Handle if the current page has exceeded its execution timeout, but there are still more results to return
-        // This must be done BEFORE popping documents from the document stack.
-        long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
-        if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
-            // Reset the queryExecutionForPageStartTime and clear the documents list so that it doesn't contain
-            // duplicates. Then return an empty document with the intermediate result flag set to true
-            documents.clear();
-            Document intermediateResult = new Document();
-            intermediateResult.setIsIntermediateResult(true);
-            return Maps.immutableEntry(new Key(), intermediateResult);
         }
         
         if (!documents.isEmpty()) {

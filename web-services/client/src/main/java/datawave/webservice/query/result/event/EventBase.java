@@ -18,6 +18,8 @@ public abstract class EventBase<T,F extends FieldBase<F>> implements HasMarkings
     
     protected transient boolean intermediateResult;
     
+    protected transient boolean reachedMaxIntermediateResults;
+    
     public abstract Metadata getMetadata();
     
     public abstract void setMetadata(Metadata metadata);
@@ -66,4 +68,11 @@ public abstract class EventBase<T,F extends FieldBase<F>> implements HasMarkings
         this.intermediateResult = intermediateResult;
     }
     
+    public boolean hasReachedMaxIntermediateResults() {
+        return reachedMaxIntermediateResults;
+    }
+    
+    public void setReachedMaxIntermediateResults(boolean reachedMaxIntermediateResults) {
+        this.reachedMaxIntermediateResults = reachedMaxIntermediateResults;
+    }
 }

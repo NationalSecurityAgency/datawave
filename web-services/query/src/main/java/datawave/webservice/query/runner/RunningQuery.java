@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -65,6 +66,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private RunningQueryTiming timing = null;
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
+    private volatile Future<Object> hasNextFuture = null;
     private QueryPredictor predictor = null;
     private long maxResults = 0;
     
@@ -107,6 +109,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, principal);
         this.timing = timing;
         this.executor = executor;
+        if (this.executor == null) {
+            this.executor = Executors.newSingleThreadExecutor();
+        }
         this.predictor = predictor;
         // set the metric information
         this.getMetric().populate(this.settings);
@@ -206,6 +211,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         boolean hitPageByteTrigger = false;
         boolean hitPageTimeTrigger = false;
         boolean hitIntermediateResult = false;
+        boolean hitMaxIntermediateResult = false;
         try {
             addNDC();
             int currentPageCount = 0;
@@ -213,113 +219,119 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             
             // test for any exceptions prior to loop as hasNext() would likely be false;
             testForUncaughtException(resultList.size());
-            while (!this.finished && ((future != null) || this.iter.hasNext())) {
-                // if we are canceled, then break out
-                if (this.canceled) {
-                    log.info("Query has been cancelled, aborting query.next call");
-                    this.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
-                    break;
-                }
-                // if the number of results has reached our page size, then break out
-                if (currentPageCount >= this.settings.getPagesize()) {
-                    log.info("Query requested page size had been reached, aborting query.next call");
-                    break;
-                }
-                // if the logic had a max page size and we have reached that, then break out
-                if (this.logic.getMaxPageSize() > 0 && currentPageCount >= this.logic.getMaxPageSize()) {
-                    log.info("Query logic max page size has been reached, aborting query.next call");
-                    break;
-                }
-                // if the logic had a page byte trigger, and we have reached that, then break out
-                if (this.logic.getPageByteTrigger() > 0 && currentPageBytes >= this.logic.getPageByteTrigger()) {
-                    log.info("Query logic max page byte trigger has been reached, aborting query.next call");
-                    hitPageByteTrigger = true;
-                    break;
-                }
-                // if the logic had a max num results (across all pages) and we have reached that (or the maxResultsOverride if set), then break out
-                if (this.settings.isMaxResultsOverridden()) {
-                    if (this.settings.getMaxResultsOverride() >= 0 && numResults >= this.settings.getMaxResultsOverride()) {
-                        log.info("Max results override has been reached, aborting query.next call");
+            hasNextFuture = executor.submit(() -> this.iter.hasNext());
+            try {
+                while ((!this.finished && (future != null)) || (Boolean) hasNextFuture.get(3000000, TimeUnit.MILLISECONDS)) {
+                    // if we are canceled, then break out
+                    if (this.canceled) {
+                        log.info("Query has been cancelled, aborting query.next call");
+                        this.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
+                        break;
+                    }
+                    // if the number of results has reached our page size, then break out
+                    if (currentPageCount >= this.settings.getPagesize()) {
+                        log.info("Query requested page size had been reached, aborting query.next call");
+                        break;
+                    }
+                    // if the logic had a max page size, and we have reached that, then break out
+                    if (this.logic.getMaxPageSize() > 0 && currentPageCount >= this.logic.getMaxPageSize()) {
+                        log.info("Query logic max page size has been reached, aborting query.next call");
+                        break;
+                    }
+                    // if the logic had a page byte trigger, and we have reached that, then break out
+                    if (this.logic.getPageByteTrigger() > 0 && currentPageBytes >= this.logic.getPageByteTrigger()) {
+                        log.info("Query logic max page byte trigger has been reached, aborting query.next call");
+                        hitPageByteTrigger = true;
+                        break;
+                    }
+                    // if the logic had a max num results (across all pages) and we have reached that (or the maxResultsOverride if set), then break out
+                    if (this.settings.isMaxResultsOverridden()) {
+                        if (this.settings.getMaxResultsOverride() >= 0 && numResults >= this.settings.getMaxResultsOverride()) {
+                            log.info("Max results override has been reached, aborting query.next call");
+                            this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
+                            break;
+                        }
+                    } else if (this.maxResults >= 0 && numResults >= this.maxResults) {
+                        log.info("Query logic max results has been reached, aborting query.next call");
                         this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
                         break;
                     }
-                } else if (this.maxResults >= 0 && numResults >= this.maxResults) {
-                    log.info("Query logic max results has been reached, aborting query.next call");
-                    this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXRESULTS);
-                    break;
-                }
-                if (this.logic.getMaxWork() >= 0 && (this.getMetric().getNextCount() + this.getMetric().getSeekCount()) >= this.logic.getMaxWork()) {
-                    log.info("Query logic max work has been reached, aborting query.next call");
-                    this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXWORK);
-                    break;
-                }
-                // if we are the specified amount on the way to timing out on this call and we have results,
-                // determine whether we are on track to having enough results
-                // use the pagestart time for the time in call since we only care about the execution time of
-                // this page.
-                long pageTimeInCall = (System.currentTimeMillis() - pageStartTime);
-                
-                int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
-                if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
-                    log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
-                                    + pageTimeInCall + " " + timing);
-                    hitPageTimeTrigger = true;
-                    break;
-                }
-                
-                Object o = null;
-                if (executor != null) {
+                    if (this.logic.getMaxWork() >= 0 && (this.getMetric().getNextCount() + this.getMetric().getSeekCount()) >= this.logic.getMaxWork()) {
+                        log.info("Query logic max work has been reached, aborting query.next call");
+                        this.getMetric().setLifecycle(QueryMetric.Lifecycle.MAXWORK);
+                        break;
+                    }
+                    // if we are the specified amount on the way to timing out on this call and we have results,
+                    // determine whether we are on track to having enough results
+                    // use the pagestart time for the time in call since we only care about the execution time of
+                    // this page.
+                    long pageTimeInCall = (System.currentTimeMillis() - pageStartTime);
+                    
+                    int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
+                    if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
+                        log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
+                                        + pageTimeInCall + " " + timing);
+                        hitPageTimeTrigger = true;
+                        break;
+                    }
+                    
+                    Object o = null;
+                    if (executor != null) {
+                        if (future == null) {
+                            future = executor.submit(() -> iter.next());
+                        }
+                        try {
+                            o = future.get(1, TimeUnit.MINUTES);
+                            future = null;
+                        } catch (InterruptedException ie) {
+                            // in this case we were most likely cancelled, no longer waiting
+                            future = null;
+                        } catch (ExecutionException ee) {
+                            // in this case we need to pass up the exception
+                            future = null;
+                            throw ee;
+                        } catch (TimeoutException te) {
+                            // in this case we are still waiting on our future....simply continue
+                        }
+                    } else {
+                        o = iter.next();
+                    }
+                    
+                    if (o instanceof DefaultEvent) {
+                        if (((DefaultEvent) o).isIntermediateResult()) {
+                            hitIntermediateResult = true;
+                            break;
+                        }
+                    }
+                    
+                    // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
+                    if (iter.getTransformer() instanceof WritesQueryMetrics) {
+                        ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
+                    }
+                    
+                    // if not still waiting on a future, then process the result (or lack thereof)
                     if (future == null) {
-                        future = executor.submit(() -> iter.next());
+                        if (null == o) {
+                            log.debug("Null result encountered, no more results");
+                            this.finished = true;
+                            break;
+                        }
+                        resultList.add(o);
+                        if (this.logic.getPageByteTrigger() > 0) {
+                            currentPageBytes += ObjectSizeOf.Sizer.getObjectSize(o);
+                        }
+                        currentPageCount++;
+                        numResults++;
                     }
-                    try {
-                        o = future.get(1, TimeUnit.MINUTES);
-                        future = null;
-                    } catch (InterruptedException ie) {
-                        // in this case we were most likely cancelled, no longer waiting
-                        future = null;
-                    } catch (ExecutionException ee) {
-                        // in this case we need to pass up the exception
-                        future = null;
-                        throw ee;
-                    } catch (TimeoutException te) {
-                        // in this case we are still waiting on our future....simply continue
-                    }
-                } else {
-                    o = iter.next();
+                    
+                    testForUncaughtException(resultList.size());
+                    hasNextFuture = executor.submit(() -> this.iter.hasNext());
                 }
-                
-                if (o instanceof DefaultEvent) {
-                    if (((DefaultEvent) o).isIntermediateResult()) {
-                        hitIntermediateResult = true;
-                        break;
-                    }
-                }
-                
-                // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
-                if (iter.getTransformer() instanceof WritesQueryMetrics) {
-                    ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
-                }
-                
-                // if not still waiting on a future, then process the result (or lack thereof)
-                if (future == null) {
-                    if (null == o) {
-                        log.debug("Null result encountered, no more results");
-                        this.finished = true;
-                        break;
-                    }
-                    resultList.add(o);
-                    if (this.logic.getPageByteTrigger() > 0) {
-                        currentPageBytes += ObjectSizeOf.Sizer.getObjectSize(o);
-                    }
-                    currentPageCount++;
-                    numResults++;
-                }
-                
-                testForUncaughtException(resultList.size());
-                
+            } catch (TimeoutException te) {
+                // This means the iter.hasNext() call didn't return within the allotted time. Manually return an
+                // intermediate result -- don't have a count here to know how many times we've returned an intermediate result...
+                hitIntermediateResult = true;
             }
-            
             // if the last hasNext() call failed, then we would catch the exception here
             testForUncaughtException(resultList.size());
             
@@ -348,7 +360,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
         }
         
-        if (hitIntermediateResult) {
+        if (hitMaxIntermediateResult) {
+            return new ResultsPage(new ArrayList<>(), ResultsPage.Status.COMPLETE);
+        } else if (hitIntermediateResult) {
             return new ResultsPage(new ArrayList<>(), ResultsPage.Status.PARTIAL);
         } else if (resultList.isEmpty()) {
             return new ResultsPage();

@@ -2,6 +2,7 @@ package datawave.webservice.query.iterator;
 
 import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.Flushable;
+import datawave.webservice.query.result.event.DefaultEvent;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
@@ -12,6 +13,8 @@ public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
     
     private Logger log = Logger.getLogger(DatawaveTransformIterator.class);
     private O next = null;
+    
+    private int intermediateCount = 0;
     
     public DatawaveTransformIterator() {
         super();
@@ -30,6 +33,17 @@ public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
         
         if (next == null) {
             next = getNext();
+            if (next != null) {
+                if (next instanceof DefaultEvent) {
+                    if (((DefaultEvent) next).isIntermediateResult()) {
+                        // up the count
+                        intermediateCount++;
+                        if (intermediateCount == 3) {
+                            ((DefaultEvent) next).setReachedMaxIntermediateResults(true);
+                        }
+                    }
+                }
+            }
         }
         return (next != null);
     }
