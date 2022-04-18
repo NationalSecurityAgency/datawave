@@ -252,4 +252,20 @@ public class JexlNodes {
     public static boolean isNotChildless(JexlNode node) {
         return node != null && node.jjtGetNumChildren() > 0;
     }
+    
+    /**
+     * Ascends the entire Jexl tree searching for a negation. In the case of an unflattened tree this may be an expensive operation
+     *
+     * @param node
+     *            an arbitrary JexlNode
+     * @return true if an ASTNotNode exists in this node's ancestry
+     */
+    public static boolean findNegatedParent(JexlNode node) {
+        while (node.jjtGetParent() != null) {
+            node = node.jjtGetParent();
+            if (node instanceof ASTNotNode)
+                return true;
+        }
+        return false;
+    }
 }
