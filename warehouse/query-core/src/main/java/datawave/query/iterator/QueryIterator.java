@@ -384,6 +384,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        log.info("QueryIterator begins seeking..");
+        
         // preserve the original range for use with the Final Document tracking iterator because it is placed after the ResultCountingIterator
         // so the FinalDocumentTracking iterator needs the start key with the count already appended
         originalRange = range;
@@ -402,6 +404,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         try {
             if (log.isDebugEnabled()) {
                 log.debug("Seek range: " + range + " " + query);
+            } else {
+                log.info("Seek range: " + range + " " + query);
             }
             this.range = range;
             
@@ -409,7 +413,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             long resultCount = 0;
             if (!range.isStartKeyInclusive()) {
                 // see if we can fail fast. If we were rebuilt with the FinalDocument key, then we are already completely done
+                log.info("Checking if this is the FinalDocument key..");
                 if (collectTimingDetails && FinalDocumentTrackingIterator.isFinalDocumentKey(range.getStartKey())) {
+                    log.info("Cutting out, since collectTimingDetails is true and this is the FinalDocument.");
                     this.seekKeySource = new EmptyTreeIterable();
                     this.serializedDocuments = EmptyIterator.emptyIterator();
                     prepareKeyValue(span);
@@ -419,6 +425,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 // see if we have a count in the cf
                 Key startKey = range.getStartKey();
                 String[] parts = StringUtils.split(startKey.getColumnFamily().toString(), '\0');
+                log.info("startKey: " + startKey.getRow().toString() + " " + startKey.getColumnFamily().toString() + " " + startKey.getColumnQualifier().toString());
+                
                 if (parts.length == 3) {
                     resultCount = NumericalEncoder.decode(parts[0]).longValue();
                     // remove the count from the range
@@ -437,6 +445,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             if (documentRange != null && !documentRange.isStartKeyInclusive()) {
                 if (log.isTraceEnabled()) {
                     log.trace("Received non-inclusive event specific range: " + documentRange);
+                } else {
+                    log.info("Received non-inclusive event specific range: " + documentRange);
                 }
                 if (gatherTimingDetails()) {
                     this.seekKeySource = new EvaluationTrackingNestedIterator(QuerySpan.Stage.EmptyTree, trackingSpan, new EmptyTreeIterable(), myEnvironment);
@@ -454,10 +464,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 Map.Entry<Key,Document> documentKey = Maps.immutableEntry(super.getDocumentKey.apply(documentRange), new Document());
                 if (log.isTraceEnabled()) {
                     log.trace("Transformed document key: " + documentKey);
+                } else {
+                    log.info("documentKey: " + documentKey);
+                    log.info("gatherTimingDetails: " + gatherTimingDetails());
                 }
                 // we can only trim if we're certain that the projected fields
                 // aren't needed for evaluation
-                
                 if (gatherTimingDetails()) {
                     this.seekKeySource = new EvaluationTrackingNestedIterator(QuerySpan.Stage.DocumentSpecificTree, trackingSpan,
                                     new DocumentSpecificNestedIterator(documentKey), myEnvironment);
@@ -520,24 +532,25 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             if (this.getReturnType() == ReturnType.kryo) {
                 // Serialize the Document using Kryo
+                log.info("Serializing document using Kryo");
                 this.serializedDocuments = Iterators.transform(pipelineDocuments, new KryoDocumentSerializer(isReducedResponse(), isCompressResults()));
             } else if (this.getReturnType() == ReturnType.writable) {
+                log.info("Serializing document using Writable interface");
                 // Use the Writable interface to serialize the Document
                 this.serializedDocuments = Iterators.transform(pipelineDocuments, new WritableDocumentSerializer(isReducedResponse()));
             } else if (this.getReturnType() == ReturnType.tostring) {
+                log.info("Returning toString() version of document");
                 // Just return a toString() representation of the document
                 this.serializedDocuments = Iterators.transform(pipelineDocuments, new ToStringDocumentSerializer(isReducedResponse()));
             } else {
                 throw new IllegalArgumentException("Unknown return type of: " + this.getReturnType());
             }
             
-            if (log.isTraceEnabled()) {
-                KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
-                this.serializedDocuments = Iterators.filter(this.serializedDocuments, keyValueEntry -> {
-                    log.trace("after serializing, keyValueEntry:" + dser.apply(keyValueEntry));
-                    return true;
-                });
-            }
+            KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
+            this.serializedDocuments = Iterators.filter(this.serializedDocuments, keyValueEntry -> {
+                log.info("after serializing, keyValueEntry:" + dser.apply(keyValueEntry));
+                return true;
+            });
             
             // now add the result count to the keys (required when not sorting UIDs)
             // Cannot do this on document specific ranges as the count would place the keys outside the initial range
@@ -555,15 +568,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 this.serializedDocuments = new FinalDocumentTrackingIterator(querySpanCollector, trackingSpan, originalRange, this.serializedDocuments,
                                 this.getReturnType(), this.isReducedResponse(), this.isCompressResults(), this.yield);
             }
-            if (log.isTraceEnabled()) {
-                KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
-                this.serializedDocuments = Iterators.filter(this.serializedDocuments, keyValueEntry -> {
-                    log.debug("finally, considering:" + dser.apply(keyValueEntry));
-                    return true;
-                });
-            }
+            KryoDocumentDeserializer dserTwo = new KryoDocumentDeserializer();
+            this.serializedDocuments = Iterators.filter(this.serializedDocuments, keyValueEntry -> {
+                log.debug("finally, considering:" + dserTwo.apply(keyValueEntry));
+                return true;
+            });
             
             // Determine if we have items to return
+            log.info("Preparing key value, if we have any items left to return.");
             prepareKeyValue(span);
         } catch (Exception e) {
             handleException(e);
