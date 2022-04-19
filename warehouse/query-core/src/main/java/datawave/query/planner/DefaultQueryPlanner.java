@@ -16,6 +16,7 @@ import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
@@ -64,6 +65,7 @@ import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
+import datawave.query.jexl.visitors.IsNotNullPruningVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.NoExpansionFunctionVisitor;
@@ -390,14 +392,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         builderThread = Executors.newSingleThreadExecutor();
         
         ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
-        
-        // lets mark the query as started (used by ivarators at a minimum)
         try {
             markQueryStarted(config, settings);
         } catch (Exception e) {
             throw new DatawaveQueryException("Failed to mark query as started" + settings.getId(), e);
         }
-        
         return process(scannerFactory, getMetadataHelper(config), getDateIndexHelper(config), config, query, settings);
     }
     
@@ -536,6 +535,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFieldsAsString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
+        addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), true);
@@ -575,8 +575,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.error("Failed to close query " + settings.getId(), e);
         }
         
-        if (null != builderThread)
+        if (null != builderThread) {
             builderThread.shutdown();
+        }
     }
     
     private QueryLock getQueryLock(ShardQueryConfiguration config, Query settings) throws Exception {
@@ -762,12 +763,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         if (disableBoundedLookup) {
             // protection mechanism. If we disable bounded ranges and have a
             // LT,GT or ER node, we should expand it
-            if (BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, metadataHelper, config.getQueryTree()))
+            if (BoundedRangeDetectionVisitor.mustExpandBoundedRange(config, metadataHelper, config.getQueryTree())) {
                 disableBoundedLookup = false;
+            }
         }
         if (!indexOnlyFields.isEmpty()) {
             config.setQueryTree(expandRegexFunctionNodes(config.getQueryTree(), config, metadataHelper, indexOnlyFields));
         }
+        
+        config.setQueryTree(timedPruneIsNotNullNodes(timers, config.getQueryTree()));
         
         config.setQueryTree(processTree(config.getQueryTree(), config, settings, metadataHelper, scannerFactory, queryData, timers, queryModel));
         
@@ -949,8 +953,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_ACCESS_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             } catch (CannotExpandUnfieldedTermFatalException e) {
-                if (null != e.getCause() && e.getCause() instanceof DoNotPerformOptimizedQueryException)
+                if (null != e.getCause() && e.getCause() instanceof DoNotPerformOptimizedQueryException) {
                     throw (DoNotPerformOptimizedQueryException) e.getCause();
+                }
                 QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
                 throw new DatawaveFatalQueryException(qe);
             }
@@ -1217,6 +1222,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     protected ASTJexlScript timedRewriteNegations(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, "Rewrite Negated Equality Operators", () -> (RewriteNegationsVisitor.rewrite(script)));
+    }
+    
+    protected ASTJexlScript timedPruneIsNotNullNodes(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, "Prune IsNotNull Nodes", () -> (ASTJexlScript) IsNotNullPruningVisitor.prune(script));
     }
     
     protected ASTJexlScript timedApplyQueryModel(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
@@ -1665,7 +1674,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         inverseReverseModel.putAll(queryModel.getForwardQueryMapping());
         Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getBlacklistedFields(), limitFields = config.getLimitFields(), groupFields = config
                         .getGroupFields();
-        UniqueFields uniqueFields = config.getUniqueFields();
         
         if (projectFields != null && !projectFields.isEmpty()) {
             projectFields = queryModel.remapParameter(projectFields, inverseReverseModel);
@@ -1685,12 +1693,22 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setProjectFields(Sets.newHashSet(remappedGroupFields));
         }
         
+        UniqueFields uniqueFields = config.getUniqueFields();
         if (uniqueFields != null && !uniqueFields.isEmpty()) {
             uniqueFields.remapFields(inverseReverseModel);
             if (log.isTraceEnabled()) {
                 log.trace("Updated unique set using query model to: " + uniqueFields.getFields());
             }
             config.setUniqueFields(uniqueFields);
+        }
+        
+        ExcerptFields excerptFields = config.getExcerptFields();
+        if (excerptFields != null && !excerptFields.isEmpty()) {
+            excerptFields.expandFields(inverseReverseModel);
+            if (log.isTraceEnabled()) {
+                log.trace("Updated excerpt fields using query model to " + excerptFields.getFields());
+            }
+            config.setExcerptFields(excerptFields);
         }
         
         if (config.getBlacklistedFields() != null && !config.getBlacklistedFields().isEmpty()) {

@@ -3,7 +3,6 @@ package datawave.query.iterator;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
-import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -69,6 +68,7 @@ import datawave.query.predicate.EmptyDocumentFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
+import datawave.query.transformer.ExcerptTransform;
 import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
@@ -190,7 +190,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     protected UniqueTransform uniqueTransform = null;
     
-    protected GroupingTransform groupingTransform;
+    protected GroupingIterator groupingIterator;
     
     protected boolean groupingContextAddedByMe = false;
     
@@ -199,6 +199,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected Map<String,Object> exceededOrEvaluationCache = null;
     
     protected ActiveQueryLog activeQueryLog;
+    
+    protected ExcerptTransform excerptTransform = null;
+    private Iterator<Entry<Key,Document>> entryIterator;
     
     public QueryIterator() {}
     
@@ -499,16 +502,17 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             // apply the grouping transform if requested and if the batch size is greater than zero
             // if the batch size is 0, then grouping is computed only on the web server
-            GroupingTransform groupify = getGroupingTransform();
-            if (groupify != null && this.groupFieldsBatchSize > 0) {
-                
-                pipelineDocuments = groupingTransform.getGroupingIterator(pipelineDocuments, this.groupFieldsBatchSize, this.yield);
-                
-                if (log.isTraceEnabled()) {
-                    pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
-                        log.trace("after grouping, keyDocumentEntry:" + keyDocumentEntry);
-                        return true;
-                    });
+            if (this.groupFieldsBatchSize > 0) {
+                GroupingIterator groupify = getGroupingIteratorInstance(pipelineDocuments);
+                if (groupify != null) {
+                    pipelineDocuments = groupify;
+                    
+                    if (log.isTraceEnabled()) {
+                        pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
+                            log.trace("after grouping, keyDocumentEntry:" + keyDocumentEntry);
+                            return true;
+                        });
+                    }
                 }
             }
             
@@ -919,6 +923,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                             inclusive);
         }
         
+        ExcerptTransform excerptTransform = getExcerptTransform();
+        if (excerptTransform != null) {
+            documents = excerptTransform.getIterator(documents);
+        }
+        
         // a hook to allow mapping the document such as with the TLD or Parent
         // query logics
         // or if the document was not aggregated in the first place because the
@@ -1245,10 +1254,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         
         if (this.useWhiteListedFields) {
-            projection.initializeWhitelist(this.whiteListedFields);
+            projection.setIncludes(this.whiteListedFields);
             return projection;
         } else if (this.useBlackListedFields) {
-            projection.initializeBlacklist(this.blackListedFields);
+            projection.setExcludes(this.blackListedFields);
             return projection;
         } else {
             String msg = "Configured to use projection, but no whitelist or blacklist was provided";
@@ -1269,7 +1278,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
             }
         }
-        projection.initializeBlacklist(composites);
+        projection.setExcludes(composites);
         return projection;
     }
     
@@ -1598,16 +1607,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return uniqueTransform;
     }
     
-    protected GroupingTransform getGroupingTransform() {
-        if (groupingTransform == null && getGroupFields() != null && !getGroupFields().isEmpty()) {
+    protected GroupingIterator getGroupingIteratorInstance(Iterator<Entry<Key,Document>> in) {
+        if (groupingIterator == null && getGroupFields() != null && !getGroupFields().isEmpty()) {
             synchronized (getGroupFields()) {
-                if (groupingTransform == null) {
-                    groupingTransform = new GroupingTransform(null, getGroupFields(), true);
-                    groupingTransform.initialize(null, MarkingFunctionsFactory.createMarkingFunctions());
+                if (groupingIterator == null) {
+                    groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(), getGroupFields(), this.groupFieldsBatchSize,
+                                    this.yield);
                 }
             }
         }
-        return groupingTransform;
+        return groupingIterator;
     }
     
     protected ActiveQueryLog getActiveQueryLog() {
@@ -1615,5 +1624,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.activeQueryLog = ActiveQueryLog.getInstance(getActiveQueryLogName());
         }
         return this.activeQueryLog;
+    }
+    
+    protected ExcerptTransform getExcerptTransform() {
+        if (excerptTransform == null && getExcerptFields() != null && !getExcerptFields().isEmpty()) {
+            synchronized (getExcerptFields()) {
+                if (excerptTransform == null) {
+                    excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment));
+                }
+            }
+        }
+        return excerptTransform;
     }
 }

@@ -14,11 +14,12 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.attributes.Attribute;
+import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
+import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.JexlControlledQueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.query.transformer.GroupingTransform.GroupingTypeAttribute;
 import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
@@ -172,6 +173,7 @@ public abstract class GroupingTest {
         
         logic.setFullTableScanEnabled(true);
         logic.setMaxEvaluationPipelines(1);
+        logic.setQueryExecutionForPageTimeout(300000000000000L);
         deserializer = new KryoDocumentDeserializer();
     }
     
@@ -231,6 +233,7 @@ public abstract class GroupingTest {
                     case "GENDER":
                     case "GEN":
                     case "BIRTHDAY":
+                    case "TYPE":
                         firstKey = fieldBase.getValueString();
                         break;
                     case "AGE":
@@ -292,7 +295,7 @@ public abstract class GroupingTest {
         log.debug("reponses:" + digested);
         Set<String> responseSet = Sets.newHashSet(digested);
         // if the grouped results from every type of rebuild are the same, there should be only 1 entry in the responseSet
-        Assert.assertEquals(responseSet.size(), 1);
+        Assert.assertEquals(1, responseSet.size());
     }
     
     // grab the relevant stuff from the events and do some formatting
@@ -473,6 +476,51 @@ public abstract class GroupingTest {
     }
     
     @Test
+    public void testGroupingEntriesWithNoContextOneValue() throws Exception {
+        // Testing multivalued entries with no grouping context
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        Map<String,Integer> expectedMap = ImmutableMap.of("WISEGUY", 2, "REGGUY", 1);
+        // Map<String,Integer> expectedMap = ImmutableMap.of("WISEGUY", 3);
+        
+        extraParameters.put("group.fields", "TYPE");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+    
+    @Test
+    public void testGroupingEntriesWithNoContextOneAndMultipleValue() throws Exception {
+        // Testing multivalued entries with no grouping context
+        Map<String,String> extraParameters = new HashMap<>();
+        
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+        
+        String queryString = "UUID =~ '^[CS].*'";
+        
+        // Map<String,Integer> expectedMap = ImmutableMap.of("WISEGUY", 2, "REGGUY", 1);
+        // Map<String,Integer> expectedMap = ImmutableMap.of("WISEGUY-1", 2);
+        Map<String,Integer> expectedMap = ImmutableMap.of("WISEGUY-1", 2, "REGGUY-1", 1);
+        
+        extraParameters.put("group.fields", "TYPE,RECORD");
+        
+        for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
+            for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
+                runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate, extraParameters, teardown, interrupt);
+            }
+        }
+    }
+    
+    @Test
     public void testGroupingWithFieldWithSparseGroupingEntries() throws Exception {
         // Testing multivalued atoms where not all atoms have every field populated.
         // This results in entries where the grouping context is sparse;
@@ -598,7 +646,7 @@ public abstract class GroupingTest {
     @Test
     public void testCountingMap() {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
+        GroupCountingHashMap map = new GroupCountingHashMap(markingFunctions);
         GroupingTypeAttribute attr1 = new GroupingTypeAttribute(new LcType("FOO"), new Key("FOO"), true);
         attr1.setColumnVisibility(new ColumnVisibility("A"));
         map.add(Collections.singleton(attr1));
@@ -628,7 +676,7 @@ public abstract class GroupingTest {
     @Test
     public void testCountingMapAgain() {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
+        GroupCountingHashMap map = new GroupCountingHashMap(markingFunctions);
         
         GroupingTypeAttribute<?> attr1a = new GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
         attr1a.setColumnVisibility(new ColumnVisibility("A"));
