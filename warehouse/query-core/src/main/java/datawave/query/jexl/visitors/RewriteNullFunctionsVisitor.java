@@ -167,34 +167,30 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
      * @return the rewritten function
      */
     private JexlNode rewriteFilterFunction(FunctionJexlNodeVisitor visitor, boolean negated) {
+        
         JexlNode args = visitor.args().get(0);
-        if (args instanceof ASTIdentifier) {
-            // single fielded case
+        List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(args);
+        List<JexlNode> children = new ArrayList<>(identifiers.size());
+        
+        for (ASTIdentifier identifier : identifiers) {
             if (negated) {
-                return buildIsNotNullNode((ASTIdentifier) args);
+                children.add(buildIsNotNullNode(identifier));
             } else {
-                return buildIsNullNode((ASTIdentifier) args);
+                children.add(buildIsNullNode(identifier));
             }
-        } else if (args instanceof ASTOrNode) {
-            // multi fielded case
-            rebuiltMultiFieldedFunction = true;
-            List<JexlNode> children = new ArrayList<>(args.jjtGetNumChildren());
-            for (JexlNode child : JexlNodes.children(args)) {
-                child = JexlASTHelper.dereference(child);
-                if (child instanceof ASTIdentifier) {
-                    if (negated) {
-                        children.add(buildIsNotNullNode((ASTIdentifier) child));
-                    } else {
-                        children.add(buildIsNullNode((ASTIdentifier) child));
-                    }
-                } else {
-                    throw new IllegalStateException("Expected isNull/IsNotNull functions are to be an ASTIdentifier or ASTOrNode, but was: "
-                                    + child.getClass().getSimpleName());
-                }
-            }
-            return JexlNodeFactory.createOrNode(children);
         }
-        return null;
+        
+        switch (children.size()) {
+            case 0:
+                return null;
+            case 1:
+                // single fielded case
+                return children.get(0);
+            default:
+                // multi fielded case
+                rebuiltMultiFieldedFunction = true;
+                return JexlNodeFactory.createOrNode(children);
+        }
     }
     
     /**

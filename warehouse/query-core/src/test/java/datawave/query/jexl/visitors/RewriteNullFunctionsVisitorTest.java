@@ -153,8 +153,16 @@ public class RewriteNullFunctionsVisitorTest {
         test(query, expected);
     }
     
+    @Test
+    public void testWeirdModelExpansion() throws ParseException {
+        // this happens when the input query is like #ISNULL((F0 OR F3)) and F0 is expanded to (F1 OR F2)
+        String query = "filter:isNull(((F1 || F2) || F3))";
+        String expected = "F1 == null || F2 == null || F3 == null";
+        test(query, expected);
+    }
+    
     private void test(String original, String expected) throws ParseException {
-        ASTJexlScript originalScript = JexlASTHelper.parseAndFlattenJexlQuery(original);
+        ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
         ASTJexlScript actual = RewriteNullFunctionsVisitor.rewriteNullFunctions(originalScript);
         
         JexlNodeAssert.assertThat(actual).isEqualTo(expected).hasValidLineage();
