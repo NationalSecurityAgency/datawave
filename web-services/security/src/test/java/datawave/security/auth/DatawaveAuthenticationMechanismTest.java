@@ -154,8 +154,8 @@ public class DatawaveAuthenticationMechanismTest {
     
     @Test
     public void testSSLProxiedLogin() throws Exception {
-        String expectedID = normalizeDN(testServerCert.getSubjectDN().getName()) + "<" + normalizeDN(testServerCert.getIssuerDN().getName()) + "><"
-                        + normalizeDN(testUserCert.getSubjectDN().getName()) + "><" + normalizeDN(testUserCert.getIssuerDN().getName()) + ">";
+        String expectedID = normalizeDN(testUserCert.getSubjectDN().getName()) + "<" + normalizeDN(testUserCert.getIssuerDN().getName()) + "><"
+                        + normalizeDN(testServerCert.getSubjectDN().getName()) + "><" + normalizeDN(testServerCert.getIssuerDN().getName()) + ">";
         httpRequestHeaders.add(PROXIED_ENTITIES_HEADER, testUserCert.getSubjectDN().toString());
         httpRequestHeaders.add(PROXIED_ISSUERS_HEADER, testUserCert.getIssuerDN().toString());
         
@@ -302,8 +302,8 @@ public class DatawaveAuthenticationMechanismTest {
         httpRequestHeaders.add(SUBJECT_DN_HEADER, testServerCert.getSubjectDN().toString());
         httpRequestHeaders.add(ISSUER_DN_HEADER, testServerCert.getIssuerDN().toString());
         
-        String expectedID = normalizeDN(testServerCert.getSubjectDN().getName()) + "<" + normalizeDN(testServerCert.getIssuerDN().getName()) + "><"
-                        + normalizeDN(testUserCert.getSubjectDN().getName()) + "><" + normalizeDN(testUserCert.getIssuerDN().getName()) + ">";
+        String expectedID = normalizeDN(testUserCert.getSubjectDN().getName()) + "<" + normalizeDN(testUserCert.getIssuerDN().getName()) + "><"
+                        + normalizeDN(testServerCert.getSubjectDN().getName()) + "><" + normalizeDN(testServerCert.getIssuerDN().getName()) + ">";
         
         expect(httpServerExchange.getConnection()).andReturn(serverConnection);
         expect(serverConnection.getSslSessionInfo()).andReturn(null);

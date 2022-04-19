@@ -79,41 +79,6 @@ public class TermOffsetPopulator {
         return termFrequencyFieldValues;
     }
     
-    // merge two maps presuming both came from getContextMap()
-    @SuppressWarnings("unchecked")
-    public static Map<String,Object> mergeContextMap(Map<String,Object> map1, Map<String,Object> map2) {
-        Map<String,Object> map = new HashMap<>();
-        Map<String,TermFrequencyList> termOffsetMap = Maps.newHashMap();
-        
-        Map<String,TermFrequencyList> termOffsetMap1 = (Map<String,TermFrequencyList>) (map1.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
-        Map<String,TermFrequencyList> termOffsetMap2 = (Map<String,TermFrequencyList>) (map2.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
-        
-        if (termOffsetMap1 == null) {
-            if (termOffsetMap2 != null) {
-                termOffsetMap.putAll(termOffsetMap2);
-            }
-        } else {
-            termOffsetMap.putAll(termOffsetMap1);
-            if (termOffsetMap2 != null) {
-                for (Map.Entry<String,TermFrequencyList> entry : termOffsetMap2.entrySet()) {
-                    String key = entry.getKey();
-                    TermFrequencyList list1 = termOffsetMap.get(key);
-                    TermFrequencyList list2 = entry.getValue();
-                    if (list1 == null) {
-                        termOffsetMap.put(key, list2);
-                    } else if (list2 != null) {
-                        termOffsetMap.put(key, TermFrequencyList.merge(list1, list2));
-                    }
-                }
-            }
-        }
-        
-        // Load the actual map into map that will be put into the JexlContext
-        map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffsetMap);
-        
-        return map;
-    }
-    
     protected Range getRange(Set<Key> keys) {
         // building a range from the beginning of the term frequencies for the first datatype\0uid
         // to the end of the term frequencies for the last datatype\0uid
@@ -235,7 +200,7 @@ public class TermOffsetPopulator {
         
         // Load the actual map into map that will be put into the JexlContext
         Map<String,Object> map = new HashMap<>();
-        map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffsetMap);
+        map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(termOffsetMap));
         
         return map;
     }
