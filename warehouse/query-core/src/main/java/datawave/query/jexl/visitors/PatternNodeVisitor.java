@@ -1,19 +1,21 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
-
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import datawave.query.jexl.JexlASTHelper;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
 
 /**
  * Fetch all regular expression patterns from the AST
- * 
  */
 @SuppressWarnings("unchecked")
-public class PatternNodeVisitor extends BaseVisitor {
+public class PatternNodeVisitor extends ShortCircuitBaseVisitor {
     
     public static Multimap<String,String> getPatterns(ASTJexlScript script) {
         PatternNodeVisitor visitor = new PatternNodeVisitor();
@@ -34,4 +36,30 @@ public class PatternNodeVisitor extends BaseVisitor {
         
         return patterns;
     }
+    
+    // Ensure we short circuit these nodes
+    public Object visit(ASTLTNode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTGTNode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTLENode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTGENode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTFunctionNode node, Object data) {
+        return data;
+    }
+    
 }
