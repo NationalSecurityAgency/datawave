@@ -425,7 +425,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 // see if we have a count in the cf
                 Key startKey = range.getStartKey();
                 String[] parts = StringUtils.split(startKey.getColumnFamily().toString(), '\0');
-                log.info("startKey: " + startKey.getRow().toString() + " " + startKey.getColumnFamily().toString() + " " + startKey.getColumnQualifier().toString());
+                log.info("startKey: " + startKey.getRow().toString() + " " + startKey.getColumnFamily().toString() + " "
+                                + startKey.getColumnQualifier().toString());
                 
                 if (parts.length == 3) {
                     resultCount = NumericalEncoder.decode(parts[0]).longValue();
@@ -459,6 +460,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             else if (documentRange != null && (!this.isContainsIndexOnlyTerms() && this.getTermFrequencyFields().isEmpty() && !super.mustUseFieldIndex)) {
                 if (log.isTraceEnabled()) {
                     log.trace("Received event specific range: " + documentRange);
+                }
+                else {
+                    log.info("Received event specific range: " + documentRange);
                 }
                 // We can take a shortcut to the directly to the event
                 Map.Entry<Key,Document> documentKey = Maps.immutableEntry(super.getDocumentKey.apply(documentRange), new Document());
@@ -499,6 +503,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     log.trace("after pipeline, keyDocumentEntry:" + keyDocumentEntry);
                     return true;
                 });
+            } else {
+                pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
+                    log.info("after pipeline, keyDocumentEntry:" + keyDocumentEntry);
+                    return true;
+                });
             }
             
             // now apply the unique transform if requested
@@ -517,6 +526,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                     if (log.isTraceEnabled()) {
                         pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
                             log.trace("after grouping, keyDocumentEntry:" + keyDocumentEntry);
+                            return true;
+                        });
+                    } else {
+                        pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
+                            log.info("after grouping, keyDocumentEntry:" + keyDocumentEntry);
                             return true;
                         });
                     }
