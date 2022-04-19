@@ -7,6 +7,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import datawave.query.attributes.ExcerptFields;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
@@ -222,7 +223,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     /**
      * Disables Whindex (value-specific) field mappings for GeoWave functions.
-     * 
+     *
      * @see WhindexVisitor
      */
     private boolean disableWhindexFieldMappings = false;
@@ -295,7 +296,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private ReturnType returnType = DocumentSerialization.DEFAULT_RETURN_TYPE;
     private int eventPerDayThreshold = 10000;
     private int shardsPerDayThreshold = 10;
-    private int maxTermThreshold = 2500;
+    private int initialMaxTermThreshold = 2500;
+    private int finalMaxTermThreshold = 2500;
     private int maxDepthThreshold = 2500;
     private boolean expandFields = true;
     private int maxUnfieldedExpansionThreshold = 500;
@@ -372,6 +374,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // fields exempt from query model expansion
     private Set<String> noExpansionFields = new HashSet<>();
     
+    public ExcerptFields excerptFields = new ExcerptFields();
+    
+    /**
+     * The max execution time per page of results - after it has elapsed, an intermediate result page will be returned.
+     */
+    private long queryExecutionForPageTimeout = 3000000L;
+    
     /**
      * Default constructor
      */
@@ -382,7 +391,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     /**
      * Performs a deep copy of the provided ShardQueryConfiguration into a new instance
-     * 
+     *
      * @param other
      *            - another ShardQueryConfiguration instance
      */
@@ -446,7 +455,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         .getRealmSuffixExclusionPatterns()));
         this.setDefaultType(other.getDefaultType());
         this.setShardDateFormatter(null == other.getShardDateFormatter() ? null : new SimpleDateFormat(other.getShardDateFormatter().toPattern())); // TODO --
-                                                                                                                                                    // deep copy
+        // deep copy
         this.setUseEnrichers(other.getUseEnrichers());
         this.setEnricherClassNames(null == other.getEnricherClassNames() ? null : Lists.newArrayList(other.getEnricherClassNames()));
         this.setUseFilters(other.getUseFilters());
@@ -499,7 +508,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setReturnType(other.getReturnType());
         this.setEventPerDayThreshold(other.getEventPerDayThreshold());
         this.setShardsPerDayThreshold(other.getShardsPerDayThreshold());
-        this.setMaxTermThreshold(other.getMaxTermThreshold());
+        this.setInitialMaxTermThreshold(other.getInitialMaxTermThreshold());
+        this.setFinalMaxTermThreshold(other.getFinalMaxTermThreshold());
         this.setMaxDepthThreshold(other.getMaxDepthThreshold());
         this.setMaxUnfieldedExpansionThreshold(other.getMaxUnfieldedExpansionThreshold());
         this.setExpandFields(other.isExpandFields());
@@ -554,6 +564,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexMappingFields(other.getWhindexMappingFields());
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
+        this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
+        this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
     }
     
     /**
@@ -958,8 +970,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      *            filter value
      */
     public void putFilterOptions(final String option, final String value) {
-        if (StringUtils.isNotBlank(option) && StringUtils.isNotBlank(value))
+        if (StringUtils.isNotBlank(option) && StringUtils.isNotBlank(value)) {
             filterOptions.put(option, value);
+        }
     }
     
     /**
@@ -994,7 +1007,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * any, used to construct the IndexIterator, particularly via the TLDQueryIterator.
      *
      * @return list of predicate-implemented classnames
-     *
      * @see QueryIterator
      * @see TLDQueryIterator
      */
@@ -1092,12 +1104,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.shardsPerDayThreshold = shardsPerDayThreshold;
     }
     
-    public int getMaxTermThreshold() {
-        return maxTermThreshold;
+    public int getInitialMaxTermThreshold() {
+        return initialMaxTermThreshold;
     }
     
-    public void setMaxTermThreshold(int maxTermThreshold) {
-        this.maxTermThreshold = maxTermThreshold;
+    public void setInitialMaxTermThreshold(int initialMaxTermThreshold) {
+        this.initialMaxTermThreshold = initialMaxTermThreshold;
+    }
+    
+    public int getFinalMaxTermThreshold() {
+        return finalMaxTermThreshold;
+    }
+    
+    public void setFinalMaxTermThreshold(int finalMaxTermThreshold) {
+        this.finalMaxTermThreshold = finalMaxTermThreshold;
     }
     
     public int getMaxDepthThreshold() {
@@ -1153,8 +1173,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setMaxIndexBatchSize(final int size) {
-        if (size >= 1)
+        if (size >= 1) {
             this.maxIndexBatchSize = size;
+        }
     }
     
     public int getMaxOrExpansionThreshold() {
@@ -2216,5 +2237,24 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setNoExpansionFields(Set<String> noExpansionFields) {
         this.noExpansionFields = noExpansionFields;
+    }
+    
+    public ExcerptFields getExcerptFields() {
+        return excerptFields;
+    }
+    
+    public void setExcerptFields(ExcerptFields excerptFields) {
+        if (excerptFields != null) {
+            excerptFields.deconstructFields();
+        }
+        this.excerptFields = excerptFields;
+    }
+    
+    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
+        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
+    }
+    
+    public long getQueryExecutionForPageTimeout() {
+        return this.queryExecutionForPageTimeout;
     }
 }

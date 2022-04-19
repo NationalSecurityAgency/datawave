@@ -153,7 +153,8 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(DocumentSerialization.DEFAULT_RETURN_TYPE, config.getReturnType());
         Assert.assertEquals(10000, config.getEventPerDayThreshold());
         Assert.assertEquals(10, config.getShardsPerDayThreshold());
-        Assert.assertEquals(2500, config.getMaxTermThreshold());
+        Assert.assertEquals(2500, config.getInitialMaxTermThreshold());
+        Assert.assertEquals(2500, config.getFinalMaxTermThreshold());
         Assert.assertEquals(2500, config.getMaxDepthThreshold());
         Assert.assertEquals(500, config.getMaxUnfieldedExpansionThreshold());
         Assert.assertEquals(5000, config.getMaxValueExpansionThreshold());
@@ -456,7 +457,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 182;
+        int expectedObjectCount = 185;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

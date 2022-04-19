@@ -20,6 +20,7 @@ import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.query.data.UUIDType;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.DatawavePrincipal;
@@ -43,7 +44,6 @@ import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.cache.QueryExpirationConfiguration;
-import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
@@ -59,10 +59,10 @@ import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
-import datawave.webservice.query.metric.QueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
@@ -260,7 +260,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private static class QueryData {
         QueryLogic<?> logic = null;
         Principal p = null;
-        Set<String> proxyServers = null;
+        Collection<String> proxyServers = null;
         String userDn = null;
         String userid = null;
         List<String> dnList = null;
@@ -973,7 +973,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 Query q = persister.create(qd.userDn, qd.dnList, marking, queryLogicName, qp, optionalQueryParameters);
                 
                 BaseQueryMetric metric = metricFactory.createMetric();
-                q.populateMetric(metric);
+                metric.populate(q);
                 metric.setQueryType(RunningQuery.class.getSimpleName());
                 
                 Set<Prediction> predictions = predictor.predict(metric);
@@ -1367,9 +1367,9 @@ public class QueryExecutorBean implements QueryExecutor {
             span = Trace.trace(traceInfo, "query:next");
         }
         
-        ResultsPage resultList;
+        ResultsPage resultsPage;
         try {
-            resultList = query.next();
+            resultsPage = query.next();
         } catch (RejectedExecutionException e) {
             // - race condition, query expired while user called next
             throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_OR_SERVER_ERROR, e, MessageFormat.format("id = {0}", queryId));
@@ -1377,8 +1377,8 @@ public class QueryExecutorBean implements QueryExecutor {
         
         long pageNum = query.getLastPageNumber();
         
-        BaseQueryResponse response = query.getLogic().getTransformer(query.getSettings()).createResponse(resultList);
-        if (!resultList.getResults().isEmpty()) {
+        BaseQueryResponse response = query.getLogic().getTransformer(query.getSettings()).createResponse(resultsPage);
+        if (resultsPage.getStatus() != ResultsPage.Status.NONE) {
             response.setHasResults(true);
         } else {
             response.setHasResults(false);
@@ -1393,9 +1393,11 @@ public class QueryExecutorBean implements QueryExecutor {
         
         query.getMetric().setProxyServers(proxyServers);
         
-        testForUncaughtException(query.getSettings(), resultList);
+        testForUncaughtException(query.getSettings(), resultsPage);
         
-        if (resultList.getResults().isEmpty()) {
+        // This should NOT be an exception - revisit. Unfortunately, the jboss interceptor looks for a
+        // NoResultsQueryException in order to set the status code.
+        if (resultsPage.getStatus() == ResultsPage.Status.NONE) {
             NoResultsQueryException qe = new NoResultsQueryException(DatawaveErrorCode.NO_QUERY_RESULTS_FOUND, MessageFormat.format("{0}", queryId));
             response.addException(qe);
             throw new NoResultsException(qe);

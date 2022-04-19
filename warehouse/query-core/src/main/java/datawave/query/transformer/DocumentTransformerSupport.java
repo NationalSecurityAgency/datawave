@@ -25,7 +25,7 @@ import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.logic.WritesResultCardinalities;
-import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -83,7 +83,6 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     private Set<String> blacklistedFields = Collections.emptySet();
     
     protected List<DocumentTransform> transforms = new ArrayList<>();
-    
     /*
      * The 'HIT_TERM' feature required that an attribute value also contain the attribute's field name. The current implementation does it by prepending the
      * field name to the value with a colon separator, like so: BUDDY:fred. In the case where a data model has been applied to the query, the
@@ -171,7 +170,7 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     protected Collection<FieldBase<?>> buildDocumentFields(Key documentKey, String documentName, Document document, ColumnVisibility topLevelColumnVisibility,
                     MarkingFunctions markingFunctions) {
         
-        // Whether the fields were added to projectFields or removed from blacklistedFields, they user does not want them returned
+        // Whether the fields were added to projectFields or removed from blacklistedFields, the user does not want them returned
         // If neither a projection nor a blacklist was used then the suppressFields set should remain empty
         Set<String> suppressFields = Collections.emptySet();
         if (cardinalityConfiguration != null) {
@@ -497,13 +496,43 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     }
     
     /**
-     * Add a document transformer
-     * 
+     * Add a document transformer. If the type of document transformer is already in the list of transformers, that instance is replaced. This works under the
+     * assumption that there is only one instance (singleton) of Transformer per query logic.
+     *
+     * If the caller does not want the replacement behavior, call containsTransform and decide whether to call this method based on what that returns.*
+     *
      * @param transform
      */
     public void addTransform(DocumentTransform transform) {
+        int replacementIndex = -1;
+        for (DocumentTransform t : transforms) {
+            if (transform.getClass().toString().equals(t.getClass().toString())) {
+                replacementIndex = transforms.indexOf(t);
+            }
+        }
         transform.initialize(settings, markingFunctions);
-        transforms.add(transform);
+        
+        if (replacementIndex != -1) {
+            transforms.set(replacementIndex, transform);
+        } else {
+            transforms.add(transform);
+        }
+    }
+    
+    /**
+     * Determine whether the list of transforms already contains an instance of the specified DocumentTransform type
+     *
+     * @param transform
+     *            the transform (type) to determine if an instance is already in the list of transforms.
+     * @return
+     */
+    public DocumentTransform containsTransform(Class transform) {
+        for (DocumentTransform t : transforms) {
+            if (transform.toString().equals(t.getClass().toString())) {
+                return t;
+            }
+        }
+        return null;
     }
     
     @Override

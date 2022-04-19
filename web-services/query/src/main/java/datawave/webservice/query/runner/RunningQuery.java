@@ -1,11 +1,14 @@
 package datawave.webservice.query.runner;
 
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.QueryMetric;
+import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.AbstractRunningQuery;
-import datawave.webservice.query.cache.QueryMetricFactory;
-import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.data.ObjectSizeOf;
@@ -14,10 +17,8 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.logic.WritesResultCardinalities;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
-import datawave.webservice.query.metric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
@@ -108,7 +109,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.executor = executor;
         this.predictor = predictor;
         // set the metric information
-        this.settings.populateMetric(this.getMetric());
+        this.getMetric().populate(this.settings);
         this.getMetric().setQueryType(this.getClass().getSimpleName());
         if (this.queryMetrics != null) {
             try {
@@ -200,9 +201,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         // update AbstractRunningQuery.lastUsed
         touch();
         long pageStartTime = System.currentTimeMillis();
+        this.logic.getTransformer(getSettings()).setQueryExecutionForPageStartTime(pageStartTime);
         List<Object> resultList = new ArrayList<>();
         boolean hitPageByteTrigger = false;
         boolean hitPageTimeTrigger = false;
+        boolean hitIntermediateResult = false;
         try {
             addNDC();
             int currentPageCount = 0;
@@ -210,7 +213,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             
             // test for any exceptions prior to loop as hasNext() would likely be false;
             testForUncaughtException(resultList.size());
-            
             while (!this.finished && ((future != null) || this.iter.hasNext())) {
                 // if we are canceled, then break out
                 if (this.canceled) {
@@ -218,7 +220,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     this.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
                     break;
                 }
-                // if the number of results has reached out page size, then break out
+                // if the number of results has reached our page size, then break out
                 if (currentPageCount >= this.settings.getPagesize()) {
                     log.info("Query requested page size had been reached, aborting query.next call");
                     break;
@@ -228,7 +230,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     log.info("Query logic max page size has been reached, aborting query.next call");
                     break;
                 }
-                // if the logic had a page byte trigger and we have readed that, then break out
+                // if the logic had a page byte trigger, and we have reached that, then break out
                 if (this.logic.getPageByteTrigger() > 0 && currentPageBytes >= this.logic.getPageByteTrigger()) {
                     log.info("Query logic max page byte trigger has been reached, aborting query.next call");
                     hitPageByteTrigger = true;
@@ -287,6 +289,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     o = iter.next();
                 }
                 
+                if (o instanceof DefaultEvent) {
+                    if (((DefaultEvent) o).isIntermediateResult()) {
+                        hitIntermediateResult = true;
+                        break;
+                    }
+                }
+                
                 // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
                 if (iter.getTransformer() instanceof WritesQueryMetrics) {
                     ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
@@ -308,6 +317,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
                 
                 testForUncaughtException(resultList.size());
+                
             }
             
             // if the last hasNext() call failed, then we would catch the exception here
@@ -337,7 +347,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
             }
         }
-        if (resultList.isEmpty()) {
+        
+        if (hitIntermediateResult) {
+            return new ResultsPage(new ArrayList<>(), ResultsPage.Status.PARTIAL);
+        } else if (resultList.isEmpty()) {
             return new ResultsPage();
         } else {
             return new ResultsPage(resultList, ((hitPageByteTrigger || hitPageTimeTrigger) ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE));

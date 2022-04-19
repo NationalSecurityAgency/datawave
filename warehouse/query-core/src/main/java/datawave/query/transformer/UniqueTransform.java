@@ -11,11 +11,9 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.model.QueryModel;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -42,32 +40,35 @@ import java.util.stream.Collectors;
  */
 public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform {
     
-    private static final Logger log = Logger.getLogger(GroupingTransform.class);
+    private static final Logger log = Logger.getLogger(UniqueTransform.class);
     
-    private final BloomFilter<byte[]> bloom;
+    private BloomFilter<byte[]> bloom;
     private UniqueFields uniqueFields;
     private Multimap<String,String> modelMapping;
     
     public UniqueTransform(UniqueFields uniqueFields) {
+        this(null, uniqueFields);
+    }
+    
+    /**
+     * Create a new {@link UniqueTransform} that will capture the reverse field mapping defined within the model being used by the logic (if present).
+     * 
+     * @param model
+     *            the query model
+     * @param uniqueFields
+     *            the set of fields to find unique values for
+     */
+    public UniqueTransform(QueryModel model, UniqueFields uniqueFields) {
+        updateConfig(uniqueFields, model);
+    }
+    
+    public void updateConfig(UniqueFields uniqueFields, QueryModel model) {
         this.uniqueFields = uniqueFields;
         this.uniqueFields.deconstructIdentifierFields();
         this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         if (log.isTraceEnabled()) {
             log.trace("unique fields: " + this.uniqueFields.getFields());
         }
-    }
-    
-    /**
-     * Create a new {@link UniqueTransform} that will capture the reverse field mapping defined within the model being used by the logic (if present).
-     * 
-     * @param logic
-     *            the logic
-     * @param uniqueFields
-     *            the set of fields to find unique values for
-     */
-    public UniqueTransform(BaseQueryLogic<Entry<Key,Value>> logic, UniqueFields uniqueFields) {
-        this(uniqueFields);
-        QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
         if (model != null) {
             modelMapping = HashMultimap.create();
             // reverse the reverse query mapping which will give us a mapping from the final field name to the original field name(s)
@@ -96,6 +97,10 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         if (keyDocumentEntry != null) {
+            if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
+                return keyDocumentEntry;
+            }
+            
             try {
                 if (isDuplicate(keyDocumentEntry.getValue())) {
                     keyDocumentEntry = null;

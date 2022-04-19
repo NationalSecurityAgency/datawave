@@ -11,6 +11,7 @@ import datawave.query.attributes.Document;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.functions.TermFrequencyList;
+import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.util.Tuple3;
 import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
@@ -134,7 +135,7 @@ public class JexlEvaluationTest {
         map.put("dog", buildTfList("TOKFIELD", 3));
         
         DatawaveJexlContext context = new DatawaveJexlContext();
-        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, map);
+        context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(map));
         
         Key docKey = new Key("shard", "datatype\0uid");
         
