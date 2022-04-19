@@ -326,6 +326,15 @@
             <version>${version.springframework}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <!-- Runtime dependency needed for MiniAccumuloCluster, discovered
+            after hunting down the MAC logs out in /tmp territory, which can
+            only be found and recovered by using a well-placed breakpoint in the
+            test prior to cleanup, due to our current pattern of MAC setup/usage -->
+            <groupId>org.xerial.snappy</groupId>
+            <artifactId>snappy-java</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <resources>

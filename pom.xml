@@ -47,7 +47,7 @@
         <version.commons-lang>2.6</version.commons-lang>
         <version.commons-logging>1.2</version.commons-logging>
         <version.commons-pool>1.6</version.commons-pool>
-        <version.curator>2.13.0</version.curator>
+        <version.curator>5.2.0</version.curator>
         <version.deltaspike>1.9.0</version.deltaspike>
         <version.easymock>4.0.2</version.easymock>
         <version.geoserver>2.14.2</version.geoserver>
@@ -77,8 +77,7 @@
         <version.junit.vintage>5.5.2</version.junit.vintage>
         <version.kryo>2.20</version.kryo>
         <version.kryonet>2.20</version.kryonet>
-        <version.log4j>1.2.16</version.log4j>
-        <version.log4j-extras>1.0</version.log4j-extras>
+        <version.log4j2>2.17.2</version.log4j2>
         <version.lucene>7.5.0</version.lucene>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.microservice.accumulo-api>2.0.0</version.microservice.accumulo-api>
@@ -99,7 +98,7 @@
         <version.powermock>2.0.9</version.powermock>
         <version.protobuf>3.7.1</version.protobuf>
         <version.protostuff>1.6.2</version.protostuff>
-        <version.slf4j>1.7.29</version.slf4j>
+        <version.slf4j>1.7.36</version.slf4j>
         <version.spotify-dns>3.1.5</version.spotify-dns>
         <version.spring>5.2.2.RELEASE</version.spring>
         <version.springframework>${version.spring}</version.springframework>
@@ -114,7 +113,7 @@
         <version.woodstox-core>5.0.3</version.woodstox-core>
         <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
         <version.xerces>2.12.0.SP02</version.xerces>
-        <version.zookeeper>3.4.5-cdh6.3.1</version.zookeeper>
+        <version.zookeeper>3.7.0</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
         <!-- <runOrder>random</runOrder> -->
     </properties>
@@ -345,6 +344,20 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>metadata-utils</artifactId>
                 <version>${version.microservice.metadata-utils}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
@@ -390,16 +403,20 @@
                 <groupId>java3d</groupId>
                 <artifactId>vecmath</artifactId>
                 <version>1.3.1</version>
-            </dependency>
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>apache-log4j-extras</artifactId>
-                <version>${version.log4j-extras}</version>
-            </dependency>
-            <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>${version.log4j}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>
@@ -550,6 +567,12 @@
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-client</artifactId>
                 <version>${version.curator}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
@@ -589,6 +612,10 @@
                     </exclusion>
                     <exclusion>
                         <groupId>org.codehaus.jackson</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
@@ -701,13 +728,6 @@
                 <artifactId>httpcore</artifactId>
                 <version>${version.httpcomponents-httpcore}</version>
             </dependency>
-            <!--            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-bom</artifactId>
-                <version>${version.log4j}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>-->
             <dependency>
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-analyzers-common</artifactId>
@@ -890,11 +910,6 @@
                 <version>${version.slf4j}</version>
             </dependency>
             <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>${version.slf4j}</version>
-            </dependency>
-            <dependency>
                 <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
                 <version>${version.xerces}</version>
@@ -958,6 +973,13 @@
                 <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
                 <version>${version.hadoop-protobuf}</version>
                 <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${version.log4j2}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.springframework</groupId>
