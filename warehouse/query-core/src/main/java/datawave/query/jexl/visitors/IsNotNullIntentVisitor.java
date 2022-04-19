@@ -8,9 +8,6 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * This visitor replaces any occurrences of <code>FIELD =~'.*?'</code> with the more efficient equivalent <code>FIELD != null</code>.
  */
@@ -33,12 +30,9 @@ public class IsNotNullIntentVisitor extends BaseVisitor {
         // If the ER node is meant to match any string, it can be replaced with FIELD != null.
         Object value = JexlASTHelper.getLiteralValue(node);
         if (".*?".equals(value)) {
-            List<JexlNode> children = new ArrayList<>();
-            children.add(node.jjtGetChild(0));
-            children.add(new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL));
-            
+            JexlNode nullLiteral = new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL);
             JexlNode neNode = new ASTNENode(ParserTreeConstants.JJTNENODE);
-            JexlNodes.children(neNode, children.toArray(new JexlNode[0]));
+            JexlNodes.children(neNode, node.jjtGetChild(0), nullLiteral);
             
             JexlNodes.replaceChild(node.jjtGetParent(), node, neNode);
         }

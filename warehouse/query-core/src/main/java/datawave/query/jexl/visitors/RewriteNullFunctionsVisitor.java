@@ -60,7 +60,7 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.jexl2.parser.SimpleNode;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
@@ -71,10 +71,10 @@ import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescri
  * <p>
  * It is similar to the {@link IsNotNullIntentVisitor} in that it rewrites certain filter functions into their ASTEq equivalents.
  * <ul>
- * <li><code>filter:isNull(FIELD)</code></li>
- * <li><code>filter:isNull(FIELD_1 || FIELD_2)</code></li>
- * <li><code>filter:isNotNull(FIELD)</code></li>
- * <li><code>filter:isNotNull(FIELD_1 || FIELD_2)</code></li>
+ * <li><code>filter:isNull(FIELD)</code> becomes <code>FIELD == null</code></li>
+ * <li><code>filter:isNull(F1 || F2)</code> becomes <code>F1 == null || F2 == null</code></li>
+ * <li><code>filter:isNotNull(FIELD)</code> becomes <code>!(FIELD == null)</code></li>
+ * <li><code>filter:isNotNull(F1 || F2)</code> becomes <code>!(F1 == null) || !(F2 == null)</code></li>
  * </ul>
  */
 public class RewriteNullFunctionsVisitor extends BaseVisitor {
@@ -82,7 +82,7 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
     // used to rebuild flattened unions
     private boolean rebuiltMultiFieldedFunction = false;
     
-    private final String IS_NOT_NULL = "isNotNull";
+    private final static String IS_NOT_NULL = "isNotNull";
     
     private RewriteNullFunctionsVisitor() {}
     
@@ -116,7 +116,7 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
             for (JexlNode child : JexlNodes.children(node)) {
                 JexlNode deref = JexlASTHelper.dereference(child);
                 if (deref instanceof ASTOrNode) {
-                    children.addAll(Arrays.asList(JexlNodes.children(deref)));
+                    Collections.addAll(children, JexlNodes.children(deref));
                 } else {
                     children.add(child);
                 }
@@ -188,7 +188,8 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
                         children.add(buildIsNullNode((ASTIdentifier) child));
                     }
                 } else {
-                    throw new IllegalStateException("Encountered an unexpected state while rewriting IsNotNull functions");
+                    throw new IllegalStateException("Expected isNull/IsNotNull functions are to be an ASTIdentifier or ASTOrNode, but was: "
+                                    + child.getClass().getSimpleName());
                 }
             }
             return JexlNodeFactory.createOrNode(children);
