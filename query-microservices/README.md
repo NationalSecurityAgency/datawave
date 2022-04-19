@@ -90,3 +90,6 @@ Query flow:
 |No|MapReduceStatusUpdateBean|/MapReduceStatus|?|?|?|Looks like this is a callback handler for BulkResults jobs which updates the internal state of the job.  Is this still needed?|
 |Yes|CredentialsCacheBean|/Security/Admin/Credentials|Keep|AuthorizationOperations|Authorization Service|Add remote auth profile and add a route in HAProxy.  The listAccumuloAuths and reloadAccumuloAuths endpoints will probably be left behind.  |
 |Yes|UserOperationsBase|/Security/User|Keep|AuthorizationOperations|AuthorizationService|Add remote auth profile and add a route in HAProxy.  |
+|No|web-services/deploy/docs/docs/index.html|index.html|Keep|  |  |Should probably live in the query service and use Spring MVC where applicable.|
+|No|web-services/deploy/docs/docs/query_help.html|query_help.html|Keep|  |  |Should probably live in the query service and use Spring MVC where applicable.|
+|No|Enunciate Docs| /doc |Keep|  |  |  |
