@@ -175,7 +175,17 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             excerptIterator.seek(range, Collections.emptyList(), false);
             if (excerptIterator.hasTop()) {
                 Key topKey = excerptIterator.getTopKey();
-                return topKey.getColumnQualifier().toString().split(Constants.NULL)[1];
+                String[] parts = topKey.getColumnQualifier().toString().split(Constants.NULL);
+                // The column qualifier is expected to be field\0phrase.
+                if (parts.length == 2) {
+                    return parts[1];
+                } else {
+                    if (log.isTraceEnabled()) {
+                        log.trace(TermFrequencyExcerptIterator.class.getSimpleName() + " returned top key with incorrectly-formatted column qualifier in key: "
+                                        + topKey + " when scanning for excerpt [" + start + "," + end + "] for field " + field + " within range " + range);
+                    }
+                    return null;
+                }
             } else {
                 return null;
             }
