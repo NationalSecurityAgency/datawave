@@ -35,38 +35,6 @@ public class IsNotNullIntentVisitorTest {
         assertResult(query, expected);
     }
     
-    @Test
-    public void testIsNotNullWithSingleField() throws ParseException {
-        String query = "filter:isNotNull(FOO)";
-        String expected = "!(FOO == null)";
-        assertResult(query, expected);
-    }
-    
-    @Test
-    public void testIsNotNullWithMultipleFields() throws ParseException {
-        String query = "filter:isNotNull(FOO || FOO2)";
-        String expected = "!(FOO == null) || !(FOO2 == null)";
-        assertResult(query, expected);
-        
-        query = "filter:isNotNull(FOO || FOO2 || FOO3)";
-        expected = "!(FOO == null) || !(FOO2 == null) || !(FOO3 == null)";
-        assertResult(query, expected);
-    }
-    
-    @Test
-    public void testNestedIsNotNullWithSingleField() throws ParseException {
-        String query = "FOO == 'bar' || filter:isNotNull(FOO)";
-        String expected = "FOO == 'bar' || !(FOO == null)";
-        assertResult(query, expected);
-    }
-    
-    @Test
-    public void testNestedIsNotNullWithMultipleFields() throws ParseException {
-        String query = "FOO == 'bar' || filter:isNotNull(FOO || FOO2)";
-        String expected = "FOO == 'bar' || !(FOO == null) || !(FOO2 == null)";
-        assertResult(query, expected);
-    }
-    
     private void assertResult(String original, String expected) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseAndFlattenJexlQuery(original);
         ASTJexlScript actual = IsNotNullIntentVisitor.fixNotNullIntent(originalScript);

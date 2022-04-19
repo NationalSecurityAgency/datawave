@@ -462,7 +462,7 @@ public abstract class CompositeFunctionsTest {
                 Collections.emptyList(),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
-                Collections.emptyList(),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
                 Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
                 Collections.emptyList(),};
         //  @formatter:on
