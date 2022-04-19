@@ -575,6 +575,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
             
             // only add the final document tracking iterator which sends stats back to the client if collectTimingDetails is true
+            log.info("collectTimingDetails:" + collectTimingDetails);
             if (collectTimingDetails) {
                 // if there is no document to return, then add an empty document
                 // to store the timing metadata
