@@ -460,8 +460,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             else if (documentRange != null && (!this.isContainsIndexOnlyTerms() && this.getTermFrequencyFields().isEmpty() && !super.mustUseFieldIndex)) {
                 if (log.isTraceEnabled()) {
                     log.trace("Received event specific range: " + documentRange);
-                }
-                else {
+                } else {
                     log.info("Received event specific range: " + documentRange);
                 }
                 // We can take a shortcut to the directly to the event

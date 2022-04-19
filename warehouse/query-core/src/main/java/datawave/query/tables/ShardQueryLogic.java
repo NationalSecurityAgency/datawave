@@ -639,6 +639,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     protected void loadQueryParameters(ShardQueryConfiguration config, Query settings) throws QueryException {
+        log.info("ShardQueryLogic - Parse query parameters");
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Parse query parameters");
         boolean rawDataOnly = false;
         String rawDataOnlyStr = settings.findParameter(QueryParameters.RAW_DATA_ONLY).getParameterValue().trim();
@@ -949,17 +950,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         config.setReturnType(DocumentSerialization.getReturnType(settings));
         
         QueryLogicTransformer transformer = getTransformer(settings);
+        log.info("Checking current transformer: " + transformer);
         if (transformer instanceof WritesQueryMetrics) {
             String logTimingDetailsStr = settings.findParameter(QueryOptions.LOG_TIMING_DETAILS).getParameterValue().trim();
             if (org.apache.commons.lang.StringUtils.isNotBlank(logTimingDetailsStr)) {
                 setLogTimingDetails(Boolean.valueOf(logTimingDetailsStr));
             }
+            log.info("getLogTimingDetails: " + getLogTimingDetails());
             if (getLogTimingDetails()) {
                 // we have to collect the timing details on the iterator stack in order to log them
                 setCollectTimingDetails(true);
             } else {
                 
                 String collectTimingDetailsStr = settings.findParameter(QueryOptions.COLLECT_TIMING_DETAILS).getParameterValue().trim();
+                log.info("collectTimingDetailsStr: " + collectTimingDetailsStr);
                 if (org.apache.commons.lang.StringUtils.isNotBlank(collectTimingDetailsStr)) {
                     setCollectTimingDetails(Boolean.valueOf(collectTimingDetailsStr));
                 }
