@@ -2,7 +2,6 @@ package datawave.query.predicate;
 
 import com.google.common.collect.Sets;
 import datawave.query.attributes.Document;
-import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -45,7 +44,7 @@ public class EventDataQueryFieldFilter extends KeyProjection implements EventDat
             queryFields.add(JexlASTHelper.deconstructIdentifier(identifier));
         }
         
-        initializeWhitelist(queryFields);
+        setIncludes(queryFields);
     }
     
     protected Key document = null;
