@@ -8,6 +8,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import datawave.query.attributes.ExcerptFields;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.CloseableIterable;
@@ -793,6 +795,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
         }
         
+        // Get the EXCERPT_FIELDS parameter if given
+        String excerptFieldsParam = settings.findParameter(QueryParameters.EXCERPT_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(excerptFieldsParam)) {
+            ExcerptFields excerptFields = ExcerptFields.from(excerptFieldsParam);
+            // Only set the excerpt fields if we were actually given some
+            if (!excerptFieldsParam.isEmpty()) {
+                this.setExcerptFields(excerptFields);
+                config.setExcerptFields(excerptFields);
+            }
+        }
+        
         // Get the HIT_LIST parameter if given
         String hitListString = settings.findParameter(QueryParameters.HIT_LIST).getParameterValue().trim();
         if (org.apache.commons.lang.StringUtils.isNotBlank(hitListString)) {
@@ -1242,6 +1255,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setUniqueFields(UniqueFields uniqueFields) {
         getConfig().setUniqueFields(uniqueFields);
+    }
+    
+    public ExcerptFields getExcerptFields() {
+        return getConfig().getExcerptFields();
+    }
+    
+    public void setExcerptFields(ExcerptFields excerptFields) {
+        getConfig().setExcerptFields(excerptFields);
     }
     
     public String getBlacklistedFieldsString() {
