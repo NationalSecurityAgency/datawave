@@ -59,8 +59,8 @@ import java.util.*;
 import datawave.security.util.AuthorizationsUtil;
 
 @Path("/BasicQuery")
-@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "UnlimitedQueryResultsUser", "InternalUser", "Administrator", "JBossAdministrator"})
-@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "UnlimitedQueryResultsUser", "InternalUser", "Administrator", "JBossAdministrator"})
+@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "JBossAdministrator"})
+@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator", "JBossAdministrator"})
 @Stateless
 @LocalBean
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
