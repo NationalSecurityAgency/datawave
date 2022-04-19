@@ -561,7 +561,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             KryoDocumentDeserializer dser = new KryoDocumentDeserializer();
             this.serializedDocuments = Iterators.filter(this.serializedDocuments, keyValueEntry -> {
-                log.info("after serializing, keyValueEntry:" + dser.apply(keyValueEntry));
+                log.info("after kryo serializing, keyValueEntry:" + dser.apply(keyValueEntry));
                 return true;
             });
             
@@ -583,7 +583,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
             KryoDocumentDeserializer dserTwo = new KryoDocumentDeserializer();
             this.serializedDocuments = Iterators.filter(this.serializedDocuments, keyValueEntry -> {
-                log.debug("finally, considering:" + dserTwo.apply(keyValueEntry));
+                log.info("finally, considering:" + dserTwo.apply(keyValueEntry));
                 return true;
             });
             
@@ -594,6 +594,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             handleException(e);
         } finally {
             if (gatherTimingDetails() && trackingSpan != null && querySpanCollector != null) {
+                log.info("Adding query span with timing info..");
                 querySpanCollector.addQuerySpan(trackingSpan);
             }
             if (null != span) {
