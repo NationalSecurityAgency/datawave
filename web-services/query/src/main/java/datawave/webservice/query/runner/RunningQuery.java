@@ -276,25 +276,21 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     }
                     
                     Object o = null;
-                    if (executor != null) {
-                        if (future == null) {
-                            future = executor.submit(() -> iter.next());
-                        }
-                        try {
-                            o = future.get(1, TimeUnit.MINUTES);
-                            future = null;
-                        } catch (InterruptedException ie) {
-                            // in this case we were most likely cancelled, no longer waiting
-                            future = null;
-                        } catch (ExecutionException ee) {
-                            // in this case we need to pass up the exception
-                            future = null;
-                            throw ee;
-                        } catch (TimeoutException te) {
-                            // in this case we are still waiting on our future....simply continue
-                        }
-                    } else {
-                        o = iter.next();
+                    if (future == null) {
+                        future = executor.submit(() -> iter.next());
+                    }
+                    try {
+                        o = future.get(1, TimeUnit.MINUTES);
+                        future = null;
+                    } catch (InterruptedException ie) {
+                        // in this case we were most likely cancelled, no longer waiting
+                        future = null;
+                    } catch (ExecutionException ee) {
+                        // in this case we need to pass up the exception
+                        future = null;
+                        throw ee;
+                    } catch (TimeoutException te) {
+                        // in this case we are still waiting on our future....simply continue
                     }
                     
                     if (o instanceof DefaultEvent) {
