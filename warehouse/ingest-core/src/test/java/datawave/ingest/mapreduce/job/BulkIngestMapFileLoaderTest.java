@@ -1,33 +1,16 @@
 package datawave.ingest.mapreduce.job;
 
-import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.net.ServerSocket;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.Multimap;
 import datawave.common.test.integration.IntegrationTest;
-import datawave.common.test.logging.CommonTestAppender;
+import datawave.common.test.logging.TestLogCollector;
 import datawave.common.test.utils.ProcessUtils;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.input.reader.EventRecordReader;
 import datawave.ingest.input.reader.LongLineEventRecordReader;
-
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.client.impl.Credentials;
-import org.apache.commons.vfs2.provider.hdfs.HdfsFileSystem;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -52,7 +35,21 @@ import org.junit.experimental.categories.Category;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.reflect.Whitebox;
 
-import com.google.common.collect.Multimap;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.net.ServerSocket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Category(IntegrationTest.class)
 public class BulkIngestMapFileLoaderTest {
@@ -61,13 +58,14 @@ public class BulkIngestMapFileLoaderTest {
     
     protected static final Logger logger = Logger.getLogger(BulkIngestMapFileLoaderTest.class);
     protected Level testDriverLevel;
-    protected Level uutLevel;
-    protected CommonTestAppender uutAppender;
     
     private List<String> systemProperties;
     
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+    
+    @Rule
+    public TestLogCollector logCollector = new TestLogCollector.Builder().with(BulkIngestMapFileLoader.class, Level.ALL).build();
     
     @Test
     public void testShutdownPortAlreadyInUse() throws IOException {
@@ -388,7 +386,7 @@ public class BulkIngestMapFileLoaderTest {
     }
     
     protected List<String> retrieveUUTLogs() throws IOException {
-        return uutAppender.retrieveLogsEntries();
+        return logCollector.getMessages();
     }
     
     @Before
@@ -397,23 +395,11 @@ public class BulkIngestMapFileLoaderTest {
         
         testDriverLevel = BulkIngestMapFileLoaderTest.logger.getLevel();
         BulkIngestMapFileLoaderTest.logger.setLevel(Level.ALL);
-        
-        Logger uutLogger = Logger.getLogger(BulkIngestMapFileLoader.class);
-        uutAppender = new CommonTestAppender();
-        
-        uutLevel = uutLogger.getLevel();
-        uutLogger.setLevel(Level.ALL);
-        uutLogger.addAppender(uutAppender);
-        
     }
     
     @After
     public void teardown() {
-        
-        Logger.getLogger(BulkIngestMapFileLoader.class).setLevel(uutLevel);
-        Logger.getLogger(BulkIngestMapFileLoader.class).removeAppender(uutAppender);
         BulkIngestMapFileLoaderTest.logger.setLevel(testDriverLevel);
-        
     }
     
     @Test

@@ -1,5 +1,6 @@
 package datawave.query.jexl.visitors;
 
+import datawave.common.test.logging.TestLogCollector;
 import datawave.query.attributes.Document;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.jexl.DatawaveJexlContext;
@@ -10,34 +11,15 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Appender;
-import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggingEvent;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class QueryPruningVisitorTest {
-    private static TestLogAppender logAppender;
     
-    @BeforeClass
-    public static void staticSetup() {
-        logAppender = new TestLogAppender();
-        Logger log = Logger.getLogger(QueryPruningVisitor.class);
-        log.addAppender(logAppender);
-        log.setLevel(Level.DEBUG);
-    }
-    
-    @Before
-    public void setup() {
-        logAppender.clearMessages();
-    }
+    @Rule
+    public TestLogCollector logCollector = new TestLogCollector.Builder().with(QueryPruningVisitor.class, Level.DEBUG).build();
     
     @Test
     public void falseAndTest() throws ParseException {
@@ -45,7 +27,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.FALSE, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -61,9 +43,9 @@ public class QueryPruningVisitorTest {
         Assert.assertEquals("false", JexlStringBuildingVisitor.buildQuery(reduced));
         Assert.assertEquals("false", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
         
-        Assert.assertTrue(logAppender.getMessages().size() == 2);
-        Assert.assertEquals("Pruning FIELD1 == 'x' && _NOFIELD_ == 'y' to false", logAppender.getMessages().get(0));
-        Assert.assertEquals("Query before prune: FIELD1 == 'x' && _NOFIELD_ == 'y'\nQuery after prune: false", logAppender.getMessages().get(1));
+        Assert.assertTrue(logCollector.getMessages().size() == 2);
+        Assert.assertEquals("Pruning FIELD1 == 'x' && _NOFIELD_ == 'y' to false", logCollector.getMessages().get(0));
+        Assert.assertEquals("Query before prune: FIELD1 == 'x' && _NOFIELD_ == 'y'\nQuery after prune: false", logCollector.getMessages().get(1));
     }
     
     @Test
@@ -80,9 +62,9 @@ public class QueryPruningVisitorTest {
         Assert.assertEquals("true", JexlStringBuildingVisitor.buildQuery(reduced));
         Assert.assertEquals("true", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
         
-        Assert.assertTrue(logAppender.getMessages().size() == 2);
-        Assert.assertEquals("Pruning true || (FIELD1 == '1' && filter:isNull(FIELD2)) to true", logAppender.getMessages().get(0));
-        Assert.assertEquals("Query before prune: true || (FIELD1 == '1' && filter:isNull(FIELD2))\nQuery after prune: true", logAppender.getMessages().get(1));
+        Assert.assertTrue(logCollector.getMessages().size() == 2);
+        Assert.assertEquals("Pruning true || (FIELD1 == '1' && filter:isNull(FIELD2)) to true", logCollector.getMessages().get(0));
+        Assert.assertEquals("Query before prune: true || (FIELD1 == '1' && filter:isNull(FIELD2))\nQuery after prune: true", logCollector.getMessages().get(1));
     }
     
     @Test
@@ -91,7 +73,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.FALSE, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -107,10 +89,10 @@ public class QueryPruningVisitorTest {
         Assert.assertEquals("false", JexlStringBuildingVisitor.buildQuery(reduced));
         Assert.assertEquals("false", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
         
-        Assert.assertTrue(logAppender.getMessages().size() == 2);
-        Assert.assertEquals("Pruning FIELD1 == 'x' && _NOFIELD_ == 'y' && FIELD2 == 'y' to false", logAppender.getMessages().get(0));
-        Assert.assertEquals("Query before prune: FIELD1 == 'x' && _NOFIELD_ == 'y' && FIELD2 == 'y'\nQuery after prune: false", logAppender.getMessages()
-                        .get(1));
+        Assert.assertTrue(logCollector.getMessages().size() == 2);
+        Assert.assertEquals("Pruning FIELD1 == 'x' && _NOFIELD_ == 'y' && FIELD2 == 'y' to false", logCollector.getMessages().get(0));
+        Assert.assertEquals("Query before prune: FIELD1 == 'x' && _NOFIELD_ == 'y' && FIELD2 == 'y'\nQuery after prune: false",
+                        logCollector.getMessages().get(1));
     }
     
     @Test
@@ -119,7 +101,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -128,7 +110,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.TRUE, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -137,7 +119,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -151,11 +133,11 @@ public class QueryPruningVisitorTest {
         Assert.assertEquals("FIELD1 == 'x'", JexlStringBuildingVisitor.buildQuery(reduced));
         Assert.assertEquals("FIELD1 == 'x'", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
         
-        Assert.assertTrue(logAppender.getMessages().size() == 3);
-        Assert.assertEquals("Pruning _NOFIELD_ == 'y' && FIELD2 == 'z' to false", logAppender.getMessages().get(0));
-        Assert.assertEquals("Pruning (_NOFIELD_ == 'y' && FIELD2 == 'z') from FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')", logAppender.getMessages()
+        Assert.assertTrue(logCollector.getMessages().size() == 3);
+        Assert.assertEquals("Pruning _NOFIELD_ == 'y' && FIELD2 == 'z' to false", logCollector.getMessages().get(0));
+        Assert.assertEquals("Pruning (_NOFIELD_ == 'y' && FIELD2 == 'z') from FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')", logCollector.getMessages()
                         .get(1));
-        Assert.assertEquals("Query before prune: FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')\nQuery after prune: FIELD1 == 'x'", logAppender
+        Assert.assertEquals("Query before prune: FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')\nQuery after prune: FIELD1 == 'x'", logCollector
                         .getMessages().get(2));
     }
     
@@ -169,14 +151,14 @@ public class QueryPruningVisitorTest {
         Assert.assertEquals("FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(reduced));
         Assert.assertEquals("FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
         
-        Assert.assertEquals(3, logAppender.getMessages().size());
-        Assert.assertEquals("Pruning (_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && _NOFIELD_ == 'z' to false", logAppender.getMessages().get(0));
+        Assert.assertEquals(3, logCollector.getMessages().size());
+        Assert.assertEquals("Pruning (_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && _NOFIELD_ == 'z' to false", logCollector.getMessages().get(0));
         Assert.assertEquals(
                         "Pruning ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && _NOFIELD_ == 'z') from ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && _NOFIELD_ == 'z') || FIELD2 == 'z'",
-                        logAppender.getMessages().get(1));
+                        logCollector.getMessages().get(1));
         Assert.assertEquals(
                         "Query before prune: ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && _NOFIELD_ == 'z') || FIELD2 == 'z'\nQuery after prune: FIELD2 == 'z'",
-                        logAppender.getMessages().get(2));
+                        logCollector.getMessages().get(2));
     }
     
     @Test
@@ -189,15 +171,15 @@ public class QueryPruningVisitorTest {
         Assert.assertEquals("FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(reduced));
         Assert.assertEquals("FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
         
-        Assert.assertEquals(logAppender.getMessages().size() + "", 3, logAppender.getMessages().size());
+        Assert.assertEquals(logCollector.getMessages().size() + "", 3, logCollector.getMessages().size());
         Assert.assertEquals("Pruning (_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z' to false",
-                        logAppender.getMessages().get(0));
+                        logCollector.getMessages().get(0));
         Assert.assertEquals(
                         "Pruning ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z') from ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z') || FIELD2 == 'z'",
-                        logAppender.getMessages().get(1));
+                        logCollector.getMessages().get(1));
         Assert.assertEquals(
                         "Query before prune: ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z') || FIELD2 == 'z'\nQuery after prune: FIELD2 == 'z'",
-                        logAppender.getMessages().get(2));
+                        logCollector.getMessages().get(2));
     }
     
     @Test
@@ -206,7 +188,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -227,7 +209,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -236,7 +218,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.TRUE, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -245,7 +227,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.FALSE, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -254,7 +236,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -263,7 +245,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.FALSE, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -272,7 +254,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.TRUE, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -281,7 +263,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.FALSE, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -290,7 +272,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -299,7 +281,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -308,7 +290,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -317,7 +299,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -326,7 +308,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -335,7 +317,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.getState(script), QueryPruningVisitor.TruthState.UNKNOWN);
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -344,7 +326,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -353,7 +335,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.UNKNOWN, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -362,7 +344,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.FALSE, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -371,7 +353,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.FALSE, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -380,7 +362,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.FALSE, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -389,7 +371,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.FALSE, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -398,7 +380,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.FALSE, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -407,7 +389,7 @@ public class QueryPruningVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
         Assert.assertEquals(QueryPruningVisitor.TruthState.FALSE, QueryPruningVisitor.getState(script));
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
     
     @Test
@@ -466,38 +448,6 @@ public class QueryPruningVisitorTest {
         String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
         Assert.assertEquals(query, newQuery);
         
-        Assert.assertEquals(0, logAppender.getMessages().size(), logAppender.getMessages().size());
-    }
-    
-    private static class TestLogAppender extends AppenderSkeleton {
-        private List<String> messages = new ArrayList<>();
-        
-        @Override
-        public void close() {
-            
-        }
-        
-        @Override
-        public boolean requiresLayout() {
-            return false;
-        }
-        
-        @Override
-        protected void append(LoggingEvent loggingEvent) {
-            messages.add(loggingEvent.getMessage().toString());
-        }
-        
-        @Override
-        public void doAppend(LoggingEvent event) {
-            messages.add(event.getMessage().toString());
-        }
-        
-        public List<String> getMessages() {
-            return messages;
-        }
-        
-        public void clearMessages() {
-            messages = new ArrayList<>();
-        }
+        Assert.assertEquals(0, logCollector.getMessages().size(), logCollector.getMessages().size());
     }
 }

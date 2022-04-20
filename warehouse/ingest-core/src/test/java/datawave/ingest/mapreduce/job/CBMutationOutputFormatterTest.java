@@ -1,8 +1,8 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.common.test.logging.CommonTestAppender;
-import datawave.ingest.data.TypeRegistry;
+import datawave.common.test.logging.TestLogCollector;
 import datawave.data.hash.UID;
+import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.ClientConfiguration;
@@ -27,6 +27,7 @@ import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
 
@@ -42,8 +43,10 @@ public class CBMutationOutputFormatterTest {
     protected static final Logger logger = Logger.getLogger(CBMutationOutputFormatterTest.class);
     
     protected Level testDriverLevel;
-    protected Level uutLevel;
-    protected CommonTestAppender uutAppender;
+    
+    @Rule
+    public TestLogCollector logCollector = new TestLogCollector.Builder().with(CBMutationOutputFormatter.class, Level.ALL)
+                    .with(AccumuloOutputFormat.class, Level.ALL).build();
     
     protected static Map<String,String> mockedConfiguration = new HashMap<>();
     
@@ -159,27 +162,13 @@ public class CBMutationOutputFormatterTest {
     
     @Before
     public void setup() {
-        
         testDriverLevel = CBMutationOutputFormatterTest.logger.getLevel();
         CBMutationOutputFormatterTest.logger.setLevel(Level.ALL);
-        
-        uutAppender = new CommonTestAppender();
-        Logger uutLogger = Logger.getLogger(CBMutationOutputFormatter.class);
-        uutLevel = uutLogger.getLevel();
-        uutLogger.setLevel(Level.ALL);
-        uutLogger.addAppender(uutAppender);
-        
-        Logger.getLogger(AccumuloOutputFormat.class).addAppender(uutAppender);
-        
         TypeRegistry.reset();
     }
     
     @After
     public void teardown() {
-        
-        Logger.getLogger(CBMutationOutputFormatter.class).setLevel(uutLevel);
-        Logger.getLogger(CBMutationOutputFormatter.class).removeAppender(uutAppender);
-        Logger.getLogger(AccumuloOutputFormat.class).removeAppender(uutAppender);
         CBMutationOutputFormatterTest.logger.setLevel(testDriverLevel);
     }
     
@@ -292,7 +281,7 @@ public class CBMutationOutputFormatterTest {
             
             Assert.assertNotNull("CBMutationOutputFormatter#getRecordWriter failed to create an instance of RecordWriter", rw);
             
-            List<String> entries = uutAppender.retrieveLogsEntries();
+            List<String> entries = logCollector.getMessages();
             
             Assert.assertTrue("CBMutationOutputFormatter#getRecordWriter failed to create simulation warning message.",
                             processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
@@ -334,7 +323,7 @@ public class CBMutationOutputFormatterTest {
             
             rw.close(context);
             
-            List<String> entries = uutAppender.retrieveLogsEntries();
+            List<String> entries = logCollector.getMessages();
             
             Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#close failed to create simulation warning message.",
                             processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
@@ -379,7 +368,7 @@ public class CBMutationOutputFormatterTest {
             
             rw.write(key, value);
             
-            List<String> entries = uutAppender.retrieveLogsEntries();
+            List<String> entries = logCollector.getMessages();
             
             Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
                             processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
@@ -426,7 +415,7 @@ public class CBMutationOutputFormatterTest {
             
             rw.write(key, value);
             
-            List<String> entries = uutAppender.retrieveLogsEntries();
+            List<String> entries = logCollector.getMessages();
             
             Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
                             processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
@@ -475,7 +464,7 @@ public class CBMutationOutputFormatterTest {
             
             rw.write(key, value);
             
-            List<String> entries = uutAppender.retrieveLogsEntries();
+            List<String> entries = logCollector.getMessages();
             
             Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
                             processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
@@ -535,7 +524,7 @@ public class CBMutationOutputFormatterTest {
             
             rw.write(key, value);
             
-            List<String> entries = uutAppender.retrieveLogsEntries();
+            List<String> entries = logCollector.getMessages();
             
             Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
                             processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
@@ -595,7 +584,7 @@ public class CBMutationOutputFormatterTest {
             
             rw.write(key, value);
             
-            List<String> entries = uutAppender.retrieveLogsEntries();
+            List<String> entries = logCollector.getMessages();
             
             Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
                             processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
@@ -657,7 +646,7 @@ public class CBMutationOutputFormatterTest {
             
             rw.write(key, value);
             
-            List<String> entries = uutAppender.retrieveLogsEntries();
+            List<String> entries = logCollector.getMessages();
             
             Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
                             processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
@@ -719,7 +708,7 @@ public class CBMutationOutputFormatterTest {
             
             rw.write(key, value);
             
-            List<String> entries = uutAppender.retrieveLogsEntries();
+            List<String> entries = logCollector.getMessages();
             
             Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
                             processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
@@ -780,7 +769,7 @@ public class CBMutationOutputFormatterTest {
             
             rw.write(key, value);
             
-            List<String> entries = uutAppender.retrieveLogsEntries();
+            List<String> entries = logCollector.getMessages();
             
             Assert.assertTrue("CBMutationOutputFormatter$getRecordWriter#write failed to create simulation warning message.",
                             processOutputContains(entries, "Simulating output only. No writes to tables will occur"));
