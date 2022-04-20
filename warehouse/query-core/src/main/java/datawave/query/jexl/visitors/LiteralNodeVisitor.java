@@ -1,21 +1,24 @@
 package datawave.query.jexl.visitors;
 
-import java.util.Set;
-
-import datawave.query.jexl.JexlASTHelper;
-
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import datawave.query.jexl.JexlASTHelper;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+
+import java.util.Set;
 
 /**
  * Collect a {@link Set} of all literals/terms in the AST
- * 
  */
 @SuppressWarnings("unchecked")
-public class LiteralNodeVisitor extends BaseVisitor {
+public class LiteralNodeVisitor extends ShortCircuitBaseVisitor {
     
     public static Multimap<String,String> getLiterals(ASTJexlScript script) {
         LiteralNodeVisitor visitor = new LiteralNodeVisitor();
@@ -33,6 +36,49 @@ public class LiteralNodeVisitor extends BaseVisitor {
         literals.put(identifier, (literal == null ? null : literal.toString()));
         
         return literals;
+    }
+    
+    // Descend through these nodes
+    @Override
+    public Object visit(ASTJexlScript node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTAndNode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTERNode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTNENode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTOrNode node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTReference node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTReferenceExpression node, Object data) {
+        node.childrenAccept(this, data);
+        return data;
     }
     
 }
