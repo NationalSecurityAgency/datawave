@@ -2375,4 +2375,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
     }
+    
+    public long getVisitorFunctionMaxWeight() {
+        return getConfig().getVisitorFunctionMaxWeight();
+    }
+    
+    public void setVisitorFunctionMaxWeight(long visitorFunctionMaxWeight) {
+        getConfig().setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
+    }
 }

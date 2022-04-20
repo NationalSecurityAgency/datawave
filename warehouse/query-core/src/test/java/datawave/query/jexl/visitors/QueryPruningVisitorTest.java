@@ -22,6 +22,18 @@ public class QueryPruningVisitorTest {
     public TestLogCollector logCollector = new TestLogCollector.Builder().with(QueryPruningVisitor.class, Level.DEBUG).build();
     
     @Test
+    public void delayedGeowaveTest() throws ParseException {
+        String query = "geowave:intersects(GEO_FIELD, 'POINT(0 0)') && ((_Delayed_ = true) && (GEO_FIELD == '00' || GEO_FIELD == '0100' || false || false || GEO_FIELD == '0103'))";
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        
+        JexlNode rebuilt = QueryPruningVisitor.reduce(script, false);
+        
+        Assert.assertEquals(
+                        "geowave:intersects(GEO_FIELD, 'POINT(0 0)') && ((_Delayed_ = true) && (GEO_FIELD == '00' || GEO_FIELD == '0100' || GEO_FIELD == '0103'))",
+                        JexlStringBuildingVisitor.buildQuery(rebuilt));
+    }
+    
+    @Test
     public void falseAndTest() throws ParseException {
         String query = "FIELD1 == 'x' && _NOFIELD_ == 'y'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
