@@ -409,11 +409,11 @@ public class FieldAgeOffFilterTest {
     @Test
     public void handlesFieldsStartingWithNumber() {
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
-
+        
         long currentTime = System.currentTimeMillis();
         long oneSecondAgo = currentTime - (1 * ONE_SEC);
         long tenSecondsAgo = currentTime - (10 * ONE_SEC);
-
+        
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 seconds
         filterOptions.setTTL(5);

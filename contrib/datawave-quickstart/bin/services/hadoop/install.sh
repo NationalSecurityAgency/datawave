@@ -88,6 +88,15 @@ else
    warn "No capacity-scheduler.xml content defined! :("
 fi
 
+# Swap log4j 1x jars in common/lib for 2x jars
+DW_DATAWAVE_SOURCE_DIR="$( cd "${DW_HADOOP_SERVICE_DIR}/../../../../.." && pwd )"
+rm -f "${DW_HADOOP_SERVICE_DIR}/${DW_HADOOP_BASEDIR}"/share/hadoop/common/lib/slf4j-log4j12-*.jar
+rm -f "${DW_HADOOP_SERVICE_DIR}/${DW_HADOOP_BASEDIR}"/share/hadoop/common/lib/log4j-1*.jar
+cp "${DW_DATAWAVE_SOURCE_DIR}"/warehouse/assemble/datawave/target/archive/lib/log4j-api-2.*.jar "${DW_HADOOP_SERVICE_DIR}/${DW_HADOOP_BASEDIR}"/share/hadoop/common/lib/
+cp "${DW_DATAWAVE_SOURCE_DIR}"/warehouse/assemble/datawave/target/archive/lib/log4j-1.2-api-2.*.jar "${DW_HADOOP_SERVICE_DIR}/${DW_HADOOP_BASEDIR}"/share/hadoop/common/lib/
+cp "${DW_DATAWAVE_SOURCE_DIR}"/warehouse/assemble/datawave/target/archive/lib/log4j-core-2.*.jar "${DW_HADOOP_SERVICE_DIR}/${DW_HADOOP_BASEDIR}"/share/hadoop/common/lib/
+cp "${DW_DATAWAVE_SOURCE_DIR}"/warehouse/assemble/datawave/target/archive/lib/log4j-slf4j-impl-2.*.jar "${DW_HADOOP_SERVICE_DIR}/${DW_HADOOP_BASEDIR}"/share/hadoop/common/lib/
+
 # Ensure that $JAVA_HOME is observed by all hadoop scripts
 sed -i'' -e "s|.*\(export JAVA_HOME=\).*|\1${JAVA_HOME}|g" ${HADOOP_CONF_DIR}/hadoop-env.sh
 
