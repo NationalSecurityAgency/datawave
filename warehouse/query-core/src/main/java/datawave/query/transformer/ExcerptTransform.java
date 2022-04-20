@@ -180,10 +180,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 if (parts.length == 2) {
                     return parts[1];
                 } else {
-                    if (log.isTraceEnabled()) {
-                        log.trace(TermFrequencyExcerptIterator.class.getSimpleName() + " returned top key with incorrectly-formatted column qualifier in key: "
-                                        + topKey + " when scanning for excerpt [" + start + "," + end + "] for field " + field + " within range " + range);
-                    }
+                    log.warn(TermFrequencyExcerptIterator.class.getSimpleName() + " returned top key with incorrectly-formatted column qualifier in key: "
+                                    + topKey + " when scanning for excerpt [" + start + "," + end + "] for field " + field + " within range " + range);
                     return null;
                 }
             } else {
