@@ -1,5 +1,28 @@
 package datawave.query.metrics;
 
+import java.io.IOException;
+import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.annotation.PostConstruct;
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -18,6 +41,15 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
+import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetric;
+import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.microservice.querymetric.QueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetricsDetailListResponse;
+import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.map.SimpleQueryGeometryHandler;
 import datawave.security.authorization.DatawavePrincipal;
@@ -32,18 +64,9 @@ import datawave.services.query.util.QueryUtil;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.Lifecycle;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import datawave.webservice.query.metric.BaseQueryMetricListResponse;
-import datawave.webservice.query.metric.QueryMetric;
-import datawave.webservice.query.metric.QueryMetricListResponse;
-import datawave.webservice.query.metric.QueryMetricsDetailListResponse;
-import datawave.webservice.query.metric.QueryMetricsSummaryHtmlResponse;
-import datawave.webservice.query.metric.QueryMetricsSummaryResponse;
+
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.runner.RunningQuery;
@@ -77,28 +100,6 @@ import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.task.MapContextImpl;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import java.io.IOException;
-import java.net.URL;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @ApplicationScoped
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
@@ -523,7 +524,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     }
     
     @Override
-    public QueryMetricListResponse query(String user, String queryId, DatawavePrincipal datawavePrincipal) {
+    public QueryMetricsDetailListResponse query(String user, String queryId, DatawavePrincipal datawavePrincipal) {
         QueryMetricsDetailListResponse response = new QueryMetricsDetailListResponse();
         
         try {
@@ -827,13 +828,13 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     }
     
     @Override
-    public QueryMetricsSummaryHtmlResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
-        return (QueryMetricsSummaryHtmlResponse) getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryHtmlResponse());
+    public QueryMetricsSummaryResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return (QueryMetricsSummaryResponse) getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
     
     @Override
-    public QueryMetricsSummaryHtmlResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
-        return (QueryMetricsSummaryHtmlResponse) getQueryMetricsSummary(begin, end, true, datawavePrincipal, new QueryMetricsSummaryHtmlResponse());
+    public QueryMetricsSummaryResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return (QueryMetricsSummaryResponse) getQueryMetricsSummary(begin, end, true, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
     
     public QueryMetricsSummaryResponse getQueryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser, DatawavePrincipal datawavePrincipal,

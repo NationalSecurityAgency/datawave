@@ -24,7 +24,7 @@ public class ResultsPage<T> {
     
     public ResultsPage(List<T> results, Status status) {
         this.results = results;
-        this.status = (results.isEmpty()) ? Status.NONE : status;
+        this.status = status;
     }
     
     public Status getStatus() {

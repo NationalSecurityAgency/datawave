@@ -296,7 +296,12 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                     List<JexlNode> otherNodes) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(subNode);
         if (subNode instanceof ASTEQNode) {
-            eqNodes.put(JexlASTHelper.getIdentifier(subNode, false), origNode);
+            String identifier = JexlASTHelper.getIdentifier(subNode, false);
+            if (identifier != null) {
+                eqNodes.put(JexlASTHelper.getIdentifier(subNode, false), origNode);
+            } else {
+                otherNodes.add(origNode);
+            }
         } else if (instance.isType(ExceededValueThresholdMarkerJexlNode.class)) {
             assignNodeByField(origNode, instance.getSource(), eqNodes, rangeNodes, otherNodes);
         } else if (instance.isType(BoundedRange.class)) {

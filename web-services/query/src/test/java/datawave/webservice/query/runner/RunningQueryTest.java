@@ -1,6 +1,7 @@
 package datawave.webservice.query.runner;
 
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -12,7 +13,6 @@ import datawave.services.query.logic.BaseQueryLogic;
 import datawave.services.query.logic.QueryLogic;
 import datawave.services.query.logic.composite.CompositeQueryLogic;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.logic.TestQueryLogic;
 import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
 import org.apache.accumulo.core.client.Connector;

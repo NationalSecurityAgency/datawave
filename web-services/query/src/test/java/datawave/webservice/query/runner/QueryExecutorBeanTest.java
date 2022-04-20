@@ -9,6 +9,8 @@ import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.microservice.query.config.QueryExpirationProperties;
+import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -34,18 +36,16 @@ import datawave.webservice.query.cache.ClosedQueryCache;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
 import datawave.webservice.query.cache.QueryCache;
-import datawave.webservice.query.cache.QueryMetricFactory;
-import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.factory.Persister;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.Lifecycle;
-import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
-import datawave.webservice.query.metric.QueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.result.GenericResponse;
@@ -425,7 +425,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         
         BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
-        q.populateMetric(metric);
+        metric.populate(q);
         metric.setQueryType(RunningQuery.class.getSimpleName());
         
         QueryMetric testMetric = new QueryMetric((QueryMetric) metric) {
@@ -662,7 +662,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(connectionFactory.getTrackingMap(anyObject())).andReturn(null).anyTimes();
         
         BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
-        q.populateMetric(metric);
+        metric.populate(q);
         EasyMock.expectLastCall();
         metric.setQueryType(RunningQuery.class.getSimpleName());
         metric.setLifecycle(Lifecycle.DEFINED);

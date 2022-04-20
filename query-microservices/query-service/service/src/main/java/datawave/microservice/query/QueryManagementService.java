@@ -515,7 +515,7 @@ public class QueryManagementService implements QueryRequestHandler {
         String userDn = currentUser.getPrimaryUser().getDn().subjectDN();
         setInternalAuditParameters(queryLogicName, userDn, parameters);
         
-        Query query = createQuery(queryLogicName, parameters, userDn, currentUser.getDNs(), queryId);
+        Query query = createQuery(queryLogicName, parameters, userDn, getDNs(currentUser), queryId);
         
         // TODO: Downgrade the auths before or after auditing???
         // downgrade the auths
@@ -588,7 +588,7 @@ public class QueryManagementService implements QueryRequestHandler {
                 baseQueryMetric.setQueryId(taskKey.getQueryId());
                 baseQueryMetric.setLifecycle(BaseQueryMetric.Lifecycle.DEFINED);
                 baseQueryMetric.populate(query);
-                baseQueryMetric.setProxyServers(currentUser.getProxyServers());
+                baseQueryMetric.setProxyServers(getDNs(currentUser));
             }
             
             return taskKey;
@@ -1623,7 +1623,7 @@ public class QueryManagementService implements QueryRequestHandler {
                             
                             // create a new query object
                             String userDn = currentUser.getPrimaryUser().getDn().subjectDN();
-                            Query query = createQuery(queryLogicName, currentParams, userDn, currentUser.getDNs(), queryId);
+                            Query query = createQuery(queryLogicName, currentParams, userDn, getDNs(currentUser), queryId);
                             
                             // save the new query object in the cache
                             queryStatusUpdateUtil.lockedUpdate(queryId, status -> status.setQuery(query));
@@ -2425,7 +2425,7 @@ public class QueryManagementService implements QueryRequestHandler {
         }
         
         // Verify that the calling principal has access to the query logic.
-        List<String> dnList = currentUser.getDNs();
+        List<String> dnList = getDNs(currentUser);
         if (!queryLogic.containsDNWithAccess(dnList)) {
             throw new UnauthorizedQueryException("None of the DNs used have access to this query logic: " + dnList, 401);
         }
@@ -2513,5 +2513,9 @@ public class QueryManagementService implements QueryRequestHandler {
     
     public ThreadLocal<BaseQueryMetric> getBaseQueryMetricOverride() {
         return baseQueryMetricOverride;
+    }
+    
+    public List<String> getDNs(ProxiedUserDetails user) {
+        return user.getProxiedUsers().stream().map(u -> u.getDn().subjectDN()).collect(Collectors.toList());
     }
 }

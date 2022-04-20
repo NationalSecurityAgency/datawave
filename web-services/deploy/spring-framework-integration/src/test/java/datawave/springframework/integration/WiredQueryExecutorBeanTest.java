@@ -24,7 +24,8 @@ import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.edgedictionary.EdgeDictionaryResponseTypeProducer;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
-import datawave.webservice.query.metric.NoOpQueryMetricHandler;
+import datawave.webservice.query.logic.composite.CompositeQueryLogic;
+import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.results.cached.CachedResultsConfiguration;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
@@ -73,7 +74,7 @@ public class WiredQueryExecutorBeanTest {
                                         DefaultQueryPlanner.class, BooleanChunkingQueryPlanner.class, ShardQueryLogic.class, CountingShardQueryLogic.class,
                                         EventQueryDataDecoratorTransformer.class, FieldIndexCountQueryLogic.class, CompositeQueryLogic.class,
                                         QueryMetricQueryLogic.class, TLDQueryLogic.class, ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class,
-                                        QueryLogicFactoryImpl.class, NoOpQueryMetricHandler.class, CachedResultsConfiguration.class,
+                                        QueryLogicFactoryImpl.class, CachedResultsConfiguration.class,
                                         DateIndexHelperFactory.class, EdgeDictionaryResponseTypeProducer.class, RemoteEdgeDictionary.class,
                                         DefaultMapperDecorator.class).addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }

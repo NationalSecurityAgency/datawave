@@ -2,10 +2,10 @@ package datawave.webservice.query.util;
 
 import java.io.IOException;
 
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.QueryMetric;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtobufIOUtil;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.QueryMetric;
 
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;

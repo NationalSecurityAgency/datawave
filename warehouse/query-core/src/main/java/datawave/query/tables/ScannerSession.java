@@ -24,12 +24,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -282,7 +284,15 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             // until we've completed the start process
             if (null != stats)
                 initializeTimers();
-            startAsync();
+            try {
+                startAsync();
+            } catch (RejectedExecutionException e) {
+                // It appears that sometimes a rejected execution exception occurs on a retry underneath of the startAsync.
+                // if the state is not starting or running, then pass along the failure.
+                if (state() != State.STARTING || state() != State.RUNNING) {
+                    throw e;
+                }
+            }
             try {
                 awaitRunning();
             } catch (IllegalStateException e) {
@@ -368,7 +378,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * 
      * @see java.util.Iterator#next()
      * 
-     * Note that this method needs to check the uncaught exception handler and propogate any set throwables.
+     * Note that this method needs to check the uncaught exception handler and propagate any set throwables.
      */
     @Override
     public Result next() {

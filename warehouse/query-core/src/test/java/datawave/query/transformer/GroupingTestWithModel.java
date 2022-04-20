@@ -14,12 +14,13 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.attributes.Attribute;
+import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
+import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.JexlControlledQueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.query.transformer.GroupingTransform.GroupingTypeAttribute;
 import datawave.query.util.VisibilityWiseGuysIngestWithModel;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.iterator.DatawaveTransformIterator;
@@ -168,6 +169,7 @@ public abstract class GroupingTestWithModel {
         
         logic.setFullTableScanEnabled(true);
         logic.setMaxEvaluationPipelines(1);
+        logic.setQueryExecutionForPageTimeout(300000000000000L);
         deserializer = new KryoDocumentDeserializer();
     }
     
@@ -448,7 +450,7 @@ public abstract class GroupingTestWithModel {
     @Test
     public void testCountingMap() {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
+        GroupCountingHashMap map = new GroupCountingHashMap(markingFunctions);
         GroupingTypeAttribute attr1 = new GroupingTypeAttribute(new LcType("FOO"), new Key("FOO"), true);
         attr1.setColumnVisibility(new ColumnVisibility("A"));
         map.add(Collections.singleton(attr1));
@@ -478,7 +480,7 @@ public abstract class GroupingTestWithModel {
     @Test
     public void testCountingMapAgain() {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
+        GroupCountingHashMap map = new GroupCountingHashMap(markingFunctions);
         
         GroupingTypeAttribute<?> attr1a = new GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
         attr1a.setColumnVisibility(new ColumnVisibility("A"));

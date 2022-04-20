@@ -302,7 +302,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private ReturnType returnType = DocumentSerialization.DEFAULT_RETURN_TYPE;
     private int eventPerDayThreshold = 10000;
     private int shardsPerDayThreshold = 10;
-    private int maxTermThreshold = 2500;
+    private int initialMaxTermThreshold = 2500;
+    private int finalMaxTermThreshold = 2500;
     private int maxDepthThreshold = 2500;
     private boolean expandFields = true;
     private int maxUnfieldedExpansionThreshold = 500;
@@ -383,6 +384,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * A bloom filter to avoid duplicate results if needed
      */
     private BloomFilter<byte[]> bloom = null;
+    
+    /**
+     * The max execution time per page of results - after it has elapsed, an intermediate result page will be returned.
+     */
+    private long queryExecutionForPageTimeout = 3000000L;
     
     /**
      * Default constructor
@@ -512,7 +518,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setReturnType(other.getReturnType());
         this.setEventPerDayThreshold(other.getEventPerDayThreshold());
         this.setShardsPerDayThreshold(other.getShardsPerDayThreshold());
-        this.setMaxTermThreshold(other.getMaxTermThreshold());
+        this.setInitialMaxTermThreshold(other.getInitialMaxTermThreshold());
+        this.setFinalMaxTermThreshold(other.getFinalMaxTermThreshold());
         this.setMaxDepthThreshold(other.getMaxDepthThreshold());
         this.setMaxUnfieldedExpansionThreshold(other.getMaxUnfieldedExpansionThreshold());
         this.setExpandFields(other.isExpandFields());
@@ -568,6 +575,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexMappingFields(other.getWhindexMappingFields());
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
+        this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
     }
     
     /**
@@ -616,7 +624,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setMaxOrExpansionThreshold(other.getMaxOrExpansionThreshold());
         this.setMaxOrRangeIvarators(other.getMaxOrRangeIvarators());
         this.setMaxOrRangeThreshold(other.getMaxOrRangeThreshold());
-        this.setMaxTermThreshold(other.getMaxTermThreshold());
+        this.setInitialMaxTermThreshold(other.getInitialMaxTermThreshold());
+        this.setFinalMaxTermThreshold(other.getFinalMaxTermThreshold());
         this.setMaxDepthThreshold(other.getMaxDepthThreshold());
         this.setMaxRangesPerRangeIvarator(other.getMaxRangesPerRangeIvarator());
         this.setFstCount(other.getFstCount());
@@ -1169,12 +1178,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.shardsPerDayThreshold = shardsPerDayThreshold;
     }
     
-    public int getMaxTermThreshold() {
-        return maxTermThreshold;
+    public int getInitialMaxTermThreshold() {
+        return initialMaxTermThreshold;
     }
     
-    public void setMaxTermThreshold(int maxTermThreshold) {
-        this.maxTermThreshold = maxTermThreshold;
+    public void setInitialMaxTermThreshold(int initialMaxTermThreshold) {
+        this.initialMaxTermThreshold = initialMaxTermThreshold;
+    }
+    
+    public int getFinalMaxTermThreshold() {
+        return finalMaxTermThreshold;
+    }
+    
+    public void setFinalMaxTermThreshold(int finalMaxTermThreshold) {
+        this.finalMaxTermThreshold = finalMaxTermThreshold;
     }
     
     public int getMaxDepthThreshold() {
@@ -2310,6 +2327,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.noExpansionFields = noExpansionFields;
     }
     
+    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
+        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
+    }
+    
+    public long getQueryExecutionForPageTimeout() {
+        return this.queryExecutionForPageTimeout;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -2352,10 +2377,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         && isContainsCompositeTerms() == that.isContainsCompositeTerms() && isAllowFieldIndexEvaluation() == that.isAllowFieldIndexEvaluation()
                         && isAllowTermFrequencyLookup() == that.isAllowTermFrequencyLookup()
                         && isExpandUnfieldedNegations() == that.isExpandUnfieldedNegations() && getEventPerDayThreshold() == that.getEventPerDayThreshold()
-                        && getShardsPerDayThreshold() == that.getShardsPerDayThreshold() && getMaxTermThreshold() == that.getMaxTermThreshold()
-                        && getMaxDepthThreshold() == that.getMaxDepthThreshold() && isExpandFields() == that.isExpandFields()
-                        && getMaxUnfieldedExpansionThreshold() == that.getMaxUnfieldedExpansionThreshold() && isExpandValues() == that.isExpandValues()
-                        && getMaxValueExpansionThreshold() == that.getMaxValueExpansionThreshold()
+                        && getShardsPerDayThreshold() == that.getShardsPerDayThreshold() && getInitialMaxTermThreshold() == that.getInitialMaxTermThreshold()
+                        && getFinalMaxTermThreshold() == that.getFinalMaxTermThreshold() && getMaxDepthThreshold() == that.getMaxDepthThreshold()
+                        && isExpandFields() == that.isExpandFields() && getMaxUnfieldedExpansionThreshold() == that.getMaxUnfieldedExpansionThreshold()
+                        && isExpandValues() == that.isExpandValues() && getMaxValueExpansionThreshold() == that.getMaxValueExpansionThreshold()
                         && getMaxOrExpansionThreshold() == that.getMaxOrExpansionThreshold() && getMaxOrRangeThreshold() == that.getMaxOrRangeThreshold()
                         && getMaxOrRangeIvarators() == that.getMaxOrRangeIvarators() && getMaxRangesPerRangeIvarator() == that.getMaxRangesPerRangeIvarator()
                         && getMaxOrExpansionFstThreshold() == that.getMaxOrExpansionFstThreshold() && getYieldThresholdMs() == that.getYieldThresholdMs()
@@ -2375,6 +2400,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         && getCacheModel() == that.getCacheModel() && isTrackSizes() == that.isTrackSizes()
                         && getEnforceUniqueConjunctionsWithinExpression() == that.getEnforceUniqueConjunctionsWithinExpression()
                         && getEnforceUniqueDisjunctionsWithinExpression() == that.getEnforceUniqueDisjunctionsWithinExpression()
+                        && getQueryExecutionForPageTimeout() == that.getQueryExecutionForPageTimeout()
                         && Objects.equals(getFilterOptions(), that.getFilterOptions()) && Objects.equals(getAccumuloPassword(), that.getAccumuloPassword())
                         && Objects.equals(getStatsdHost(), that.getStatsdHost()) && Objects.equals(getShardTableName(), that.getShardTableName())
                         && Objects.equals(getIndexTableName(), that.getIndexTableName())
@@ -2445,17 +2471,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         getIncludeGroupingContext(), getDocumentPermutations(), getFilterMaskedValues(), isReducedResponse(), getAllowShortcutEvaluation(),
                         getSpeculativeScanning(), isDisableEvaluation(), isContainsIndexOnlyTerms(), isContainsCompositeTerms(), isAllowFieldIndexEvaluation(),
                         isAllowTermFrequencyLookup(), isExpandUnfieldedNegations(), getReturnType(), getEventPerDayThreshold(), getShardsPerDayThreshold(),
-                        getMaxTermThreshold(), getMaxDepthThreshold(), isExpandFields(), getMaxUnfieldedExpansionThreshold(), isExpandValues(),
-                        getMaxValueExpansionThreshold(), getMaxOrExpansionThreshold(), getMaxOrRangeThreshold(), getMaxOrRangeIvarators(),
-                        getMaxRangesPerRangeIvarator(), getMaxOrExpansionFstThreshold(), getYieldThresholdMs(), getHdfsSiteConfigURLs(),
-                        getHdfsFileCompressionCodec(), getZookeeperConfig(), getIvaratorCacheDirConfigs(), getIvaratorFstHdfsBaseURIs(),
-                        getIvaratorCacheBufferSize(), getIvaratorCacheScanPersistThreshold(), getIvaratorCacheScanTimeout(), getMaxFieldIndexRangeSplit(),
-                        getIvaratorMaxOpenFiles(), getIvaratorNumRetries(), isIvaratorPersistVerify(), getIvaratorPersistVerifyCount(),
-                        getMaxIvaratorSources(), getMaxIvaratorResults(), getMaxEvaluationPipelines(), getMaxPipelineCachedResults(), isExpandAllTerms(),
-                        getQueryModel(), getModelName(), getModelTableName(), shouldLimitTermExpansionToModel, isCompressServerSideResults(),
-                        isIndexOnlyFilterFunctionsEnabled(), isCompositeFilterFunctionsEnabled(), getGroupFieldsBatchSize(), getAccrueStats(),
-                        getGroupFields(), getUniqueFields(), getCacheModel(), isTrackSizes(), getContentFieldNames(), getActiveQueryLogNameSource(),
-                        getEnforceUniqueConjunctionsWithinExpression(), getEnforceUniqueDisjunctionsWithinExpression(), getNoExpansionFields(), getBloom());
+                        getInitialMaxTermThreshold(), getFinalMaxTermThreshold(), getMaxDepthThreshold(), isExpandFields(),
+                        getMaxUnfieldedExpansionThreshold(), isExpandValues(), getMaxValueExpansionThreshold(), getMaxOrExpansionThreshold(),
+                        getMaxOrRangeThreshold(), getMaxOrRangeIvarators(), getMaxRangesPerRangeIvarator(), getMaxOrExpansionFstThreshold(),
+                        getYieldThresholdMs(), getHdfsSiteConfigURLs(), getHdfsFileCompressionCodec(), getZookeeperConfig(), getIvaratorCacheDirConfigs(),
+                        getIvaratorFstHdfsBaseURIs(), getIvaratorCacheBufferSize(), getIvaratorCacheScanPersistThreshold(), getIvaratorCacheScanTimeout(),
+                        getMaxFieldIndexRangeSplit(), getIvaratorMaxOpenFiles(), getIvaratorNumRetries(), isIvaratorPersistVerify(),
+                        getIvaratorPersistVerifyCount(), getMaxIvaratorSources(), getMaxIvaratorResults(), getMaxEvaluationPipelines(),
+                        getMaxPipelineCachedResults(), isExpandAllTerms(), getQueryModel(), getModelName(), getModelTableName(),
+                        shouldLimitTermExpansionToModel, isCompressServerSideResults(), isIndexOnlyFilterFunctionsEnabled(),
+                        isCompositeFilterFunctionsEnabled(), getGroupFieldsBatchSize(), getAccrueStats(), getGroupFields(), getUniqueFields(), getCacheModel(),
+                        isTrackSizes(), getContentFieldNames(), getActiveQueryLogNameSource(), getEnforceUniqueConjunctionsWithinExpression(),
+                        getEnforceUniqueDisjunctionsWithinExpression(), getQueryExecutionForPageTimeout(), getNoExpansionFields(), getBloom());
     }
     
     // Part of the Serializable interface used to initialize any transient members during deserialization
@@ -2464,4 +2491,5 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.fstCount = new AtomicInteger(0);
         return this;
     }
+    
 }

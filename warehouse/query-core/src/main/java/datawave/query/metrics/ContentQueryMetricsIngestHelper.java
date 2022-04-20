@@ -1,5 +1,13 @@
 package datawave.query.metrics;
 
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -12,13 +20,6 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.services.query.util.QueryUtil;
 import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
      */
     
     private static final Logger log = Logger.getLogger(ContentQueryMetricsIngestHelper.class);
+    private static final Integer MAX_FIELD_VALUE_LENGTH = 500000;
     
     private Set<String> contentIndexFields = new HashSet<>();
     private HelperDelegate<BaseQueryMetric> delegate = new HelperDelegate<>();
@@ -243,7 +245,15 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             
             putExtendedFieldsToWrite(updatedQueryMetric, fields);
             
-            return fields;
+            HashMultimap<String,String> truncatedFields = HashMultimap.create();
+            fields.entries().forEach(e -> {
+                if (e.getValue().length() > MAX_FIELD_VALUE_LENGTH) {
+                    truncatedFields.put(e.getKey(), e.getValue().substring(0, MAX_FIELD_VALUE_LENGTH) + "<truncated>");
+                } else {
+                    truncatedFields.put(e.getKey(), e.getValue());
+                }
+            });
+            return truncatedFields;
         }
         
         protected void putExtendedFieldsToWrite(T updatedQueryMetric, Multimap<String,String> fields) {
@@ -336,7 +346,15 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             
             putExtendedFieldsToDelete(updatedQueryMetric, fields);
             
-            return fields;
+            HashMultimap<String,String> truncatedFields = HashMultimap.create();
+            fields.entries().forEach(e -> {
+                if (e.getValue().length() > MAX_FIELD_VALUE_LENGTH) {
+                    truncatedFields.put(e.getKey(), e.getValue().substring(0, MAX_FIELD_VALUE_LENGTH) + "<truncated>");
+                } else {
+                    truncatedFields.put(e.getKey(), e.getValue());
+                }
+            });
+            return truncatedFields;
         }
         
         protected void putExtendedFieldsToDelete(T updatedQueryMetric, Multimap<String,String> fields) {

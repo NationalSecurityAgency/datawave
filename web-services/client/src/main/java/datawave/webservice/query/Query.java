@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import datawave.microservice.query.QueryParameters;
 import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -122,8 +121,6 @@ public abstract class Query implements Externalizable {
     public abstract void readMap(MultiValueMap<String,String> map) throws ParseException;
     
     public abstract Map<String,String> getCardinalityFields();
-    
-    public abstract void populateMetric(BaseQueryMetric metric);
     
     public abstract void setOptionalQueryParameters(Map<String,List<String>> optionalQueryParameters);
     

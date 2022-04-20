@@ -85,8 +85,10 @@
         <!-- Determines how many shards in the global index lookup will be
         aggregated into a day range -->
         <property name="shardsPerDayThreshold" value="${datawave.query.logic.logics.BaseEventQuery.shardsPerDayThreshold}" />
+        <!-- The max number of terms BEFORE all expansions -->
+        <property name="initialMaxTermThreshold" value="${datawave.query.logic.logics.BaseEventQuery.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->
-        <property name="maxTermThreshold" value="${datawave.query.logic.logics.BaseEventQuery.maxTermThreshold}" />
+        <property name="finalMaxTermThreshold" value="${datawave.query.logic.logics.BaseEventQuery.finalMaxTermThreshold}" />
         <!-- The max query depth -->
         <property name="maxDepthThreshold" value="${datawave.query.logic.logics.BaseEventQuery.maxDepthThreshold}" />
         <!-- The max unfielded (_ANYFIELD_) expansion per term -->
@@ -491,8 +493,10 @@
         <property name="eventPerDayThreshold" value="${datawave.query.logic.logics.HitHighlights.eventPerDayThreshold}" />
         <!-- Determines how many shards in the global index lookup will be aggregated into a day range -->
         <property name="shardsPerDayThreshold" value="${datawave.query.logic.logics.HitHighlights.shardsPerDayThreshold}" />
+        <!-- The max number of terms BEFORE all expansions -->
+        <property name="initialMaxTermThreshold" value="${datawave.query.logic.logics.BaseEventQuery.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->
-        <property name="maxTermThreshold" value="${datawave.query.logic.logics.HitHighlights.maxTermThreshold}" />
+        <property name="finalMaxTermThreshold" value="${datawave.query.logic.logics.BaseEventQuery.finalMaxTermThreshold}" />
         <!-- The max query depth -->
         <property name="maxDepthThreshold" value="${datawave.query.logic.logics.HitHighlights.maxDepthThreshold}" />
         <!-- The max unfielded (_ANYFIELD_) expansion per term -->

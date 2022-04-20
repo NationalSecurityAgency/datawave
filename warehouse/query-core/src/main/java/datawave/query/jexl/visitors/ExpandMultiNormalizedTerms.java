@@ -14,6 +14,8 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import datawave.services.common.logging.ThreadConfigurableLogger;
@@ -137,9 +139,10 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         /**
-         * If we have a delayed predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types
+         * If we have an exceeded value or term predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types
          */
-        if (QueryPropertyMarker.findInstance(node).isDelayedPredicate() || this.expandedNodes.contains(node)) {
+        if (QueryPropertyMarker.findInstance(node).isAnyTypeOf(ExceededValueThresholdMarkerJexlNode.class, ExceededTermThresholdMarkerJexlNode.class)
+                        || this.expandedNodes.contains(node)) {
             return node;
         }
         

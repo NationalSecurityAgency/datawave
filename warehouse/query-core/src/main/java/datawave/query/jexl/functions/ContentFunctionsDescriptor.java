@@ -424,16 +424,20 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             List<JexlNode> components = new LinkedList<>();
             
             JexlNode deref = JexlASTHelper.dereference(indexQuery);
-            if (deref instanceof ASTAndNode) {
-                // single component
+            if (deref instanceof ASTAndNode || deref instanceof ASTEQNode) {
+                
+                // the index query may be a single equality node when the phrase is composed of repeated terms
+                // i.e., "phrase(termOffsetMap, 'bar', 'bar')" will produce an index query of "FOO == 'bar'"
                 components.add(deref);
+                
             } else if (deref instanceof ASTOrNode) {
                 // multiple components
                 for (JexlNode child : JexlNodes.children(deref)) {
                     components.add(JexlASTHelper.dereference(child));
                 }
             } else {
-                throw new IllegalStateException("Expected a dereferenced IndexQuery node to be an AND or OR node, but was " + deref.getClass().getSimpleName());
+                throw new IllegalStateException("Expected a dereferenced IndexQuery node to be an AND, OR, or EQ node, but was "
+                                + deref.getClass().getSimpleName());
             }
             
             // distribute functions into components
@@ -461,7 +465,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
          * @param function
          *            an arbitrary function
          * @param component
-         *            the component
+         *            an ASTAndNode or ASTEqNode
          * @return nothing
          */
         public static JexlNode distributeFunctionIntoComponent(JexlNode function, JexlNode component) {
@@ -469,7 +473,13 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             String field = findCommonField(component);
             if (field != null) {
                 children.add(updateFunctionWithField(function, field));
-                children.addAll(Arrays.asList(JexlNodes.children(component)));
+                if (component instanceof ASTEQNode) {
+                    children.add(component);
+                } else if (component instanceof ASTAndNode) {
+                    children.addAll(Arrays.asList(JexlNodes.children(component)));
+                } else {
+                    throw new IllegalStateException("Unexpected component. Expected ASTAndNode or ASTEqNode but was: " + component.getClass().getSimpleName());
+                }
                 return JexlNodeFactory.createAndNode(children);
             } else {
                 throw new IllegalStateException("Expected index query component to only contain a single field");
