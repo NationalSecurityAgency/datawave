@@ -111,18 +111,12 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         
-        JexlNode copy = RebuildingVisitor.copy(node);
-        
         FunctionJexlNodeVisitor visitor = new FunctionJexlNodeVisitor();
-        copy.jjtAccept(visitor, null);
+        node.jjtAccept(visitor, null);
         
         if (visitor.namespace().equals(EVAL_PHASE_FUNCTION_NAMESPACE)) {
-            JexlNode rewritten = null;
             if (visitor.name().equals(IS_NULL) || visitor.name().equals(IS_NOT_NULL)) {
-                rewritten = rewriteFilterFunction(visitor);
-            }
-            
-            if (rewritten != null) {
+                JexlNode rewritten = rewriteFilterFunction(visitor);
                 JexlNodes.replaceChild(node.jjtGetParent(), node, rewritten);
             }
         }

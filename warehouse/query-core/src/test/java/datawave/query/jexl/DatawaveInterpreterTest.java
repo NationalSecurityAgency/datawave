@@ -186,6 +186,83 @@ public class DatawaveInterpreterTest {
         test(query, buildBoundedRangeContext(), false);
     }
     
+    // test filter:isNull
+    @Test
+    public void testFilterFunctionIsNull() {
+        // single field, present
+        String query = "FOO == 'bar' && filter:isNull(FOO)";
+        test(query, buildDefaultContext(), false);
+        
+        // single field, absent
+        query = "FOO == 'bar' && filter:isNull(ABSENT)";
+        test(query, buildDefaultContext(), true);
+        
+        // multi field, all present
+        query = "FOO == 'bar' && filter:isNull(FOO || FOO)";
+        test(query, buildDefaultContext(), false);
+        
+        // multi field, (present || absent)
+        query = "FOO == 'bar' && filter:isNull(FOO || ABSENT)";
+        // test(query, buildDefaultContext(), true); // this is wrong
+        
+        // multi field, (absent || present)
+        query = "FOO == 'bar' && filter:isNull(ABSENT || FOO)";
+        // test(query, buildDefaultContext(), true); // this is wrong
+        
+        // multi field, all absent
+        query = "FOO == 'bar' && filter:isNull(ABSENT || ABSENT)";
+        test(query, buildDefaultContext(), true);
+    }
+    
+    // test filter:isNotNull and not(filter:isNull)
+    @Test
+    public void testFilterFunctionIsNotNull() {
+        // single field, present
+        String query = "FOO == 'bar' && filter:isNotNull(FOO)";
+        test(query, buildDefaultContext(), true);
+        
+        query = "FOO == 'bar' && !(filter:isNull(FOO))";
+        test(query, buildDefaultContext(), true);
+        
+        // single field, absent
+        query = "FOO == 'bar' && filter:isNotNull(ABSENT)";
+        test(query, buildDefaultContext(), false);
+        
+        query = "FOO == 'bar' && !(filter:isNull(ABSENT))";
+        test(query, buildDefaultContext(), false);
+        
+        // multi field, all present
+        query = "FOO == 'bar' && filter:isNotNull(FOO || FOO)";
+        test(query, buildDefaultContext(), true);
+        
+        query = "FOO == 'bar' && !(filter:isNull(FOO || FOO))";
+        test(query, buildDefaultContext(), true);
+        
+        // multi field, (present || absent)
+        query = "FOO == 'bar' && filter:isNotNull(FOO || ABSENT)";
+        test(query, buildDefaultContext(), true);
+        
+        query = "FOO == 'bar' && !(filter:isNull(FOO || ABSENT))";
+        test(query, buildDefaultContext(), true);
+        
+        query = "FOO == 'bar' && ( !(filter:isNull(FOO)) || !(filter:isNull(ABSENT)) )";
+        test(query, buildDefaultContext(), true);
+        
+        // multi field, (absent || present)
+        query = "FOO == 'bar' && filter:isNotNull(ABSENT || FOO)";
+        test(query, buildDefaultContext(), true); // this is wrong
+        
+        query = "FOO == 'bar' && !(filter:isNull(ABSENT || FOO))";
+        test(query, buildDefaultContext(), true); // this is wrong
+        
+        // multi field, all absent
+        query = "FOO == 'bar' && filter:isNotNull(ABSENT || ABSENT)";
+        test(query, buildDefaultContext(), false);
+        
+        query = "FOO == 'bar' && !(filter:isNull(ABSENT || ABSENT))";
+        test(query, buildDefaultContext(), false);
+    }
+    
     /**
      * Evaluate a query against a default context
      * 
