@@ -25,8 +25,8 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
-import org.apache.accumulo.core.conf.IterConfigUtil;
-import org.apache.accumulo.core.conf.IterLoad;
+import org.apache.accumulo.core.iteratorsImpl.IteratorBuilder;
+import org.apache.accumulo.core.iteratorsImpl.IteratorConfigUtil;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.conf.SiteConfiguration;
 import org.apache.accumulo.core.crypto.CryptoServiceFactory;
@@ -372,8 +372,8 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             byte[] defaultSecurityLabel = cv.getExpression();
             
             SortedKeyValueIterator<Key,Value> visFilter = VisibilityFilter.wrap(topIter, auths, defaultSecurityLabel);
-            IterLoad iterLoad = IterConfigUtil.loadIterConf(IteratorScope.scan, Collections.emptyList(), Collections.emptyMap(), acuTableConf);
-            return IterConfigUtil.loadIterators(visFilter, iterLoad.iterEnv(iterEnv).useAccumuloClassLoader(false));
+            IteratorBuilder.IteratorBuilderEnv iterLoad = IteratorConfigUtil.loadIterConf(IteratorScope.scan, Collections.emptyList(), Collections.emptyMap(), acuTableConf);
+            return IteratorConfigUtil.loadIterators(visFilter, iterLoad.env(iterEnv).build());
         }
         
         return topIter;
