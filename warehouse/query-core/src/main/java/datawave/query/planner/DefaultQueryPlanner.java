@@ -875,7 +875,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         // push down terms that are over the min selectivity
         if (config.getMinSelectivity() > 0) {
-            config.setQueryTree(timedPushdownLowSelectiveTerms(timers, config.getQueryTree(), config, indexedFields, indexOnlyFields, nonEventFields));
+            config.setQueryTree(timedPushdownLowSelectiveTerms(timers, config));
         }
         
         config.setQueryTree(timedForceFieldToFieldComparison(timers, config.getQueryTree()));
@@ -1386,8 +1386,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return visitorManager.timedVisit(timers, "Executable Expansion", () -> (ExecutableExpansionVisitor.expand(script, config, metadataHelper)));
     }
     
-    protected ASTJexlScript timedPushdownLowSelectiveTerms(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
-                    Set<String> indexedFields, Set<String> indexOnlyFields, Set<String> nonEventFields) {
+    protected ASTJexlScript timedPushdownLowSelectiveTerms(QueryStopwatch timers, ShardQueryConfiguration config) {
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Pushdown Low-Selective Terms");
         
         config.setQueryTree(PushdownLowSelectivityNodesVisitor.pushdownLowSelectiveTerms(config.getQueryTree(), config, metadataHelper));
@@ -1395,19 +1394,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             logQuery(config.getQueryTree(), "Query after pushing down low-selective terms:");
         }
         
-        List<String> debugOutput = null;
-        if (log.isDebugEnabled()) {
-            debugOutput = new ArrayList<>(32);
-        }
-        if (!ExecutableDeterminationVisitor.isExecutable(config.getQueryTree(), config, indexedFields, indexOnlyFields, nonEventFields, debugOutput,
-                        metadataHelper)) {
-            config.setQueryTree((ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(config.getQueryTree(), false, config, indexedFields,
-                            indexOnlyFields, nonEventFields, metadataHelper));
-            if (log.isDebugEnabled()) {
-                logDebug(debugOutput, "Executable state after pushing low-selective terms:");
-                logQuery(config.getQueryTree(), "Query after partially executable pushdown :");
-            }
-        }
         stopwatch.stop();
         return config.getQueryTree();
     }
