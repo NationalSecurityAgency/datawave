@@ -53,8 +53,8 @@ public class AuthorizationsUtilTest {
         DatawaveUser p3 = new DatawaveUser(p3dn, UserType.SERVER, Sets.newHashSet("A", "B", "G"), null, null, System.currentTimeMillis());
         
         proxiedUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user, p1, p2));
-        proxiedServerPrincipal1 = new DatawavePrincipal(Lists.newArrayList(p1, p3));
-        proxiedServerPrincipal2 = new DatawavePrincipal(Lists.newArrayList(p1, p2, p3));
+        proxiedServerPrincipal1 = new DatawavePrincipal(Lists.newArrayList(p3, p1));
+        proxiedServerPrincipal2 = new DatawavePrincipal(Lists.newArrayList(p2, p3, p1));
     }
     
     @Test
