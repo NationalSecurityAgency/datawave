@@ -1,23 +1,24 @@
 package datawave.webservice.query.logic;
 
-import datawave.marking.MarkingFunctions;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.result.BaseQueryResponse;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.api.easymock.PowerMock;
-import org.powermock.api.easymock.annotation.Mock;
-import org.powermock.modules.junit4.PowerMockRunner;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.isA;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
+import datawave.marking.MarkingFunctions;
+import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.result.BaseQueryResponse;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.easymock.PowerMock;
+import org.powermock.api.easymock.annotation.Mock;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 @RunWith(PowerMockRunner.class)
 public class TestLegacyBaseQueryLogicTransformer {
