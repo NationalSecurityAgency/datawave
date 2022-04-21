@@ -478,30 +478,6 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>apache-log4j-extras</artifactId>
-                <version>${version.log4j-extras}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <!--<dependency>
-                <groupId>org.apache.looging.log4j</groupId>
-                <artifactId>log4j-1.2-api</artifactId>
-                <version>${version.log4j}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>-->
-            <dependency>
                 <groupId>org.apache.mrunit</groupId>
                 <artifactId>mrunit</artifactId>
                 <version>${version.mrunit}</version>
@@ -559,6 +535,7 @@
                              when running on a multi user system where /tmp/server.lock could
                              be written to by multiple users -->
                         <systemPropertyVariables>
+                            <log4j1.compatibility>true</log4j1.compatibility>
                             <log4j.configuration>file:${project.build.testOutputDirectory}/log4j.properties</log4j.configuration>
                             <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                         </systemPropertyVariables>

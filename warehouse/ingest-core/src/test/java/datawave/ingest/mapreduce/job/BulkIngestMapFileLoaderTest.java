@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import datawave.common.test.integration.IntegrationTest;
-import datawave.common.test.logging.CommonTestAppender;
+import datawave.common.test.logging.TestLogCollector;
 import datawave.common.test.utils.ProcessUtils;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -59,13 +59,15 @@ public class BulkIngestMapFileLoaderTest {
     
     protected static final Logger logger = Logger.getLogger(BulkIngestMapFileLoaderTest.class);
     protected Level testDriverLevel;
-    protected Level uutLevel;
-    protected CommonTestAppender uutAppender;
     
     private List<String> systemProperties;
     
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+
+    @Rule
+    public TestLogCollector logCollector = new TestLogCollector.Builder()
+            .with(BulkIngestMapFileLoader.class, Level.ALL).build();
     
     @Test
     public void testShutdownPortAlreadyInUse() throws IOException {
@@ -387,7 +389,7 @@ public class BulkIngestMapFileLoaderTest {
     }
     
     protected List<String> retrieveUUTLogs() throws IOException {
-        return uutAppender.retrieveLogsEntries();
+        return logCollector.getMessages();
     }
     
     @Before
@@ -396,23 +398,11 @@ public class BulkIngestMapFileLoaderTest {
         
         testDriverLevel = BulkIngestMapFileLoaderTest.logger.getLevel();
         BulkIngestMapFileLoaderTest.logger.setLevel(Level.ALL);
-        
-        Logger uutLogger = Logger.getLogger(BulkIngestMapFileLoader.class);
-        uutAppender = new CommonTestAppender();
-        
-        uutLevel = uutLogger.getLevel();
-        uutLogger.setLevel(Level.ALL);
-        uutLogger.addAppender(uutAppender);
-        
     }
     
     @After
     public void teardown() {
-        
-        Logger.getLogger(BulkIngestMapFileLoader.class).setLevel(uutLevel);
-        Logger.getLogger(BulkIngestMapFileLoader.class).removeAppender(uutAppender);
         BulkIngestMapFileLoaderTest.logger.setLevel(testDriverLevel);
-        
     }
     
     @Test

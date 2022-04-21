@@ -409,10 +409,12 @@ public class FieldAgeOffFilterTest {
     
     @Test
     public void handlesFieldsStartingWithNumber() {
-        long oneSecondAgo = System.currentTimeMillis() - (1 * ONE_SEC);
-        long tenSecondsAgo = System.currentTimeMillis() - (10 * ONE_SEC);
-        
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
+
+        long currentTime = System.currentTimeMillis();
+        long oneSecondAgo = currentTime - (1 * ONE_SEC);
+        long tenSecondsAgo = currentTime - (10 * ONE_SEC);
+
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 seconds
         filterOptions.setTTL(5);
@@ -424,11 +426,15 @@ public class FieldAgeOffFilterTest {
         ageOffFilter.init(filterOptions, iterEnv);
         // field_y is a match, but its ttl was not defined, so it will use the default one
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
-        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
+        Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), key, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
         // field_z is a match, but the key is more recent than its age off period
         Key keyNumeric = new Key("1234", "myDataType\\x00my-uuid", "12_3_4\u0000value", VISIBILITY_PATTERN, oneSecondAgo);
-        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), keyNumeric, new Value()));
+        // The assertion below can be observed to fail sporadically due to the interplay between 'oneSecondAgo',
+        // the 5sec TTL, and the amount of time that it takes for this test code to run, which is subject to the
+        // whims of the given test runner JVM. E.g., you can force the failure simply by placing a breakpoint at
+        // the top of this test and very slowly stepping through.
+        Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), keyNumeric, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
     
