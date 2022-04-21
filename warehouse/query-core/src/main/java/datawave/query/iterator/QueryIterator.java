@@ -68,6 +68,8 @@ import datawave.query.predicate.EmptyDocumentFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
+import datawave.query.transformer.ExcerptTransform;
+import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
@@ -197,6 +199,9 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected Map<String,Object> exceededOrEvaluationCache = null;
     
     protected ActiveQueryLog activeQueryLog;
+    
+    protected ExcerptTransform excerptTransform = null;
+    private Iterator<Entry<Key,Document>> entryIterator;
     
     public QueryIterator() {}
     
@@ -945,6 +950,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                             inclusive);
         }
         
+        ExcerptTransform excerptTransform = getExcerptTransform();
+        if (excerptTransform != null) {
+            documents = excerptTransform.getIterator(documents);
+        }
+        
         // a hook to allow mapping the document such as with the TLD or Parent
         // query logics
         // or if the document was not aggregated in the first place because the
@@ -1641,5 +1651,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             this.activeQueryLog = ActiveQueryLog.getInstance(getActiveQueryLogName());
         }
         return this.activeQueryLog;
+    }
+    
+    protected ExcerptTransform getExcerptTransform() {
+        if (excerptTransform == null && getExcerptFields() != null && !getExcerptFields().isEmpty()) {
+            synchronized (getExcerptFields()) {
+                if (excerptTransform == null) {
+                    excerptTransform = new ExcerptTransform(excerptFields, myEnvironment, sourceForDeepCopies.deepCopy(myEnvironment));
+                }
+            }
+        }
+        return excerptTransform;
     }
 }
