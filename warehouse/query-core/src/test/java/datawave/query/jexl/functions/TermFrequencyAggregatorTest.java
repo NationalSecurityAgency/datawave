@@ -54,7 +54,7 @@ public class TermFrequencyAggregatorTest {
         EventDataQueryFilter filter = new EventDataQueryFieldFilter();
         Set<String> blacklist = new HashSet<>();
         blacklist.add("FIELD1");
-        ((EventDataQueryFieldFilter) filter).initializeBlacklist(blacklist);
+        ((EventDataQueryFieldFilter) filter).setExcludes(blacklist);
         
         aggregator = new TermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
