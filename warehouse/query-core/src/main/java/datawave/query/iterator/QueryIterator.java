@@ -3,6 +3,7 @@ package datawave.query.iterator;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -68,6 +69,7 @@ import datawave.query.predicate.EmptyDocumentFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
+import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
@@ -188,7 +190,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     protected UniqueTransform uniqueTransform = null;
     
-    protected GroupingIterator groupingIterator;
+    protected GroupingTransform groupingTransform;
     
     protected boolean groupingContextAddedByMe = false;
     
@@ -497,17 +499,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             // apply the grouping transform if requested and if the batch size is greater than zero
             // if the batch size is 0, then grouping is computed only on the web server
-            if (this.groupFieldsBatchSize > 0) {
-                GroupingIterator groupify = getGroupingIteratorInstance(pipelineDocuments);
-                if (groupify != null) {
-                    pipelineDocuments = groupify;
-                    
-                    if (log.isTraceEnabled()) {
-                        pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
-                            log.trace("after grouping, keyDocumentEntry:" + keyDocumentEntry);
-                            return true;
-                        });
-                    }
+            GroupingTransform groupify = getGroupingTransform();
+            if (groupify != null && this.groupFieldsBatchSize > 0) {
+                
+                pipelineDocuments = groupingTransform.getGroupingIterator(pipelineDocuments, this.groupFieldsBatchSize, this.yield);
+                
+                if (log.isTraceEnabled()) {
+                    pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
+                        log.trace("after grouping, keyDocumentEntry:" + keyDocumentEntry);
+                        return true;
+                    });
                 }
             }
             
@@ -1597,16 +1598,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return uniqueTransform;
     }
     
-    protected GroupingIterator getGroupingIteratorInstance(Iterator<Entry<Key,Document>> in) {
-        if (groupingIterator == null && getGroupFields() != null && !getGroupFields().isEmpty()) {
+    protected GroupingTransform getGroupingTransform() {
+        if (groupingTransform == null && getGroupFields() != null && !getGroupFields().isEmpty()) {
             synchronized (getGroupFields()) {
-                if (groupingIterator == null) {
-                    groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(), getGroupFields(), this.groupFieldsBatchSize,
-                                    this.yield);
+                if (groupingTransform == null) {
+                    groupingTransform = new GroupingTransform(null, getGroupFields(), true);
+                    groupingTransform.initialize(null, MarkingFunctionsFactory.createMarkingFunctions());
                 }
             }
         }
-        return groupingIterator;
+        return groupingTransform;
     }
     
     protected ActiveQueryLog getActiveQueryLog() {
