@@ -87,7 +87,7 @@ public class TableConfigurationUtil {
      * @return true if a non-empty comma separated list of table names was properly set to conf's job table.names property
      */
     private boolean registerTableNames(Configuration conf) {
-        Set<String> tables = extractTablesFromConf(conf);
+        Set<String> tables = extractTableNames(conf);
         
         if (tables.isEmpty()) {
             log.error("Configured tables for configured data types is empty");
@@ -99,13 +99,13 @@ public class TableConfigurationUtil {
     }
     
     /**
-     * Get the table names for the job as specified in DataTypeHandlers, Filters, and conf
+     * Extract the table names for the job as specified in DataTypeHandlers, Filters, and conf
      *
      * @param conf
      *            hadoop configuration
      * @return map of table names to priorities
      */
-    public static Set<String> extractTablesFromConf(Configuration conf) throws IllegalArgumentException {
+    public static Set<String> extractTableNames(Configuration conf) throws IllegalArgumentException {
         TypeRegistry.getInstance(conf);
         
         Set<String> tables = new HashSet<>();
@@ -377,6 +377,7 @@ public class TableConfigurationUtil {
     }
     
     /**
+     * Populate the table configuration cache directly from accumulo or from the cached properties file, as configured
      *
      * @param conf
      *            the Hadoop configuration
@@ -482,7 +483,11 @@ public class TableConfigurationUtil {
     
     public void setTableItersPrioritiesAndOpts() throws IOException {
         if (!tableConfigCache.isInitialized()) {
-            setTableConfigsFromConf(conf);
+            try {
+                setTableConfigsFromConf(conf);
+            } catch (IOException e) {
+                setupTableConfigurationsCache(conf);
+            }
         }
         
         // This used to be set arbitrarily to scan scope. We have since decided it is more appropriate to use the minc scope. Some unsuspecting dev might think
@@ -586,7 +591,11 @@ public class TableConfigurationUtil {
     
     public Map<String,String> getTableProperties(String tableName) throws IOException {
         if (!tableConfigCache.isInitialized()) {
-            setTableConfigsFromConf(conf);
+            try {
+                setTableConfigsFromConf(conf);
+            } catch (IOException e) {
+                setupTableConfigurationsCache(conf);
+            }
         }
         return tableConfigCache.getTableProperties(tableName);
         
@@ -661,7 +670,7 @@ public class TableConfigurationUtil {
                     }
                     
                 } else {
-                    log.error("Job has requested a table which was not configured: " + tableName);
+                    throw new IOException("Job has requested a table which was not configured: " + tableName);
                 }
             }
         }

@@ -354,7 +354,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     
     // Get the table list
     protected Set<String> getTableList() {
-        Set<String> tableList = new HashSet<>(TableConfigurationUtil.extractTablesFromConf(conf));
+        Set<String> tableList = new HashSet<>(TableConfigurationUtil.extractTableNames(conf));
         
         String configNames = conf.get(CONFIGURED_TABLE_NAMES, "");
         if (log.isInfoEnabled())
@@ -386,7 +386,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
             if (null == properties || properties.isEmpty()) {
                 log.error("No properties found for table " + tableName);
             } else {
-                ConfigurationCopy tableConfig = new ConfigurationCopy(tcu.getTableProperties(tableName));
+                ConfigurationCopy tableConfig = new ConfigurationCopy(properties);
                 tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(), (compressionTableBlackList.contains(tableName) ? Compression.COMPRESSION_NONE
                                 : compressionType));
                 
