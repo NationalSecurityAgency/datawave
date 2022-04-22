@@ -159,4 +159,9 @@ public class QueryParameters {
      * Used to specify a SHARDS_AND_DAYS hint within the options function.
      */
     public static final String SHARDS_AND_DAYS = "shards.and.days";
+    
+    /**
+     * Used to specify phrase excerpts that should be returned.
+     */
+    public static final String EXCERPT_FIELDS = "excerpt.fields";
 }

@@ -64,7 +64,6 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
     }
     
     private void extractEntities(String subjectDN, String issuerDN, String proxiedSubjects, String proxiedIssuers) {
-        entities.add(SubjectIssuerDNPair.of(subjectDN, issuerDN));
         if (proxiedSubjects != null) {
             String[] subjects = DnUtils.splitProxiedDNs(proxiedSubjects, true);
             if (proxiedIssuers == null)
@@ -77,6 +76,7 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
                 entities.add(SubjectIssuerDNPair.of(subjects[i], issuers[i]));
             }
         }
+        entities.add(SubjectIssuerDNPair.of(subjectDN, issuerDN));
         userName = DnUtils.buildNormalizedProxyDN(subjectDN, issuerDN, proxiedSubjects, proxiedIssuers);
     }
     
