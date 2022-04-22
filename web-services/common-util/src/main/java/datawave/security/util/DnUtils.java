@@ -69,14 +69,7 @@ public class DnUtils {
     }
     
     public static Collection<String> buildNormalizedDNList(String subjectDN, String issuerDN, String proxiedSubjectDNs, String proxiedIssuerDNs) {
-        subjectDN = normalizeDN(subjectDN);
-        issuerDN = normalizeDN(issuerDN);
         List<String> dnList = new ArrayList<>();
-        HashSet<String> subjects = new HashSet<>();
-        String subject = subjectDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1");
-        dnList.add(subject);
-        subjects.add(subject);
-        dnList.add(issuerDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1"));
         if (proxiedSubjectDNs != null) {
             if (proxiedIssuerDNs == null)
                 throw new IllegalArgumentException("If proxied subject DNs are supplied, then issuer DNs must be supplied as well.");
@@ -87,18 +80,19 @@ public class DnUtils {
                                 + " vs " + Arrays.toString(issuerDNarray));
             for (int i = 0; i < subjectDNarray.length; ++i) {
                 subjectDNarray[i] = normalizeDN(subjectDNarray[i]);
-                if (!subjects.contains(subjectDNarray[i])) {
-                    issuerDNarray[i] = normalizeDN(issuerDNarray[i]);
-                    subjects.add(subjectDNarray[i]);
-                    dnList.add(subjectDNarray[i]);
-                    dnList.add(issuerDNarray[i]);
-                    if (issuerDNarray[i].equalsIgnoreCase(subjectDNarray[i]))
-                        throw new IllegalArgumentException("Subject DN " + issuerDNarray[i] + " was passed as an issuer DN.");
-                    if (SUBJECT_DN_PATTERN.matcher(issuerDNarray[i]).find())
-                        throw new IllegalArgumentException("It appears that a subject DN (" + issuerDNarray[i] + ") was passed as an issuer DN.");
-                }
+                issuerDNarray[i] = normalizeDN(issuerDNarray[i]);
+                dnList.add(subjectDNarray[i]);
+                dnList.add(issuerDNarray[i]);
+                if (issuerDNarray[i].equalsIgnoreCase(subjectDNarray[i]))
+                    throw new IllegalArgumentException("Subject DN " + issuerDNarray[i] + " was passed as an issuer DN.");
+                if (SUBJECT_DN_PATTERN.matcher(issuerDNarray[i]).find())
+                    throw new IllegalArgumentException("It appears that a subject DN (" + issuerDNarray[i] + ") was passed as an issuer DN.");
             }
         }
+        subjectDN = normalizeDN(subjectDN);
+        issuerDN = normalizeDN(issuerDN);
+        dnList.add(subjectDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1"));
+        dnList.add(issuerDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1"));
         return dnList;
     }
     

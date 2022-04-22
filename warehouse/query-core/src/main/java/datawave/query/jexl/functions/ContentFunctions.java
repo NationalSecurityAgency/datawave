@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import datawave.query.attributes.ValueTuple;
+import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.util.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -87,12 +88,12 @@ public class ContentFunctions {
      *            The array of terms
      * @return a collection of fields that satisfy the content function
      */
-    public static Collection<String> within(int distance, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
-        return new ContentUnorderedEvaluator(Collections.EMPTY_SET, distance, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
+    public static Collection<String> within(int distance, TermOffsetMap termOffsetMap, String... terms) {
+        return new ContentUnorderedEvaluator(Collections.emptySet(), distance, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
     }
     
     /**
-     * Like {@link #within(int, Map, String...)} but limited to only finding a match in a single zone.
+     * Like {@link #within(int, TermOffsetMap, String...)} but limited to only finding a match in a single zone.
      *
      * @param zone
      *            The zone or zones to search within
@@ -103,14 +104,14 @@ public class ContentFunctions {
      * @param terms
      *            The array of terms
      * @return a collection of fields that satisfy the content function
-     * @see #within(int, Map, String...)
+     * @see #within(int, TermOffsetMap, String...)
      */
-    public static Collection<String> within(Object zone, int distance, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> within(Object zone, int distance, TermOffsetMap termOffsetMap, String... terms) {
         return new ContentUnorderedEvaluator(getFields(zone), distance, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
     }
     
     /**
-     * Like {@link #within(int, Map, String...)} but limited to only finding a match in a single zone.
+     * Like {@link #within(int, TermOffsetMap, String...)} but limited to only finding a match in a single zone.
      *
      * @param zones
      *            The zone or zones to search within
@@ -121,9 +122,9 @@ public class ContentFunctions {
      * @param terms
      *            The array of terms
      * @return a collection of fields that satisfy the content function
-     * @see #within(int, Map, String...)
+     * @see #within(int, TermOffsetMap, String...)
      */
-    public static Collection<String> within(Iterable<?> zones, int distance, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> within(Iterable<?> zones, int distance, TermOffsetMap termOffsetMap, String... terms) {
         return new ContentUnorderedEvaluator(getFields(zones), distance, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
     }
     
@@ -137,7 +138,7 @@ public class ContentFunctions {
      *            The array of terms
      * @return a collection of fields that satisfy the content function
      */
-    public static Collection<String> adjacent(Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> adjacent(TermOffsetMap termOffsetMap, String... terms) {
         return within(terms.length - 1, termOffsetMap, terms);
     }
     
@@ -152,7 +153,7 @@ public class ContentFunctions {
      *            The array of terms
      * @return a collection of fields that satisfy the content function
      */
-    public static Collection<String> adjacent(Object zone, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> adjacent(Object zone, TermOffsetMap termOffsetMap, String... terms) {
         return within(getFields(zone), terms.length - 1, termOffsetMap, terms);
     }
     
@@ -167,7 +168,7 @@ public class ContentFunctions {
      *            The array of terms
      * @return a collection of fields that satisfy the content function
      */
-    public static Collection<String> adjacent(Iterable<?> zone, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> adjacent(Iterable<?> zone, TermOffsetMap termOffsetMap, String... terms) {
         return within(getFields(zone), terms.length - 1, termOffsetMap, terms);
     }
     
@@ -180,8 +181,8 @@ public class ContentFunctions {
      *            The array of terms
      * @return a collection of fields that satisfy the content function
      */
-    public static Collection<String> phrase(Map<String,TermFrequencyList> termOffsetMap, String... terms) {
-        return new ContentOrderedEvaluator(Collections.EMPTY_SET, 1, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
+    public static Collection<String> phrase(TermOffsetMap termOffsetMap, String... terms) {
+        return new ContentOrderedEvaluator(Collections.emptySet(), 1, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
     }
     
     /**
@@ -195,7 +196,7 @@ public class ContentFunctions {
      *            The array of terms
      * @return a collection of fields that satisfy the content function
      */
-    public static Collection<String> phrase(Object zone, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> phrase(Object zone, TermOffsetMap termOffsetMap, String... terms) {
         return new ContentOrderedEvaluator(getFields(zone), 1, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
     }
     
@@ -210,8 +211,8 @@ public class ContentFunctions {
      *            The array of terms
      * @return a collection of fields that satisfy the content function
      */
-    public static Collection<String> scoredPhrase(Float minScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
-        return new ContentOrderedEvaluator(Collections.EMPTY_SET, 1, minScore, termOffsetMap, terms).evaluate();
+    public static Collection<String> scoredPhrase(Float minScore, TermOffsetMap termOffsetMap, String... terms) {
+        return new ContentOrderedEvaluator(Collections.emptySet(), 1, minScore, termOffsetMap, terms).evaluate();
     }
     
     /**
@@ -227,7 +228,7 @@ public class ContentFunctions {
      *            The array of terms
      * @return a collection of fields that satisfy the content function
      */
-    public static Collection<String> scoredPhrase(Object zone, Float minScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> scoredPhrase(Object zone, Float minScore, TermOffsetMap termOffsetMap, String... terms) {
         return new ContentOrderedEvaluator(getFields(zone), 1, minScore, termOffsetMap, terms).evaluate();
     }
     
@@ -242,7 +243,7 @@ public class ContentFunctions {
      *            The array of terms
      * @return a collection of fields that satisfy the content function
      */
-    public static Collection<String> phrase(Iterable<?> zone, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public static Collection<String> phrase(Iterable<?> zone, TermOffsetMap termOffsetMap, String... terms) {
         return new ContentOrderedEvaluator(getFields(zone), 1, Float.NEGATIVE_INFINITY, termOffsetMap, terms).evaluate();
     }
     
