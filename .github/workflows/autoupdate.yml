@@ -7,6 +7,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - uses: docker://chinthakagodawita/autoupdate-action:v1
+        continue-on-error: true
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           DRY_RUN: "false"
