@@ -1,6 +1,7 @@
 package datawave.query.jexl.functions;
 
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -18,6 +19,7 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
+import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.BadRequestQueryException;
@@ -34,14 +36,26 @@ import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTFloatLiteral;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTNumberLiteral;
+import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
+import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.lang.mutable.MutableBoolean;
+import org.apache.log4j.Logger;
+
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_FUNCTION_NAMESPACE;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME;
+import static datawave.query.jexl.functions.ContentFunctions.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME;
 
 public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
     
@@ -49,6 +63,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
      * This is the JexlNode descriptor which can be used to normalize and optimize function node queries
      */
     public static class ContentJexlArgumentDescriptor implements JexlArgumentDescriptor {
+        
+        private static final Logger log = Logger.getLogger(ContentJexlArgumentDescriptor.class);
         
         private final ASTFunctionNode node;
         private final String namespace, name;
@@ -64,13 +80,23 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         @Override
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             try {
-                return getIndexQuery(helper.getTermFrequencyFields(datatypeFilter), helper.getIndexedFields(datatypeFilter),
-                                helper.getContentFields(datatypeFilter));
+                Set<String> tfFields = new HashSet<>(helper.getTermFrequencyFields(datatypeFilter));
+                Set<String> indexedFields = new HashSet<>(helper.getIndexedFields(datatypeFilter));
+                Set<String> contentFields = new HashSet<>(helper.getContentFields(datatypeFilter));
+                
+                if (config != null && !config.getNoExpansionFields().isEmpty()) {
+                    // exclude fields from expansion
+                    Set<String> noExpansionFields = config.getNoExpansionFields();
+                    tfFields.removeAll(noExpansionFields);
+                    indexedFields.removeAll(noExpansionFields);
+                    contentFields.removeAll(noExpansionFields);
+                }
+                
+                return getIndexQuery(tfFields, indexedFields, contentFields);
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
             }
-            
         }
         
         public JexlNode getIndexQuery(Set<String> termFrequencyFields, Set<String> indexedFields, Set<String> contentFields) {
@@ -88,8 +114,11 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 }
             }
             
-            // A single field needs no wrapper node.
-            if (1 == fieldsAndTerms[0].size()) {
+            if (fieldsAndTerms[0].size() == 0) {
+                log.warn("No fields found for content function, will not expand index query");
+                return new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
+            } else if (fieldsAndTerms[0].size() == 1) {
+                // A single field needs no wrapper node.
                 return nodes.iterator().next();
             } else if (oredFields.booleanValue()) {
                 return JexlNodeFactory.createOrNode(nodes);
@@ -115,7 +144,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             PeekingIterator<JexlNode> args = Iterators.peekingIterator(this.args.iterator());
             
             if (args.hasNext()) {
-                if (ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME.equals(funcName) || ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME.equals(funcName)) {
+                if (CONTENT_ADJACENT_FUNCTION_NAME.equals(funcName) || CONTENT_PHRASE_FUNCTION_NAME.equals(funcName)) {
                     JexlNode firstArg = args.next();
                     
                     // we override the zones if the first argument is a string
@@ -124,12 +153,12 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     } else {
                         JexlNode nextArg = args.peek();
                         
-                        // The zones may (more likely) be specified as an idenfifier
+                        // The zones may (more likely) be specified as an identifier
                         if (!JexlASTHelper.getIdentifiers(firstArg).isEmpty() && !JexlASTHelper.getIdentifiers(nextArg).isEmpty()) {
                             firstTermIndex = 2;
                         }
                     }
-                } else if (ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME.equals(funcName)) {
+                } else if (CONTENT_WITHIN_FUNCTION_NAME.equals(funcName) || CONTENT_SCORED_PHRASE_FUNCTION_NAME.equals(funcName)) {
                     firstTermIndex = 2;
                     JexlNode nextArg = args.next();
                     
@@ -140,7 +169,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     }
                     
                     // we can trash the distance
-                    if (!(nextArg instanceof ASTNumberLiteral)) {
+                    if (!(nextArg instanceof ASTNumberLiteral || nextArg instanceof ASTUnaryMinusNode || nextArg instanceof ASTFloatLiteral)) {
                         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NUMERIC_DISTANCE_ARGUMENT_MISSING);
                         throw new IllegalArgumentException(qe);
                     }
@@ -226,7 +255,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             if (args.hasNext()) {
                 JexlNode termOffsetMap = null;
                 
-                if (ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME.equals(funcName)) {
+                if (CONTENT_ADJACENT_FUNCTION_NAME.equals(funcName)) {
                     JexlNode firstArg = args.next();
                     
                     // we override the zones if the first argument is a string
@@ -248,10 +277,33 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                             termOffsetMap = firstArg;
                         }
                     }
-                } else if (ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME.equals(funcName)) {
+                } else if (CONTENT_PHRASE_FUNCTION_NAME.equals(funcName)) {
                     JexlNode firstArg = args.next();
                     
-                    if (firstArg instanceof ASTNumberLiteral || firstArg instanceof ASTUnaryMinusNode) {
+                    // we override the zones if the first argument is a string
+                    if (firstArg instanceof ASTStringLiteral) {
+                        fields = Collections.singleton(firstArg.image);
+                        
+                        termOffsetMap = args.next();
+                    } else {
+                        JexlNode nextArg = args.peek();
+                        
+                        // The zones may (more likely) be specified as an identifier
+                        if (!JexlASTHelper.getIdentifiers(firstArg).isEmpty() && !JexlASTHelper.getIdentifiers(nextArg).isEmpty()) {
+                            if (oredFields != null && firstArg instanceof ASTAndNode) {
+                                oredFields.setValue(false);
+                            }
+                            
+                            fields = JexlASTHelper.getIdentifierNames(firstArg);
+                            termOffsetMap = args.next();
+                        } else {
+                            termOffsetMap = firstArg;
+                        }
+                    }
+                } else if (CONTENT_SCORED_PHRASE_FUNCTION_NAME.equals(funcName)) {
+                    JexlNode firstArg = args.next();
+                    
+                    if (firstArg instanceof ASTNumberLiteral || firstArg instanceof ASTUnaryMinusNode || firstArg instanceof ASTFloatLiteral) {
                         // firstArg is max score value, skip
                         firstArg = args.next();
                     }
@@ -260,7 +312,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     if (firstArg instanceof ASTStringLiteral) {
                         fields = Collections.singleton(firstArg.image);
                         
-                        if (args.peek() instanceof ASTNumberLiteral || args.peek() instanceof ASTUnaryMinusNode) {
+                        if (args.peek() instanceof ASTNumberLiteral || args.peek() instanceof ASTUnaryMinusNode || firstArg instanceof ASTFloatLiteral) {
                             args.next(); // max score not needed for fields and terms
                         }
                         
@@ -280,7 +332,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                             termOffsetMap = firstArg;
                         }
                     }
-                } else if (ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME.equals(funcName)) {
+                } else if (CONTENT_WITHIN_FUNCTION_NAME.equals(funcName)) {
                     JexlNode arg = args.next();
                     
                     // we override the zones if the first argument is a string or identifier
@@ -297,7 +349,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     }
                     
                     // we can trash the distance
-                    if (!(arg instanceof ASTNumberLiteral)) {
+                    if (!(arg instanceof ASTNumberLiteral || arg instanceof ASTUnaryMinusNode || arg instanceof ASTFloatLiteral)) {
                         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NUMERIC_DISTANCE_ARGUMENT_MISSING);
                         throw new IllegalArgumentException(qe);
                     }
@@ -343,6 +395,179 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             }
             
             return new Set[] {fields, terms};
+        }
+        
+        /**
+         * Distributes a function node into one or more components of an index query. If applicable, the function node will be updated with the field of the
+         * intersected component of index query.
+         * <p>
+         * For example, for a function that expands into field F1
+         * 
+         * <pre>
+         * content:phrase(termOffsetMap, 'foo', 'bar')
+         * </pre>
+         * 
+         * becomes
+         * 
+         * <pre>
+         * (content:phrase(F1, termOffsetMap, 'foo', 'bar') &amp;&amp; F1 == 'foo' &amp;&amp; F2 == 'bar'))
+         * </pre>
+         *
+         * @param function
+         *            a function of indeterminate namespace
+         * @param indexQuery
+         *            an intersection of equality nodes or a union of such nodes
+         * @return the root of a distributed index query
+         */
+        public static JexlNode distributeFunctionIntoIndexQuery(JexlNode function, JexlNode indexQuery) {
+            
+            List<JexlNode> components = new LinkedList<>();
+            
+            JexlNode deref = JexlASTHelper.dereference(indexQuery);
+            if (deref instanceof ASTAndNode || deref instanceof ASTEQNode) {
+                
+                // the index query may be a single equality node when the phrase is composed of repeated terms
+                // i.e., "phrase(termOffsetMap, 'bar', 'bar')" will produce an index query of "FOO == 'bar'"
+                components.add(deref);
+                
+            } else if (deref instanceof ASTOrNode) {
+                // multiple components
+                for (JexlNode child : JexlNodes.children(deref)) {
+                    components.add(JexlASTHelper.dereference(child));
+                }
+            } else {
+                throw new IllegalStateException("Expected a dereferenced IndexQuery node to be an AND, OR, or EQ node, but was "
+                                + deref.getClass().getSimpleName());
+            }
+            
+            // distribute functions into components
+            List<JexlNode> rebuiltComponents = new LinkedList<>();
+            for (JexlNode component : components) {
+                rebuiltComponents.add(distributeFunctionIntoComponent(function, component));
+            }
+            
+            // build proper return node
+            switch (rebuiltComponents.size()) {
+                case 0:
+                    throw new IllegalStateException("Expected one or more index query components to exist but none do");
+                case 1:
+                    // single component, just return it
+                    return rebuiltComponents.get(0);
+                default:
+                    // join multiple components under a union
+                    return JexlNodeFactory.createOrNode(rebuiltComponents);
+            }
+        }
+        
+        /**
+         * Distribute a function into a component of an index query. Update the function with the common field
+         *
+         * @param function
+         *            an arbitrary function
+         * @param component
+         *            an ASTAndNode or ASTEqNode
+         * @return nothing
+         */
+        public static JexlNode distributeFunctionIntoComponent(JexlNode function, JexlNode component) {
+            List<JexlNode> children = new LinkedList<>();
+            String field = findCommonField(component);
+            if (field != null) {
+                children.add(updateFunctionWithField(function, field));
+                if (component instanceof ASTEQNode) {
+                    children.add(component);
+                } else if (component instanceof ASTAndNode) {
+                    children.addAll(Arrays.asList(JexlNodes.children(component)));
+                } else {
+                    throw new IllegalStateException("Unexpected component. Expected ASTAndNode or ASTEqNode but was: " + component.getClass().getSimpleName());
+                }
+                return JexlNodeFactory.createAndNode(children);
+            } else {
+                throw new IllegalStateException("Expected index query component to only contain a single field");
+            }
+        }
+        
+        /**
+         * Extract the common field from the component. If more than one field exists, or none exist, return null.
+         *
+         * @param component
+         *            a component of an index query
+         * @return the common field, or null if no such field exists or more than one field exists
+         */
+        private static String findCommonField(JexlNode component) {
+            Set<String> fields = new HashSet<>();
+            List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(component);
+            for (ASTIdentifier identifier : identifiers) {
+                fields.add(JexlASTHelper.deconstructIdentifier(identifier));
+            }
+            
+            if (fields.size() == 1) {
+                return fields.iterator().next();
+            } else {
+                return null;
+            }
+        }
+        
+        /**
+         * Return a copy of the provided content function, updated to always include the provided field
+         *
+         * @param function
+         *            a content function
+         * @param field
+         *            the field common to a query index component
+         * @return a copy of the original function with the specified field added as an argument
+         */
+        public static JexlNode updateFunctionWithField(JexlNode function, String field) {
+            JexlNode functionCopy = RebuildingVisitor.copy(function);
+            JexlNode replacementField = JexlNodes.makeRef(JexlNodeFactory.buildIdentifier(field));
+            
+            FunctionJexlNodeVisitor visitor = new FunctionJexlNodeVisitor();
+            functionCopy.jjtAccept(visitor, null);
+            
+            // if a zone does not exist, add it as the first argument.
+            // if the zone does exist, replace it with the common field from the index query component
+            // within(int, ...)
+            // adjacent(termOffsetMap, ...)
+            // phrase(termOffsetMap, ...)
+            // scoredPhrase(float, ...)
+            
+            // inspect the first argument to see if we need to insert the field
+            boolean zoneExists = true;
+            PeekingIterator<JexlNode> args = Iterators.peekingIterator(visitor.args().iterator());
+            JexlNode first = args.peek();
+            
+            // switch on the function name
+            switch (visitor.name()) {
+                case CONTENT_PHRASE_FUNCTION_NAME:
+                case CONTENT_ADJACENT_FUNCTION_NAME:
+                    if (first instanceof ASTIdentifier) {
+                        String identifier = JexlASTHelper.deconstructIdentifier((ASTIdentifier) first);
+                        if (identifier.equals(TERM_OFFSET_MAP_JEXL_VARIABLE_NAME)) {
+                            zoneExists = false;
+                        }
+                    }
+                    break;
+                case CONTENT_WITHIN_FUNCTION_NAME:
+                case CONTENT_SCORED_PHRASE_FUNCTION_NAME:
+                    if (first instanceof ASTNumberLiteral || first instanceof ASTUnaryMinusNode || first instanceof ASTFloatLiteral) {
+                        zoneExists = false;
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException("Found unexpected content function with name: " + visitor.name());
+            }
+            
+            List<JexlNode> updated = new LinkedList<>();
+            Iterator<JexlNode> iter = Arrays.asList(JexlNodes.children(functionCopy)).iterator();
+            updated.add(iter.next()); // add function namespace (ex. 'content')
+            updated.add(iter.next()); // add function name (ex. 'phrase' or 'adjacent')
+            updated.add(replacementField);
+            if (zoneExists) {
+                iter.next(); // skip a zone argument if it exists
+            }
+            while (iter.hasNext()) {
+                updated.add(iter.next());
+            }
+            return JexlNodes.children(functionCopy, updated.toArray(new JexlNode[0]));
         }
         
         /**
@@ -401,7 +626,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         
         Class<?> functionClass = (Class<?>) ArithmeticJexlEngines.functions().get(fvis.namespace());
         
-        if (!ContentFunctions.CONTENT_FUNCTION_NAMESPACE.equals(node.jjtGetChild(0).image)) {
+        if (!CONTENT_FUNCTION_NAMESPACE.equals(node.jjtGetChild(0).image)) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NAMESPACE_UNEXPECTED, MessageFormat.format(
                             "Class: {0}, Namespace: {1}", this.getClass().getSimpleName(), node.jjtGetChild(0).image));
             throw new IllegalArgumentException(qe);

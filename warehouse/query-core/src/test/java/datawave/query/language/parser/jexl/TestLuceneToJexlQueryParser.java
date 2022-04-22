@@ -1,11 +1,14 @@
 package datawave.query.language.parser.jexl;
 
 import com.google.common.collect.Sets;
+import datawave.ingest.data.tokenize.StandardAnalyzer;
+import datawave.ingest.data.tokenize.TokenSearch;
 import datawave.query.Constants;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.processor.lucene.QueryNodeProcessorFactory;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.flexible.core.config.QueryConfigHandler;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessorPipeline;
@@ -16,6 +19,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TestLuceneToJexlQueryParser {
     
@@ -167,6 +171,34 @@ public class TestLuceneToJexlQueryParser {
         assertEquals("(F1 == 'A' && F2 == 'B') && !(F3 == 'C') && !(F4 == 'D')", parseQuery("(F1:A AND F2:B) NOT F3:C NOT F4:D"));
         assertEquals("(F1 == 'A' && F2 == 'B' || F3 == 'C') && !(F4 == 'D') && !(F5 == 'E') && !(F6 == 'F')",
                         parseQuery("(F1:A AND F2:B OR F3:C) NOT F4:D NOT F5:E NOT F6:F"));
+    }
+    
+    @Test
+    public void testCompare() throws ParseException {
+        assertEquals("F1 == 'A' && F2 == 'B' && filter:compare(F1, '<', 'ALL', F2)", parseQuery("F1:A AND F2:B AND #COMPARE(F1, <, ALL, F2)"));
+        assertEquals("F1 == 'A' && F2 == 'B' && filter:compare(F1, '>=', 'ANY', F2)", parseQuery("F1:A AND F2:B AND #COMPARE(F1, >=, ANY, F2)"));
+    }
+    
+    @Test
+    public void testCompareInvalidOpArg() {
+        try {
+            parseQuery("F1:A AND F2:B AND #COMPARE(F1, <>, ALL, F2)");
+            fail("Expected an IllegalArgumentException");
+        } catch (ParseException e) {
+            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
+            assertTrue(e.getCause().getMessage().startsWith("#COMPARE function requires a valid op arg:"));
+        }
+    }
+    
+    @Test
+    public void testCompareInvalidModeArg() {
+        try {
+            parseQuery("F1:A AND F2:B AND #COMPARE(F1, <, A FEW OR SEVERAL, F2)");
+            fail("Expected an IllegalArgumentException");
+        } catch (ParseException e) {
+            assertEquals(IllegalArgumentException.class, e.getCause().getClass());
+            assertTrue(e.getCause().getMessage().startsWith("#COMPARE function requires a valid mode arg:"));
+        }
     }
     
     @Test
@@ -598,5 +630,17 @@ public class TestLuceneToJexlQueryParser {
     public void testParseIncludeFunctionPartOfUnion() throws ParseException {
         testFunction("(filter:includeRegex(f1, 'r1') || filter:includeRegex(f2, 'r2'))", "#include(OR, f1, r1, f2, r2)");
         testFunction("filter:includeRegex(f1, 'r1')", "#include(f1, r1)");
+    }
+    
+    @Test
+    public void testSynonymTokenization() throws ParseException {
+        TokenSearch searchUtil = TokenSearch.Factory.newInstance();
+        Analyzer analyzer = new StandardAnalyzer(searchUtil);
+        parser.setAnalyzer(analyzer);
+        // this isn't the most realistic test, but it does verify that we don't lose the rest of the token stream
+        // when the first token emitted is the same as the input token.
+        Assert.assertEquals("(TOKFIELD == '/home/datawave/README.md' || "
+                        + "content:phrase(TOKFIELD, termOffsetMap, '/home/datawave/readme.md', 'home/datawave/readme.md', "
+                        + "'home', 'datawave/readme.md', 'datawave', 'readme.md', 'readme', 'md'))", parseQuery("TOKFIELD:\"/home/datawave/README.md\""));
     }
 }

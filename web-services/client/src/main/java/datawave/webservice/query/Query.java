@@ -1,7 +1,6 @@
 package datawave.webservice.query;
 
 import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.metric.BaseQueryMetric;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -103,8 +102,6 @@ public abstract class Query {
     public abstract Map<String,List<String>> toMap();
     
     public abstract Map<String,String> getCardinalityFields();
-    
-    public abstract void populateMetric(BaseQueryMetric metric);
     
     public abstract void setOptionalQueryParameters(Map<String,List<String>> optionalQueryParameters);
     

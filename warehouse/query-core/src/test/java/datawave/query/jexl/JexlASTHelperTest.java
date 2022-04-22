@@ -3,12 +3,14 @@ package datawave.query.jexl;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.util.MockMetadataHelper;
+import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -25,8 +27,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNull;
+import static junit.framework.TestCase.assertTrue;
 
 public class JexlASTHelperTest {
     
@@ -653,5 +659,65 @@ public class JexlASTHelperTest {
         String interpretedQuery = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
         Assert.assertEquals("ci\\\\\\ty\\.bl\\'ah", node.jjtGetChild(0).jjtGetChild(1).jjtGetChild(0).image);
         Assert.assertEquals(query, interpretedQuery);
+    }
+    
+    // Verify that true is returned for a query with valid junctions.
+    @Test
+    public void validateJunctionChildrenWithValidTree() throws ParseException {
+        String query = "FOO == 'bar' && FOO == 'baz'";
+        JexlNode node = JexlASTHelper.parseJexlQuery(query);
+        assertTrue(JexlASTHelper.validateJunctionChildren(node));
+        assertTrue(JexlASTHelper.validateJunctionChildren(node, false));
+    }
+    
+    // Verify that false is returned for a query with invalid junctions when failHard == false.
+    @Test
+    public void validateJunctionChildrenWithInvalidTree() {
+        ASTEQNode eqNode = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "bar");
+        ASTAndNode conjunction = (ASTAndNode) JexlNodeFactory.createAndNode(Collections.singletonList(eqNode));
+        assertFalse(JexlASTHelper.validateJunctionChildren(conjunction));
+        assertFalse(JexlASTHelper.validateJunctionChildren(conjunction, false));
+    }
+    
+    // Verify that an exception is thrown for a query with invalid junctions when failHard == true.
+    @Test
+    public void validateJunctionChildrenWithInvalidTreeAndFailHard() {
+        ASTEQNode eqNode = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "bar");
+        ASTAndNode conjunction = (ASTAndNode) JexlNodeFactory.createAndNode(Collections.singletonList(eqNode));
+        RuntimeException exception = Assert.assertThrows(RuntimeException.class, () -> JexlASTHelper.validateJunctionChildren(conjunction, true));
+        assertEquals("Instance of AND/OR node found with less than 2 children", exception.getMessage());
+    }
+    
+    @Test
+    public void testGetFunctionIdentifiers() {
+        // single term
+        String query = "AGE > '+bE1'";
+        testIdentifierParse(query, Sets.newHashSet("AGE"));
+        
+        // union of two terms
+        query = "(AGE > '+bE1' || ETA > '+bE1')";
+        testIdentifierParse(query, Sets.newHashSet("AGE", "ETA"));
+        
+        // complex function
+        query = "(grouping:getGroupsForMatchesInGroup((NOME || NAME), 'MEADOW', (GENERE || GENDER), 'FEMALE')) == MAGIC";
+        testIdentifierParse(query, Sets.newHashSet("GENDER", "GENERE", "MAGIC", "NAME", "NOME"));
+        
+        // function output feeds method
+        query = "((AGE || ETA).getValuesForGroups(grouping:getGroupsForMatchesInGroup((NOME || NAME), 'MEADOW', (GENERE || GENDER), 'FEMALE')) == MAGIC)";
+        testIdentifierParse(query, Sets.newHashSet("AGE", "ETA", "GENDER", "GENERE", "MAGIC", "NAME", "NOME"));
+        
+        // original full query
+        query = "(AGE > '+bE1' || ETA > '+bE1') && (AGE < '+cE1' || ETA < '+cE1') && ((_Eval_ = true) && ((AGE || ETA).getValuesForGroups(grouping:getGroupsForMatchesInGroup((NOME || NAME), 'MEADOW', (GENERE || GENDER), 'FEMALE')) == MAGIC))";
+        testIdentifierParse(query, Sets.newHashSet("AGE", "ETA", "GENDER", "GENERE", "MAGIC", "NAME", "NOME"));
+    }
+    
+    private void testIdentifierParse(String query, Set<String> expectedIdentifiers) {
+        try {
+            ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+            Set<String> fields = JexlASTHelper.getIdentifierNames(script);
+            assertEquals("Expected fields but was", expectedIdentifiers, fields);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -170,7 +170,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         if (!configuration.getFacetedFields().isEmpty()) {
             projection = new EventDataQueryFieldFilter();
-            projection.initializeWhitelist(configuration.getFacetedFields());
+            projection.setIncludes(configuration.getFacetedFields());
         }
         
         if (!configuration.hasFieldLimits() || projection != null) {
@@ -195,7 +195,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
                     
                     List<Entry<Key,Value>> attrs = Lists.newArrayList();
                     
-                    return Maps.immutableEntry(new DocumentData(input.getKey(), docKeys, attrs), input.getValue());
+                    return Maps.immutableEntry(new DocumentData(input.getKey(), docKeys, attrs, true), input.getValue());
                 }
                 
             });

@@ -5,6 +5,9 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions.Default;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
@@ -27,7 +30,6 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.result.event.EventBase;
@@ -112,6 +114,9 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
             Assert.fail();
         }
     }
+    
+    private boolean useRunningQuery = false;
+    private QueryMetricFactory metricFactory;
     
     /**
      * Contains a list of cities that are specified in the test data. Additional cities can be added to the test data and do not specifically need to be added
@@ -386,9 +391,37 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     protected void runTestQuery(Collection<String> expected, String queryStr, Date startDate, Date endDate, Map<String,String> options,
                     List<DocumentChecker> checkers) throws Exception {
+        runTestQuery(expected, queryStr, startDate, endDate, options, checkers, this.authSet);
+    }
+    
+    /**
+     * Executes the query and performs validation of the results.
+     *
+     * @param expected
+     *            expected results from the query
+     * @param queryStr
+     *            execution query string
+     * @param startDate
+     *            start date for query (inclusive)
+     * @param endDate
+     *            end date for query (exclusive)
+     * @param options
+     *            optional parameters to query
+     * @param checkers
+     *            optional list of assert checker methods
+     * @param authSet
+     *            optional set of authorizations to use. If null or empty, will use default auths.
+     */
+    protected void runTestQuery(Collection<String> expected, String queryStr, Date startDate, Date endDate, Map<String,String> options,
+                    List<DocumentChecker> checkers, Set<Authorizations> authSet) throws Exception {
         if (log.isDebugEnabled()) {
             log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startDate) + ")  end(" + YMD_DateFormat.format(endDate) + ")");
         }
+        
+        if (authSet == null || authSet.isEmpty()) {
+            authSet = this.authSet;
+        }
+        
         QueryImpl q = new QueryImpl();
         q.setBeginDate(startDate);
         q.setEndDate(endDate);
@@ -398,11 +431,15 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         q.setId(UUID.randomUUID());
         q.setPagesize(Integer.MAX_VALUE);
         q.setQueryAuthorizations(auths.toString());
-        
-        GenericQueryConfiguration config = this.logic.initialize(connector, q, this.authSet);
-        this.logic.setupQuery(config);
-        if (log.isDebugEnabled()) {
-            log.debug("Plan: " + config.getQueryString());
+        if (useRunningQuery) {
+            QueryMetricFactory queryMetricFactory = (metricFactory == null) ? new QueryMetricFactoryImpl() : metricFactory;
+            new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, this.logic, q, "", principal, queryMetricFactory);
+        } else {
+            GenericQueryConfiguration config = this.logic.initialize(connector, q, authSet);
+            this.logic.setupQuery(config);
+            if (log.isDebugEnabled()) {
+                log.debug("Plan: " + config.getQueryString());
+            }
         }
         testHarness.assertLogicResults(this.logic, expected, checkers);
     }
@@ -632,4 +669,20 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         connector.tableOperations().compact(QueryTestTableHelper.METADATA_TABLE_NAME, new Text("\0"), new Text("~"), true, true);
     }
     
+    /**
+     * The test framework typically just calls logic.initialize and logic.setupQuery. The typical code path for a query, as seen in RunningQuery, involves more.
+     * This method will ensure that RunningQuery is used to more fully exercise the query.
+     */
+    protected void useRunningQuery() {
+        this.useRunningQuery = true;
+    }
+    
+    /**
+     * When provided, the QueryMetric object will be used for running the query and so can be later inspected. Also see #useRunningQuery()
+     * 
+     * @param metric
+     */
+    protected void withMetric(BaseQueryMetric metric) {
+        this.metricFactory = () -> metric;
+    }
 }

@@ -37,6 +37,9 @@
         <bean class="datawave.query.language.functions.jexl.Jexl"/>
         <bean class="datawave.query.language.functions.jexl.Options"/>
         <bean class="datawave.query.language.functions.jexl.Unique"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByHour"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByMinute"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.CoveredBy"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Covers"/>
@@ -47,6 +50,7 @@
         <bean class="datawave.query.language.functions.jexl.EvaluationOnly">
             <property name="parser" ref="LuceneToJexlQueryParser"/>
         </bean>
+        <bean class="datawave.query.language.functions.jexl.ExcerptFields"/>
     </util:list>
 
     <!-- Fields we should not tokenize in a tokenized query. In non-tokenized 
@@ -175,8 +179,10 @@
         <!-- Determines how many shards in the global index lookup will be
         aggregated into a day range -->
         <property name="shardsPerDayThreshold" value="${beq.shardsPerDayThreshold}" />
+        <!-- The max number of terms BEFORE all expansions -->
+        <property name="initialMaxTermThreshold" value="${beq.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->
-        <property name="maxTermThreshold" value="${beq.maxTermThreshold}" />
+        <property name="finalMaxTermThreshold" value="${beq.finalMaxTermThreshold}" />
         <!-- The max query depth -->
         <property name="maxDepthThreshold" value="${beq.maxDepthThreshold}" />
         <!-- The max unfielded (_ANYFIELD_) expansion per term -->
@@ -510,8 +516,10 @@
         <!-- Determines how many shards in the global index lookup will be
         aggregated into a day range -->
         <property name="shardsPerDayThreshold" value="${beq.shardsPerDayThreshold}" />
+        <!-- The max number of terms BEFORE all expansions -->
+        <property name="initialMaxTermThreshold" value="${beq.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->
-        <property name="maxTermThreshold" value="${beq.maxTermThreshold}" />
+        <property name="finalMaxTermThreshold" value="${beq.finalMaxTermThreshold}" />
         <!-- The max query depth -->
         <property name="maxDepthThreshold" value="${beq.maxDepthThreshold}" />
         <!-- The max unfielded (_ANYFIELD_) expansion per term -->
@@ -568,10 +576,6 @@
         <property name="queryLogicFactoryConfiguration" ref="QueryLogicFactoryConfiguration" />
     </bean>
 
-    <bean id="queryMetricHandler" scope="prototype" class="datawave.query.metrics.ShardTableQueryMetricHandler">
-        <property name="queryLogicFactory" ref="queryLogicFactory"/>
-    </bean>
- 
     <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />
     
     <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
