@@ -72,7 +72,7 @@ public class Cardinality extends Attribute<Cardinality> {
         WritableUtils.writeString(out, content.lower);
         WritableUtils.writeString(out, content.upper);
         WritableUtils.writeCompressedByteArray(out, content.estimate.getBytes());
-        
+        WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
     
     @Override
@@ -84,6 +84,7 @@ public class Cardinality extends Attribute<Cardinality> {
         content.upper = WritableUtils.readString(in);
         byte[] cardArray = WritableUtils.readCompressedByteArray(in);
         content.estimate = HyperLogLogPlus.Builder.build(cardArray);
+        this.toKeep = WritableUtils.readVInt(in) != 0;
     }
     
     @Override
@@ -167,7 +168,7 @@ public class Cardinality extends Attribute<Cardinality> {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        
+        output.writeBoolean(this.toKeep);
     }
     
     @Override
@@ -185,6 +186,7 @@ public class Cardinality extends Attribute<Cardinality> {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        this.toKeep = input.readBoolean();
     }
     
     /*

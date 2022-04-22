@@ -65,6 +65,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         WritableUtils.writeString(out, datawaveType.getClass().toString());
         writeMetadata(out, reducedResponse);
         WritableUtils.writeString(out, datawaveType.getDelegateAsString());
+        WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
     
     @Override
@@ -75,9 +76,11 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
             log.error("Could not create the datawaveType " + ex);
         }
         readMetadata(in);
-        if (datawaveType == null)
+        if (datawaveType == null) {
             datawaveType = (Type) new NoOpType();
-        datawaveType.setDelegateFromString(WritableUtils.readString(in));
+        }
+        this.datawaveType.setDelegateFromString(WritableUtils.readString(in));
+        this.toKeep = WritableUtils.readVInt(in) != 0;
     }
     
     @Override
@@ -134,8 +137,8 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
     public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         output.writeString(datawaveType.getClass().getName());
         super.writeMetadata(kryo, output, reducedResponse);
-        
         output.writeString(this.datawaveType.getDelegateAsString());
+        output.writeBoolean(this.toKeep);
     }
     
     @Override
@@ -158,6 +161,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
             datawaveType = (Type) new NoOpType();
             datawaveType.setDelegateFromString(delegateString);
         }
+        this.toKeep = input.readBoolean();
     }
     
     private void setDatawaveType(String datawaveTypeString) throws InstantiationException, IllegalAccessException, ClassNotFoundException {

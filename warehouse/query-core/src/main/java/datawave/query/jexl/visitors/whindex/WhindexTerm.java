@@ -32,6 +32,10 @@ class WhindexTerm {
         return mappableNode;
     }
     
+    public String getNewFieldName() {
+        return newFieldName;
+    }
+    
     public JexlNode createWhindexNode() {
         JexlNode copiedNode = RebuildingVisitor.copy(mappableNode);
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(copiedNode);

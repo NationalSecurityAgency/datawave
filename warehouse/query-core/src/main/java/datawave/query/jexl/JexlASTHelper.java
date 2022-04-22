@@ -470,7 +470,11 @@ public class JexlASTHelper {
         if (node instanceof ASTFunctionNode) {
             identifiers.addAll(getFunctionIdentifiers((ASTFunctionNode) node));
         } else if (node instanceof ASTMethodNode) {
-            // Don't get identifiers under a method node, they are method names
+            // the first child of a method node is typically the method name.
+            // identifiers may exist as arguments to methods in later children
+            for (int i = 1; i < node.jjtGetNumChildren(); i++) {
+                getIdentifiers(node.jjtGetChild(i), identifiers);
+            }
             return;
         } else if (node instanceof ASTAssignment) {
             // Don't get identifiers under assignments as they are only used for QueryPropertyMarkers

@@ -8,6 +8,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import datawave.query.attributes.ExcerptFields;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
@@ -477,7 +478,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     protected MetadataHelper prepareMetadataHelper(Connector connection, String metadataTableName, Set<Authorizations> auths, boolean rawTypes) {
         if (log.isTraceEnabled())
             log.trace("prepareMetadataHelper with " + connection);
-        return metadataHelperFactory.createMetadataHelper(connection, metadataTableName, auths, rawTypes);
+        MetadataHelper helper = metadataHelperFactory.createMetadataHelper(connection, metadataTableName, auths, rawTypes);
+        helper.setEvaluationOnlyFields(config.getEvaluationOnlyFields());
+        return helper;
     }
     
     public MetadataHelperFactory getMetadataHelperFactory() {
@@ -757,6 +760,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             if (!uniqueFields.isEmpty()) {
                 this.setUniqueFields(uniqueFields);
                 config.setUniqueFields(uniqueFields);
+            }
+        }
+        
+        // Get the EXCERPT_FIELDS parameter if given
+        String excerptFieldsParam = settings.findParameter(QueryParameters.EXCERPT_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(excerptFieldsParam)) {
+            ExcerptFields excerptFields = ExcerptFields.from(excerptFieldsParam);
+            // Only set the excerpt fields if we were actually given some
+            if (!excerptFieldsParam.isEmpty()) {
+                this.setExcerptFields(excerptFields);
+                config.setExcerptFields(excerptFields);
             }
         }
         
@@ -1211,6 +1225,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setUniqueFields(uniqueFields);
     }
     
+    public ExcerptFields getExcerptFields() {
+        return getConfig().getExcerptFields();
+    }
+    
+    public void setExcerptFields(ExcerptFields excerptFields) {
+        getConfig().setExcerptFields(excerptFields);
+    }
+    
     public String getBlacklistedFieldsString() {
         return getConfig().getBlacklistedFieldsAsString();
     }
@@ -1271,12 +1293,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setShardsPerDayThreshold(shardsPerDayThreshold);
     }
     
-    public int getMaxTermThreshold() {
-        return getConfig().getMaxTermThreshold();
+    public int getInitialMaxTermThreshold() {
+        return getConfig().getInitialMaxTermThreshold();
     }
     
-    public void setMaxTermThreshold(int maxTermThreshold) {
-        getConfig().setMaxTermThreshold(maxTermThreshold);
+    public void setInitialMaxTermThreshold(int initialMaxTermThreshold) {
+        getConfig().setInitialMaxTermThreshold(initialMaxTermThreshold);
+    }
+    
+    public int getFinalMaxTermThreshold() {
+        return getConfig().getFinalMaxTermThreshold();
+    }
+    
+    public void setFinalMaxTermThreshold(int finalMaxTermThreshold) {
+        getConfig().setFinalMaxTermThreshold(finalMaxTermThreshold);
     }
     
     public int getMaxDepthThreshold() {
@@ -2304,5 +2334,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
+    }
+    
+    public long getVisitorFunctionMaxWeight() {
+        return getConfig().getVisitorFunctionMaxWeight();
+    }
+    
+    public void setVisitorFunctionMaxWeight(long visitorFunctionMaxWeight) {
+        getConfig().setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
     }
 }
