@@ -3,7 +3,7 @@ package datawave.webservice.query.hud;
 import java.util.ArrayList;
 import java.util.List;
 
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 
 /**
  * 

@@ -236,8 +236,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         SubjectIssuerDNPair server1 = SubjectIssuerDNPair.of(serverDN, issuerDN);
         String otherServerDN = DnUtils.normalizeDN("CN=otherServer.example.com, OU=iamnotaperson, OU=acme");
         SubjectIssuerDNPair server2 = SubjectIssuerDNPair.of(otherServerDN, issuerDN);
-        String proxiedSubjects = "<" + serverDN + "><" + otherServerDN + "><" + userDN.subjectDN() + ">";
-        String proxiedIssuers = "<" + issuerDN + "><" + issuerDN + "><" + userDN.issuerDN() + ">";
+        String proxiedSubjects = "<" + userDN.subjectDN() + "><" + otherServerDN + ">";
+        String proxiedIssuers = "<" + userDN.issuerDN() + "><" + issuerDN + ">";
         DatawaveCredential datawaveCredential = new DatawaveCredential(testServerCert, proxiedSubjects, proxiedIssuers);
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
@@ -249,7 +249,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, userRoles, null, System.currentTimeMillis());
         DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, s1Roles, null, System.currentTimeMillis());
         DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, s2Roles, null, System.currentTimeMillis());
-        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s1, s2));
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s2, s1));
         
         expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
         expect(securityDomain.getTrustStore()).andReturn(truststore);
@@ -281,8 +281,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         SubjectIssuerDNPair server1 = SubjectIssuerDNPair.of(serverDN, issuerDN);
         String otherServerDN = DnUtils.normalizeDN("CN=otherServer.example.com, OU=iamnotaperson, OU=acme");
         SubjectIssuerDNPair server2 = SubjectIssuerDNPair.of(otherServerDN, issuerDN);
-        String proxiedSubjects = "<" + serverDN + "><" + otherServerDN + "><" + userDN.subjectDN() + ">";
-        String proxiedIssuers = "<" + issuerDN + "><" + issuerDN + "><" + userDN.issuerDN() + ">";
+        String proxiedSubjects = "<" + userDN.subjectDN() + "><" + otherServerDN + ">";
+        String proxiedIssuers = "<" + userDN.issuerDN() + "><" + issuerDN + ">";
         DatawaveCredential datawaveCredential = new DatawaveCredential(testServerCert, proxiedSubjects, proxiedIssuers);
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
@@ -294,7 +294,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, null, userRoles, null, System.currentTimeMillis());
         DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, s1Roles, null, System.currentTimeMillis());
         DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, s2Roles, null, System.currentTimeMillis());
-        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s1, s2));
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s2, s1));
         
         expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
         expect(securityDomain.getTrustStore()).andReturn(truststore);
@@ -348,8 +348,8 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         SubjectIssuerDNPair server1 = SubjectIssuerDNPair.of(serverDN, issuerDN);
         String otherServerDN = DnUtils.normalizeDN("CN=otherServer.example.com, OU=iamnotaperson, OU=acme");
         SubjectIssuerDNPair server2 = SubjectIssuerDNPair.of(otherServerDN, issuerDN);
-        String proxiedSubjects = "<" + serverDN + "><" + otherServerDN + "><" + userDN.subjectDN() + ">";
-        String proxiedIssuers = "<" + issuerDN + "><" + issuerDN + "><" + userDN.issuerDN() + ">";
+        String proxiedSubjects = "<" + userDN.subjectDN() + "><" + otherServerDN + ">";
+        String proxiedIssuers = "<" + userDN.issuerDN() + "><" + issuerDN + ">";
         DatawaveCredential datawaveCredential = new DatawaveCredential(testServerCert, proxiedSubjects, proxiedIssuers);
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
@@ -361,7 +361,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, otherRoles, null, System.currentTimeMillis());
         DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, blacklistRoles, null, System.currentTimeMillis());
         
-        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s1, s2));
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user, s2, s1));
         
         expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
         expect(securityDomain.getTrustStore()).andReturn(truststore);
@@ -386,15 +386,15 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         SubjectIssuerDNPair server1 = SubjectIssuerDNPair.of(serverDN, issuerDN);
         String otherServerDN = DnUtils.normalizeDN("CN=otherServer.example.com, OU=iamnotaperson, OU=acme");
         SubjectIssuerDNPair server2 = SubjectIssuerDNPair.of(otherServerDN, issuerDN);
-        String proxiedSubjects = "<" + serverDN + "><" + otherServerDN + "><" + userDN.subjectDN() + ">";
-        String proxiedIssuers = "<" + issuerDN + "><" + issuerDN + "><" + userDN.issuerDN() + ">";
+        String proxiedSubjects = "<" + userDN.subjectDN() + "><" + otherServerDN + ">";
+        String proxiedIssuers = "<" + userDN.issuerDN() + "><" + issuerDN + ">";
         DatawaveCredential datawaveCredential = new DatawaveCredential(testServerCert, proxiedSubjects, proxiedIssuers);
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
         
         DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, null, null, System.currentTimeMillis());
         DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, null, null, System.currentTimeMillis());
-        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(defaultPrincipal.getPrimaryUser(), s1, s2));
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(defaultPrincipal.getPrimaryUser(), s2, s1));
         
         expect(securityDomain.getKeyStore()).andReturn(serverKeystore);
         expect(securityDomain.getTrustStore()).andReturn(truststore);
@@ -426,7 +426,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         
         DatawaveUser s1 = new DatawaveUser(server1, UserType.SERVER, null, null, null, System.currentTimeMillis());
         DatawaveUser s2 = new DatawaveUser(server2, UserType.SERVER, null, null, null, System.currentTimeMillis());
-        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(defaultPrincipal.getPrimaryUser(), s1, s2));
+        DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(s1, s2, defaultPrincipal.getPrimaryUser()));
         
         String token = tokenHandler.createTokenFromUsers(expected.getName(), expected.getProxiedUsers());
         DatawaveCredential datawaveCredential = new DatawaveCredential(token);

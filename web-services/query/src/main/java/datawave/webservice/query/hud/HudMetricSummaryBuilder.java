@@ -1,6 +1,6 @@
 package datawave.webservice.query.hud;
 
-import datawave.webservice.query.metric.QueryMetricSummary;
+import datawave.microservice.querymetric.QueryMetricSummary;
 
 /**
  * 
