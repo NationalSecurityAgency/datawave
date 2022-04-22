@@ -16,15 +16,15 @@ public class DnUtilsTest {
         String actual = DnUtils.buildNormalizedProxyDN("SDN", "IDN", null, null);
         assertEquals(expected, actual);
         
-        expected = "sdn1<idn1><sdn2><idn2>";
+        expected = "sdn2<idn2><sdn1><idn1>";
         actual = DnUtils.buildNormalizedProxyDN("SDN1", "IDN1", "SDN2", "IDN2");
         assertEquals(expected, actual);
         
-        expected = "sdn1<idn1><sdn2><idn2><sdn3><idn3>";
+        expected = "sdn2<idn2><sdn3><idn3><sdn1><idn1>";
         actual = DnUtils.buildNormalizedProxyDN("SDN1", "IDN1", "SDN2<SDN3>", "IDN2<IDN3>");
         assertEquals(expected, actual);
         
-        expected = "sdn1<idn1><sdn2><idn2><sdn3><idn3>";
+        expected = "sdn2<idn2><sdn3><idn3><sdn1><idn1>";
         actual = DnUtils.buildNormalizedProxyDN("SDN1", "IDN1", "<SDN2><SDN3>", "<IDN2><IDN3>");
         assertEquals(expected, actual);
     }
@@ -35,15 +35,15 @@ public class DnUtilsTest {
         Collection<String> actual = DnUtils.buildNormalizedDNList("SDN", "IDN", null, null);
         assertEquals(expected, actual);
         
-        expected = Lists.newArrayList("sdn1", "idn1", "sdn2", "idn2");
+        expected = Lists.newArrayList("sdn2", "idn2", "sdn1", "idn1");
         actual = DnUtils.buildNormalizedDNList("SDN1", "IDN1", "SDN2", "IDN2");
         assertEquals(expected, actual);
         
-        expected = Lists.newArrayList("sdn1", "idn1", "sdn2", "idn2", "sdn3", "idn3");
+        expected = Lists.newArrayList("sdn2", "idn2", "sdn3", "idn3", "sdn1", "idn1");
         actual = DnUtils.buildNormalizedDNList("SDN1", "IDN1", "SDN2<SDN3>", "IDN2<IDN3>");
         assertEquals(expected, actual);
         
-        expected = Lists.newArrayList("sdn1", "idn1", "sdn2", "idn2", "sdn3", "idn3");
+        expected = Lists.newArrayList("sdn2", "idn2", "sdn3", "idn3", "sdn1", "idn1");
         actual = DnUtils.buildNormalizedDNList("SDN1", "IDN1", "<SDN2><SDN3>", "<IDN2><IDN3>");
         assertEquals(expected, actual);
     }

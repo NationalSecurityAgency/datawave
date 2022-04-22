@@ -8,7 +8,6 @@ import datawave.data.type.Type;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.TermFrequencyList;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedMapIterator;
@@ -18,7 +17,6 @@ import org.apache.hadoop.io.Text;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,8 +25,8 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class TermOffsetPopulatorTest {
@@ -143,12 +141,12 @@ public class TermOffsetPopulatorTest {
         assertTrue(contextMap.containsKey(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
         
         // ensure termOffsetMap has correct values
-        HashMap<String,TermFrequencyList> termOffsetMap = (HashMap<String,TermFrequencyList>) contextMap.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
-        assertTrue(termOffsetMap.containsKey("fox"));
-        assertTrue(termOffsetMap.containsKey("quick"));
+        TermOffsetMap termOffsetMap = (TermOffsetMap) contextMap.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
+        assertNotNull(termOffsetMap.getTermFrequencyList("fox"));
+        assertNotNull(termOffsetMap.getTermFrequencyList("quick"));
     }
     
-    // A term offset map like this will be defeated during ContentFunction.initializse()
+    // A term offset map like this will be defeated during ContentFunction.initializes()
     @Test
     public void testPotentialErrorCase() {
         Multimap<String,String> tfFields = HashMultimap.create();
@@ -174,9 +172,9 @@ public class TermOffsetPopulatorTest {
         assertTrue(contextMap.containsKey(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
         
         // ensure termOffsetMap has correct values
-        HashMap<String,TermFrequencyList> termOffsetMap = (HashMap<String,TermFrequencyList>) contextMap.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
-        assertTrue(termOffsetMap.containsKey("blue"));
-        assertTrue(termOffsetMap.containsKey("fish"));
+        TermOffsetMap termOffsetMap = (TermOffsetMap) contextMap.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
+        assertNotNull(termOffsetMap.getTermFrequencyList("blue"));
+        assertNotNull(termOffsetMap.getTermFrequencyList("fish"));
     }
     
     @Test
@@ -200,9 +198,9 @@ public class TermOffsetPopulatorTest {
         assertTrue(contextMap.containsKey(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
         
         // ensure termOffsetMap has correct values
-        HashMap<String,TermFrequencyList> termOffsetMap = (HashMap<String,TermFrequencyList>) contextMap.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
-        assertFalse(termOffsetMap.containsKey("fox")); // the key for 'fox' is malformed
-        assertTrue(termOffsetMap.containsKey("quick")); // the key for 'quick' is correct
+        TermOffsetMap termOffsetMap = (TermOffsetMap) contextMap.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
+        assertNull(termOffsetMap.getTermFrequencyList("fox")); // the key for 'fox' is malformed
+        assertNotNull(termOffsetMap.getTermFrequencyList("quick")); // the key for 'quick' is correct
     }
     
     private SortedMapIterator createDataIter() {
