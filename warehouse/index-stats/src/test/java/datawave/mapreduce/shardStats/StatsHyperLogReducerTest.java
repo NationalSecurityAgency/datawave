@@ -4,6 +4,7 @@ import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -97,6 +98,9 @@ public class StatsHyperLogReducerTest {
         conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, url.getPath());
         conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, true);
         conf.set(FileSystem.FS_DEFAULT_NAME_KEY, URI.create("file:///").toString());
+        
+        TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
+        tcu.serializeTableConfgurationIntoConf(conf);
         
         log.debug("=====  REDUCER INPUT  =====");
         // generate input
