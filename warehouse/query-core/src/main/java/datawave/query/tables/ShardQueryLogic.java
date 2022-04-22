@@ -8,13 +8,14 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import datawave.query.attributes.ExcerptFields;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
-import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
@@ -25,7 +26,6 @@ import datawave.query.index.lookup.CreateUidsIterator;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.UidIntersector;
 import datawave.query.iterator.QueryOptions;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
@@ -38,10 +38,10 @@ import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
 import datawave.query.tables.stats.ScanSessionStats;
-import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
 import datawave.query.transformer.GroupingTransform;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.DateIndexHelperFactory;
@@ -183,8 +183,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private Set<String> mandatoryQuerySyntax = null;
     private QueryPlanner planner = null;
     private QueryParser parser = null;
-    private QueryLogicTransformer transformerInstance = null;
-    private GroupingTransform groupingTransformerInstance = null;
     
     private CardinalityConfiguration cardinalityConfiguration = null;
     
@@ -580,11 +578,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        if (this.transformerInstance != null) {
-            addConfigBasedTransformers();
-            return this.transformerInstance;
-        }
-        
         MarkingFunctions markingFunctions = this.getMarkingFunctions();
         ResponseObjectFactory responseObjectFactory = this.getResponseObjectFactory();
         
@@ -601,41 +594,18 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         transformer.setCardinalityConfiguration(cardinalityConfiguration);
         transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
         transformer.setQm(queryModel);
-        this.transformerInstance = transformer;
-        addConfigBasedTransformers();
-        return this.transformerInstance;
-    }
-    
-    /**
-     * If the configuration didn't exist, OR IT CHANGED, we need to create or update the transformers that have been added.
-     */
-    private void addConfigBasedTransformers() {
         if (getConfig() != null) {
-            ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
-            ((DocumentTransformer) this.transformerInstance).setBlacklistedFields(getConfig().getBlacklistedFields());
-            
+            transformer.setProjectFields(getConfig().getProjectFields());
+            transformer.setBlacklistedFields(getConfig().getBlacklistedFields());
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
-                DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(UniqueTransform.class);
-                if (alreadyExists != null) {
-                    ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
-                } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(getQueryModel(), getConfig().getUniqueFields()));
-                }
+                transformer.addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
             }
-            
             if (getConfig().getGroupFields() != null && !getConfig().getGroupFields().isEmpty()) {
-                DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(GroupingTransform.class);
-                if (alreadyExists != null) {
-                    ((GroupingTransform) alreadyExists).updateConfig(getConfig().getGroupFields(), getQueryModel());
-                } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new GroupingTransform(getQueryModel(), getConfig().getGroupFields(),
-                                    this.markingFunctions, this.getQueryExecutionForPageTimeout()));
-                }
+                transformer.addTransform(new GroupingTransform(this, getConfig().getGroupFields()));
             }
         }
-        if (getQueryModel() != null) {
-            ((DocumentTransformer) this.transformerInstance).setQm(getQueryModel());
-        }
+        
+        return transformer;
     }
     
     protected void loadQueryParameters(ShardQueryConfiguration config, Query settings) throws QueryException {
@@ -790,6 +760,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             if (!uniqueFields.isEmpty()) {
                 this.setUniqueFields(uniqueFields);
                 config.setUniqueFields(uniqueFields);
+            }
+        }
+        
+        // Get the EXCERPT_FIELDS parameter if given
+        String excerptFieldsParam = settings.findParameter(QueryParameters.EXCERPT_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang.StringUtils.isNotBlank(excerptFieldsParam)) {
+            ExcerptFields excerptFields = ExcerptFields.from(excerptFieldsParam);
+            // Only set the excerpt fields if we were actually given some
+            if (!excerptFieldsParam.isEmpty()) {
+                this.setExcerptFields(excerptFields);
+                config.setExcerptFields(excerptFields);
             }
         }
         
@@ -1242,6 +1223,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setUniqueFields(UniqueFields uniqueFields) {
         getConfig().setUniqueFields(uniqueFields);
+    }
+    
+    public ExcerptFields getExcerptFields() {
+        return getConfig().getExcerptFields();
+    }
+    
+    public void setExcerptFields(ExcerptFields excerptFields) {
+        getConfig().setExcerptFields(excerptFields);
     }
     
     public String getBlacklistedFieldsString() {
@@ -1739,14 +1728,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setMaxPipelineCachedResults(int maxCachedResults) {
         getConfig().setMaxPipelineCachedResults(maxCachedResults);
-    }
-    
-    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
-        getConfig().setQueryExecutionForPageTimeout(queryExecutionForPageTimeout);
-    }
-    
-    public long getQueryExecutionForPageTimeout() {
-        return getConfig().getQueryExecutionForPageTimeout();
     }
     
     public double getMinimumSelectivity() {
@@ -2353,5 +2334,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
+    }
+    
+    public long getVisitorFunctionMaxWeight() {
+        return getConfig().getVisitorFunctionMaxWeight();
+    }
+    
+    public void setVisitorFunctionMaxWeight(long visitorFunctionMaxWeight) {
+        getConfig().setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
     }
 }
