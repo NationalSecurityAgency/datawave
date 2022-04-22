@@ -134,7 +134,6 @@
         <property name="indexTableName" value="${index.table.name}" />
         <property name="reverseIndexTableName" value="${rindex.table.name}" />
         <property name="maxResults" value="${event.query.max.results}" />
-        <property name="queryExecutionForPageTimeout" value="${query.execution.for.page.timeout}"/>
         <property name="queryThreads" value="${shard.query.threads}" />
         <property name="indexLookupThreads" value="${index.query.threads}" />
         <property name="dateIndexThreads" value="${date.index.threads}" />
