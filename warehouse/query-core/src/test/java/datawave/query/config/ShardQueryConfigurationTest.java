@@ -15,12 +15,12 @@ import datawave.data.type.NoOpType;
 import datawave.data.type.StringType;
 import datawave.data.type.Type;
 import datawave.query.DocumentSerialization;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.attributes.UniqueGranularity;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.function.ws.EvaluationFunction;
 import datawave.query.model.QueryModel;
-import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.UniqueGranularity;
 import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
 import org.junit.Assert;
@@ -207,6 +207,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Maps.newHashMap(), config.getWhindexFieldMappings());
         Assert.assertEquals(Collections.emptySet(), config.getNoExpansionFields());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
+        Assert.assertEquals(5000000L, config.getVisitorFunctionMaxWeight());
     }
     
     /**
@@ -264,6 +265,7 @@ public class ShardQueryConfigurationTest {
         boolean usePartialInterpreter = true;
         Set<String> incompleteFields = Sets.newHashSet("INCOMPLETE_FIELD_A", "INCOMPLETE_FIELD_B");
         EvaluationFunction evaluationFunction = null;
+        long visitorFunctionMaxWeight = 200L;
         
         // Set collections on 'other' ShardQueryConfiguration
         other.setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
@@ -300,6 +302,7 @@ public class ShardQueryConfigurationTest {
         other.setUsePartialInterpreter(usePartialInterpreter);
         other.setIncompleteFields(incompleteFields);
         other.setEvaluationFunction(evaluationFunction);
+        other.setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
         
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
@@ -386,6 +389,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(usePartialInterpreter, config.isUsePartialInterpreter());
         Assert.assertEquals(incompleteFields, config.getIncompleteFields());
         Assert.assertEquals(evaluationFunction, config.getEvaluationFunction());
+        Assert.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());
         
         // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
         QueryImpl expectedQuery = new QueryImpl();
@@ -473,7 +477,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 187;
+        int expectedObjectCount = 189;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

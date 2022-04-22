@@ -20,9 +20,9 @@ public class ProjectionFunction implements Function<Map.Entry<Key,Document>,Map.
         
         projection = new DocumentProjection(includeGroupingContext, reducedResponse);
         if (!includeFields.isEmpty()) {
-            projection.initializeWhitelist(includeFields);
+            projection.setIncludes(includeFields);
         } else {
-            projection.initializeBlacklist(excludeFields);
+            projection.setExcludes(excludeFields);
         }
     }
     

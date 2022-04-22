@@ -79,28 +79,6 @@ public class TermOffsetPopulator {
         return termFrequencyFieldValues;
     }
     
-    /**
-     * Merge two maps of type <code>String, TermFrequencyList</code>, presuming they came from a JexlContext like
-     *
-     * @param map1
-     * @param map2
-     * 
-     * @return
-     */
-    @SuppressWarnings("unchecked")
-    public static Map<String,Object> mergeContextMap(Map<String,Object> map1, Map<String,Object> map2) {
-        
-        Map<String,TermFrequencyList> termOffsetMap1 = (Map<String,TermFrequencyList>) (map1.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
-        Map<String,TermFrequencyList> termOffsetMap2 = (Map<String,TermFrequencyList>) (map2.get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME));
-        
-        Map<String,TermFrequencyList> merged = mergeTermFrequencyLists(termOffsetMap1, termOffsetMap2);
-        
-        // Load the actual map into map that will be put into the JexlContext
-        Map<String,Object> map = new HashMap<>();
-        map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, merged);
-        return map;
-    }
-    
     public static Map<String,TermFrequencyList> mergeTermFrequencyLists(Map<String,TermFrequencyList> left, Map<String,TermFrequencyList> right) {
         Map<String,TermFrequencyList> termOffsetMap = Maps.newHashMap();
         if (left == null) {
@@ -246,8 +224,8 @@ public class TermOffsetPopulator {
         
         // Load the termOffsetMap into an intermediate map that will be put into the JexlContext
         Map<String,Object> map = new HashMap<>();
-        map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffsetMap);
-        document.setOffsetMap(termOffsetMap);
+        map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(termOffsetMap));
+        document.setOffsetMap(new TermOffsetMap(termOffsetMap));
         return map;
     }
     

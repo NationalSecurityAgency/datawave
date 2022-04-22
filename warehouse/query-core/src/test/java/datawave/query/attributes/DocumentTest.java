@@ -6,6 +6,7 @@ import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.jexl.functions.TermFrequencyList;
+import datawave.query.postprocessing.tf.TermOffsetMap;
 import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
 
@@ -77,9 +78,9 @@ public class DocumentTest {
         
         assertTrue(d2.containsKey("FOO"));
         assertNotNull(d2.getOffsetMap());
-        assertTrue(d2.getOffsetMap().containsKey("big"));
-        assertTrue(d2.getOffsetMap().containsKey("red"));
-        assertTrue(d2.getOffsetMap().containsKey("dog"));
+        assertNotNull(d2.getOffsetMap().getTermFrequencyList("big"));
+        assertNotNull(d2.getOffsetMap().getTermFrequencyList("red"));
+        assertNotNull(d2.getOffsetMap().getTermFrequencyList("dog"));
     }
     
     @Test
@@ -104,9 +105,9 @@ public class DocumentTest {
         Document d2 = de.deserialize(new ByteArrayInputStream(data));
         assertTrue(d2.containsKey("FOO"));
         assertNotNull(d2.getOffsetMap());
-        assertTrue(d2.getOffsetMap().containsKey("big"));
-        assertTrue(d2.getOffsetMap().containsKey("red"));
-        assertTrue(d2.getOffsetMap().containsKey("dog"));
+        assertTrue(d2.getOffsetMap().getTermFrequencyKeySet().contains("big"));
+        assertTrue(d2.getOffsetMap().getTermFrequencyKeySet().contains("red"));
+        assertTrue(d2.getOffsetMap().getTermFrequencyKeySet().contains("dog"));
     }
     
     @Test
@@ -114,21 +115,21 @@ public class DocumentTest {
         Document d1 = buildDefaultDocument();
         Document d2 = buildDefaultDocument();
         
-        Map<String,TermFrequencyList> firstOffsetMap = getTermOffsetMap();
+        TermOffsetMap firstOffsetMap = getTermOffsetMap();
         
-        Map<String,TermFrequencyList> secondOffsetMap = new HashMap<>();
-        secondOffsetMap.put("see", buildTfList("TEXT", 4));
-        secondOffsetMap.put("spot", buildTfList("TEXT", 5));
-        secondOffsetMap.put("run", buildTfList("TEXT", 6));
+        TermOffsetMap secondOffsetMap = new TermOffsetMap();
+        secondOffsetMap.putTermFrequencyList("see", buildTfList("TEXT", 4));
+        secondOffsetMap.putTermFrequencyList("spot", buildTfList("TEXT", 5));
+        secondOffsetMap.putTermFrequencyList("run", buildTfList("TEXT", 6));
         
         d1.setOffsetMap(firstOffsetMap);
         d2.setOffsetMap(secondOffsetMap);
         
         d1.putAll(d2, false);
         
-        Map<String,TermFrequencyList> merged = d1.getOffsetMap();
-        assertEquals(6, merged.keySet().size());
-        assertEquals(Sets.newHashSet("see", "spot", "run", "big", "red", "dog"), merged.keySet());
+        TermOffsetMap merged = d1.getOffsetMap();
+        assertEquals(6, merged.getTermFrequencyKeySet().size());
+        assertEquals(Sets.newHashSet("see", "spot", "run", "big", "red", "dog"), merged.getTermFrequencyKeySet());
     }
     
     protected Document buildDefaultDocument() {
@@ -144,11 +145,11 @@ public class DocumentTest {
         return d;
     }
     
-    protected Map<String,TermFrequencyList> getTermOffsetMap() {
-        Map<String,TermFrequencyList> offsets = new HashMap<>();
-        offsets.put("big", buildTfList("TEXT", 1));
-        offsets.put("red", buildTfList("TEXT", 2));
-        offsets.put("dog", buildTfList("TEXT", 3));
+    protected TermOffsetMap getTermOffsetMap() {
+        TermOffsetMap offsets = new TermOffsetMap();
+        offsets.putTermFrequencyList("big", buildTfList("TEXT", 1));
+        offsets.putTermFrequencyList("red", buildTfList("TEXT", 2));
+        offsets.putTermFrequencyList("dog", buildTfList("TEXT", 3));
         return offsets;
     }
     

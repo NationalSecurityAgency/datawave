@@ -13,6 +13,7 @@ import datawave.query.function.KeyToFieldName;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyList;
+import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ValueToAttributes;
@@ -54,7 +55,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     TreeMap<String,Attribute<? extends Comparable<?>>> dict;
     
     // optional store for term weight positions
-    private Map<String,TermFrequencyList> offsetMap;
+    private TermOffsetMap offsetMap;
     
     /**
      * should sizes of the documents be tracked
@@ -400,7 +401,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         putAll(other.dict.entrySet().iterator(), includeGroupingContext);
         
         if (offsetMap != null && other.offsetMap != null) {
-            offsetMap = TermOffsetPopulator.mergeTermFrequencyLists(offsetMap, other.offsetMap);
+            offsetMap.merge(other.offsetMap);
         } else if (offsetMap == null && other.offsetMap != null) {
             offsetMap = other.offsetMap;
         }
@@ -562,7 +563,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
             entry.getValue().write(out);
         }
         
-        if (offsetMap != null && !offsetMap.isEmpty()) {
+        if (offsetMap != null && !offsetMap.getTermFrequencyKeySet().isEmpty()) {
             byte[] data = getOffsetMapToBytes();
             if (data != null) {
                 WritableUtils.writeVInt(out, 1);
@@ -792,7 +793,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         }
         
         // Note: this will overwrite an existing termOffsetMap
-        if (offsetMap != null && !offsetMap.isEmpty()) {
+        if (offsetMap != null && !offsetMap.getTermFrequencyKeySet().isEmpty()) {
             context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, offsetMap);
         }
         
@@ -824,7 +825,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
             attribute.write(kryo, output, reducedResponse);
         }
         
-        if (offsetMap != null && !offsetMap.isEmpty()) {
+        if (offsetMap != null && !offsetMap.getTermFrequencyKeySet().isEmpty()) {
             byte[] data = getOffsetMapToBytes();
             if (data != null) {
                 output.writeInt(data.length);
@@ -929,10 +930,10 @@ public class Document extends AttributeBag<Document> implements Serializable {
         return null;
     }
     
-    private Map<String,TermFrequencyList> getOffsetMapFromBytes(byte[] data) {
+    private TermOffsetMap getOffsetMapFromBytes(byte[] data) {
         try (ByteArrayInputStream bais = new ByteArrayInputStream(data)) {
             try (ObjectInputStream ois = new ObjectInputStream(bais)) {
-                return (Map<String,TermFrequencyList>) ois.readObject();
+                return (TermOffsetMap) ois.readObject();
             }
         } catch (Exception e) {
             log.error("failed to deserialize offset map from byte array");
@@ -940,11 +941,11 @@ public class Document extends AttributeBag<Document> implements Serializable {
         return null;
     }
     
-    public Map<String,TermFrequencyList> getOffsetMap() {
+    public TermOffsetMap getOffsetMap() {
         return this.offsetMap;
     }
     
-    public void setOffsetMap(Map<String,TermFrequencyList> offsetMap) {
+    public void setOffsetMap(TermOffsetMap offsetMap) {
         this.offsetMap = offsetMap;
     }
 }

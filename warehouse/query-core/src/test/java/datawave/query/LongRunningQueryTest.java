@@ -23,6 +23,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.text.DateFormat;
@@ -149,6 +150,7 @@ public class LongRunningQueryTest {
      *
      * @throws Exception
      */
+    @Ignore
     @Test
     public void testAllowLongRunningQueryOnNoResults() throws Exception {
         

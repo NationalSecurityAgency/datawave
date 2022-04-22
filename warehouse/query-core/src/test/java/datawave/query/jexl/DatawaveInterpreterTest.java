@@ -8,6 +8,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.functions.TermFrequencyList;
+import datawave.query.postprocessing.tf.TermOffsetMap;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.DatawaveJexlScript;
 import org.apache.commons.jexl2.ExpressionImpl;
@@ -314,10 +315,10 @@ public class DatawaveInterpreterTest {
     protected JexlContext buildTermOffsetContext() {
         JexlContext context = buildDefaultContext();
         
-        Map<String,TermFrequencyList> map = new HashMap<>();
-        map.put("big", buildTfList("TEXT", 1));
-        map.put("red", buildTfList("TEXT", 2));
-        map.put("dog", buildTfList("TEXT", 3));
+        TermOffsetMap map = new TermOffsetMap();
+        map.putTermFrequencyList("big", buildTfList("TEXT", 1));
+        map.putTermFrequencyList("red", buildTfList("TEXT", 2));
+        map.putTermFrequencyList("dog", buildTfList("TEXT", 3));
         
         //@formatter:off
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, map);

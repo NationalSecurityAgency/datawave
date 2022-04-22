@@ -32,7 +32,7 @@ public class CompositeProjectionFunction implements Function<Map.Entry<Key,Docum
                 }
             }
         }
-        projection.initializeBlacklist(composites);
+        projection.setExcludes(composites);
     }
     
     @Nullable
