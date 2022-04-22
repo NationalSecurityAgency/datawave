@@ -170,7 +170,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         if (!configuration.getFacetedFields().isEmpty()) {
             projection = new EventDataQueryFieldFilter();
-            projection.initializeWhitelist(configuration.getFacetedFields());
+            projection.setIncludes(configuration.getFacetedFields());
         }
         
         if (!configuration.hasFieldLimits() || projection != null) {
