@@ -378,11 +378,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public ExcerptFields excerptFields = new ExcerptFields();
     
     /**
-     * The max execution time per page of results - after it has elapsed, an intermediate result page will be returned.
-     */
-    private long queryExecutionForPageTimeout = 3000000L;
-    
-    /**
      * The maximum weight for entries in the visitor function cache. The weight is calculated as the total number of characters for each key and value in the
      * cache. Default is 5m characters, which is roughly 10MB
      */
@@ -572,7 +567,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
-        this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
     }
     
@@ -2256,14 +2250,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
             excerptFields.deconstructFields();
         }
         this.excerptFields = excerptFields;
-    }
-    
-    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
-        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
-    }
-    
-    public long getQueryExecutionForPageTimeout() {
-        return this.queryExecutionForPageTimeout;
     }
     
     public long getVisitorFunctionMaxWeight() {
