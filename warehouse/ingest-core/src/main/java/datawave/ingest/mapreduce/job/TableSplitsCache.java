@@ -119,7 +119,7 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
     }
     
     private Set<String> getIngestTableNames() {
-        Set<String> tableNames = TableConfigurationUtil.extractTablesFromConf(conf);
+        Set<String> tableNames = TableConfigurationUtil.extractTableNames(conf);
         if (tableNames.isEmpty()) {
             log.error("Missing data types or one of the following helperClass,readerClass,handlerClassNames,filterClassNames");
             throw new IllegalArgumentException("Missing data types or one of the following helperClass,readerClass,handlerClassNames,filterClassNames");
