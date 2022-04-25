@@ -14,7 +14,6 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.accumulo.core.client.Connector;
@@ -22,7 +21,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.functors.NOPTransformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -74,9 +72,6 @@ public class ExtendedRunningQueryTest {
     
     @Mock
     TransformIterator transformIterator;
-    
-    @Mock
-    QueryLogicTransformer documentTransformer;
     
     private Transformer transformer = NOPTransformer.nopTransformer();
     

@@ -36,7 +36,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     private int maxPageSize = 0;
     private long pageByteTrigger = 0;
     private long pageProcessingStartTime = 0;
-    
     private boolean collectQueryMetrics = true;
     private String _connPoolName;
     private Set<String> authorizedDNs;

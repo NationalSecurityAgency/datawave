@@ -1,14 +1,16 @@
 package datawave.webservice.query.result.event;
 
-import com.google.common.collect.Maps;
+import java.util.List;
+import java.util.Map;
+
 import io.protostuff.Message;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlTransient;
-import java.util.List;
-import java.util.Map;
+
+import com.google.common.collect.Maps;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultEvent.class)
