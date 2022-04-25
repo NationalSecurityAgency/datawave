@@ -63,13 +63,13 @@ import java.util.function.Supplier;
  */
 public class JexlNodeBuilder<T extends JexlNode> {
     
-    private final Supplier<T> constructor;
+    private final Supplier<T> instanceSupplier;
     private final List<Supplier<? extends JexlNode>> children = new ArrayList<>();
     private String image;
     private Object value;
     
     public JexlNodeBuilder(JexlNodeInstance<T> instance) {
-        this.constructor = instance.getConstructor();
+        this.instanceSupplier = instance.getConstructor();
     }
     
     /**
@@ -154,7 +154,7 @@ public class JexlNodeBuilder<T extends JexlNode> {
      */
     public T build() {
         // Create the initial node.
-        T node = constructor.get();
+        T node = instanceSupplier.get();
         node.image = this.image;
         node.jjtSetValue(this.value);
         
