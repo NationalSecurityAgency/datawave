@@ -48,6 +48,7 @@ import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl2.parser.ASTVar;
 import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -166,14 +167,8 @@ public class JexlNodeBuilder<T extends JexlNode> {
                         .toArray(JexlNode[]::new);
         // @formatter:on
         
-        // Set the parent for each child.
-        for (JexlNode child : childArray) {
-            child.jjtSetParent(node);
-        }
-        // Add each child to the root node.
-        for (int i = 0; i < childArray.length; i++) {
-            node.jjtAddChild(childArray[i], i);
-        }
+        // Set the children for the node.
+        JexlNodes.children(node, childArray);
         return node;
     }
     
