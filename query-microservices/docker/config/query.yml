@@ -1,7 +1,20 @@
+spring:
+  lifecycle:
+    # Set the shutdown grace period
+    timeout-per-shutdown-phase: 5s
+
+management:
+  endpoint:
+    # Enable the shutdown endpoint for the query service
+    shutdown:
+      enabled: true
+
 # Query requires a client certificate
 server:
   ssl:
     client-auth: NEED
+  # Enable graceful shutdown
+  shutdown: "graceful"
 
 logging:
   level:
