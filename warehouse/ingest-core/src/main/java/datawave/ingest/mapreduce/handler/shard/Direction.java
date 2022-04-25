@@ -1,6 +1,6 @@
 package datawave.ingest.mapreduce.handler.shard;
 
-import javax.xml.bind.annotation.XmlEnum;
+import jakarta.xml.bind.annotation.XmlEnum;
 import java.io.Serializable;
 
 @XmlEnum(String.class)

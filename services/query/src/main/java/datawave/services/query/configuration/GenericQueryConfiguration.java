@@ -10,7 +10,7 @@ import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 
-import javax.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;

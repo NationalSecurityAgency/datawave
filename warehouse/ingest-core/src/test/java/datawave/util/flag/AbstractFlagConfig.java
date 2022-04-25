@@ -8,7 +8,7 @@ import java.util.Calendar;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 
 import datawave.util.StringUtils;
 import datawave.util.flag.config.ConfigUtil;
