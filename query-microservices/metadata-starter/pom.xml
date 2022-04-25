@@ -10,7 +10,7 @@
     <artifactId>spring-boot-starter-datawave-metadata</artifactId>
     <version>1.0-SNAPSHOT</version>
     <properties>
-        <version.microservice.starter>1.6.6-SNAPSHOT</version.microservice.starter>
+        <version.microservice.starter>1.6.8-SNAPSHOT</version.microservice.starter>
     </properties>
     <dependencyManagement>
         <dependencies>

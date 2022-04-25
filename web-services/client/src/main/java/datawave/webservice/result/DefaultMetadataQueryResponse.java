@@ -1,11 +1,11 @@
 package datawave.webservice.result;
 
+import datawave.webservice.metadata.DefaultMetadataField;
+import datawave.webservice.metadata.MetadataFieldBase;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
-import datawave.webservice.query.result.metadata.DefaultMetadataField;
-import datawave.webservice.query.result.metadata.MetadataFieldBase;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;

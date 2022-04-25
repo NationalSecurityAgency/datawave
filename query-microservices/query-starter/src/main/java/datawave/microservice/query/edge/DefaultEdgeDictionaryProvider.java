@@ -6,8 +6,8 @@ import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.services.common.edgedictionary.EdgeDictionaryProvider;
 import datawave.webservice.query.Query;
-import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
-import datawave.webservice.results.edgedictionary.MetadataBase;
+import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
+import datawave.webservice.dictionary.edge.MetadataBase;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 

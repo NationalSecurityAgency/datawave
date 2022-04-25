@@ -5,13 +5,13 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
-import datawave.webservice.query.result.metadata.MetadataFieldBase;
+import datawave.webservice.metadata.MetadataFieldBase;
 import datawave.webservice.response.objects.KeyBase;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.FacetQueryResponseBase;
-import datawave.webservice.results.datadictionary.DataDictionaryBase;
-import datawave.webservice.results.datadictionary.DescriptionBase;
-import datawave.webservice.results.datadictionary.FieldsBase;
+import datawave.webservice.dictionary.data.DataDictionaryBase;
+import datawave.webservice.dictionary.data.DescriptionBase;
+import datawave.webservice.dictionary.data.FieldsBase;
 
 public abstract class ResponseObjectFactory {
     

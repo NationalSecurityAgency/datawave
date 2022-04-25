@@ -3,6 +3,7 @@ package datawave.query.planner;
 import com.google.common.collect.Sets;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.ExcerptFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.services.common.logging.ThreadConfigurableLogger;
 import datawave.query.attributes.UniqueFields;
@@ -45,6 +46,10 @@ public class QueryOptionsSwitch {
                 case QueryParameters.UNIQUE_FIELDS:
                     UniqueFields uniqueFields = UniqueFields.from(value);
                     config.setUniqueFields(uniqueFields);
+                    break;
+                case QueryParameters.EXCERPT_FIELDS:
+                    ExcerptFields excerptFields = ExcerptFields.from(value);
+                    config.setExcerptFields(excerptFields);
             }
         }
     }

@@ -839,7 +839,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.getSettings()).andReturn(this.query).anyTimes();
         expect(this.queryLogic1.getTransformer(this.query)).andReturn(this.transformer);
         expect(this.transformer.createResponse(this.resultsPage)).andReturn(this.baseResponse);
-        expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.COMPLETE).times(2);
+        expect(this.resultsPage.getResults()).andReturn(Arrays.asList((Object) "result1")).times(2);
         this.baseResponse.setHasResults(true);
         this.baseResponse.setPageNumber(pageNumber);
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
@@ -1018,7 +1018,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.getSettings()).andReturn(this.query).anyTimes();
         expect(this.queryLogic1.getTransformer(this.query)).andReturn(this.transformer);
         expect(this.transformer.createResponse(this.resultsPage)).andReturn(this.baseResponse);
-        expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.COMPLETE).times(2);
+        expect(this.resultsPage.getResults()).andReturn(Arrays.asList((Object) "result1")).times(2);
         this.baseResponse.setHasResults(true);
         this.baseResponse.setPageNumber(pageNumber);
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
@@ -1306,7 +1306,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.runningQuery.getLogic()).andReturn((QueryLogic) this.queryLogic1).times(2);
         expect(this.queryLogic1.getTransformer(this.query)).andReturn(this.transformer);
         expect(this.transformer.createResponse(this.resultsPage)).andReturn(this.baseResponse);
-        expect(this.resultsPage.getStatus()).andReturn(ResultsPage.Status.NONE).times(2);
+        expect(this.resultsPage.getResults()).andReturn(new ArrayList<>(0)).times(2);
         this.baseResponse.setHasResults(false);
         this.baseResponse.setPageNumber(pageNumber);
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);

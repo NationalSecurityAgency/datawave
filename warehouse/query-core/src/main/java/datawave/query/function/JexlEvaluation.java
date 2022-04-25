@@ -1,10 +1,14 @@
 package datawave.query.function;
 
+import datawave.query.Constants;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.DelayedNonEventIndexContext;
+import datawave.query.postprocessing.tf.PhraseIndexes;
+import datawave.query.postprocessing.tf.TermOffsetMap;
+import datawave.query.transformer.ExcerptTransform;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl2.DatawaveJexlScript;
@@ -117,6 +121,18 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                 }
                 if (attributes.size() > 0) {
                     document.put(HIT_TERM_FIELD, attributes);
+                }
+                
+                // Put the phrase indexes into the document so that we can add phrase excerpts if desired later.
+                TermOffsetMap termOffsetMap = (TermOffsetMap) input.third().get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
+                if (termOffsetMap != null) {
+                    PhraseIndexes phraseIndexes = termOffsetMap.getPhraseIndexes();
+                    Content phraseIndexesAttribute = new Content(phraseIndexes.toString(), document.getMetadata(), false);
+                    document.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, phraseIndexesAttribute);
+                    if (log.isTraceEnabled()) {
+                        log.trace("Added phrase-indexes " + phraseIndexes + " as attribute " + ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE + " to document "
+                                        + document.getMetadata());
+                    }
                 }
             }
             hitListArithmetic.clear();

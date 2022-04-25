@@ -8,12 +8,12 @@ import datawave.microservice.query.storage.TaskStates;
 import datawave.microservice.query.storage.TaskStatesCache;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.annotation.security.RolesAllowed;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +34,7 @@ public class QueryStorageStateServiceController implements QueryStorageStateServ
     }
     
     @ApiOperation(value = "Get the running queries.")
-    @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
+    @Secured({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
     @RequestMapping(path = "/queries", method = RequestMethod.GET)
     @Override
     public List<datawave.microservice.query.storage.QueryState> getRunningQueries() {
@@ -49,7 +49,7 @@ public class QueryStorageStateServiceController implements QueryStorageStateServ
     }
     
     @ApiOperation(value = "Get the query and task states for a query")
-    @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
+    @Secured({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
     @RequestMapping(path = "/query/{id}", method = RequestMethod.GET)
     @Override
     public datawave.microservice.query.storage.QueryState getQuery(@PathVariable("id") String queryId) {
@@ -61,7 +61,7 @@ public class QueryStorageStateServiceController implements QueryStorageStateServ
     }
     
     @ApiOperation(value = "Get the list of tasks for a query")
-    @RolesAllowed({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
+    @Secured({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
     @RequestMapping(path = "/tasks/{id}", method = RequestMethod.GET)
     @Override
     public List<TaskDescription> getTasks(@PathVariable("id") String queryId) {

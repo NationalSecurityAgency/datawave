@@ -1,7 +1,7 @@
 package datawave.webservice.result;
 
+import datawave.webservice.metadata.MetadataFieldBase;
 import io.protostuff.Message;
-import datawave.webservice.query.result.metadata.MetadataFieldBase;
 
 import java.io.Serializable;
 import java.util.List;

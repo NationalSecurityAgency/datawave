@@ -14,12 +14,11 @@ import datawave.marking.MarkingFunctions;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.RebuildingScannerTestHelper;
 import datawave.query.attributes.Attribute;
-import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
-import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.JexlControlledQueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.query.transformer.GroupingTransform.GroupingTypeAttribute;
 import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.services.query.configuration.GenericQueryConfiguration;
 import datawave.services.query.iterator.DatawaveTransformIterator;
@@ -172,7 +171,6 @@ public abstract class GroupingTest {
         
         logic.setFullTableScanEnabled(true);
         logic.setMaxEvaluationPipelines(1);
-        logic.setQueryExecutionForPageTimeout(300000000000000L);
         deserializer = new KryoDocumentDeserializer();
     }
     
@@ -292,7 +290,7 @@ public abstract class GroupingTest {
         log.debug("reponses:" + digested);
         Set<String> responseSet = Sets.newHashSet(digested);
         // if the grouped results from every type of rebuild are the same, there should be only 1 entry in the responseSet
-        Assert.assertEquals(1, responseSet.size());
+        Assert.assertEquals(responseSet.size(), 1);
     }
     
     // grab the relevant stuff from the events and do some formatting
@@ -565,7 +563,7 @@ public abstract class GroupingTest {
     @Test
     public void testCountingMap() {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        GroupCountingHashMap map = new GroupCountingHashMap(markingFunctions);
+        GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
         GroupingTypeAttribute attr1 = new GroupingTypeAttribute(new LcType("FOO"), new Key("FOO"), true);
         attr1.setColumnVisibility(new ColumnVisibility("A"));
         map.add(Collections.singleton(attr1));
@@ -595,7 +593,7 @@ public abstract class GroupingTest {
     @Test
     public void testCountingMapAgain() {
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();
-        GroupCountingHashMap map = new GroupCountingHashMap(markingFunctions);
+        GroupingTransform.GroupCountingHashMap map = new GroupingTransform.GroupCountingHashMap(markingFunctions);
         
         GroupingTypeAttribute<?> attr1a = new GroupingTypeAttribute(new LcType("FOO"), new Key("NAME"), true);
         attr1a.setColumnVisibility(new ColumnVisibility("A"));

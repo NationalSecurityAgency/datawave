@@ -13,9 +13,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static datawave.security.authorization.DatawaveUser.ANONYMOUS_USER;
@@ -31,7 +29,7 @@ public class DatawavePrincipal implements Principal, Serializable {
     private final String username;
     private final DatawaveUser primaryUser;
     @XmlElement
-    private final Set<DatawaveUser> proxiedUsers = new LinkedHashSet<>();
+    private final List<DatawaveUser> proxiedUsers = new ArrayList<>();
     @XmlElement
     private final long creationTime;
     
@@ -62,15 +60,27 @@ public class DatawavePrincipal implements Principal, Serializable {
     /**
      * Gets the {@link DatawaveUser} that represents the primary user in this DatawavePrincipal. If there is only one DatawaveUser, then it is the primaryUser.
      * If there is more than one DatawaveUser, then the first (and presumably only) DatawaveUser whose {@link DatawaveUser#getUserType()} is
-     * {@link UserType#USER} is the primary user. If no such DatawaveUser is present, then the second principal in the list is returned as the primary user.
-     * This will be the first entity in the X-ProxiedEntitiesChain which should be the server that originated the request.
+     * {@link UserType#USER} is the primary user. If no such DatawaveUser is present, then the first principal in the list is returned as the primary user. This
+     * will be the first entity in the X-ProxiedEntitiesChain which should be the server that originated the request.
      */
-    static protected DatawaveUser findPrimaryUser(Collection<DatawaveUser> datawaveUsers) {
-        if (datawaveUsers.size() <= 1) {
-            return datawaveUsers.stream().findFirst().orElse(null);
+    static protected DatawaveUser findPrimaryUser(List<DatawaveUser> datawaveUsers) {
+        if (datawaveUsers.isEmpty()) {
+            return null;
         } else {
-            DatawaveUser secondInOrder = datawaveUsers.stream().skip(1).findFirst().orElse(null);
-            return datawaveUsers.stream().filter(u -> u.getUserType() == UserType.USER).findFirst().orElse(secondInOrder);
+            return datawaveUsers.get(findPrimaryUserPosition(datawaveUsers));
+        }
+    }
+    
+    static protected int findPrimaryUserPosition(List<DatawaveUser> datawaveUsers) {
+        if (datawaveUsers.isEmpty()) {
+            return -1;
+        } else {
+            for (int x = 0; x < datawaveUsers.size(); x++) {
+                if (datawaveUsers.get(x).getUserType().equals(UserType.USER)) {
+                    return x;
+                }
+            }
+            return 0;
         }
     }
     
@@ -80,22 +90,14 @@ public class DatawavePrincipal implements Principal, Serializable {
      * assumptions about the List that is passed to ths method: 1) The first element is the one that made the final call 2) Additional elements (if any) are
      * from X-ProxiedEntitiesChain in chronological order of the calls
      */
-    static protected List<DatawaveUser> orderProxiedUsers(Collection<DatawaveUser> datawaveUsers) {
-        DatawaveUser primary = DatawavePrincipal.findPrimaryUser(datawaveUsers);
+    static protected List<DatawaveUser> orderProxiedUsers(List<DatawaveUser> datawaveUsers) {
         List<DatawaveUser> users = new ArrayList<>();
-        users.add(primary);
-        if (datawaveUsers.size() > 1) {
-            // @formatter:off
-            // Skipping first user because if it is UserType.USER, it is the primary
-            // and already added.  If it is UserType.Server, then it will be added at the end
-            datawaveUsers.stream()
-                    .skip(1)
-                    .filter(u -> u != primary)
-                    .forEach(u -> users.add(u));
-            // @formatter:on
-            DatawaveUser first = datawaveUsers.stream().findFirst().orElse(null);
-            if (!users.contains(first)) {
-                users.add(first);
+        int position = DatawavePrincipal.findPrimaryUserPosition(datawaveUsers);
+        if (position >= 0) {
+            users.add(datawaveUsers.get(position));
+            if (datawaveUsers.size() > 1) {
+                datawaveUsers.stream().limit(position).forEach(u -> users.add(u));
+                datawaveUsers.stream().skip(position + 1).forEach(u -> users.add(u));
             }
         }
         return users;

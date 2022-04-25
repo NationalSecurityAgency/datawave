@@ -1,25 +1,5 @@
 package datawave.query.tables;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Queues;
-import com.google.common.util.concurrent.AbstractExecutionThreadService;
-import com.google.common.util.concurrent.MoreExecutors;
-import datawave.query.tables.AccumuloResource.ResourceFactory;
-import datawave.query.tables.stats.ScanSessionStats;
-import datawave.query.tables.stats.ScanSessionStats.TIMERS;
-import datawave.query.tables.stats.StatsListener;
-import datawave.services.query.configuration.Result;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.log4j.Logger;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -33,6 +13,28 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import datawave.query.tables.AccumuloResource.ResourceFactory;
+import datawave.query.tables.stats.ScanSessionStats;
+import datawave.query.tables.stats.StatsListener;
+import datawave.services.query.configuration.Result;
+import datawave.query.tables.stats.ScanSessionStats.TIMERS;
+import datawave.webservice.query.Query;
+
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Queues;
+import com.google.common.util.concurrent.AbstractExecutionThreadService;
+import com.google.common.util.concurrent.MoreExecutors;
 
 /**
  * This will handles running a scan against a set of ranges. The actual scan is performed in a separate thread which places the results in a result queue. The
@@ -280,30 +282,27 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
         
         // if we are new, let's start and wait
         if (state() == State.NEW) {
-            // we have just started, so let's start and wait
-            // until we've completed the start process
-            if (null != stats)
-                initializeTimers();
-            try {
-                startAsync();
-            } catch (RejectedExecutionException e) {
-                // It appears that sometimes a rejected execution exception occurs on a retry underneath of the startAsync.
-                // if the state is not starting or running, then pass along the failure.
-                if (state() != State.STARTING || state() != State.RUNNING) {
-                    throw e;
+            // make sure this is not done multiple time concurrently
+            synchronized (this) {
+                if (state() == State.NEW) {
+                    if (null != stats) {
+                        initializeTimers();
+                    }
+                    startAsync();
+                    try {
+                        // we have just started, so let's start and wait
+                        // until we've completed the start process
+                        awaitRunning();
+                    } catch (IllegalStateException e) {
+                        // This is thrown if the state is anything other than RUNNING
+                        // STOPPING, and TERMINATED are valid as they indicate successful execution
+                        // FAILED is not ok, and should be thrown
+                        if (state() == State.FAILED) {
+                            throw e;
+                        }
+                    }
                 }
             }
-            try {
-                awaitRunning();
-            } catch (IllegalStateException e) {
-                // This is thrown if the state is anything other than RUNNING
-                // STOPPING, and TERMINATED are valid as they indicate successful execution
-                // FAILED is not ok, and should be thrown
-                if (state() == State.FAILED) {
-                    throw e;
-                }
-            }
-            
         }
         
         // isFlushNeeded is only in the case of when we are finished
@@ -378,7 +377,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * 
      * @see java.util.Iterator#next()
      * 
-     * Note that this method needs to check the uncaught exception handler and propagate any set throwables.
+     * Note that this method needs to check the uncaught exception handler and propogate any set throwables.
      */
     @Override
     public Result next() {

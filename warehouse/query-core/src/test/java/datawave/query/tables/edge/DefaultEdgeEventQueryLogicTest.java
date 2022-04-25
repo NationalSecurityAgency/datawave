@@ -7,9 +7,9 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.model.edge.EdgeQueryModel;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import datawave.webservice.results.edgedictionary.DefaultEdgeDictionary;
-import datawave.webservice.results.edgedictionary.DefaultMetadata;
-import datawave.webservice.results.edgedictionary.EventField;
+import datawave.webservice.dictionary.edge.DefaultEdgeDictionary;
+import datawave.webservice.dictionary.edge.DefaultMetadata;
+import datawave.webservice.dictionary.edge.EventField;
 import org.junit.Before;
 import org.junit.Test;
 

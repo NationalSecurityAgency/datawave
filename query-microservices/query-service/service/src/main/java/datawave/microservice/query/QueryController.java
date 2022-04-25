@@ -21,6 +21,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,7 +32,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 
-import javax.annotation.security.RolesAllowed;
 import java.util.List;
 
 import static datawave.microservice.query.lookup.LookupService.LOOKUP_STREAMING;
@@ -213,7 +213,7 @@ public class QueryController {
     }
     
     @Timed(name = "dw.query.adminCancel", absolute = true)
-    @RolesAllowed({"Administrator", "JBossAdministrator"})
+    @Secured({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "{queryId}/adminCancel", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml",
             "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public VoidResponse adminCancel(@PathVariable String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
@@ -228,7 +228,7 @@ public class QueryController {
     }
     
     @Timed(name = "dw.query.adminClose", absolute = true)
-    @RolesAllowed({"Administrator", "JBossAdministrator"})
+    @Secured({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "{queryId}/adminClose", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml",
             "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public VoidResponse adminClose(@PathVariable String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
@@ -250,7 +250,7 @@ public class QueryController {
     }
     
     @Timed(name = "dw.query.adminRemove", absolute = true)
-    @RolesAllowed({"Administrator", "JBossAdministrator"})
+    @Secured({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "{queryId}/adminRemove", method = {RequestMethod.DELETE}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public VoidResponse adminRemove(@PathVariable String queryId, @AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
@@ -282,7 +282,7 @@ public class QueryController {
     }
     
     @Timed(name = "dw.query.adminList", absolute = true)
-    @RolesAllowed({"Administrator", "JBossAdministrator"})
+    @Secured({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "adminList", method = {RequestMethod.GET}, produces = {"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml",
             "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public QueryImplListResponse adminList(@RequestParam(required = false) String queryId, @RequestParam(required = false) String user,
@@ -312,7 +312,7 @@ public class QueryController {
     }
     
     @Timed(name = "dw.query.adminCancelAll", absolute = true)
-    @RolesAllowed({"Administrator", "JBossAdministrator"})
+    @Secured({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "adminCancelAll", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
             "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public VoidResponse adminCancelAll(@AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
@@ -320,7 +320,7 @@ public class QueryController {
     }
     
     @Timed(name = "dw.query.adminCloseAll", absolute = true)
-    @RolesAllowed({"Administrator", "JBossAdministrator"})
+    @Secured({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "adminCloseAll", method = {RequestMethod.PUT, RequestMethod.POST}, produces = {"application/xml", "text/xml", "application/json",
             "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public VoidResponse adminCloseAll(@AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {
@@ -328,7 +328,7 @@ public class QueryController {
     }
     
     @Timed(name = "dw.query.adminRemoveAll", absolute = true)
-    @RolesAllowed({"Administrator", "JBossAdministrator"})
+    @Secured({"Administrator", "JBossAdministrator"})
     @RequestMapping(path = "adminRemoveAll", method = {RequestMethod.DELETE}, produces = {"application/xml", "text/xml", "application/json", "text/yaml",
             "text/x-yaml", "application/x-yaml", "application/x-protobuf", "application/x-protostuff"})
     public VoidResponse adminRemoveAll(@AuthenticationPrincipal ProxiedUserDetails currentUser) throws QueryException {

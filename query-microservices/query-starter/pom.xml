@@ -10,10 +10,10 @@
     <artifactId>spring-boot-starter-datawave-query</artifactId>
     <version>1.0-SNAPSHOT</version>
     <properties>
-        <version.datawave>3.20.0-SNAPSHOT</version.datawave>
+        <version.datawave>3.21.0-SNAPSHOT</version.datawave>
         <version.guava>31.0.1-jre</version.guava>
-        <version.microservice.hazelcast-client>1.7-SNAPSHOT</version.microservice.hazelcast-client>
-        <version.microservice.starter>1.6.6-SNAPSHOT</version.microservice.starter>
+        <version.microservice.hazelcast-client>1.9-SNAPSHOT</version.microservice.hazelcast-client>
+        <version.microservice.starter>1.6.8-SNAPSHOT</version.microservice.starter>
         <version.microservice.starter-metadata>1.0-SNAPSHOT</version.microservice.starter-metadata>
         <version.microservice.starter-metrics>1.5-SNAPSHOT</version.microservice.starter-metrics>
     </properties>
