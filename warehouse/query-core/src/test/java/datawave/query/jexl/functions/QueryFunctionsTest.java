@@ -16,8 +16,8 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Due to the expansive nature of {@link QueryFunctions}, tests for individual methods are encapsulated within their own test suites represented
- * by the nested classes found herein. The {@link Enclosed} runner will run all tests within these test suites.
+ * Due to the expansive nature of {@link QueryFunctions}, tests for individual methods are encapsulated within their own test suites represented by the nested
+ * classes found herein. The {@link Enclosed} runner will run all tests within these test suites.
  */
 @RunWith(Enclosed.class)
 public class QueryFunctionsTest {

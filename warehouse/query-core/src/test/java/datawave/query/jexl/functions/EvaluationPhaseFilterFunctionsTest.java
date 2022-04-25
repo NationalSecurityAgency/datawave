@@ -1034,8 +1034,6 @@ public class EvaluationPhaseFilterFunctionsTest {
         }
     }
     
-    
-    
     /**
      * Tests for {@link EvaluationPhaseFilterFunctions#getMatchToLeftOfPeriod(String, int)}.
      */
