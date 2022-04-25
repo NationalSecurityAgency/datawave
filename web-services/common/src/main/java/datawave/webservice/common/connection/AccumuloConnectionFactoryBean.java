@@ -453,7 +453,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     }
     
     public Collection<String> getCurrentProxyServers() {
-        Set<String> currentProxyServers = null;
+        List<String> currentProxyServers = null;
         Principal p = context.getCallerPrincipal();
         
         if (p instanceof DatawavePrincipal) {

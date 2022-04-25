@@ -3,6 +3,7 @@ package datawave.query.jexl.visitors;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
 import datawave.query.jexl.functions.QueryFunctions;
@@ -48,7 +49,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     
     private static final Set<String> RESERVED = ImmutableSet.of(QueryFunctions.QUERY_FUNCTION_NAMESPACE, QueryFunctions.OPTIONS_FUNCTION,
                     QueryFunctions.UNIQUE_FUNCTION, QueryFunctions.UNIQUE_BY_DAY_FUNCTION, QueryFunctions.UNIQUE_BY_HOUR_FUNCTION,
-                    QueryFunctions.UNIQUE_BY_MINUTE_FUNCTION, QueryFunctions.GROUPBY_FUNCTION);
+                    QueryFunctions.UNIQUE_BY_MINUTE_FUNCTION, QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION);
     
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T collect(T node, Object data) {
@@ -178,6 +179,12 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     List<String> optionsList = new ArrayList<>();
                     this.visit(node, optionsList);
                     optionsMap.put(QueryParameters.GROUP_FIELDS, JOINER.join(optionsList));
+                    return null;
+                }
+                case QueryFunctions.EXCERPT_FIELDS_FUNCTION: {
+                    List<String> optionsList = new ArrayList<>();
+                    this.visit(node, optionsList);
+                    optionsMap.put(QueryParameters.EXCERPT_FIELDS, JOINER.join(optionsList));
                     return null;
                 }
             }

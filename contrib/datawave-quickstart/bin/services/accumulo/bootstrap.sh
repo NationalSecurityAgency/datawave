@@ -36,7 +36,7 @@ admin.enableServer=true"
 # Accumulo config
 
 # You may override DW_ACCUMULO_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-http://archive.apache.org/dist/accumulo/2.0.1/accumulo-2.0.1-bin.tar.gz}"
+DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://repository.apache.org/content/groups/snapshots/org/apache/accumulo/accumulo/2.1.0-SNAPSHOT/accumulo-2.1.0-20220422.093503-397-bin.tar.gz}"
 # shellcheck disable=SC2034
 DW_ACCUMULO_DIST="$( downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
 DW_ACCUMULO_BASEDIR="accumulo-install"

@@ -7,6 +7,8 @@ import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.marking.ColumnVisibilitySecurityMarking;
 import datawave.marking.SecurityMarking;
+import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -32,8 +34,6 @@ import datawave.webservice.query.cache.CreatedQueryLogicCacheBean;
 import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.cache.QueryExpirationConfiguration;
-import datawave.webservice.query.cache.QueryMetricFactory;
-import datawave.webservice.query.cache.QueryMetricFactoryImpl;
 import datawave.webservice.query.cache.QueryTraceCache;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.LookupUUIDConfiguration;
@@ -44,9 +44,10 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
-import datawave.webservice.query.metric.BaseQueryMetric.Lifecycle;
-import datawave.webservice.query.metric.BaseQueryMetric.Prediction;
-import datawave.webservice.query.metric.QueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.result.GenericResponse;
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -140,7 +141,7 @@ public class QueryExecutorBeanTest {
     private QueryLogicFactoryImpl queryLogicFactory;
     private QueryExpirationConfiguration queryExpirationConf;
     private Persister persister;
-    private QueryPredictor<QueryMetric> predictor;
+    private QueryPredictor predictor;
     private EJBContext ctx;
     private CreatedQueryLogicCacheBean qlCache;
     private QueryExecutorBean bean;
@@ -426,13 +427,13 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.containsDNWithAccess(dnList)).andReturn(true);
         EasyMock.expect(logic.getMaxPageSize()).andReturn(0);
         
-        QueryMetric metric = new QueryMetricFactoryImpl().createMetric();
-        q.populateMetric(metric);
+        BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
+        metric.populate(q);
         metric.setQueryType(RunningQuery.class.getSimpleName());
         
-        QueryMetric testMetric = new QueryMetric(metric) {
+        QueryMetric testMetric = new QueryMetric((QueryMetric) metric) {
             public static final long serialVersionUID = 1L;
-            
+
             @Override
             public boolean equals(Object o) {
                 // test for equality except for the create date
@@ -665,8 +666,8 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(persister.findById(EasyMock.anyString())).andReturn(null).anyTimes();
         EasyMock.expect(connectionFactory.getTrackingMap(anyObject())).andReturn(Maps.newHashMap()).anyTimes();
         
-        QueryMetric metric = new QueryMetricFactoryImpl().createMetric();
-        q.populateMetric(metric);
+        BaseQueryMetric metric = new QueryMetricFactoryImpl().createMetric();
+        metric.populate(q);
         EasyMock.expectLastCall();
         metric.setQueryType(RunningQuery.class.getSimpleName());
         metric.setLifecycle(Lifecycle.DEFINED);

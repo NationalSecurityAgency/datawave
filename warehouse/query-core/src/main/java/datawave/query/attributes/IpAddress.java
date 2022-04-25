@@ -67,8 +67,8 @@ public class IpAddress extends Attribute<IpAddress> implements Serializable {
     @Override
     public void write(DataOutput out, boolean reducedResponse) throws IOException {
         writeMetadata(out, reducedResponse);
-        
         WritableUtils.writeString(out, this.value.toString());
+        WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
     
     @Override
@@ -77,6 +77,7 @@ public class IpAddress extends Attribute<IpAddress> implements Serializable {
         String ipString = WritableUtils.readString(in);
         setValue(ipString);
         setNormalizedValue(ipString);
+        this.toKeep = WritableUtils.readVInt(in) != 0;
         validate();
     }
     
@@ -127,8 +128,8 @@ public class IpAddress extends Attribute<IpAddress> implements Serializable {
     @Override
     public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         writeMetadata(kryo, output, reducedResponse);
-        
         output.writeString(this.value.toString());
+        output.writeBoolean(this.toKeep);
     }
     
     @Override
@@ -137,6 +138,7 @@ public class IpAddress extends Attribute<IpAddress> implements Serializable {
         String ipAddressString = input.readString();
         setValue(ipAddressString);
         setNormalizedValue(ipAddressString);
+        this.toKeep = input.readBoolean();
         validate();
     }
     

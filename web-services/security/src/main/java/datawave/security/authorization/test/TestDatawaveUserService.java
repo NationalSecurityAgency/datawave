@@ -33,7 +33,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -49,7 +51,7 @@ import java.util.Set;
 // Exclude this bean if the system property dw.security.use.testuserservice isn't defined to be true
 @Exclude(onExpression = "dw.security.use.testuserservice!=true", interpretedBy = NotEqualPropertyExpressionInterpreter.class)
 public class TestDatawaveUserService implements CachedDatawaveUserService {
-    private HashMap<SubjectIssuerDNPair,DatawaveUser> cannedUsers = new HashMap<>();
+    private Map<SubjectIssuerDNPair,DatawaveUser> cannedUsers = new HashMap<>();
     private DatawaveUserService delegateService;
     private CachedDatawaveUserService delegateCachedService;
     private CreationalContext<?> delegateContext;
@@ -98,7 +100,7 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
     public Collection<DatawaveUser> reload(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
         // @formatter:off
         ArrayList<SubjectIssuerDNPair> missing = new ArrayList<>();
-        HashMap<SubjectIssuerDNPair, DatawaveUser> results = new HashMap<>();
+        Map<SubjectIssuerDNPair, DatawaveUser> results = new LinkedHashMap<>();
         dns.forEach(dn -> {
             if (cannedUsers.containsKey(dn))
                 results.put(dn, cannedUsers.get(dn));
@@ -122,7 +124,7 @@ public class TestDatawaveUserService implements CachedDatawaveUserService {
     public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
         // @formatter:off
         ArrayList<SubjectIssuerDNPair> missing = new ArrayList<>();
-        HashMap<SubjectIssuerDNPair, DatawaveUser> results = new HashMap<>();
+        Map<SubjectIssuerDNPair, DatawaveUser> results = new LinkedHashMap<>();
         dns.forEach(dn -> {
             if (cannedUsers.containsKey(dn))
                 results.put(dn, cannedUsers.get(dn));

@@ -17,6 +17,7 @@ import com.google.common.collect.Sets;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.query.attributes.ExcerptFields;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.core.iterators.querylock.QueryLock;
@@ -247,6 +248,8 @@ public class QueryOptions implements OptionDescriber {
      */
     public static final String ACTIVE_QUERY_LOG_NAME = "active.query.log.name";
     
+    public static final String EXCERPT_FIELDS = "excerpt.fields";
+    
     protected Map<String,String> options;
     
     protected String scanId;
@@ -391,6 +394,8 @@ public class QueryOptions implements OptionDescriber {
      */
     protected String activeQueryLogName;
     
+    protected ExcerptFields excerptFields;
+    
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -488,6 +493,8 @@ public class QueryOptions implements OptionDescriber {
         
         this.trackSizes = other.trackSizes;
         this.activeQueryLogName = other.activeQueryLogName;
+        this.excerptFields = other.excerptFields;
+        
     }
     
     public String getQuery() {
@@ -983,6 +990,14 @@ public class QueryOptions implements OptionDescriber {
         this.activeQueryLogName = activeQueryLogName;
     }
     
+    public ExcerptFields getExcerptFields() {
+        return excerptFields;
+    }
+    
+    public void setExcerptFields(ExcerptFields excerptFields) {
+        this.excerptFields = excerptFields;
+    }
+    
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -1074,6 +1089,7 @@ public class QueryOptions implements OptionDescriber {
                         "If not provided or set to '"
                                         + ActiveQueryLog.DEFAULT_NAME
                                         + "', will use the default shared Active Query Log instance. If provided otherwise, uses a separate distinct Active Query Log that will include the unique name in log messages.");
+        options.put(EXCERPT_FIELDS, "excerpt fields");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
     
@@ -1528,6 +1544,10 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(ACTIVE_QUERY_LOG_NAME)) {
             setActiveQueryLogName(activeQueryLogName);
+        }
+        
+        if (options.containsKey(EXCERPT_FIELDS)) {
+            setExcerptFields(ExcerptFields.from(options.get(EXCERPT_FIELDS)));
         }
         
         return true;
