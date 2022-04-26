@@ -51,7 +51,7 @@ import java.util.UUID;
 
 /**
  * Applies uniqueness to queries
- * 
+ *
  */
 public abstract class UniqueTest {
     
@@ -152,7 +152,6 @@ public abstract class UniqueTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         logic.setFullTableScanEnabled(true);
-        logic.setQueryExecutionForPageTimeout(300000000000000L);
         deserializer = new KryoDocumentDeserializer();
     }
     

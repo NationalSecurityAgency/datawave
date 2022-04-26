@@ -69,6 +69,7 @@ import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.transformer.ExcerptTransform;
+import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
 import datawave.query.util.TraceIterators;
@@ -186,7 +187,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     protected QuerySpanCollector querySpanCollector = new QuerySpanCollector();
     
-    protected UniqueIterator uniqueIterator;
+    protected UniqueTransform uniqueTransform = null;
     
     protected GroupingIterator groupingIterator;
     
@@ -493,10 +494,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             }
             
             // now apply the unique iterator if requested
-            UniqueIterator uniquify = getUniqueIteratorInstance();
+            UniqueTransform uniquify = getUniqueTransform();
             if (uniquify != null) {
                 // pipelineDocuments = uniquify;
-                pipelineDocuments = Iterators.filter(pipelineDocuments, uniquify.getPredicate());
+                pipelineDocuments = Iterators.filter(pipelineDocuments, uniquify.getUniquePredicate());
             }
             
             // apply the grouping iterator if requested and if the batch size is greater than zero
@@ -1595,15 +1596,15 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return new ValueComparator(from.second().getMetadata());
     }
     
-    protected UniqueIterator getUniqueIteratorInstance() {
-        if (uniqueIterator == null && getUniqueFields() != null && !getUniqueFields().isEmpty()) {
+    protected UniqueTransform getUniqueTransform() {
+        if (uniqueTransform == null && getUniqueFields() != null && !getUniqueFields().isEmpty()) {
             synchronized (getUniqueFields()) {
-                if (uniqueIterator == null) {
-                    uniqueIterator = new UniqueIterator(getUniqueFields());
+                if (uniqueTransform == null) {
+                    uniqueTransform = new UniqueTransform(getUniqueFields());
                 }
             }
         }
-        return uniqueIterator;
+        return uniqueTransform;
     }
     
     protected GroupingIterator getGroupingIteratorInstance(Iterator<Entry<Key,Document>> in) {

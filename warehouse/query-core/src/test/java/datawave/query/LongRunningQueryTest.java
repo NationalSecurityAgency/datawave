@@ -88,56 +88,6 @@ public class LongRunningQueryTest {
         logic.setIvaratorCacheBufferSize(0);
     }
     
-    @Test
-    public void testLongRunningUniqueQuery() throws Exception {
-        Map<String,String> extraParameters = new HashMap<>();
-        extraParameters.put("include.grouping.context", "true");
-        extraParameters.put("unique.fields", "$AGE,GENDER");
-        
-        String queryStr = "UUID =~ '^[CS].*'";
-        Date startDate = format.parse("20091231");
-        Date endDate = format.parse("20150101");
-        
-        QueryImpl query = new QueryImpl();
-        query.setQuery(queryStr);
-        query.setBeginDate(startDate);
-        query.setEndDate(endDate);
-        query.setQueryAuthorizations(auths.serialize());
-        query.setColumnVisibility("A&E&I");
-        query.setPagesize(Integer.MAX_VALUE);
-        query.setParameters(extraParameters);
-        query.setId(UUID.randomUUID());
-        
-        logic.setQueryExecutionForPageTimeout(20);
-        GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
-        logic.setupQuery(config);
-        
-        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal,
-                        new RunningQueryTimingImpl(), Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
-        List<ResultsPage> pages = new ArrayList<>();
-        
-        ResultsPage page = runningQuery.next();
-        pages.add(page);
-        
-        Thread.sleep(40);
-        
-        while (page.getStatus() != ResultsPage.Status.COMPLETE) {
-            page = runningQuery.next();
-            pages.add(page);
-        }
-        
-        // There should be at least 2 pages, more depending on cpu speed.
-        assertTrue(pages.size() > 1);
-        for (int i = 0; i < pages.size() - 1; ++i) {
-            // check every page but the last one for 0 results and PARTIAL status
-            assertEquals(0, pages.get(i).getResults().size());
-            assertEquals(ResultsPage.Status.PARTIAL, pages.get(i).getStatus());
-        }
-        // check the last page for COMPLETE status and that the total number of results is 3
-        assertEquals(3, pages.get(pages.size() - 1).getResults().size());
-        assertEquals(ResultsPage.Status.COMPLETE, pages.get(pages.size() - 1).getStatus());
-    }
-    
     /**
      * A groupBy query is one type of query that is allowed to be "long running", so that type of query is used in this test.
      *
