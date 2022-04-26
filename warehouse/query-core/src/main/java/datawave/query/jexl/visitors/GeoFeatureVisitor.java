@@ -18,7 +18,7 @@ import java.util.Set;
 /**
  * This visitor will traverse the query tree, and extract both the geo function and associated query geometry (as GeoJSON).
  */
-public class GeoFeatureVisitor extends BaseVisitor {
+public class GeoFeatureVisitor extends ShortCircuitBaseVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(GeoFeatureVisitor.class);
     
     private Set<QueryGeometry> geoFeatures;
