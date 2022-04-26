@@ -64,7 +64,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private volatile boolean canceled = false;
     private TInfo traceInfo = null;
     private transient QueryMetricsBean queryMetrics = null;
-    private RunningQueryTimingImpl timing = null;
+    private transient RunningQueryTimingImpl timing = null;
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
     private volatile Future<Object> hasNextFuture = null;
