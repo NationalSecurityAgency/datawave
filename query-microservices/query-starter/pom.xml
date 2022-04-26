@@ -12,7 +12,6 @@
     <properties>
         <version.datawave>3.21.0-SNAPSHOT</version.datawave>
         <version.guava>31.0.1-jre</version.guava>
-        <version.jakarta.activation>2.1.0</version.jakarta.activation>
         <version.microservice.hazelcast-client>1.9-SNAPSHOT</version.microservice.hazelcast-client>
         <version.microservice.starter>1.6.8-SNAPSHOT</version.microservice.starter>
         <version.microservice.starter-metadata>1.0-SNAPSHOT</version.microservice.starter-metadata>
@@ -107,22 +106,6 @@
                 <version>${version.datawave}</version>
             </dependency>
             <dependency>
-                <groupId>jakarta.activation</groupId>
-                <artifactId>jakarta.activation-api</artifactId>
-                <version>${version.jakarta.activation}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.xml.bind</groupId>
-                <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>${version.jakarta.xml.bind}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
-                <version>${version.sun.xml.bind}</version>
-                <scope>runtime</scope>
-            </dependency>
-            <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave</artifactId>
                 <version>${version.microservice.starter}</version>
@@ -132,10 +115,6 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>SparseBitSet</artifactId>
@@ -163,14 +142,6 @@
         <dependency>
             <groupId>gov.nsa.datawave.services</groupId>
             <artifactId>datawave-services-query</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.activation</groupId>
-            <artifactId>jakarta.activation-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.kafka</groupId>

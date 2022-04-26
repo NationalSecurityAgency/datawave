@@ -32,8 +32,8 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
 import javax.ejb.EJBContext;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.Unmarshaller;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,7 +48,7 @@ import static org.powermock.api.easymock.PowerMock.createStrictMock;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ModelBean.class, ModelKeyParser.class})
-@PowerMockIgnore({"org.apache.*", "com.sun.xml.*", "javax.xml.*", "org.xml.sax.*", "com.google.*", "org.glassfish.jaxb.*", "jakarta.xml.*"})
+@PowerMockIgnore({"org.apache.*", "com.sun.xml.*", "javax.xml.bind.*", "com.google.*"})
 public class ModelBeanTest {
     
     private static final String userDN = "CN=Guy Some Other soguy, OU=ou1, OU=ou2, OU=ou3, O=o1, C=US";

@@ -50,11 +50,9 @@
         <version.dnsjava>2.1.8</version.dnsjava>
         <version.geronimo-activation>1.1</version.geronimo-activation>
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
-        <version.jakarta.xml.bind>3.0.1</version.jakarta.xml.bind>
         <version.jms>1.1</version.jms>
         <version.mrunit>1.0.0</version.mrunit>
         <version.protobuf>2.5.0</version.protobuf>
-        <version.sun.xml.bind>3.0.1</version.sun.xml.bind>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -182,11 +180,6 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.xml.bind</groupId>
-                <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>${version.jakarta.xml.bind}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.abdera</groupId>
@@ -508,12 +501,6 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
-                <version>${version.sun.xml.bind}</version>
-                <scope>runtime</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.mrunit</groupId>
