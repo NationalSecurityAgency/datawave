@@ -21,25 +21,12 @@
         <developerConnection>scm:git:ssh://git@fixme/core.git</developerConnection>
     </scm>
     <properties>
-        <version.jakarta.xml.bind>3.0.1</version.jakarta.xml.bind>
         <version.junit>4.13.2</version.junit>
         <version.junit.jupiter>5.8.2</version.junit.jupiter>
         <version.junit.vintage>5.8.2</version.junit.vintage>
-        <version.sun.xml.bind>3.0.1</version.sun.xml.bind>
     </properties>
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>jakarta.xml.bind</groupId>
-                <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>${version.jakarta.xml.bind}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
-                <version>${version.sun.xml.bind}</version>
-                <scope>runtime</scope>
-            </dependency>
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
@@ -68,16 +55,8 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-        </dependency>
-        <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-common-test</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

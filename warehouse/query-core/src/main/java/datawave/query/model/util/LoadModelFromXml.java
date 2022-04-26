@@ -6,8 +6,8 @@ import datawave.webservice.model.Model;
 import org.apache.log4j.Logger;
 import org.xml.sax.InputSource;
 
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.Unmarshaller;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;

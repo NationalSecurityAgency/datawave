@@ -8,7 +8,7 @@ import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.InjectionTarget;
 import javax.enterprise.inject.spi.ProcessInjectionTarget;
-import jakarta.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBContext;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.InputStream;
 import java.util.Set;
