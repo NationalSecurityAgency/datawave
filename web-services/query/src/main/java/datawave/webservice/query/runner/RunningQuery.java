@@ -10,6 +10,7 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.QueryException;
@@ -63,7 +64,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private volatile boolean canceled = false;
     private TInfo traceInfo = null;
     private transient QueryMetricsBean queryMetrics = null;
-    private RunningQueryTiming timing = null;
+    private RunningQueryTimingImpl timing = null;
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
     private volatile Future<Object> hasNextFuture = null;
@@ -107,7 +108,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.connectionPriority = priority;
         this.settings = settings;
         this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, principal);
-        this.timing = timing;
+        this.timing = (RunningQueryTimingImpl) timing;
+        if (this.timing == null) {
+            this.timing = new RunningQueryTimingImpl();
+        }
         this.executor = executor;
         if (this.executor == null) {
             this.executor = Executors.newSingleThreadExecutor();
@@ -212,6 +216,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         boolean hitPageTimeTrigger = false;
         boolean hitIntermediateResult = false;
         boolean hitMaxIntermediateResult = false;
+        boolean hitShortCircuitForLongRunningQuery = false;
         try {
             addNDC();
             int currentPageCount = 0;
@@ -221,7 +226,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             testForUncaughtException(resultList.size());
             hasNextFuture = executor.submit(() -> this.iter.hasNext());
             try {
-                while ((!this.finished && (future != null)) || (Boolean) hasNextFuture.get(3000000, TimeUnit.MILLISECONDS)) {
+                while ((!this.finished && (future != null)) || (Boolean) hasNextFuture.get(timing.getPageShortCircuitTimeoutMs(), TimeUnit.MILLISECONDS)) {
                     // if we are canceled, then break out
                     if (this.canceled) {
                         log.info("Query has been cancelled, aborting query.next call");
@@ -324,9 +329,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     hasNextFuture = executor.submit(() -> this.iter.hasNext());
                 }
             } catch (TimeoutException te) {
-                // This means the iter.hasNext() call didn't return within the allotted time. Manually return an
-                // intermediate result -- don't have a count here to know how many times we've returned an intermediate result...
-                hitIntermediateResult = true;
+                // This means the iter.hasNext() call didn't return within the allotted time. If this is a long running query,
+                // then we want to signal that the caller should call next to keep going (as opposed to just returning the
+                // page as COMPLETE)
+                if (logic.isLongRunningQuery()) {
+                    hitShortCircuitForLongRunningQuery = true;
+                }
             }
             // if the last hasNext() call failed, then we would catch the exception here
             testForUncaughtException(resultList.size());
@@ -358,7 +366,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         
         if (hitMaxIntermediateResult) {
             return new ResultsPage(new ArrayList<>(), ResultsPage.Status.COMPLETE);
-        } else if (hitIntermediateResult) {
+        } else if (hitIntermediateResult | hitShortCircuitForLongRunningQuery) {
             return new ResultsPage(new ArrayList<>(), ResultsPage.Status.PARTIAL);
         } else if (resultList.isEmpty()) {
             return new ResultsPage();

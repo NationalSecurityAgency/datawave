@@ -109,6 +109,13 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     TransformIterator getTransformIterator(Query settings);
     
     /**
+     * Whether the query is a type that should be allowed to be run long (exceed the short circuit timeout)
+     *
+     * @return Return whether the query is a type that should be allowed to be run long (exceed the short circuit timeout)
+     */
+    boolean isLongRunningQuery();
+    
+    /**
      * release resources
      */
     void close();

@@ -10,6 +10,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.common.grouping.GroupingUtil;
 import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
 import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import org.apache.accumulo.core.data.Key;
@@ -113,6 +114,12 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         log.trace("apply to {}", keyDocumentEntry);
         
         if (keyDocumentEntry != null) {
+            
+            // If this is a final document, bail without adding to the keys, countingMap or fieldVisibilities.
+            if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
+                return null;
+            }
+            
             keys.add(keyDocumentEntry.getKey());
             log.trace("{} get list key counts for: {}", "web-server", keyDocumentEntry);
             GroupingUtil.GroupingInfo groupingInfo = groupingUtil.getGroupingInfo(keyDocumentEntry, groupFieldsSet, countingMap, reverseModelMapping);

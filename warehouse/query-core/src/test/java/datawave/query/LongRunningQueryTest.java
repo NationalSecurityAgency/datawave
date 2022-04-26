@@ -15,6 +15,7 @@ import datawave.util.TableName;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.runner.RunningQuery;
@@ -22,9 +23,7 @@ import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.junit.Before;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
-import org.junit.runners.MethodSorters;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -46,7 +45,6 @@ import static org.junit.Assert.assertTrue;
  * test can sleep and results in intermittent failures. Therefore, ensure that the test names alphabetically follow the order shortest to longest running
  * keeping in mind that queries that have been seen before will execute quicker.
  */
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class LongRunningQueryTest {
     
     // variables common to all current tests
@@ -114,8 +112,8 @@ public class LongRunningQueryTest {
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
-                        Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
+        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal,
+                        new RunningQueryTimingImpl(), Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();
@@ -175,8 +173,8 @@ public class LongRunningQueryTest {
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
-                        Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
+        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal,
+                        new RunningQueryTimingImpl(), Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();
@@ -201,16 +199,12 @@ public class LongRunningQueryTest {
         assertEquals(ResultsPage.Status.COMPLETE, pages.get(pages.size() - 1).getStatus());
     }
     
-    /**
-     * ALWAYS ENSURE THAT THE NAME OF THIS TEST IS SUCH THAT IT COMES ALPHABETICALLY FIRST IN THIS CLASS.
-     *
+    /***
      * Tests that the code path that allows long running queries does not interfere or create a never ending query if a query legitimately doesn't have results.
-     * Set the queryExecutionForPageTimeout to an extremely small value (10ms) so that we still hit the timeout per page, even though there will be no results.
-     * should have 1 - n pages with 0 results and a status of PARTIAL, but the last page should have 0 results and a status of NONE
-     *
+     * 
      * @throws Exception
      */
-    // @Test -- This test doesn't take long enough to trigger intermediate results
+    @Test
     public void testExecutesFirstLongRunningQueryWithNoResults() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("group.fields", "AGE,$GENDER");
@@ -231,19 +225,16 @@ public class LongRunningQueryTest {
         query.setId(UUID.randomUUID());
         
         // this parameter is what makes the query long running. Failing to set this will let it default to 50 minutes
-        // (and not the 1 millisecond that it is set to) Set to just 1
-        // ms because since there will be no results,
-        // we have to make sure we hit the timeout before no results are returned.
+        // (and not the 1 millisecond that it is set to)
         logic.setQueryExecutionForPageTimeout(1);
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
-                        Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
+        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal,
+                        new RunningQueryTimingImpl(), Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();
-        // guarantee the need for at least a second page.
         Thread.sleep(15);
         pages.add(page);
         
@@ -253,13 +244,9 @@ public class LongRunningQueryTest {
         }
         
         // There should be at least 2 pages, more depending on cpu speed.
-        assertTrue(pages.size() > 1);
-        for (int i = 0; i < pages.size() - 1; ++i) {
-            // check every page but the last one for 0 results and PARTIAL status
-            assertEquals(0, pages.get(i).getResults().size());
-            assertEquals(ResultsPage.Status.PARTIAL, pages.get(i).getStatus());
-        }
-        // check the last page for COMPLETE status and that the total number of results is 8
+        assertTrue(pages.size() == 1);
+        
+        // check the last page for COMPLETE status and that the total number of results is 0
         assertEquals(0, pages.get(pages.size() - 1).getResults().size());
         assertEquals(ResultsPage.Status.NONE, pages.get(pages.size() - 1).getStatus());
     }
@@ -300,8 +287,8 @@ public class LongRunningQueryTest {
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
-                        Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
+        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal,
+                        new RunningQueryTimingImpl(), Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();

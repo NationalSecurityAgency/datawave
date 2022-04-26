@@ -607,6 +607,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return this.transformerInstance;
     }
     
+    public boolean isLongRunningQuery() {
+        return !getConfig().getUniqueFields().isEmpty() || !getConfig().getGroupFields().isEmpty();
+    }
+    
     /**
      * If the configuration didn't exist, OR IT CHANGED, we need to create or update the transformers that have been added.
      */
