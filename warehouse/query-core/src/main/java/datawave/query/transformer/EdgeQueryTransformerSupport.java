@@ -3,18 +3,28 @@ package datawave.query.transformer;
 import com.google.common.collect.Sets;
 import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.edge.model.EdgeModelAware;
+import datawave.edge.util.EdgeKey;
 import datawave.edge.util.EdgeValue;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.TimingMetadata;
+import datawave.query.function.LogTiming;
+import datawave.query.iterator.profile.QuerySpan;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.cachedresults.CacheableQueryRowImpl;
+import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogicTransformer;
+import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -28,9 +38,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTransformer<I,O> implements CacheableLogic, EdgeModelAware {
+public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTransformer<I,O> implements CacheableLogic, EdgeModelAware, WritesQueryMetrics {
     protected Authorizations auths;
     protected ResponseObjectFactory responseObjectFactory;
+    private long sourceCount = 0;
+    private long nextCount = 0;
+    private long seekCount = 0;
+    private boolean logTimingDetails = false;
     
     public EdgeQueryTransformerSupport(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
@@ -240,5 +254,22 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
                         .append(edge.getEdgeRelationship()).toHashCode();
         
         return Integer.toString(hashCode);
+    }
+
+    public void setLogTimingDetails(Boolean logTimingDetails) {
+        this.logTimingDetails = logTimingDetails;
+    }
+
+    protected void extractMetrics(EdgeValue edgeValue, EdgeKey edgeKey) {
+        //TODO add a LogTiming.TIMING_METADATA to the EdgeValue to get source/next/seek counts
+    }
+
+    public void writeQueryMetrics(BaseQueryMetric metric) {
+        // if any timing details have been returned, add metrics
+        if (sourceCount > 0) {
+            metric.setSourceCount(sourceCount);
+            metric.setNextCount(nextCount);
+            metric.setSeekCount(seekCount);
+        }
     }
 }

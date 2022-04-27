@@ -9,6 +9,7 @@ import datawave.marking.MarkingFunctions;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableLogic;
+import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import org.apache.accumulo.core.data.Key;
@@ -21,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,Value>,EdgeBase> implements CacheableLogic, EdgeModelAware {
+public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,Value>,EdgeBase> implements CacheableLogic, EdgeModelAware, WritesQueryMetrics {
     private Logger log = Logger.getLogger(EdgeQueryTransformer.class);
     
     public EdgeQueryTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
@@ -49,7 +50,7 @@ public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,
             }
             edge.setDate(DateHelper.format(entry.getKey().getTimestamp())); // the aquisition time is always in the key timestamp field
         } catch (Exception ex) {
-            log.error("cound not get markings for " + new ColumnVisibility(edgeKey.getColvis()), ex);
+            log.error("could not get markings for " + new ColumnVisibility(edgeKey.getColvis()), ex);
         }
         EdgeValue edgeValue = null;
         try {
@@ -119,6 +120,10 @@ public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,
         if (edgeKey.hasAttribute3()) {
             edge.setEdgeAttribute3(edgeKey.getAttribute3());
         }
+
+        //TODO: Call extractmetrics somewhere here
+        extractMetrics(edgeValue, edgeKey);
+
         return edge;
     }
 }

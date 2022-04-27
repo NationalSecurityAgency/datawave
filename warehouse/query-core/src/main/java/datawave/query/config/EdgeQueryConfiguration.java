@@ -55,6 +55,8 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration {
     
     // Use to aggregate results will be false by default
     private boolean aggregateResults = false;
+    private boolean collectTimingDetails = false;
+    private boolean logTimingDetails = false;
     
     public EdgeQueryConfiguration(EdgeQueryLogic configuredLogic, Query query) {
         super(configuredLogic);
@@ -65,6 +67,8 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration {
         setModelName(configuredLogic.getModelName());
         setModelTableName(configuredLogic.getModelTableName());
         setEdgeQueryModel(configuredLogic.getEdgeQueryModel());
+        setCollectTimingDetails(configuredLogic.getCollectTimingDetails());
+        setLogTimingDetails(configuredLogic.getLogTimingDetails());
     }
     
     public List<? extends Type<?>> getDataTypes() {
@@ -102,7 +106,24 @@ public class EdgeQueryConfiguration extends GenericQueryConfiguration {
     public void setDateRangeType(dateType dateRangeType) {
         this.dateRangeType = dateRangeType;
     }
-    
+
+    public boolean getCollectTimingDetails() {
+        return collectTimingDetails;
+    }
+
+    public void setCollectTimingDetails(boolean collectTimingDetails) {
+        this.collectTimingDetails = collectTimingDetails;
+
+    }
+
+    public boolean getLogTimingDetails() {
+        return logTimingDetails;
+    }
+
+    public void setLogTimingDetails(boolean logTimingDetails) {
+        this.logTimingDetails = logTimingDetails;
+    }
+
     /**
      * Fluent interface for parsing the parameters out of the Parameter set provided by the Query.
      */

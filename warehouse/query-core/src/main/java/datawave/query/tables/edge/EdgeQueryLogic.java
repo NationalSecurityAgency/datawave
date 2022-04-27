@@ -9,6 +9,7 @@ import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.EdgeQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.filter.DateTypeFilter;
 import datawave.query.iterator.filter.EdgeFilterIterator;
 import datawave.query.iterator.filter.LoadDateFilter;
@@ -30,6 +31,7 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.logic.WritesQueryMetrics;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -133,7 +135,30 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         cfg.setConnector(connection);
         cfg.setAuthorizations(auths);
-        
+
+        //TODO: Move this to it's own loadQueryParams
+        QueryLogicTransformer transformer = getTransformer(settings);
+        if (transformer instanceof WritesQueryMetrics) {
+            String logTimingDetailsStr = settings.findParameter(QueryOptions.LOG_TIMING_DETAILS).getParameterValue().trim();
+            if (org.apache.commons.lang.StringUtils.isNotBlank(logTimingDetailsStr)) {
+                setLogTimingDetails(Boolean.valueOf(logTimingDetailsStr));
+            }
+            if (getLogTimingDetails()) {
+                // we have to collect the timing details on the iterator stack in order to log them
+                setCollectTimingDetails(true);
+            } else {
+
+                String collectTimingDetailsStr = settings.findParameter(QueryOptions.COLLECT_TIMING_DETAILS).getParameterValue().trim();
+                if (org.apache.commons.lang.StringUtils.isNotBlank(collectTimingDetailsStr)) {
+                    setCollectTimingDetails(Boolean.valueOf(collectTimingDetailsStr));
+                }
+            }
+        } else {
+            // if the transformer can not process the timing metrics, then turn them off
+            setLogTimingDetails(false);
+            setCollectTimingDetails(false);
+        }
+
         String queryString = settings.getQuery();
         if (null == queryString) {
             throw new IllegalArgumentException("Query cannot be null");
@@ -658,7 +683,9 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return new EdgeQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
+        EdgeQueryTransformer transformer =  new EdgeQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
+        transformer.setLogTimingDetails(this.getLogTimingDetails());
+        return transformer;
     }
     
     public List<? extends Type<?>> getDataTypes() {
@@ -684,7 +711,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setQueryThreads(int queryThreads) {
         this.queryThreads = queryThreads;
     }
-    
+
     @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> optionalParams = new TreeSet<>();
@@ -793,5 +820,21 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setDateFilterScanLimit(long dateFilterScanLimit) {
         this.dateFilterScanLimit = dateFilterScanLimit;
+    }
+
+    public Boolean getCollectTimingDetails() {
+        return config.getCollectTimingDetails();
+    }
+
+    public void setCollectTimingDetails(Boolean collectTimingDetails) {
+        this.config.setCollectTimingDetails(collectTimingDetails);
+    }
+
+    public Boolean getLogTimingDetails() {
+        return config.getLogTimingDetails();
+    }
+
+    public void setLogTimingDetails(Boolean logTimingDetails) {
+        this.config.setLogTimingDetails(logTimingDetails);
     }
 }
