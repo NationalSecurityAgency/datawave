@@ -32,6 +32,7 @@ import datawave.query.planner.*;
 import datawave.query.planner.document.batch.DocumentQueryPlanner;
 import datawave.query.scheduler.document.batch.DocumentScheduler;
 import datawave.query.scheduler.Scheduler;
+import datawave.query.scheduler.document.pushdown.DocumentPushdownScheduler;
 import datawave.query.tables.BaseScannerSession;
 import datawave.query.tables.MyScannerFactory;
 import datawave.query.tables.ScannerFactory;
@@ -896,7 +897,7 @@ public class DocumentLogic extends BaseQueryLogic<SerializedDocumentIfc> {
     }
 
     protected Scheduler<SerializedDocumentIfc> getScheduler(DocumentQueryConfiguration config, ScannerFactory scannerFactory) {
-        return new DocumentScheduler(config, scannerFactory);
+        return new DocumentPushdownScheduler(config, scannerFactory, metadataHelperFactory);
     }
 
     public EventQueryDataDecoratorTransformer getEventQueryDataDecoratorTransformer() {

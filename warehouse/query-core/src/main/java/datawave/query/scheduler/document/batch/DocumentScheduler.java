@@ -5,6 +5,7 @@ import datawave.query.config.DocumentQueryConfiguration;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.scheduler.Scheduler;
+import datawave.query.tables.DocumentBatchScannerSession;
 import datawave.query.tables.document.batch.DocumentLogic;
 import datawave.query.tables.document.batch.DocumentScannerImpl;
 import datawave.query.tables.MyScannerFactory;
@@ -56,7 +57,11 @@ public class DocumentScheduler extends Scheduler<SerializedDocumentIfc> {
             throw new IllegalArgumentException("Null configuration provided");
         }
 
-        this.iterator = new DocumentSchedulerIterator(this.config, this.scannerFactory);
+        try {
+            this.iterator = new DocumentSchedulerIterator(this.config, this.scannerFactory);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         return this.iterator;
     }
@@ -94,13 +99,15 @@ public class DocumentScheduler extends Scheduler<SerializedDocumentIfc> {
         protected SerializedDocumentIfc currentDocument = null;
         protected DocumentScannerImpl currentBS = null;
         protected Iterator<SerializedDocumentIfc> currentIter = null;
+        protected DocumentBatchScannerSession session = null;
 
         protected volatile boolean closed = false;
 
-        public DocumentSchedulerIterator(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
+        public DocumentSchedulerIterator(DocumentQueryConfiguration config, ScannerFactory scannerFactory) throws Exception {
             this.config = config;
             this.scannerFactory = scannerFactory;
             this.queries = config.getQueries();
+            //session = scannerFactory.newDocumentQueryScanner(config, config.getTableName(), config.getAuthorizations(), config.getQuery());
         }
         
         /*
