@@ -49,10 +49,10 @@ import org.apache.commons.jexl2.parser.ASTVar;
 import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -63,13 +63,27 @@ import java.util.function.Supplier;
  */
 public class JexlNodeBuilder<T extends JexlNode> {
     
+    private static final Logger log = Logger.getLogger(JexlNodeBuilder.class);
+    
     private final Supplier<T> instanceSupplier;
     private final List<Supplier<? extends JexlNode>> children = new ArrayList<>();
     private String image;
     private Object value;
+    private boolean throwOnNullChild = true;
     
     public JexlNodeBuilder(JexlNodeInstance<T> instance) {
         this.instanceSupplier = instance.getConstructor();
+    }
+    
+    /**
+     * Set whether an exception should be thrown when a null child is supplied to this builder. By default, this is true. This value impacts behavior when
+     * adding children to this builder only, and will never result in null children being included in the resulting node from {@link #build()}.
+     * @param throwOnNullChild whether to throw an exception
+     * @return this builder
+     */
+    public JexlNodeBuilder<T> throwOnNullChild(boolean throwOnNullChild) {
+        this.throwOnNullChild = throwOnNullChild;
+        return this;
     }
     
     /**
@@ -97,19 +111,21 @@ public class JexlNodeBuilder<T extends JexlNode> {
     }
     
     /**
-     * Add a child node to this builder.
+     * Add a child node to this builder. Children in the resulting node from {@link #build()} will be in the order they're added.
      * 
      * @param node
      *            the child node
      * @return this builder
      */
     public JexlNodeBuilder<T> withChild(JexlNode node) {
-        children.add(() -> node);
+        if (isNonNullChild(node)) {
+            children.add(() -> node);
+        }
         return this;
     }
     
     /**
-     * Add each node in the provided vararg as a child to this builder.
+     * Add each node in the provided vararg as a child to this builder. Children in the resulting node from {@link #build()} will be in the order they're added.
      * 
      * @param children
      *            the children nodes
@@ -123,7 +139,8 @@ public class JexlNodeBuilder<T extends JexlNode> {
     }
     
     /**
-     * Add each node in the provided iterable as a child to this builder.
+     * Add each node in the provided iterable as a child to this builder. Children in the resulting node from {@link #build()} will be in the order they're
+     * added.
      * 
      * @param children
      *            the children nodes
@@ -135,15 +152,37 @@ public class JexlNodeBuilder<T extends JexlNode> {
     }
     
     /**
-     * Add a child node builder to this builder. The final child will be built when {@link JexlNodeBuilder#build()} is called on this builder.
+     * Add a child node builder to this builder. The final child will be built when {@link JexlNodeBuilder#build()} is called on this builder. Children in the
+     * resulting node from {@link #build()} will be in the order they're added.
      * 
      * @param builder
      *            the builder
      * @return this builder
      */
     public JexlNodeBuilder<T> withChild(JexlNodeBuilder<?> builder) {
-        children.add(builder::build);
+        if (isNonNullChild(builder)) {
+            children.add(builder::build);
+        }
         return this;
+    }
+    
+    /**
+     * Return whether the given child is null, and if so, throw an exception if {@link #throwOnNullChild} is true.
+     * @param child the child to evaluate
+     * @return true if the child is not null or false otherwise
+     * @throws IllegalArgumentException if the child is null and {@link #throwOnNullChild} is true for this builder
+     */
+    private boolean isNonNullChild(Object child) {
+        if (child != null) {
+            return true;
+        } else {
+            if (throwOnNullChild) {
+                throw new IllegalArgumentException("Child must not be null");
+            } else {
+                log.warn("Attempted to add null child to " + JexlNodeBuilder.class.getSimpleName());
+                return false;
+            }
+        }
     }
     
     /**
@@ -161,9 +200,7 @@ public class JexlNodeBuilder<T extends JexlNode> {
         // Create the finalized children.
         // @formatter:off
         JexlNode[] childArray = children.stream()
-                        .filter(Objects::nonNull) // Filter out any possible null suppliers.
                         .map(Supplier::get)       // Get the actual child nodes.
-                        .filter(Objects::nonNull) // Filter out any null children.
                         .toArray(JexlNode[]::new);
         // @formatter:on
         
