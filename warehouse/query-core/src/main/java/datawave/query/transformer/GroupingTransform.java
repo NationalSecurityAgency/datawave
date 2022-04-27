@@ -117,7 +117,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             
             // If this is a final document, bail without adding to the keys, countingMap or fieldVisibilities.
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
-                return null;
+                return keyDocumentEntry;
             }
             
             keys.add(keyDocumentEntry.getKey());

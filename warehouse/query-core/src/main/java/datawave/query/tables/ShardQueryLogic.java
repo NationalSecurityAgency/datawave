@@ -185,7 +185,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private QueryPlanner planner = null;
     private QueryParser parser = null;
     private QueryLogicTransformer transformerInstance = null;
-    private GroupingTransform groupingTransformerInstance = null;
     
     private CardinalityConfiguration cardinalityConfiguration = null;
     

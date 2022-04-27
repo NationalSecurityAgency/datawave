@@ -30,20 +30,8 @@ public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
     
     @Override
     public boolean hasNext() {
-        
         if (next == null) {
             next = getNext();
-            if (next != null) {
-                if (next instanceof DefaultEvent) {
-                    if (((DefaultEvent) next).isIntermediateResult()) {
-                        // up the count
-                        intermediateCount++;
-                        if (intermediateCount == 3) {
-                            ((DefaultEvent) next).setReachedMaxIntermediateResults(true);
-                        }
-                    }
-                }
-            }
         }
         return (next != null);
     }

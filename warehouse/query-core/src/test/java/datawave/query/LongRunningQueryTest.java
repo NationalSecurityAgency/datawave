@@ -15,7 +15,6 @@ import datawave.util.TableName;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.runner.RunningQuery;
@@ -98,7 +97,7 @@ public class LongRunningQueryTest {
      * @throws Exception
      */
     @Test
-    public void testExecutesSecondLongRunningGroupByQuery() throws Exception {
+    public void testLongRunningGroupByQuery() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("group.fields", "AGE,$GENDER");
         extraParameters.put("group.fields.batch.size", "6");
@@ -123,8 +122,8 @@ public class LongRunningQueryTest {
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal,
-                        new RunningQueryTimingImpl(), Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
+        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
+                        Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();
@@ -155,7 +154,7 @@ public class LongRunningQueryTest {
      * @throws Exception
      */
     @Test
-    public void testExecutesFirstLongRunningQueryWithNoResults() throws Exception {
+    public void testLongRunningQueryWithNoResults() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("group.fields", "AGE,$GENDER");
         extraParameters.put("group.fields.batch.size", "6");
@@ -180,8 +179,8 @@ public class LongRunningQueryTest {
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal,
-                        new RunningQueryTimingImpl(), Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
+        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
+                        Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();
@@ -210,7 +209,7 @@ public class LongRunningQueryTest {
      * @throws Exception
      */
     @Test
-    public void testExecutesThirdLongRunningQueryWithSmallPageSize() throws Exception {
+    public void testLongRunningQueryWithSmallPageSize() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("group.fields", "AGE,$GENDER");
         extraParameters.put("group.fields.batch.size", "6");
@@ -237,8 +236,8 @@ public class LongRunningQueryTest {
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal,
-                        new RunningQueryTimingImpl(), Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
+        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
+                        Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();

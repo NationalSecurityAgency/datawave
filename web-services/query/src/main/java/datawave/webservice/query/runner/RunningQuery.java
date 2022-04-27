@@ -70,6 +70,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private volatile Future<Object> hasNextFuture = null;
     private QueryPredictor predictor = null;
     private long maxResults = 0;
+    private int currentTimeoutcount = 0;
     
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
@@ -109,9 +110,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.settings = settings;
         this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, principal);
         this.timing = (RunningQueryTimingImpl) timing;
-        if (this.timing == null) {
-            this.timing = new RunningQueryTimingImpl();
-        }
         this.executor = executor;
         if (this.executor == null) {
             this.executor = Executors.newSingleThreadExecutor();
@@ -226,7 +224,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             testForUncaughtException(resultList.size());
             hasNextFuture = executor.submit(() -> this.iter.hasNext());
             try {
-                while ((!this.finished && (future != null)) || (Boolean) hasNextFuture.get(timing.getPageShortCircuitTimeoutMs(), TimeUnit.MILLISECONDS)) {
+                while ((!this.finished && (future != null))
+                                || (Boolean) hasNextFuture.get(timing != null ? timing.getPageShortCircuitTimeoutMs() : Long.MAX_VALUE, TimeUnit.MILLISECONDS)) {
                     // if we are canceled, then break out
                     if (this.canceled) {
                         log.info("Query has been cancelled, aborting query.next call");
@@ -334,6 +333,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 // page as COMPLETE)
                 if (logic.isLongRunningQuery()) {
                     hitShortCircuitForLongRunningQuery = true;
+                    currentTimeoutcount++;
+                    if (timing != null && currentTimeoutcount == timing.getMaxLongRunningTimeoutRetries()) {
+                        hitMaxIntermediateResult = true;
+                    }
                 }
             }
             // if the last hasNext() call failed, then we would catch the exception here
