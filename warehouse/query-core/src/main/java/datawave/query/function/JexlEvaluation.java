@@ -30,9 +30,15 @@ import java.util.Collections;
 import java.util.Set;
 
 public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJexlContext>> {
+    
     private static final Logger log = Logger.getLogger(JexlEvaluation.class);
     
     public static final String HIT_TERM_FIELD = "HIT_TERM";
+    public static final String FULL_EVAL_FIELD = "EVAL_STATE";
+    
+    public enum EVAL_STATE {
+        FULL, PARTIAL
+    }
     
     private String query;
     private JexlArithmetic arithmetic;
@@ -100,6 +106,14 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         // Add delayed info to document
         if (matched && input.third() instanceof DelayedNonEventIndexContext) {
             ((DelayedNonEventIndexContext) input.third()).populateDocument(input.second());
+        }
+        
+        // pass a hint back to the webservice about the evaluation state
+        if (engine.wasCallbackUsed() && matched) {
+            Document document = input.second();
+            Content attr = new Content(String.valueOf(EVAL_STATE.PARTIAL), document.getMetadata(), document.isToKeep());
+            document.put(FULL_EVAL_FIELD, attr);
+            engine.resetCallback();
         }
         
         if (arithmetic instanceof HitListArithmetic) {

@@ -80,9 +80,15 @@ public class EvaluationFunction implements Function<Map.Entry<Key,Document>,Map.
     @Nullable
     @Override
     public Map.Entry<Key,Document> apply(@Nullable Map.Entry<Key,Document> input) {
-        Tuple3<Key,Document,DatawaveJexlContext> transformed = transformInput(input);
-        if (!evaluation.apply(transformed)) {
-            input = null; // null out document that fails evaluation
+        if (input.getValue().containsKey(JexlEvaluation.FULL_EVAL_FIELD)) {
+            
+            // remove the marker
+            input.getValue().remove(JexlEvaluation.FULL_EVAL_FIELD);
+            
+            Tuple3<Key,Document,DatawaveJexlContext> transformed = transformInput(input);
+            if (!evaluation.apply(transformed)) {
+                input = null; // null out document that fails evaluation
+            }
         }
         return input;
     }

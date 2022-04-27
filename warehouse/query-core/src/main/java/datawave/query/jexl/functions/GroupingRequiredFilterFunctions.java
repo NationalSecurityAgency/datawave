@@ -1,6 +1,7 @@
 package datawave.query.jexl.functions;
 
 import datawave.query.attributes.ValueTuple;
+import datawave.query.jexl.DatawavePartialInterpreter;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -54,6 +55,11 @@ public class GroupingRequiredFilterFunctions {
         Collection<ValueTuple> allMatches = new HashSet<>();
         Object fieldValue1 = args[0];
         String regex = args[1].toString();
+        
+        if (fieldValue1 instanceof DatawavePartialInterpreter.State) {
+            fieldValue1 = ((DatawavePartialInterpreter.State) fieldValue1).getSet();
+        }
+        
         if (fieldValue1 instanceof Iterable) {
             // cast as Iterable in order to call the right getAllMatches method
             leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatches((Iterable) fieldValue1, regex);
@@ -69,6 +75,10 @@ public class GroupingRequiredFilterFunctions {
                 groups.add(context);
             }
             for (int i = 2; i < args.length; i++) {
+                
+                if (args[i] instanceof DatawavePartialInterpreter.State) {
+                    args[i] = ((DatawavePartialInterpreter.State) args[i]).getSet();
+                }
                 
                 if (args[i] instanceof Iterable) {
                     boolean contextHasMatch = false;
@@ -158,6 +168,11 @@ public class GroupingRequiredFilterFunctions {
         Collection<ValueTuple> allMatches = new HashSet<>();
         Object fieldValue1 = args[0];
         String regex = args[1].toString();
+        
+        if (fieldValue1 instanceof DatawavePartialInterpreter.State) {
+            fieldValue1 = ((DatawavePartialInterpreter.State) fieldValue1).getSet();
+        }
+        
         if (fieldValue1 instanceof Iterable) {
             // cast as Iterable in order to call the right getAllMatches method
             leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatches((Iterable) fieldValue1, regex);
@@ -171,6 +186,10 @@ public class GroupingRequiredFilterFunctions {
             String context = EvaluationPhaseFilterFunctions.getMatchToRightOfPeriod(matchFieldName, positionFromRight);
             
             for (int i = 2; i < args.length; i += 2) {
+                
+                if (args[i] instanceof DatawavePartialInterpreter.State) {
+                    args[i] = ((DatawavePartialInterpreter.State) args[i]).getSet();
+                }
                 
                 if (args[i] instanceof Iterable) {
                     for (Object fv : (Iterable) args[i]) {

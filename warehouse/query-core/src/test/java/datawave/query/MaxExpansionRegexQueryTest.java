@@ -232,17 +232,6 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
-        
-        this.logic.setMaxValueExpansionThreshold(4);
-        ivaratorConfig();
-        runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
-        
-        this.logic.setMaxValueExpansionThreshold(1);
-        ivaratorConfig();
-        runTest(query, expect);
-        parsePlan(VALUE_THRESHOLD_JEXL_NODE, 4);
     }
     
     /**

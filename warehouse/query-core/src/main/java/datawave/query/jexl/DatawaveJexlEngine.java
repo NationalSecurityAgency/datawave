@@ -21,6 +21,7 @@ public class DatawaveJexlEngine extends JexlEngine {
     // support for a partial document evaluation
     private boolean usePartialInterpreter = false;
     private Set<String> incompleteFields = Collections.emptySet();
+    private PartialInterpreterCallback callback = new PartialInterpreterCallback();
     
     public DatawaveJexlEngine() {
         super();
@@ -39,7 +40,7 @@ public class DatawaveJexlEngine extends JexlEngine {
     @Override
     protected Interpreter createInterpreter(JexlContext context, boolean strictFlag, boolean silentFlag) {
         if (usePartialInterpreter) {
-            return new DatawavePartialInterpreter(this, context, strictFlag, silentFlag, incompleteFields);
+            return new DatawavePartialInterpreter(this, context, strictFlag, silentFlag, incompleteFields, callback);
         } else {
             return new DatawaveInterpreter(this, context, strictFlag, silentFlag);
         }
@@ -63,5 +64,13 @@ public class DatawaveJexlEngine extends JexlEngine {
     
     public void setIncompleteFields(Set<String> incompleteFields) {
         this.incompleteFields = incompleteFields;
+    }
+    
+    public boolean wasCallbackUsed() {
+        return this.callback.getIsUsed();
+    }
+    
+    public void resetCallback() {
+        this.callback.reset();
     }
 }

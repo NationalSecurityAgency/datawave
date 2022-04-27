@@ -1,5 +1,7 @@
 package org.apache.commons.jexl2;
 
+import datawave.query.jexl.DatawaveJexlEngine;
+import datawave.query.jexl.PartialInterpreterCallback;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
@@ -168,4 +170,15 @@ public class DatawaveJexlScript implements Expression, Script {
         };
     }
     
+    /**
+     * Used for tests
+     *
+     * @return true if the resulting evaluation was a partial evaluation
+     */
+    public boolean getCallback() {
+        if (jexl instanceof DatawaveJexlEngine) {
+            return ((DatawaveJexlEngine) jexl).wasCallbackUsed();
+        }
+        return false;
+    }
 }

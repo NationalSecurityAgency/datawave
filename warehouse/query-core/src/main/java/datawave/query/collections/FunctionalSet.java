@@ -3,6 +3,7 @@ package datawave.query.collections;
 import com.google.common.collect.Sets;
 import datawave.data.type.NumberType;
 import datawave.query.attributes.ValueTuple;
+import datawave.query.jexl.DatawavePartialInterpreter;
 import datawave.util.OperationEvaluator;
 import org.apache.log4j.Logger;
 
@@ -253,6 +254,12 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
     public Collection<T> getValuesForGroups(Object in) {
         
         Collection<T> values = new FunctionalSet<>();
+        
+        if (in instanceof DatawavePartialInterpreter.State) {
+            DatawavePartialInterpreter.State state = (DatawavePartialInterpreter.State) in;
+            in = state.getNumeric();
+        }
+        
         if (in instanceof String) {
             
             Object value = this.getValueForGroup((String) in);

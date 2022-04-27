@@ -5,12 +5,12 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
-import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.JexlEngine;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -20,9 +20,9 @@ import java.util.Set;
  */
 public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
     
-    private final String INCOMPLETE_FIELD_A = "FIELD_A";
-    private final String INCOMPLETE_FIELD_B = "FIELD_B";
-    private final Set<String> incompleteFields = Sets.newHashSet(INCOMPLETE_FIELD_A, INCOMPLETE_FIELD_B);
+    private final String FIELD_A = "FIELD_A";
+    private final String FIELD_B = "FIELD_B";
+    private final Set<String> incompleteFields = Sets.newHashSet(FIELD_A, FIELD_B);
     
     /**
      * Use a JexlEngine built with a partial interpreter
@@ -40,96 +40,62 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
     }
     
     @Test
-    public void testSimpleEqualityAgainstExistingIncompleteField() {
-        // field exists, can't be evaluated, defaults to true
-        String query = "FIELD_A == 'something'";
-        test(query, true);
+    public void testEqualitiesWithIncompleteFields() {
+        //  @formatter:off
+        Object[][] array = {
+                {"FIELD_A == 'something'", true, true},     // field exists, can't be evaluated, defaults to true
+                {"!(FIELD_A == 'something')", true, true},  // can't be evaluated, defaults to true
+                {"FIELD_B == 'something'", false, false},   // field doesn't exist, evaluates to false
+                {"!(FIELD_B == 'something')", true, false}, // field doesn't exist, evaluates to false
+        };
+        //  @formatter:on
         
-        // can't be evaluated, defaults to true
-        query = "FIELD_A != 'something'";
-        test(query, true);
+        for (int i = 0; i < array.length; i++) {
+            test((String) array[i][0], (Boolean) array[i][1], (Boolean) array[i][2]);
+        }
     }
     
     @Test
-    public void testSimpleEqualityAgainstNonExistentIncompleteField() {
-        // field doesn't exist, evaluates to false
-        String query = "FIELD_B == 'something'";
-        test(query, false);
+    public void testUnionsWithIncompleteFields() {
+        //  @formatter:off
+        Object[][] array = {
+                {"FOO == 'bar' || FIELD_A == 'something'", true, false},            // (TRUE || UNKNOWN) = TRUE
+                {"FIELD_A == 'something' || FOO == 'bar'", true, false},            // (UNKNOWN || TRUE) = TRUE
+                {"FOO == 'fewer' || FIELD_A == 'something'", true, true},           // (FALSE || UNKNOWN) = UNKNOWN
+                {"FIELD_A == 'something' || FOO == 'fewer'", true, true},           // (UNKNOWN || FALSE) = UNKNOWN (order of terms shouldn't matter)
+                {"FIELD_A == 'something' || FIELD_A == 'nothing'", true, true},     // (UNKNOWN || UNKNOWN) = UNKNOWN
+                {"FIELD_A == 'something' || FIELD_B == 'perfection'", true, true},  // (UNKNOWN || FALSE) = UNKNOWN
+                // verifies the interpreter fully traverses the union
+                {"FOO == 'bar' || FOO == 'baz' || FIELD_A == 'barzee' || FIELD_A == 'zeebar'", true, false},
+                {"FIELD_A == 'barzee' || FIELD_A == 'zeebar' || FOO == 'bar' || FOO == 'baz'", true, false},
+                {"FOO == 'zip' || FOO == 'nada' || FOO == 'nope' || FIELD_A == 'maybe'", true, true}
+        };
+        //  @formatter:on
         
-        // field doesn't exist, evaluates to false
-        query = "FIELD_B != 'something'";
-        test(query, true);
+        for (int i = 0; i < array.length; i++) {
+            test((String) array[i][0], (Boolean) array[i][1], (Boolean) array[i][2]);
+        }
     }
     
     @Test
-    public void testUnions() {
-        // field with incomplete field (TRUE || UNKNOWN) = TRUE
-        String query = "FOO == 'bar' || FIELD_A == 'something'";
-        test(query, true);
+    public void testIntersectionsWithIncompleteFields() {
+        //  @formatter:off
+        Object[][] array = {
+                {"FOO == 'bar' && FIELD_A == 'something'", true, true},     // (TRUE && UNKNOWN) = TRUE
+                {"FOO == 'bar' && FIELD_A == 'something'", true, true},     // (UNKNOWN && TRUE) = TRUE
+                {"FOO == 'fewer' && FIELD_A == 'something'", false, false}, // (FALSE && UNKNOWN) = FALSE
+                {"FIELD_A == 'something' && FOO == 'fewer'", false, false}, // (UNKNOWN && FALSE) = FALSE (order of terms shouldn't matter)
+                {"FIELD_A == 'something' && FIELD_A == 'nothing'", true, true},         // (UNKNOWN && UNKNOWN) = UNKNOWN
+                {"FIELD_A == 'something' && FIELD_B == 'perfection'", false, false},    // (UNKNOWN && FALSE) = FALSE
+                // verifies the interpreter fully traverses the intersection
+                {"FOO == 'bar' && FOO == 'baz' && FIELD_A == 'barzee' && FIELD_A == 'zeebar'", true, true},
+                {"FIELD_A == 'barzee' && FIELD_A == 'zeebar' && FOO == 'bar' && FOO == 'baz'", true, true},
+        };
+        //  @formatter:on
         
-        // (FALSE || UNKNOWN) = UNKNOWN
-        query = "FOO == 'fewer' || FIELD_A == 'something'";
-        test(query, true);
-        
-        // (UNKNOWN || FALSE) = UNKNOWN (order of terms shouldn't matter)
-        query = "FIELD_A == 'something' || FOO == 'fewer'";
-        test(query, true);
-        
-        // two incomplete fields (UNKNOWN || UNKNOWN) = UNKNOWN
-        query = "FIELD_A == 'something' || FIELD_A == 'nothing'";
-        test(query, true);
-        
-        // incomplete field that exists with incomplete field that does not exist
-        // two incomplete fields (UNKNOWN || FALSE) = UNKNOWN
-        query = "FIELD_A == 'something' || FIELD_B == 'perfection'";
-        test(query, true);
-    }
-    
-    @Test
-    public void testIntersections() {
-        // field with incomplete field (TRUE && UNKNOWN) = TRUE
-        String query = "FOO == 'bar' && FIELD_A == 'something'";
-        test(query, true);
-        
-        // (FALSE && UNKNOWN) = FALSE
-        query = "FOO == 'fewer' && FIELD_A == 'something'";
-        test(query, false);
-        
-        // (UNKNOWN && FALSE) = FALSE (order of terms shouldn't matter)
-        query = "FIELD_A == 'something' && FOO == 'fewer'";
-        test(query, false);
-        
-        // two incomplete fields (UNKNOWN && UNKNOWN) = UNKNOWN
-        query = "FIELD_A == 'something' && FIELD_A == 'nothing'";
-        test(query, true);
-        
-        // incomplete field that exists with incomplete field that does not exist
-        // two incomplete fields (UNKNOWN && FALSE) = FALSE
-        query = "FIELD_A == 'something' && FIELD_B == 'perfection'";
-        test(query, false);
-    }
-    
-    // verifies the interpreter fully traverses the intersection
-    @Test
-    public void testLargeIntersections() {
-        String query = "FOO == 'bar' && FOO == 'baz' && FIELD_A == 'barzee' && FIELD_A == 'zeebar'";
-        test(query, true);
-        
-        query = "FIELD_A == 'barzee' && FIELD_A == 'zeebar' && FOO == 'bar' && FOO == 'baz'";
-        test(query, true);
-    }
-    
-    // verifies the interpreter fully traverses the union
-    @Test
-    public void testLargeUnions() {
-        String query = "FOO == 'bar' || FOO == 'baz' || FIELD_A == 'barzee' || FIELD_A == 'zeebar'";
-        test(query, true);
-        
-        query = "FIELD_A == 'barzee' || FIELD_A == 'zeebar' || FOO == 'bar' || FOO == 'baz'";
-        test(query, true);
-        
-        query = "FOO == 'zip' || FOO == 'nada' || FOO == 'nope' || FIELD_A == 'maybe'";
-        test(query, true);
+        for (int i = 0; i < array.length; i++) {
+            test((String) array[i][0], (Boolean) array[i][1], (Boolean) array[i][2]);
+        }
     }
     
     @Test
@@ -138,10 +104,10 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
         test(query, true);
         
         query = "((FOO == 'bar' && FIELD_A == 'zeebar') || (FIELD_A == 'barzee' && FOO == 'baz'))";
-        test(query, true);
+        test(query, true, true);
         
         query = "((FOO == 'bar' || FOO == 'baz') && (FIELD_A == 'barzee' || FIELD_A == 'zeebar'))";
-        test(query, true);
+        test(query, true, true);
         
         query = "((FOO == 'bar' || FIELD_A == 'zeebar') && (FIELD_A == 'barzee' || FOO == 'baz'))";
         test(query, true);
@@ -152,45 +118,45 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
     public void testPhraseQueryAgainstNormalField() {
         // this phrase hits
         String query = "content:phrase(TEXT, termOffsetMap, 'red', 'dog') && TEXT == 'red' && TEXT == 'dog'";
-        test(query, buildTermOffsetIncompleteContext(), true);
+        test(buildTermOffsetIncompleteContext(), query, true);
         
         // this phrase doesn't
         query = "content:phrase(TEXT, termOffsetMap, 'big', 'dog') && TEXT == 'big' && TEXT == 'dog'";
-        test(query, buildTermOffsetIncompleteContext(), false);
+        test(buildTermOffsetIncompleteContext(), query, false);
     }
     
     // incomplete field cannot be evaluated, document must be returned
     @Test
     public void testPhraseQueryAgainstIncompleteField() {
         String query = "content:phrase(FIELD_A, termOffsetMap, 'red', 'dog') && FIELD_A == 'red' && FIELD_A == 'dog'";
-        test(query, buildTermOffsetIncompleteContext(), true);
+        test(buildTermOffsetIncompleteContext(), query, true, true);
     }
     
     // normal field could evaluate, but presence of incomplete field means the document is returned
     @Test
     public void testPhraseQueryAgainstIncompleteFieldAndNormalField() {
         String query = "(content:phrase(TEXT, termOffsetMap, 'red', 'dog') && TEXT == 'red' && TEXT == 'dog') || (content:phrase(FIELD_A, termOffsetMap, 'red', 'dog') && FIELD_A == 'red' && FIELD_A == 'dog')";
-        test(query, buildTermOffsetIncompleteContext(), true);
+        test(buildTermOffsetIncompleteContext(), query, true);
         
         query = "(content:phrase(FIELD_A, termOffsetMap, 'red', 'dog') && FIELD_A == 'red' && FIELD_A == 'dog') || (content:phrase(TEXT, termOffsetMap, 'red', 'dog') && TEXT == 'red' && TEXT == 'dog')";
-        test(query, buildTermOffsetIncompleteContext(), true);
+        test(buildTermOffsetIncompleteContext(), query, true);
     }
     
     // normal field is not in the context so evaluates to false, but presence of incomplete field means the document is returned
     @Test
     public void testPhraseQueryAgainstIncompleteFieldAndMissingNormalField() {
         String query = "(content:phrase(ZEE, termOffsetMap, 'red', 'dog') && ZEE == 'red' && ZEE == 'dog') || (content:phrase(FIELD_A, termOffsetMap, 'red', 'dog') && FIELD_A == 'red' && FIELD_A == 'dog')";
-        test(query, buildTermOffsetIncompleteContext(), true);
+        test(buildTermOffsetIncompleteContext(), query, true, true);
         
         query = "(content:phrase(FIELD_A, termOffsetMap, 'red', 'dog') && FIELD_A == 'red' && FIELD_A == 'dog') || (content:phrase(ZEE, termOffsetMap, 'red', 'dog') && ZEE == 'red' && ZEE == 'dog')";
-        test(query, buildTermOffsetIncompleteContext(), true);
+        test(buildTermOffsetIncompleteContext(), query, true, true);
     }
     
     // #INCLUDE
     @Test
     public void testIncludeFunctionAgainstIncompleteField() {
         String query = "FOO == 'bar' && filter:regexInclude(FIELD_A,'ba.*')";
-        test(query, buildDefaultIncompleteContext(), true);
+        test(buildDefaultIncompleteContext(), query, true, true);
     }
     
     // UNKNOWN && DATE_FUNCTION -> UNKNOWN -> TRUE
@@ -198,7 +164,107 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
     public void testArithmeticWithFunctionOutputs() {
         // check for boolean coercion errors, long value is 80+ years
         String query = "FIELD_A == 'a1b2c3' && filter:getMaxTime(DEATH_DATE) - filter:getMinTime(BIRTH_DATE) > 2522880000000L";
-        test(query, buildIncompleteDateContext(), true);
+        test(buildIncompleteDateContext(), query, true, true);
+        
+        query = "FIELD_A == 'a1b2c3' && filter:getMaxTime(DEATH_DATE) - filter:getMinTime(BIRTH_DATE) >= 2522880000000L";
+        test(buildIncompleteDateContext(), query, true, true);
+        
+        query = "FIELD_A == 'a1b2c3' && filter:getMinTime(BIRTH_DATE) - filter:getMaxTime(DEATH_DATE) < 2522880000000L";
+        test(buildIncompleteDateContext(), query, true, true);
+        
+        query = "FIELD_A == 'a1b2c3' && filter:getMinTime(BIRTH_DATE) - filter:getMaxTime(DEATH_DATE) <= 2522880000000L";
+        test(buildIncompleteDateContext(), query, true, true);
+    }
+    
+    // negation tests
+    
+    @Test
+    public void testNot() {
+        String query = "!(FIELD_A == 'no')";
+        test(buildDefaultIncompleteContext(), query, true, true);
+    }
+    
+    @Test
+    public void testGnarlyNegationsDude() {
+        // !( (delayed(FALSE) || UNKNOWN || UNKNOWN) && UNKNOWN) ==> TRUE via UNKNOWN
+        String query = "!((((_Delayed_ = true) && (_ANYFIELD_ =~ 'a-.*')) || FIELD_A == 'no' || FIELD_A == 'nope') && FIELD_A == 'nada')";
+        test(buildDefaultIncompleteContext(), query, true, true);
+    }
+    
+    @Test
+    public void testAndNot() {
+        // (TRUE && !(FALSE)) = TRUE
+        String query = "FOO == 'bar' && !(FOO == 'nothing')";
+        test(buildDefaultIncompleteContext(), query, true);
+        
+        // (TRUE && !(UNKNOWN)) = TRUE
+        query = "FOO == 'bar' && !(FIELD_A == 'nothing')";
+        test(buildDefaultIncompleteContext(), query, true, true);
+        
+        // (TRUE && !(delayed && UNKNOWN)) = TRUE
+        query = "FOO == 'bar' && !((_Delayed_ = true) && (FIELD_A == 'nothing'))";
+        test(buildDefaultIncompleteContext(), query, true, true);
+    }
+    
+    @Test
+    public void testOrNot() {
+        // (TRUE || !(FALSE)) = TRUE
+        String query = "FOO == 'bar' || !(FOO == 'nothing')";
+        test(buildDefaultIncompleteContext(), query, true);
+        
+        // (TRUE || !(UNKNOWN)) = TRUE
+        query = "FOO == 'bar' || !(FIELD_A == 'nothing')";
+        test(buildDefaultIncompleteContext(), query, true);
+        
+        // (TRUE || !(delayed && UNKNOWN)) = TRUE
+        query = "FOO == 'bar' || !((_Delayed_ = true) && (FIELD_A == 'nothing'))";
+        test(buildDefaultIncompleteContext(), query, true);
+    }
+    
+    /**
+     * taken from {@link datawave.query.CompositeFunctionsTest}
+     */
+    @Test
+    public void testFilterFunctionIncludeRegexSize_incomplete() {
+        String query = "filter:includeRegex(FOO, 'bar').size() >= 1";
+        test(buildDefaultIncompleteContext(), query, true);
+        
+        query = "1 >= filter:includeRegex(FOO, 'bar').size()";
+        test(buildDefaultIncompleteContext(), query, true);
+    }
+    
+    @Test
+    public void testFilterFunctionMatchesAtLeastCountOf_incomplete() {
+        String query = "FOO =~ 'ba.*' && filter:matchesAtLeastCountOf(2,FOO,'BAR','BAZ')";
+        test(query, true);
+    }
+    
+    // (f1.size() + f2.size()) > x is logically equivalent to f:matchesAtLeastCountOf(x,FIELD,'value')
+    @Test
+    public void testFilterFunctionInsteadOfMatchesAtLeastCountOf_incomplete() {
+        String query = "(filter:includeRegex(FIELD_A, 'bar').size() + filter:includeRegex(FOO, 'baz').size()) >= 1";
+        test(query, true, true);
+        
+        query = "(filter:includeRegex(FIELD_A, 'bar').size() + filter:includeRegex(FOO, 'baz').size()) > 0";
+        test(query, true, true);
+        
+        query = "(filter:includeRegex(FIELD_A, 'bar').size() + filter:includeRegex(FOO, 'baz').size()) <= 1";
+        test(query, true, true);
+        
+        query = "(filter:includeRegex(FIELD_A, 'bar').size() + filter:includeRegex(FOO, 'baz').size()) < 10";
+        test(query, true, true);
+    }
+    
+    @Test
+    public void testMinMaxSizeMethods_incomplete() {
+        String query = "FIELD_A.min() > 0";
+        test(query, true, true);
+        
+        query = "FIELD_A.max() < 20";
+        test(query, true, true);
+        
+        query = "FIELD_A.size() > 0";
+        test(query, true, true);
     }
     
     /**
@@ -209,8 +275,13 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
      * @param expectedResult
      *            the expected evaluation
      */
+    @Override
     protected void test(String query, boolean expectedResult) {
-        test(query, buildDefaultIncompleteContext(), expectedResult);
+        test(buildDefaultIncompleteContext(), query, expectedResult);
+    }
+    
+    protected void test(String query, boolean expectedResult, boolean expectedCallbackState) {
+        test(buildDefaultIncompleteContext(), query, expectedResult, expectedCallbackState);
     }
     
     /**
@@ -220,33 +291,39 @@ public class DatawavePartialInterpreterTest extends DatawaveInterpreterTest {
      */
     protected JexlContext buildDefaultIncompleteContext() {
         JexlContext context = buildDefaultContext();
-        context.set(INCOMPLETE_FIELD_A, "a1b2c3");
+        //@formatter:off
+        context.set(FIELD_A, new FunctionalSet(Collections.singletonList(
+                new ValueTuple(FIELD_A, "a1b2c3", "a1b2c3", new TypeAttribute<>(new LcNoDiacriticsType("a1b2c3"), docKey, true)))));
+        //@formatter:on
         return context;
     }
     
     protected JexlContext buildIncompleteDateContext() {
-        JexlContext context = buildDateContext();
-        context.set(INCOMPLETE_FIELD_A, "a1b2c3");
+        JexlContext context = buildDefaultContext();
+        //@formatter:off
+        context.set(FIELD_A, new FunctionalSet(Collections.singletonList(
+                new ValueTuple(FIELD_A, "a1b2c3", "a1b2c3", new TypeAttribute<>(new LcNoDiacriticsType("a1b2c3"), docKey, true)))));
+        //@formatter:on
         return context;
     }
     
     /**
-     * Builds a normal {@link DatawaveInterpreterTest#buildTermOffsetContext()} and adds term offsets for an incomplete field
+     * adds term offsets for an incomplete field
      *
      * @return a JexlContext with additional term offsets
      */
     protected JexlContext buildTermOffsetIncompleteContext() {
-        JexlContext context = buildTermOffsetContext();
+        JexlContext context = buildDefaultContext();
         
         // a term offset map already exists for the TEXT field. No values are necessary for the
         // incomplete FIELD_A. The only necessary addition to the context is the kv pairs for
         // FIELD_A.
         
         //@formatter:off
-        context.set("FIELD_A", new FunctionalSet(Arrays.asList(
-                new ValueTuple("FIELD_A", "big", "big", new TypeAttribute<>(new LcNoDiacriticsType("big"), new Key("dt\0uid"), true)),
-                new ValueTuple("FIELD_A", "red", "red", new TypeAttribute<>(new LcNoDiacriticsType("red"), new Key("dt\0uid"), true)),
-                new ValueTuple("FIELD_A", "dog", "dog", new TypeAttribute<>(new LcNoDiacriticsType("dog"), new Key("dt\0uid"), true)))));
+        context.set(FIELD_A, new FunctionalSet(Arrays.asList(
+                new ValueTuple(FIELD_A, "big", "big", new TypeAttribute<>(new LcNoDiacriticsType("big"), docKey, true)),
+                new ValueTuple(FIELD_A, "red", "red", new TypeAttribute<>(new LcNoDiacriticsType("red"), docKey, true)),
+                new ValueTuple(FIELD_A, "dog", "dog", new TypeAttribute<>(new LcNoDiacriticsType("dog"), docKey, true)))));
         //@formatter:on
         return context;
     }

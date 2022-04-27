@@ -336,8 +336,39 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
             if (val instanceof Type<?>) {
                 val = ((Type) val).getDelegate();
             }
+        } else if (val instanceof DatawavePartialInterpreter.State) {
+            DatawavePartialInterpreter.State state = (DatawavePartialInterpreter.State) val;
+            if (state.set != null) {
+                val = state.getSet().size();
+            } else {
+                val = 0;
+            }
         }
         return val;
+    }
+    
+    /**
+     * There is a need to check for a {@link DatawavePartialInterpreter.State} as an incoming argument. These state args need to be narrowed to a functional set
+     * or numeric in order to find the correct method.
+     *
+     * @param args
+     *            function args
+     * @return {@see }
+     */
+    @Override
+    protected boolean narrowArguments(Object[] args) {
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] instanceof DatawavePartialInterpreter.State) {
+                DatawavePartialInterpreter.State state = (DatawavePartialInterpreter.State) args[i];
+                if (state.hasNumeric()) {
+                    args[i] = state.getNumeric();
+                } else {
+                    args[i] = state.getSet();
+                }
+            }
+        }
+        
+        return super.narrowArguments(args);
     }
     
     public int toInteger(Object val) {

@@ -1,7 +1,9 @@
 package datawave.query.jexl;
 
 import com.google.common.collect.Maps;
+import datawave.data.type.DateType;
 import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NumberType;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
 import datawave.query.attributes.TypeAttribute;
@@ -22,9 +24,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.easymock.EasyMock.mock;
@@ -52,7 +52,7 @@ public class DatawaveInterpreterTest {
     public void largeOrListTest() {
         List<String> uuids = new ArrayList<>();
         for (int i = 0; i < 1000000; i++)
-            uuids.add("'" + UUID.randomUUID().toString() + "'");
+            uuids.add("'" + UUID.randomUUID() + "'");
         
         String query = String.join(" || ", uuids);
         
@@ -87,151 +87,300 @@ public class DatawaveInterpreterTest {
     }
     
     @Test
-    public void testSimpleQuery() {
-        String query = "FOO == 'bar'";
-        test(query, true);
+    public void testSimpleEqualities() {
+        //  @formatter:off
+        Object[][] array = {
+                {"FOO == 'bar'", true},
+                {"FOO == 'baz'", true},
+                {"FOO == 'baz'", true},
+                {"!(FOO == 'bar')", false},
+                {"!(FOO == 'baz')", false},
+                {"!(ZEE == 'bar')", true}};   //  non-existent field
+        //  @formatter:on
         
-        query = "FOO == 'baz'";
-        test(query, true);
-        
-        query = "FOO != 'bar'";
-        test(query, false);
-        
-        query = "FOO != 'baz'";
-        test(query, false);
+        for (int i = 0; i < array.length; i++) {
+            test((String) array[i][0], (Boolean) array[i][1]);
+        }
     }
     
     @Test
-    public void testNonExistentField() {
-        String query = "ZEE != 'bar'";
-        test(query, true);
+    public void testUnions() {
+        //  @formatter:off
+        Object[][] array = {
+                {"FOO == 'bar' || FOO == 'baz'", true},
+                {"FOO == 'abc' || FOO == 'xyz'", false},
+                {"FOO == 'bar' || FOO == 'baz' || FOO == 'barzee' || FOO == 'zeebar'", true},
+                {"FOO == 'barzee' || FOO == 'zeebar' || FOO == 'bar' || FOO == 'baz'", true}};
+        //  @formatter:on
+        
+        for (int i = 0; i < array.length; i++) {
+            test((String) array[i][0], (Boolean) array[i][1]);
+        }
     }
     
     @Test
-    public void testOrWithTwoTerms() {
-        String query = "FOO == 'bar' || FOO == 'baz'";
-        test(query, true);
+    public void testIntersections() {
+        //  @formatter:off
+        Object[][] array = {
+                {"FOO == 'bar' && FOO == 'baz'", true},
+                {"!(FOO == 'bar') && FOO == 'baz'", false},
+                {"FOO == 'bar' && FOO == 'baz' && FOO == 'barzee' && FOO == 'zeebar'", false},
+                {"FOO == 'barzee' && FOO == 'zeebar' && FOO == 'bar' && FOO == 'baz'", false}};
+        //  @formatter:on
         
-        query = "FOO == 'abc' || FOO == 'xyz'";
-        test(query, false);
-    }
-    
-    @Test
-    public void testOrWithFourTerms() {
-        String query = "FOO == 'bar' || FOO == 'baz' || FOO == 'barzee' || FOO == 'zeebar'";
-        test(query, true);
-        
-        query = "FOO == 'barzee' || FOO == 'zeebar' || FOO == 'bar' || FOO == 'baz'";
-        test(query, true);
-    }
-    
-    @Test
-    public void testAndWithTwoTerms() {
-        String query = "FOO == 'bar' && FOO == 'baz'";
-        test(query, true);
-        
-        query = "FOO != 'bar' && FOO == 'baz'";
-        test(query, false);
-    }
-    
-    @Test
-    public void testAndWithFourTerms() {
-        String query = "FOO == 'bar' && FOO == 'baz' && FOO == 'barzee' && FOO == 'zeebar'";
-        test(query, false);
-        
-        query = "FOO == 'barzee' && FOO == 'zeebar' && FOO == 'bar' && FOO == 'baz'";
-        test(query, false);
+        for (int i = 0; i < array.length; i++) {
+            test((String) array[i][0], (Boolean) array[i][1]);
+        }
     }
     
     @Test
     public void testMixOfAndOrExpressions() {
-        String query = "((FOO == 'bar' && FOO == 'baz') || (FOO == 'barzee' && FOO == 'zeebar'))";
+        //  @formatter:off
+        Object[][] array = {
+                {"((FOO == 'bar' && FOO == 'baz') || (FOO == 'barzee' && FOO == 'zeebar'))", true},
+                {"((FOO == 'bar' && FOO == 'zeebar') || (FOO == 'barzee' && FOO == 'baz'))", false},
+                {"((FOO == 'bar' || FOO == 'baz') && (FOO == 'barzee' || FOO == 'zeebar'))", false},
+                {"((FOO == 'bar' || FOO == 'zeebar') && (FOO == 'barzee' || FOO == 'baz'))", true}};
+        //  @formatter:on
+        
+        for (int i = 0; i < array.length; i++) {
+            test((String) array[i][0], (Boolean) array[i][1]);
+        }
+    }
+    
+    @Test
+    public void testBoundedRanges() {
+        //  @formatter:off
+        Object[][] array = {
+                {"((_Bounded_ = true) && (SPEED >= '+cE1.2' && SPEED <= '+cE1.5'))", true}, // (120, 150)
+                {"((_Bounded_ = true) && (SPEED >= '+bE9' && SPEED <= '+cE1'))", false},    // (90, 130)
+                {"((_Bounded_ = true) && (SPEED >= '+cE1.2' && SPEED <= '+cE1.5')) && FOO == 'bar'", true}, // range matches, term matches (120, 150)
+                {"((_Bounded_ = true) && (SPEED >= '+cE1.2' && SPEED <= '+cE1.5')) && !(FOO == 'bar')", false},    // range matches, term misses (120, 15)
+                {"((_Bounded_ = true) && (SPEED >= '+bE9' && SPEED <= '+cE1')) && FOO == 'bar'", false}, // range misses, term hits (90, 130)
+                {"((_Bounded_ = true) && (SPEED >= '+bE9' && SPEED <= '+cE1')) && !(FOO == 'bar')", false},// range misses, term misses (90, 130)
+                {"((_Bounded_ = true) && (SPEED >= '+cE1.2' && SPEED <= '+cE1.5')) || FOO == 'bar'", true},// range matches, term matches (120, 150)
+                {"((_Bounded_ = true) && (SPEED >= '+cE1.2' && SPEED <= '+cE1.5')) || !(FOO == 'bar')", true},
+                {"((_Bounded_ = true) && (SPEED >= '+bE9' && SPEED <= '+cE1')) || FOO == 'bar'", true},
+                {"((_Bounded_ = true) && (SPEED >= '+bE9' && SPEED <= '+cE1')) || !(FOO == 'bar')", false},
+        };
+        //  @formatter:on
+        
+        for (int i = 0; i < array.length; i++) {
+            test((String) array[i][0], (Boolean) array[i][1]);
+        }
+    }
+    
+    @Test
+    public void testContentFunctionPhrase() {
+        //  @formatter:off
+        Object[][] array = {
+                {"content:phrase(TEXT, termOffsetMap, 'red', 'dog') && (TEXT == 'red' && TEXT == 'dog')", true},
+                {"content:phrase(TEXT, termOffsetMap, 'big', 'dog') && (TEXT == 'big' && TEXT == 'dog')", false},
+                //  alternate form phrases
+                {"content:phrase(termOffsetMap, 'red', 'dog') && (TEXT == 'red' && TEXT == 'dog')", true},
+                {"content:phrase(termOffsetMap, 'big', 'dog') && (TEXT == 'big' && TEXT == 'dog')", false},
+                //  full phrase
+                {"content:phrase(termOffsetMap, 'big', 'red', 'dog') && (TEXT == 'big' && TEXT == 'red' && TEXT == 'dog')", true},
+        };
+        //  @formatter:on
+        
+        for (int i = 0; i < array.length; i++) {
+            test((String) array[i][0], (Boolean) array[i][1]);
+        }
+    }
+    
+    @Test
+    public void testDateEquality() {
+        String query = "BIRTH_DATE == '1910-12-28T00:00:05.000Z'";
         test(query, true);
-        
-        query = "((FOO == 'bar' && FOO == 'zeebar') || (FOO == 'barzee' && FOO == 'baz'))";
-        test(query, false);
-        
-        query = "((FOO == 'bar' || FOO == 'baz') && (FOO == 'barzee' || FOO == 'zeebar'))";
-        test(query, false);
-        
-        query = "((FOO == 'bar' || FOO == 'zeebar') && (FOO == 'barzee' || FOO == 'baz'))";
-        test(query, true);
-    }
-    
-    @Test
-    public void testBoundedRange() {
-        String query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150'))";
-        test(query, buildBoundedRangeContext(), true);
-        
-        query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130'))";
-        test(query, buildBoundedRangeContext(), false);
-    }
-    
-    @Test
-    public void testBoundedRangeAndTerm() {
-        // range matches, term matches
-        String query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150')) && FOO == 'bar'";
-        test(query, buildBoundedRangeContext(), true);
-        
-        // range matches, term misses
-        query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150')) && FOO != 'bar'";
-        test(query, buildBoundedRangeContext(), false);
-        
-        // range misses, term hits
-        query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130')) && FOO == 'bar'";
-        test(query, buildBoundedRangeContext(), false);
-        
-        // range misses, term misses
-        query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130')) && FOO != 'bar'";
-        test(query, buildBoundedRangeContext(), false);
-    }
-    
-    @Test
-    public void testBoundedRangeOrTerm() {
-        // range matches, term matches
-        String query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150')) || FOO == 'bar'";
-        test(query, buildBoundedRangeContext(), true);
-        
-        // range matches, term misses
-        query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150')) || FOO != 'bar'";
-        test(query, buildBoundedRangeContext(), true);
-        
-        // range misses, term hits
-        query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130')) || FOO == 'bar'";
-        test(query, buildBoundedRangeContext(), true);
-        
-        // range misses, term misses
-        query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130')) || FOO != 'bar'";
-        test(query, buildBoundedRangeContext(), false);
-    }
-    
-    @Test
-    public void testPhraseBasicForm() {
-        // this phrase hits
-        String query = "content:phrase(TEXT, termOffsetMap, 'red', 'dog') && (TEXT == 'red' && TEXT == 'dog')";
-        test(query, buildTermOffsetContext(), true);
-        
-        // this phrase doesn't
-        query = "content:phrase(TEXT, termOffsetMap, 'big', 'dog') && (TEXT == 'big' && TEXT == 'dog')";
-        test(query, buildTermOffsetContext(), false);
-    }
-    
-    @Test
-    public void testPhraseAlternateForm() {
-        // this phrase hits
-        String query = "content:phrase(termOffsetMap, 'red', 'dog') && (TEXT == 'red' && TEXT == 'dog')";
-        test(query, buildTermOffsetContext(), true);
-        
-        // this phrase doesn't
-        query = "content:phrase(termOffsetMap, 'big', 'dog') && (TEXT == 'big' && TEXT == 'dog')";
-        test(query, buildTermOffsetContext(), false);
     }
     
     @Test
     public void testMultipleTimeFunctions() {
         // long value is 80+ years
         String query = "FOO == 'bar' && filter:getMaxTime(DEATH_DATE) - filter:getMinTime(BIRTH_DATE) > 2522880000000L";
-        test(query, buildDateContext(), true);
+        test(query, true);
+        
+        query = "BIRTH_DATE.min() < '1920-12-28T00:00:05.000Z'";
+        test(query, true);
+        
+        query = "DEATH_DATE.max() - BIRTH_DATE.min() > 1000 * 60 * 60 * 24"; // one day
+        test(query, true);
+        
+        query = "DEATH_DATE.max() - BIRTH_DATE.min() > 1000 * 60 * 60 * 24 * 5 + 1000 * 60 * 60 * 24 * 7"; // 5 plus 7 days for the calculator-deprived
+        test(query, true);
+        
+        query = "DEATH_DATE.min() < '20160301120000'";
+        test(query, true);
+    }
+    
+    /**
+     * taken from {@link datawave.query.CompositeFunctionsTest}
+     */
+    @Test
+    public void testFilterFunctionIsNull() {
+        //  @formatter:off
+        Object[][] array = {
+                {"filter:isNull(FOO)", false},
+                {"filter:isNull(NULL1)", true},
+                {"filter:isNull(NULL1||NULL2)", true},
+                {"filter:isNull(NULL1) || filter:isNull(NULL2)", true},
+                {"filter:isNull(BOTH_NULL)", true},
+                {"filter:isNull(FOO||NULL1)", false},   //  incorrect assertion
+                {"filter:isNull(NULL1||FOO)", false},   //  incorrect assertion
+                {"filter:isNull(FOO) || filter:isNull(NULL1)", true},
+                {"filter:isNull(ONE_NULL)", true},
+                {"FOO == 'bar' && filter:isNull(FOO)", false},
+                {"FOO == 'bar' && filter:isNull(NULL1)", true},
+                {"FOO == 'bar' && filter:isNull(NULL1||NULL2)", true},
+                {"FOO == 'bar' && filter:isNull(BOTH_NULL)", true},
+                {"FOO == 'bar' && filter:isNull(FOO||NULL1)", false},
+                {"FOO == 'bar' && filter:isNull(NULL1||FOO)", false},
+                {"FOO == 'bar' && filter:isNull(ONE_NULL)", true}};
+        //  @formatter:on
+        
+        for (Object[] o : array) {
+            test((String) o[0], (Boolean) o[1]);
+        }
+    }
+    
+    /**
+     * taken from {@link datawave.query.CompositeFunctionsTest}
+     */
+    @Test
+    public void testFilterFunctionIsNotNull() {
+        //  @formatter:off
+        Object[][] array = {
+                {"filter:isNotNull(FOO)", true},
+                {"filter:isNotNull(NULL1)", false},
+                {"filter:isNotNull(NULL1||NULL2)", false},
+                {"filter:isNotNull(NULL1) || filter:isNotNull(NULL2)", false},
+                {"filter:isNotNull(BOTH_NULL)", false},
+                {"filter:isNotNull(FOO||NULL1)", true},
+                {"filter:isNotNull(NULL1||FOO)", true},
+                {"filter:isNotNull(FOO) || filter:isNotNull(NULL1)", true},
+                {"filter:isNotNull(ONE_NULL)", false},
+                {"FOO == 'bar' && filter:isNotNull(FOO)", true},
+                {"FOO == 'bar' && filter:isNotNull(NULL1)", false},
+                {"FOO == 'bar' && filter:isNotNull(NULL1||NULL2)", false},
+                {"FOO == 'bar' && filter:isNotNull(BOTH_NULL)", false},
+                {"FOO == 'bar' && filter:isNotNull(FOO||NULL1)", true},
+                {"FOO == 'bar' && filter:isNotNull(ONE_NULL)", false},
+        };
+        //  @formatter:on
+        
+        for (Object[] o : array) {
+            test((String) o[0], (Boolean) o[1]);
+        }
+    }
+    
+    /**
+     * taken from {@link datawave.query.CompositeFunctionsTest}
+     */
+    @Test
+    public void testFilterFunctionIncludeRegexSize() {
+        //  @formatter:off
+        Object[][] array = {
+                {"filter:includeRegex(FOO, 'bar').size() == 0", false},
+                {"filter:includeRegex(FOO, 'bar').size() == 1", true},
+                {"filter:includeRegex(FOO, 'bar').size() >= 0", true},
+                {"filter:includeRegex(FOO, 'bar').size() >= 1", true},
+                {"filter:includeRegex(FOO, 'bar').size() > 0", true},
+                {"filter:includeRegex(FOO, 'bar').size() > 1", false},
+                {"filter:includeRegex(FOO, 'bar').size() <= 0", false},
+                {"filter:includeRegex(FOO, 'bar').size() <= 1", true},
+                {"filter:includeRegex(FOO, 'bar').size() < 0", false},
+                {"filter:includeRegex(FOO, 'bar').size() < 1", false},
+                {"filter:includeRegex(FOO, 'bar').size() < 2", true},
+        };
+        //  @formatter:on
+        
+        for (Object[] o : array) {
+            test((String) o[0], (Boolean) o[1]);
+        }
+    }
+    
+    @Test
+    public void testFilterFunctionMatchesAtLeastCountOf() {
+        //  @formatter:off
+        Object[][] array = {
+                {"filter:matchesAtLeastCountOf(2,FOO,'BAR','BAZ')", true},
+                {"filter:matchesAtLeastCountOf(2,FOO,'bar','baz')", true},
+                {"filter:matchesAtLeastCountOf(1,FOO,'BAR','BAZ')", true},
+                {"filter:matchesAtLeastCountOf(5,FOO,'BAR','BAZ')", false},
+                {"filter:matchesAtLeastCountOf(2,bar,'FOO','SPEED')", false},
+        };
+        //  @formatter:on
+        
+        for (Object[] o : array) {
+            test((String) o[0], (Boolean) o[1]);
+        }
+    }
+    
+    // (f1.size() + f2.size()) > x is logically equivalent to f:matchesAtLeastCountOf(x,FIELD,'value')
+    @Test
+    public void testFilterFunctionInsteadOfMatchesAtLeastCountOf() {
+        //  @formatter:off
+        Object[][] array = {
+                {"filter:includeRegex(FOO, 'bar').size() == 1", true},
+                {"filter:includeRegex(FOO, 'baz').size() == 1", true},
+                {"filter:includeRegex(FOO, 'ba.*').size() == 1", true},
+                {"filter:includeRegex(SPEED, '1.*').size() == 1", true},
+                {"(filter:includeRegex(FOO, 'bar').size() + filter:includeRegex(FOO, 'baz').size()) == 2", true},
+                {"(filter:includeRegex(FOO, 'bar').size() + filter:includeRegex(FOO, 'ba.*').size()) == 2", true},
+                {"(filter:includeRegex(SPEED, '1.*').size() + filter:includeRegex(FOO, 'ba.*').size()) == 2", true},
+                {"(filter:includeRegex(SPEED, '1.*').size() + filter:includeRegex(FOO, 'ba.*').size() + filter:includeRegex(FOO, 'baz').size()) == 3", true},
+                {"(filter:includeRegex(FOO, 'bar').size() - filter:includeRegex(FOO, 'baz').size()) == 0", true},
+                {"(filter:includeRegex(FOO, 'bar').size() - filter:includeRegex(FOO, 'ba.*').size()) == 0", true},
+                {"(filter:includeRegex(SPEED, '1.*').size() - filter:includeRegex(FOO, 'ba.*').size()) == 0", true},
+        };
+        //  @formatter:on
+        
+        for (Object[] o : array) {
+            test((String) o[0], (Boolean) o[1]);
+        }
+    }
+    
+    @Test
+    public void testJexlMinMaxFunctions() {
+        //  @formatter:off
+        Object[][] array = {
+                {"SPEED.max() == 147", true},
+                {"SPEED.max() > 147", false},
+                {"SPEED.max() >= 147", true},
+                {"SPEED.max() < 147", false},
+                {"SPEED.max() <= 147", true},
+                {"SPEED.min() == 123", true},
+                {"SPEED.min() > 123", false},
+                {"SPEED.min() >= 123", true},
+                {"SPEED.min() < 123", false},
+                {"SPEED.min() <= 123", true},
+        };
+        //  @formatter:on
+        
+        for (Object[] o : array) {
+            test((String) o[0], (Boolean) o[1]);
+        }
+    }
+    
+    @Test
+    public void testArithmetic() {
+        //  @formatter:off
+        Object[][] array = {
+                {"FOO == 'bar' && 1 + 1 + 1 == 3", true},
+                {"FOO == 'bar' && 1 * 2 * 3 == 6", true},
+                {"FOO == 'bar' && 12 / 2 / 3 == 2", true},
+                {"FOO == 'bar' && 1 + 1 + 1 == 4", false},
+                {"FOO == 'bar' && 1 * 2 * 3 == 7", false},
+                {"FOO == 'bar' && 12 / 2 / 3 == 3", false},
+                {"FOO == 'bar' && filter:getAllMatches(FOO,'hubert').isEmpty() == true", true},
+                {"FOO == 'bar' && filter:getAllMatches(FOO,'hubert').size() == 0", true},
+        };
+        //  @formatter:on
+        
+        for (Object[] o : array) {
+            test((String) o[0], (Boolean) o[1]);
+        }
     }
     
     /**
@@ -241,7 +390,11 @@ public class DatawaveInterpreterTest {
      * @param expectedResult
      */
     protected void test(String query, boolean expectedResult) {
-        test(query, buildDefaultContext(), expectedResult);
+        test(buildDefaultContext(), query, expectedResult, false);
+    }
+    
+    protected void test(JexlContext context, String query, boolean expectedResult) {
+        test(context, query, expectedResult, false);
     }
     
     /**
@@ -254,7 +407,7 @@ public class DatawaveInterpreterTest {
      * @param expectedResult
      *            the expected evaluation of the query given the context
      */
-    protected void test(String query, JexlContext context, boolean expectedResult) {
+    protected void test(JexlContext context, String query, boolean expectedResult, boolean expectedCallbackState) {
         
         // create binary tree and execute the query
         Script script = getJexlEngine().createScript(query);
@@ -267,6 +420,8 @@ public class DatawaveInterpreterTest {
         executed = dwScript.execute(context);
         isMatched = matchResult(executed);
         assertEquals("Unexpected result for query (flattened tree): " + query, expectedResult, isMatched);
+        assertEquals("Expected callback state of [" + expectedCallbackState + "] but was [" + dwScript.getCallback() + "]", expectedCallbackState,
+                        dwScript.getCallback());
     }
     
     protected JexlEngine getJexlEngine() {
@@ -277,56 +432,62 @@ public class DatawaveInterpreterTest {
         return ArithmeticJexlEngines.isMatched(o);
     }
     
+    protected Key docKey = new Key("dt\0uid");
+    
     /**
-     * Build a jexl context with default values
+     * Build a jexl context with default values for several different type attributes
+     * 
+     * <pre>
+     *     FOO = {bar, baz}
+     *     SPEED = {123, 147}
+     *     BIRTH_DATE = {1910, 1930, 1950}
+     *     DEATH_DATE = {2000}
+     *     TEXT = {big, red, dog}
+     *     termOffsetMap - phrase offsets
+     * </pre>
      *
      * @return a context
      */
     protected JexlContext buildDefaultContext() {
+        //  @formatter:off
         DatawaveJexlContext context = new DatawaveJexlContext();
-        context.set("FOO", new FunctionalSet(Arrays.asList("bar", "baz")));
-        return context;
-    }
-    
-    /**
-     * Build a jexl context with values that will match bounded ranges
-     *
-     * @return a context
-     */
-    protected JexlContext buildBoundedRangeContext() {
-        DatawaveJexlContext context = new DatawaveJexlContext();
-        context.set("SPEED", new FunctionalSet(Arrays.asList("123", "147")));
-        context.set("FOO", new FunctionalSet(Arrays.asList("bar", "baz")));
-        return context;
-    }
-    
-    /**
-     * Build a JexlContext with date values to test time functions
-     *
-     * @return a context
-     */
-    protected JexlContext buildDateContext() {
-        JexlContext context = buildDefaultContext();
-        context.set("BIRTH_DATE", new FunctionalSet(Arrays.asList("1910-12-28T00:00:05.000Z", "1930-12-28T00:00:05.000Z", "1950-12-28T00:00:05.000Z")));
-        context.set("DEATH_DATE", new FunctionalSet(Arrays.asList("2000-12-28T00:00:05.000Z")));
-        return context;
-    }
-    
-    protected JexlContext buildTermOffsetContext() {
-        JexlContext context = buildDefaultContext();
-        
+
+        //  standard field value pair
+        context.set("FOO", new FunctionalSet(Arrays.asList(
+                new ValueTuple("FOO", "bar", "bar", new TypeAttribute<>(new LcNoDiacriticsType("bar"), docKey, true)),
+                new ValueTuple("FOO", "baz", "baz", new TypeAttribute<>(new LcNoDiacriticsType("baz"), docKey, true)))));
+
+        //  numerics for bounded range queries
+        context.set("SPEED", new FunctionalSet(Arrays.asList(
+                new ValueTuple("SPEED", "123", "+cE1.23", new TypeAttribute<>(new NumberType("123"), docKey, true)),
+                new ValueTuple("SPEED", "147", "+cE1.47", new TypeAttribute<>(new NumberType("147"), docKey, true)))));
+
+        //  dates
+        DateType firstDate = new DateType("1910-12-28T00:00:05.000Z");
+        DateType secondDate = new DateType("1930-12-28T00:00:05.000Z");
+        DateType thirdDate = new DateType("1950-12-28T00:00:05.000Z");
+
+        ValueTuple birthDate01 = new ValueTuple("BIRTH_DATE", firstDate, "1910-12-28T00:00:05.000Z", new TypeAttribute<>(firstDate, docKey, true));
+        ValueTuple birthDate02 = new ValueTuple("BIRTH_DATE", secondDate, "1930-12-28T00:00:05.000Z", new TypeAttribute<>(secondDate, docKey, true));
+        ValueTuple birthDate03 = new ValueTuple("BIRTH_DATE", thirdDate, "1950-12-28T00:00:05.000Z", new TypeAttribute<>(thirdDate, docKey, true));
+        context.set("BIRTH_DATE", new FunctionalSet(Arrays.asList(birthDate01, birthDate02, birthDate03)));
+
+        DateType fourthDate = new DateType("2000-12-28T00:00:05.000Z");
+        ValueTuple deathDate01 = new ValueTuple("DEATH_DATE", fourthDate, "2000-12-28T00:00:05.000Z", new TypeAttribute<>(fourthDate, docKey, true));
+        context.set("DEATH_DATE", new FunctionalSet(Arrays.asList(deathDate01)));
+
+        //  term offsets for phrases
         TermOffsetMap map = new TermOffsetMap();
         map.putTermFrequencyList("big", buildTfList("TEXT", 1));
         map.putTermFrequencyList("red", buildTfList("TEXT", 2));
         map.putTermFrequencyList("dog", buildTfList("TEXT", 3));
-        
-        //@formatter:off
+
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, map);
         context.set("TEXT", new FunctionalSet(Arrays.asList(
-                new ValueTuple("TEXT", "big", "big",  new TypeAttribute<>(new LcNoDiacriticsType("big"), new Key("dt\0uid"), true)),
-                new ValueTuple("TEXT", "red", "red",  new TypeAttribute<>(new LcNoDiacriticsType("red"), new Key("dt\0uid"), true)),
-                new ValueTuple("TEXT", "dog", "dog",  new TypeAttribute<>(new LcNoDiacriticsType("dog"), new Key("dt\0uid"), true)))));
-        //@formatter:on
+                new ValueTuple("TEXT", "big", "big",  new TypeAttribute<>(new LcNoDiacriticsType("big"), docKey, true)),
+                new ValueTuple("TEXT", "red", "red",  new TypeAttribute<>(new LcNoDiacriticsType("red"), docKey, true)),
+                new ValueTuple("TEXT", "dog", "dog",  new TypeAttribute<>(new LcNoDiacriticsType("dog"), docKey, true)))));
+        //  @formatter:on
         return context;
     }
     

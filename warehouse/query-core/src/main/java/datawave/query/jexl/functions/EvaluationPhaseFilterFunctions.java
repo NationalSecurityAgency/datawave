@@ -4,6 +4,7 @@ import com.google.common.base.CharMatcher;
 import com.google.common.collect.Sets;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.ValueTuple;
+import datawave.query.jexl.DatawavePartialInterpreter;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.query.collections.FunctionalSet;
 import datawave.util.OperationEvaluator;
@@ -19,7 +20,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
@@ -135,14 +135,17 @@ public class EvaluationPhaseFilterFunctions {
      * @return the {@link FunctionalSet} of hit terms found
      */
     public static FunctionalSet<ValueTuple> isNotNull(Object fieldValue) {
-        FunctionalSet<ValueTuple> matches = FunctionalSet.emptySet();
         if (fieldValue != null) {
             if (fieldValue instanceof Collection) {
                 Collection<?> values = (Collection<?>) fieldValue;
                 if (!values.isEmpty()) {
                     return values.stream().map(EvaluationPhaseFilterFunctions::getHitTerm).collect(Collectors.toCollection(FunctionalSet::new));
                 }
-                
+            } else if (fieldValue instanceof DatawavePartialInterpreter.State) {
+                Collection<?> values = (Collection<?>) ((DatawavePartialInterpreter.State) fieldValue).getSet();
+                if (!values.isEmpty()) {
+                    return values.stream().map(EvaluationPhaseFilterFunctions::getHitTerm).collect(Collectors.toCollection(FunctionalSet::new));
+                }
             } else {
                 return FunctionalSet.singleton(getHitTerm(fieldValue));
             }
@@ -158,7 +161,13 @@ public class EvaluationPhaseFilterFunctions {
      * @return true if {@code fieldValue} is a null {@link Object} or an empty {@link Collection}, or false otherwise
      */
     public static boolean isNull(Object fieldValue) {
-        return fieldValue instanceof Collection ? ((Collection<?>) fieldValue).isEmpty() : fieldValue == null;
+        if (fieldValue instanceof Collection) {
+            return ((Collection<?>) fieldValue).isEmpty();
+        } else if (fieldValue instanceof DatawavePartialInterpreter.State) {
+            return ((DatawavePartialInterpreter.State) fieldValue).getSet().isEmpty();
+        } else {
+            return fieldValue == null;
+        }
     }
     
     /**
@@ -226,6 +235,10 @@ public class EvaluationPhaseFilterFunctions {
         // Find all matches.
         for (Object regexObject : regexes) {
             String regex = regexObject.toString();
+            
+            if (fieldValue instanceof DatawavePartialInterpreter.State) {
+                fieldValue = ((DatawavePartialInterpreter.State) fieldValue).getSet();
+            }
             if (fieldValue instanceof Iterable) {
                 // Cast as Iterable in order to call the right includeRegex method
                 matches.addAll(includeRegex((Iterable<?>) fieldValue, regex));
@@ -258,6 +271,17 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> includeRegex(Object fieldValue, String regex) {
         if (fieldValue != null) {
+            
+            if (fieldValue instanceof DatawavePartialInterpreter.State) {
+                DatawavePartialInterpreter.State state = (DatawavePartialInterpreter.State) fieldValue;
+                if (state.getSet().size() > 1) {
+                    return includeRegex(state.getSet(), regex);
+                } else if (state.getSet().size() == 1) {
+                    fieldValue = state.getSet().iterator().next();
+                }
+                // else error
+            }
+            
             Pattern pattern = JexlPatternCache.getPattern(regex);
             boolean caseInsensitive = regex.matches(CASE_INSENSITIVE);
             if (isMatchForPattern(pattern, caseInsensitive, fieldValue)) {
@@ -332,7 +356,11 @@ public class EvaluationPhaseFilterFunctions {
      * @see EvaluationPhaseFilterFunctions#includeRegex(Object, String) additional documentation on expected result
      */
     public static FunctionalSet<ValueTuple> getAllMatches(Object fieldValue, String regex) {
-        return includeRegex(fieldValue, regex);
+        if (fieldValue instanceof DatawavePartialInterpreter.State) {
+            return includeRegex((Iterable<?>) ((DatawavePartialInterpreter.State) fieldValue).getSet(), regex);
+        } else {
+            return includeRegex(fieldValue, regex);
+        }
     }
     
     // Returns whether the pattern matches against either the non-normalized value or, if caseInsensitive is false, the normalized value.
