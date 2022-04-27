@@ -12,10 +12,10 @@
     <description>DATAWAVE Query Executor Service</description>
     <properties>
         <start-class>datawave.microservice.query.executor.QueryExecutorService</start-class>
-        <version.accumulo>1.9.2</version.accumulo>
+        <version.accumulo>1.9.3</version.accumulo>
         <version.curator>5.2.0</version.curator>
         <version.datawave>3.21.0-SNAPSHOT</version.datawave>
-        <version.in-memory-accumulo>1.9.2.3</version.in-memory-accumulo>
+        <version.in-memory-accumulo>1.9.3-SNAPSHOT</version.in-memory-accumulo>
         <version.microservice.query-executor-api>1.0-SNAPSHOT</version.microservice.query-executor-api>
         <version.microservice.starter-query>1.0-SNAPSHOT</version.microservice.starter-query>
         <version.zookeeper>3.6.3</version.zookeeper>
