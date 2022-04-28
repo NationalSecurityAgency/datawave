@@ -64,7 +64,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private volatile boolean canceled = false;
     private TInfo traceInfo = null;
     private transient QueryMetricsBean queryMetrics = null;
-    private transient RunningQueryTimingImpl timing = null;
+    private transient RunningQueryTiming timing = null;
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
     private volatile Future<Object> hasNextFuture = null;
@@ -109,7 +109,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.connectionPriority = priority;
         this.settings = settings;
         this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, principal);
-        this.timing = (RunningQueryTimingImpl) timing;
+        this.timing = timing;
         this.executor = executor;
         if (this.executor == null) {
             this.executor = Executors.newSingleThreadExecutor();
@@ -540,14 +540,27 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      */
     public interface RunningQueryTiming {
         boolean shouldReturnPartialResults(int pageSize, int maxPageSize, long timeInCall);
+        
+        int getMaxLongRunningTimeoutRetries();
+        
+        long getPageShortCircuitTimeoutMs();
     }
     
     /**
-     * A noop implementation of the running query timing interface.
+     * A noop implementation of the running query timing interface. -- only used by upstream tests
      */
     public static class RunningQueryTimingNoOp implements RunningQueryTiming {
         public boolean shouldReturnPartialResults(int pageSize, int maxPageSize, long timeInCall) {
             return false;
+        }
+        
+        public int getMaxLongRunningTimeoutRetries() {
+            return 0;
+        }
+        
+        // hardcoded because only used by upstream tests.
+        public long getPageShortCircuitTimeoutMs() {
+            return 300000000000000L;
         }
     }
     

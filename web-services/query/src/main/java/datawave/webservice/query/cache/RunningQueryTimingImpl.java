@@ -44,10 +44,12 @@ public class RunningQueryTimingImpl implements RunningQueryTiming {
         return pageSizeShortCircuitCheckTimeMs;
     }
     
+    @Override
     public long getPageShortCircuitTimeoutMs() {
         return pageShortCircuitTimeoutMs;
     }
     
+    @Override
     public int getMaxLongRunningTimeoutRetries() {
         return maxLongRunningTimeoutRetries;
     }
