@@ -183,7 +183,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         expect(document.get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(phraseIndexAttribute);
         
         Key metadata = new Key("Row", "cf", "cq");
-        expect(document.getMetadata()).andReturn(metadata).times(2);
+        expect(document.getMetadata()).andReturn(metadata).times(1);
         
         givenDocument(document);
     }
