@@ -13,6 +13,7 @@ import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.data.ObjectSizeOf;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
@@ -213,7 +214,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         boolean hitPageByteTrigger = false;
         boolean hitPageTimeTrigger = false;
         boolean hitIntermediateResult = false;
-        boolean hitMaxIntermediateResult = false;
         boolean hitShortCircuitForLongRunningQuery = false;
         try {
             addNDC();
@@ -222,10 +222,15 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             
             // test for any exceptions prior to loop as hasNext() would likely be false;
             testForUncaughtException(resultList.size());
-            hasNextFuture = executor.submit(() -> this.iter.hasNext());
+            if (hasNextFuture == null) {
+                hasNextFuture = executor.submit(() -> this.iter.hasNext());
+            }
             try {
                 while ((!this.finished && (future != null))
                                 || (Boolean) hasNextFuture.get(timing != null ? timing.getPageShortCircuitTimeoutMs() : Long.MAX_VALUE, TimeUnit.MILLISECONDS)) {
+                    // the current hasNextFuture is complete
+                    hasNextFuture = null;
+                    
                     // if we are canceled, then break out
                     if (this.canceled) {
                         log.info("Query has been cancelled, aborting query.next call");
@@ -299,6 +304,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     
                     if (o instanceof DefaultEvent) {
                         if (((DefaultEvent) o).isIntermediateResult()) {
+                            // in this case we have timed out up stream somewhere, so lets return what we have
                             hitIntermediateResult = true;
                             break;
                         }
@@ -325,6 +331,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     }
                     
                     testForUncaughtException(resultList.size());
+                    // setup the next hasNext call
                     hasNextFuture = executor.submit(() -> this.iter.hasNext());
                 }
             } catch (TimeoutException te) {
@@ -333,10 +340,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 // page as COMPLETE)
                 if (logic.isLongRunningQuery()) {
                     hitShortCircuitForLongRunningQuery = true;
-                    currentTimeoutcount++;
-                    if (timing != null && currentTimeoutcount == timing.getMaxLongRunningTimeoutRetries()) {
-                        hitMaxIntermediateResult = true;
-                    }
                 }
             }
             // if the last hasNext() call failed, then we would catch the exception here
@@ -367,14 +370,30 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
         }
         
-        if (hitMaxIntermediateResult) {
-            return new ResultsPage(new ArrayList<>(), ResultsPage.Status.COMPLETE);
-        } else if (hitIntermediateResult | hitShortCircuitForLongRunningQuery) {
-            return new ResultsPage(new ArrayList<>(), ResultsPage.Status.PARTIAL);
-        } else if (resultList.isEmpty()) {
-            return new ResultsPage();
+        if (!resultList.isEmpty()) {
+            // we have results!
+            return new ResultsPage(
+                            resultList,
+                            ((hitPageByteTrigger || hitPageTimeTrigger || hitIntermediateResult || hitShortCircuitForLongRunningQuery) ? ResultsPage.Status.PARTIAL
+                                            : ResultsPage.Status.COMPLETE));
         } else {
-            return new ResultsPage(resultList, ((hitPageByteTrigger || hitPageTimeTrigger) ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE));
+            // we have no results. Let us determine whether we are done or not.
+            
+            // if we have hit an intermediate result or a short circuit then check to see how many times we hit this
+            if (hitIntermediateResult | hitShortCircuitForLongRunningQuery) {
+                currentTimeoutcount++;
+                if (timing != null && currentTimeoutcount == timing.getMaxLongRunningTimeoutRetries()) {
+                    // this means that we have timed out waiting for a result too many times over the course of this query.
+                    // In this case we need to fail the next call with a timeout
+                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Query timed out waiting for a results for too many cycle.");
+                } else {
+                    // We are returning an empty page with a PARTIAL status to allow the query to continue running
+                    return new ResultsPage(new ArrayList<>(), ResultsPage.Status.PARTIAL);
+                }
+            } else {
+                // This query is done, we have no more results to return.
+                return new ResultsPage();
+            }
         }
     }
     
