@@ -55,6 +55,8 @@ public class ExcerptTransformTest extends EasyMockSupport {
     private Document document;
     private ExcerptTransform excerptTransform;
     
+    private static final String EVENT_ID = "shard\u0000dt\u0000uid";
+    
     @Before
     public void setUp() throws Exception {
         phraseIndexes = new PhraseIndexes();
@@ -199,7 +201,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
     }
     
     private void givenPhraseIndex(String field, int start, int end) {
-        phraseIndexes.addIndexPair(field, start, end);
+        phraseIndexes.addIndexTriplet(field, EVENT_ID, start, end);
     }
     
     private void givenMatchingPhrase(String field, int start, int end, String phrase) throws IOException {
