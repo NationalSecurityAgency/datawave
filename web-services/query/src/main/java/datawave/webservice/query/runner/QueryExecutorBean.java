@@ -513,7 +513,7 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         // validate the max results override relative to the max results on a query logic
-        // privileged users however can set whatever they want, or unlimited max results users.
+        // privileged users or unlimited max results users however, may ignore this limitation.
         if (qp.isMaxResultsOverridden() && qd.logic.getMaxResults() >= 0) {
             if (!ctx.isCallerInRole(PRIVILEGED_USER) || !ctx.isCallerInRole(UNLIMITED_QUERY_RESULTS_USER)) {
                 if (qp.getMaxResultsOverride() < 0 || (qd.logic.getMaxResults() < qp.getMaxResultsOverride())) {
