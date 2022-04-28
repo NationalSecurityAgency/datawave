@@ -65,7 +65,7 @@ public class ShardRangeStream extends RangeStream {
             DefaultQueryPlanner.addOption(cfg, QueryOptions.DATATYPE_FILTER, config.getDatatypeFilterAsString(), false);
             DefaultQueryPlanner.addOption(cfg, QueryOptions.END_TIME, Long.toString(config.getEndDate().getTime()), false);
             
-            DefaultQueryPlanner.configureTypeMappings(config, cfg, metadataHelper, true);
+            DefaultQueryPlanner.configureTypeMappings(config, cfg, metadataHelper, true, false);
             
             scanner.setRanges(Collections.singleton(rangeForTerm(null, null, config)));
             

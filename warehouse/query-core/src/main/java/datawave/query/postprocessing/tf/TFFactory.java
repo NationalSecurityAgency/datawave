@@ -29,18 +29,48 @@ public class TFFactory {
                     EventDataQueryFilter evaluationFilter, SortedKeyValueIterator<Key,Value> sourceCopy, Set<String> tfIndexOnlyFields) {
         
         Multimap<String,Class<? extends Type<?>>> fieldMappings = LinkedListMultimap.create();
-        for (Entry<String,String> dataType : typeMetadata.fold().entries()) {
-            String dataTypeName = dataType.getValue();
-            
-            try {
-                fieldMappings.put(dataType.getKey(), (Class<? extends Type<?>>) Class.forName(dataTypeName).asSubclass(Type.class));
-            } catch (ClassNotFoundException e) {
-                log.warn("Skipping instantiating a " + dataTypeName + " for " + dataType.getKey() + " because the class was not found.", e);
+        Multimap<String,Function> functions = TermOffsetPopulator.getContentFunctions(query);
+        if (!functions.isEmpty()) {
+            for (Entry<String, String> dataType : typeMetadata.fold().entries()) {
+                String dataTypeName = dataType.getValue();
+
+                try {
+                    fieldMappings.put(dataType.getKey(), (Class<? extends Type<?>>) Class.forName(dataTypeName).asSubclass(Type.class));
+                } catch (ClassNotFoundException e) {
+                    log.warn("Skipping instantiating a " + dataTypeName + " for " + dataType.getKey() + " because the class was not found.", e);
+                }
+
             }
-            
         }
         
-        return getFunction(query, contentExpansionFields, termFrequencyFields, fieldMappings, equality, evaluationFilter, sourceCopy, tfIndexOnlyFields);
+        return getFunction(query,functions, contentExpansionFields, termFrequencyFields, fieldMappings, equality, evaluationFilter, sourceCopy, tfIndexOnlyFields);
+    }
+
+    /**
+     * Factory method for creating the TF function used for generating the map context.
+     *
+     * @param query
+     * @param dataTypes
+     * @param sourceDeepCopy
+     * @return
+     */
+    public static com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> getFunction(ASTJexlScript query,
+                                                                                                                            Multimap<String,Function> functions,
+                                                                                                                            Set<String> contentExpansionFields, Set<String> termFrequencyFields, Multimap<String,Class<? extends Type<?>>> dataTypes,
+                                                                                                                            Equality equality, EventDataQueryFilter evaluationFilter, SortedKeyValueIterator<Key,Value> sourceDeepCopy, Set<String> tfIndexOnlyFields) {
+
+        if (functions.isEmpty()){
+            return new EmptyTermFrequencyFunction();
+        }
+        Multimap<String,String> termFrequencyFieldValues = TermOffsetPopulator.getTermFrequencyFieldValues(query, contentExpansionFields, termFrequencyFields,
+                dataTypes);
+
+        if (termFrequencyFieldValues.isEmpty()) {
+            return new EmptyTermFrequencyFunction();
+        } else {
+            return new TermOffsetFunction(new TermOffsetPopulator(termFrequencyFieldValues, contentExpansionFields, evaluationFilter, sourceDeepCopy),
+                    tfIndexOnlyFields);
+        }
     }
     
     /**

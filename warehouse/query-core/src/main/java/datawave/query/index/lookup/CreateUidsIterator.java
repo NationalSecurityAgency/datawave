@@ -68,9 +68,11 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
     private static final Logger log = Logger.getLogger(CreateUidsIterator.class);
     
     public static final String COLLAPSE_UIDS = "index.lookup.collapse";
+    public static final String COLLAPSE_UIDS_GATHER_COUNTS = "index.lookup.collapse.gather.count";
     public static final String PARSE_TLD_UIDS = "index.lookup.parse.tld.uids";
     
     protected boolean collapseUids = false;
+    protected boolean collapseUidsGatherCounts = false;
     protected boolean parseTldUids = false;
     protected SortedKeyValueIterator<Key,Value> src;
     protected Key tk;
@@ -80,14 +82,10 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         src = source;
         if (null != options) {
-            final String collapseOpt = options.get(COLLAPSE_UIDS);
-            if (null != collapseOpt) {
-                try {
-                    collapseUids = Boolean.valueOf(collapseOpt);
-                } catch (Exception e) {
-                    collapseUids = false;
-                }
-            }
+            collapseUids = Boolean.parseBoolean( options.getOrDefault(COLLAPSE_UIDS,"false") );
+
+            collapseUidsGatherCounts = Boolean.parseBoolean( options.getOrDefault(COLLAPSE_UIDS_GATHER_COUNTS,"false") );
+
             final String parseTldUidsOption = options.get(PARSE_TLD_UIDS);
             if (null != parseTldUidsOption) {
                 parseTldUids = Boolean.parseBoolean(parseTldUidsOption);
@@ -108,20 +106,31 @@ public class CreateUidsIterator implements SortedKeyValueIterator<Key,Value>, Op
             List<String> uids = Lists.newLinkedList();
             long count = 0L;
             boolean ignore = false;
+            boolean skipDeser = false;
             if (collapseUids) {
+                if (collapseUidsGatherCounts){
+                    skipDeser = false;
+                }
+                else{
+                    count=1;
+                    skipDeser = true;
+                }
+
                 ignore = true;
             }
             while (src.hasTop() && sameShard(reference, src.getTopKey())) {
                 Key nextTop = src.getTopKey();
-                Tuple3<Long,Boolean,List<String>> uidInfo = parseUids(nextTop, src.getTopValue());
-                count += uidInfo.first();
-                ignore |= uidInfo.second();
-                if (!ignore)
-                    for (String uid : uidInfo.third()) {
-                        if (log.isTraceEnabled())
-                            log.trace("Adding uid " + StringUtils.split(uid, '\u0000')[1]);
-                        uids.add(uid);
-                    }
+                if (!skipDeser) {
+                    Tuple3<Long, Boolean, List<String>> uidInfo = parseUids(nextTop, src.getTopValue());
+                    count += uidInfo.first();
+                    ignore |= uidInfo.second();
+                    if (!ignore)
+                        for (String uid : uidInfo.third()) {
+                            if (log.isTraceEnabled())
+                                log.trace("Adding uid " + StringUtils.split(uid, '\u0000')[1] + " for " + nextTop);
+                            uids.add(uid);
+                        }
+                }
                 src.next();
             }
             if (ignore) {

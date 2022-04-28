@@ -355,8 +355,8 @@ public class RangeStreamScannerTest {
             documentCount += entry.second().count();
         }
         // A single range with a count of -1 means the shard ranges were collapsed into a day range.
-        assertEquals(1, shardCount);
-        assertEquals(-1, documentCount);
+        assertEquals(15, shardCount);
+        assertEquals(375, documentCount);
         assertFalse(scannerStream.hasNext());
     }
     

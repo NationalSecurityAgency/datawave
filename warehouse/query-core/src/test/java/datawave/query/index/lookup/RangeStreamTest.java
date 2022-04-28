@@ -31,6 +31,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.Text;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -1256,7 +1258,8 @@ public class RangeStreamTest {
         Set<Range> expectedRanges = Sets.newHashSet();
         expectedRanges.addAll(shard0);
         expectedRanges.addAll(shard1);
-        expectedRanges.addAll(shard10);
+        // Shard 10 q
+        //expectedRanges.addAll(shard10);
         expectedRanges.addAll(shard100);
         expectedRanges.addAll(shard9);
         
@@ -1287,6 +1290,7 @@ public class RangeStreamTest {
     // (A && B)
     @Test
     public void testIntersection_HighAndLowCardinality_withSeek() throws Exception {
+        Logger.getLogger("datawave.query").setLevel(Level.TRACE);
         String originalQuery = "(FOO == 'lowest_card' && FOO == 'highest_card')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
         
@@ -1572,11 +1576,10 @@ public class RangeStreamTest {
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());
         
-        // Create expected ranges verbosely, so it is obvious which shards contribute to the results.
-        Range range1 = makeTestRange("20190310_21", "datatype1\u0000a.b.c");
-        // Fun story. It's hard to roll up to a day range when you seek most of the way through the day and don't have all the shards for the day.
-        // Range range2 = makeTestRange("20190315_51", "datatype1\u0000a.b.c");
-        Set<Range> expectedRanges = Sets.newHashSet(range1);
+        // Now that RangeStream returns individual ranges as opposed to day ranges, this means that this test
+        // is OBE. Leaving it should show that without day ranges ( and only returning shard ranges ) prevents this
+        // test from returning a range that needs to be tested at the doc level.
+        Set<Range> expectedRanges = Sets.newHashSet();
         
         RangeStream rangeStream = new RangeStream(config, new ScannerFactory(client, 1), helper);
         rangeStream.setLimitScanners(true);
@@ -1585,6 +1588,7 @@ public class RangeStreamTest {
         for (QueryPlan queryPlan : queryPlans) {
             Iterable<Range> ranges = queryPlan.getRanges();
             for (Range range : ranges) {
+                System.out.println(range.toString());
                 assertTrue("Tried to remove unexpected range " + range.toString() + "\nfrom expected ranges: " + expectedRanges.toString(),
                                 expectedRanges.remove(range));
             }

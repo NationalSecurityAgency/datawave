@@ -59,7 +59,6 @@ public class KeyToFieldName implements Function<Entry<Key,Value>,Entry<Key,Strin
         }
         
         try {
-            
             return Text.decode(arrayReference, 0, index);
         } catch (CharacterCodingException e) {
             throw new IllegalArgumentException(e);

@@ -20,7 +20,7 @@ import com.google.common.collect.Lists;
 /**
  * 
  */
-public abstract class Scheduler implements CloseableIterable<Entry<Key,Value>> {
+public abstract class Scheduler<T> implements CloseableIterable<T> {
     
     protected Collection<IteratorSetting> settings = Lists.newArrayList();
     

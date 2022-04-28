@@ -232,6 +232,7 @@ public class CreateUidsIteratorTest {
         CreateUidsIterator iterator = new CreateUidsIterator();
         Map<String,String> iteratorOptions = new HashMap<>();
         iteratorOptions.put(CreateUidsIterator.COLLAPSE_UIDS, "true");
+        iteratorOptions.put(CreateUidsIterator.COLLAPSE_UIDS_GATHER_COUNTS, "true");
         iterator.init(new SortedMapIterator(data), iteratorOptions, null);
         iterator.seek(new Range(), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());

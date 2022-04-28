@@ -33,7 +33,7 @@ public class QueryPlan {
     protected JexlNode queryTree = null;
     protected String queryTreeString = null;
     protected List<Range> ranges = null;
-    protected int hashCode;
+    protected int hashCode=-1;
     protected List<String> columnFamilies = Lists.newArrayList();
     protected List<IteratorSetting> settings = Lists.newArrayList();
     
@@ -209,7 +209,7 @@ public class QueryPlan {
         if (obj instanceof QueryPlan) {
             EqualsBuilder equalsBuilder = new EqualsBuilder();
             equalsBuilder.append(columnFamilies, ((QueryPlan) obj).columnFamilies);
-            return hashCode == ((QueryPlan) obj).hashCode && equalsBuilder.append(ranges, ((QueryPlan) obj).ranges).isEquals();
+            return hashCode() == ((QueryPlan) obj).hashCode() && equalsBuilder.append(ranges, ((QueryPlan) obj).ranges).isEquals();
             
         } else
             return false;
@@ -217,6 +217,9 @@ public class QueryPlan {
     
     @Override
     public int hashCode() {
+        if (hashCode==-1){
+            buildHashCode();
+        }
         return hashCode;
     }
     
@@ -228,7 +231,7 @@ public class QueryPlan {
     public void setQuery(String queryString, ASTJexlScript queryTree) {
         this.queryTree = queryTree;
         this.queryTreeString = queryString;
-        buildHashCode();
+        hashCode=-1; // buildHashCode();
         
     }
     

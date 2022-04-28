@@ -6,6 +6,7 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.tables.RangeStreamScanner;
 import datawave.query.util.Tuple2;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
 
 import java.util.Iterator;
 
@@ -18,7 +19,8 @@ import java.util.Iterator;
  * implementation.
  */
 public abstract class BaseIndexStream implements IndexStream {
-    
+    private static final Logger log = Logger.getLogger(BaseIndexStream.class);
+
     protected RangeStreamScanner rangeStreamScanner;
     
     protected EntryParser entryParser;
@@ -70,7 +72,11 @@ public abstract class BaseIndexStream implements IndexStream {
     
     @Override
     public boolean hasNext() {
-        return (hasPeeked && peekedElement != null) || backingIter.hasNext();
+        boolean ret = (hasPeeked && peekedElement != null) || backingIter.hasNext();
+        if (log.isTraceEnabled()){
+            log.trace("Calling hasNext " + ret);
+        }
+        return ret;
     }
     
     @Override

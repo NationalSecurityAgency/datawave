@@ -5,6 +5,7 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.tables.RangeStreamScanner;
 import datawave.query.util.Tuple2;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -15,7 +16,8 @@ import java.util.Iterator;
  * Note that certain delayed terms may create a ScannerStream without an underlying RangeStreamScanner.
  */
 public class ScannerStream extends BaseIndexStream {
-    
+
+    private static final Logger log = Logger.getLogger(ScannerStream.class);
     private ScannerStream(RangeStreamScanner scanSession, EntryParser entryParser, StreamContext ctx, JexlNode currNode, IndexStream debugDelegate) {
         super(scanSession, entryParser, currNode, ctx, debugDelegate);
     }
@@ -120,6 +122,9 @@ public class ScannerStream extends BaseIndexStream {
      */
     @Override
     public String seek(String seekShard) {
+        if (log.isTraceEnabled()){
+            log.trace("seek " + seekShard);
+        }
         if (rangeStreamScanner != null) {
             
             String seekedShard = rangeStreamScanner.seek(seekShard);
@@ -154,7 +159,9 @@ public class ScannerStream extends BaseIndexStream {
      * @return the top shard after seeking
      */
     public String seekByNext(String seekShard) {
-        
+        if (log.isTraceEnabled()){
+            log.trace("SeekByNext " + seekShard);
+        }
         String target = extractDayFromShard(seekShard);
         
         // First advance by day.

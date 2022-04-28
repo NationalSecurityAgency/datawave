@@ -17,13 +17,13 @@ import org.apache.accumulo.core.data.Value;
  * 
  *
  */
-public interface Profile {
+public interface Profile<T> {
     /**
      * Tune the query logic
      * 
      * @param logic
      */
-    void configure(BaseQueryLogic<Entry<Key,Value>> logic);
+    void configure(BaseQueryLogic<T> logic);
     
     /**
      * Tune the query planner.

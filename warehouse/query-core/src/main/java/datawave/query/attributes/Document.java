@@ -3,6 +3,8 @@ package datawave.query.attributes;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import datawave.marking.MarkingFunctions;
@@ -10,6 +12,8 @@ import datawave.query.Constants;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.KeyToFieldName;
+import datawave.query.function.json.deser.DocumentJSONDeSerializer;
+import datawave.query.function.json.deser.DocumentJSONSerializer;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFilter;
@@ -36,6 +40,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
+@JsonSerialize(using = DocumentJSONSerializer.class)
+@JsonDeserialize(using = DocumentJSONDeSerializer.class)
 public class Document extends AttributeBag<Document> implements Serializable {
     private static final long serialVersionUID = 1L;
     
@@ -109,7 +115,12 @@ public class Document extends AttributeBag<Document> implements Serializable {
     private TreeMap<String,Attribute<? extends Comparable<?>>> _getDictionary() {
         return dict;
     }
-    
+
+    public void rawPut(String key, Attribute<?> value) {
+        dict.put(key,value);
+        _count++;
+    }
+
     public Set<Entry<String,Attribute<? extends Comparable<?>>>> entrySet() {
         return getDictionary().entrySet();
     }
@@ -463,7 +474,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
     public int size() {
         return _count;
     }
-    
+
     @Override
     public long sizeInBytes() {
         if (trackSizes) {

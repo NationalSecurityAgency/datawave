@@ -44,12 +44,43 @@ public class QueryStopwatch {
         
         return sw;
     }
-    
-    public TraceStopwatch newStartedStopwatch(String header) {
-        TraceStopwatch sw = newStopwatch(header);
-        sw.start();
-        
+
+    /**
+     * Creates a new Stopwatch whose time will not be tabulated into the total during summarization
+     *
+     * @return the newly created instance
+     */
+    private TraceStopwatch newNonSummarizedStopwatch(String header) {
+        checkNotNull(header);
+
+        TraceStopwatch sw = new NonSummarizedStopWatch(header);
+
+        watches.add(Maps.immutableEntry(header, sw));
+
         return sw;
+    }
+
+
+    /**
+     * Creates a new stopwatch that will be printed at summarization iff nonSummarized is false
+     * @param header header header string to print during summarization
+     * @param nonSummarized boolean to determine if this stopwatch's time is tabulated during summarization
+     * @return newly created instance
+     */
+    public TraceStopwatch newStartedStopwatch(String header, boolean nonSummarized) {
+        TraceStopwatch sw = nonSummarized ? newNonSummarizedStopwatch(header) : newStopwatch(header);
+        sw.start();
+
+        return sw;
+    }
+
+    /**
+     * Creates a new stopwatch that will tabulated into the total time during summarization
+     * @param header
+     * @return
+     */
+    public TraceStopwatch newStartedStopwatch(String header) {
+        return newStartedStopwatch(header,false);
     }
     
     public TraceStopwatch peek() {
@@ -93,8 +124,9 @@ public class QueryStopwatch {
             // Stopwatch.toString() will give us appropriate units for the timing
             sb.append(paddedCount).append(description).append(": ").append(sw);
             lines.add(sb.toString());
-            
-            totalDurationMillis += sw.elapsed(TimeUnit.MILLISECONDS);
+            if (! (sw instanceof NonSummarizedStopWatch)) {
+                totalDurationMillis += sw.elapsed(TimeUnit.MILLISECONDS);
+            }
             count++;
             sb.setLength(0);
         }
@@ -128,6 +160,16 @@ public class QueryStopwatch {
                 return "s";
             default:
                 throw new AssertionError();
+        }
+    }
+
+    /**
+     * Purpose: Produces a stop watch instance that is not summarized by the query framework
+     */
+    private class NonSummarizedStopWatch extends TraceStopwatch {
+
+        public NonSummarizedStopWatch(final String description) {
+            super(description);
         }
     }
 }

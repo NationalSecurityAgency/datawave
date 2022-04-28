@@ -259,7 +259,7 @@ public class ShardQueryConfigurationTest {
         Set<String> noExpansionFields = Sets.newHashSet("NoExpansionFieldA");
         Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
         long visitorFunctionMaxWeight = 200L;
-        
+
         // Set collections on 'other' ShardQueryConfiguration
         other.setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
         other.setShardDateFormatter(shardDateFormatter);
@@ -293,7 +293,7 @@ public class ShardQueryConfigurationTest {
         other.setNoExpansionFields(noExpansionFields);
         other.setDisallowedRegexPatterns(disallowedRegexPatterns);
         other.setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
-        
+
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
         
@@ -377,7 +377,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(expectedQueryModel.getUnevaluatedFields(), config.getQueryModel().getUnevaluatedFields());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
         Assert.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());
-        
+
         // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
         QueryImpl expectedQuery = new QueryImpl();
         expectedQuery.setId(config.getQuery().getId());
@@ -461,7 +461,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 185;
+        int expectedObjectCount = 194;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

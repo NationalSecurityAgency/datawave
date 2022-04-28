@@ -21,7 +21,7 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
     
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
     
-    protected static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
+    protected static final MarkingFunctions markingFunctions = new MarkingFunctions.Default();
     
     public MarkingFunctions getMarkingFunctions() {
         return markingFunctions;
