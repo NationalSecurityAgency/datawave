@@ -17,18 +17,18 @@ import datawave.webservice.query.result.event.Metadata;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.VoidResponse;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
@@ -50,7 +50,7 @@ import static datawave.microservice.query.QueryParameters.QUERY_MAX_CONCURRENT_T
 import static datawave.microservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE;
 import static datawave.microservice.query.lookup.LookupService.LOOKUP_UUID_PAIRS;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 public class LookupServiceTest extends AbstractQueryServiceTest {
@@ -58,12 +58,12 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
     @Autowired
     public LookupProperties lookupProperties;
     
-    @Before
+    @BeforeEach
     public void setup() {
         super.setup();
     }
     
-    @After
+    @AfterEach
     public void teardown() throws Exception {
         super.teardown();
     }
@@ -106,12 +106,12 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         
         ResponseEntity<BaseQueryResponse> response = future.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify some headers
-        Assert.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
-        Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
-        Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+        Assertions.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
+        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
+        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
         
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
         
@@ -139,7 +139,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that the correct events were published
-        Assert.assertEquals(3, queryRequestEvents.size());
+        Assertions.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -198,12 +198,12 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         
         ResponseEntity<BaseQueryResponse> response = future.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify some headers
-        Assert.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
-        Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
-        Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+        Assertions.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
+        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
+        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
         
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
         
@@ -231,7 +231,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that the correct events were published
-        Assert.assertEquals(3, queryRequestEvents.size());
+        Assertions.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -300,7 +300,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
             Thread.sleep(500);
         }
         
-        Assert.assertNotNull(contentQueryIds);
+        Assertions.assertNotNull(contentQueryIds);
         for (String contentQueryId : contentQueryIds) {
             MultiValueMap<String,String> contentFieldValues = new LinkedMultiValueMap<>();
             contentFieldValues.add("CONTENT", "look I made you some content!");
@@ -316,18 +316,18 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         
         ResponseEntity<BaseQueryResponse> response = future.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify some headers
-        Assert.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
-        Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
-        Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+        Assertions.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
+        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
+        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
         
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
         
         String responseQueryId = queryResponse.getQueryId();
         
-        Assert.assertTrue(contentQueryIds.contains(responseQueryId));
+        Assertions.assertTrue(contentQueryIds.contains(responseQueryId));
         
         // verify the query response
         // @formatter:off
@@ -351,7 +351,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that the correct events were published
-        Assert.assertEquals(7, queryRequestEvents.size());
+        Assertions.assertEquals(7, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -442,7 +442,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
             Thread.sleep(500);
         }
         
-        Assert.assertNotNull(contentQueryIds);
+        Assertions.assertNotNull(contentQueryIds);
         for (String contentQueryId : contentQueryIds) {
             MultiValueMap<String,String> contentFieldValues = new LinkedMultiValueMap<>();
             contentFieldValues.add("CONTENT", "look I made you some content!");
@@ -468,18 +468,18 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         
         ResponseEntity<BaseQueryResponse> response = future.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify some headers
-        Assert.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
-        Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
-        Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+        Assertions.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
+        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
+        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
         
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
         
         String responseQueryId = queryResponse.getQueryId();
         
-        Assert.assertTrue(contentQueryIds.contains(responseQueryId));
+        Assertions.assertTrue(contentQueryIds.contains(responseQueryId));
         
         // verify the query response
         // @formatter:off
@@ -503,7 +503,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that the correct events were published
-        Assert.assertEquals(7, queryRequestEvents.size());
+        Assertions.assertEquals(7, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -558,7 +558,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -586,7 +586,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -613,7 +613,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -640,7 +640,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -667,7 +667,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -697,7 +697,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -724,7 +724,7 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
         
         ResponseEntity<VoidResponse> response = jwtRestTemplate.exchange(requestEntity, VoidResponse.class);
         
-        Assert.assertEquals(500, response.getStatusCodeValue());
+        Assertions.assertEquals(500, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -811,11 +811,11 @@ public class LookupServiceTest extends AbstractQueryServiceTest {
     
     protected void assertContentQueryResponse(String queryId, String logicName, long pageNumber, boolean partialResults, long operationTimeInMS, int numEvents,
                     DefaultEventQueryResponse queryResponse) {
-        Assert.assertEquals(queryId, queryResponse.getQueryId());
-        Assert.assertEquals(logicName, queryResponse.getLogicName());
-        Assert.assertEquals(pageNumber, queryResponse.getPageNumber());
-        Assert.assertEquals(partialResults, queryResponse.isPartialResults());
-        Assert.assertEquals(operationTimeInMS, queryResponse.getOperationTimeMS());
-        Assert.assertEquals(numEvents, queryResponse.getEvents().size());
+        Assertions.assertEquals(queryId, queryResponse.getQueryId());
+        Assertions.assertEquals(logicName, queryResponse.getLogicName());
+        Assertions.assertEquals(pageNumber, queryResponse.getPageNumber());
+        Assertions.assertEquals(partialResults, queryResponse.isPartialResults());
+        Assertions.assertEquals(operationTimeInMS, queryResponse.getOperationTimeMS());
+        Assertions.assertEquals(numEvents, queryResponse.getEvents().size());
     }
 }

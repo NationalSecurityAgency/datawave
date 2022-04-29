@@ -7,17 +7,17 @@ import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.VoidResponse;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.util.UriComponents;
 
 import java.util.Arrays;
@@ -26,16 +26,16 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
-    @Before
+    @BeforeEach
     public void setup() {
         super.setup();
     }
     
-    @After
+    @AfterEach
     public void teardown() throws Exception {
         super.teardown();
     }
@@ -53,15 +53,15 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = removeFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify that original query was removed
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
-        Assert.assertNull(queryStatus);
+        Assertions.assertNull(queryStatus);
         
         // verify that events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
     
     @Test
@@ -77,7 +77,7 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> closeResponse = closeFuture.get();
         
-        Assert.assertEquals(200, closeResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, closeResponse.getStatusCodeValue());
         
         // remove the query
         Future<ResponseEntity<VoidResponse>> removeFuture = removeQuery(authUser, queryId);
@@ -85,15 +85,15 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = removeFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify that original query was removed
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
-        Assert.assertNull(queryStatus);
+        Assertions.assertNull(queryStatus);
         
         // verify that events were published
-        Assert.assertEquals(2, queryRequestEvents.size());
+        Assertions.assertEquals(2, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -121,7 +121,7 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
         
-        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, cancelResponse.getStatusCodeValue());
         
         // remove the query
         Future<ResponseEntity<VoidResponse>> removeFuture = removeQuery(authUser, queryId);
@@ -129,15 +129,15 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = removeFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify that original query was removed
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
-        Assert.assertNull(queryStatus);
+        Assertions.assertNull(queryStatus);
         
         // verify that events were published
-        Assert.assertEquals(3, queryRequestEvents.size());
+        Assertions.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -170,17 +170,17 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = removeFuture.get();
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
-        Assert.assertEquals("Cannot remove a running query.", Iterables.getOnlyElement(response.getBody().getExceptions()).getMessage());
+        Assertions.assertEquals("Cannot remove a running query.", Iterables.getOnlyElement(response.getBody().getExceptions()).getMessage());
         
         // verify that original query was not removed
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
-        Assert.assertNotNull(queryStatus);
+        Assertions.assertNotNull(queryStatus);
         
         // verify that events were published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -206,7 +206,7 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> closeResponse = closeFuture.get();
         
-        Assert.assertEquals(200, closeResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, closeResponse.getStatusCodeValue());
         
         // remove the query
         Future<ResponseEntity<VoidResponse>> removeFuture = removeQuery(authUser, queryId);
@@ -214,17 +214,17 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = removeFuture.get();
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
-        Assert.assertEquals("Cannot remove a running query.", Iterables.getOnlyElement(response.getBody().getExceptions()).getMessage());
+        Assertions.assertEquals("Cannot remove a running query.", Iterables.getOnlyElement(response.getBody().getExceptions()).getMessage());
         
         // verify that original query was not removed
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
-        Assert.assertNotNull(queryStatus);
+        Assertions.assertNotNull(queryStatus);
         
         // verify that events were published
-        Assert.assertEquals(3, queryRequestEvents.size());
+        Assertions.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -261,7 +261,7 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<BaseResponse> response = resetFuture.get();
         
-        Assert.assertEquals(404, response.getStatusCodeValue());
+        Assertions.assertEquals(404, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -272,7 +272,7 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that no events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
     
     @Test
@@ -294,7 +294,7 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<BaseResponse> response = resetFuture.get();
         
-        Assert.assertEquals(401, response.getStatusCodeValue());
+        Assertions.assertEquals(401, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -305,7 +305,7 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that no events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
     
     @Test
@@ -322,15 +322,15 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = removeFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify that original query was removed
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
-        Assert.assertNull(queryStatus);
+        Assertions.assertNull(queryStatus);
         
         // verify that events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
     
     @Test
@@ -350,15 +350,15 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<String> response = removeFuture.get();
         
-        Assert.assertEquals(403, response.getStatusCodeValue());
+        Assertions.assertEquals(403, response.getStatusCodeValue());
         
         // verify that original query was not removed
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
-        Assert.assertNotNull(queryStatus);
+        Assertions.assertNotNull(queryStatus);
         
         // verify that events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
     
     @Test
@@ -376,15 +376,15 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> removeResponse = removeFuture.get();
         
-        Assert.assertEquals(200, removeResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, removeResponse.getStatusCodeValue());
         
         // verify that query status was created correctly
         List<QueryStatus> queryStatusList = queryStorageCache.getQueryStatus();
         
-        Assert.assertEquals(0, queryStatusList.size());
+        Assertions.assertEquals(0, queryStatusList.size());
         
         // verify that there are no events
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
     
     @Test
@@ -405,14 +405,14 @@ public class QueryServiceRemoveTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<String> removeResponse = removeFuture.get();
         
-        Assert.assertEquals(403, removeResponse.getStatusCodeValue());
+        Assertions.assertEquals(403, removeResponse.getStatusCodeValue());
         
         // verify that query status was created correctly
         List<QueryStatus> queryStatusList = queryStorageCache.getQueryStatus();
         
-        Assert.assertEquals(10, queryStatusList.size());
+        Assertions.assertEquals(10, queryStatusList.size());
         
         // verify that there are no events
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
 }

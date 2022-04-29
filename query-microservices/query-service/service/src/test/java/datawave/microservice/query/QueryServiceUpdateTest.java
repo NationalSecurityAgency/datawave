@@ -7,17 +7,17 @@ import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
@@ -35,16 +35,16 @@ import static datawave.webservice.query.QueryImpl.END_DATE;
 import static datawave.webservice.query.QueryImpl.PAGESIZE;
 import static datawave.webservice.query.QueryImpl.QUERY;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
-    @Before
+    @BeforeEach
     public void setup() {
         super.setup();
     }
     
-    @After
+    @AfterEach
     public void teardown() throws Exception {
         super.teardown();
     }
@@ -77,20 +77,20 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<GenericResponse> response = updateFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
         // make sure the query was updated
-        Assert.assertEquals(newQuery, queryStatus.getQuery().getQuery());
-        Assert.assertEquals(newAuths, queryStatus.getQuery().getQueryAuthorizations());
-        Assert.assertEquals(newBegin, DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()));
-        Assert.assertEquals(newEnd, DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()));
-        Assert.assertEquals(newLogic, queryStatus.getQuery().getQueryLogicName());
-        Assert.assertEquals(newPageSize, queryStatus.getQuery().getPagesize());
+        Assertions.assertEquals(newQuery, queryStatus.getQuery().getQuery());
+        Assertions.assertEquals(newAuths, queryStatus.getQuery().getQueryAuthorizations());
+        Assertions.assertEquals(newBegin, DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()));
+        Assertions.assertEquals(newEnd, DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()));
+        Assertions.assertEquals(newLogic, queryStatus.getQuery().getQueryLogicName());
+        Assertions.assertEquals(newPageSize, queryStatus.getQuery().getPagesize());
         
         // verify that no events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
     
     @Test
@@ -111,15 +111,15 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<GenericResponse> response = updateFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
         // make sure the query was updated
-        Assert.assertEquals(newPageSize, queryStatus.getQuery().getPagesize());
+        Assertions.assertEquals(newPageSize, queryStatus.getQuery().getPagesize());
         
         // verify that events were published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -153,12 +153,12 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = updateFuture.get();
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
         // make sure the query was not updated
-        Assert.assertEquals(TEST_QUERY_STRING, queryStatus.getQuery().getQuery());
+        Assertions.assertEquals(TEST_QUERY_STRING, queryStatus.getQuery().getQuery());
         
         // @formatter:off
         assertQueryException(
@@ -169,7 +169,7 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that events were published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -205,13 +205,13 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = updateFuture.get();
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
         // make sure the query was not updated
-        Assert.assertEquals(TEST_QUERY_BEGIN, DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()));
-        Assert.assertEquals(TEST_QUERY_END, DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()));
+        Assertions.assertEquals(TEST_QUERY_BEGIN, DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()));
+        Assertions.assertEquals(TEST_QUERY_END, DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()));
         
         // @formatter:off
         assertQueryException(
@@ -222,7 +222,7 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that events were published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -256,12 +256,12 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = updateFuture.get();
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
         // make sure the query was not updated
-        Assert.assertEquals("EventQuery", queryStatus.getQuery().getQueryLogicName());
+        Assertions.assertEquals("EventQuery", queryStatus.getQuery().getQueryLogicName());
         
         // @formatter:off
         assertQueryException(
@@ -272,7 +272,7 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that events were published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -306,12 +306,12 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = updateFuture.get();
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
         // make sure the query was not updated
-        Assert.assertEquals(TEST_QUERY_AUTHORIZATIONS, queryStatus.getQuery().getQueryAuthorizations());
+        Assertions.assertEquals(TEST_QUERY_AUTHORIZATIONS, queryStatus.getQuery().getQueryAuthorizations());
         
         // @formatter:off
         assertQueryException(
@@ -322,7 +322,7 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that events were published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -353,7 +353,7 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = updateFuture.get();
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -364,7 +364,7 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that events were published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -395,7 +395,7 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = updateFuture.get();
         
-        Assert.assertEquals(404, response.getStatusCodeValue());
+        Assertions.assertEquals(404, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -406,7 +406,7 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that no events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
     
     @Test
@@ -434,7 +434,7 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = updateFuture.get();
         
-        Assert.assertEquals(401, response.getStatusCodeValue());
+        Assertions.assertEquals(401, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -447,9 +447,9 @@ public class QueryServiceUpdateTest extends AbstractQueryServiceTest {
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
         // make sure the query was not updated
-        Assert.assertEquals(TEST_QUERY_STRING, queryStatus.getQuery().getQuery());
+        Assertions.assertEquals(TEST_QUERY_STRING, queryStatus.getQuery().getQuery());
         
         // verify that no events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
 }

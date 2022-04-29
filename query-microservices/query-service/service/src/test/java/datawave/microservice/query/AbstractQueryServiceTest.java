@@ -30,7 +30,7 @@ import datawave.webservice.result.QueryLogicResponse;
 import datawave.webservice.result.VoidResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -379,68 +379,68 @@ public abstract class AbstractQueryServiceTest {
     }
     
     protected void assertDefaultEvent(List<String> fields, List<String> values, DefaultEvent event) {
-        Assert.assertEquals(fields, event.getFields().stream().map(DefaultField::getName).collect(Collectors.toList()));
-        Assert.assertEquals(values, event.getFields().stream().map(DefaultField::getValueString).collect(Collectors.toList()));
+        Assertions.assertEquals(fields, event.getFields().stream().map(DefaultField::getName).collect(Collectors.toList()));
+        Assertions.assertEquals(values, event.getFields().stream().map(DefaultField::getValueString).collect(Collectors.toList()));
     }
     
     protected void assertQueryResponse(String queryId, String logicName, long pageNumber, boolean partialResults, long operationTimeInMS, int numFields,
                     List<String> fieldNames, int numEvents, DefaultEventQueryResponse queryResponse) {
-        Assert.assertEquals(queryId, queryResponse.getQueryId());
-        Assert.assertEquals(logicName, queryResponse.getLogicName());
-        Assert.assertEquals(pageNumber, queryResponse.getPageNumber());
-        Assert.assertEquals(partialResults, queryResponse.isPartialResults());
-        Assert.assertEquals(operationTimeInMS, queryResponse.getOperationTimeMS());
-        Assert.assertEquals(numFields, queryResponse.getFields().size());
-        Assert.assertEquals(fieldNames, queryResponse.getFields());
-        Assert.assertEquals(numEvents, queryResponse.getEvents().size());
+        Assertions.assertEquals(queryId, queryResponse.getQueryId());
+        Assertions.assertEquals(logicName, queryResponse.getLogicName());
+        Assertions.assertEquals(pageNumber, queryResponse.getPageNumber());
+        Assertions.assertEquals(partialResults, queryResponse.isPartialResults());
+        Assertions.assertEquals(operationTimeInMS, queryResponse.getOperationTimeMS());
+        Assertions.assertEquals(numFields, queryResponse.getFields().size());
+        Assertions.assertEquals(fieldNames, queryResponse.getFields());
+        Assertions.assertEquals(numEvents, queryResponse.getEvents().size());
     }
     
     protected void assertQueryRequestEvent(String destination, QueryRequest.Method method, String queryId, RemoteQueryRequestEvent queryRequestEvent) {
-        Assert.assertEquals(destination, queryRequestEvent.getDestinationService());
-        Assert.assertEquals(queryId, queryRequestEvent.getRequest().getQueryId());
-        Assert.assertEquals(method, queryRequestEvent.getRequest().getMethod());
+        Assertions.assertEquals(destination, queryRequestEvent.getDestinationService());
+        Assertions.assertEquals(queryId, queryRequestEvent.getRequest().getQueryId());
+        Assertions.assertEquals(method, queryRequestEvent.getRequest().getMethod());
     }
     
     protected void assertQueryStatus(QueryStatus.QUERY_STATE queryState, long numResultsReturned, long numResultsGenerated, long activeNextCalls,
                     long lastPageNumber, long lastCallTimeMillis, QueryStatus queryStatus) {
-        Assert.assertEquals(queryState, queryStatus.getQueryState());
-        Assert.assertEquals(numResultsReturned, queryStatus.getNumResultsReturned());
-        Assert.assertEquals(numResultsGenerated, queryStatus.getNumResultsGenerated());
-        Assert.assertEquals(activeNextCalls, queryStatus.getActiveNextCalls());
-        Assert.assertEquals(lastPageNumber, queryStatus.getLastPageNumber());
-        Assert.assertTrue(queryStatus.getLastUsedMillis() > lastCallTimeMillis);
-        Assert.assertTrue(queryStatus.getLastUpdatedMillis() > lastCallTimeMillis);
+        Assertions.assertEquals(queryState, queryStatus.getQueryState());
+        Assertions.assertEquals(numResultsReturned, queryStatus.getNumResultsReturned());
+        Assertions.assertEquals(numResultsGenerated, queryStatus.getNumResultsGenerated());
+        Assertions.assertEquals(activeNextCalls, queryStatus.getActiveNextCalls());
+        Assertions.assertEquals(lastPageNumber, queryStatus.getLastPageNumber());
+        Assertions.assertTrue(queryStatus.getLastUsedMillis() > lastCallTimeMillis);
+        Assertions.assertTrue(queryStatus.getLastUpdatedMillis() > lastCallTimeMillis);
     }
     
     protected void assertQuery(String queryString, String queryName, String authorizations, String begin, String end, String visibility, Query query)
                     throws ParseException {
         SimpleDateFormat sdf = new SimpleDateFormat(DefaultQueryParameters.formatPattern);
-        Assert.assertEquals(queryString, query.getQuery());
-        Assert.assertEquals(queryName, query.getQueryName());
-        Assert.assertEquals(authorizations, query.getQueryAuthorizations());
-        Assert.assertEquals(sdf.parse(begin), query.getBeginDate());
-        Assert.assertEquals(sdf.parse(end), query.getEndDate());
-        Assert.assertEquals(visibility, query.getColumnVisibility());
+        Assertions.assertEquals(queryString, query.getQuery());
+        Assertions.assertEquals(queryName, query.getQueryName());
+        Assertions.assertEquals(authorizations, query.getQueryAuthorizations());
+        Assertions.assertEquals(sdf.parse(begin), query.getBeginDate());
+        Assertions.assertEquals(sdf.parse(end), query.getEndDate());
+        Assertions.assertEquals(visibility, query.getColumnVisibility());
     }
     
     protected void assertTasksCreated(String queryId) throws IOException {
         // verify that the query task states were created
         TaskStates taskStates = queryStorageCache.getTaskStates(queryId);
-        Assert.assertNotNull(taskStates);
+        Assertions.assertNotNull(taskStates);
         
         // verify that a query task was created
         List<TaskKey> taskKeys = queryStorageCache.getTasks(queryId);
-        Assert.assertFalse(taskKeys.isEmpty());
+        Assertions.assertFalse(taskKeys.isEmpty());
     }
     
     protected void assertTasksNotCreated(String queryId) throws IOException {
         // verify that the query task states were not created
         TaskStates taskStates = queryStorageCache.getTaskStates(queryId);
-        Assert.assertNull(taskStates);
+        Assertions.assertNull(taskStates);
         
         // verify that a query task was not created
         List<TaskKey> taskKeys = queryStorageCache.getTasks(queryId);
-        Assert.assertTrue(taskKeys.isEmpty());
+        Assertions.assertTrue(taskKeys.isEmpty());
     }
     
     public RequestMatcher auditIdGrabber() {
@@ -464,37 +464,37 @@ public abstract class AbstractQueryServiceTest {
     
     protected void assertAuditSent(String queryId) {
         mockServer.verify();
-        Assert.assertEquals(1, auditIds.size());
-        Assert.assertEquals(queryId, auditIds.get(0));
+        Assertions.assertEquals(1, auditIds.size());
+        Assertions.assertEquals(queryId, auditIds.get(0));
     }
     
     protected void assertAuditNotSent() {
         mockServer.verify();
-        Assert.assertEquals(0, auditIds.size());
+        Assertions.assertEquals(0, auditIds.size());
     }
     
     protected void assertQueryException(String message, String cause, String code, QueryExceptionType queryException) {
-        Assert.assertEquals(message, queryException.getMessage());
-        Assert.assertEquals(cause, queryException.getCause());
-        Assert.assertEquals(code, queryException.getCode());
+        Assertions.assertEquals(message, queryException.getMessage());
+        Assertions.assertEquals(cause, queryException.getCause());
+        Assertions.assertEquals(code, queryException.getCode());
     }
     
     protected BaseResponse assertBaseResponse(boolean hasResults, HttpStatus.Series series, ResponseEntity<BaseResponse> response) {
-        Assert.assertEquals(series, response.getStatusCode().series());
-        Assert.assertNotNull(response);
+        Assertions.assertEquals(series, response.getStatusCode().series());
+        Assertions.assertNotNull(response);
         BaseResponse baseResponse = response.getBody();
-        Assert.assertNotNull(baseResponse);
-        Assert.assertEquals(hasResults, baseResponse.getHasResults());
+        Assertions.assertNotNull(baseResponse);
+        Assertions.assertEquals(hasResults, baseResponse.getHasResults());
         return baseResponse;
     }
     
     @SuppressWarnings("unchecked")
     protected GenericResponse<String> assertGenericResponse(boolean hasResults, HttpStatus.Series series, ResponseEntity<GenericResponse> response) {
-        Assert.assertEquals(series, response.getStatusCode().series());
-        Assert.assertNotNull(response);
+        Assertions.assertEquals(series, response.getStatusCode().series());
+        Assertions.assertNotNull(response);
         GenericResponse<String> genericResponse = (GenericResponse<String>) response.getBody();
-        Assert.assertNotNull(genericResponse);
-        Assert.assertEquals(hasResults, genericResponse.getHasResults());
+        Assertions.assertNotNull(genericResponse);
+        Assertions.assertEquals(hasResults, genericResponse.getHasResults());
         return genericResponse;
     }
     

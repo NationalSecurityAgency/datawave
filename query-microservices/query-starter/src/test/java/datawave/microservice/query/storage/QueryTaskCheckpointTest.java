@@ -13,17 +13,14 @@ import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 public class QueryTaskCheckpointTest {
     @Test
@@ -32,35 +29,35 @@ public class QueryTaskCheckpointTest {
         String queryPool = "default";
         String queryLogic = "EventQuery";
         QueryKey key = new QueryKey(queryPool, queryId, queryLogic);
-        assertEquals(queryId, key.getQueryId());
-        assertEquals(queryPool, key.getQueryPool());
+        Assertions.assertEquals(queryId, key.getQueryId());
+        Assertions.assertEquals(queryPool, key.getQueryPool());
         
         String queryId2 = queryId;
         String queryPool2 = "default";
         String queryLogic2 = "EventQuery";
         QueryKey key2 = new QueryKey(queryPool2, queryId2, queryLogic2);
-        assertEquals(key, key2);
-        assertEquals(key.hashCode(), key2.hashCode());
-        assertEquals(key.toKey(), key2.toKey());
+        Assertions.assertEquals(key, key2);
+        Assertions.assertEquals(key.hashCode(), key2.hashCode());
+        Assertions.assertEquals(key.toKey(), key2.toKey());
         
-        assertTrue(key.toKey().contains(queryId.toString()));
-        assertTrue(key.toKey().contains(queryPool.toString()));
-        assertTrue(key.toKey().contains(queryLogic));
+        Assertions.assertTrue(key.toKey().contains(queryId.toString()));
+        Assertions.assertTrue(key.toKey().contains(queryPool.toString()));
+        Assertions.assertTrue(key.toKey().contains(queryLogic));
         
         String otherId = UUID.randomUUID().toString();
         QueryKey otherKey = new QueryKey(queryPool, otherId, queryLogic);
-        assertNotEquals(key, otherKey);
-        assertNotEquals(key.toKey(), otherKey.toKey());
+        Assertions.assertNotEquals(key, otherKey);
+        Assertions.assertNotEquals(key.toKey(), otherKey.toKey());
         
         String otherPool = "other";
         otherKey = new QueryKey(otherPool, queryId, queryLogic);
-        assertNotEquals(key, otherKey);
-        assertNotEquals(key.toKey(), otherKey.toKey());
+        Assertions.assertNotEquals(key, otherKey);
+        Assertions.assertNotEquals(key.toKey(), otherKey.toKey());
         
         String otherLogic = "EdgeQuery";
         otherKey = new QueryKey(queryPool, queryId, otherLogic);
-        assertNotEquals(key, otherKey);
-        assertNotEquals(key.toKey(), otherKey.toKey());
+        Assertions.assertNotEquals(key, otherKey);
+        Assertions.assertNotEquals(key.toKey(), otherKey.toKey());
     }
     
     @Test
@@ -70,42 +67,42 @@ public class QueryTaskCheckpointTest {
         String queryLogic = "EventQuery";
         int taskId = new Random().nextInt(Integer.MAX_VALUE);
         TaskKey key = new TaskKey(taskId, queryPool, queryId, queryLogic);
-        assertEquals(queryId, key.getQueryId());
-        assertEquals(queryPool, key.getQueryPool());
-        assertEquals(taskId, key.getTaskId());
+        Assertions.assertEquals(queryId, key.getQueryId());
+        Assertions.assertEquals(queryPool, key.getQueryPool());
+        Assertions.assertEquals(taskId, key.getTaskId());
         
         String queryId2 = queryId;
         String queryPool2 = "default";
         int taskId2 = taskId;
         String queryLogic2 = "EventQuery";
         TaskKey key2 = new TaskKey(taskId2, queryPool2, queryId2, queryLogic2);
-        assertEquals(key, key2);
-        assertEquals(key.hashCode(), key2.hashCode());
-        assertEquals(key.toKey(), key2.toKey());
+        Assertions.assertEquals(key, key2);
+        Assertions.assertEquals(key.hashCode(), key2.hashCode());
+        Assertions.assertEquals(key.toKey(), key2.toKey());
         
-        assertTrue(key.toKey().contains(Integer.toString(taskId)));
-        assertTrue(key.toKey().contains(queryId));
-        assertTrue(key.toKey().contains(queryPool));
+        Assertions.assertTrue(key.toKey().contains(Integer.toString(taskId)));
+        Assertions.assertTrue(key.toKey().contains(queryId));
+        Assertions.assertTrue(key.toKey().contains(queryPool));
         
         String otherQqueryId = UUID.randomUUID().toString();
         int otherId = new Random().nextInt(Integer.MAX_VALUE);
         String otherPool = "other";
         String otherLogic = "EdgeQuery";
         TaskKey otherKey = new TaskKey(otherId, queryPool, queryId, queryLogic);
-        assertNotEquals(key, otherKey);
-        assertNotEquals(key.toKey(), otherKey.toKey());
+        Assertions.assertNotEquals(key, otherKey);
+        Assertions.assertNotEquals(key.toKey(), otherKey.toKey());
         otherKey = new TaskKey(taskId, otherPool, queryId, queryLogic);
-        assertNotEquals(key, otherKey);
-        assertNotEquals(key.toKey(), otherKey.toKey());
+        Assertions.assertNotEquals(key, otherKey);
+        Assertions.assertNotEquals(key.toKey(), otherKey.toKey());
         otherKey = new TaskKey(taskId + 1, queryPool, queryId, queryLogic);
-        assertNotEquals(key, otherKey);
-        assertNotEquals(key.toKey(), otherKey.toKey());
+        Assertions.assertNotEquals(key, otherKey);
+        Assertions.assertNotEquals(key.toKey(), otherKey.toKey());
         otherKey = new TaskKey(taskId, queryPool, otherQqueryId, queryLogic);
-        assertNotEquals(key, otherKey);
-        assertNotEquals(key.toKey(), otherKey.toKey());
+        Assertions.assertNotEquals(key, otherKey);
+        Assertions.assertNotEquals(key.toKey(), otherKey.toKey());
         otherKey = new TaskKey(taskId, queryPool, queryId, otherLogic);
-        assertNotEquals(key, otherKey);
-        assertNotEquals(key.toKey(), otherKey.toKey());
+        Assertions.assertNotEquals(key, otherKey);
+        Assertions.assertNotEquals(key.toKey(), otherKey.toKey());
     }
     
     @Test
@@ -123,9 +120,9 @@ public class QueryTaskCheckpointTest {
         config.setQueries(Collections.singletonList(queryData));
         QueryCheckpoint qcp = new QueryCheckpoint(queryPool, uuid, queryLogic, config.getQueries());
         
-        assertEquals(queryPool, qcp.getQueryKey().getQueryPool());
-        assertEquals(Collections.singletonList(queryData), qcp.getQueries());
-        assertEquals(uuid, qcp.getQueryKey().getQueryId());
+        Assertions.assertEquals(queryPool, qcp.getQueryKey().getQueryPool());
+        Assertions.assertEquals(Collections.singletonList(queryData), qcp.getQueries());
+        Assertions.assertEquals(uuid, qcp.getQueryKey().getQueryId());
         
         String uuid2 = uuid;
         String queryPool2 = "default";
@@ -136,11 +133,11 @@ public class QueryTaskCheckpointTest {
         ShardQueryConfiguration config2 = new ShardQueryConfiguration();
         config2.setQuery(query2);
         config2.setQueries(Collections.singletonList(queryData));
-        assertEquals(config, config2);
+        Assertions.assertEquals(config, config2);
         QueryCheckpoint qcp2 = new QueryCheckpoint(queryPool2, uuid2, queryLogic2, config2.getQueries());
         
-        assertEquals(qcp, qcp2);
-        assertEquals(qcp.hashCode(), qcp2.hashCode());
+        Assertions.assertEquals(qcp, qcp2);
+        Assertions.assertEquals(qcp.hashCode(), qcp2.hashCode());
         
         String otherId = UUID.randomUUID().toString();
         String otherPool = "other";
@@ -150,13 +147,13 @@ public class QueryTaskCheckpointTest {
         ShardQueryConfiguration otherConfig = new ShardQueryConfiguration();
         otherConfig.setQuery(otherQuery);
         QueryCheckpoint otherCp = new QueryCheckpoint(otherPool, uuid, queryLogic, config.getQueries());
-        assertNotEquals(otherCp, qcp);
+        Assertions.assertNotEquals(otherCp, qcp);
         otherCp = new QueryCheckpoint(queryPool, otherId, queryLogic, config.getQueries());
-        assertNotEquals(otherCp, qcp);
+        Assertions.assertNotEquals(otherCp, qcp);
         otherCp = new QueryCheckpoint(queryPool, uuid, otherLogic, config.getQueries());
-        assertNotEquals(otherCp, qcp);
+        Assertions.assertNotEquals(otherCp, qcp);
         otherCp = new QueryCheckpoint(queryPool, uuid, queryLogic, otherConfig.getQueries());
-        assertNotEquals(otherCp, qcp);
+        Assertions.assertNotEquals(otherCp, qcp);
     }
     
     @Test
@@ -175,8 +172,8 @@ public class QueryTaskCheckpointTest {
         QueryCheckpoint qcp = new QueryCheckpoint(queryPool, uuid, queryLogic, config.getQueries());
         QueryTask task = new QueryTask(0, QueryRequest.Method.CREATE, qcp);
         
-        assertEquals(QueryRequest.Method.CREATE, task.getAction());
-        assertEquals(qcp, task.getQueryCheckpoint());
+        Assertions.assertEquals(QueryRequest.Method.CREATE, task.getAction());
+        Assertions.assertEquals(qcp, task.getQueryCheckpoint());
         
         String uuid2 = uuid;
         String queryPool2 = "default";
@@ -188,24 +185,24 @@ public class QueryTaskCheckpointTest {
         config2.setQuery(query2);
         config2.setQueries(Collections.singletonList(queryData));
         QueryCheckpoint qcp2 = new QueryCheckpoint(queryPool2, uuid2, queryLogic2, config2.getQueries());
-        assertEquals(qcp, qcp2);
+        Assertions.assertEquals(qcp, qcp2);
         QueryTask task2 = new QueryTask(task.getTaskKey().getTaskId(), QueryRequest.Method.CREATE, qcp2);
         
-        assertEquals(task, task2);
-        assertEquals(task.hashCode(), task2.hashCode());
-        assertEquals(task.getTaskKey(), task2.getTaskKey());
+        Assertions.assertEquals(task, task2);
+        Assertions.assertEquals(task.hashCode(), task2.hashCode());
+        Assertions.assertEquals(task.getTaskKey(), task2.getTaskKey());
         
         String otherId = UUID.randomUUID().toString();
         QueryCheckpoint otherCp = new QueryCheckpoint(queryPool, otherId, queryLogic, config.getQueries());
         QueryTask otherTask = new QueryTask(1, QueryRequest.Method.CREATE, qcp);
-        assertNotEquals(otherTask, task);
-        assertNotEquals(otherTask.getTaskKey(), task.getTaskKey());
+        Assertions.assertNotEquals(otherTask, task);
+        Assertions.assertNotEquals(otherTask.getTaskKey(), task.getTaskKey());
         otherTask = new QueryTask(task.getTaskKey().getTaskId(), QueryRequest.Method.NEXT, qcp);
-        assertNotEquals(otherTask, task);
-        assertEquals(otherTask.getTaskKey(), task.getTaskKey());
+        Assertions.assertNotEquals(otherTask, task);
+        Assertions.assertEquals(otherTask.getTaskKey(), task.getTaskKey());
         otherTask = new QueryTask(task.getTaskKey().getTaskId(), QueryRequest.Method.CREATE, otherCp);
-        assertNotEquals(otherTask, task);
-        assertNotEquals(otherTask.getTaskKey(), task.getTaskKey());
+        Assertions.assertNotEquals(otherTask, task);
+        Assertions.assertNotEquals(otherTask.getTaskKey(), task.getTaskKey());
     }
     
     @Test
@@ -224,13 +221,13 @@ public class QueryTaskCheckpointTest {
         config.setQueries(Collections.singletonList(queryData));
         TaskDescription desc = new TaskDescription(key, config.getQueries());
         
-        assertEquals(key, desc.getTaskKey());
-        assertEquals(config.getQueries(), desc.getQueries());
+        Assertions.assertEquals(key, desc.getTaskKey());
+        Assertions.assertEquals(config.getQueries(), desc.getQueries());
         
         String json = new ObjectMapper().registerModule(new GuavaModule()).writeValueAsString(desc);
         TaskDescription desc2 = new ObjectMapper().registerModule(new GuavaModule()).readerFor(TaskDescription.class).readValue(json);
-        assertEquals(desc, desc2);
-        assertEquals(desc.hashCode(), desc2.hashCode());
+        Assertions.assertEquals(desc, desc2);
+        Assertions.assertEquals(desc.hashCode(), desc2.hashCode());
         
         TaskKey key2 = new TaskKey(key.getTaskId(), key.getQueryPool(), key.getQueryId(), key.getQueryLogic());
         QueryImpl query2 = new QueryImpl();
@@ -242,8 +239,8 @@ public class QueryTaskCheckpointTest {
         config2.setQueries(Collections.singletonList(queryData));
         desc2 = new TaskDescription(key2, config2.getQueries());
         
-        assertEquals(desc, desc2);
-        assertEquals(desc.hashCode(), desc.hashCode());
+        Assertions.assertEquals(desc, desc2);
+        Assertions.assertEquals(desc.hashCode(), desc.hashCode());
         
         TaskKey otherKey = new TaskKey(key.getTaskId() + 1, key.getQueryPool(), key.getQueryId(), key.getQueryLogic());
         QueryImpl otherQuery = new QueryImpl();
@@ -252,9 +249,9 @@ public class QueryTaskCheckpointTest {
         ShardQueryConfiguration otherConfig = new ShardQueryConfiguration();
         otherConfig.setQuery(otherQuery);
         TaskDescription otherDesc = new TaskDescription(otherKey, config.getQueries());
-        assertNotEquals(otherDesc, desc);
+        Assertions.assertNotEquals(otherDesc, desc);
         otherDesc = new TaskDescription(key, otherConfig.getQueries());
-        assertNotEquals(otherDesc, desc);
+        Assertions.assertNotEquals(otherDesc, desc);
     }
     
     @Test
@@ -272,15 +269,15 @@ public class QueryTaskCheckpointTest {
         tasks.setTaskStates(states);
         QueryState state = new QueryState(queryStatus, tasks);
         
-        assertEquals(uuid, state.getQueryStatus().getQueryKey().getQueryId());
-        assertEquals(queryPool, state.getQueryStatus().getQueryKey().getQueryPool());
-        assertEquals(queryLogic, state.getQueryStatus().getQueryKey().getQueryLogic());
-        assertEquals(tasks, state.getTaskStates());
+        Assertions.assertEquals(uuid, state.getQueryStatus().getQueryKey().getQueryId());
+        Assertions.assertEquals(queryPool, state.getQueryStatus().getQueryKey().getQueryPool());
+        Assertions.assertEquals(queryLogic, state.getQueryStatus().getQueryKey().getQueryLogic());
+        Assertions.assertEquals(tasks, state.getTaskStates());
         
         String json = new ObjectMapper().writeValueAsString(state);
         QueryState state2 = new ObjectMapper().readerFor(QueryState.class).readValue(json);
-        assertEquals(state, state2);
-        assertEquals(state.hashCode(), state2.hashCode());
+        Assertions.assertEquals(state, state2);
+        Assertions.assertEquals(state.hashCode(), state2.hashCode());
         
         String uuid2 = uuid;
         String queryPool2 = "default";
@@ -290,8 +287,8 @@ public class QueryTaskCheckpointTest {
         tasks2.setTaskStates(new HashMap<>(states));
         state2 = new QueryState(queryStatus2, tasks2);
         
-        assertEquals(state, state2);
-        assertEquals(state.hashCode(), state2.hashCode());
+        Assertions.assertEquals(state, state2);
+        Assertions.assertEquals(state.hashCode(), state2.hashCode());
         
         String otherId = UUID.randomUUID().toString();
         String otherPool = "other";
@@ -304,8 +301,8 @@ public class QueryTaskCheckpointTest {
         otherStates.get(TaskStates.TASK_STATE.READY).set(3);
         otherTasks.setTaskStates(otherStates);
         QueryState otherState = new QueryState(otherProperties, tasks);
-        assertNotEquals(otherState, state);
+        Assertions.assertNotEquals(otherState, state);
         otherState = new QueryState(queryStatus, otherTasks);
-        assertNotEquals(otherState, state);
+        Assertions.assertNotEquals(otherState, state);
     }
 }

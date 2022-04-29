@@ -29,7 +29,6 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.common.result.ConnectionPool;
 import datawave.services.query.logic.QueryLogicFactory;
@@ -38,8 +37,8 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -161,7 +160,7 @@ public abstract class QueryExecutorTest {
             System.setProperty("hadoop.home.dir", targetDir.getAbsolutePath());
         } catch (URISyntaxException se) {
             log.error("failed to get URI for .", se);
-            Assert.fail();
+            Assertions.fail();
         }
         FieldConfig generic = new GenericCityFields();
         generic.addReverseIndexField(CitiesDataType.CityField.STATE.name());
@@ -170,7 +169,7 @@ public abstract class QueryExecutorTest {
             dataType = new CitiesDataType(CitiesDataType.CityEntry.generic, generic);
         } catch (Exception e) {
             log.error("Failed to load cities data type", e);
-            Assert.fail();
+            Assertions.fail();
         }
     }
     

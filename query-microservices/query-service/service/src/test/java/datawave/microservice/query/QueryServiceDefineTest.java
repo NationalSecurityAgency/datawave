@@ -8,18 +8,18 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.GenericResponse;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
 
@@ -34,16 +34,16 @@ import static datawave.microservice.query.QueryParameters.QUERY_PAGESIZE;
 import static datawave.webservice.common.audit.AuditParameters.QUERY_STRING;
 import static datawave.webservice.query.QueryImpl.BEGIN_DATE;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 public class QueryServiceDefineTest extends AbstractQueryServiceTest {
-    @Before
+    @BeforeEach
     public void setup() {
         super.setup();
     }
     
-    @After
+    @AfterEach
     public void teardown() throws Exception {
         super.teardown();
     }
@@ -70,7 +70,7 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         
         // verify that a query id was returned
         String queryId = genericResponse.getResult();
-        Assert.assertNotNull(queryId);
+        Assertions.assertNotNull(queryId);
         
         // verify that query status was created correctly
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
@@ -127,10 +127,10 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertFalse(baseResponse.getHasResults());
+        Assertions.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, baseResponse.getExceptions().size());
+        Assertions.assertEquals(1, baseResponse.getExceptions().size());
         
         QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
@@ -142,7 +142,7 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there are no query statuses
-        Assert.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
+        Assertions.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
     }
     
     @Test
@@ -163,10 +163,10 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertFalse(baseResponse.getHasResults());
+        Assertions.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, baseResponse.getExceptions().size());
+        Assertions.assertEquals(1, baseResponse.getExceptions().size());
         
         QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
@@ -178,7 +178,7 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there are no query statuses
-        Assert.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
+        Assertions.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
     }
     
     @Test
@@ -202,10 +202,10 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertFalse(baseResponse.getHasResults());
+        Assertions.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, baseResponse.getExceptions().size());
+        Assertions.assertEquals(1, baseResponse.getExceptions().size());
         
         QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
@@ -217,7 +217,7 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there are no query statuses
-        Assert.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
+        Assertions.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
     }
     
     @Test
@@ -241,10 +241,10 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertFalse(baseResponse.getHasResults());
+        Assertions.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, baseResponse.getExceptions().size());
+        Assertions.assertEquals(1, baseResponse.getExceptions().size());
         
         QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
@@ -256,7 +256,7 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there are no query statuses
-        Assert.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
+        Assertions.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
     }
     
     @Test
@@ -280,10 +280,10 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertFalse(baseResponse.getHasResults());
+        Assertions.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, baseResponse.getExceptions().size());
+        Assertions.assertEquals(1, baseResponse.getExceptions().size());
         
         QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
@@ -295,7 +295,7 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there are no query statuses
-        Assert.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
+        Assertions.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
     }
     
     @Test
@@ -319,10 +319,10 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertFalse(baseResponse.getHasResults());
+        Assertions.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, baseResponse.getExceptions().size());
+        Assertions.assertEquals(1, baseResponse.getExceptions().size());
         
         QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
@@ -334,7 +334,7 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there are no query statuses
-        Assert.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
+        Assertions.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
     }
     
     @Test
@@ -356,10 +356,10 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertFalse(baseResponse.getHasResults());
+        Assertions.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, baseResponse.getExceptions().size());
+        Assertions.assertEquals(1, baseResponse.getExceptions().size());
         
         QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
@@ -371,7 +371,7 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there are no query statuses
-        Assert.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
+        Assertions.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
     }
     
     @Test
@@ -395,10 +395,10 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there is no result
-        Assert.assertFalse(baseResponse.getHasResults());
+        Assertions.assertFalse(baseResponse.getHasResults());
         
         // verify that an exception was returned
-        Assert.assertEquals(1, baseResponse.getExceptions().size());
+        Assertions.assertEquals(1, baseResponse.getExceptions().size());
         
         QueryExceptionType queryException = baseResponse.getExceptions().get(0);
         // @formatter:off
@@ -410,6 +410,6 @@ public class QueryServiceDefineTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that there are no query statuses
-        Assert.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
+        Assertions.assertTrue(queryStorageCache.getQueryStatus().isEmpty());
     }
 }

@@ -10,16 +10,16 @@ import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.VoidResponse;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -29,16 +29,16 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 public class QueryServiceNextTest extends AbstractQueryServiceTest {
-    @Before
+    @BeforeEach
     public void setup() {
         super.setup();
     }
     
-    @After
+    @AfterEach
     public void teardown() throws Exception {
         super.teardown();
     }
@@ -72,12 +72,12 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<BaseResponse> response = future.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify some headers
-        Assert.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
-        Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
-        Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+        Assertions.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
+        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
+        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
         
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
         
@@ -105,7 +105,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that the next event was published
-        Assert.assertEquals(2, queryRequestEvents.size());
+        Assertions.assertEquals(2, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -136,7 +136,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         fieldValues.add("LOKI", "CLASSIC");
         
         // verify that the create event was published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -161,12 +161,12 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
             // the response should come back right away
             ResponseEntity<BaseResponse> response = future.get();
             
-            Assert.assertEquals(200, response.getStatusCodeValue());
+            Assertions.assertEquals(200, response.getStatusCodeValue());
             
             // verify some headers
-            Assert.assertEquals(Integer.toString(page), Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
-            Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
-            Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+            Assertions.assertEquals(Integer.toString(page), Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
+            Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
+            Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
             
             DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
             
@@ -194,7 +194,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
             // @formatter:on
             
             // verify that the next event was published
-            Assert.assertEquals(1, queryRequestEvents.size());
+            Assertions.assertEquals(1, queryRequestEvents.size());
             // @formatter:off
             assertQueryRequestEvent(
                     "executor-unassigned:**",
@@ -244,17 +244,17 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
         
-        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, cancelResponse.getStatusCodeValue());
         
         // the response should come back right away
         ResponseEntity<BaseResponse> nextResponse = nextFuture.get();
         
-        Assert.assertEquals(200, nextResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, nextResponse.getStatusCodeValue());
         
         // verify some headers
-        Assert.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(nextResponse.getHeaders().get("X-query-page-number"))));
-        Assert.assertEquals("true", Iterables.getOnlyElement(Objects.requireNonNull(nextResponse.getHeaders().get("X-Partial-Results"))));
-        Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(nextResponse.getHeaders().get("X-query-last-page"))));
+        Assertions.assertEquals("1", Iterables.getOnlyElement(Objects.requireNonNull(nextResponse.getHeaders().get("X-query-page-number"))));
+        Assertions.assertEquals("true", Iterables.getOnlyElement(Objects.requireNonNull(nextResponse.getHeaders().get("X-Partial-Results"))));
+        Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(nextResponse.getHeaders().get("X-query-last-page"))));
         
         DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) nextResponse.getBody();
         
@@ -282,7 +282,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that the next events were published
-        Assert.assertEquals(4, queryRequestEvents.size());
+        Assertions.assertEquals(4, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -323,7 +323,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         fieldValues.add("LOKI", "CLASSIC");
         
         // verify that the create event was published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -349,16 +349,17 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
             ResponseEntity<BaseResponse> response = future.get();
             
             if (page != 4) {
-                Assert.assertEquals(200, response.getStatusCodeValue());
+                Assertions.assertEquals(200, response.getStatusCodeValue());
             } else {
-                Assert.assertEquals(204, response.getStatusCodeValue());
+                Assertions.assertEquals(204, response.getStatusCodeValue());
             }
             
             if (page != 4) {
                 // verify some headers
-                Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
-                Assert.assertEquals(Integer.toString(page), Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
-                Assert.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
+                Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-Partial-Results"))));
+                Assertions.assertEquals(Integer.toString(page),
+                                Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-page-number"))));
+                Assertions.assertEquals("false", Iterables.getOnlyElement(Objects.requireNonNull(response.getHeaders().get("X-query-last-page"))));
                 
                 DefaultEventQueryResponse queryResponse = (DefaultEventQueryResponse) response.getBody();
                 
@@ -386,7 +387,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
                 // @formatter:on
                 
                 // verify that the next event was published
-                Assert.assertEquals(1, queryRequestEvents.size());
+                Assertions.assertEquals(1, queryRequestEvents.size());
                 // @formatter:off
                 assertQueryRequestEvent(
                         "executor-unassigned:**",
@@ -395,10 +396,10 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
                         queryRequestEvents.removeLast());
                 // @formatter:on
             } else {
-                Assert.assertNull(response.getBody());
+                Assertions.assertNull(response.getBody());
                 
                 // verify that the next and close events were published
-                Assert.assertEquals(2, queryRequestEvents.size());
+                Assertions.assertEquals(2, queryRequestEvents.size());
                 // @formatter:off
                 assertQueryRequestEvent(
                         "executor-unassigned:**",
@@ -422,7 +423,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<BaseResponse> response = future.get();
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -454,11 +455,11 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<BaseResponse> response = future.get();
         
-        Assert.assertEquals(204, response.getStatusCodeValue());
-        Assert.assertNull(response.getBody());
+        Assertions.assertEquals(204, response.getStatusCodeValue());
+        Assertions.assertNull(response.getBody());
         
         // verify that the next event was published
-        Assert.assertEquals(3, queryRequestEvents.size());
+        Assertions.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -490,7 +491,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<BaseResponse> response = future.get();
         
-        Assert.assertEquals(404, response.getStatusCodeValue());
+        Assertions.assertEquals(404, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -501,7 +502,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that no events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
     
     @Test
@@ -517,7 +518,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
         
-        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, cancelResponse.getStatusCodeValue());
         
         // make the next call asynchronously
         Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);
@@ -525,7 +526,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<BaseResponse> response = future.get();
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -536,7 +537,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that the next events were published
-        Assert.assertEquals(3, queryRequestEvents.size());
+        Assertions.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -570,7 +571,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<BaseResponse> response = future.get();
         
-        Assert.assertEquals(401, response.getStatusCodeValue());
+        Assertions.assertEquals(401, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -581,7 +582,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that the next events were published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -608,7 +609,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // the response should come back after the configured timeout (5 seconds)
         ResponseEntity<BaseResponse> response = future.get();
         
-        Assert.assertEquals(500, response.getStatusCodeValue());
+        Assertions.assertEquals(500, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -619,7 +620,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that the next events were published
-        Assert.assertEquals(2, queryRequestEvents.size());
+        Assertions.assertEquals(2, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -647,7 +648,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<BaseResponse> response = future.get();
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -658,7 +659,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that no events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
     
     @Test
@@ -674,7 +675,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> closeResponse = closeFuture.get();
         
-        Assert.assertEquals(200, closeResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, closeResponse.getStatusCodeValue());
         
         // make the next call asynchronously
         Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);
@@ -682,7 +683,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<BaseResponse> response = future.get();
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -693,7 +694,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that no events were published
-        Assert.assertEquals(2, queryRequestEvents.size());
+        Assertions.assertEquals(2, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -721,7 +722,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
         
-        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, cancelResponse.getStatusCodeValue());
         
         // make the next call asynchronously
         Future<ResponseEntity<BaseResponse>> future = nextQuery(authUser, queryId);
@@ -729,7 +730,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<BaseResponse> response = future.get();
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -740,7 +741,7 @@ public class QueryServiceNextTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that the cancel event was published
-        Assert.assertEquals(3, queryRequestEvents.size());
+        Assertions.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",

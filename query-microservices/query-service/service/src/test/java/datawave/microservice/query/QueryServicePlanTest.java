@@ -5,11 +5,11 @@ import datawave.microservice.authorization.user.ProxiedUserDetails;
 import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.webservice.result.GenericResponse;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
@@ -19,7 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
 
@@ -30,7 +30,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 public class QueryServicePlanTest extends AbstractQueryServiceTest {
@@ -38,12 +38,12 @@ public class QueryServicePlanTest extends AbstractQueryServiceTest {
     @Autowired
     public ApplicationEventPublisher eventPublisher;
     
-    @Before
+    @BeforeEach
     public void setup() {
         super.setup();
     }
     
-    @After
+    @AfterEach
     public void teardown() throws Exception {
         super.teardown();
     }
@@ -69,11 +69,11 @@ public class QueryServicePlanTest extends AbstractQueryServiceTest {
         }
         
         // verify that the plan event was published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         RemoteQueryRequestEvent requestEvent = queryRequestEvents.removeLast();
         
-        Assert.assertEquals("executor-unassigned:**", requestEvent.getDestinationService());
-        Assert.assertEquals(QueryRequest.Method.PLAN, requestEvent.getRequest().getMethod());
+        Assertions.assertEquals("executor-unassigned:**", requestEvent.getDestinationService());
+        Assertions.assertEquals(QueryRequest.Method.PLAN, requestEvent.getRequest().getMethod());
         
         String queryId = requestEvent.getRequest().getQueryId();
         String plan = "some plan";
@@ -96,7 +96,7 @@ public class QueryServicePlanTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         String receivedPlan = genericResponse.getResult();
-        Assert.assertEquals(receivedPlan, plan);
+        Assertions.assertEquals(receivedPlan, plan);
         
         // @formatter:off
         assertQueryRequestEvent(
@@ -108,6 +108,6 @@ public class QueryServicePlanTest extends AbstractQueryServiceTest {
         
         // verify that the query status was deleted
         queryStatus = queryStorageCache.getQueryStatus(queryId);
-        Assert.assertNull(queryStatus);
+        Assertions.assertNull(queryStatus);
     }
 }

@@ -12,11 +12,11 @@ import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.result.DefaultEventQueryResponse;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -24,7 +24,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
@@ -42,17 +42,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 public class StreamingServiceTest extends AbstractQueryServiceTest {
     
-    @Before
+    @BeforeEach
     public void setup() {
         super.setup();
     }
     
-    @After
+    @AfterEach
     public void teardown() throws Exception {
         super.teardown();
     }
@@ -87,10 +87,10 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<String> response = future.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify some headers
-        Assert.assertEquals(MediaType.APPLICATION_XML, response.getHeaders().getContentType());
+        Assertions.assertEquals(MediaType.APPLICATION_XML, response.getHeaders().getContentType());
         
         int pageNumber = 1;
         
@@ -121,7 +121,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
         }
         
         // verify that the next event was published
-        Assert.assertEquals(6, queryRequestEvents.size());
+        Assertions.assertEquals(6, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -198,10 +198,10 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<String> response = future.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // verify some headers
-        Assert.assertEquals(MediaType.APPLICATION_XML, response.getHeaders().getContentType());
+        Assertions.assertEquals(MediaType.APPLICATION_XML, response.getHeaders().getContentType());
         
         int pageNumber = 1;
         
@@ -232,7 +232,7 @@ public class StreamingServiceTest extends AbstractQueryServiceTest {
         }
         
         // verify that the next event was published
-        Assert.assertEquals(6, queryRequestEvents.size());
+        Assertions.assertEquals(6, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",

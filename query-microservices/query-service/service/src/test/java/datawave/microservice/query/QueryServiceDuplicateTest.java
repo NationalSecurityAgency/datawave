@@ -7,17 +7,17 @@ import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
@@ -33,16 +33,16 @@ import static datawave.webservice.query.QueryImpl.BEGIN_DATE;
 import static datawave.webservice.query.QueryImpl.END_DATE;
 import static datawave.webservice.query.QueryImpl.QUERY;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
-    @Before
+    @BeforeEach
     public void setup() {
         super.setup();
     }
     
-    @After
+    @AfterEach
     public void teardown() throws Exception {
         super.teardown();
     }
@@ -66,7 +66,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<GenericResponse> response = duplicateFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         String dupeQueryId = (String) response.getBody().getResult();
         
@@ -98,17 +98,17 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // make sure the queries are identical
-        Assert.assertEquals(queryStatus.getQuery().getQuery(), dupeQueryStatus.getQuery().getQuery());
-        Assert.assertEquals(queryStatus.getQuery().getQueryAuthorizations(), dupeQueryStatus.getQuery().getQueryAuthorizations());
-        Assert.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()),
+        Assertions.assertEquals(queryStatus.getQuery().getQuery(), dupeQueryStatus.getQuery().getQuery());
+        Assertions.assertEquals(queryStatus.getQuery().getQueryAuthorizations(), dupeQueryStatus.getQuery().getQueryAuthorizations());
+        Assertions.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()),
                         DefaultQueryParameters.formatDate(dupeQueryStatus.getQuery().getBeginDate()));
-        Assert.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()),
+        Assertions.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()),
                         DefaultQueryParameters.formatDate(dupeQueryStatus.getQuery().getEndDate()));
-        Assert.assertEquals(queryStatus.getQuery().getQueryLogicName(), dupeQueryStatus.getQuery().getQueryLogicName());
-        Assert.assertEquals(queryStatus.getQuery().getPagesize(), dupeQueryStatus.getQuery().getPagesize());
+        Assertions.assertEquals(queryStatus.getQuery().getQueryLogicName(), dupeQueryStatus.getQuery().getQueryLogicName());
+        Assertions.assertEquals(queryStatus.getQuery().getPagesize(), dupeQueryStatus.getQuery().getPagesize());
         
         // verify that no events were published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -137,7 +137,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<GenericResponse> response = duplicateFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         String dupeQueryId = (String) response.getBody().getResult();
         
@@ -169,17 +169,17 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // make sure the queries are identical
-        Assert.assertEquals(queryStatus.getQuery().getQuery(), dupeQueryStatus.getQuery().getQuery());
-        Assert.assertEquals(queryStatus.getQuery().getQueryAuthorizations(), dupeQueryStatus.getQuery().getQueryAuthorizations());
-        Assert.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()),
+        Assertions.assertEquals(queryStatus.getQuery().getQuery(), dupeQueryStatus.getQuery().getQuery());
+        Assertions.assertEquals(queryStatus.getQuery().getQueryAuthorizations(), dupeQueryStatus.getQuery().getQueryAuthorizations());
+        Assertions.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()),
                         DefaultQueryParameters.formatDate(dupeQueryStatus.getQuery().getBeginDate()));
-        Assert.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()),
+        Assertions.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()),
                         DefaultQueryParameters.formatDate(dupeQueryStatus.getQuery().getEndDate()));
-        Assert.assertEquals(queryStatus.getQuery().getQueryLogicName(), dupeQueryStatus.getQuery().getQueryLogicName());
-        Assert.assertEquals(queryStatus.getQuery().getPagesize(), dupeQueryStatus.getQuery().getPagesize());
+        Assertions.assertEquals(queryStatus.getQuery().getQueryLogicName(), dupeQueryStatus.getQuery().getQueryLogicName());
+        Assertions.assertEquals(queryStatus.getQuery().getPagesize(), dupeQueryStatus.getQuery().getPagesize());
         
         // verify that no events were published
-        Assert.assertEquals(2, queryRequestEvents.size());
+        Assertions.assertEquals(2, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -208,7 +208,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // this should return immediately
         ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
         
-        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, cancelResponse.getStatusCodeValue());
         
         MultiValueMap<String,String> updateParams = new LinkedMultiValueMap<>();
         
@@ -221,7 +221,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<GenericResponse> response = duplicateFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         String dupeQueryId = (String) response.getBody().getResult();
         
@@ -253,17 +253,17 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // make sure the queries are identical
-        Assert.assertEquals(queryStatus.getQuery().getQuery(), dupeQueryStatus.getQuery().getQuery());
-        Assert.assertEquals(queryStatus.getQuery().getQueryAuthorizations(), dupeQueryStatus.getQuery().getQueryAuthorizations());
-        Assert.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()),
+        Assertions.assertEquals(queryStatus.getQuery().getQuery(), dupeQueryStatus.getQuery().getQuery());
+        Assertions.assertEquals(queryStatus.getQuery().getQueryAuthorizations(), dupeQueryStatus.getQuery().getQueryAuthorizations());
+        Assertions.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()),
                         DefaultQueryParameters.formatDate(dupeQueryStatus.getQuery().getBeginDate()));
-        Assert.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()),
+        Assertions.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()),
                         DefaultQueryParameters.formatDate(dupeQueryStatus.getQuery().getEndDate()));
-        Assert.assertEquals(queryStatus.getQuery().getQueryLogicName(), dupeQueryStatus.getQuery().getQueryLogicName());
-        Assert.assertEquals(queryStatus.getQuery().getPagesize(), dupeQueryStatus.getQuery().getPagesize());
+        Assertions.assertEquals(queryStatus.getQuery().getQueryLogicName(), dupeQueryStatus.getQuery().getQueryLogicName());
+        Assertions.assertEquals(queryStatus.getQuery().getPagesize(), dupeQueryStatus.getQuery().getPagesize());
         
         // verify that no events were published
-        Assert.assertEquals(4, queryRequestEvents.size());
+        Assertions.assertEquals(4, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -302,7 +302,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // this should return immediately
         ResponseEntity<VoidResponse> closeResponse = closeFuture.get();
         
-        Assert.assertEquals(200, closeResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, closeResponse.getStatusCodeValue());
         
         MultiValueMap<String,String> updateParams = new LinkedMultiValueMap<>();
         
@@ -315,7 +315,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<GenericResponse> response = duplicateFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         String dupeQueryId = (String) response.getBody().getResult();
         
@@ -347,17 +347,17 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // make sure the queries are identical
-        Assert.assertEquals(queryStatus.getQuery().getQuery(), dupeQueryStatus.getQuery().getQuery());
-        Assert.assertEquals(queryStatus.getQuery().getQueryAuthorizations(), dupeQueryStatus.getQuery().getQueryAuthorizations());
-        Assert.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()),
+        Assertions.assertEquals(queryStatus.getQuery().getQuery(), dupeQueryStatus.getQuery().getQuery());
+        Assertions.assertEquals(queryStatus.getQuery().getQueryAuthorizations(), dupeQueryStatus.getQuery().getQueryAuthorizations());
+        Assertions.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()),
                         DefaultQueryParameters.formatDate(dupeQueryStatus.getQuery().getBeginDate()));
-        Assert.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()),
+        Assertions.assertEquals(DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()),
                         DefaultQueryParameters.formatDate(dupeQueryStatus.getQuery().getEndDate()));
-        Assert.assertEquals(queryStatus.getQuery().getQueryLogicName(), dupeQueryStatus.getQuery().getQueryLogicName());
-        Assert.assertEquals(queryStatus.getQuery().getPagesize(), dupeQueryStatus.getQuery().getPagesize());
+        Assertions.assertEquals(queryStatus.getQuery().getQueryLogicName(), dupeQueryStatus.getQuery().getQueryLogicName());
+        Assertions.assertEquals(queryStatus.getQuery().getPagesize(), dupeQueryStatus.getQuery().getPagesize());
         
         // verify that no events were published
-        Assert.assertEquals(3, queryRequestEvents.size());
+        Assertions.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -407,7 +407,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<GenericResponse> response = duplicateFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         String dupeQueryId = (String) response.getBody().getResult();
         
@@ -439,21 +439,21 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // make sure the original query is unchanged
-        Assert.assertEquals(TEST_QUERY_STRING, queryStatus.getQuery().getQuery());
-        Assert.assertEquals(TEST_QUERY_AUTHORIZATIONS, queryStatus.getQuery().getQueryAuthorizations());
-        Assert.assertEquals(TEST_QUERY_BEGIN, DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()));
-        Assert.assertEquals(TEST_QUERY_END, DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()));
-        Assert.assertEquals("EventQuery", queryStatus.getQuery().getQueryLogicName());
+        Assertions.assertEquals(TEST_QUERY_STRING, queryStatus.getQuery().getQuery());
+        Assertions.assertEquals(TEST_QUERY_AUTHORIZATIONS, queryStatus.getQuery().getQueryAuthorizations());
+        Assertions.assertEquals(TEST_QUERY_BEGIN, DefaultQueryParameters.formatDate(queryStatus.getQuery().getBeginDate()));
+        Assertions.assertEquals(TEST_QUERY_END, DefaultQueryParameters.formatDate(queryStatus.getQuery().getEndDate()));
+        Assertions.assertEquals("EventQuery", queryStatus.getQuery().getQueryLogicName());
         
         // make sure the duplicated query is updated
-        Assert.assertEquals(newQuery, dupeQueryStatus.getQuery().getQuery());
-        Assert.assertEquals(newAuths, dupeQueryStatus.getQuery().getQueryAuthorizations());
-        Assert.assertEquals(newBegin, DefaultQueryParameters.formatDate(dupeQueryStatus.getQuery().getBeginDate()));
-        Assert.assertEquals(newEnd, DefaultQueryParameters.formatDate(dupeQueryStatus.getQuery().getEndDate()));
-        Assert.assertEquals(newLogic, dupeQueryStatus.getQuery().getQueryLogicName());
+        Assertions.assertEquals(newQuery, dupeQueryStatus.getQuery().getQuery());
+        Assertions.assertEquals(newAuths, dupeQueryStatus.getQuery().getQueryAuthorizations());
+        Assertions.assertEquals(newBegin, DefaultQueryParameters.formatDate(dupeQueryStatus.getQuery().getBeginDate()));
+        Assertions.assertEquals(newEnd, DefaultQueryParameters.formatDate(dupeQueryStatus.getQuery().getEndDate()));
+        Assertions.assertEquals(newLogic, dupeQueryStatus.getQuery().getQueryLogicName());
         
         // verify that no events were published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -490,13 +490,13 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = duplicateFuture.get();
         
-        Assert.assertEquals(400, response.getStatusCodeValue());
+        Assertions.assertEquals(400, response.getStatusCodeValue());
         
         // make sure an audit message wasn't sent
         assertAuditNotSent();
         
         // verify that no events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
     
     @Test
@@ -522,7 +522,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = duplicateFuture.get();
         
-        Assert.assertEquals(404, response.getStatusCodeValue());
+        Assertions.assertEquals(404, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -536,7 +536,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         assertAuditNotSent();
         
         // verify that no events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
     
     @Test
@@ -564,7 +564,7 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = duplicateFuture.get();
         
-        Assert.assertEquals(401, response.getStatusCodeValue());
+        Assertions.assertEquals(401, response.getStatusCodeValue());
         
         // make sure an audit message wasn't sent
         assertAuditNotSent();
@@ -580,9 +580,9 @@ public class QueryServiceDuplicateTest extends AbstractQueryServiceTest {
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
         
         // make sure the query was not updated
-        Assert.assertEquals(TEST_QUERY_STRING, queryStatus.getQuery().getQuery());
+        Assertions.assertEquals(TEST_QUERY_STRING, queryStatus.getQuery().getQuery());
         
         // verify that no events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
 }

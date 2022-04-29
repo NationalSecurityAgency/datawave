@@ -7,17 +7,17 @@ import datawave.microservice.query.remote.QueryRequest;
 import datawave.microservice.query.storage.QueryStatus;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.VoidResponse;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.util.UriComponents;
 
 import java.util.ArrayList;
@@ -29,16 +29,16 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 public class QueryServiceCancelTest extends AbstractQueryServiceTest {
-    @Before
+    @BeforeEach
     public void setup() {
         super.setup();
     }
     
-    @After
+    @AfterEach
     public void teardown() throws Exception {
         super.teardown();
     }
@@ -57,7 +57,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
         
-        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, cancelResponse.getStatusCodeValue());
         
         // verify that query status was created correctly
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
@@ -77,7 +77,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         assertTasksCreated(queryId);
         
         // verify that the cancel event was published
-        Assert.assertEquals(3, queryRequestEvents.size());
+        Assertions.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -126,7 +126,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
         
-        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, cancelResponse.getStatusCodeValue());
         
         // wait for the next call to drop out before checking status
         // since we canceled, this should quit immediately, but just in case, we add a timeout
@@ -153,7 +153,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         assertTasksCreated(queryId);
         
         // verify that the close event was published
-        Assert.assertEquals(4, queryRequestEvents.size());
+        Assertions.assertEquals(4, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -190,7 +190,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
         
-        Assert.assertEquals(404, cancelResponse.getStatusCodeValue());
+        Assertions.assertEquals(404, cancelResponse.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -216,7 +216,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> response = future.get();
         
-        Assert.assertEquals(401, response.getStatusCodeValue());
+        Assertions.assertEquals(401, response.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -227,7 +227,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that the next events were published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -250,7 +250,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
         
-        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, cancelResponse.getStatusCodeValue());
         
         // try to cancel the query again
         cancelFuture = cancelQuery(authUser, queryId);
@@ -258,7 +258,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         // the response should come back right away
         cancelResponse = cancelFuture.get();
         
-        Assert.assertEquals(400, cancelResponse.getStatusCodeValue());
+        Assertions.assertEquals(400, cancelResponse.getStatusCodeValue());
         
         // @formatter:off
         assertQueryException(
@@ -269,7 +269,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that the next events were published
-        Assert.assertEquals(3, queryRequestEvents.size());
+        Assertions.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -304,7 +304,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
         
-        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, cancelResponse.getStatusCodeValue());
         
         // verify that query status was created correctly
         QueryStatus queryStatus = queryStorageCache.getQueryStatus(queryId);
@@ -324,7 +324,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         assertTasksCreated(queryId);
         
         // verify that the cancel event was published
-        Assert.assertEquals(3, queryRequestEvents.size());
+        Assertions.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -360,10 +360,10 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<String> closeResponse = closeFuture.get();
         
-        Assert.assertEquals(403, closeResponse.getStatusCodeValue());
+        Assertions.assertEquals(403, closeResponse.getStatusCodeValue());
         
         // verify that the create event was published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -401,7 +401,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
         
-        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, cancelResponse.getStatusCodeValue());
         
         // verify that query status was created correctly
         List<QueryStatus> queryStatusList = queryStorageCache.getQueryStatus();
@@ -438,7 +438,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         }
         
         // verify that there are no more events
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
     
     @Test
@@ -473,7 +473,7 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<String> cancelResponse = cancelFuture.get();
         
-        Assert.assertEquals(403, cancelResponse.getStatusCodeValue());
+        Assertions.assertEquals(403, cancelResponse.getStatusCodeValue());
         
         // verify that query status was created correctly
         List<QueryStatus> queryStatusList = queryStorageCache.getQueryStatus();
@@ -496,6 +496,6 @@ public class QueryServiceCancelTest extends AbstractQueryServiceTest {
         }
         
         // verify that there are no more events
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
 }

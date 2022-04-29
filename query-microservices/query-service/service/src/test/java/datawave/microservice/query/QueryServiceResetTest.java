@@ -8,34 +8,34 @@ import datawave.microservice.query.storage.QueryStatus;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.GenericResponse;
 import datawave.webservice.result.VoidResponse;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.util.UriComponents;
 
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 public class QueryServiceResetTest extends AbstractQueryServiceTest {
-    @Before
+    @BeforeEach
     public void setup() {
         super.setup();
     }
     
-    @After
+    @AfterEach
     public void teardown() throws Exception {
         super.teardown();
     }
@@ -57,7 +57,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<GenericResponse> response = resetFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // @formatter:off
         assertGenericResponse(
@@ -69,7 +69,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         String resetQueryId = (String) response.getBody().getResult();
         
         // verify that a new query id was created
-        Assert.assertNotEquals(queryId, resetQueryId);
+        Assertions.assertNotEquals(queryId, resetQueryId);
         
         // verify that an audit record was sent
         assertAuditSent(resetQueryId);
@@ -104,10 +104,10 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         
         // make sure the queries are equal (ignoring the query id)
         queryStatus.getQuery().setId(resetQueryStatus.getQuery().getId());
-        Assert.assertEquals(queryStatus.getQuery(), resetQueryStatus.getQuery());
+        Assertions.assertEquals(queryStatus.getQuery(), resetQueryStatus.getQuery());
         
         // verify that events were published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -134,7 +134,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<GenericResponse> response = resetFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // @formatter:off
         assertGenericResponse(
@@ -146,7 +146,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         String resetQueryId = (String) response.getBody().getResult();
         
         // verify that a new query id was created
-        Assert.assertNotEquals(queryId, resetQueryId);
+        Assertions.assertNotEquals(queryId, resetQueryId);
         
         // verify that an audit record was sent
         assertAuditSent(resetQueryId);
@@ -181,10 +181,10 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         
         // make sure the queries are equal (ignoring the query id)
         queryStatus.getQuery().setId(resetQueryStatus.getQuery().getId());
-        Assert.assertEquals(queryStatus.getQuery(), resetQueryStatus.getQuery());
+        Assertions.assertEquals(queryStatus.getQuery(), resetQueryStatus.getQuery());
         
         // verify that events were published
-        Assert.assertEquals(4, queryRequestEvents.size());
+        Assertions.assertEquals(4, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -223,7 +223,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> closeResponse = closeFuture.get();
         
-        Assert.assertEquals(200, closeResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, closeResponse.getStatusCodeValue());
         
         mockServer.reset();
         auditSentSetup();
@@ -234,7 +234,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<GenericResponse> response = resetFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // @formatter:off
         assertGenericResponse(
@@ -246,7 +246,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         String resetQueryId = (String) response.getBody().getResult();
         
         // verify that a new query id was created
-        Assert.assertNotEquals(queryId, resetQueryId);
+        Assertions.assertNotEquals(queryId, resetQueryId);
         
         // verify that an audit record was sent
         assertAuditSent(resetQueryId);
@@ -281,10 +281,10 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         
         // make sure the queries are equal (ignoring the query id)
         queryStatus.getQuery().setId(resetQueryStatus.getQuery().getId());
-        Assert.assertEquals(queryStatus.getQuery(), resetQueryStatus.getQuery());
+        Assertions.assertEquals(queryStatus.getQuery(), resetQueryStatus.getQuery());
         
         // verify that events were published
-        Assert.assertEquals(3, queryRequestEvents.size());
+        Assertions.assertEquals(3, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -318,7 +318,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<VoidResponse> cancelResponse = cancelFuture.get();
         
-        Assert.assertEquals(200, cancelResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, cancelResponse.getStatusCodeValue());
         
         mockServer.reset();
         auditSentSetup();
@@ -329,7 +329,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<GenericResponse> response = resetFuture.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         // @formatter:off
         assertGenericResponse(
@@ -341,7 +341,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         String resetQueryId = (String) response.getBody().getResult();
         
         // verify that a new query id was created
-        Assert.assertNotEquals(queryId, resetQueryId);
+        Assertions.assertNotEquals(queryId, resetQueryId);
         
         // verify that an audit record was sent
         assertAuditSent(resetQueryId);
@@ -376,10 +376,10 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         
         // make sure the queries are equal (ignoring the query id)
         queryStatus.getQuery().setId(resetQueryStatus.getQuery().getId());
-        Assert.assertEquals(queryStatus.getQuery(), resetQueryStatus.getQuery());
+        Assertions.assertEquals(queryStatus.getQuery(), resetQueryStatus.getQuery());
         
         // verify that events were published
-        Assert.assertEquals(4, queryRequestEvents.size());
+        Assertions.assertEquals(4, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",
@@ -423,7 +423,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<BaseResponse> response = resetFuture.get();
         
-        Assert.assertEquals(404, response.getStatusCodeValue());
+        Assertions.assertEquals(404, response.getStatusCodeValue());
         
         // make sure no audits were sent
         assertAuditNotSent();
@@ -437,7 +437,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that no events were published
-        Assert.assertEquals(0, queryRequestEvents.size());
+        Assertions.assertEquals(0, queryRequestEvents.size());
     }
     
     @Test
@@ -462,7 +462,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         // the response should come back right away
         ResponseEntity<BaseResponse> response = resetFuture.get();
         
-        Assert.assertEquals(401, response.getStatusCodeValue());
+        Assertions.assertEquals(401, response.getStatusCodeValue());
         
         // make sure no audits were sent
         assertAuditNotSent();
@@ -476,7 +476,7 @@ public class QueryServiceResetTest extends AbstractQueryServiceTest {
         // @formatter:on
         
         // verify that no events were published
-        Assert.assertEquals(1, queryRequestEvents.size());
+        Assertions.assertEquals(1, queryRequestEvents.size());
         // @formatter:off
         assertQueryRequestEvent(
                 "executor-unassigned:**",

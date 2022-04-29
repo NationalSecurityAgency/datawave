@@ -23,7 +23,6 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
-import datawave.security.util.DnUtils;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.common.result.ConnectionPool;
 import datawave.services.query.logic.QueryCheckpoint;

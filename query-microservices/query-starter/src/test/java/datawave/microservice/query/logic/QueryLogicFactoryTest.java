@@ -3,9 +3,9 @@ package datawave.microservice.query.logic;
 import datawave.services.query.logic.QueryLogic;
 import datawave.services.query.logic.QueryLogicFactory;
 import datawave.webservice.query.exception.QueryException;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,9 +15,9 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @ActiveProfiles({"QueryStarterDefaults", "QueryLogicFactoryTest"})
 public class QueryLogicFactoryTest {
@@ -29,7 +29,7 @@ public class QueryLogicFactoryTest {
     public void createShardQueryLogicTest() throws QueryException, CloneNotSupportedException {
         QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic("EventQuery");
         
-        Assert.assertNotNull(queryLogic);
+        Assertions.assertNotNull(queryLogic);
     }
     
     @ComponentScan(basePackages = "datawave.microservice")

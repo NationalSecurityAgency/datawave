@@ -7,17 +7,17 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
 import datawave.webservice.result.QueryImplListResponse;
 import datawave.webservice.result.QueryLogicResponse;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -33,16 +33,16 @@ import java.util.stream.Collectors;
 
 import static datawave.microservice.query.QueryParameters.QUERY_NAME;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"QueryStarterDefaults", "QueryStarterOverrides", "QueryServiceTest", RemoteAuthorizationServiceUserDetailsService.ACTIVATION_PROFILE})
 public class QueryServiceListTest extends AbstractQueryServiceTest {
-    @Before
+    @BeforeEach
     public void setup() {
         super.setup();
     }
     
-    @After
+    @AfterEach
     public void teardown() throws Exception {
         super.teardown();
     }
@@ -76,18 +76,18 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         // this should return immediately
         ResponseEntity<QueryImplListResponse> listResponse = listFuture.get();
         
-        Assert.assertEquals(200, listResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, listResponse.getStatusCodeValue());
         
         QueryImplListResponse result = listResponse.getBody();
         
-        Assert.assertEquals(5, result.getNumResults());
+        Assertions.assertEquals(5, result.getNumResults());
         
         List<String> actualQueryIds = result.getQuery().stream().map(Query::getId).map(UUID::toString).collect(Collectors.toList());
         
         Collections.sort(queryIds);
         Collections.sort(actualQueryIds);
         
-        Assert.assertEquals(queryIds, actualQueryIds);
+        Assertions.assertEquals(queryIds, actualQueryIds);
     }
     
     @Test
@@ -109,15 +109,15 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         // this should return immediately
         ResponseEntity<QueryImplListResponse> listResponse = listFuture.get();
         
-        Assert.assertEquals(200, listResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, listResponse.getStatusCodeValue());
         
         QueryImplListResponse result = listResponse.getBody();
         
-        Assert.assertEquals(1, result.getNumResults());
+        Assertions.assertEquals(1, result.getNumResults());
         
         List<String> actualQueryIds = result.getQuery().stream().map(Query::getId).map(UUID::toString).collect(Collectors.toList());
         
-        Assert.assertEquals(queryIds.get(0), actualQueryIds.get(0));
+        Assertions.assertEquals(queryIds.get(0), actualQueryIds.get(0));
     }
     
     @Test
@@ -146,15 +146,15 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         // this should return immediately
         ResponseEntity<QueryImplListResponse> listResponse = listFuture.get();
         
-        Assert.assertEquals(200, listResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, listResponse.getStatusCodeValue());
         
         QueryImplListResponse result = listResponse.getBody();
         
-        Assert.assertEquals(1, result.getNumResults());
+        Assertions.assertEquals(1, result.getNumResults());
         
         List<String> actualQueryIds = result.getQuery().stream().map(Query::getId).map(UUID::toString).collect(Collectors.toList());
         
-        Assert.assertEquals(queryIds.get(0), actualQueryIds.get(0));
+        Assertions.assertEquals(queryIds.get(0), actualQueryIds.get(0));
     }
     
     @Test
@@ -183,11 +183,11 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         // this should return immediately
         ResponseEntity<QueryImplListResponse> listResponse = listFuture.get();
         
-        Assert.assertEquals(200, listResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, listResponse.getStatusCodeValue());
         
         QueryImplListResponse result = listResponse.getBody();
         
-        Assert.assertEquals(0, result.getNumResults());
+        Assertions.assertEquals(0, result.getNumResults());
         
         // list queries with just the query name and a bogus ID
         listFuture = listQueries(authUser, UUID.randomUUID().toString(), uniqueQueryName);
@@ -195,11 +195,11 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         // this should return immediately
         listResponse = listFuture.get();
         
-        Assert.assertEquals(200, listResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, listResponse.getStatusCodeValue());
         
         result = listResponse.getBody();
         
-        Assert.assertEquals(0, result.getNumResults());
+        Assertions.assertEquals(0, result.getNumResults());
         
         // list queries with just the query name and a bogus ID
         listFuture = listQueries(authUser, queryIds.get(0), uniqueQueryName);
@@ -207,15 +207,15 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         // this should return immediately
         listResponse = listFuture.get();
         
-        Assert.assertEquals(200, listResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, listResponse.getStatusCodeValue());
         
         result = listResponse.getBody();
         
-        Assert.assertEquals(1, result.getNumResults());
+        Assertions.assertEquals(1, result.getNumResults());
         
         List<String> actualQueryIds = result.getQuery().stream().map(Query::getId).map(UUID::toString).collect(Collectors.toList());
         
-        Assert.assertEquals(queryIds.get(0), actualQueryIds.get(0));
+        Assertions.assertEquals(queryIds.get(0), actualQueryIds.get(0));
     }
     
     @Test
@@ -245,11 +245,11 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         // this should return immediately
         ResponseEntity<QueryImplListResponse> listResponse = listFuture.get();
         
-        Assert.assertEquals(200, listResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, listResponse.getStatusCodeValue());
         
         QueryImplListResponse result = listResponse.getBody();
         
-        Assert.assertEquals(0, result.getNumResults());
+        Assertions.assertEquals(0, result.getNumResults());
         
         // list queries with just the query name and a bogus ID
         listFuture = listQueries(altAuthUser, UUID.randomUUID().toString(), uniqueQueryName);
@@ -257,11 +257,11 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         // this should return immediately
         listResponse = listFuture.get();
         
-        Assert.assertEquals(200, listResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, listResponse.getStatusCodeValue());
         
         result = listResponse.getBody();
         
-        Assert.assertEquals(0, result.getNumResults());
+        Assertions.assertEquals(0, result.getNumResults());
         
         // list queries with the query name and query ID
         listFuture = listQueries(altAuthUser, queryIds.get(0), uniqueQueryName);
@@ -269,11 +269,11 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         // this should return immediately
         listResponse = listFuture.get();
         
-        Assert.assertEquals(200, listResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, listResponse.getStatusCodeValue());
         
         result = listResponse.getBody();
         
-        Assert.assertEquals(0, result.getNumResults());
+        Assertions.assertEquals(0, result.getNumResults());
     }
     
     @Test
@@ -305,15 +305,15 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         // this should return immediately
         ResponseEntity<QueryImplListResponse> listResponse = listFuture.get();
         
-        Assert.assertEquals(200, listResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, listResponse.getStatusCodeValue());
         
         QueryImplListResponse result = listResponse.getBody();
         
-        Assert.assertEquals(1, result.getNumResults());
+        Assertions.assertEquals(1, result.getNumResults());
         
         List<String> actualQueryIds = result.getQuery().stream().map(Query::getId).map(UUID::toString).collect(Collectors.toList());
         
-        Assert.assertEquals(queryIds.get(0), actualQueryIds.get(0));
+        Assertions.assertEquals(queryIds.get(0), actualQueryIds.get(0));
         
         // list queries with just the query name
         listFuture = adminListQueries(adminUser, null, user, uniqueQueryName);
@@ -321,15 +321,15 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         // this should return immediately
         listResponse = listFuture.get();
         
-        Assert.assertEquals(200, listResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, listResponse.getStatusCodeValue());
         
         result = listResponse.getBody();
         
-        Assert.assertEquals(1, result.getNumResults());
+        Assertions.assertEquals(1, result.getNumResults());
         
         actualQueryIds = result.getQuery().stream().map(Query::getId).map(UUID::toString).collect(Collectors.toList());
         
-        Assert.assertEquals(queryIds.get(0), actualQueryIds.get(0));
+        Assertions.assertEquals(queryIds.get(0), actualQueryIds.get(0));
         
         // list queries with the query name and query ID
         listFuture = adminListQueries(adminUser, queryIds.get(0), user, uniqueQueryName);
@@ -337,15 +337,15 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         // this should return immediately
         listResponse = listFuture.get();
         
-        Assert.assertEquals(200, listResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, listResponse.getStatusCodeValue());
         
         result = listResponse.getBody();
         
-        Assert.assertEquals(1, result.getNumResults());
+        Assertions.assertEquals(1, result.getNumResults());
         
         actualQueryIds = result.getQuery().stream().map(Query::getId).map(UUID::toString).collect(Collectors.toList());
         
-        Assert.assertEquals(queryIds.get(0), actualQueryIds.get(0));
+        Assertions.assertEquals(queryIds.get(0), actualQueryIds.get(0));
     }
     
     @Test
@@ -381,7 +381,7 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         
         ResponseEntity<String> listResponse = listFuture.get();
         
-        Assert.assertEquals(403, listResponse.getStatusCodeValue());
+        Assertions.assertEquals(403, listResponse.getStatusCodeValue());
     }
     
     @Test
@@ -398,13 +398,13 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         // this should return immediately
         ResponseEntity<QueryImplListResponse> listResponse = listFuture.get();
         
-        Assert.assertEquals(200, listResponse.getStatusCodeValue());
+        Assertions.assertEquals(200, listResponse.getStatusCodeValue());
         
         QueryImplListResponse result = listResponse.getBody();
         
-        Assert.assertEquals(1, result.getNumResults());
+        Assertions.assertEquals(1, result.getNumResults());
         
-        Assert.assertEquals(queryId, result.getQuery().get(0).getId().toString());
+        Assertions.assertEquals(queryId, result.getQuery().get(0).getId().toString());
     }
     
     @Test
@@ -415,7 +415,7 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
         
         ResponseEntity<QueryLogicResponse> response = future.get();
         
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Assertions.assertEquals(200, response.getStatusCodeValue());
         
         QueryLogicResponse qlResponse = response.getBody();
         
@@ -423,12 +423,12 @@ public class QueryServiceListTest extends AbstractQueryServiceTest {
                 "ErrorCountQuery", "ErrorDiscoveryQuery", "ErrorEventQuery", "ErrorFieldIndexCountQuery", "EventQuery", "FacetedQuery", "FieldIndexCountQuery",
                 "HitHighlights", "IndexStatsQuery", "LuceneUUIDEventQuery", "QueryMetricsQuery", "InternalQueryMetricsQuery", "TermFrequencyQuery"};
         
-        Assert.assertEquals(expectedQueryLogics.length, qlResponse.getQueryLogicList().size());
+        Assertions.assertEquals(expectedQueryLogics.length, qlResponse.getQueryLogicList().size());
         
         List<String> qlNames = qlResponse.getQueryLogicList().stream().map(QueryLogicDescription::getName).sorted().collect(Collectors.toList());
         
         qlNames.removeAll(Arrays.asList(expectedQueryLogics));
         
-        Assert.assertTrue(qlNames.isEmpty());
+        Assertions.assertTrue(qlNames.isEmpty());
     }
 }
