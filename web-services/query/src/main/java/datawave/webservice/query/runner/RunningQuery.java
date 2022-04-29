@@ -304,6 +304,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     
                     if (o instanceof DefaultEvent) {
                         if (((DefaultEvent) o).isIntermediateResult()) {
+                            log.info("Received an intermediate result");
                             // in this case we have timed out up stream somewhere, so lets return what we have
                             hitIntermediateResult = true;
                             break;
@@ -335,11 +336,16 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     hasNextFuture = executor.submit(() -> this.iter.hasNext());
                 }
             } catch (TimeoutException te) {
+                log.info("Hit the timeout waiting for a result");
                 // This means the iter.hasNext() call didn't return within the allotted time. If this is a long running query,
                 // then we want to signal that the caller should call next to keep going (as opposed to just returning the
                 // page as COMPLETE)
                 if (logic.isLongRunningQuery()) {
+                    log.info("Short circuiting the long running query");
                     hitShortCircuitForLongRunningQuery = true;
+                } else if (resultList.isEmpty()) {
+                    log.warn("Query timed out waiting for next result");
+                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Query timed out waiting for next result");
                 }
             }
             // if the last hasNext() call failed, then we would catch the exception here
@@ -371,6 +377,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         }
         
         if (!resultList.isEmpty()) {
+            log.info("Returning page of results");
             // we have results!
             return new ResultsPage(
                             resultList,
@@ -380,17 +387,21 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             // we have no results. Let us determine whether we are done or not.
             
             // if we have hit an intermediate result or a short circuit then check to see how many times we hit this
-            if (hitIntermediateResult | hitShortCircuitForLongRunningQuery) {
+            if (hitIntermediateResult || hitShortCircuitForLongRunningQuery) {
                 currentTimeoutcount++;
                 if (timing != null && currentTimeoutcount == timing.getMaxLongRunningTimeoutRetries()) {
+                    log.warn("Query timed out waiting for results for too many ( " + currentTimeoutcount + ") cycles.");
                     // this means that we have timed out waiting for a result too many times over the course of this query.
                     // In this case we need to fail the next call with a timeout
-                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Query timed out waiting for a results for too many cycle.");
+                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Query timed out waiting for results for too many (" + currentTimeoutcount
+                                    + ") cycles.");
                 } else {
+                    log.info("Returning an empty partial results page");
                     // We are returning an empty page with a PARTIAL status to allow the query to continue running
                     return new ResultsPage(new ArrayList<>(), ResultsPage.Status.PARTIAL);
                 }
             } else {
+                log.info("Returning final empty page");
                 // This query is done, we have no more results to return.
                 return new ResultsPage();
             }
