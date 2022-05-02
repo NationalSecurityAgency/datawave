@@ -315,6 +315,16 @@
         <property name="logicDescription" value="Indexed Fields Only:  Given FIELDNAME returns counts for each unique value. Given FIELDNAME:FIELDVALUE returns count for only that value." />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
     </bean>
+
+    <!-- The Top Level Document query (queries document tree as if it were one document, and then returns the top level document as the representative) -->
+    <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
+        <property name="collapseUids" value="false"/>
+        <property name="indexFilteringClassNames">
+            <list value-type="java.lang.String">
+                <value>datawave.query.function.NormalizedVersionPredicate</value>
+            </list>
+        </property>
+    </bean>
     
     <!-- Query Logic that returns document content -->
     <bean id="ContentQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.content.ContentQueryTable">
