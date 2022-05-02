@@ -227,7 +227,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
             try {
                 while ((!this.finished && (future != null))
-                                || (Boolean) hasNextFuture.get(timing != null ? timing.getPageShortCircuitTimeoutMs() : Long.MAX_VALUE, TimeUnit.MILLISECONDS)) {
+                                || (Boolean) hasNextFuture.get(
+                                                timing != null ? Math.max(1,
+                                                                (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
+                                                                : Long.MAX_VALUE, TimeUnit.MILLISECONDS)) {
                     // the current hasNextFuture is complete
                     hasNextFuture = null;
                     
@@ -302,18 +305,16 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         // in this case we are still waiting on our future....simply continue
                     }
                     
-                    if (o instanceof DefaultEvent) {
-                        if (((DefaultEvent) o).isIntermediateResult()) {
-                            log.info("Received an intermediate result");
-                            // in this case we have timed out up stream somewhere, so lets return what we have
-                            hitIntermediateResult = true;
-                            break;
-                        }
-                    }
-                    
                     // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
                     if (iter.getTransformer() instanceof WritesQueryMetrics) {
                         ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
+                    }
+                    
+                    if (o instanceof DefaultEvent && ((DefaultEvent) o).isIntermediateResult()) {
+                        log.info("Received an intermediate result");
+                        // in this case we have timed out up stream somewhere, so lets return what we have
+                        hitIntermediateResult = true;
+                        break;
                     }
                     
                     // if not still waiting on a future, then process the result (or lack thereof)

@@ -118,7 +118,7 @@ public class LongRunningQueryTest {
         // this parameter is what makes the query long running. Failing to set this will let it default to 50 minutes
         // (and not the 200 milliseconds that it is set to) which will return only 1 page of 8 results, thereby failing this test.
         // the smaller this timeout, the more pages of results that will be returned.
-        logic.setQueryExecutionForPageTimeout(20);
+        logic.setQueryExecutionForPageTimeout(1);
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
@@ -128,8 +128,6 @@ public class LongRunningQueryTest {
         
         ResultsPage page = runningQuery.next();
         pages.add(page);
-        // guarantee the need for at least a second page. (make the wait slightly longer than the page timeout is set to)
-        Thread.sleep(50);
         
         while (page.getStatus() != ResultsPage.Status.COMPLETE) {
             page = runningQuery.next();
