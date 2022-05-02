@@ -1,7 +1,7 @@
 package datawave.query.postprocessing.tf;
 
 import datawave.query.jexl.functions.TermFrequencyList;
-import org.javatuples.Pair;
+import org.javatuples.Triplet;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -61,13 +61,15 @@ public class TermOffsetMap {
      * 
      * @param field
      *            the field
+     * @param eventId
+     *            the event id (see @TermFrequencyList.getEventId(Key))
      * @param start
      *            the phrase starting index
      * @param end
      *            the phrase ending index
      */
-    public void addPhraseIndexPair(String field, int start, int end) {
-        phraseIndexes.addIndexPair(field, start, end);
+    public void addPhraseIndexTriplet(String field, String eventId, int start, int end) {
+        phraseIndexes.addIndexTriplet(field, eventId, start, end);
     }
     
     /**
@@ -77,7 +79,7 @@ public class TermOffsetMap {
      *            the field
      * @return the phrase indexes
      */
-    public Collection<Pair<Integer,Integer>> getPhraseIndexes(String field) {
+    public Collection<Triplet<String,Integer,Integer>> getPhraseIndexes(String field) {
         return phraseIndexes.getIndices(field);
     }
     
