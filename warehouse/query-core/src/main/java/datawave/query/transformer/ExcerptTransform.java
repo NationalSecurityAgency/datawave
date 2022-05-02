@@ -14,7 +14,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
-import org.javatuples.Pair;
+import org.javatuples.Triplet;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -64,7 +64,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                     if (log.isTraceEnabled()) {
                         log.trace("Fetching phrase excerpts " + excerptFields + " for document " + document.getMetadata());
                     }
-                    Set<String> excerpts = getExcerpts(phraseIndexes, document);
+                    Set<String> excerpts = getExcerpts(phraseIndexes);
                     addExcerptsToDocument(excerpts, document);
                 } else {
                     if (log.isTraceEnabled()) {
@@ -116,28 +116,29 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      *            the pre-identified phrase offsets
      * @return the excerpts
      */
-    private Set<String> getExcerpts(PhraseIndexes phraseIndexes, Document document) {
+    private Set<String> getExcerpts(PhraseIndexes phraseIndexes) {
         phraseIndexes = getOffsetPhraseIndexes(phraseIndexes);
         if (phraseIndexes.isEmpty()) {
             return Collections.emptySet();
         }
         
-        // Construct the required range for this document.
-        Key metadata = document.getMetadata();
-        Key startKey = new Key(metadata.getRow(), metadata.getColumnFamily());
-        Key endKey = startKey.followingKey(PartialKey.ROW_COLFAM);
-        Range range = new Range(startKey, true, endKey, false);
-        
         // Fetch the excerpts.
         Set<String> excerpts = new HashSet<>();
         for (String field : phraseIndexes.getFields()) {
-            Collection<Pair<Integer,Integer>> indexes = phraseIndexes.getIndices(field);
-            for (Pair<Integer,Integer> indexPair : indexes) {
-                int start = indexPair.getValue0();
-                int end = indexPair.getValue1();
+            Collection<Triplet<String,Integer,Integer>> indexes = phraseIndexes.getIndices(field);
+            for (Triplet<String,Integer,Integer> indexPair : indexes) {
+                String eventId = indexPair.getValue0();
+                int start = indexPair.getValue1();
+                int end = indexPair.getValue2();
                 if (log.isTraceEnabled()) {
-                    log.trace("Fetching excerpt [" + start + "," + end + "] for field " + field + " for document " + metadata);
+                    log.trace("Fetching excerpt [" + start + "," + end + "] for field " + field + " for document " + eventId.replace('\u0000', '/'));
                 }
+                
+                // Construct the required range for this document.
+                int split = eventId.indexOf('\u0000');
+                Key startKey = new Key(eventId.substring(0, split), eventId.substring(split + 1));
+                Key endKey = startKey.followingKey(PartialKey.ROW_COLFAM);
+                Range range = new Range(startKey, true, endKey, false);
                 
                 String excerpt = getExcerpt(field, start, end, range);
                 // Only retain non-blank excerpts.
@@ -145,7 +146,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                     excerpts.add(excerpt);
                 } else {
                     if (log.isTraceEnabled()) {
-                        log.trace("Failed to find excerpt [" + start + "," + end + "] for field " + field + "for document " + metadata);
+                        log.trace("Failed to find excerpt [" + start + "," + end + "] for field " + field + "for document " + eventId.replace('\u0000', '/'));
                     }
                 }
             }
@@ -205,13 +206,14 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         for (String field : excerptFields.getFields()) {
             // Filter out phrases that are not in desired fields.
             if (phraseIndexes.containsField(field)) {
-                Collection<Pair<Integer,Integer>> indexes = phraseIndexes.getIndices(field);
+                Collection<Triplet<String,Integer,Integer>> indexes = phraseIndexes.getIndices(field);
                 int offset = excerptFields.getOffset(field);
                 // Ensure the offset is modified to encompass the target excerpt range.
-                for (Pair<Integer,Integer> indexPair : indexes) {
-                    int start = indexPair.getValue0() <= offset ? 0 : indexPair.getValue0() - offset;
-                    int end = indexPair.getValue1() + offset + 1; // Add 1 here to offset the non-inclusive end of the range that will be used when scanning.
-                    offsetPhraseIndexes.addIndexPair(field, start, end);
+                for (Triplet<String,Integer,Integer> indexPair : indexes) {
+                    String eventId = indexPair.getValue0();
+                    int start = indexPair.getValue1() <= offset ? 0 : indexPair.getValue1() - offset;
+                    int end = indexPair.getValue2() + offset + 1; // Add 1 here to offset the non-inclusive end of the range that will be used when scanning.
+                    offsetPhraseIndexes.addIndexTriplet(field, eventId, start, end);
                 }
             }
         }
