@@ -8,6 +8,9 @@ import static org.junit.Assert.assertTrue;
 
 public class PhraseIndexesTest {
     
+    private static final String EVENT_ID_1 = "shard1\u0000dt\u0000uid1";
+    private static final String EVENT_ID_2 = "shard2\u0000dt\u0000uid2";
+    
     /**
      * Verify formatting an empty {@link PhraseIndexes} returns an empty string.
      */
@@ -22,12 +25,12 @@ public class PhraseIndexesTest {
     @Test
     public void testNonEmptyPhraseOffsetsToString() {
         PhraseIndexes phraseIndexes = new PhraseIndexes();
-        phraseIndexes.addIndexPair("BODY", 1, 3);
-        phraseIndexes.addIndexPair("BODY", 10, 11);
-        phraseIndexes.addIndexPair("CONTENT", 3, 4);
-        phraseIndexes.addIndexPair("CONTENT", 12, 17);
+        phraseIndexes.addIndexTriplet("BODY", EVENT_ID_1, 1, 3);
+        phraseIndexes.addIndexTriplet("BODY", EVENT_ID_2, 10, 11);
+        phraseIndexes.addIndexTriplet("CONTENT", EVENT_ID_1, 3, 4);
+        phraseIndexes.addIndexTriplet("CONTENT", EVENT_ID_2, 12, 17);
         
-        assertEquals("BODY:1,3:10,11/CONTENT:3,4:12,17", phraseIndexes.toString());
+        assertEquals("BODY:" + EVENT_ID_1 + ",1,3:" + EVENT_ID_2 + ",10,11/CONTENT:" + EVENT_ID_1 + ",3,4:" + EVENT_ID_2 + ",12,17", phraseIndexes.toString());
     }
     
     /**
@@ -52,12 +55,13 @@ public class PhraseIndexesTest {
     @Test
     public void testParsingFromNonBlankString() {
         PhraseIndexes expected = new PhraseIndexes();
-        expected.addIndexPair("BODY", 1, 3);
-        expected.addIndexPair("BODY", 10, 11);
-        expected.addIndexPair("CONTENT", 3, 4);
-        expected.addIndexPair("CONTENT", 12, 17);
+        expected.addIndexTriplet("BODY", EVENT_ID_1, 1, 3);
+        expected.addIndexTriplet("BODY", EVENT_ID_2, 10, 11);
+        expected.addIndexTriplet("CONTENT", EVENT_ID_1, 3, 4);
+        expected.addIndexTriplet("CONTENT", EVENT_ID_2, 12, 17);
         
-        PhraseIndexes actual = PhraseIndexes.from("BODY:1,3:10,11/CONTENT:3,4:12,17");
+        PhraseIndexes actual = PhraseIndexes.from("BODY:" + EVENT_ID_1 + ",1,3:" + EVENT_ID_2 + ",10,11/CONTENT:" + EVENT_ID_1 + ",3,4:" + EVENT_ID_2
+                        + ",12,17");
         assertEquals(expected, actual);
     }
 }
