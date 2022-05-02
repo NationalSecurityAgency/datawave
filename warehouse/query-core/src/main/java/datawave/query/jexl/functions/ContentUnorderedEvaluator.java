@@ -55,9 +55,9 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
      * @return true if we found an unordered list within the specified distance for the specified set of offsets.
      */
     @Override
-    public boolean evaluate(String field, List<List<TermWeightPosition>> offsets) {
+    public boolean evaluate(String field, String eventId, List<List<TermWeightPosition>> offsets) {
         filterOffsets(offsets);
-        MultiOffsetMatcher mlIter = new MultiOffsetMatcher(distance, terms, offsets, field, termOffsetMap);
+        MultiOffsetMatcher mlIter = new MultiOffsetMatcher(distance, terms, offsets, field, eventId, termOffsetMap);
         return mlIter.findMatch();
     }
     
@@ -142,6 +142,7 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
         final PriorityQueue<OffsetList> offsetQueue = new PriorityQueue<>();
         Optional<TermWeightPosition> maxOffset = Optional.empty();
         final String field;
+        final String eventId;
         final TermOffsetMap termOffsetMap;
         
         /**
@@ -155,15 +156,21 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
          *            the maximum acceptable distance between terms.
          * @param terms
          *            the query terms.
+         * @param field
+         *            the field
+         * @param eventId
+         *            the event id (see @TermFrequencyList.getEventId(Key))
          * @param termOffsets
          *            the offsets for the specified terms, these lists will not be modified in any way.
          * @throws IllegalArgumentException
          *             if the number of terms does not match the number of offset lists.
          */
-        public MultiOffsetMatcher(int distance, String[] terms, Collection<List<TermWeightPosition>> termOffsets, String field, TermOffsetMap termOffsetMap) {
+        public MultiOffsetMatcher(int distance, String[] terms, Collection<List<TermWeightPosition>> termOffsets, String field, String eventId,
+                        TermOffsetMap termOffsetMap) {
             this.distance = distance;
             this.terms = terms;
             this.field = field;
+            this.eventId = eventId;
             this.termOffsetMap = termOffsetMap;
             if (terms.length > termOffsets.size()) {
                 // more terms than offsets, no match, falls through to quick short-circuit in findMatch.
@@ -222,7 +229,7 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
                     // Track the start and end offset for the phrase.
                     int startOffset = o.getMinOffset().getOffset();
                     int endOffset = maxOffset.get().getLowOffset();
-                    termOffsetMap.addPhraseIndexPair(field, startOffset, endOffset);
+                    termOffsetMap.addPhraseIndexTriplet(field, eventId, startOffset, endOffset);
                     if (log.isTraceEnabled()) {
                         log.trace("Adding phrase indexes [" + startOffset + "," + endOffset + "] for field " + field + " to jexl context");
                     }
