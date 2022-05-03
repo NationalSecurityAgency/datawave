@@ -45,7 +45,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     
     private static final Logger log = Logger.getLogger(UniqueTransform.class);
     
-    private final BloomFilter<byte[]> bloom;
+    private BloomFilter<byte[]> bloom;
     private UniqueFields uniqueFields;
     private Multimap<String,String> modelMapping;
     
@@ -60,7 +60,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     
     /**
      * Create a new {@link UniqueTransform} that will capture the reverse field mapping defined within the model being used by the logic (if present).
-     * 
+     *
      * @param logic
      *            the logic
      * @param uniqueFields
@@ -78,9 +78,25 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
     }
     
+    public void updateConfig(UniqueFields uniqueFields, QueryModel model) {
+        this.uniqueFields = uniqueFields;
+        this.uniqueFields.deconstructIdentifierFields();
+        this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
+        if (log.isTraceEnabled()) {
+            log.trace("unique fields: " + this.uniqueFields.getFields());
+        }
+        if (model != null) {
+            modelMapping = HashMultimap.create();
+            // reverse the reverse query mapping which will give us a mapping from the final field name to the original field name(s)
+            for (Map.Entry<String,String> entry : model.getReverseQueryMapping().entrySet()) {
+                modelMapping.put(entry.getValue(), entry.getKey());
+            }
+        }
+    }
+    
     /**
      * Get a predicate that will apply this transform.
-     * 
+     *
      * @return A unique transform predicate
      */
     public Predicate<Entry<Key,Document>> getUniquePredicate() {
@@ -89,7 +105,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     
     /**
      * Apply uniqueness to a document.
-     * 
+     *
      * @param keyDocumentEntry
      * @return The document if unique per the configured fields, null otherwise.
      */
@@ -114,7 +130,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     
     /**
      * Determine if a document is unique per the fields specified. If we have seen this set of fields and values before, then it is not unique.
-     * 
+     *
      * @param document
      * @return
      * @throws IOException
@@ -132,7 +148,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     
     /**
      * Get a sequence of bytes that uniquely identifies this document using the configured unique fields.
-     * 
+     *
      * @param document
      * @return A document signature
      * @throws IOException
@@ -190,7 +206,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     
     /**
      * Get a list of field sets that are sorted. (package private for testing)
-     * 
+     *
      * @param document
      * @return the fields sets that uniquely identify this document
      */
@@ -264,7 +280,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     /**
      * Multiply set1 and set2 by combining those in set1 are mutually exclusive with those in set2. Those left remaining in set1 are those entries that could
      * not be combined with anything in set2
-     * 
+     *
      * @param set1
      * @param set1
      * @return the multiplication
@@ -299,9 +315,9 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         if (attribute instanceof Attributes) {
             // @formatter:off
             return ((Attributes) attribute).getAttributes().stream()
-                            .map(this::getValues)
-                            .flatMap(Set::stream)
-                            .collect(Collectors.toSet());
+                    .map(this::getValues)
+                    .flatMap(Set::stream)
+                    .collect(Collectors.toSet());
             // @formatter:on
         } else {
             return Collections.singleton(String.valueOf(attribute.getData()));
