@@ -35,7 +35,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected Iterator<T> iterator = (Iterator<T>) Collections.emptyList().iterator();
     private int maxPageSize = 0;
     private long pageByteTrigger = 0;
-    
     private boolean collectQueryMetrics = true;
     private String _connPoolName;
     private Set<String> authorizedDNs;
@@ -345,5 +344,21 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     @Override
     public Map<String,Long> getDnResultLimits() {
         return dnResultLimits;
+    }
+    
+    @Override
+    public void setPageProcessingStartTime(long pageProcessingStartTime) {
+        // no op
+    }
+    
+    /**
+     * Whether the query is a type that should be allowed to be run long (exceed the short circuit timeout). Default to false. Implementations should override
+     * this if the default is not appropriate.
+     *
+     * @return Return whether the query is a type that should be allowed to be run long (exceed the short circuit timeout)
+     */
+    @Override
+    public boolean isLongRunningQuery() {
+        return false;
     }
 }

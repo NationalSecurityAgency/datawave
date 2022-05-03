@@ -10,6 +10,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.common.grouping.GroupingUtil;
 import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
 import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import org.apache.accumulo.core.data.Key;
@@ -77,8 +78,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     private final List<Key> keys = new ArrayList<>();
     
     /**
-     * how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client (which indicates the request is
-     * still in process and all results will be returned at once at the end)
+     * Length of time in milliseconds that a client will wait while results are collected. If a full page is not collected before the timeout, a blank page will
+     * be returned to signal the request is still in progress.
      */
     private final long queryExecutionForPageTimeout;
     
@@ -113,12 +114,26 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         log.trace("apply to {}", keyDocumentEntry);
         
         if (keyDocumentEntry != null) {
+            
+            // If this is a final document, bail without adding to the keys, countingMap or fieldVisibilities.
+            if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
+                return keyDocumentEntry;
+            }
+            
             keys.add(keyDocumentEntry.getKey());
             log.trace("{} get list key counts for: {}", "web-server", keyDocumentEntry);
             GroupingUtil.GroupingInfo groupingInfo = groupingUtil.getGroupingInfo(keyDocumentEntry, groupFieldsSet, countingMap, reverseModelMapping);
             this.countingMap = groupingInfo.getCountsMap();
             this.fieldVisibilities.putAll(groupingInfo.getFieldVisibilities());
         }
+        
+        long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
+        if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
+            Document intermediateResult = new Document();
+            intermediateResult.setIntermediateResult(true);
+            return Maps.immutableEntry(new Key(), intermediateResult);
+        }
+        
         return null;
     }
     
@@ -151,18 +166,6 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 d.put("COUNT", attr);
                 documents.add(d);
             }
-        }
-        
-        // Handle if the current page has exceeded its execution timeout, but there are still more results to return
-        // This must be done BEFORE popping documents from the document stack.
-        long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
-        if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
-            // Reset the queryExecutionForPageStartTime and clear the documents list so that it doesn't contain
-            // duplicates. Then return an empty document with the intermediate result flag set to true
-            documents.clear();
-            Document intermediateResult = new Document();
-            intermediateResult.setIsIntermediateResult(true);
-            return Maps.immutableEntry(new Key(), intermediateResult);
         }
         
         if (!documents.isEmpty()) {

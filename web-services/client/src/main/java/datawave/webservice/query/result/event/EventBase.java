@@ -1,14 +1,16 @@
 package datawave.webservice.query.result.event;
 
-import com.google.common.collect.Maps;
+import java.util.List;
+import java.util.Map;
+
 import io.protostuff.Message;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlTransient;
-import java.util.List;
-import java.util.Map;
+
+import com.google.common.collect.Maps;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultEvent.class)
@@ -17,6 +19,8 @@ public abstract class EventBase<T,F extends FieldBase<F>> implements HasMarkings
     protected transient Map<String,String> markings;
     
     protected transient boolean intermediateResult;
+    
+    protected transient boolean reachedMaxIntermediateResults;
     
     public abstract Metadata getMetadata();
     
@@ -66,4 +70,11 @@ public abstract class EventBase<T,F extends FieldBase<F>> implements HasMarkings
         this.intermediateResult = intermediateResult;
     }
     
+    public boolean hasReachedMaxIntermediateResults() {
+        return reachedMaxIntermediateResults;
+    }
+    
+    public void setReachedMaxIntermediateResults(boolean reachedMaxIntermediateResults) {
+        this.reachedMaxIntermediateResults = reachedMaxIntermediateResults;
+    }
 }

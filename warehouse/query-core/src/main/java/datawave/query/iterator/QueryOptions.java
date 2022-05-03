@@ -155,9 +155,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String DATATYPE_FIELDNAME = "include.datatype.fieldname";
     public static final String TRACK_SIZES = "track.sizes";
     
-    public static final String QUERY_PAGE_EXECUTION_TIMEOUT = "query.execution.for.page.timeout";
-    public static final String QUERY_IS_LONG_RUNNING = "query.is.long.running";
-    
     // pass through to Evaluating iterator to ensure consistency between query
     // logics
     
@@ -388,18 +385,6 @@ public class QueryOptions implements OptionDescriber {
     protected boolean debugMultithreadedSources = false;
     
     /**
-     * Manually stop the iteration (query execution) after the specified time has elapsed. Default to 50 minutes (3000000 milliseconds). A Value of 0
-     * effectively means no timeout. If this timeout is reached, either partial results, or a blank page is returned.
-     */
-    protected long queryExecutionTimeout = 3000000;
-    
-    /**
-     * If true, triggers keeping track of the intermediate result keys so that a blank page may be sent back at the end of each executionTimeout period, and
-     * then all results are returned at once after execution completes. An example of query that uses this is if the GROUP_FIELDS option exists.
-     */
-    protected boolean allowLongRunningQuery = false;
-    
-    /**
      * should document sizes be tracked
      */
     protected boolean trackSizes = true;
@@ -510,8 +495,6 @@ public class QueryOptions implements OptionDescriber {
         this.activeQueryLogName = other.activeQueryLogName;
         this.excerptFields = other.excerptFields;
         
-        this.queryExecutionTimeout = other.queryExecutionTimeout;
-        this.allowLongRunningQuery = other.allowLongRunningQuery;
     }
     
     public String getQuery() {
@@ -1107,8 +1090,6 @@ public class QueryOptions implements OptionDescriber {
                                         + ActiveQueryLog.DEFAULT_NAME
                                         + "', will use the default shared Active Query Log instance. If provided otherwise, uses a separate distinct Active Query Log that will include the unique name in log messages.");
         options.put(EXCERPT_FIELDS, "excerpt fields");
-        options.put(QUERY_PAGE_EXECUTION_TIMEOUT, "Time, in milliseocnds, after which a blank page will be returned and the query will continue to execute.");
-        options.put(QUERY_IS_LONG_RUNNING, "Allow the query to exceed the the timeout. Needs to be used in conjunction with QUERY_PAGE_EXECUTION_TIMEOUT");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
     
@@ -1368,8 +1349,6 @@ public class QueryOptions implements OptionDescriber {
             for (String param : Splitter.on(',').omitEmptyStrings().trimResults().split(groupFields)) {
                 this.getGroupFields().add(param);
             }
-            
-            this.setAllowLongRunningQuery(true);
         }
         
         if (options.containsKey(GROUP_FIELDS_BATCH_SIZE)) {
@@ -1569,15 +1548,6 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(EXCERPT_FIELDS)) {
             setExcerptFields(ExcerptFields.from(options.get(EXCERPT_FIELDS)));
-        }
-        
-        if (options.containsKey(QUERY_PAGE_EXECUTION_TIMEOUT)) {
-            String queryExecutionTimeoutStr = options.get(QUERY_PAGE_EXECUTION_TIMEOUT);
-            this.setQueryExecutionTimeout(Long.parseLong(queryExecutionTimeoutStr));
-        }
-        
-        if (options.containsKey(QUERY_IS_LONG_RUNNING)) {
-            this.setAllowLongRunningQuery(Boolean.parseBoolean(options.get(QUERY_IS_LONG_RUNNING)));
         }
         
         return true;
@@ -1984,22 +1954,6 @@ public class QueryOptions implements OptionDescriber {
     
     public void setYieldThresholdMs(long yieldThresholdMs) {
         this.yieldThresholdMs = yieldThresholdMs;
-    }
-    
-    public void setQueryExecutionTimeout(long queryExecutionTimeout) {
-        this.queryExecutionTimeout = queryExecutionTimeout;
-    }
-    
-    public long getQueryExecutionTimeout() {
-        return queryExecutionTimeout;
-    }
-    
-    public void setAllowLongRunningQuery(boolean allowLongRunningQuery) {
-        this.allowLongRunningQuery = allowLongRunningQuery;
-    }
-    
-    public boolean allowLongRunningQuery() {
-        return allowLongRunningQuery;
     }
     
 }

@@ -90,7 +90,7 @@ public class GroupingUtil {
             int longest = longestValueList(fieldToFieldWithContextMap);
             for (int i = 0; i < longest; i++) {
                 Collection<GroupingUtil.GroupingTypeAttribute<?>> fieldCollection = new HashSet<>();
-                String currentGroupingContext = Integer.toHexString(i).toUpperCase();
+                String currentGroupingContext = "";
                 for (String fieldListItem : expandedGroupFieldsList) {
                     log.trace("fieldListItem: {}", fieldListItem);
                     Collection<String> gtNames = fieldToFieldWithContextMap.get(fieldListItem);
@@ -98,10 +98,10 @@ public class GroupingUtil {
                         log.trace("gtNames: {}", gtNames);
                         log.trace("fieldToFieldWithContextMap: {} did not contain: {}", fieldToFieldWithContextMap, fieldListItem);
                     } else {
-                        String nameWithGrouping = fieldListItem + "." + currentGroupingContext;
-                        final String gtName = gtNames.stream().filter(name -> nameWithGrouping.equals(gtNames.iterator().next())).findAny().orElse(null);
-                        if (gtName == null || gtName.isEmpty()) {
-                            continue;
+                        String gtName = gtNames.iterator().next();
+                        int idx = gtName.indexOf('.');
+                        if (idx != -1) {
+                            currentGroupingContext = gtName.substring(idx + 1);
                         }
                         if (!fieldListItem.equals(gtName)) {
                             fieldToFieldWithContextMap.remove(fieldListItem, gtName);
