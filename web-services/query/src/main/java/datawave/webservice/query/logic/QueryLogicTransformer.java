@@ -24,4 +24,11 @@ public interface QueryLogicTransformer<I,O> extends Transformer<I,O> {
      */
     @Override
     O transform(I input) throws EmptyObjectException;
+    
+    /**
+     *
+     *
+     * @param queryExecutionForCurrentPageStartTime
+     */
+    void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime);
 }
