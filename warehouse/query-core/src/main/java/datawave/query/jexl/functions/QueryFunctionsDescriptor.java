@@ -80,7 +80,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 int i = 0;
                 for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
                     String field = JexlASTHelper.deconstructIdentifier(identifier.image);
-                    JexlNode kid = JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
+                    JexlNode kid = JexlNodeFactory.buildNode((ASTERNode) null, field, value);
                     kid.jjtSetParent(newParent);
                     newParent.jjtAddChild(kid, i++);
                 }
