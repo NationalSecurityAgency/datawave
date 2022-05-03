@@ -97,7 +97,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             final String value = args.get(1).image;
             if (node0 instanceof ASTIdentifier) {
                 final String field = JexlASTHelper.deconstructIdentifier(node0.image);
-                return JexlNodeFactory.buildNode((ASTERNode) null, field, value);
+                return JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
             } else {
                 // node0 is an Or node or an And node
                 // copy it
@@ -105,7 +105,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 int i = 0;
                 for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
                     String field = JexlASTHelper.deconstructIdentifier(identifier.image);
-                    JexlNode kid = JexlNodeFactory.buildNode((ASTERNode) null, field, value);
+                    JexlNode kid = JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
                     kid.jjtSetParent(newParent);
                     newParent.jjtAddChild(kid, i++);
                 }
