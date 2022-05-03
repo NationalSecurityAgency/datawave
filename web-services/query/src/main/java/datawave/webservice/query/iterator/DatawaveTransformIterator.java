@@ -14,8 +14,6 @@ public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
     private Logger log = Logger.getLogger(DatawaveTransformIterator.class);
     private O next = null;
     
-    private int intermediateCount = 0;
-    
     public DatawaveTransformIterator() {
         super();
     }

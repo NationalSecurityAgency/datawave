@@ -130,7 +130,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
         if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
             Document intermediateResult = new Document();
-            intermediateResult.setIsIntermediateResult(true);
+            intermediateResult.setIntermediateResult(true);
             return Maps.immutableEntry(new Key(), intermediateResult);
         }
         
