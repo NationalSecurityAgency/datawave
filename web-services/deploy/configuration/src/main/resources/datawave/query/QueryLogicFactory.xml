@@ -51,6 +51,7 @@
             <property name="parser" ref="LuceneToJexlQueryParser"/>
         </bean>
         <bean class="datawave.query.language.functions.jexl.ExcerptFields"/>
+        <bean class="datawave.query.language.functions.jexl.Matches"/>
     </util:list>
 
     <!-- Fields we should not tokenize in a tokenized query. In non-tokenized 
