@@ -9,7 +9,7 @@ jobs:
       - uses: docker://chinthakagodawita/autoupdate-action:v1
         continue-on-error: true
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: "${{ secrets.DATAWAVE_BOT_BUILDER_TOKEN }}"
           DRY_RUN: "false"
           PR_FILTER: "protected"
           EXCLUDED_LABELS: "dependencies,no_update"
