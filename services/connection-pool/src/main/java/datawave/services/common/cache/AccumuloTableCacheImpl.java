@@ -190,6 +190,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
         if (null == details.get(tableName)) {
             return;
         }
+        log.debug("Reloading table cache for " + tableName);
         // send an eviction notice to the cluster
         try {
             details.get(tableName).getWatcher().incrementCounter(tableName);

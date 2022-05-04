@@ -1,4 +1,4 @@
-package datawave.webservice.common.result;
+package datawave.services.common.result;
 
 import datawave.services.common.cache.TableCacheDescription;
 import datawave.webservice.HtmlProvider;

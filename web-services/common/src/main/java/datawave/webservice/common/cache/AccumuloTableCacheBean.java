@@ -10,7 +10,7 @@ import datawave.services.common.cache.AccumuloTableCacheImpl;
 import datawave.services.common.cache.TableCacheDescription;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.common.result.AccumuloTableCacheStatus;
+import datawave.services.common.result.AccumuloTableCacheStatus;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.VoidResponse;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
