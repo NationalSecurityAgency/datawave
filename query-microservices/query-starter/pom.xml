@@ -108,6 +108,12 @@
                 <groupId>gov.nsa.datawave.services</groupId>
                 <artifactId>datawave-services-query</artifactId>
                 <version>${version.datawave}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>log4j</artifactId>
+                        <groupId>log4j</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
