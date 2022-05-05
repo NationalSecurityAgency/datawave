@@ -3,7 +3,7 @@ package datawave.microservice.query.executor.config;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.services.common.cache.AccumuloTableCache;
-import datawave.services.common.cache.AccumuloTableCacheConfiguration;
+import datawave.services.common.cache.AccumuloTableCacheProperties;
 import datawave.services.common.cache.AccumuloTableCacheImpl;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.common.connection.AccumuloConnectionFactoryImpl;
@@ -28,16 +28,16 @@ public class QueryExecutorConfig {
     }
     
     @Bean
-    @ConditionalOnMissingBean(AccumuloTableCacheConfiguration.class)
+    @ConditionalOnMissingBean(AccumuloTableCacheProperties.class)
     @ConfigurationProperties("datawave.table.cache")
-    public AccumuloTableCacheConfiguration tableCacheConfiguration() {
-        return new AccumuloTableCacheConfiguration();
+    public AccumuloTableCacheProperties tableCacheConfiguration() {
+        return new AccumuloTableCacheProperties();
     }
     
     @Bean
     @ConditionalOnMissingBean(AccumuloTableCache.class)
-    public AccumuloTableCache tableCache(AccumuloTableCacheConfiguration accumuloTableCacheConfiguration) {
-        return new AccumuloTableCacheImpl(accumuloTableCacheConfiguration);
+    public AccumuloTableCache tableCache(AccumuloTableCacheProperties accumuloTableCacheProperties) {
+        return new AccumuloTableCacheImpl(accumuloTableCacheProperties);
     }
     
     @Bean

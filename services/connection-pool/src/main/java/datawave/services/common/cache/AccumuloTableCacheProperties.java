@@ -1,12 +1,9 @@
 package datawave.services.common.cache;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public class AccumuloTableCacheConfiguration {
+public class AccumuloTableCacheProperties {
     private String zookeepers = null;
     private List<String> tableNames = new ArrayList<>();
     private String poolName;
@@ -15,24 +12,11 @@ public class AccumuloTableCacheConfiguration {
     private int numLocks;
     private int maxRetries;
     
-    private Map<String,TableCache> caches = new HashMap<>();
-    
-    public AccumuloTableCacheConfiguration build() {
-        for (String tableName : tableNames) {
-            BaseTableCache cache = new BaseTableCache();
-            cache.setTableName(tableName);
-            cache.setConnectionPoolName(poolName);
-            cache.setReloadInterval(reloadInterval);
-            caches.put(tableName, cache);
-        }
-        return this;
-    }
-    
     public String getZookeepers() {
         return zookeepers;
     }
     
-    public AccumuloTableCacheConfiguration withZookeepers(String zookeepers) {
+    public AccumuloTableCacheProperties withZookeepers(String zookeepers) {
         this.zookeepers = zookeepers;
         return this;
     }
@@ -41,7 +25,7 @@ public class AccumuloTableCacheConfiguration {
         return tableNames;
     }
     
-    public AccumuloTableCacheConfiguration withTableNames(List<String> tableNames) {
+    public AccumuloTableCacheProperties withTableNames(List<String> tableNames) {
         this.tableNames = tableNames;
         return this;
     }
@@ -50,7 +34,7 @@ public class AccumuloTableCacheConfiguration {
         return poolName;
     }
     
-    public AccumuloTableCacheConfiguration withPoolName(String poolName) {
+    public AccumuloTableCacheProperties withPoolName(String poolName) {
         this.poolName = poolName;
         return this;
     }
@@ -59,7 +43,7 @@ public class AccumuloTableCacheConfiguration {
         return reloadInterval;
     }
     
-    public AccumuloTableCacheConfiguration withReloadInterval(long reloadInterval) {
+    public AccumuloTableCacheProperties withReloadInterval(long reloadInterval) {
         this.reloadInterval = reloadInterval;
         return this;
     }
@@ -68,7 +52,7 @@ public class AccumuloTableCacheConfiguration {
         return evictionReaperIntervalInSeconds;
     }
     
-    public AccumuloTableCacheConfiguration withEvictionReaperIntervalInSeconds(int evictionReaperIntervalInSeconds) {
+    public AccumuloTableCacheProperties withEvictionReaperIntervalInSeconds(int evictionReaperIntervalInSeconds) {
         this.evictionReaperIntervalInSeconds = evictionReaperIntervalInSeconds;
         return this;
     }
@@ -77,7 +61,7 @@ public class AccumuloTableCacheConfiguration {
         return numLocks;
     }
     
-    public AccumuloTableCacheConfiguration withNumLocks(int numLocks) {
+    public AccumuloTableCacheProperties withNumLocks(int numLocks) {
         this.numLocks = numLocks;
         return this;
     }
@@ -86,13 +70,9 @@ public class AccumuloTableCacheConfiguration {
         return maxRetries;
     }
     
-    public AccumuloTableCacheConfiguration withMaxRetries(int maxRetries) {
+    public AccumuloTableCacheProperties withMaxRetries(int maxRetries) {
         this.maxRetries = maxRetries;
         return this;
-    }
-    
-    public Map<String,TableCache> getCaches() {
-        return Collections.unmodifiableMap(caches);
     }
     
     public void setZookeepers(String zookeepers) {

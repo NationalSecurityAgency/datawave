@@ -5,7 +5,7 @@ import datawave.annotation.Required;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.services.common.cache.AccumuloTableCache;
-import datawave.services.common.cache.AccumuloTableCacheConfiguration;
+import datawave.services.common.cache.AccumuloTableCacheProperties;
 import datawave.services.common.cache.AccumuloTableCacheImpl;
 import datawave.services.common.cache.TableCacheDescription;
 import datawave.services.common.connection.AccumuloConnectionFactory;
@@ -99,9 +99,9 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
     
     @PostConstruct
     private void setup() {
-        AccumuloTableCacheConfiguration config = new AccumuloTableCacheConfiguration().withTableNames(tableNames).withPoolName(poolName).withNumLocks(numLocks)
+        AccumuloTableCacheProperties config = new AccumuloTableCacheProperties().withTableNames(tableNames).withPoolName(poolName).withNumLocks(numLocks)
                         .withZookeepers(zookeepers).withMaxRetries(maxRetries).withReloadInterval(reloadInterval)
-                        .withEvictionReaperIntervalInSeconds(evictionReaperIntervalInSeconds).build();
+                        .withEvictionReaperIntervalInSeconds(evictionReaperIntervalInSeconds);
         
         log.debug("Called AccumuloTableCacheBean and accumuloTableCacheConfiguration = " + config);
         

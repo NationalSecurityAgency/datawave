@@ -29,46 +29,49 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
     private final Logger log = Logger.getLogger(this.getClass());
     
     private final ExecutorService executorService;
-    private final AccumuloTableCacheConfiguration accumuloTableCacheConfiguration;
+    private final AccumuloTableCacheProperties accumuloTableCacheProperties;
     
     private InMemoryInstance instance;
     private Map<String,TableCache> details;
     private List<SharedCacheCoordinator> cacheCoordinators;
     private boolean connectionFactoryProvided = false;
     
-    public AccumuloTableCacheImpl(ExecutorService executorService, AccumuloTableCacheConfiguration accumuloTableCacheConfiguration) {
-        log.debug("Called AccumuloTableCacheImpl with accumuloTableCacheConfiguration = " + accumuloTableCacheConfiguration);
+    public AccumuloTableCacheImpl(ExecutorService executorService, AccumuloTableCacheProperties accumuloTableCacheProperties) {
+        log.debug("Called AccumuloTableCacheImpl with accumuloTableCacheConfiguration = " + accumuloTableCacheProperties);
         this.executorService = executorService;
-        this.accumuloTableCacheConfiguration = accumuloTableCacheConfiguration;
+        this.accumuloTableCacheProperties = accumuloTableCacheProperties;
         setup();
     }
     
-    public AccumuloTableCacheImpl(AccumuloTableCacheConfiguration accumuloTableCacheConfiguration) {
-        this(getThreadPoolExecutor(accumuloTableCacheConfiguration), accumuloTableCacheConfiguration);
+    public AccumuloTableCacheImpl(AccumuloTableCacheProperties accumuloTableCacheProperties) {
+        this(getThreadPoolExecutor(accumuloTableCacheProperties), accumuloTableCacheProperties);
     }
     
-    private static ExecutorService getThreadPoolExecutor(AccumuloTableCacheConfiguration accumuloTableCacheConfiguration) {
-        return new ThreadPoolExecutor(Math.max(accumuloTableCacheConfiguration.getTableNames().size() / 2, 1), Math.max(accumuloTableCacheConfiguration
+    private static ExecutorService getThreadPoolExecutor(AccumuloTableCacheProperties accumuloTableCacheProperties) {
+        return new ThreadPoolExecutor(Math.max(accumuloTableCacheProperties.getTableNames().size() / 2, 1), Math.max(accumuloTableCacheProperties
                         .getTableNames().size(), 1), 5, TimeUnit.MINUTES, new LinkedBlockingDeque<>(), new NamingThreadFactory("TableCacheReloader"));
     }
     
     public void setup() {
-        log.debug("accumuloTableCacheConfiguration was setup as: " + accumuloTableCacheConfiguration);
+        log.debug("accumuloTableCacheConfiguration was setup as: " + accumuloTableCacheProperties);
         
         instance = new InMemoryInstance();
         details = new HashMap<>();
         cacheCoordinators = new ArrayList<>();
         
-        String zookeepers = accumuloTableCacheConfiguration.getZookeepers();
+        String zookeepers = accumuloTableCacheProperties.getZookeepers();
         
-        for (Entry<String,TableCache> entry : accumuloTableCacheConfiguration.getCaches().entrySet()) {
-            final String tableName = entry.getKey();
-            TableCache detail = entry.getValue();
+        for (String tableName : accumuloTableCacheProperties.getTableNames()) {
+            BaseTableCache detail = new BaseTableCache();
+            detail.setTableName(tableName);
+            detail.setConnectionPoolName(accumuloTableCacheProperties.getPoolName());
+            detail.setReloadInterval(accumuloTableCacheProperties.getReloadInterval());
+            
             detail.setInstance(instance);
             
             final SharedCacheCoordinator cacheCoordinator = new SharedCacheCoordinator(tableName, zookeepers,
-                            accumuloTableCacheConfiguration.getEvictionReaperIntervalInSeconds(), accumuloTableCacheConfiguration.getNumLocks(),
-                            accumuloTableCacheConfiguration.getMaxRetries());
+                            accumuloTableCacheProperties.getEvictionReaperIntervalInSeconds(), accumuloTableCacheProperties.getNumLocks(),
+                            accumuloTableCacheProperties.getMaxRetries());
             cacheCoordinators.add(cacheCoordinator);
             try {
                 cacheCoordinator.start();
@@ -114,13 +117,12 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
                 throw new RuntimeException("table:" + tableName + " Unable to create shared counters: " + e.getMessage(), e);
             }
             detail.setWatcher(cacheCoordinator);
-            details.put(entry.getKey(), entry.getValue());
-            
+            details.put(tableName, detail);
         }
     }
     
     public void setConnectionFactory(AccumuloConnectionFactory connectionFactory) {
-        for (Entry<String,TableCache> entry : accumuloTableCacheConfiguration.getCaches().entrySet()) {
+        for (Entry<String,TableCache> entry : details.entrySet()) {
             TableCache detail = entry.getValue();
             detail.setConnectionFactory(connectionFactory);
         }

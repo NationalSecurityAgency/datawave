@@ -51,18 +51,12 @@ import static datawave.microservice.http.converter.protostuff.ProtostuffHttpMess
 
 @RestController
 @RequestMapping(path = "/v1/AccumuloTableCache", produces = MediaType.APPLICATION_JSON_VALUE)
-public class TableCacheController implements TableCacheReloadRequestHandler {
+public class TableCacheController {
     private final Logger log = Logger.getLogger(TableCacheController.class);
-    private final AccumuloTableCache cache;
-    private final BusProperties busProperties;
-    private final ApplicationEventPublisher publisher;
-    private final QueryProperties queryProperties;
+    private final TableCacheReloadService service;
     
-    public TableCacheController(AccumuloTableCache cache, BusProperties busProperties, ApplicationEventPublisher publisher, QueryProperties queryProperties) {
-        this.cache = cache;
-        this.busProperties = busProperties;
-        this.publisher = publisher;
-        this.queryProperties = queryProperties;
+    public TableCacheController(TableCacheReloadService service) {
+        this.service = service;
     }
     
     /**
@@ -79,21 +73,11 @@ public class TableCacheController implements TableCacheReloadRequestHandler {
     @RequestMapping(path = "/reload/{tableName}", method = {RequestMethod.GET},
                     produces = {"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})
     public VoidResponse reloadCache(@PathVariable String tableName) {
-        cache.reloadTableCache(tableName);
-        sendCacheReloadMessage(tableName);
-        return new VoidResponse();
-    }
-    
-    private void sendCacheReloadMessage(String tableName) {
-        log.warn("Sending cache reload message about table " + tableName);
-        // @formatter:off
-        publisher.publishEvent(
-                new TableCacheReloadRequestEvent(
-                        cache,
-                        busProperties.getId(),
-                        queryProperties.getExecutorServiceName(), // TODO + "-*" ???
-                        tableName));
-        // @formatter:on
+        log.debug("Handling reload request for " + tableName + " and notifying other executor services");
+        service.reloadTable(tableName, true);
+        VoidResponse response = new VoidResponse();
+        response.addMessage(tableName + " reloaded and message sent to all other executor services");
+        return response;
     }
     
     /**
@@ -114,12 +98,7 @@ public class TableCacheController implements TableCacheReloadRequestHandler {
                     produces = {"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})
     public AccumuloTableCacheStatus getStatus() {
         AccumuloTableCacheStatus response = new AccumuloTableCacheStatus();
-        response.getCaches().addAll(cache.getTableCaches());
+        response.getCaches().addAll(service.getTableCache().getTableCaches());
         return response;
-    }
-    
-    @Override
-    public void handleRemoteRequest(String tableName, String originService, String destinationService) {
-        cache.reloadTableCache(tableName);
     }
 }
