@@ -2,3 +2,7 @@
 	path = query-microservices/query-metric
 	url = git@github.com:NationalSecurityAgency/datawave-query-metric-service.git
 	branch = feature/queryMicroservices
+[submodule "query-microservices/dictionary-service"]
+	path = query-microservices/dictionary-service
+	url = git@github.com:NationalSecurityAgency/datawave-dictionary-service.git
+	branch = feature/queryMicroservices

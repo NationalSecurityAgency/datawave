@@ -17,6 +17,7 @@
         <module>query-starter</module>
         <module>query-storage</module>
         <module>query-executor</module>
+        <module>dictionary-service</module>
     </modules>
     <repositories>
         <repository>
