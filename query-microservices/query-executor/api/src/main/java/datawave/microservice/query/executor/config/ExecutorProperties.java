@@ -33,11 +33,6 @@ public class ExecutorProperties {
     @NotNull
     private TimeUnit monitorTaskLeaseTimeUnit = TimeUnit.MILLISECONDS;
     
-    @PositiveOrZero
-    private long tableCacheReloadTaskLease = TimeUnit.MINUTES.toMillis(10);
-    @NotNull
-    private TimeUnit tableCacheReloadTaskLeaseTimeUnit = TimeUnit.MILLISECONDS;
-    
     // how often should executor status be logged regardless of whether there are status changes
     private long logStatusPeriodMs = 10 * 60 * 1000;
     // how often should executor status be logged when the status has changed
@@ -125,26 +120,6 @@ public class ExecutorProperties {
     
     public void setMonitorTaskLeaseTimeUnit(TimeUnit monitorTaskLeaseTimeUnit) {
         this.monitorTaskLeaseTimeUnit = monitorTaskLeaseTimeUnit;
-    }
-    
-    public long getTableCacheReloadTaskLease() {
-        return tableCacheReloadTaskLease;
-    }
-    
-    public void setTableCacheReloadTaskLease(long tableCacheReloadTaskLease) {
-        this.tableCacheReloadTaskLease = tableCacheReloadTaskLease;
-    }
-    
-    public long getTableCacheReloadTaskLeaseMillis() {
-        return tableCacheReloadTaskLeaseTimeUnit.toMillis(tableCacheReloadTaskLease);
-    }
-    
-    public TimeUnit getTableCacheReloadTaskLeaseTimeUnit() {
-        return tableCacheReloadTaskLeaseTimeUnit;
-    }
-    
-    public void setTableCacheReloadTaskLeaseTimeUnit(TimeUnit tableCacheReloadTaskLeaseTimeUnit) {
-        this.tableCacheReloadTaskLeaseTimeUnit = tableCacheReloadTaskLeaseTimeUnit;
     }
     
     public int getCheckpointFlushResults() {

@@ -28,19 +28,6 @@ public class QueryExecutorConfig {
     }
     
     @Bean
-    @ConditionalOnMissingBean(AccumuloTableCacheProperties.class)
-    @ConfigurationProperties("datawave.table.cache")
-    public AccumuloTableCacheProperties tableCacheConfiguration() {
-        return new AccumuloTableCacheProperties();
-    }
-    
-    @Bean
-    @ConditionalOnMissingBean(AccumuloTableCache.class)
-    public AccumuloTableCache tableCache(AccumuloTableCacheProperties accumuloTableCacheProperties) {
-        return new AccumuloTableCacheImpl(accumuloTableCacheProperties);
-    }
-    
-    @Bean
     @ConditionalOnMissingBean(ConnectionPoolsProperties.class)
     @ConfigurationProperties("datawave.connection.factory")
     public ConnectionPoolsProperties poolProperties() {

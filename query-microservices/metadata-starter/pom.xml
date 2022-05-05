@@ -20,6 +20,22 @@
                 <version>${version.microservice.starter}</version>
             </dependency>
             <dependency>
+                <groupId>gov.nsa.datawave.services</groupId>
+                <artifactId>datawave-services-connection-pool</artifactId>
+                <version>${version.datawave}</version>
+                <exclusions>
+                    <!-- Exclude log4j since with spring boot we're using log4j2 -->
+                    <exclusion>
+                        <artifactId>log4j</artifactId>
+                        <groupId>log4j</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>slf4j-reload4j</artifactId>
+                        <groupId>org.slf4j</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave</artifactId>
                 <version>${version.microservice.starter}</version>
@@ -40,6 +56,12 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>spring-boot-starter-datawave-cache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.services</groupId>
+            <artifactId>datawave-services-connection-pool</artifactId>
+            <version>3.21.0-SNAPSHOT</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

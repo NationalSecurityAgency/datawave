@@ -1,8 +1,9 @@
-package datawave.microservice.query.remote.event.listener;
+package datawave.microservice.metadata.remote.event.listener;
 
-import datawave.microservice.query.remote.TableCacheReloadRequestHandler;
+import datawave.microservice.metadata.remote.TableCacheReloadRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.bus.ConditionalOnBusEnabled;
 import org.springframework.cloud.bus.ServiceMatcher;
 import org.springframework.cloud.bus.event.TableCacheReloadRequestEvent;
@@ -13,6 +14,7 @@ import java.util.List;
 
 @Component
 @ConditionalOnBusEnabled
+@ConditionalOnProperty(name = "datawave.table.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class TableCacheReloadRequestEventListener implements ApplicationListener<TableCacheReloadRequestEvent> {
     private final Logger log = LoggerFactory.getLogger(getClass());
     

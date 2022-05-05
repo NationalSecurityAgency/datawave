@@ -53,3 +53,8 @@ spring:
   rabbitmq:
     discovery:
       enabled: false
+
+datawave:
+  table:
+    cache:
+      enabled: false

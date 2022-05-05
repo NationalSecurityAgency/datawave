@@ -1,27 +1,25 @@
-package datawave.microservice.query.executor;
+package datawave.microservice.metadata.tablecache;
 
-import datawave.microservice.query.config.QueryProperties;
-import datawave.microservice.query.remote.TableCacheReloadRequestHandler;
+import datawave.microservice.metadata.remote.TableCacheReloadRequestHandler;
 import datawave.services.common.cache.AccumuloTableCache;
 import org.apache.log4j.Logger;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.bus.BusProperties;
 import org.springframework.cloud.bus.event.TableCacheReloadRequestEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @Service
+@ConditionalOnProperty(name = "datawave.table.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class TableCacheReloadService implements TableCacheReloadRequestHandler {
     private final Logger log = Logger.getLogger(TableCacheReloadService.class);
     private final AccumuloTableCache cache;
     private final BusProperties busProperties;
-    private final QueryProperties queryProperties;
     private final ApplicationEventPublisher publisher;
     
-    public TableCacheReloadService(AccumuloTableCache cache, BusProperties busProperties, QueryProperties queryProperties,
-                    ApplicationEventPublisher publisher) {
+    public TableCacheReloadService(AccumuloTableCache cache, BusProperties busProperties, ApplicationEventPublisher publisher) {
         this.cache = cache;
         this.busProperties = busProperties;
-        this.queryProperties = queryProperties;
         this.publisher = publisher;
     }
     
@@ -69,7 +67,7 @@ public class TableCacheReloadService implements TableCacheReloadRequestHandler {
                 new TableCacheReloadRequestEvent(
                         cache,
                         busProperties.getId(),
-                        queryProperties.getExecutorServiceName() + "-*",
+                        null,  // null destination service will result is sending it to all services
                         tableName));
         // @formatter:on
     }

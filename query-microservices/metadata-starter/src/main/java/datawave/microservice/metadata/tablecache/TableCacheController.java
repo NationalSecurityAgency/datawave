@@ -1,56 +1,20 @@
-package datawave.microservice.query.executor;
+package datawave.microservice.metadata.tablecache;
 
 import com.codahale.metrics.annotation.Timed;
-import com.google.common.collect.Multimap;
-import datawave.microservice.query.config.QueryProperties;
-import datawave.microservice.query.executor.action.ExecutorTask;
-import datawave.microservice.query.executor.config.ExecutorProperties;
-import datawave.microservice.query.executor.task.FindWorkTask;
-import datawave.microservice.query.remote.QueryRequestHandler;
-import datawave.microservice.query.remote.TableCacheReloadRequestHandler;
-import datawave.microservice.query.result.ExecutorMetricsResponse;
-import datawave.microservice.query.result.QueryTaskDescription;
-import datawave.services.common.cache.AccumuloTableCache;
-import datawave.services.common.cache.TableCache;
-import datawave.services.common.cache.TableCacheDescription;
 import datawave.services.common.result.AccumuloTableCacheStatus;
 import datawave.webservice.result.VoidResponse;
 import org.apache.log4j.Logger;
-import org.springframework.cloud.bus.BusProperties;
-import org.springframework.cloud.bus.event.RemoteQueryRequestEvent;
-import org.springframework.cloud.bus.event.TableCacheReloadRequestEvent;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.stream.Collectors;
-
-import static datawave.microservice.http.converter.protostuff.ProtostuffHttpMessageConverter.PROTOSTUFF_VALUE;
 
 @RestController
 @RequestMapping(path = "/v1/AccumuloTableCache", produces = MediaType.APPLICATION_JSON_VALUE)
+@ConditionalOnProperty(name = "datawave.table.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class TableCacheController {
     private final Logger log = Logger.getLogger(TableCacheController.class);
     private final TableCacheReloadService service;
@@ -68,7 +32,7 @@ public class TableCacheController {
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */
-    @Timed(name = "dw.query.executor.tableCache.reloadCache", absolute = true)
+    @Timed(name = "dw.table.cache.reloadCache", absolute = true)
     @Secured({"AuthorizedUser", "AuthorizedQueryServer", "AuthorizedServer", "InternalUser", "Administrator", "JBossAdministrator"})
     @RequestMapping(path = "/reload/{tableName}", method = {RequestMethod.GET},
                     produces = {"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})
@@ -92,7 +56,7 @@ public class TableCacheController {
      *
      * @HTTP 200 success
      */
-    @Timed(name = "dw.query.executor.tableCache.getStatus", absolute = true)
+    @Timed(name = "dw.table.cache.getStatus", absolute = true)
     @Secured({"AuthorizedUser", "AuthorizedQueryServer", "AuthorizedServer", "InternalUser", "Administrator", "JBossAdministrator"})
     @RequestMapping(path = "/", method = {RequestMethod.GET},
                     produces = {"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})

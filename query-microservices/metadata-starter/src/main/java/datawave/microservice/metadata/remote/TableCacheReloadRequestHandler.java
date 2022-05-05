@@ -1,4 +1,4 @@
-package datawave.microservice.query.remote;
+package datawave.microservice.metadata.remote;
 
 // implement this if you only want to handle external requests
 public interface TableCacheReloadRequestHandler {

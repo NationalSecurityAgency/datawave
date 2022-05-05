@@ -2,6 +2,7 @@ package datawave.services.common.cache;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class AccumuloTableCacheProperties {
     private String zookeepers = null;
@@ -11,6 +12,8 @@ public class AccumuloTableCacheProperties {
     private int evictionReaperIntervalInSeconds;
     private int numLocks;
     private int maxRetries;
+    private long tableCacheReloadTaskLease = TimeUnit.MINUTES.toMillis(10);
+    private TimeUnit tableCacheReloadTaskLeaseTimeUnit = TimeUnit.MILLISECONDS;
     
     public String getZookeepers() {
         return zookeepers;
@@ -101,6 +104,26 @@ public class AccumuloTableCacheProperties {
     
     public void setMaxRetries(int maxRetries) {
         this.maxRetries = maxRetries;
+    }
+    
+    public long getTableCacheReloadTaskLease() {
+        return tableCacheReloadTaskLease;
+    }
+    
+    public void setTableCacheReloadTaskLease(long tableCacheReloadTaskLease) {
+        this.tableCacheReloadTaskLease = tableCacheReloadTaskLease;
+    }
+    
+    public long getTableCacheReloadTaskLeaseMillis() {
+        return tableCacheReloadTaskLeaseTimeUnit.toMillis(tableCacheReloadTaskLease);
+    }
+    
+    public TimeUnit getTableCacheReloadTaskLeaseTimeUnit() {
+        return tableCacheReloadTaskLeaseTimeUnit;
+    }
+    
+    public void setTableCacheReloadTaskLeaseTimeUnit(TimeUnit tableCacheReloadTaskLeaseTimeUnit) {
+        this.tableCacheReloadTaskLeaseTimeUnit = tableCacheReloadTaskLeaseTimeUnit;
     }
     
 }

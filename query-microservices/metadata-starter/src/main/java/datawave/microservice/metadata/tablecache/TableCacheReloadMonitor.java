@@ -1,7 +1,7 @@
-package datawave.microservice.query.executor.task;
+package datawave.microservice.metadata.tablecache;
 
-import datawave.microservice.query.executor.config.ExecutorProperties;
 import datawave.services.common.cache.AccumuloTableCache;
+import datawave.services.common.cache.AccumuloTableCacheProperties;
 import org.apache.log4j.Logger;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,19 +14,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 @Component
-@ConditionalOnProperty(name = "datawave.query.executor.table.cache.reload.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "datawave.table.cache.enabled", havingValue = "true", matchIfMissing = true)
 public class TableCacheReloadMonitor {
     private final Logger log = Logger.getLogger(TableCacheReloadMonitor.class);
     private final AccumuloTableCache cache;
-    private final ExecutorProperties executorProperties;
+    private final AccumuloTableCacheProperties properties;
     
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private long taskStartTime;
     private Future<Void> taskFuture;
     
-    public TableCacheReloadMonitor(AccumuloTableCache cache, ExecutorProperties executorProperties) {
+    public TableCacheReloadMonitor(AccumuloTableCache cache, AccumuloTableCacheProperties properties) {
         this.cache = cache;
-        this.executorProperties = executorProperties;
+        this.properties = properties;
     }
     
     @Scheduled(cron = "${datawave.query.executor.tablecache.reload-crontab:* * */5 * * ?}")
@@ -65,7 +65,7 @@ public class TableCacheReloadMonitor {
     }
     
     private boolean isTaskLeaseExpired() {
-        return (System.currentTimeMillis() - taskStartTime) > executorProperties.getTableCacheReloadTaskLeaseMillis();
+        return (System.currentTimeMillis() - taskStartTime) > properties.getTableCacheReloadTaskLeaseMillis();
     }
     
 }
