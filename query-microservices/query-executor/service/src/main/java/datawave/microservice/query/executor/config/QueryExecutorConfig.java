@@ -1,16 +1,19 @@
 package datawave.microservice.query.executor.config;
 
+import datawave.microservice.query.config.QueryProperties;
+import datawave.microservice.query.executor.QueryExecutor;
+import datawave.microservice.query.executor.task.FindWorkMonitor;
+import datawave.microservice.query.storage.QueryStorageCache;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.services.common.cache.AccumuloTableCache;
-import datawave.services.common.cache.AccumuloTableCacheProperties;
-import datawave.services.common.cache.AccumuloTableCacheImpl;
 import datawave.services.common.connection.AccumuloConnectionFactory;
 import datawave.services.common.connection.AccumuloConnectionFactoryImpl;
 import datawave.services.common.result.ConnectionPoolsProperties;
 import datawave.services.query.predict.NoOpQueryPredictor;
 import datawave.services.query.predict.QueryPredictor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,5 +53,13 @@ public class QueryExecutorConfig {
     @ConditionalOnMissingBean(QueryPredictor.class)
     public QueryPredictor queryPredictor() {
         return new NoOpQueryPredictor();
+    }
+    
+    @Bean
+    @ConditionalOnMissingBean(FindWorkMonitor.class)
+    @ConditionalOnProperty(name = "datawave.query.executor.monitor.enabled", havingValue = "true", matchIfMissing = true)
+    public FindWorkMonitor findWorkMonitor(ExecutorProperties executorProperties, QueryProperties queryProperties, QueryStorageCache cache,
+                    QueryExecutor executor) {
+        return new FindWorkMonitor(executorProperties, queryProperties, cache, executor);
     }
 }

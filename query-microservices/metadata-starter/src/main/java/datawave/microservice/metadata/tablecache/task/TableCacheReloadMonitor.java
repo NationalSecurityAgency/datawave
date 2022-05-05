@@ -1,4 +1,4 @@
-package datawave.microservice.metadata.tablecache;
+package datawave.microservice.metadata.tablecache.task;
 
 import datawave.services.common.cache.AccumuloTableCache;
 import datawave.services.common.cache.AccumuloTableCacheProperties;
@@ -29,8 +29,8 @@ public class TableCacheReloadMonitor {
         this.properties = properties;
     }
     
-    @Scheduled(cron = "${datawave.query.executor.tablecache.reload-crontab:* * */5 * * ?}")
-    public void submitReloadTasks() {
+    @Scheduled(cron = "${datawave.table.cache.reload-crontab:* * * * * ?}")
+    public void monitorReloadTasks() {
         // perform some upkeep
         if (taskFuture != null) {
             if (taskFuture.isDone()) {

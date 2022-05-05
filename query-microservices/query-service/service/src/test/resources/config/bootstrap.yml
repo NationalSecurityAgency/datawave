@@ -18,3 +18,4 @@ datawave:
   table:
     cache:
       enabled: false
+

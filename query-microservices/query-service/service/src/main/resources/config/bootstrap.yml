@@ -20,6 +20,11 @@ spring:
   main:
     allow-circular-references: true
 
+datawave:
+  table:
+    cache:
+      enabled: false
+
 ---
 
 # For the dev profile, check localhost for the config server by default
@@ -55,9 +60,4 @@ spring:
       enabled: false
   rabbitmq:
     discovery:
-      enabled: false
-
-datawave:
-  table:
-    cache:
       enabled: false
