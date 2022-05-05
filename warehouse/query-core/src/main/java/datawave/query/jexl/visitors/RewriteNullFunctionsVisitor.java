@@ -141,15 +141,18 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         
+        JexlNode copy = RebuildingVisitor.copy(node);
+        
         FunctionJexlNodeVisitor visitor = new FunctionJexlNodeVisitor();
-        node.jjtAccept(visitor, null);
+        copy.jjtAccept(visitor, null);
         
         if (visitor.namespace().equals(EVAL_PHASE_FUNCTION_NAMESPACE)) {
-            if (visitor.name().equals(IS_NULL)) {
-                JexlNode rewritten = rewriteFilterFunction(visitor, false);
-                JexlNodes.replaceChild(node.jjtGetParent(), node, rewritten);
-            } else if (visitor.name().equals(IS_NOT_NULL)) {
-                JexlNode rewritten = rewriteFilterFunction(visitor, true);
+            JexlNode rewritten = null;
+            if (visitor.name().equals(IS_NULL) || visitor.name().equals(IS_NOT_NULL)) {
+                rewritten = rewriteFilterFunction(visitor);
+            }
+            
+            if (rewritten != null) {
                 JexlNodes.replaceChild(node.jjtGetParent(), node, rewritten);
             }
         }
@@ -162,18 +165,16 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
      *
      * @param visitor
      *            a {@link FunctionJexlNodeVisitor}
-     * @param negated
-     *            a flag indicating this method should negate the built node
      * @return the rewritten function
      */
-    private JexlNode rewriteFilterFunction(FunctionJexlNodeVisitor visitor, boolean negated) {
+    private JexlNode rewriteFilterFunction(FunctionJexlNodeVisitor visitor) {
         
         JexlNode args = visitor.args().get(0);
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(args);
         List<JexlNode> children = new ArrayList<>(identifiers.size());
         
         for (ASTIdentifier identifier : identifiers) {
-            if (negated) {
+            if (visitor.name().equals(IS_NOT_NULL)) {
                 children.add(buildIsNotNullNode(identifier));
             } else {
                 children.add(buildIsNullNode(identifier));
