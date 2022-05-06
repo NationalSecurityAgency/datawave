@@ -10,6 +10,8 @@ public class RunningQueryTimingImpl implements RunningQueryTiming {
     private long pageSizeShortCircuitCheckTimeMs = 30 * 60 * 1000;
     // The time after which will we prematurely return if we have results.
     private long pageShortCircuitTimeoutMs = 58 * 60 * 1000;
+    // The maximum number of times to continue running a long running query after the timeout is reached.
+    private int maxLongRunningTimeoutRetries = 3;
     
     /**
      * Uses the default values
@@ -17,7 +19,7 @@ public class RunningQueryTimingImpl implements RunningQueryTiming {
     public RunningQueryTimingImpl() {}
     
     public RunningQueryTimingImpl(QueryExpirationConfiguration conf, int pageTimeout) {
-        this(conf.getCallTimeInMS(), conf.getPageSizeShortCircuitCheckTimeInMS(), conf.getPageShortCircuitTimeoutInMS());
+        this(conf.getCallTimeInMS(), conf.getPageSizeShortCircuitCheckTimeInMS(), conf.getPageShortCircuitTimeoutInMS(), conf.getMaxLongRunningTimeoutRetries());
         
         if (pageTimeout > 0) {
             maxCallMs = pageTimeout * 60 * 1000;
@@ -27,9 +29,16 @@ public class RunningQueryTimingImpl implements RunningQueryTiming {
     }
     
     public RunningQueryTimingImpl(long maxCallMs, long pageSizeShortCircuitCheckTimeMs, long pageShortCircuitTimeoutMs) {
+        this(maxCallMs, pageSizeShortCircuitCheckTimeMs, pageShortCircuitTimeoutMs, 0);
+    }
+    
+    public RunningQueryTimingImpl(long maxCallMs, long pageSizeShortCircuitCheckTimeMs, long pageShortCircuitTimeoutMs, int maxLongRunningTimeoutRetries) {
         this.maxCallMs = maxCallMs;
         this.pageSizeShortCircuitCheckTimeMs = pageSizeShortCircuitCheckTimeMs;
         this.pageShortCircuitTimeoutMs = pageShortCircuitTimeoutMs;
+        if (maxLongRunningTimeoutRetries > 0) {
+            this.maxLongRunningTimeoutRetries = maxLongRunningTimeoutRetries;
+        }
     }
     
     public long getMaxCallMs() {
@@ -40,8 +49,14 @@ public class RunningQueryTimingImpl implements RunningQueryTiming {
         return pageSizeShortCircuitCheckTimeMs;
     }
     
+    @Override
     public long getPageShortCircuitTimeoutMs() {
         return pageShortCircuitTimeoutMs;
+    }
+    
+    @Override
+    public int getMaxLongRunningTimeoutRetries() {
+        return maxLongRunningTimeoutRetries;
     }
     
     @Override

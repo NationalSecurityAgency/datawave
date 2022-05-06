@@ -40,7 +40,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     
     /**
      * Create a new {@link UniqueTransform} that will capture the reverse field mapping defined within the model being used by the logic (if present).
-     * 
+     *
      * @param logic
      *            the logic
      * @param uniqueFields
@@ -56,6 +56,22 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         this.uniqueFields = uniqueFields;
         this.uniqueFields.deconstructIdentifierFields();
         this.bloom = BloomFilter.create(new UniqueUtil.ByteFunnel(), 500000, 1e-15);
+        if (log.isTraceEnabled()) {
+            log.trace("unique fields: " + this.uniqueFields.getFields());
+        }
+        if (model != null) {
+            modelMapping = HashMultimap.create();
+            // reverse the reverse query mapping which will give us a mapping from the final field name to the original field name(s)
+            for (Map.Entry<String,String> entry : model.getReverseQueryMapping().entrySet()) {
+                modelMapping.put(entry.getValue(), entry.getKey());
+            }
+        }
+    }
+    
+    public void updateConfig(UniqueFields uniqueFields, QueryModel model) {
+        this.uniqueFields = uniqueFields;
+        this.uniqueFields.deconstructIdentifierFields();
+        this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         if (log.isTraceEnabled()) {
             log.trace("unique fields: " + this.uniqueFields.getFields());
         }

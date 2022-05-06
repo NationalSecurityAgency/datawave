@@ -30,7 +30,6 @@ public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
     
     @Override
     public boolean hasNext() {
-        
         if (next == null) {
             next = getNext();
             if (next != null) {

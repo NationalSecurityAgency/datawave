@@ -2392,3 +2392,4 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
     }
 }
+x

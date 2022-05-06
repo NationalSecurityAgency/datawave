@@ -13,6 +13,7 @@ import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.data.ObjectSizeOf;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
@@ -64,12 +65,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private volatile boolean canceled = false;
     private TInfo traceInfo = null;
     private transient QueryMetricsBean queryMetrics = null;
-    private transient RunningQueryTimingImpl timing = null;
+    private transient RunningQueryTiming timing = null;
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
     private volatile Future<Object> hasNextFuture = null;
     private QueryPredictor predictor = null;
     private long maxResults = 0;
+    private int currentTimeoutcount = 0;
     
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
@@ -224,9 +226,18 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             
             // test for any exceptions prior to loop as hasNext() would likely be false;
             testForUncaughtException(resultList.size());
-            hasNextFuture = executor.submit(() -> this.iter.hasNext());
+            if (hasNextFuture == null) {
+                hasNextFuture = executor.submit(() -> this.iter.hasNext());
+            }
             try {
-                while ((!this.finished && (future != null)) || (Boolean) hasNextFuture.get(timing.getPageShortCircuitTimeoutMs(), TimeUnit.MILLISECONDS)) {
+                while ((!this.finished && (future != null))
+                                || (Boolean) hasNextFuture.get(
+                                                timing != null ? Math.max(1,
+                                                                (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
+                                                                : Long.MAX_VALUE, TimeUnit.MILLISECONDS)) {
+                    // the current hasNextFuture is complete
+                    hasNextFuture = null;
+                    
                     // if we are canceled, then break out
                     if (this.canceled) {
                         log.info("Query has been cancelled, aborting query.next call");
@@ -298,16 +309,16 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         // in this case we are still waiting on our future....simply continue
                     }
                     
-                    if (o instanceof DefaultEvent) {
-                        if (((DefaultEvent) o).isIntermediateResult()) {
-                            hitIntermediateResult = true;
-                            break;
-                        }
-                    }
-                    
                     // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
                     if (iter.getTransformer() instanceof WritesQueryMetrics) {
                         ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
+                    }
+                    
+                    if (o instanceof DefaultEvent && ((DefaultEvent) o).isIntermediateResult()) {
+                        log.info("Received an intermediate result");
+                        // in this case we have timed out up stream somewhere, so lets return what we have
+                        hitIntermediateResult = true;
+                        break;
                     }
                     
                     // if not still waiting on a future, then process the result (or lack thereof)
@@ -326,14 +337,20 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     }
                     
                     testForUncaughtException(resultList.size());
+                    // setup the next hasNext call
                     hasNextFuture = executor.submit(() -> this.iter.hasNext());
                 }
             } catch (TimeoutException te) {
+                log.info("Hit the timeout waiting for a result");
                 // This means the iter.hasNext() call didn't return within the allotted time. If this is a long running query,
                 // then we want to signal that the caller should call next to keep going (as opposed to just returning the
                 // page as COMPLETE)
                 if (logic.isLongRunningQuery()) {
+                    log.info("Short circuiting the long running query");
                     hitShortCircuitForLongRunningQuery = true;
+                } else if (resultList.isEmpty()) {
+                    log.warn("Query timed out waiting for next result");
+                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Query timed out waiting for next result");
                 }
             }
             // if the last hasNext() call failed, then we would catch the exception here
@@ -364,14 +381,35 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
         }
         
-        if (hitMaxIntermediateResult) {
-            return new ResultsPage(new ArrayList<>(), ResultsPage.Status.COMPLETE);
-        } else if (hitIntermediateResult | hitShortCircuitForLongRunningQuery) {
-            return new ResultsPage(new ArrayList<>(), ResultsPage.Status.PARTIAL);
-        } else if (resultList.isEmpty()) {
-            return new ResultsPage();
+        if (!resultList.isEmpty()) {
+            log.info("Returning page of results");
+            // we have results!
+            return new ResultsPage(
+                            resultList,
+                            ((hitPageByteTrigger || hitPageTimeTrigger || hitIntermediateResult || hitShortCircuitForLongRunningQuery) ? ResultsPage.Status.PARTIAL
+                                            : ResultsPage.Status.COMPLETE));
         } else {
-            return new ResultsPage(resultList, ((hitPageByteTrigger || hitPageTimeTrigger) ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE));
+            // we have no results. Let us determine whether we are done or not.
+            
+            // if we have hit an intermediate result or a short circuit then check to see how many times we hit this
+            if (hitIntermediateResult || hitShortCircuitForLongRunningQuery) {
+                currentTimeoutcount++;
+                if (timing != null && currentTimeoutcount == timing.getMaxLongRunningTimeoutRetries()) {
+                    log.warn("Query timed out waiting for results for too many ( " + currentTimeoutcount + ") cycles.");
+                    // this means that we have timed out waiting for a result too many times over the course of this query.
+                    // In this case we need to fail the next call with a timeout
+                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Query timed out waiting for results for too many (" + currentTimeoutcount
+                                    + ") cycles.");
+                } else {
+                    log.info("Returning an empty partial results page");
+                    // We are returning an empty page with a PARTIAL status to allow the query to continue running
+                    return new ResultsPage(new ArrayList<>(), ResultsPage.Status.PARTIAL);
+                }
+            } else {
+                log.info("Returning final empty page");
+                // This query is done, we have no more results to return.
+                return new ResultsPage();
+            }
         }
     }
     
@@ -537,14 +575,27 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      */
     public interface RunningQueryTiming {
         boolean shouldReturnPartialResults(int pageSize, int maxPageSize, long timeInCall);
+        
+        int getMaxLongRunningTimeoutRetries();
+        
+        long getPageShortCircuitTimeoutMs();
     }
     
     /**
-     * A noop implementation of the running query timing interface.
+     * A noop implementation of the running query timing interface. -- only used by upstream tests
      */
     public static class RunningQueryTimingNoOp implements RunningQueryTiming {
         public boolean shouldReturnPartialResults(int pageSize, int maxPageSize, long timeInCall) {
             return false;
+        }
+        
+        public int getMaxLongRunningTimeoutRetries() {
+            return 0;
+        }
+        
+        // hardcoded because only used by upstream tests.
+        public long getPageShortCircuitTimeoutMs() {
+            return 300000000000000L;
         }
     }
     

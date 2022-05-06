@@ -51,7 +51,7 @@ import java.util.UUID;
 
 /**
  * Applies uniqueness to queries
- * 
+ *
  */
 public abstract class UniqueTest {
     

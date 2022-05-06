@@ -117,7 +117,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             
             // If this is a final document, bail without adding to the keys, countingMap or fieldVisibilities.
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
-                return null;
+                return keyDocumentEntry;
             }
             
             keys.add(keyDocumentEntry.getKey());
@@ -130,7 +130,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
         if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
             Document intermediateResult = new Document();
-            intermediateResult.setIsIntermediateResult(true);
+            intermediateResult.setIntermediateResult(true);
             return Maps.immutableEntry(new Key(), intermediateResult);
         }
         

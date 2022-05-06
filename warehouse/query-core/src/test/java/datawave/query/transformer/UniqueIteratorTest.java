@@ -320,17 +320,17 @@ public class UniqueIteratorTest {
         
         // @formatter:off
         givenInputDocument()
-                        .withKeyValue("Attr0.0.0.0", randomValues.get(0))
-                        .withKeyValue("Attr1.0.1.0", randomValues.get(1))
-                        .withKeyValue("Attr0.0.0.1", randomValues.get(2))
-                        .withKeyValue("Attr1.0.1.1", randomValues.get(3));
-        
+                .withKeyValue("Attr0.0.0.0", randomValues.get(0))
+                .withKeyValue("Attr1.0.1.0", randomValues.get(1))
+                .withKeyValue("Attr0.0.0.1", randomValues.get(2))
+                .withKeyValue("Attr1.0.1.1", randomValues.get(3));
+
         givenExpectedOrderedFieldSet()
-                        .withKeyValue("Attr0", randomValues.get(0))
-                        .withKeyValue("Attr1", randomValues.get(1));
+                .withKeyValue("Attr0", randomValues.get(0))
+                .withKeyValue("Attr1", randomValues.get(1));
         givenExpectedOrderedFieldSet()
-                        .withKeyValue("Attr0", randomValues.get(2))
-                        .withKeyValue("Attr1", randomValues.get(3));
+                .withKeyValue("Attr0", randomValues.get(2))
+                .withKeyValue("Attr1", randomValues.get(3));
         // @formatter:on
         
         givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1");
@@ -352,20 +352,20 @@ public class UniqueIteratorTest {
         
         // @formatter:off
         givenInputDocument()
-                        .withKeyValue("Attr0.0.0.0", randomValues.get(0))
-                        .withKeyValue("Attr1.0.1.0", randomValues.get(1))
-                        .withKeyValue("Attr0.0.0.1", randomValues.get(2))
-                        .withKeyValue("Attr1.0.1.1", randomValues.get(3))
-                        .withKeyValue("Attr3", randomValues.get(4));
-    
+                .withKeyValue("Attr0.0.0.0", randomValues.get(0))
+                .withKeyValue("Attr1.0.1.0", randomValues.get(1))
+                .withKeyValue("Attr0.0.0.1", randomValues.get(2))
+                .withKeyValue("Attr1.0.1.1", randomValues.get(3))
+                .withKeyValue("Attr3", randomValues.get(4));
+
         givenExpectedOrderedFieldSet()
-                        .withKeyValue("Attr0", randomValues.get(0))
-                        .withKeyValue("Attr1", randomValues.get(1))
-                        .withKeyValue("Attr3", randomValues.get(4));
+                .withKeyValue("Attr0", randomValues.get(0))
+                .withKeyValue("Attr1", randomValues.get(1))
+                .withKeyValue("Attr3", randomValues.get(4));
         givenExpectedOrderedFieldSet()
-                        .withKeyValue("Attr0", randomValues.get(2))
-                        .withKeyValue("Attr1", randomValues.get(3))
-                        .withKeyValue("Attr3", randomValues.get(4));
+                .withKeyValue("Attr0", randomValues.get(2))
+                .withKeyValue("Attr1", randomValues.get(3))
+                .withKeyValue("Attr3", randomValues.get(4));
         // @formatter:on
         
         givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1", "Attr3");
@@ -387,20 +387,20 @@ public class UniqueIteratorTest {
         
         // @formatter:off
         givenInputDocument()
-                        .withKeyValue("Attr0.0.0.0", randomValues.get(0))
-                        .withKeyValue("Attr1.0.1.0", randomValues.get(1))
-                        .withKeyValue("Attr0.0.0.1", randomValues.get(2))
-                        .withKeyValue("Attr1.0.1.1", randomValues.get(3))
-                        .withKeyValue("Attr3.1.0.0", randomValues.get(4));
-    
+                .withKeyValue("Attr0.0.0.0", randomValues.get(0))
+                .withKeyValue("Attr1.0.1.0", randomValues.get(1))
+                .withKeyValue("Attr0.0.0.1", randomValues.get(2))
+                .withKeyValue("Attr1.0.1.1", randomValues.get(3))
+                .withKeyValue("Attr3.1.0.0", randomValues.get(4));
+
         givenExpectedOrderedFieldSet()
-                        .withKeyValue("Attr0", randomValues.get(0))
-                        .withKeyValue("Attr1", randomValues.get(1))
-                        .withKeyValue("Attr3", randomValues.get(4));
+                .withKeyValue("Attr0", randomValues.get(0))
+                .withKeyValue("Attr1", randomValues.get(1))
+                .withKeyValue("Attr3", randomValues.get(4));
         givenExpectedOrderedFieldSet()
-                        .withKeyValue("Attr0", randomValues.get(2))
-                        .withKeyValue("Attr1", randomValues.get(3))
-                        .withKeyValue("Attr3", randomValues.get(4));
+                .withKeyValue("Attr0", randomValues.get(2))
+                .withKeyValue("Attr1", randomValues.get(3))
+                .withKeyValue("Attr3", randomValues.get(4));
         // @formatter:on
         
         givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1", "Attr3");
@@ -423,29 +423,29 @@ public class UniqueIteratorTest {
         
         // @formatter:off
         givenInputDocument()
-                        .withKeyValue("Attr0.0.0.0", randomValues.get(0))
-                        .withKeyValue("Attr1.0.1.0", randomValues.get(1))
-                        .withKeyValue("Attr0.0.0.1", randomValues.get(2))
-                        .withKeyValue("Attr1.0.1.1", randomValues.get(3))
-                        .withKeyValue("Attr3.1.0.0", randomValues.get(4))
-                        .withKeyValue("Attr3.1.0.1", randomValues.get(0));
-    
+                .withKeyValue("Attr0.0.0.0", randomValues.get(0))
+                .withKeyValue("Attr1.0.1.0", randomValues.get(1))
+                .withKeyValue("Attr0.0.0.1", randomValues.get(2))
+                .withKeyValue("Attr1.0.1.1", randomValues.get(3))
+                .withKeyValue("Attr3.1.0.0", randomValues.get(4))
+                .withKeyValue("Attr3.1.0.1", randomValues.get(0));
+
         givenExpectedOrderedFieldSet()
-                        .withKeyValue("Attr0", randomValues.get(0))
-                        .withKeyValue("Attr1", randomValues.get(1))
-                        .withKeyValue("Attr3", randomValues.get(4));
+                .withKeyValue("Attr0", randomValues.get(0))
+                .withKeyValue("Attr1", randomValues.get(1))
+                .withKeyValue("Attr3", randomValues.get(4));
         givenExpectedOrderedFieldSet()
-                        .withKeyValue("Attr0", randomValues.get(2))
-                        .withKeyValue("Attr1", randomValues.get(3))
-                        .withKeyValue("Attr3", randomValues.get(4));
+                .withKeyValue("Attr0", randomValues.get(2))
+                .withKeyValue("Attr1", randomValues.get(3))
+                .withKeyValue("Attr3", randomValues.get(4));
         givenExpectedOrderedFieldSet()
-                        .withKeyValue("Attr0", randomValues.get(0))
-                        .withKeyValue("Attr1", randomValues.get(1))
-                        .withKeyValue("Attr3", randomValues.get(0));
+                .withKeyValue("Attr0", randomValues.get(0))
+                .withKeyValue("Attr1", randomValues.get(1))
+                .withKeyValue("Attr3", randomValues.get(0));
         givenExpectedOrderedFieldSet()
-                        .withKeyValue("Attr0", randomValues.get(2))
-                        .withKeyValue("Attr1", randomValues.get(3))
-                        .withKeyValue("Attr3", randomValues.get(0));
+                .withKeyValue("Attr0", randomValues.get(2))
+                .withKeyValue("Attr1", randomValues.get(3))
+                .withKeyValue("Attr3", randomValues.get(0));
         // @formatter:on
         
         givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1", "Attr3");
@@ -466,26 +466,26 @@ public class UniqueIteratorTest {
         
         // @formatter:off
         givenInputDocument()
-                        .withKeyValue("Attr0.0.0.0", randomValues.get(0))
-                        .withKeyValue("Attr1.0.1.0", randomValues.get(1))
-                        .withKeyValue("Attr0.0.0.1", randomValues.get(2))
-                        .withKeyValue("Attr3.1.0.0", randomValues.get(4))
-                        .withKeyValue("Attr3.1.0.1", randomValues.get(0));
-    
+                .withKeyValue("Attr0.0.0.0", randomValues.get(0))
+                .withKeyValue("Attr1.0.1.0", randomValues.get(1))
+                .withKeyValue("Attr0.0.0.1", randomValues.get(2))
+                .withKeyValue("Attr3.1.0.0", randomValues.get(4))
+                .withKeyValue("Attr3.1.0.1", randomValues.get(0));
+
         givenExpectedOrderedFieldSet()
-                        .withKeyValue("Attr0", randomValues.get(0))
-                        .withKeyValue("Attr1", randomValues.get(1))
-                        .withKeyValue("Attr3", randomValues.get(4));
+                .withKeyValue("Attr0", randomValues.get(0))
+                .withKeyValue("Attr1", randomValues.get(1))
+                .withKeyValue("Attr3", randomValues.get(4));
         givenExpectedOrderedFieldSet()
-                        .withKeyValue("Attr0", randomValues.get(2))
-                        .withKeyValue("Attr3", randomValues.get(4));
+                .withKeyValue("Attr0", randomValues.get(2))
+                .withKeyValue("Attr3", randomValues.get(4));
         givenExpectedOrderedFieldSet()
-                        .withKeyValue("Attr0", randomValues.get(0))
-                        .withKeyValue("Attr1", randomValues.get(1))
-                        .withKeyValue("Attr3", randomValues.get(0));
+                .withKeyValue("Attr0", randomValues.get(0))
+                .withKeyValue("Attr1", randomValues.get(1))
+                .withKeyValue("Attr3", randomValues.get(0));
         givenExpectedOrderedFieldSet()
-                        .withKeyValue("Attr0", randomValues.get(2))
-                        .withKeyValue("Attr3", randomValues.get(0));
+                .withKeyValue("Attr0", randomValues.get(2))
+                .withKeyValue("Attr3", randomValues.get(0));
         // @formatter:on
         
         givenValueTransformerForFields(UniqueGranularity.ALL, "Attr0", "Attr1", "Attr3");
