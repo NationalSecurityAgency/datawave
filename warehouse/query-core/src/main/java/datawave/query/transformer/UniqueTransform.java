@@ -68,22 +68,6 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
     }
     
-    public void updateConfig(UniqueFields uniqueFields, QueryModel model) {
-        this.uniqueFields = uniqueFields;
-        this.uniqueFields.deconstructIdentifierFields();
-        this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
-        if (log.isTraceEnabled()) {
-            log.trace("unique fields: " + this.uniqueFields.getFields());
-        }
-        if (model != null) {
-            modelMapping = HashMultimap.create();
-            // reverse the reverse query mapping which will give us a mapping from the final field name to the original field name(s)
-            for (Map.Entry<String,String> entry : model.getReverseQueryMapping().entrySet()) {
-                modelMapping.put(entry.getValue(), entry.getKey());
-            }
-        }
-    }
-    
     /**
      * Apply uniqueness to a document and if it is unique, stores it in the internal list. Null is returned from this method. #flush() should be called in order
      * to retrieve the next .
@@ -109,7 +93,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
         if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
             Document document = new Document();
-            document.setIsIntermediateResult(true);
+            document.setIntermediateResult(true);
             return Maps.immutableEntry(new Key(), document);
         }
         

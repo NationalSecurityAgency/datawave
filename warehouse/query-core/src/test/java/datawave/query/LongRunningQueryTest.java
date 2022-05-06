@@ -111,8 +111,8 @@ public class LongRunningQueryTest {
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal,
-                        new RunningQueryTimingImpl(), Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
+        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
+                        Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();
