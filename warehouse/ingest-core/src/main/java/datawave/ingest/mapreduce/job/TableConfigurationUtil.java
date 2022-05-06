@@ -78,7 +78,15 @@ public class TableConfigurationUtil {
     }
     
     public Set<String> getJobTableNames() {
-        return new HashSet(Arrays.asList(conf.getStrings(JOB_OUTPUT_TABLE_NAMES)));
+        HashSet tableNames = new HashSet<>();
+        
+        String[] outputTables = conf.getStrings(JOB_OUTPUT_TABLE_NAMES);
+        
+        if (null != outputTables && outputTables.length > 0) {
+            tableNames = new HashSet(Arrays.asList(outputTables));
+        }
+        
+        return tableNames;
     }
     
     /**
@@ -500,91 +508,97 @@ public class TableConfigurationUtil {
         // setup and options in a map so that we can group together all of the options for each
         // iterator.
         
-        for (String table : conf.getStrings(JOB_OUTPUT_TABLE_NAMES)) {
-            Map<Integer,Map<String,String>> aggregatorMap = new HashMap<>();
-            Map<Integer,Map<String,String>> combinerMap = new HashMap<>();
-            HashMap<String,Map<String,String>> allOptions = new HashMap<>();
-            ArrayList<IteratorSetting> iters = new ArrayList<>();
-            
-            Map<String,String> tableProps = tableConfigCache.getTableProperties(table);
-            if (null == tableProps || tableProps.isEmpty()) {
-                log.warn("No table properties found for " + table);
-                continue;
-            }
-            for (Map.Entry<String,String> entry : tableProps.entrySet()) {
+        Set<String> configuredTables = getJobTableNames();
+        
+        if (!configuredTables.isEmpty()) {
+            for (String table : configuredTables) {
+                Map<Integer,Map<String,String>> aggregatorMap = new HashMap<>();
+                Map<Integer,Map<String,String>> combinerMap = new HashMap<>();
+                HashMap<String,Map<String,String>> allOptions = new HashMap<>();
+                ArrayList<IteratorSetting> iters = new ArrayList<>();
                 
-                if (entry.getKey().startsWith(Property.TABLE_ITERATOR_PREFIX.getKey())) {
+                Map<String,String> tableProps = tableConfigCache.getTableProperties(table);
+                if (null == tableProps || tableProps.isEmpty()) {
+                    log.warn("No table properties found for " + table);
+                    continue;
+                }
+                for (Map.Entry<String,String> entry : tableProps.entrySet()) {
                     
-                    String suffix = entry.getKey().substring(Property.TABLE_ITERATOR_PREFIX.getKey().length());
-                    String suffixSplit[] = suffix.split("\\.", 4);
-                    
-                    if (!suffixSplit[0].equals(scope.name())) {
-                        continue;
-                    }
-                    
-                    if (suffixSplit.length == 2) {
-                        // get the Iterator priority and class
-                        String sa[] = entry.getValue().split(",");
-                        int prio = Integer.parseInt(sa[0]);
-                        String className = sa[1];
-                        iters.add(new IteratorSetting(prio, suffixSplit[1], className));
+                    if (entry.getKey().startsWith(Property.TABLE_ITERATOR_PREFIX.getKey())) {
                         
-                    } else if (suffixSplit.length == 4 && suffixSplit[2].equals("opt")) {
-                        // get the iterator options
-                        String iterName = suffixSplit[1];
-                        String optName = suffixSplit[3];
+                        String suffix = entry.getKey().substring(Property.TABLE_ITERATOR_PREFIX.getKey().length());
+                        String suffixSplit[] = suffix.split("\\.", 4);
                         
-                        Map<String,String> options = allOptions.get(iterName);
-                        if (options == null) {
-                            options = new HashMap<>();
-                            allOptions.put(iterName, options);
+                        if (!suffixSplit[0].equals(scope.name())) {
+                            continue;
                         }
                         
-                        options.put(optName, entry.getValue());
-                        
-                    } else {
-                        log.warn("Unrecognizable option: " + entry.getKey());
-                    }
-                }
-            }
-            
-            // Now go through all of the iterators, and for those that are aggregators, store
-            try {
-                for (IteratorSetting iter : iters) {
-                    
-                    Class<?> klass = Class.forName(iter.getIteratorClass());
-                    if (PropogatingIterator.class.isAssignableFrom(klass)) {
-                        Map<String,String> options = allOptions.get(iter.getName());
-                        if (null != options) {
-                            aggregatorMap.put(iter.getPriority(), options);
-                        } else
-                            log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
-                        
-                    }
-                    if (Combiner.class.isAssignableFrom(klass)) {
-                        Map<String,String> options = allOptions.get(iter.getName());
-                        if (null != options) {
-                            options.put(ITERATOR_CLASS_MARKER, iter.getIteratorClass());
-                            combinerMap.put(iter.getPriority(), options);
+                        if (suffixSplit.length == 2) {
+                            // get the Iterator priority and class
+                            String sa[] = entry.getValue().split(",");
+                            int prio = Integer.parseInt(sa[0]);
+                            String className = sa[1];
+                            iters.add(new IteratorSetting(prio, suffixSplit[1], className));
+                            
+                        } else if (suffixSplit.length == 4 && suffixSplit[2].equals("opt")) {
+                            // get the iterator options
+                            String iterName = suffixSplit[1];
+                            String optName = suffixSplit[3];
+                            
+                            Map<String,String> options = allOptions.get(iterName);
+                            if (options == null) {
+                                options = new HashMap<>();
+                                allOptions.put(iterName, options);
+                            }
+                            
+                            options.put(optName, entry.getValue());
+                            
                         } else {
-                            log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
+                            log.warn("Unrecognizable option: " + entry.getKey());
                         }
-                    } else {
-                        log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't appear to be a combiner.");
-                        
                     }
                 }
                 
-                if (!aggregatorMap.isEmpty()) {
-                    setTableAggregators(table, aggregatorMap);
+                // Now go through all of the iterators, and for those that are aggregators, store
+                try {
+                    for (IteratorSetting iter : iters) {
+                        
+                        Class<?> klass = Class.forName(iter.getIteratorClass());
+                        if (PropogatingIterator.class.isAssignableFrom(klass)) {
+                            Map<String,String> options = allOptions.get(iter.getName());
+                            if (null != options) {
+                                aggregatorMap.put(iter.getPriority(), options);
+                            } else
+                                log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
+                            
+                        }
+                        if (Combiner.class.isAssignableFrom(klass)) {
+                            Map<String,String> options = allOptions.get(iter.getName());
+                            if (null != options) {
+                                options.put(ITERATOR_CLASS_MARKER, iter.getIteratorClass());
+                                combinerMap.put(iter.getPriority(), options);
+                            } else {
+                                log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
+                            }
+                        } else {
+                            log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't appear to be a combiner.");
+                            
+                        }
+                    }
+                    
+                    if (!aggregatorMap.isEmpty()) {
+                        setTableAggregators(table, aggregatorMap);
+                    }
+                    if (!combinerMap.isEmpty()) {
+                        setTableCombiners(table, combinerMap);
+                    }
+                    
+                } catch (ClassNotFoundException e) {
+                    throw new IOException("Unable to configure iterators for " + table, e);
                 }
-                if (!combinerMap.isEmpty()) {
-                    setTableCombiners(table, combinerMap);
-                }
-                
-            } catch (ClassNotFoundException e) {
-                throw new IOException("Unable to configure iterators for " + table, e);
             }
+        } else {
+            log.warn("No output tables configured.");
         }
         
     }
