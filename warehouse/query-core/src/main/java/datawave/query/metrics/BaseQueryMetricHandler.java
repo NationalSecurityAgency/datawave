@@ -1,15 +1,25 @@
 package datawave.query.metrics;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
 import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
 import datawave.microservice.querymetric.QueryMetricSummary;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.language.tree.QueryNode;
 import datawave.webservice.query.metric.QueryMetricHandler;
 
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 
@@ -83,5 +93,64 @@ public abstract class BaseQueryMetricHandler<T extends BaseQueryMetric> implemen
             populateSummary(metric, summary.getDay90());
         }
         populateSummary(metric, summary.getAll());
+    }
+    
+    public void incrementNumUpdates(T updatedMetric, Collection<T> cachedMetrics) {
+        long maxUpdates = cachedMetrics.stream().map(BaseQueryMetric::getNumUpdates).max(Long::compareTo).orElse(0l);
+        updatedMetric.setNumUpdates(maxUpdates + 1);
+    }
+    
+    public void populateMetricSelectors(T queryMetric, LuceneToJexlQueryParser luceneToJexlQueryParser) {
+        String type = queryMetric.getQueryType();
+        Lifecycle lifecycle = queryMetric.getLifecycle();
+        // this is time consuming - we only need to parse the query and write the selectors once
+        if (lifecycle.equals(Lifecycle.DEFINED) && type != null && type.equalsIgnoreCase("RunningQuery") && queryMetric.getPositiveSelectors() == null
+                        && queryMetric.getNegativeSelectors() == null) {
+            try {
+                String query = queryMetric.getQuery();
+                if (query != null) {
+                    ASTJexlScript jexlScript = null;
+                    try {
+                        // Parse and flatten here before visitors visit.
+                        jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                    } catch (Throwable t1) {
+                        // not JEXL, try LUCENE
+                        QueryNode node = luceneToJexlQueryParser.parse(query);
+                        String jexlQuery = node.getOriginalQuery();
+                        jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery);
+                    }
+                    
+                    if (jexlScript != null) {
+                        jexlScript = TreeFlatteningRebuildingVisitor.flatten(jexlScript);
+                        List<ASTEQNode> positiveEQNodes = JexlASTHelper.getPositiveEQNodes(jexlScript);
+                        List<String> positiveSelectors = new ArrayList<>();
+                        for (ASTEQNode pos : positiveEQNodes) {
+                            String identifier = JexlASTHelper.getIdentifier(pos);
+                            Object literal = JexlASTHelper.getLiteralValue(pos);
+                            if (identifier != null && literal != null) {
+                                positiveSelectors.add(identifier + ":" + literal);
+                            }
+                        }
+                        if (!positiveSelectors.isEmpty()) {
+                            queryMetric.setPositiveSelectors(positiveSelectors);
+                        }
+                        List<ASTEQNode> negativeEQNodes = JexlASTHelper.getNegativeEQNodes(jexlScript);
+                        List<String> negativeSelectors = new ArrayList<>();
+                        for (ASTEQNode neg : negativeEQNodes) {
+                            String identifier = JexlASTHelper.getIdentifier(neg);
+                            Object literal = JexlASTHelper.getLiteralValue(neg);
+                            if (identifier != null && literal != null) {
+                                negativeSelectors.add(identifier + ":" + literal);
+                            }
+                        }
+                        if (!negativeSelectors.isEmpty()) {
+                            queryMetric.setNegativeSelectors(negativeSelectors);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.error("populateMetricSelectors: " + e.getMessage());
+            }
+        }
     }
 }
