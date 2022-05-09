@@ -10,10 +10,24 @@
     <artifactId>spring-boot-starter-datawave-metadata</artifactId>
     <version>1.0-SNAPSHOT</version>
     <properties>
+        <version.in-memory-accumulo>1.9.3-SNAPSHOT</version.in-memory-accumulo>
         <version.microservice.starter>1.6.8-SNAPSHOT</version.microservice.starter>
     </properties>
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>gov.nsa.datawave.contrib</groupId>
+                <artifactId>datawave-in-memory-accumulo</artifactId>
+                <version>${version.in-memory-accumulo}</version>
+                <scope>compile</scope>
+                <exclusions>
+                    <!-- Exclude all dependencies of in-memory-accumulo. We'll pull in the exact version we need. -->
+                    <exclusion>
+                        <artifactId>*</artifactId>
+                        <groupId>*</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>spring-boot-starter-datawave</artifactId>
@@ -45,6 +59,10 @@
         </dependencies>
     </dependencyManagement>
     <dependencies>
+        <dependency>
+            <groupId>gov.nsa.datawave.contrib</groupId>
+            <artifactId>datawave-in-memory-accumulo</artifactId>
+        </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>metadata-utils</artifactId>
