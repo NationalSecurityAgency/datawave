@@ -69,7 +69,6 @@ import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.transformer.ExcerptTransform;
-import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
@@ -494,13 +493,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 });
             }
             
-            // now apply the unique transform if requested
+            // now apply the unique iterator if requested
             UniqueTransform uniquify = getUniqueTransform();
             if (uniquify != null) {
+                // pipelineDocuments = uniquify;
                 pipelineDocuments = Iterators.filter(pipelineDocuments, uniquify.getUniquePredicate());
             }
             
-            // apply the grouping transform if requested and if the batch size is greater than zero
+            // apply the grouping iterator if requested and if the batch size is greater than zero
             // if the batch size is 0, then grouping is computed only on the web server
             if (this.groupFieldsBatchSize > 0 && !getUsePartialInterpreter()) {
                 GroupingIterator groupify = getGroupingIteratorInstance(pipelineDocuments);

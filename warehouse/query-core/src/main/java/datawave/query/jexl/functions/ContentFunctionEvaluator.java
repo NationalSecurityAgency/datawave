@@ -69,11 +69,13 @@ public abstract class ContentFunctionEvaluator {
      *
      * @param field
      *            the field where the offsets were found
+     * @param eventId
+     *            the event id (see @TermFrequencyList.getEventId(Key))
      * @param offsets
      *            the offset lists
      * @return List of offset matching the query, often just the first match for efficiency
      */
-    protected abstract boolean evaluate(String field, List<List<TermWeightPosition>> offsets);
+    protected abstract boolean evaluate(String field, String eventId, List<List<TermWeightPosition>> offsets);
     
     /**
      * Validate and initialize this class. This will validate the arguments and setup other members.
@@ -220,7 +222,7 @@ public abstract class ContentFunctionEvaluator {
                     }
                     
                     // evaluate the offsets
-                    if (evaluate(field, offsets)) {
+                    if (evaluate(field, eventId, offsets)) {
                         if (log.isTraceEnabled()) {
                             log.trace(logPrefix + " satisfied the content function");
                         }

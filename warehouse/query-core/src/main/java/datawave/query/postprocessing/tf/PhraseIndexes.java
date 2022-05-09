@@ -4,7 +4,7 @@ import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
 import datawave.query.Constants;
 import org.apache.commons.lang3.StringUtils;
-import org.javatuples.Pair;
+import org.javatuples.Triplet;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -18,7 +18,10 @@ import java.util.Set;
  */
 public class PhraseIndexes implements Serializable {
     
-    private final SortedSetMultimap<String,Pair<Integer,Integer>> map = TreeMultimap.create();
+    /**
+     * A Map of fieldname to eventId,start,end phrase offsets. The eventId has the form as defined by TermFrequencyList.getEventid(key)
+     */
+    private final SortedSetMultimap<String,Triplet<String,Integer,Integer>> map = TreeMultimap.create();
     
     /**
      * Returns a new {@link PhraseIndexes} parsed from the string. The provided string is expected to have the format returned by
@@ -49,9 +52,10 @@ public class PhraseIndexes implements Serializable {
             String field = parts[0];
             for (int i = 1; i < parts.length; i++) {
                 String[] indexParts = parts[i].split(Constants.COMMA);
-                int start = Integer.parseInt(indexParts[0]);
-                int end = Integer.parseInt(indexParts[1]);
-                phraseIndexes.addIndexPair(field, start, end);
+                String eventId = indexParts[0];
+                int start = Integer.parseInt(indexParts[1]);
+                int end = Integer.parseInt(indexParts[2]);
+                phraseIndexes.addIndexTriplet(field, eventId, start, end);
             }
         }
         return phraseIndexes;
@@ -59,16 +63,18 @@ public class PhraseIndexes implements Serializable {
     
     /**
      * Add an index pair identified as a phrase for a hit for the specified field.
-     * 
+     *
      * @param field
      *            the field
+     * @param eventId
+     *            the event id (see @TermFrequencyList.getEventId(Key))
      * @param start
      *            the start index of the phrase
      * @param end
      *            the end index of the phrase
      */
-    public void addIndexPair(String field, int start, int end) {
-        map.put(field, Pair.with(start, end));
+    public void addIndexTriplet(String field, String eventId, int start, int end) {
+        map.put(field, Triplet.with(eventId, start, end));
     }
     
     /**
@@ -78,7 +84,7 @@ public class PhraseIndexes implements Serializable {
      *            the field
      * @return the index pairs
      */
-    public Collection<Pair<Integer,Integer>> getIndices(String field) {
+    public Collection<Triplet<String,Integer,Integer>> getIndices(String field) {
         return map.get(field);
     }
     
@@ -137,7 +143,7 @@ public class PhraseIndexes implements Serializable {
     
     /**
      * Returns this {@link PhraseIndexes} as a formatted string that can later be parsed back into a {@link PhraseIndexes} using
-     * {@link PhraseIndexes#from(String)}. The string will have the format FIELD:start,end:start,end:.../FIELD:start,end:...
+     * {@link PhraseIndexes#from(String)}. The string will have the format FIELD:eventId,start,end:eventId,start,end:.../FIELD:eventId,start,end:...
      * 
      * @return a formatted string
      */
@@ -150,10 +156,11 @@ public class PhraseIndexes implements Serializable {
             String field = fieldIterator.next();
             sb.append(field).append(Constants.COLON);
             // Write the indexes found for the field.
-            Iterator<Pair<Integer,Integer>> indexIterator = map.get(field).iterator();
+            Iterator<Triplet<String,Integer,Integer>> indexIterator = map.get(field).iterator();
             while (indexIterator.hasNext()) {
-                Pair<Integer,Integer> indexPair = indexIterator.next();
-                sb.append(indexPair.getValue0()).append(Constants.COMMA).append(indexPair.getValue1());
+                Triplet<String,Integer,Integer> indexTriplet = indexIterator.next();
+                sb.append(indexTriplet.getValue0()).append(Constants.COMMA).append(indexTriplet.getValue1()).append(Constants.COMMA)
+                                .append(indexTriplet.getValue2());
                 if (indexIterator.hasNext()) {
                     sb.append(Constants.COLON);
                 }

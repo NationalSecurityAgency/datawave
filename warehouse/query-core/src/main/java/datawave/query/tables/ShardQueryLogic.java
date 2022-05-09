@@ -23,6 +23,7 @@ import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
 import datawave.query.config.IndexHole;
@@ -203,7 +204,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private QueryPlanner planner = null;
     private QueryParser parser = null;
     private QueryLogicTransformer transformerInstance = null;
-    private GroupingTransform groupingTransformerInstance = null;
     
     private CardinalityConfiguration cardinalityConfiguration = null;
     private EvaluationFunction evaluationFunction = null;
@@ -638,6 +638,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return this.transformerInstance;
     }
     
+    public boolean isLongRunningQuery() {
+        return !getConfig().getUniqueFields().isEmpty() || !getConfig().getGroupFields().isEmpty();
+    }
+    
     /**
      * If the configuration didn't exist, OR IT CHANGED, we need to create or update the transformers that have been added.
      */
@@ -651,7 +655,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 if (alreadyExists != null) {
                     ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
                 } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(getQueryModel(), getConfig().getUniqueFields()));
+                    ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
                 }
             }
             
@@ -668,6 +672,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (getQueryModel() != null) {
             ((DocumentTransformer) this.transformerInstance).setQm(getQueryModel());
         }
+    }
+    
+    public void setPageProcessingStartTime(long pageProcessingStartTime) {
+        getTransformer(getSettings()).setQueryExecutionForPageStartTime(pageProcessingStartTime);
     }
     
     protected void loadQueryParameters(ShardQueryConfiguration config, Query settings) throws QueryException {
