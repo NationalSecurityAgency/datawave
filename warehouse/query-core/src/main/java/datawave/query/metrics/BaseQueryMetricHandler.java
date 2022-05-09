@@ -3,7 +3,6 @@ package datawave.query.metrics;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
@@ -63,7 +62,7 @@ public abstract class BaseQueryMetricHandler<T extends BaseQueryMetric> implemen
         return summary;
     }
     
-    public void binSummary(T metric, QueryMetricsSummaryResponse summary, Date hour1, Date hour6, Date hour12, Date day1, Date day7, Date day30, Date day60,
+    protected void binSummary(T metric, QueryMetricsSummaryResponse summary, Date hour1, Date hour6, Date hour12, Date day1, Date day7, Date day30, Date day60,
                     Date day90) {
         Date d = metric.getCreateDate();
         // Find out which buckets this query belongs to based on query create date.
@@ -95,12 +94,12 @@ public abstract class BaseQueryMetricHandler<T extends BaseQueryMetric> implemen
         populateSummary(metric, summary.getAll());
     }
     
-    public void incrementNumUpdates(T updatedMetric, Collection<T> cachedMetrics) {
+    protected void incrementNumUpdates(T updatedMetric, Collection<T> cachedMetrics) {
         long maxUpdates = cachedMetrics.stream().map(BaseQueryMetric::getNumUpdates).max(Long::compareTo).orElse(0l);
         updatedMetric.setNumUpdates(maxUpdates + 1);
     }
     
-    public void populateMetricSelectors(T queryMetric, LuceneToJexlQueryParser luceneToJexlQueryParser) {
+    protected void populateMetricSelectors(T queryMetric, LuceneToJexlQueryParser luceneToJexlQueryParser) {
         String type = queryMetric.getQueryType();
         Lifecycle lifecycle = queryMetric.getLifecycle();
         // this is time consuming - we only need to parse the query and write the selectors once
