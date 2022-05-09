@@ -36,8 +36,6 @@ datawave:
         "[datawave.data.type.NumberType]": "Number"
         "[datawave.data.type.PointType]": "Point Geometry"
         "[datawave.data.type.TrimLeadingZerosType]": "Text"
-
-datawave:
   table:
     cache:
       zookeepers: '${accumulo.zookeepers}'
