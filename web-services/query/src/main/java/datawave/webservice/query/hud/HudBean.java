@@ -24,11 +24,11 @@ import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import datawave.webservice.query.metric.QueryMetricSummary;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.QueryMetricSummary;
 import datawave.webservice.query.metric.QueryMetricsBean;
-import datawave.webservice.query.metric.QueryMetricsSummaryResponse;
+import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.result.QueryImplListResponse;
 import org.apache.deltaspike.core.api.exclude.Exclude;
@@ -119,8 +119,9 @@ public class HudBean {
     
     @Path("/summaryall")
     @GET
+    @RolesAllowed({"Administrator", "MetricsAdministrator"})
     public String getSummaryQueryStats() throws Exception {
-        QueryMetricsSummaryResponse summaryResp = queryMetrics.getTotalQueriesSummary(null, null);
+        QueryMetricsSummaryResponse summaryResp = queryMetrics.getQueryMetricsSummary(null, null);
         QueryMetricSummary hour1 = summaryResp.getHour1();
         QueryMetricSummary hour6 = summaryResp.getHour6();
         QueryMetricSummary hour12 = summaryResp.getHour12();

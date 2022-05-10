@@ -12,6 +12,7 @@ import java.util.PriorityQueue;
 import java.util.Set;
 
 import datawave.ingest.protobuf.TermWeightPosition;
+import datawave.query.postprocessing.tf.TermOffsetMap;
 import org.apache.log4j.Logger;
 
 /**
@@ -43,7 +44,7 @@ import org.apache.log4j.Logger;
 public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
     private static final Logger log = Logger.getLogger(ContentUnorderedEvaluator.class);
     
-    public ContentUnorderedEvaluator(Set<String> fields, int distance, float maxScore, Map<String,TermFrequencyList> termOffsetMap, String... terms) {
+    public ContentUnorderedEvaluator(Set<String> fields, int distance, float maxScore, TermOffsetMap termOffsetMap, String... terms) {
         super(fields, distance, maxScore, termOffsetMap, terms);
     }
     
@@ -54,9 +55,9 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
      * @return true if we found an unordered list within the specified distance for the specified set of offsets.
      */
     @Override
-    public boolean evaluate(List<List<TermWeightPosition>> offsets) {
+    public boolean evaluate(String field, String eventId, List<List<TermWeightPosition>> offsets) {
         filterOffsets(offsets);
-        MultiOffsetMatcher mlIter = new MultiOffsetMatcher(distance, terms, offsets);
+        MultiOffsetMatcher mlIter = new MultiOffsetMatcher(distance, terms, offsets, field, eventId, termOffsetMap);
         return mlIter.findMatch();
     }
     
@@ -140,11 +141,14 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
         
         final PriorityQueue<OffsetList> offsetQueue = new PriorityQueue<>();
         Optional<TermWeightPosition> maxOffset = Optional.empty();
+        final String field;
+        final String eventId;
+        final TermOffsetMap termOffsetMap;
         
         /**
          * At the end of this method, terms will contain the query terms. currentOffsets will contain the minimum offset for each term and offsetLists will
          * contain the remaining offsets for each term.
-         * 
+         *
          * The indexes of terms, offsetLists and currentOffsets are parallel in that the i'th item in currentOffsets corresponds to the i'th item in offsetLists
          * and term[i].
          *
@@ -152,15 +156,22 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
          *            the maximum acceptable distance between terms.
          * @param terms
          *            the query terms.
+         * @param field
+         *            the field
+         * @param eventId
+         *            the event id (see @TermFrequencyList.getEventId(Key))
          * @param termOffsets
          *            the offsets for the specified terms, these lists will not be modified in any way.
          * @throws IllegalArgumentException
          *             if the number of terms does not match the number of offset lists.
          */
-        public MultiOffsetMatcher(int distance, String[] terms, Collection<List<TermWeightPosition>> termOffsets) {
+        public MultiOffsetMatcher(int distance, String[] terms, Collection<List<TermWeightPosition>> termOffsets, String field, String eventId,
+                        TermOffsetMap termOffsetMap) {
             this.distance = distance;
             this.terms = terms;
-            
+            this.field = field;
+            this.eventId = eventId;
+            this.termOffsetMap = termOffsetMap;
             if (terms.length > termOffsets.size()) {
                 // more terms than offsets, no match, falls through to quick short-circuit in findMatch.
                 return;
@@ -215,6 +226,13 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
                 OffsetList o = offsetQueue.remove();
                 
                 if (maxOffset.get().getLowOffset() - o.getMinOffset().getOffset() <= distance) {
+                    // Track the start and end offset for the phrase.
+                    int startOffset = o.getMinOffset().getOffset();
+                    int endOffset = maxOffset.get().getLowOffset();
+                    termOffsetMap.addPhraseIndexTriplet(field, eventId, startOffset, endOffset);
+                    if (log.isTraceEnabled()) {
+                        log.trace("Adding phrase indexes [" + startOffset + "," + endOffset + "] for field " + field + " to jexl context");
+                    }
                     return true;
                 }
                 
