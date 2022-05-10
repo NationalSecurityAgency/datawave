@@ -42,6 +42,15 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
+import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetric;
+import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.microservice.querymetric.QueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetricsDetailListResponse;
+import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.map.SimpleQueryGeometryHandler;
 import datawave.security.authorization.DatawavePrincipal;
@@ -52,21 +61,12 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.cache.QueryMetricFactory;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.Lifecycle;
-import datawave.webservice.query.metric.BaseQueryMetricListResponse;
-import datawave.webservice.query.metric.QueryMetric;
-import datawave.webservice.query.metric.QueryMetricListResponse;
-import datawave.webservice.query.metric.QueryMetricsDetailListResponse;
-import datawave.webservice.query.metric.QueryMetricsSummaryHtmlResponse;
-import datawave.webservice.query.metric.QueryMetricsSummaryResponse;
+
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.runner.RunningQuery;
@@ -529,7 +529,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     }
     
     @Override
-    public QueryMetricListResponse query(String user, String queryId, DatawavePrincipal datawavePrincipal) {
+    public QueryMetricsDetailListResponse query(String user, String queryId, DatawavePrincipal datawavePrincipal) {
         QueryMetricsDetailListResponse response = new QueryMetricsDetailListResponse();
         
         try {
@@ -833,13 +833,13 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     }
     
     @Override
-    public QueryMetricsSummaryHtmlResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
-        return (QueryMetricsSummaryHtmlResponse) getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryHtmlResponse());
+    public QueryMetricsSummaryResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return (QueryMetricsSummaryResponse) getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
     
     @Override
-    public QueryMetricsSummaryHtmlResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
-        return (QueryMetricsSummaryHtmlResponse) getQueryMetricsSummary(begin, end, true, datawavePrincipal, new QueryMetricsSummaryHtmlResponse());
+    public QueryMetricsSummaryResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
+        return (QueryMetricsSummaryResponse) getQueryMetricsSummary(begin, end, true, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
     
     public QueryMetricsSummaryResponse getQueryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser, DatawavePrincipal datawavePrincipal,
