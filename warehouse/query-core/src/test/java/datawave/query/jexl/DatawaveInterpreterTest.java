@@ -92,15 +92,13 @@ public class DatawaveInterpreterTest {
         Object[][] array = {
                 {"FOO == 'bar'", true},
                 {"FOO == 'baz'", true},
-                {"FOO == 'baz'", true},
+                {"ZEE == 'bar'", false},
                 {"!(FOO == 'bar')", false},
                 {"!(FOO == 'baz')", false},
                 {"!(ZEE == 'bar')", true}};   //  non-existent field
         //  @formatter:on
         
-        for (int i = 0; i < array.length; i++) {
-            test((String) array[i][0], (Boolean) array[i][1]);
-        }
+        test(array);
     }
     
     @Test
@@ -109,13 +107,12 @@ public class DatawaveInterpreterTest {
         Object[][] array = {
                 {"FOO == 'bar' || FOO == 'baz'", true},
                 {"FOO == 'abc' || FOO == 'xyz'", false},
+                {"FOO == 'abc' || !(FOO == 'xyz')", true},
                 {"FOO == 'bar' || FOO == 'baz' || FOO == 'barzee' || FOO == 'zeebar'", true},
                 {"FOO == 'barzee' || FOO == 'zeebar' || FOO == 'bar' || FOO == 'baz'", true}};
         //  @formatter:on
         
-        for (int i = 0; i < array.length; i++) {
-            test((String) array[i][0], (Boolean) array[i][1]);
-        }
+        test(array);
     }
     
     @Test
@@ -128,9 +125,7 @@ public class DatawaveInterpreterTest {
                 {"FOO == 'barzee' && FOO == 'zeebar' && FOO == 'bar' && FOO == 'baz'", false}};
         //  @formatter:on
         
-        for (int i = 0; i < array.length; i++) {
-            test((String) array[i][0], (Boolean) array[i][1]);
-        }
+        test(array);
     }
     
     @Test
@@ -143,9 +138,7 @@ public class DatawaveInterpreterTest {
                 {"((FOO == 'bar' || FOO == 'zeebar') && (FOO == 'barzee' || FOO == 'baz'))", true}};
         //  @formatter:on
         
-        for (int i = 0; i < array.length; i++) {
-            test((String) array[i][0], (Boolean) array[i][1]);
-        }
+        test(array);
     }
     
     @Test
@@ -161,13 +154,10 @@ public class DatawaveInterpreterTest {
                 {"((_Bounded_ = true) && (SPEED >= '+cE1.2' && SPEED <= '+cE1.5')) || FOO == 'bar'", true},// range matches, term matches (120, 150)
                 {"((_Bounded_ = true) && (SPEED >= '+cE1.2' && SPEED <= '+cE1.5')) || !(FOO == 'bar')", true},
                 {"((_Bounded_ = true) && (SPEED >= '+bE9' && SPEED <= '+cE1')) || FOO == 'bar'", true},
-                {"((_Bounded_ = true) && (SPEED >= '+bE9' && SPEED <= '+cE1')) || !(FOO == 'bar')", false},
-        };
+                {"((_Bounded_ = true) && (SPEED >= '+bE9' && SPEED <= '+cE1')) || !(FOO == 'bar')", false}};
         //  @formatter:on
         
-        for (int i = 0; i < array.length; i++) {
-            test((String) array[i][0], (Boolean) array[i][1]);
-        }
+        test(array);
     }
     
     @Test
@@ -180,13 +170,10 @@ public class DatawaveInterpreterTest {
                 {"content:phrase(termOffsetMap, 'red', 'dog') && (TEXT == 'red' && TEXT == 'dog')", true},
                 {"content:phrase(termOffsetMap, 'big', 'dog') && (TEXT == 'big' && TEXT == 'dog')", false},
                 //  full phrase
-                {"content:phrase(termOffsetMap, 'big', 'red', 'dog') && (TEXT == 'big' && TEXT == 'red' && TEXT == 'dog')", true},
-        };
+                {"content:phrase(termOffsetMap, 'big', 'red', 'dog') && (TEXT == 'big' && TEXT == 'red' && TEXT == 'dog')", true}};
         //  @formatter:on
         
-        for (int i = 0; i < array.length; i++) {
-            test((String) array[i][0], (Boolean) array[i][1]);
-        }
+        test(array);
     }
     
     @Test
@@ -239,9 +226,7 @@ public class DatawaveInterpreterTest {
                 {"FOO == 'bar' && filter:isNull(ONE_NULL)", true}};
         //  @formatter:on
         
-        for (Object[] o : array) {
-            test((String) o[0], (Boolean) o[1]);
-        }
+        test(array);
     }
     
     /**
@@ -265,13 +250,10 @@ public class DatawaveInterpreterTest {
                 {"FOO == 'bar' && filter:isNotNull(NULL1||NULL2)", false},
                 {"FOO == 'bar' && filter:isNotNull(BOTH_NULL)", false},
                 {"FOO == 'bar' && filter:isNotNull(FOO||NULL1)", true},
-                {"FOO == 'bar' && filter:isNotNull(ONE_NULL)", false},
-        };
+                {"FOO == 'bar' && filter:isNotNull(ONE_NULL)", false}};
         //  @formatter:on
         
-        for (Object[] o : array) {
-            test((String) o[0], (Boolean) o[1]);
-        }
+        test(array);
     }
     
     /**
@@ -291,13 +273,10 @@ public class DatawaveInterpreterTest {
                 {"filter:includeRegex(FOO, 'bar').size() <= 1", true},
                 {"filter:includeRegex(FOO, 'bar').size() < 0", false},
                 {"filter:includeRegex(FOO, 'bar').size() < 1", false},
-                {"filter:includeRegex(FOO, 'bar').size() < 2", true},
-        };
+                {"filter:includeRegex(FOO, 'bar').size() < 2", true}};
         //  @formatter:on
         
-        for (Object[] o : array) {
-            test((String) o[0], (Boolean) o[1]);
-        }
+        test(array);
     }
     
     @Test
@@ -308,13 +287,10 @@ public class DatawaveInterpreterTest {
                 {"filter:matchesAtLeastCountOf(2,FOO,'bar','baz')", true},
                 {"filter:matchesAtLeastCountOf(1,FOO,'BAR','BAZ')", true},
                 {"filter:matchesAtLeastCountOf(5,FOO,'BAR','BAZ')", false},
-                {"filter:matchesAtLeastCountOf(2,bar,'FOO','SPEED')", false},
-        };
+                {"filter:matchesAtLeastCountOf(2,bar,'FOO','SPEED')", false}};
         //  @formatter:on
         
-        for (Object[] o : array) {
-            test((String) o[0], (Boolean) o[1]);
-        }
+        test(array);
     }
     
     // (f1.size() + f2.size()) > x is logically equivalent to f:matchesAtLeastCountOf(x,FIELD,'value')
@@ -332,13 +308,10 @@ public class DatawaveInterpreterTest {
                 {"(filter:includeRegex(SPEED, '1.*').size() + filter:includeRegex(FOO, 'ba.*').size() + filter:includeRegex(FOO, 'baz').size()) == 3", true},
                 {"(filter:includeRegex(FOO, 'bar').size() - filter:includeRegex(FOO, 'baz').size()) == 0", true},
                 {"(filter:includeRegex(FOO, 'bar').size() - filter:includeRegex(FOO, 'ba.*').size()) == 0", true},
-                {"(filter:includeRegex(SPEED, '1.*').size() - filter:includeRegex(FOO, 'ba.*').size()) == 0", true},
-        };
+                {"(filter:includeRegex(SPEED, '1.*').size() - filter:includeRegex(FOO, 'ba.*').size()) == 0", true}};
         //  @formatter:on
         
-        for (Object[] o : array) {
-            test((String) o[0], (Boolean) o[1]);
-        }
+        test(array);
     }
     
     @Test
@@ -354,13 +327,10 @@ public class DatawaveInterpreterTest {
                 {"SPEED.min() > 123", false},
                 {"SPEED.min() >= 123", true},
                 {"SPEED.min() < 123", false},
-                {"SPEED.min() <= 123", true},
-        };
+                {"SPEED.min() <= 123", true}};
         //  @formatter:on
         
-        for (Object[] o : array) {
-            test((String) o[0], (Boolean) o[1]);
-        }
+        test(array);
     }
     
     @Test
@@ -374,11 +344,20 @@ public class DatawaveInterpreterTest {
                 {"FOO == 'bar' && 1 * 2 * 3 == 7", false},
                 {"FOO == 'bar' && 12 / 2 / 3 == 3", false},
                 {"FOO == 'bar' && filter:getAllMatches(FOO,'hubert').isEmpty() == true", true},
-                {"FOO == 'bar' && filter:getAllMatches(FOO,'hubert').size() == 0", true},
-        };
+                {"FOO == 'bar' && filter:getAllMatches(FOO,'hubert').size() == 0", true}};
         //  @formatter:on
         
-        for (Object[] o : array) {
+        test(array);
+    }
+    
+    /**
+     * Wrapper that accepts an array of [String, Boolean] pairs that are the query and expected evaluation state, respectively
+     *
+     * @param inputs
+     *            the inputs
+     */
+    protected void test(Object[][] inputs) {
+        for (Object[] o : inputs) {
             test((String) o[0], (Boolean) o[1]);
         }
     }

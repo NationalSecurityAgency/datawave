@@ -1,7 +1,6 @@
 package org.apache.commons.jexl2;
 
 import datawave.query.jexl.DatawaveJexlEngine;
-import datawave.query.jexl.PartialInterpreterCallback;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 

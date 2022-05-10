@@ -4,7 +4,7 @@ import com.google.common.base.CharMatcher;
 import com.google.common.collect.Sets;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.ValueTuple;
-import datawave.query.jexl.DatawavePartialInterpreter;
+import datawave.query.jexl.DatawavePartialInterpreter.State;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.query.collections.FunctionalSet;
 import datawave.util.OperationEvaluator;
@@ -141,8 +141,8 @@ public class EvaluationPhaseFilterFunctions {
                 if (!values.isEmpty()) {
                     return values.stream().map(EvaluationPhaseFilterFunctions::getHitTerm).collect(Collectors.toCollection(FunctionalSet::new));
                 }
-            } else if (fieldValue instanceof DatawavePartialInterpreter.State) {
-                Collection<?> values = (Collection<?>) ((DatawavePartialInterpreter.State) fieldValue).getSet();
+            } else if (fieldValue instanceof State) {
+                Collection<?> values = (Collection<?>) ((State) fieldValue).getSet();
                 if (!values.isEmpty()) {
                     return values.stream().map(EvaluationPhaseFilterFunctions::getHitTerm).collect(Collectors.toCollection(FunctionalSet::new));
                 }
@@ -163,8 +163,8 @@ public class EvaluationPhaseFilterFunctions {
     public static boolean isNull(Object fieldValue) {
         if (fieldValue instanceof Collection) {
             return ((Collection<?>) fieldValue).isEmpty();
-        } else if (fieldValue instanceof DatawavePartialInterpreter.State) {
-            return ((DatawavePartialInterpreter.State) fieldValue).getSet().isEmpty();
+        } else if (fieldValue instanceof State) {
+            return ((State) fieldValue).getSet().isEmpty();
         } else {
             return fieldValue == null;
         }
@@ -236,8 +236,8 @@ public class EvaluationPhaseFilterFunctions {
         for (Object regexObject : regexes) {
             String regex = regexObject.toString();
             
-            if (fieldValue instanceof DatawavePartialInterpreter.State) {
-                fieldValue = ((DatawavePartialInterpreter.State) fieldValue).getSet();
+            if (fieldValue instanceof State) {
+                fieldValue = ((State) fieldValue).getSet();
             }
             if (fieldValue instanceof Iterable) {
                 // Cast as Iterable in order to call the right includeRegex method
@@ -272,8 +272,8 @@ public class EvaluationPhaseFilterFunctions {
     public static FunctionalSet<ValueTuple> includeRegex(Object fieldValue, String regex) {
         if (fieldValue != null) {
             
-            if (fieldValue instanceof DatawavePartialInterpreter.State) {
-                DatawavePartialInterpreter.State state = (DatawavePartialInterpreter.State) fieldValue;
+            if (fieldValue instanceof State) {
+                State state = (State) fieldValue;
                 if (state.getSet().size() > 1) {
                     return includeRegex(state.getSet(), regex);
                 } else if (state.getSet().size() == 1) {
@@ -356,8 +356,8 @@ public class EvaluationPhaseFilterFunctions {
      * @see EvaluationPhaseFilterFunctions#includeRegex(Object, String) additional documentation on expected result
      */
     public static FunctionalSet<ValueTuple> getAllMatches(Object fieldValue, String regex) {
-        if (fieldValue instanceof DatawavePartialInterpreter.State) {
-            return includeRegex((Iterable<?>) ((DatawavePartialInterpreter.State) fieldValue).getSet(), regex);
+        if (fieldValue instanceof State) {
+            return includeRegex((Iterable<?>) ((State) fieldValue).getSet(), regex);
         } else {
             return includeRegex(fieldValue, regex);
         }

@@ -1,7 +1,7 @@
 package datawave.query.jexl.functions;
 
 import datawave.query.attributes.ValueTuple;
-import datawave.query.jexl.DatawavePartialInterpreter;
+import datawave.query.jexl.DatawavePartialInterpreter.State;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -56,8 +56,8 @@ public class GroupingRequiredFilterFunctions {
         Object fieldValue1 = args[0];
         String regex = args[1].toString();
         
-        if (fieldValue1 instanceof DatawavePartialInterpreter.State) {
-            fieldValue1 = ((DatawavePartialInterpreter.State) fieldValue1).getSet();
+        if (fieldValue1 instanceof State) {
+            fieldValue1 = ((State) fieldValue1).getSet();
         }
         
         if (fieldValue1 instanceof Iterable) {
@@ -76,8 +76,8 @@ public class GroupingRequiredFilterFunctions {
             }
             for (int i = 2; i < args.length; i++) {
                 
-                if (args[i] instanceof DatawavePartialInterpreter.State) {
-                    args[i] = ((DatawavePartialInterpreter.State) args[i]).getSet();
+                if (args[i] instanceof State) {
+                    args[i] = ((State) args[i]).getSet();
                 }
                 
                 if (args[i] instanceof Iterable) {
@@ -169,8 +169,8 @@ public class GroupingRequiredFilterFunctions {
         Object fieldValue1 = args[0];
         String regex = args[1].toString();
         
-        if (fieldValue1 instanceof DatawavePartialInterpreter.State) {
-            fieldValue1 = ((DatawavePartialInterpreter.State) fieldValue1).getSet();
+        if (fieldValue1 instanceof State) {
+            fieldValue1 = ((State) fieldValue1).getSet();
         }
         
         if (fieldValue1 instanceof Iterable) {
@@ -187,8 +187,8 @@ public class GroupingRequiredFilterFunctions {
             
             for (int i = 2; i < args.length; i += 2) {
                 
-                if (args[i] instanceof DatawavePartialInterpreter.State) {
-                    args[i] = ((DatawavePartialInterpreter.State) args[i]).getSet();
+                if (args[i] instanceof State) {
+                    args[i] = ((State) args[i]).getSet();
                 }
                 
                 if (args[i] instanceof Iterable) {

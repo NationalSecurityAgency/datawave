@@ -235,8 +235,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         }
         
         resultMap.put(nodeString, result);
-        State state = getState(node, result);
-        return state;
+        return getState(node, result);
     }
     
     @Override
@@ -338,13 +337,8 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         } else {
             // if we got here then we are likely dealing with a function that takes a union of null fields as arguments
             // for example, filter:notNull(NULL1 || NULL2). return false with an initialized empty functional set
-            return new State(true, false, FunctionalSet.emptySet());
-            // throw new IllegalStateException("should not get here");
+            return new State(true);
         }
-        
-        // when an identifier is expanded by the data model within a Function node, the results of the matches
-        // for both (all?) fields must be gathered into a single collection to be returned.
-        // return getMatchedOr(left, right);
     }
     
     @Override
@@ -367,7 +361,6 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
         for (JexlNode child : JexlNodes.children(node)) {
             
             Object o = child.jjtAccept(this, data);
-            
             if (o instanceof State) {
                 State state = (State) o;
                 if (!state.matched) {
@@ -666,10 +659,7 @@ public class DatawavePartialInterpreter extends DatawaveInterpreter {
             return state;
         }
         
-        Object result = super.visit(node, data);
-        
-        return result;
-        // throw new IllegalStateException("ASTSizeMethod data in a partial context should be STATE but was " + data.getClass().getSimpleName());
+        return super.visit(node, data);
     }
     
     /**

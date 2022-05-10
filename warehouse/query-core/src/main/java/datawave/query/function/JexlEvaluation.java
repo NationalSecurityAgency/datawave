@@ -34,7 +34,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     private static final Logger log = Logger.getLogger(JexlEvaluation.class);
     
     public static final String HIT_TERM_FIELD = "HIT_TERM";
-    public static final String FULL_EVAL_FIELD = "EVAL_STATE";
+    public static final String EVAL_STATE_FIELD = "EVAL_STATE";
     
     public enum EVAL_STATE {
         FULL, PARTIAL
@@ -112,7 +112,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         if (engine.wasCallbackUsed() && matched) {
             Document document = input.second();
             Content attr = new Content(String.valueOf(EVAL_STATE.PARTIAL), document.getMetadata(), document.isToKeep());
-            document.put(FULL_EVAL_FIELD, attr);
+            document.put(EVAL_STATE_FIELD, attr);
             engine.resetCallback();
         }
         
