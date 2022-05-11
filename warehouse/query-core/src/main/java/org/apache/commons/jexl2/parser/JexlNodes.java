@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -73,6 +74,20 @@ public class JexlNodes {
      */
     public static <T extends JexlNode> T children(T node, JexlNode... children) {
         node.children = children;
+        for (JexlNode child : node.children)
+            newParent(child, node);
+        return node;
+    }
+    
+    /**
+     * Sets the supplied child array as the children member of {node} and sets the parent reference of each element in {children} to {node}.
+     *
+     * @param node
+     * @param children
+     * @return
+     */
+    public static <T extends JexlNode> T children(T node, Collection<JexlNode> children) {
+        node.children = children.toArray(new JexlNode[0]);
         for (JexlNode child : node.children)
             newParent(child, node);
         return node;
