@@ -293,7 +293,7 @@ public abstract class GroupingTest {
         log.debug("reponses:" + digested);
         Set<String> responseSet = Sets.newHashSet(digested);
         // if the grouped results from every type of rebuild are the same, there should be only 1 entry in the responseSet
-        Assert.assertEquals(1, responseSet.size());
+        Assert.assertEquals(responseSet.size(), 1);
     }
     
     // grab the relevant stuff from the events and do some formatting

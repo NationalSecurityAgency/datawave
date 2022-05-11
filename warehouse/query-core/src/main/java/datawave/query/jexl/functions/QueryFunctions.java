@@ -25,6 +25,7 @@ public class QueryFunctions {
     public static final String UNIQUE_BY_HOUR_FUNCTION = "unique_by_hour";
     public static final String UNIQUE_BY_MINUTE_FUNCTION = "unique_by_minute";
     public static final String GROUPBY_FUNCTION = "groupby";
+    public static final String EXCERPT_FIELDS_FUNCTION = "excerpt_fields";
     
     protected static Logger log = Logger.getLogger(QueryFunctions.class);
     

@@ -137,7 +137,6 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         ColumnVisibility eventCV = new ColumnVisibility(documentKey.getColumnVisibility());
         
         EventBase output = null;
-        
         try {
             // build response method here
             output = buildResponse(document, documentKey, eventCV, colf, row, this.markingFunctions);
@@ -147,8 +146,7 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         }
         
         if (output == null) {
-            // buildResponse will return a null object if there was only metadata in the document and a special flag was
-            // not found in the document
+            // buildResponse will return a null object if there was only metadata in the document
             throw new EmptyObjectException();
         }
         
@@ -208,5 +206,4 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         }
         this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
-    
 }
