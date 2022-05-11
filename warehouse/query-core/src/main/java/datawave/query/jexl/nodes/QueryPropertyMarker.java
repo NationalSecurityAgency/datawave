@@ -144,7 +144,8 @@ public abstract class QueryPropertyMarker extends ASTReference {
     public abstract String getLabel();
     
     protected void setupSource(JexlNode source) {
-        this.jjtSetParent(source.jjtGetParent());
+        JexlNode parent = source.jjtGetParent();
+        this.jjtSetParent(parent);
         
         // create the assignment using the label wrapped in an expression
         JexlNode refNode1 = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(getLabel(), true));
@@ -163,6 +164,11 @@ public abstract class QueryPropertyMarker extends ASTReference {
         // and make a child of this
         refExpNode1.jjtSetParent(this);
         this.jjtAddChild(refExpNode1, 0);
+        
+        // inserts new marker node in place of the original source
+        if (parent != null) {
+            JexlNodes.replaceChild(parent, source, this);
+        }
     }
     
     /**

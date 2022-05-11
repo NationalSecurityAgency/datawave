@@ -59,10 +59,7 @@ public class PushdownLowSelectivityNodesVisitor extends BaseVisitor {
     public Object visit(ASTEQNode node, Object data) {
         // if this node represents a field/value that has poor selectability, then push it down
         if (hasLowSelectability(node)) {
-            JexlNode parent = node.jjtGetParent();
-            JexlNode delayed = ASTDelayedPredicate.create(node);
-            JexlNodes.replaceChild(parent, node, delayed);
-            return delayed;
+            return ASTDelayedPredicate.create(node);
         }
         return node;
     }

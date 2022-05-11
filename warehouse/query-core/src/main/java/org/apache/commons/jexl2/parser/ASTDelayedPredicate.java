@@ -21,8 +21,8 @@ public class ASTDelayedPredicate extends QueryPropertyMarker {
     }
     
     /**
-     * Create and return a new {@link ASTDelayedPredicate} with the given source. This method does not alter the node lineage of the original query tree, it is
-     * the caller's responsibility to correctly insert the new marker node.
+     * Create and return a new {@link ASTDelayedPredicate} with the given source. This method will insert the marked node into the node tree in place of the
+     * provided node
      * 
      * @param node
      *            the source node

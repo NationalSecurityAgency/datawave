@@ -181,8 +181,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
                 ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, data, config, indexedFields, indexOnlyFields,
                                 nonEventFields, forFieldIndex, null, helper);
                 if (state == ExecutableDeterminationVisitor.STATE.PARTIAL) {
-                    JexlNode delayed = ASTDelayedPredicate.create(child);
-                    JexlNodes.replaceChild(node, child, delayed);
+                    ASTDelayedPredicate.create(child);
                 }
             }
         }
