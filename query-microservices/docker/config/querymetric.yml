@@ -52,6 +52,7 @@ datawave:
         recordWriterNumThreads: 4
         enableBloomFilter: false
         queryVisibility: PUBLIC
+        defaultMetricVisibility: PUBLIC
         defaultMetricMarkings:
           columnVisibility: PUBLIC
         baseMaps: "{}"
