@@ -5,25 +5,24 @@ import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNullLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 
 /**
- * This visitor examines a query tree and replaces any occurrences of FIELD =~'.*?' with the more efficient equivalent FIELD != null.
+ * This visitor replaces any occurrences of <code>FIELD =~'.*?'</code> with the more efficient equivalent <code>FIELD != null</code>.
  */
-public class IsNotNullIntentVisitor extends RebuildingVisitor {
+public class IsNotNullIntentVisitor extends BaseVisitor {
     
     /**
-     * Apply this visitor to the provided script and return the result.
+     * Apply this visitor to the provided node and return the result.
      * 
-     * @param script
-     *            the script to apply
-     * @return the result
+     * @param node
+     *            a JexlNode
+     * @return the same node
      */
-    public static <T extends JexlNode> T fixNotNullIntent(T script) {
-        IsNotNullIntentVisitor visitor = new IsNotNullIntentVisitor();
-        
-        // noinspection unchecked
-        return (T) script.jjtAccept(visitor, null);
+    public static <T extends JexlNode> T fixNotNullIntent(T node) {
+        node.jjtAccept(new IsNotNullIntentVisitor(), null);
+        return node;
     }
     
     @Override
@@ -31,11 +30,12 @@ public class IsNotNullIntentVisitor extends RebuildingVisitor {
         // If the ER node is meant to match any string, it can be replaced with FIELD != null.
         Object value = JexlASTHelper.getLiteralValue(node);
         if (".*?".equals(value)) {
-            ASTNENode neNode = new ASTNENode(ParserTreeConstants.JJTNENODE);
-            neNode.jjtAddChild(node.jjtGetChild(0), 0);
-            neNode.jjtAddChild(new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL), 1);
-            return super.visit(neNode, data);
+            JexlNode nullLiteral = new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL);
+            JexlNode neNode = new ASTNENode(ParserTreeConstants.JJTNENODE);
+            JexlNodes.children(neNode, node.jjtGetChild(0), nullLiteral);
+            
+            JexlNodes.replaceChild(node.jjtGetParent(), node, neNode);
         }
-        return super.visit(node, data);
+        return data;
     }
 }

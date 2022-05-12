@@ -14,8 +14,8 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 /**
  * <pre>
  * Rewrites subtrees of Not Equals and Regex Not Equals nodes.
- * EQ example: "A != B" into "!(A == B)".
- * RN example: "A !~ B" into "!(A =~ B)".
+ * NE to EQ example: "A != B" into "!(A == B)"
+ * ER to NR example: "A !~ B" into "!(A =~ B)"
  * This rewrite operation is destructive to the query tree.
  * </pre>
  */
