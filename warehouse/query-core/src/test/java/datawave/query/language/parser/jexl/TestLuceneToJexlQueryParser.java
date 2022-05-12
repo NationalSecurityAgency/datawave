@@ -442,7 +442,7 @@ public class TestLuceneToJexlQueryParser {
     @Test
     public void testFunctions() throws ParseException {
         testFunction("filter:isNull(nullfield)", "#isnull(nullfield)");
-        testFunction("not(filter:isNull(field))", "#isnotnull(field)");
+        testFunction("filter:isNotNull(field)", "#isnotnull(field)");
         testFunction("filter:includeRegex(_ANYFIELD_, 'r1')", "#include(r1)");
         testFunction("(filter:includeRegex(f1, 'r1') && filter:includeRegex(f2, 'r2'))", "#include(f1, r1, f2, r2)");
         testFunction("(filter:includeRegex(f1, 'r1') && filter:includeRegex(f2, 'r2'))", "#include(AND, f1, r1, f2, r2)");
@@ -548,7 +548,7 @@ public class TestLuceneToJexlQueryParser {
     
     @Test
     public void testIsNotNull() throws ParseException {
-        assertEquals("F == 'S' && not(filter:isNull(FOO))", parser.parse("F:S #ISNOTNULL(FOO)").getOriginalQuery());
+        assertEquals("F == 'S' && filter:isNotNull(FOO)", parser.parse("F:S #ISNOTNULL(FOO)").getOriginalQuery());
     }
     
     @Test
