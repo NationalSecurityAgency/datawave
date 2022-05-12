@@ -13,7 +13,7 @@
 [submodule "core/in-memory-accumulo"]
 	path = core/in-memory-accumulo
 	url = git@github.com:NationalSecurityAgency/datawave-in-memory-accumulo.git
-	branch = master
+	branch = feature/queryMicroservices
 [submodule "core/metrics-reporter"]
 	path = core/metrics-reporter
 	url = git@github.com:NationalSecurityAgency/datawave-metrics-reporter.git
