@@ -147,7 +147,7 @@ export DW_BIND_HOST=0.0.0.0
 
 This will ensure that Hadoop binds to all interfaces, and that Accumulo binds to the hostname/IP address.  This is required to connect to the host Accumulo instance from a docker container.
 
-What follows is a brief description of how to setup and run the Datawave Quickstart.  For more information see the [DataWave Quickstart Readme](../../contrib/datawave-quickstart/README.md) for more details.
+What follows is a brief description of how to setup and run the Datawave Quickstart.  For more detailed information see the [DataWave Quickstart Readme](../../contrib/datawave-quickstart/README.md).
 
 ```
 # Add the quickstart env.sh to your .bashrc
