@@ -1,14 +1,13 @@
 package datawave.query.jexl.visitors;
 
+import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
 
 public class IsNotNullIntentVisitorTest {
     
@@ -37,10 +36,15 @@ public class IsNotNullIntentVisitorTest {
     }
     
     private void assertResult(String original, String expected) throws ParseException {
-        ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
+        ASTJexlScript originalScript = JexlASTHelper.parseAndFlattenJexlQuery(original);
         ASTJexlScript actual = IsNotNullIntentVisitor.fixNotNullIntent(originalScript);
         
         JexlNodeAssert.assertThat(actual).isEqualTo(expected).hasValidLineage();
-        JexlNodeAssert.assertThat(originalScript).isEqualTo(original).hasValidLineage();
+        
+        try {
+            ASTValidator.isValid(actual);
+        } catch (InvalidQueryTreeException e) {
+            Assert.fail("IsNotNullIntentVisitor produced an invalid query tree: " + e.getMessage());
+        }
     }
 }
