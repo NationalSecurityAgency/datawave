@@ -41,10 +41,10 @@ cd datawave
 git submodule foreach 'git checkout feature/queryMicroservices || :'
 
 # It is recommended to build the project using multiple threads
-mvn -Pdocker,dist clean install -T C1
+mvn -Pdocker,dist clean install -T 1C
 
 # If you don't want to build the microservices, disable the 'microservices' profile
-mvn -Pdocker,dist -P !microservices clean install -T C1
+mvn -Pdocker,dist -P !microservices clean install -T 1C
 ```
 
 ### DataWave Microservices
