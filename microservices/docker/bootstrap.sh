@@ -1,8 +1,12 @@
 echo "Creating .env file..."
+
+DW_HOSTNAME=$(hostname)
+DW_HOSTNAME=${DW_HOSTNAME%%.*}
+
 ENV_CONF="\
-HOSTNAME=$(hostname)
-HOST_FQDN=$(hostname -f)
-HOST_IP=$(hostname -i)"
+DW_HOSTNAME=${DW_HOSTNAME}
+DW_HOST_FQDN=$(hostname -f)
+DW_HOST_IP=$(hostname -i)"
 
 # Write .env file using our settings in ENV_CONF
 if [ ! -z "${ENV_CONF}" ] ; then 

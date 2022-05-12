@@ -112,22 +112,6 @@ You will need to build the docker image for this service on your local machine f
 
 ### Prereqs
 
-#### Datawave Quickstart
-
-Prior to starting these services, you need to use the datawave-quickstart to deploy Hadoop, Zookeeper, and Accumulo on your host machine.  This will also ensure that you have some data available for query.
-
-Before running the quickstart setup, you need to edit your ~/.bashrc to include the following export:
-
-```
-export DW_BIND_HOST=0.0.0.0
-```
-
-This will ensure that Hadoop binds to all interfaces, and that Accumulo binds to the hostname/IP address.  This is required to connect to the host Accumulo instance from a docker container.
-
-See the [DataWave Quickstart Readme](../../contrib/datawave-quickstart/README.md) for more details.
-
-After the quickstart is running, be sure to stop the DataWave webservice prior to proceeding.  Alternatively, use `accumuloStart` to start up just the query microservice dependencies.
-
 #### /etc/hosts
 
 In order for the following bootstrap step to work properly, you should ensure that your /etc/hosts file looks similar to the following:
@@ -149,6 +133,43 @@ docker-compose version 1.28.4, build cabd5cfb
 docker-py version: 4.4.3
 CPython version: 3.7.10
 OpenSSL version: OpenSSL 1.1.0l  10 Sep 2019
+```
+
+#### Datawave Quickstart Setup
+
+Prior to starting these services, you need to use the datawave-quickstart to deploy Hadoop, Zookeeper, and Accumulo on your host machine.  This will also ensure that you have some data available for query.
+
+Before running the quickstart setup, you need to edit your ~/.bashrc to include the following export:
+
+```
+export DW_BIND_HOST=0.0.0.0
+```
+
+This will ensure that Hadoop binds to all interfaces, and that Accumulo binds to the hostname/IP address.  This is required to connect to the host Accumulo instance from a docker container.
+
+What follows is a brief description of how to setup and run the Datawave Quickstart.  For more information see the [DataWave Quickstart Readme](../../contrib/datawave-quickstart/README.md) for more details.
+
+```
+# Add the quickstart env.sh to your .bashrc
+# DW_SOURCE refers to your local path to thje datawave source code, and may be set as an environment variable if desired
+echo "source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc
+
+# Source .bashrc to kick off the quickstart build
+source ~/.bashrc
+
+# Install Datawave and it's dependencies
+allInstall
+
+# Start Accumulo and it's dependencies
+accumuloStart
+
+# At this point, you are ready to deploy and test the query microservices via docker-compose
+
+# If desired, start the wildfly webservice, and run some diagnostic tests
+datawaveWebStart && datawaveWebTest
+
+# Make sure to stop the wildfly webservice before starting the query microservices via docker-compose
+datawaveWebStop
 ```
 
 ### Bootstrap
