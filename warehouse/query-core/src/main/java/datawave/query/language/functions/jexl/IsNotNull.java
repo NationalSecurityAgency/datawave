@@ -26,7 +26,7 @@ public class IsNotNull extends JexlQueryFunction {
         
         String field = parameterList.get(0);
         
-        sb.append("not(filter:isNull(").append(field).append("))");
+        sb.append("filter:isNotNull(").append(field).append(")");
         
         return sb.toString();
     }
