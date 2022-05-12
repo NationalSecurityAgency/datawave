@@ -151,16 +151,16 @@ What follows is a brief description of how to setup and run the Datawave Quickst
 
 ```
 # Add the quickstart env.sh to your .bashrc
-# DW_SOURCE refers to your local path to thje datawave source code, and may be set as an environment variable if desired
+# DW_SOURCE refers to your local path to the datawave source code, and may be set as an environment variable if desired
 echo "source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc
 
 # Source .bashrc to kick off the quickstart build
 source ~/.bashrc
 
-# Install Datawave and it's dependencies
+# Install Datawave and its dependencies
 allInstall
 
-# Start Accumulo and it's dependencies
+# Start Accumulo and its dependencies
 accumuloStart
 
 # At this point, you are ready to deploy and test the query microservices via docker-compose
