@@ -32,15 +32,6 @@ import datawave.webservice.query.util.QueryUtil;
 
 public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements TermFrequencyIngestHelperInterface {
     
-    /*
-     * Field Name | Content | Update | Delete
-     * 
-     * ELAPSED_TIME X X LAST_UPDATED X X LIFECYCLE X X NUM_PAGES X X NUM_RESULTS X X PAGE_METRICS.X X X SETUP_TIME X X CREATE_CALL_TIME X X
-     * 
-     * AUTHORIZATIONS X BEGIN_DATE X END_DATE X ERROR_CODE X ERROR_MESSAGE X HOST X NEGATIVE_SELECTORS X POSITIVE_SELECTORS X PROXY_SERVERS QUERY X QUERY_ID X
-     * QUERY_LOGIC X QUERY_TYPE X QUERY_NAME X X PARAMETERS X CREATE_DATE X USER X
-     */
-    
     private static final Logger log = Logger.getLogger(ContentQueryMetricsIngestHelper.class);
     private static final Integer MAX_FIELD_VALUE_LENGTH = 500000;
     
@@ -114,48 +105,11 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             SimpleDateFormat sdf_date_time1 = new SimpleDateFormat("yyyyMMdd HHmmss");
             SimpleDateFormat sdf_date_time2 = new SimpleDateFormat("yyyyMMdd HHmmss");
             
-            String type = updatedQueryMetric.getQueryType();
-            // this is time consuming - we only need to parse the query and write the selectors once
-            if (type.equalsIgnoreCase("RunningQuery") && updatedQueryMetric.getNumUpdates() == 0) {
-                
-                String query = updatedQueryMetric.getQuery();
-                
-                ASTJexlScript jexlScript = null;
-                try {
-                    // Parse and flatten here before visitors visit.
-                    jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(query);
-                } catch (Throwable t1) {
-                    // not JEXL, try LUCENE
-                    try {
-                        LuceneToJexlQueryParser luceneToJexlParser = new LuceneToJexlQueryParser();
-                        QueryNode node = luceneToJexlParser.parse(query);
-                        String jexlQuery = node.getOriginalQuery();
-                        jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery);
-                    } catch (Throwable t2) {
-                        
-                    }
-                }
-                
-                jexlScript = TreeFlatteningRebuildingVisitor.flatten(jexlScript);
-                
-                if (jexlScript != null) {
-                    List<ASTEQNode> positiveEQNodes = JexlASTHelper.getPositiveEQNodes(jexlScript);
-                    for (ASTEQNode pos : positiveEQNodes) {
-                        String identifier = JexlASTHelper.getIdentifier(pos);
-                        Object literal = JexlASTHelper.getLiteralValueSafely(pos);
-                        if (identifier != null && literal != null) {
-                            fields.put("POSITIVE_SELECTORS", identifier + ":" + literal);
-                        }
-                    }
-                    List<ASTEQNode> negativeEQNodes = JexlASTHelper.getNegativeEQNodes(jexlScript);
-                    for (ASTEQNode neg : negativeEQNodes) {
-                        String identifier = JexlASTHelper.getIdentifier(neg);
-                        Object literal = JexlASTHelper.getLiteralValueSafely(neg);
-                        if (identifier != null && literal != null) {
-                            fields.put("NEGATIVE_SELECTORS", identifier + ":" + literal);
-                        }
-                    }
-                }
+            if (updatedQueryMetric.getPositiveSelectors() != null) {
+                fields.putAll("POSITIVE_SELECTORS", updatedQueryMetric.getPositiveSelectors());
+            }
+            if (updatedQueryMetric.getNegativeSelectors() != null) {
+                fields.putAll("NEGATIVE_SELECTORS", updatedQueryMetric.getNegativeSelectors());
             }
             
             if (updatedQueryMetric.getQueryAuthorizations() != null) {
