@@ -183,9 +183,9 @@ Bootstrap your deployment by running:
 This will produce a `.env` file containing the following:
 
 ```
-HOSTNAME=<Your hostname>
-HOST_FQDN=<Your host FQDN>
-HOST_IP=<Your host IP Address>
+DW_HOSTNAME=<Your hostname>
+DW_HOST_FQDN=<Your host FQDN>
+DW_HOST_IP=<Your host IP Address>
 ```
 
 ### Start services
