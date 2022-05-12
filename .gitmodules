@@ -10,10 +10,6 @@
 	path = core/base-rest-responses
 	url = git@github.com:NationalSecurityAgency/datawave-base-rest-responses.git
 	branch = feature/queryMicroservices
-[submodule "core/in-memory-accumulo"]
-	path = core/in-memory-accumulo
-	url = git@github.com:NationalSecurityAgency/datawave-in-memory-accumulo.git
-	branch = feature/queryMicroservices
 [submodule "core/metrics-reporter"]
 	path = core/metrics-reporter
 	url = git@github.com:NationalSecurityAgency/datawave-metrics-reporter.git
@@ -77,4 +73,8 @@
 [submodule "contrib/datawave-utils"]
 	path = contrib/datawave-utils
 	url = git@github.com:NationalSecurityAgency/datawave-utils.git
+	branch = feature/queryMicroservices
+[submodule "core/in-memory-accumulo"]
+	path = core/in-memory-accumulo
+	url = git@github.com:NationalSecurityAgency/datawave-in-memory-accumulo.git
 	branch = feature/queryMicroservices
