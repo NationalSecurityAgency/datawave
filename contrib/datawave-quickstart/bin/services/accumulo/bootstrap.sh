@@ -73,6 +73,7 @@ DW_ACCUMULO_JVM_HEAPDUMP_DIR="${DW_CLOUD_DATA}/heapdumps"
 
 DW_ACCUMULO_TSERVER_OPTS="\${POLICY} -Xmx768m -Xms768m -XX:-HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${DW_ACCUMULO_JVM_HEAPDUMP_DIR} -XX:+UseCompressedOops "
 
+export ACCUMULO_GENERAL_OPTS="-Dlog4j1.compatibility=true -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -Djava.net.preferIPv4Stack=true -XX:+CMSClassUnloadingEnabled"
 export ZOOKEEPER_HOME="${DW_CLOUD_HOME}/${DW_ZOOKEEPER_SYMLINK}"
 export ACCUMULO_HOME="${DW_CLOUD_HOME}/${DW_ACCUMULO_SYMLINK}"
 export PATH=${ACCUMULO_HOME}/bin:${ZOOKEEPER_HOME}/bin:$PATH

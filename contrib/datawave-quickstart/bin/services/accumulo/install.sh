@@ -63,6 +63,17 @@ sed -i'' -e "s~\(ACCUMULO_TSERVER_OPTS=\).*$~\1\"${DW_ACCUMULO_TSERVER_OPTS}\"~g
 sed -i'' -e "s~\(export JAVA_HOME=\).*$~\1\"${JAVA_HOME}\"~g" ${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh
 sed -i'' -e "s~\(export ACCUMULO_MONITOR_OPTS=\).*$~\1\"\${POLICY} -Xmx2g -Xms512m\"~g" ${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh
 
+# Get the log4j 2x jars so that we can configure bin/accumulo
+LOG4J2_API="$(find -H ${HADOOP_HOME}/share/hadoop/common/lib -regex '.*/log4j-api-2.[0-9.]*[.]jar$' -print 2>/dev/null | head -1)"
+LOG4J2_SLF4J_IMPL="$(find -H ${HADOOP_HOME}/share/hadoop/common/lib -regex '.*/log4j-slf4j-impl-2.[0-9.]*[.]jar$' -print 2>/dev/null | head -1)"
+LOG4J2_CORE="$(find -H ${HADOOP_HOME}/share/hadoop/common/lib -regex '.*/log4j-core-2.[0-9.]*[.]jar$' -print 2>/dev/null | head -1)"
+LOG4J2_12_API="$(find -H ${HADOOP_HOME}/share/hadoop/common/lib -regex '.*/log4j-1.2-api-2.[0-9.]*[.]jar$' -print 2>/dev/null | head -1)"
+LOG4J2_CLASSPATH="${LOG4J2_API}:${LOG4J2_SLF4J_IMPL}:${LOG4J2_CORE}:${LOG4J2_12_API}"
+
+# Now, modify bin/accumulo's existing log4j setup to use our 2.x jars instead
+sed -i'' -e "s~\(LOG4J_JAR=\).*$~\1\"${LOG4J2_CLASSPATH}\"~g" "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_BASEDIR}"/bin/accumulo
+sed -i'' -e "s~\(SLF4J_JARS=\).*$~\1\"\${ACCUMULO_HOME}/lib/slf4j-api.jar\"~g" "${DW_ACCUMULO_SERVICE_DIR}/${DW_ACCUMULO_BASEDIR}"/bin/accumulo
+
 # Write zoo.cfg file using our settings in DW_ZOOKEEPER_CONF
 if [ ! -z "${DW_ZOOKEEPER_CONF}" ] ; then 
    echo "${DW_ZOOKEEPER_CONF}" > ${DW_ZOOKEEPER_CONF_DIR}/zoo.cfg || fatal "Failed to write zoo.cfg"
