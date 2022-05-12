@@ -12,11 +12,8 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
@@ -24,7 +21,11 @@ import org.apache.log4j.Logger;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Rewrites <code>includeRegex</code> and <code>excludeRegex</code> terms for index only fields
+ */
 public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
+    
     private static final Logger log = ThreadConfigurableLogger.getLogger(RegexFunctionVisitor.class);
     protected Set<String> nonEventFields;
     
@@ -80,20 +81,6 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                 if (newParent.jjtGetNumChildren() == node0.jjtGetNumChildren() && newParent.jjtGetNumChildren() != 0) {
                     returnNode = newParent;
                 }
-            }
-        } else if (functionMetadata.name().equals("isNull")) {
-            List<JexlNode> arguments = functionMetadata.args();
-            JexlNode node0 = arguments.get(0);
-            if (node0 instanceof ASTIdentifier) {
-                returnNode = JexlNodeFactory.buildNode(new ASTEQNode(ParserTreeConstants.JJTEQNODE), node0.image, new ASTNullLiteral(
-                                ParserTreeConstants.JJTNULLLITERAL));
-            }
-        } else if (functionMetadata.name().equals("isNotNull")) {
-            List<JexlNode> arguments = functionMetadata.args();
-            JexlNode node0 = arguments.get(0);
-            if (node0 instanceof ASTIdentifier) {
-                returnNode = JexlNodeFactory.buildNode(new ASTNENode(ParserTreeConstants.JJTNENODE), node0.image, new ASTNullLiteral(
-                                ParserTreeConstants.JJTNULLLITERAL));
             }
         }
         return returnNode;
