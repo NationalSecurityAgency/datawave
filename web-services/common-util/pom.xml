@@ -32,6 +32,23 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-common-util</artifactId>
+            <version>${project.version}</version>
+            <classifier>jboss</classifier>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave.core</groupId>
+            <artifactId>datawave-core-connection-pool</artifactId>
+            <version>${project.version}</version>
+            <classifier>jboss</classifier>
+        </dependency>
+        <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>accumulo-utils</artifactId>
         </dependency>
@@ -42,23 +59,6 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>query-metric-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.services</groupId>
-            <artifactId>datawave-services-common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.services</groupId>
-            <artifactId>datawave-services-common-util</artifactId>
-            <version>${project.version}</version>
-            <classifier>jboss</classifier>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.services</groupId>
-            <artifactId>datawave-services-connection-pool</artifactId>
-            <version>${project.version}</version>
-            <classifier>jboss</classifier>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
@@ -192,7 +192,7 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>gov.nsa.datawave.contrib</groupId>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-in-memory-accumulo</artifactId>
             <scope>test</scope>
         </dependency>

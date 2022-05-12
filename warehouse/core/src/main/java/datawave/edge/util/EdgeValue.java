@@ -460,7 +460,7 @@ public class EdgeValue {
             return false;
         if (badActivityDate != null ? !badActivityDate.equals(edgeValue.badActivityDate) : edgeValue.badActivityDate != null)
             return false;
-        
+            
         // a protobuf Edge will have either a UUID object, preferrably, or a uuidString - but not both
         // the uuidObj and uuidString are both lazily initialized
         if (StringUtils.isNotBlank(uuidString) && StringUtils.isNotBlank(edgeValue.uuidString)) {

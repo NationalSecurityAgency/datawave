@@ -209,8 +209,8 @@ public class QueryMetricsBean {
     @Interceptors(ResponseInterceptor.class)
     @RolesAllowed({"Administrator", "MetricsAdministrator"})
     public QueryMetricsSummaryResponse getQueryMetricsSummaryDeprecated1(
-                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
-                                    defaultTime = "235959", defaultMillisec = "999") Date end) {
+                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
+                    @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
         if (queryMetricsWriterConfiguration.getUseRemoteService()) {
             return remoteQueryMetricService.summaryAll(begin, end);
         } else {
@@ -240,8 +240,8 @@ public class QueryMetricsBean {
     @Interceptors(ResponseInterceptor.class)
     @RolesAllowed({"Administrator", "MetricsAdministrator"})
     public QueryMetricsSummaryResponse getQueryMetricsSummaryDeprecated2(
-                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
-                                    defaultTime = "235959", defaultMillisec = "999") Date end) {
+                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
+                    @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
         if (queryMetricsWriterConfiguration.getUseRemoteService()) {
             return remoteQueryMetricService.summaryAll(begin, end);
         } else {
@@ -298,8 +298,8 @@ public class QueryMetricsBean {
     @Path("/summaryCounts/user")
     @Interceptors(ResponseInterceptor.class)
     public QueryMetricsSummaryResponse getQueryMetricsUserSummaryDeprecated(
-                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
-                                    defaultTime = "235959", defaultMillisec = "999") Date end) {
+                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
+                    @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
         if (queryMetricsWriterConfiguration.getUseRemoteService()) {
             return remoteQueryMetricService.summaryUser(begin, end);
         } else {

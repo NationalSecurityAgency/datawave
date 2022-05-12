@@ -37,8 +37,8 @@ public class TextUtilTest {
         Assert.assertEquals("First byte was wrong", (byte) 0, textBytes[prefixLength]);
         byte[] restOfText = new byte[text.getLength() - prefixLength - 1];
         System.arraycopy(textBytes, 1 + prefixLength, restOfText, 0, restOfText.length);
-        Assert.assertArrayEquals("Contents were wrong", new byte[] {(byte) 0x01, (byte) 0x23, (byte) 0x45, (byte) 0x67, (byte) 0x89, (byte) 0xAB, (byte) 0xCD,
-                (byte) 0xEF}, restOfText);
+        Assert.assertArrayEquals("Contents were wrong",
+                        new byte[] {(byte) 0x01, (byte) 0x23, (byte) 0x45, (byte) 0x67, (byte) 0x89, (byte) 0xAB, (byte) 0xCD, (byte) 0xEF}, restOfText);
     }
     
     @Test

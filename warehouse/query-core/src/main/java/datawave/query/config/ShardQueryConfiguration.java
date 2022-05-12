@@ -465,8 +465,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setFstCount(other.getFstCount());
         this.setCollapseDatePercentThreshold(other.getCollapseDatePercentThreshold());
         this.setFullTableScanEnabled(other.getFullTableScanEnabled());
-        this.setRealmSuffixExclusionPatterns(null == other.getRealmSuffixExclusionPatterns() ? null : Lists.newArrayList(other
-                        .getRealmSuffixExclusionPatterns()));
+        this.setRealmSuffixExclusionPatterns(
+                        null == other.getRealmSuffixExclusionPatterns() ? null : Lists.newArrayList(other.getRealmSuffixExclusionPatterns()));
         this.setDefaultType(other.getDefaultType());
         this.setShardDateFormat(other.getShardDateFormat());
         this.setShardDateFormatter(new SimpleDateFormat(this.getShardDateFormat()));
@@ -2385,13 +2385,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         && isLimitFieldsPreQueryEvaluation() == that.isLimitFieldsPreQueryEvaluation() && isHitList() == that.isHitList()
                         && isDateIndexTimeTravel() == that.isDateIndexTimeTravel() && getBeginDateCap() == that.getBeginDateCap()
                         && isFailOutsideValidDateRange() == that.isFailOutsideValidDateRange() && isRawTypes() == that.isRawTypes()
-                        && Double.compare(that.getMinSelectivity(), getMinSelectivity()) == 0
-                        && getIncludeDataTypeAsField() == that.getIncludeDataTypeAsField() && getIncludeRecordId() == that.getIncludeRecordId()
-                        && getIncludeHierarchyFields() == that.getIncludeHierarchyFields() && getIncludeGroupingContext() == that.getIncludeGroupingContext()
-                        && getFilterMaskedValues() == that.getFilterMaskedValues() && isReducedResponse() == that.isReducedResponse()
-                        && getAllowShortcutEvaluation() == that.getAllowShortcutEvaluation() && getSpeculativeScanning() == that.getSpeculativeScanning()
-                        && isDisableEvaluation() == that.isDisableEvaluation() && isContainsIndexOnlyTerms() == that.isContainsIndexOnlyTerms()
-                        && isContainsCompositeTerms() == that.isContainsCompositeTerms() && isAllowFieldIndexEvaluation() == that.isAllowFieldIndexEvaluation()
+                        && Double.compare(that.getMinSelectivity(), getMinSelectivity()) == 0 && getIncludeDataTypeAsField() == that.getIncludeDataTypeAsField()
+                        && getIncludeRecordId() == that.getIncludeRecordId() && getIncludeHierarchyFields() == that.getIncludeHierarchyFields()
+                        && getIncludeGroupingContext() == that.getIncludeGroupingContext() && getFilterMaskedValues() == that.getFilterMaskedValues()
+                        && isReducedResponse() == that.isReducedResponse() && getAllowShortcutEvaluation() == that.getAllowShortcutEvaluation()
+                        && getSpeculativeScanning() == that.getSpeculativeScanning() && isDisableEvaluation() == that.isDisableEvaluation()
+                        && isContainsIndexOnlyTerms() == that.isContainsIndexOnlyTerms() && isContainsCompositeTerms() == that.isContainsCompositeTerms()
+                        && isAllowFieldIndexEvaluation() == that.isAllowFieldIndexEvaluation()
                         && isAllowTermFrequencyLookup() == that.isAllowTermFrequencyLookup()
                         && isExpandUnfieldedNegations() == that.isExpandUnfieldedNegations() && getEventPerDayThreshold() == that.getEventPerDayThreshold()
                         && getShardsPerDayThreshold() == that.getShardsPerDayThreshold() && getInitialMaxTermThreshold() == that.getInitialMaxTermThreshold()
@@ -2465,40 +2465,39 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), isTldQuery(), getFilterOptions(), isDisableIndexOnlyDocuments(), getMaxScannerBatchSize(),
-                        getMaxIndexBatchSize(), isAllTermsIndexOnly(), getAccumuloPassword(), getMaxIndexScanTimeMillis(), getParseTldUids(),
-                        getCollapseUids(), getCollapseUidsThreshold(), getEnforceUniqueTermsWithinExpressions(), getSequentialScheduler(),
-                        getCollectTimingDetails(), getLogTimingDetails(), getSendTimingToStatsd(), getStatsdHost(), getStatsdPort(), getStatsdMaxQueueSize(),
-                        getLimitAnyFieldLookups(), isBypassExecutabilityCheck(), isGeneratePlanOnly(), getBackoffEnabled(), getUnsortedUIDsEnabled(),
-                        getSerializeQueryIterator(), isDebugMultithreadedSources(), isSortGeoWaveQueryRanges(), getNumRangesToBuffer(),
-                        getRangeBufferTimeoutMillis(), getRangeBufferPollMillis(), getGeometryMaxExpansion(), getPointMaxExpansion(),
-                        getGeoWaveRangeSplitThreshold(), getGeoWaveMaxRangeOverlap(), isOptimizeGeoWaveRanges(), getGeoWaveMaxEnvelopes(), getShardTableName(),
-                        getIndexTableName(), getReverseIndexTableName(), getMetadataTableName(), getDateIndexTableName(), getIndexStatsTableName(),
-                        getDefaultDateTypeName(), isCleanupShardsAndDaysQueryHints(), getNumQueryThreads(), numLookupThreads, getNumDateIndexThreads(),
-                        getMaxDocScanTimeout(), getCollapseDatePercentThreshold(), getFullTableScanEnabled(), getRealmSuffixExclusionPatterns(),
-                        getDefaultType(), getShardDateFormat(), getUseEnrichers(), getEnricherClassNames(), getUseFilters(), getFilterClassNames(),
-                        getIndexFilteringClassNames(), getNonEventKeyPrefixes(), getUnevaluatedFields(), getDatatypeFilter(), getIndexHoles(),
-                        getProjectFields(), getBlacklistedFields(), getIndexedFields(), getReverseIndexedFields(), getNormalizedFields(), getDataTypes(),
-                        getQueryFieldsDatatypes(), getNormalizedFieldsDatatypes(), getFieldToDiscreteIndexTypes(), getCompositeToFieldMap(),
-                        getCompositeTransitionDates(), getCompositeFieldSeparators(), getEvaluationOnlyFields(), isSortedUIDs(), getQueryTermFrequencyFields(),
-                        isTermFrequenciesRequired(), getLimitFields(), isLimitFieldsPreQueryEvaluation(), getLimitFieldsField(), isHitList(),
-                        isDateIndexTimeTravel(), getBeginDateCap(), isFailOutsideValidDateRange(), isRawTypes(), getMinSelectivity(),
-                        getIncludeDataTypeAsField(), getIncludeRecordId(), getIncludeHierarchyFields(), getHierarchyFieldOptions(),
-                        getIncludeGroupingContext(), getDocumentPermutations(), getFilterMaskedValues(), isReducedResponse(), getAllowShortcutEvaluation(),
-                        getSpeculativeScanning(), isDisableEvaluation(), isContainsIndexOnlyTerms(), isContainsCompositeTerms(), isAllowFieldIndexEvaluation(),
-                        isAllowTermFrequencyLookup(), isExpandUnfieldedNegations(), getReturnType(), getEventPerDayThreshold(), getShardsPerDayThreshold(),
-                        getInitialMaxTermThreshold(), getFinalMaxTermThreshold(), getMaxDepthThreshold(), isExpandFields(),
-                        getMaxUnfieldedExpansionThreshold(), isExpandValues(), getMaxValueExpansionThreshold(), getMaxOrExpansionThreshold(),
-                        getMaxOrRangeThreshold(), getMaxOrRangeIvarators(), getMaxRangesPerRangeIvarator(), getMaxOrExpansionFstThreshold(),
-                        getYieldThresholdMs(), getHdfsSiteConfigURLs(), getHdfsFileCompressionCodec(), getZookeeperConfig(), getIvaratorCacheDirConfigs(),
-                        getIvaratorFstHdfsBaseURIs(), getIvaratorCacheBufferSize(), getIvaratorCacheScanPersistThreshold(), getIvaratorCacheScanTimeout(),
-                        getMaxFieldIndexRangeSplit(), getIvaratorMaxOpenFiles(), getIvaratorNumRetries(), isIvaratorPersistVerify(),
-                        getIvaratorPersistVerifyCount(), getMaxIvaratorSources(), getMaxIvaratorResults(), getMaxEvaluationPipelines(),
-                        getMaxPipelineCachedResults(), isExpandAllTerms(), getQueryModel(), getModelName(), getModelTableName(),
-                        shouldLimitTermExpansionToModel, isCompressServerSideResults(), isIndexOnlyFilterFunctionsEnabled(),
-                        isCompositeFilterFunctionsEnabled(), getGroupFieldsBatchSize(), getAccrueStats(), getGroupFields(), getUniqueFields(), getCacheModel(),
-                        isTrackSizes(), getContentFieldNames(), getActiveQueryLogNameSource(), getEnforceUniqueConjunctionsWithinExpression(),
-                        getEnforceUniqueDisjunctionsWithinExpression(), getNoExpansionFields(), getBloom());
+        return Objects.hash(super.hashCode(), isTldQuery(), getFilterOptions(), isDisableIndexOnlyDocuments(), getMaxScannerBatchSize(), getMaxIndexBatchSize(),
+                        isAllTermsIndexOnly(), getAccumuloPassword(), getMaxIndexScanTimeMillis(), getParseTldUids(), getCollapseUids(),
+                        getCollapseUidsThreshold(), getEnforceUniqueTermsWithinExpressions(), getSequentialScheduler(), getCollectTimingDetails(),
+                        getLogTimingDetails(), getSendTimingToStatsd(), getStatsdHost(), getStatsdPort(), getStatsdMaxQueueSize(), getLimitAnyFieldLookups(),
+                        isBypassExecutabilityCheck(), isGeneratePlanOnly(), getBackoffEnabled(), getUnsortedUIDsEnabled(), getSerializeQueryIterator(),
+                        isDebugMultithreadedSources(), isSortGeoWaveQueryRanges(), getNumRangesToBuffer(), getRangeBufferTimeoutMillis(),
+                        getRangeBufferPollMillis(), getGeometryMaxExpansion(), getPointMaxExpansion(), getGeoWaveRangeSplitThreshold(),
+                        getGeoWaveMaxRangeOverlap(), isOptimizeGeoWaveRanges(), getGeoWaveMaxEnvelopes(), getShardTableName(), getIndexTableName(),
+                        getReverseIndexTableName(), getMetadataTableName(), getDateIndexTableName(), getIndexStatsTableName(), getDefaultDateTypeName(),
+                        isCleanupShardsAndDaysQueryHints(), getNumQueryThreads(), numLookupThreads, getNumDateIndexThreads(), getMaxDocScanTimeout(),
+                        getCollapseDatePercentThreshold(), getFullTableScanEnabled(), getRealmSuffixExclusionPatterns(), getDefaultType(), getShardDateFormat(),
+                        getUseEnrichers(), getEnricherClassNames(), getUseFilters(), getFilterClassNames(), getIndexFilteringClassNames(),
+                        getNonEventKeyPrefixes(), getUnevaluatedFields(), getDatatypeFilter(), getIndexHoles(), getProjectFields(), getBlacklistedFields(),
+                        getIndexedFields(), getReverseIndexedFields(), getNormalizedFields(), getDataTypes(), getQueryFieldsDatatypes(),
+                        getNormalizedFieldsDatatypes(), getFieldToDiscreteIndexTypes(), getCompositeToFieldMap(), getCompositeTransitionDates(),
+                        getCompositeFieldSeparators(), getEvaluationOnlyFields(), isSortedUIDs(), getQueryTermFrequencyFields(), isTermFrequenciesRequired(),
+                        getLimitFields(), isLimitFieldsPreQueryEvaluation(), getLimitFieldsField(), isHitList(), isDateIndexTimeTravel(), getBeginDateCap(),
+                        isFailOutsideValidDateRange(), isRawTypes(), getMinSelectivity(), getIncludeDataTypeAsField(), getIncludeRecordId(),
+                        getIncludeHierarchyFields(), getHierarchyFieldOptions(), getIncludeGroupingContext(), getDocumentPermutations(),
+                        getFilterMaskedValues(), isReducedResponse(), getAllowShortcutEvaluation(), getSpeculativeScanning(), isDisableEvaluation(),
+                        isContainsIndexOnlyTerms(), isContainsCompositeTerms(), isAllowFieldIndexEvaluation(), isAllowTermFrequencyLookup(),
+                        isExpandUnfieldedNegations(), getReturnType(), getEventPerDayThreshold(), getShardsPerDayThreshold(), getInitialMaxTermThreshold(),
+                        getFinalMaxTermThreshold(), getMaxDepthThreshold(), isExpandFields(), getMaxUnfieldedExpansionThreshold(), isExpandValues(),
+                        getMaxValueExpansionThreshold(), getMaxOrExpansionThreshold(), getMaxOrRangeThreshold(), getMaxOrRangeIvarators(),
+                        getMaxRangesPerRangeIvarator(), getMaxOrExpansionFstThreshold(), getYieldThresholdMs(), getHdfsSiteConfigURLs(),
+                        getHdfsFileCompressionCodec(), getZookeeperConfig(), getIvaratorCacheDirConfigs(), getIvaratorFstHdfsBaseURIs(),
+                        getIvaratorCacheBufferSize(), getIvaratorCacheScanPersistThreshold(), getIvaratorCacheScanTimeout(), getMaxFieldIndexRangeSplit(),
+                        getIvaratorMaxOpenFiles(), getIvaratorNumRetries(), isIvaratorPersistVerify(), getIvaratorPersistVerifyCount(), getMaxIvaratorSources(),
+                        getMaxIvaratorResults(), getMaxEvaluationPipelines(), getMaxPipelineCachedResults(), isExpandAllTerms(), getQueryModel(),
+                        getModelName(), getModelTableName(), shouldLimitTermExpansionToModel, isCompressServerSideResults(),
+                        isIndexOnlyFilterFunctionsEnabled(), isCompositeFilterFunctionsEnabled(), getGroupFieldsBatchSize(), getAccrueStats(), getGroupFields(),
+                        getUniqueFields(), getCacheModel(), isTrackSizes(), getContentFieldNames(), getActiveQueryLogNameSource(),
+                        getEnforceUniqueConjunctionsWithinExpression(), getEnforceUniqueDisjunctionsWithinExpression(), getNoExpansionFields(), getBloom());
     }
     
     // Part of the Serializable interface used to initialize any transient members during deserialization

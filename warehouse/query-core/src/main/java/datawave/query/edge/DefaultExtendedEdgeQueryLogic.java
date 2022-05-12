@@ -150,16 +150,15 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
         qData.setTableName(config.getTableName());
         qData.setRanges(ranges);
         
-        addIterators(qData,
-                        getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, config.getDateFilterSkipLimit(),
-                                        config.getDateFilterScanLimit(), dateFilterType));
+        addIterators(qData, getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, config.getDateFilterSkipLimit(),
+                        config.getDateFilterScanLimit(), dateFilterType));
         
         if (!normalizedQuery.equals("")) {
             if (log.isTraceEnabled()) {
                 log.trace("Query being sent to the filter iterator: " + normalizedQuery);
             }
-            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority, EdgeFilterIterator.class.getSimpleName() + "_"
-                            + currentIteratorPriority, EdgeFilterIterator.class);
+            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority,
+                            EdgeFilterIterator.class.getSimpleName() + "_" + currentIteratorPriority, EdgeFilterIterator.class);
             edgeIteratorSetting.addOption(EdgeFilterIterator.JEXL_OPTION, normalizedQuery);
             edgeIteratorSetting.addOption(EdgeFilterIterator.PROTOBUF_OPTION, "TRUE");
             

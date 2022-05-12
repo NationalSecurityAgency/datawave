@@ -126,8 +126,8 @@ public class MetricsSummaryFormatter {
     Iterable<Entry<String,NormalizedContentInterface>> getMatches(final Matcher matcher, Multimap<String,NormalizedContentInterface> fields) {
         return Iterables.filter(fields.entries(), input -> {
             // check to see if entry key matches the supplied matcher
-                        return matcher.reset(input.getKey()).matches();
-                    });
+            return matcher.reset(input.getKey()).matches();
+        });
         
     }
 }

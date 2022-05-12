@@ -107,8 +107,8 @@ public class RemoteAuditor extends RemoteHttpService implements AuditService {
             dp = (DatawavePrincipal) p;
         
         final String bearerHeader = "Bearer " + jwtTokenHandler.createTokenFromUsers(dp.getName(), dp.getProxiedUsers());
-        UrlEncodedFormEntity postBody = new UrlEncodedFormEntity(params.entrySet().stream()
-                        .map(e -> (NameValuePair) new BasicNameValuePair(e.getKey(), e.getValue()))::iterator, Consts.UTF_8);
+        UrlEncodedFormEntity postBody = new UrlEncodedFormEntity(
+                        params.entrySet().stream().map(e -> (NameValuePair) new BasicNameValuePair(e.getKey(), e.getValue()))::iterator, Consts.UTF_8);
         // @formatter:off
         return executePostMethodWithRuntimeException(
                 "audit",

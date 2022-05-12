@@ -466,8 +466,8 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 log.trace(lastSeenKey + ", using current range of " + currentRange);
             }
             
-            delegatedResource = ResourceFactory.initializeResource(delegatedResourceInitializer, delegatedResource, tableName, auths, currentRange).setOptions(
-                            options);
+            delegatedResource = ResourceFactory.initializeResource(delegatedResourceInitializer, delegatedResource, tableName, auths, currentRange)
+                            .setOptions(options);
             
             Iterator<Result> iter = Result.resultIterator(null, delegatedResource.iterator());
             

@@ -162,9 +162,9 @@ public class VertexValue {
     
     @Override
     public String toString() {
-        return "VertexValue [fieldName=" + eventFieldName + ", fieldValue=" + eventFieldValue + ", relationship=" + relationshipIndex + ", useRealm="
-                        + useRealm + ", realmLabel=" + eventRealmLabel + ", vertexType=" + sourceIndex + ", markings=" + this.markings + ", maskedValue="
-                        + maskedValue + ", hasMaskedValue=" + hasMaskedValue + "]";
+        return "VertexValue [fieldName=" + eventFieldName + ", fieldValue=" + eventFieldValue + ", relationship=" + relationshipIndex + ", useRealm=" + useRealm
+                        + ", realmLabel=" + eventRealmLabel + ", vertexType=" + sourceIndex + ", markings=" + this.markings + ", maskedValue=" + maskedValue
+                        + ", hasMaskedValue=" + hasMaskedValue + "]";
     }
     
 } /* end VertexValue */

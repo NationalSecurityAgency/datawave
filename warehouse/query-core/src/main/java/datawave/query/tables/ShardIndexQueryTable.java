@@ -620,8 +620,8 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
                 
                 if (this.reverseIndex) {
                     Text term = new Text((new StringBuilder(cur.getKey().getRow().toString())).reverse().toString());
-                    cur = Maps.immutableEntry(new Key(term, cur.getKey().getColumnFamily(), cur.getKey().getColumnQualifier(), cur.getKey()
-                                    .getColumnVisibility(), cur.getKey().getTimestamp()), cur.getValue());
+                    cur = Maps.immutableEntry(new Key(term, cur.getKey().getColumnFamily(), cur.getKey().getColumnQualifier(),
+                                    cur.getKey().getColumnVisibility(), cur.getKey().getTimestamp()), cur.getValue());
                 }
                 
                 return cur;

@@ -79,9 +79,9 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
         String state = "'ohio'";
         String code = "'fra'";
         for (final TestCities city : TestCities.values()) {
-            String query = "(" + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + " and " + "filter:includeRegex(" + CityField.CODE.name() + ","
-                            + code + "))" + OR_OP + "(" + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + " and " + CityField.STATE.name() + EQ_OP
-                            + state + ")";
+            String query = "(" + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + " and " + "filter:includeRegex(" + CityField.CODE.name() + "," + code
+                            + "))" + OR_OP + "(" + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + " and " + CityField.STATE.name() + EQ_OP + state
+                            + ")";
             String expectQuery = "(" + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + " and " + CityField.CODE.name() + RE_OP + code + ") or ("
                             + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + " and " + CityField.STATE.name() + EQ_OP + state + ")";
             runTest(query, expectQuery);
@@ -94,9 +94,8 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
         String cont = "'north america'";
         String state = "'ohio'";
         for (final TestCities city : TestCities.values()) {
-            String query = "(" + CityField.CONTINENT.name() + EQ_OP + cont + OR_OP + CityField.CITY.name().toLowerCase() + " == 'none')" + " and "
-                            +
-                            // NOTE: the ASTDelayedPredicate will not normalize the value - convert to lower case before query
+            String query = "(" + CityField.CONTINENT.name() + EQ_OP + cont + OR_OP + CityField.CITY.name().toLowerCase() + " == 'none')" + " and " +
+            // NOTE: the ASTDelayedPredicate will not normalize the value - convert to lower case before query
                             "((_Delayed_ = true) and (" + CityField.CITY.name() + EQ_OP + "'" + city.name().toLowerCase() + "'" + "))" + " and "
                             + CityField.STATE.name() + EQ_OP + state;
             String expectQuery = "(" + CityField.CONTINENT.name() + EQ_OP + cont + OR_OP + CityField.CITY.name() + " == 'none')" + " and " + "("

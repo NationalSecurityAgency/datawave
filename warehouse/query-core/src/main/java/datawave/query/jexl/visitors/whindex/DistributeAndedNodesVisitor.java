@@ -138,7 +138,7 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
         
         if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
             initialNode = node;
-        
+            
         // if this node is one of the anded nodes, or a whindex
         // comprised of one of the anded nodes, halt recursion
         List<JexlNode> usedAndedNodes = usesAndedNodes(node);
@@ -232,7 +232,7 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
         
         if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
             initialNode = node;
-        
+            
         // if this node is one of the anded nodes, or a whindex
         // comprised of one of the anded nodes, halt recursion
         List<JexlNode> usedAndedNodes = usesAndedNodes(node);

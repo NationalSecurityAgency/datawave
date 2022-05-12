@@ -31,8 +31,8 @@ import java.util.Map.Entry;
  * Document. Once we move toward a nested event, we can have a simpler approach.
  *
  */
-public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Value>,EventBase> implements WritesQueryMetrics, WritesResultCardinalities,
-                Flushable<EventBase> {
+public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Value>,EventBase>
+                implements WritesQueryMetrics, WritesResultCardinalities, Flushable<EventBase> {
     
     private static final Logger log = Logger.getLogger(DocumentTransformerSupport.class);
     

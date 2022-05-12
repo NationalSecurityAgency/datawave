@@ -127,9 +127,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
      */
     public enum TestCities {
         // any city entries can be added; these exist in the current set of data
-        london,
-        paris,
-        rome;
+        london, paris, rome;
     }
     
     private static final SimpleDateFormat YMD_DateFormat = new SimpleDateFormat("yyyyMMdd");
@@ -701,8 +699,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         }
     }
     
-    protected Multimap<String,Key> removeMetadataEntries(Set<String> fields, Text cf) throws AccumuloSecurityException, AccumuloException,
-                    TableNotFoundException {
+    protected Multimap<String,Key> removeMetadataEntries(Set<String> fields, Text cf)
+                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         Multimap<String,Key> metadataEntries = HashMultimap.create();
         MultiTableBatchWriter multiTableWriter = connector.createMultiTableBatchWriter(new BatchWriterConfig());
         BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME);

@@ -176,14 +176,13 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         qData.setTableName(config.getTableName());
         qData.setRanges(ranges);
         
-        addIterators(qData,
-                        getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, config.getDateFilterSkipLimit(),
-                                        config.getDateFilterScanLimit(), dateFilterType));
+        addIterators(qData, getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, config.getDateFilterSkipLimit(),
+                        config.getDateFilterScanLimit(), dateFilterType));
         
         if (!normalizedQuery.equals("")) {
             log.debug("Query being sent to the filter iterator: " + normalizedQuery);
-            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority, EdgeFilterIterator.class.getSimpleName() + "_"
-                            + currentIteratorPriority, EdgeFilterIterator.class);
+            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority,
+                            EdgeFilterIterator.class.getSimpleName() + "_" + currentIteratorPriority, EdgeFilterIterator.class);
             edgeIteratorSetting.addOption(EdgeFilterIterator.JEXL_OPTION, normalizedQuery);
             edgeIteratorSetting.addOption(EdgeFilterIterator.PROTOBUF_OPTION, "TRUE");
             
@@ -289,8 +288,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         
         script = TreeFlatteningRebuildingVisitor.flatten(script);
         
-        EdgeTableRangeBuildingVisitor visitor = new EdgeTableRangeBuildingVisitor(getConfig().includeStats(), getConfig().getDataTypes(), getConfig()
-                        .getMaxQueryTerms(), getConfig().getRegexDataTypes(), getEdgeFields());
+        EdgeTableRangeBuildingVisitor visitor = new EdgeTableRangeBuildingVisitor(getConfig().includeStats(), getConfig().getDataTypes(),
+                        getConfig().getMaxQueryTerms(), getConfig().getRegexDataTypes(), getEdgeFields());
         
         visitationContext = (VisitationContext) script.jjtAccept(visitor, null);
         
@@ -406,7 +405,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      * @return created iterator (or null if no iterator needed, i.e. dates not specified)
      */
     public static IteratorSetting getDateFilter(Date beginDate, Date endDate, int priority, EdgeQueryConfiguration.dateType dateFilterType) {
-        return getDateFilter(beginDate, endDate, priority, EdgeQueryConfiguration.DEFAULT_SKIP_LIMIT, EdgeQueryConfiguration.DEFAULT_SCAN_LIMIT, dateFilterType);
+        return getDateFilter(beginDate, endDate, priority, EdgeQueryConfiguration.DEFAULT_SKIP_LIMIT, EdgeQueryConfiguration.DEFAULT_SCAN_LIMIT,
+                        dateFilterType);
     }
     
     /**
@@ -435,7 +435,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
             Key endDateKey = new Key(DateHelper.format(endDate) + Constants.MAX_UNICODE_STRING);
             if ((dateFilterType == EdgeQueryConfiguration.dateType.EVENT) || (dateFilterType == EdgeQueryConfiguration.dateType.ACTIVITY)
                             || (dateFilterType == EdgeQueryConfiguration.dateType.ANY)) {
-                setting = new IteratorSetting(priority, ColumnQualifierRangeIterator.class.getSimpleName() + "_" + priority, ColumnQualifierRangeIterator.class);
+                setting = new IteratorSetting(priority, ColumnQualifierRangeIterator.class.getSimpleName() + "_" + priority,
+                                ColumnQualifierRangeIterator.class);
             } else if ((dateFilterType == EdgeQueryConfiguration.dateType.LOAD) || (dateFilterType == EdgeQueryConfiguration.dateType.ACTIVITY_LOAD)
                             || (dateFilterType == EdgeQueryConfiguration.dateType.ANY_LOAD)) {
                 setting = new IteratorSetting(priority, LoadDateFilter.class.getSimpleName() + "_" + priority, LoadDateFilter.class);
@@ -492,8 +493,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         // if we have a load date iterator (from above call) then no further iterator needed as it filters out by date type and by date range
         // but if we have no iterator or only date range iterator then we still may need a date type filter
         // @note we won't get an iterator in the above call if either/both dates are null regardless of dateFilterType
-        if ((iter == null)
-                        || ((dateFilterType != EdgeQueryConfiguration.dateType.LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ACTIVITY_LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD))) {
+        if ((iter == null) || ((dateFilterType != EdgeQueryConfiguration.dateType.LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ACTIVITY_LOAD)
+                        && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD))) {
             if ((dateFilterType != EdgeQueryConfiguration.dateType.ANY) && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD)) {
                 // of the edges remaining we only want the correct type (activity date or event date)
                 iter = getDateTypeFilter(priority, dateFilterType);
@@ -519,7 +520,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
      * @param dateFilterType
      *            type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
      * @return created iterators
-     *
+     *            
      *         There can now be one or more edges with matching keys other than a date type distinction in the column qualifier. Old-style edges have no date
      *         type marking but always used event date. New-style edges may indicate an event date-based edge, both, or activity date-based edge. Hence, based
      *         on whether the query is for event date-based edges or activity date-based edges the appropriate types of edges must be returned. Additionally,
@@ -541,8 +542,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements 
         // if we have a load date iterator (from above call) then no further iterator needed as it filters out by date type and by date range
         // but if we have no iterator or only date range iterator then we still may need a date type filter
         // @note we won't get an iterator in the above call if either/both dates are null regardless of dateFilterType
-        if ((iter == null)
-                        || ((dateFilterType != EdgeQueryConfiguration.dateType.LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ACTIVITY_LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD))) {
+        if ((iter == null) || ((dateFilterType != EdgeQueryConfiguration.dateType.LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ACTIVITY_LOAD)
+                        && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD))) {
             if ((dateFilterType != EdgeQueryConfiguration.dateType.ANY) && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD)) {
                 // of the edges remaining we only want the correct type (activity date or event date)
                 iter = getDateTypeFilter(priority, dateFilterType);

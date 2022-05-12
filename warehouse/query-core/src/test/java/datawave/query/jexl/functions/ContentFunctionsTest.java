@@ -1590,10 +1590,8 @@ public class ContentFunctionsTest {
         
         termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list1)));
         termOffSetMap.putTermFrequencyList("bar", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList(
-                        "car",
-                        new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3), Maps.immutableEntry(new Zone("META", true, eventId),
-                                        list4)));
+        termOffSetMap.putTermFrequencyList("car", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3),
+                        Maps.immutableEntry(new Zone("META", true, eventId), list4)));
         
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         context.set("BODY", Arrays.asList("foo", "bar", "car"));
@@ -1617,10 +1615,8 @@ public class ContentFunctionsTest {
         
         termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list1)));
         termOffSetMap.putTermFrequencyList("bar", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList(
-                        "car",
-                        new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3), Maps.immutableEntry(new Zone("META", true, eventId),
-                                        list4)));
+        termOffSetMap.putTermFrequencyList("car", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3),
+                        Maps.immutableEntry(new Zone("META", true, eventId), list4)));
         
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         context.set("BODY", Arrays.asList("foo", "bar", "car"));
@@ -1632,8 +1628,8 @@ public class ContentFunctionsTest {
     
     @Test
     public void testSomeEmptyOffsetsWithin() {
-        String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "BODY", "5", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'foo'",
-                        "'bar'", "'car'");
+        String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "BODY", "5", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'foo'", "'bar'",
+                        "'car'");
         Expression expr = engine.createExpression(query);
         
         List<TermWeightPosition> list1, list2, list3, list4;
@@ -1644,10 +1640,8 @@ public class ContentFunctionsTest {
         
         termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list1)));
         termOffSetMap.putTermFrequencyList("bar", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList(
-                        "car",
-                        new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3), Maps.immutableEntry(new Zone("META", true, eventId),
-                                        list4)));
+        termOffSetMap.putTermFrequencyList("car", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3),
+                        Maps.immutableEntry(new Zone("META", true, eventId), list4)));
         
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         context.set("BODY", Arrays.asList("foo", "bar", "car"));

@@ -317,8 +317,8 @@ public class NGramTokenizationStrategyTest {
         // Verify results
         assertNotNull("Should have created a non-null filter", result1);
         
-        assertTrue("Should have applied approximately " + expectedNGramCount + " n-grams to the bloom filter", (result2 > expectedNGramCount - 3)
-                        && (result2 < idealFilterSize));
+        assertTrue("Should have applied approximately " + expectedNGramCount + " n-grams to the bloom filter",
+                        (result2 > expectedNGramCount - 3) && (result2 < idealFilterSize));
         
         String fieldName = ncis.lastElement().getIndexedFieldName();
         int expectedCount = BloomFilterUtil.predictNGramCount(ncis.lastElement().getIndexedFieldValue());
@@ -418,8 +418,8 @@ public class NGramTokenizationStrategyTest {
         
         String fieldName = ncis.lastElement().getIndexedFieldName();
         int expectedCount = BloomFilterUtil.predictNGramCount(ncis.lastElement().getIndexedFieldValue());
-        assertTrue("Should have pruned the n-grams tokenized for field " + fieldName + " but got " + result3.get(fieldName), (null != result3.get(fieldName))
-                        && (result3.get(fieldName) < expectedCount));
+        assertTrue("Should have pruned the n-grams tokenized for field " + fieldName + " but got " + result3.get(fieldName),
+                        (null != result3.get(fieldName)) && (result3.get(fieldName) < expectedCount));
     }
     
     @Test
@@ -476,13 +476,13 @@ public class NGramTokenizationStrategyTest {
         // Verify results
         assertNotNull("Should have created a non-null filter", result1);
         
-        assertTrue("Should have applied approximately " + expectedNGramCount + " n-grams to the bloom filter", (result2 > expectedNGramCount - 20)
-                        && (result2 < idealFilterSize));
+        assertTrue("Should have applied approximately " + expectedNGramCount + " n-grams to the bloom filter",
+                        (result2 > expectedNGramCount - 20) && (result2 < idealFilterSize));
         
         String fieldName = ncis.lastElement().getIndexedFieldName();
         int expectedCount = BloomFilterUtil.predictNGramCount(ncis.lastElement().getIndexedFieldValue());
-        assertTrue("Should have pruned the n-grams tokenized for field " + fieldName + " but got " + result3.get(fieldName), (null != result3.get(fieldName))
-                        && (result3.get(fieldName) < expectedCount));
+        assertTrue("Should have pruned the n-grams tokenized for field " + fieldName + " but got " + result3.get(fieldName),
+                        (null != result3.get(fieldName)) && (result3.get(fieldName) < expectedCount));
         
     }
     

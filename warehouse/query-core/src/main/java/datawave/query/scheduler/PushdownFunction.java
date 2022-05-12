@@ -136,8 +136,8 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         return chunks;
     }
     
-    protected void redistributeQueries(Multimap<String,QueryPlan> serverPlan, TabletLocator tl, QueryPlan currentPlan) throws AccumuloException,
-                    AccumuloSecurityException, TableNotFoundException {
+    protected void redistributeQueries(Multimap<String,QueryPlan> serverPlan, TabletLocator tl, QueryPlan currentPlan)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         
         List<Range> ranges = Lists.newArrayList(currentPlan.getRanges());
         if (!ranges.isEmpty()) {
@@ -158,17 +158,16 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                     log.trace("Adding query tree " + JexlStringBuildingVisitor.buildQuery(currentPlan.getQueryTree()) + " " + currentPlan.getSettings().size()
                                     + " for " + server);
                 
-                serverPlan.put(server,
-                                new QueryPlan(currentPlan.getTableName(), currentPlan.getQueryTree(), rangeIter, currentPlan.getSettings(), currentPlan
-                                                .getColumnFamilies()));
+                serverPlan.put(server, new QueryPlan(currentPlan.getTableName(), currentPlan.getQueryTree(), rangeIter, currentPlan.getSettings(),
+                                currentPlan.getColumnFamilies()));
                 
             }
         }
         
     }
     
-    protected Map<String,Map<KeyExtent,List<Range>>> binRanges(TabletLocator tl, Instance instance, List<Range> ranges) throws AccumuloException,
-                    AccumuloSecurityException, TableNotFoundException {
+    protected Map<String,Map<KeyExtent,List<Range>>> binRanges(TabletLocator tl, Instance instance, List<Range> ranges)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
         
         int lastFailureSize = Integer.MAX_VALUE;
@@ -193,7 +192,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                         throw new TableDeletedException(tableId);
                     else if (Tables.getTableState(instance, tableId) == TableState.OFFLINE)
                         throw new TableOfflineException(instance, tableId);
-                
+                    
                 lastFailureSize = failures.size();
                 
                 if (log.isTraceEnabled())

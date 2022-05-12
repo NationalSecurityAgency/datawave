@@ -165,7 +165,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      *            an iterator source
      * @return the flushed value that is an aggregation from the source iterator
      */
-    public Iterator<Entry<Key,Document>> getGroupingIterator(final Iterator<Entry<Key,Document>> in, int groupFieldsBatchSize, YieldCallback<Key> yieldCallback) {
+    public Iterator<Entry<Key,Document>> getGroupingIterator(final Iterator<Entry<Key,Document>> in, int groupFieldsBatchSize,
+                    YieldCallback<Key> yieldCallback) {
         
         return new Iterator<Entry<Key,Document>>() {
             
@@ -524,14 +525,13 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             // the column visibility of the EXISTING map key to the new value.
             // Note that the hashCode and equals methods for the GroupingTypeAttribute will ignore the metadata (which contains the column visibility)
             incomingAttributes.forEach(incomingAttribute -> {
-                existingMapKeys.stream()
-                                .flatMap(Collection::stream)
+                existingMapKeys.stream().flatMap(Collection::stream)
                                 // if the existing and incoming attributes are equal (other than the metadata), the incoming attribute's visibility will be
                                 // considered for merging into the existing attribute unless the column visibilities are already equal
                                 .filter(existingAttribute -> existingAttribute.getData().equals(incomingAttribute.getData())
                                                 && !existingAttribute.getColumnVisibility().equals(incomingAttribute.getColumnVisibility()))
-                                .forEach(existingAttribute -> existingAttribute.setColumnVisibility(combine(Arrays.asList(
-                                                existingAttribute.getColumnVisibility(), incomingAttribute.getColumnVisibility()))));
+                                .forEach(existingAttribute -> existingAttribute.setColumnVisibility(
+                                                combine(Arrays.asList(existingAttribute.getColumnVisibility(), incomingAttribute.getColumnVisibility()))));
             });
         }
         

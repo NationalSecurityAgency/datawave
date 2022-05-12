@@ -84,7 +84,7 @@ public class Union extends BaseIndexStream {
                 this.childNodes.add(stream.currentNode());
             } else {
                 switch (stream.context()) {
-                
+                    
                     case INITIALIZED:
                         // this should never be returned
                         throw new RuntimeException("Invalid state in RangeStream");

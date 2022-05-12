@@ -57,8 +57,8 @@ public class BoundedOffsetQueueTest {
             String msg = iae.getMessage();
             
             Assert.assertTrue(String.format(
-                            "BoundedOffsetQueue.OffsetListComparator threw the expected exception, however it did not have the correct message: %s", msg), msg
-                            .matches("Cannot compare a key that has no offsets to be found"));
+                            "BoundedOffsetQueue.OffsetListComparator threw the expected exception, however it did not have the correct message: %s", msg),
+                            msg.matches("Cannot compare a key that has no offsets to be found"));
         }
         
         TermAndZone taz = new TermAndZone(token);

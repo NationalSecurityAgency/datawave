@@ -38,8 +38,8 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
         return getQueryLogic(name, null, false);
     }
     
-    private QueryLogic<?> getQueryLogic(String name, Collection<String> userRoles, boolean checkRoles) throws IllegalArgumentException,
-                    CloneNotSupportedException {
+    private QueryLogic<?> getQueryLogic(String name, Collection<String> userRoles, boolean checkRoles)
+                    throws IllegalArgumentException, CloneNotSupportedException {
         QueryLogic<?> logic;
         try {
             logic = (QueryLogic<?>) applicationContext.getBean(name);

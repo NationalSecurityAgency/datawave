@@ -508,7 +508,7 @@ public class FacetHandler<KEYIN,KEYOUT,VALUEOUT> implements ExtendedDataTypeHand
      *
      * @param v
      *            the value containing the encoded cardinality.
-     *
+     *            
      * @return The cardinality extracted, otherwise -1L if no cardinality is present -2L if there's en error extracting
      */
     public static long extractCardinality(Value v) {

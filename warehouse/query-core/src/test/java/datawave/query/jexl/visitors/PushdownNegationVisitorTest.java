@@ -200,11 +200,10 @@ public class PushdownNegationVisitorTest {
     
     @Test
     public void testMixedBoundedRanges() throws ParseException {
-        ASTJexlScript query = JexlASTHelper
-                        .parseJexlQuery("(F3 == 'v3' || !(((_Bounded_ = true) && (F1 >= 'v1' && F2 <= 'v2')) || !((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))))");
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery(
+                        "(F3 == 'v3' || !(((_Bounded_ = true) && (F1 >= 'v1' && F2 <= 'v2')) || !((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))))");
         JexlNode result = PushdownNegationVisitor.pushdownNegations(query);
-        Assert.assertEquals(
-                        "(F3 == 'v3' || ((!(((_Bounded_ = true) && (F1 >= 'v1' && F2 <= 'v2'))) && (((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))))))",
+        Assert.assertEquals("(F3 == 'v3' || ((!(((_Bounded_ = true) && (F1 >= 'v1' && F2 <= 'v2'))) && (((_Bounded_ = true) && (F1 >= 'v1' && F1 <= 'v2'))))))",
                         JexlStringBuildingVisitor.buildQuery(result));
     }
     

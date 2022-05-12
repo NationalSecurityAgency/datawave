@@ -75,13 +75,13 @@ public class EdgeKeyUtil {
      *
      * @param key
      *            - Accumulo key to parse
-     *
+     *            
      * @return Map of @EdgeKeyUtil.FieldName to value String representing the value for this key.
-     *
+     *            
      *         protofuf: SOURCE%00;SINK EDGE_TYPE/EDGE_RELATIONSHIP:DATE/EDGE_ATTRIBUTE1/EDGE_ATTRIBUTE2/EDGE_ATTRIBUTE3");
-     *
+     *         
      *         non-proto: SOURCE%00;SINK EDGE_TYPE/EDGE_RELATIONSHIP/EDGE_ATTRIBUTE1/EDGE_ATTRIBUTE2/EDGE_ATTRIBUTE3:DATE");
-     *
+     *         
      */
     public static Map<FieldKey,String> dissasembleKey(Key key, boolean protobuffEdgeFormat) {
         Map<FieldKey,String> value = new HashMap<>();

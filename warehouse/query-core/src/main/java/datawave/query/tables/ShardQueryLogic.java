@@ -311,8 +311,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
                 throw new IllegalStateException("Must specify one of the following syntax options: " + this.mandatoryQuerySyntax);
             } else {
                 if (!this.mandatoryQuerySyntax.contains(querySyntax)) {
-                    throw new IllegalStateException("Syntax not supported, must be one of the following: " + this.mandatoryQuerySyntax + ", submitted: "
-                                    + querySyntax);
+                    throw new IllegalStateException(
+                                    "Syntax not supported, must be one of the following: " + this.mandatoryQuerySyntax + ", submitted: " + querySyntax);
                 }
             }
         }
@@ -432,8 +432,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         stopwatch.stop();
     }
     
-    private void setupQueryPlanner(ShardQueryConfiguration config) throws TableNotFoundException, ExecutionException, InstantiationException,
-                    IllegalAccessException {
+    private void setupQueryPlanner(ShardQueryConfiguration config)
+                    throws TableNotFoundException, ExecutionException, InstantiationException, IllegalAccessException {
         MetadataHelper metadataHelper = prepareMetadataHelper(config.getConnector(), this.getMetadataTableName(), config.getAuthorizations(),
                         config.isRawTypes());
         
@@ -996,8 +996,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
      * @throws TableNotFoundException
      * @throws ExecutionException
      */
-    protected void loadQueryModel(MetadataHelper helper, ShardQueryConfiguration config) throws InstantiationException, IllegalAccessException,
-                    TableNotFoundException, ExecutionException {
+    protected void loadQueryModel(MetadataHelper helper, ShardQueryConfiguration config)
+                    throws InstantiationException, IllegalAccessException, TableNotFoundException, ExecutionException {
         TraceStopwatch modelWatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Loading the query model");
         
         int cacheKeyCode = new HashCodeBuilder().append(config.getDatatypeFilter()).append(config.getModelName()).hashCode();

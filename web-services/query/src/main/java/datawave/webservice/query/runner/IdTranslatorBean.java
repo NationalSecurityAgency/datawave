@@ -128,7 +128,7 @@ public class IdTranslatorBean {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *                 
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter
@@ -174,7 +174,7 @@ public class IdTranslatorBean {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *                 
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter

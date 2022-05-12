@@ -227,12 +227,9 @@ public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
          * Builds and returns a new {@link ThreadedRangeBundler}. The following default values will be used unless specified otherwise in the builder.
          *
          * <ul>
-         * <li>
-         * {@link ThreadedRangeBundler#docsToCombine}: -1</li>
-         * <li>
-         * {@link ThreadedRangeBundler#maxRangeWaitMillis}: 50</li>
-         * <li>
-         * {@link ThreadedRangeBundler#rangeBufferPollMillis}: 100</li>
+         * <li>{@link ThreadedRangeBundler#docsToCombine}: -1</li>
+         * <li>{@link ThreadedRangeBundler#maxRangeWaitMillis}: 50</li>
+         * <li>{@link ThreadedRangeBundler#rangeBufferPollMillis}: 100</li>
          * </ul>
          *
          * @return the new {@link ThreadedRangeBundler}

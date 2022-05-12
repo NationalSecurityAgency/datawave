@@ -26,11 +26,11 @@ public interface TableConfigHelper {
      * 
      * @param tops
      *            Accumulo TableOperations object to use to setup the configuration
-     * 
+     *            
      * @throws AccumuloException
      * @throws AccumuloSecurityException
      * @throws TableNotFoundException
-     * 
+     *            
      */
     void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException;
     

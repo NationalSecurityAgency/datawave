@@ -134,9 +134,9 @@ public class DashboardBean {
      *
      * @param c
      *            the {@link Connector} to use when creating scanners
-     *
+     *            
      * @return a {@link Scanner} that will only scan over the last 60 minutes of logs
-     *
+     *            
      * @throws TableNotFoundException
      */
     private Scanner createScanner(Connector c) throws TableNotFoundException {

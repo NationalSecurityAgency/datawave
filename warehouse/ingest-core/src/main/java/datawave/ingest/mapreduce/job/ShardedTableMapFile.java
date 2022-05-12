@@ -206,8 +206,8 @@ public class ShardedTableMapFile {
         conf.setStrings(CONFIGURED_SHARDED_TABLE_NAMES, var.toArray(new String[var.size()]));
     }
     
-    private static Map<String,Path> loadMap(Configuration conf, boolean doValidation) throws IOException, URISyntaxException, AccumuloSecurityException,
-                    AccumuloException {
+    private static Map<String,Path> loadMap(Configuration conf, boolean doValidation)
+                    throws IOException, URISyntaxException, AccumuloSecurityException, AccumuloException {
         AccumuloHelper accumuloHelper = null;
         Path workDir = new Path(conf.get(SPLIT_WORK_DIR));// todo make sure this is set in ingest job
         String[] tableNames = StringUtils.split(conf.get(TABLE_NAMES), ",");// todo make sure this is set in ingest job

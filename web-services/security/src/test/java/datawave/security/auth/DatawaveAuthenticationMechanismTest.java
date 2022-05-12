@@ -220,12 +220,12 @@ public class DatawaveAuthenticationMechanismTest {
             }
             
             @Override
-            public void verify(PublicKey key) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException,
-                            SignatureException {}
+            public void verify(PublicKey key)
+                            throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {}
             
             @Override
-            public void verify(PublicKey key, String sigProvider) throws CertificateException, NoSuchAlgorithmException, InvalidKeyException,
-                            NoSuchProviderException, SignatureException {}
+            public void verify(PublicKey key, String sigProvider)
+                            throws CertificateException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {}
             
             @Override
             public String toString() {
@@ -333,8 +333,9 @@ public class DatawaveAuthenticationMechanismTest {
         expect(httpServerExchange.getConnection()).andReturn(serverConnection);
         expect(serverConnection.getSslSessionInfo()).andReturn(null);
         expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders).times(2);
-        securityContext.authenticationFailed("Missing trusted subject DN (" + testUserCert.getSubjectDN()
-                        + ") or issuer DN (null) for trusted header authentication.", "DATAWAVE-AUTH");
+        securityContext.authenticationFailed(
+                        "Missing trusted subject DN (" + testUserCert.getSubjectDN() + ") or issuer DN (null) for trusted header authentication.",
+                        "DATAWAVE-AUTH");
         expect(httpServerExchange.getRequestStartTime()).andReturn(System.nanoTime());
         expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
         
@@ -353,8 +354,9 @@ public class DatawaveAuthenticationMechanismTest {
         expect(httpServerExchange.getConnection()).andReturn(serverConnection);
         expect(serverConnection.getSslSessionInfo()).andReturn(null);
         expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders).times(2);
-        securityContext.authenticationFailed("Missing trusted subject DN (null) or issuer DN (" + testUserCert.getIssuerDN()
-                        + ") for trusted header authentication.", "DATAWAVE-AUTH");
+        securityContext.authenticationFailed(
+                        "Missing trusted subject DN (null) or issuer DN (" + testUserCert.getIssuerDN() + ") for trusted header authentication.",
+                        "DATAWAVE-AUTH");
         expect(httpServerExchange.getRequestStartTime()).andReturn(System.nanoTime());
         expect(httpServerExchange.getRequestHeaders()).andReturn(httpRequestHeaders);
         

@@ -314,8 +314,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         String fieldName = mr.getFieldName();
         MetadataHelper helper = getMetadataHelper(con);
         MODE mode = mr.getMode();
-        MultiTableBatchWriter writer = con.createMultiTableBatchWriter(new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1048576L)
-                        .setMaxWriteThreads(4));
+        MultiTableBatchWriter writer = con
+                        .createMultiTableBatchWriter(new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1048576L).setMaxWriteThreads(4));
         try {
             for (EventIdentifier e : mr.getEvents()) {
                 String shardId = e.getShardId();
@@ -626,8 +626,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 Mutation m = new Mutation(key.getFieldName());
                 
                 // Decrement the frequency (metadata table)
-                m.put(ColumnFamilyConstants.COLF_F, new Text(key.getDataType() + NULL_BYTE + DateHelper.format(currentEntryTimestamp)), new Value(
-                                SummingCombiner.VAR_LEN_ENCODER.encode(-1L)));
+                m.put(ColumnFamilyConstants.COLF_F, new Text(key.getDataType() + NULL_BYTE + DateHelper.format(currentEntryTimestamp)),
+                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(-1L)));
                 
                 // Remove the event field.
                 Mutation e = new Mutation(currentEntry.getFirst().getRow());
@@ -912,8 +912,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         expiration = new Date(expiration.getTime() + (1000 * 60 * 60 * 24));
         
         try {
-            GenericResponse<String> createResponse = queryService.createQuery(logicName, MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(
-                            logicName, query.toString(), "Query to find matching records for metadata modification", columnVisibility, new Date(0), new Date(),
+            GenericResponse<String> createResponse = queryService.createQuery(logicName, MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(logicName,
+                            query.toString(), "Query to find matching records for metadata modification", columnVisibility, new Date(0), new Date(),
                             StringUtils.join(auths, ','), expiration, 2, -1, null, QueryPersistence.TRANSIENT, queryOptions.toString(), false)));
             
             id = createResponse.getResult();

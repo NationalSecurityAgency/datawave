@@ -15,10 +15,9 @@ import java.util.Map;
 /**
  * Test class used for the purpose of providing an alternative matchPattern format from TokenSpecParser with some overlap.
  *
- * The matchPattern format is expected to contain multiple newline-separated lines, with each line conforming to the following format:
- * "<descriptiveLabel> <pattern>=<number><duration units>" where "descriptiveLabel" and "pattern" each contain one or more alphanumeric characters. "number"
- * contains one or more digits, representing an Integer "duration units" contains exactly one of the following: ms, s, or d Leading and trailing spaces are
- * ignored.
+ * The matchPattern format is expected to contain multiple newline-separated lines, with each line conforming to the following format: "<descriptiveLabel>
+ * <pattern>=<number><duration units>" where "descriptiveLabel" and "pattern" each contain one or more alphanumeric characters. "number" contains one or more
+ * digits, representing an Integer "duration units" contains exactly one of the following: ms, s, or d Leading and trailing spaces are ignored.
  *
  * Example: foobar xyz=5d
  *

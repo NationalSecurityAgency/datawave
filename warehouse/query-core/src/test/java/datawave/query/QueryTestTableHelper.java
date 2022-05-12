@@ -50,16 +50,16 @@ public final class QueryTestTableHelper {
     public final Connector connector;
     private final Logger log; // passed in for context when debugging
     
-    public QueryTestTableHelper(Connector connector, Logger log) throws AccumuloSecurityException, AccumuloException, TableExistsException,
-                    TableNotFoundException {
+    public QueryTestTableHelper(Connector connector, Logger log)
+                    throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException {
         // create mock instance and connector
         this.connector = connector;
         this.log = log;
         createTables();
     }
     
-    public QueryTestTableHelper(String instanceName, Logger log) throws AccumuloSecurityException, AccumuloException, TableExistsException,
-                    TableNotFoundException {
+    public QueryTestTableHelper(String instanceName, Logger log)
+                    throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException {
         this(instanceName, log, RebuildingScannerTestHelper.TEARDOWN.EVERY_OTHER, RebuildingScannerTestHelper.INTERRUPT.EVERY_OTHER);
     }
     
@@ -125,8 +125,8 @@ public final class QueryTestTableHelper {
         
     }
     
-    private void deleteAndCreateTable(TableOperations tops, String tableName) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
-                    TableExistsException {
+    private void deleteAndCreateTable(TableOperations tops, String tableName)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException, TableExistsException {
         if (tops.exists(tableName)) {
             tops.delete(tableName);
         }

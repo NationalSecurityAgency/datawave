@@ -66,8 +66,8 @@ public class ShardedTableMapFileTest {
         Configuration conf = new Configuration();
         conf.setInt(ShardIdFactory.NUM_SHARDS, SHARDS_PER_DAY);
         
-        conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, TABLE_NAME
-                        + ",shard_ingest_unit_test_table_1,shard_ingest_unit_test_table_2,shard_ingest_unit_test_table_3");
+        conf.set(ShardedDataTypeHandler.SHARDED_TNAMES,
+                        TABLE_NAME + ",shard_ingest_unit_test_table_1,shard_ingest_unit_test_table_2,shard_ingest_unit_test_table_3");
         
         String[] tableNames = new String[] {TABLE_NAME};
         conf.set(ShardedTableMapFile.TABLE_NAMES, StringUtils.join(",", tableNames));
@@ -104,8 +104,8 @@ public class ShardedTableMapFileTest {
             
             configureAccumuloHelper(conf, accumuloCluster);
             
-            conf.set(ShardedDataTypeHandler.SHARDED_TNAMES, TABLE_NAME
-                            + ",shard_ingest_unit_test_table_1,shard_ingest_unit_test_table_2,shard_ingest_unit_test_table_3");
+            conf.set(ShardedDataTypeHandler.SHARDED_TNAMES,
+                            TABLE_NAME + ",shard_ingest_unit_test_table_1,shard_ingest_unit_test_table_2,shard_ingest_unit_test_table_3");
             conf.set(ShardedTableMapFile.TABLE_NAMES, TABLE_NAME);
             setWorkingDirectory(conf);
             ShardedTableMapFile.setupFile(conf);
@@ -120,8 +120,8 @@ public class ShardedTableMapFileTest {
         Assert.assertEquals(1, result.size());
     }
     
-    private MiniAccumuloClusterForPostZoo34 createMiniAccumuloWithTestTableAndSplits(SortedSet<Text> sortedSet) throws IOException, InterruptedException,
-                    AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
+    private MiniAccumuloClusterForPostZoo34 createMiniAccumuloWithTestTableAndSplits(SortedSet<Text> sortedSet)
+                    throws IOException, InterruptedException, AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
         MiniAccumuloClusterForPostZoo34 accumuloCluster;
         File clusterDir = temporaryFolder.newFolder();
         LOG.info("Created local directory for MiniAccumuloCluster: " + clusterDir.getAbsolutePath());

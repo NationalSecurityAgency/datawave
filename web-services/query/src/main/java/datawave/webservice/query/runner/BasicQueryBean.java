@@ -359,7 +359,7 @@ public class BasicQueryBean {
      * @ResponseHeader X-query-page-number page number returned by this call
      * @ResponseHeader X-query-last-page if true then there are no more pages for this query, caller should call close()
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *                
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 404 if id not found

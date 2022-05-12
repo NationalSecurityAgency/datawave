@@ -138,8 +138,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         // get the data type filter set if any
         if (null != settings.findParameter(QueryParameters.DATATYPE_FILTER_SET)
                         && !settings.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue().trim().isEmpty()) {
-            Set<String> dataTypeFilter = new HashSet<>(Arrays.asList(StringUtils.split(settings.findParameter(QueryParameters.DATATYPE_FILTER_SET)
-                            .getParameterValue().trim(), Constants.PARAM_VALUE_SEP)));
+            Set<String> dataTypeFilter = new HashSet<>(Arrays.asList(StringUtils
+                            .split(settings.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue().trim(), Constants.PARAM_VALUE_SEP)));
             getConfig().setDatatypeFilter(dataTypeFilter);
             if (log.isDebugEnabled()) {
                 log.debug("Data type filter set to " + dataTypeFilter);
@@ -216,8 +216,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         Collection<Range> forward = seekRanges.getValue0();
         
         if (!forward.isEmpty()) {
-            List<IteratorSetting> settings = getIteratorSettingsForDiscovery(getConfig(), getConfig().getLiterals(), getConfig().getPatterns(), getConfig()
-                            .getRanges(), false);
+            List<IteratorSetting> settings = getIteratorSettingsForDiscovery(getConfig(), getConfig().getLiterals(), getConfig().getPatterns(),
+                            getConfig().getRanges(), false);
             if (isCheckpointable()) {
                 // if checkpointable, then only one range per query data so that the whole checkpointing thing works correctly
                 for (Range range : forward) {
@@ -230,8 +230,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         
         Collection<Range> reverse = seekRanges.getValue1();
         if (!reverse.isEmpty()) {
-            List<IteratorSetting> settings = getIteratorSettingsForDiscovery(getConfig(), getConfig().getLiterals(), getConfig().getPatterns(), getConfig()
-                            .getRanges(), true);
+            List<IteratorSetting> settings = getIteratorSettingsForDiscovery(getConfig(), getConfig().getLiterals(), getConfig().getPatterns(),
+                            getConfig().getRanges(), true);
             if (isCheckpointable()) {
                 // if checkpointable, then only one range per query data so that the whole checkpointing thing works correctly
                 for (Range range : reverse) {
@@ -505,8 +505,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                     log.debug("Attempting to normalize [" + value + "] with [" + dataType.getClass() + "]");
                     String normalizedLower = normalization.normalize(dataType, field, value.getLower().toString());
                     String normalizedUpper = normalization.normalize(dataType, field, value.getUpper().toString());
-                    normalizedValuesToFields.put(field, new LiteralRange<>(normalizedLower, value.isLowerInclusive(), normalizedUpper,
-                                    value.isUpperInclusive(), value.getFieldName(), value.getNodeOperand()));
+                    normalizedValuesToFields.put(field, new LiteralRange<>(normalizedLower, value.isLowerInclusive(), normalizedUpper, value.isUpperInclusive(),
+                                    value.getFieldName(), value.getNodeOperand()));
                     log.debug("Normalization succeeded!");
                 } catch (Exception exception) {
                     log.debug("Normalization failed.");

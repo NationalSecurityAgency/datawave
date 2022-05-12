@@ -61,7 +61,7 @@ public class DefaultEventQueryBuilder {
         // Traverse the tree, create new query string
         Set<String> edgeQueries = new HashSet<>();
         switch (JexlNodes.id(node)) {
-        // not acceptable ... must have some AND operations to
+            // not acceptable ... must have some AND operations to
             case ParserTreeConstants.JJTEQNODE:
                 throw new IllegalArgumentException("Query not specific enough to specify an edge.");
             case ParserTreeConstants.JJTORNODE:

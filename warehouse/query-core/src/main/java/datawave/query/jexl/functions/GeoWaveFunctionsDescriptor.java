@@ -166,7 +166,8 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             return getIndexNode(fieldName, geometry, envs, config, helper);
         }
         
-        protected static JexlNode getIndexNode(String fieldName, Geometry geometry, List<Envelope> envs, ShardQueryConfiguration config, MetadataHelper helper) {
+        protected static JexlNode getIndexNode(String fieldName, Geometry geometry, List<Envelope> envs, ShardQueryConfiguration config,
+                        MetadataHelper helper) {
             List<JexlNode> indexNodes = new ArrayList<>();
             Set<IndexType> indexTypes = getIndexTypes(fieldName, helper);
             // generate ranges for geowave geometries and points
@@ -304,8 +305,8 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of "
                             + node.jjtGetChild(0).image);
         if (!functionClass.equals(GeoWaveFunctions.class))
-            throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in "
-                            + functionClass);
+            throw new IllegalArgumentException(
+                            "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
         
         verify(fvis.name(), fvis.args().size());
         

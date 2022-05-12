@@ -897,7 +897,7 @@ public class DefaultTokenSearch implements TokenSearch {
         
         if (term[1] == null)
             term[1] = "";
-        
+            
         // Include the downcased term if it is different from the original
         // token or if the includeTerm flag is raised.
         String lctok = term[0].toLowerCase();

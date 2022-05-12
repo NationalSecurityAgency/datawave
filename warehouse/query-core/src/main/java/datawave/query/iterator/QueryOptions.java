@@ -1083,12 +1083,10 @@ public class QueryOptions implements OptionDescriber {
         
         options.put(METADATA_TABLE_NAME, this.metadataTableName);
         options.put(LIMIT_FIELDS_PRE_QUERY_EVALUATION, "If true, non-query fields limits will be applied immediately off the iterator");
-        options.put(LIMIT_FIELDS_FIELD, "When " + LIMIT_FIELDS_PRE_QUERY_EVALUATION
-                        + " is set to true this field will contain all fields that were limited immediately");
-        options.put(ACTIVE_QUERY_LOG_NAME,
-                        "If not provided or set to '"
-                                        + ActiveQueryLog.DEFAULT_NAME
-                                        + "', will use the default shared Active Query Log instance. If provided otherwise, uses a separate distinct Active Query Log that will include the unique name in log messages.");
+        options.put(LIMIT_FIELDS_FIELD,
+                        "When " + LIMIT_FIELDS_PRE_QUERY_EVALUATION + " is set to true this field will contain all fields that were limited immediately");
+        options.put(ACTIVE_QUERY_LOG_NAME, "If not provided or set to '" + ActiveQueryLog.DEFAULT_NAME
+                        + "', will use the default shared Active Query Log instance. If provided otherwise, uses a separate distinct Active Query Log that will include the unique name in log messages.");
         options.put(EXCERPT_FIELDS, "excerpt fields");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
@@ -1264,8 +1262,8 @@ public class QueryOptions implements OptionDescriber {
                 
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
                 if (options.containsKey(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)) {
-                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, Integer.parseInt(options
-                                    .get(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)));
+                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed,
+                                    Integer.parseInt(options.get(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)));
                 } else {
                     this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed);
                 }
@@ -1290,8 +1288,8 @@ public class QueryOptions implements OptionDescriber {
             this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS));
         }
         
-        this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEvaluationFilter() != null ? getEvaluationFilter()
-                        .getMaxNextCount() : -1);
+        this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(),
+                        getEvaluationFilter() != null ? getEvaluationFilter().getMaxNextCount() : -1);
         
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {
             this.ignoreColumnFamilies = buildIgnoredColumnFamilies(options.get(IGNORE_COLUMN_FAMILIES));
@@ -1564,8 +1562,8 @@ public class QueryOptions implements OptionDescriber {
                 if (typeMetadataAuthsString != null && compressedMappings) {
                     typeMetadataAuthsString = decompressOption(typeMetadataAuthsString, QueryOptions.UTF8);
                 }
-                this.typeMetadataAuthsKey = Sets.newHashSet(Splitter.on(CharMatcher.anyOf(",& ")).omitEmptyStrings().trimResults()
-                                .split(typeMetadataAuthsString));
+                this.typeMetadataAuthsKey = Sets
+                                .newHashSet(Splitter.on(CharMatcher.anyOf(",& ")).omitEmptyStrings().trimResults().split(typeMetadataAuthsString));
             } catch (IOException e) {
                 log.warn("could not set typeMetadataAuthsKey from: \"" + typeMetadataAuthsString + "\"");
             }

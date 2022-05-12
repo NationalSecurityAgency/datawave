@@ -18,8 +18,8 @@ import org.jboss.security.identity.plugins.SimpleRoleGroup;
 
 /**
  * A JBoss AS/Wildfly-specific interceptor that looks for saved security context information in the WebSocket user {@link Session} and uses that information to
- * execute a WebSocket handler method in the saved security context. This workaround is necessary to cover a shortcoming in the WebSocket specification. See <a
- * href="https://java.net/jira/browse/WEBSOCKET_SPEC-238">WEBSOCKET_SPEC-238</a> for more details.
+ * execute a WebSocket handler method in the saved security context. This workaround is necessary to cover a shortcoming in the WebSocket specification. See
+ * <a href="https://java.net/jira/browse/WEBSOCKET_SPEC-238">WEBSOCKET_SPEC-238</a> for more details.
  * <p>
  * To use this interceptor, annotate your {@link ServerEndpoint}-annotated class with
  * 

@@ -44,7 +44,7 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      *            accumulo table operations helper for configuring tables
      * @param log
      *            a {@link Logger} for diagnostic messages
-     * 
+     *            
      * @throws AccumuloException
      * @throws AccumuloSecurityException
      * @throws TableNotFoundException
@@ -76,7 +76,7 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      *            accumulo table operations helper for configuring tables
      * @param log
      *            a {@link Logger} for diagnostic messages
-     * 
+     *            
      * @throws AccumuloException
      * @throws AccumuloSecurityException
      * @throws TableNotFoundException
@@ -123,7 +123,7 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      * @param tops
      *            accumulo table operations helper for configuring tables
      * @return {@code true} if {@code aggregators} are configured on {@code tableName} and {@code false} if not
-     * 
+     *            
      * @throws TableNotFoundException
      */
     protected boolean areAggregatorsConfigured(String tableName, List<CombinerConfiguration> aggregators, TableOperations tops) throws TableNotFoundException {
@@ -203,8 +203,8 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
      * @throws TableNotFoundException
      * @throws AccumuloSecurityException
      */
-    protected boolean areLocalityGroupsConfigured(String tableName, Map<String,Set<Text>> newLocalityGroups, TableOperations tops) throws AccumuloException,
-                    TableNotFoundException, AccumuloSecurityException {
+    protected boolean areLocalityGroupsConfigured(String tableName, Map<String,Set<Text>> newLocalityGroups, TableOperations tops)
+                    throws AccumuloException, TableNotFoundException, AccumuloSecurityException {
         Map<String,Set<Text>> localityGroups = tops.getLocalityGroups(tableName);
         for (Map.Entry<String,Set<Text>> entry : newLocalityGroups.entrySet()) {
             Set<Text> families = localityGroups.get(entry.getKey());

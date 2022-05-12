@@ -31,8 +31,8 @@ public class DashboardQuery {
     public static ExtJsResponse<DashboardSummary> createQuery(QueryExecutor queryExecutor, String auths, Date beginDate, Date endDate, Date now)
                     throws ParseException {
         
-        return (ExtJsResponse) queryExecutor.createQueryAndNext(logicName, MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(logicName, queryString,
-                        queryName, columnVisibility, beginDate, endDate, auths, DateUtils.addDays(now, 1), pageSize, pageTimeout, maxResultsOverride,
-                        persistence, parameters, trace)));
+        return (ExtJsResponse) queryExecutor.createQueryAndNext(logicName,
+                        MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(logicName, queryString, queryName, columnVisibility, beginDate, endDate,
+                                        auths, DateUtils.addDays(now, 1), pageSize, pageTimeout, maxResultsOverride, persistence, parameters, trace)));
     }
 }

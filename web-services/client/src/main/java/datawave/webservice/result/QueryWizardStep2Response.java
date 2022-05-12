@@ -99,8 +99,8 @@ public class QueryWizardStep2Response extends BaseResponse implements HtmlProvid
             }
             
             /* QueryParametersImpl.java line 125-130 require these next four input params */
-            builder.append("<tr><td align=\"left\" >auths:</td><td><input type=\"text\" name=\"auths\" placeholder=\"" + authString + "\" value=\""
-                            + authString + "\"  size=\"150\" /></td></tr>\n");
+            builder.append("<tr><td align=\"left\" >auths:</td><td><input type=\"text\" name=\"auths\" placeholder=\"" + authString + "\" value=\"" + authString
+                            + "\"  size=\"150\" /></td></tr>\n");
             builder.append("<tr><td align=\"left\">Visibility:</td><td><input type=\"text\" name=\"columnVisibility\" placeholder=\"" + visibilityString
                             + "\" value=\"" + visibilityString + "\" align=\"left\"  size=\"150\"/></td></tr>\n");
             builder.append("</table>\n");

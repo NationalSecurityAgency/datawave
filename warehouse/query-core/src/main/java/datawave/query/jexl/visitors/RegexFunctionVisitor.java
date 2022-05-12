@@ -85,15 +85,15 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
             List<JexlNode> arguments = functionMetadata.args();
             JexlNode node0 = arguments.get(0);
             if (node0 instanceof ASTIdentifier) {
-                returnNode = JexlNodeFactory.buildNode(new ASTEQNode(ParserTreeConstants.JJTEQNODE), node0.image, new ASTNullLiteral(
-                                ParserTreeConstants.JJTNULLLITERAL));
+                returnNode = JexlNodeFactory.buildNode(new ASTEQNode(ParserTreeConstants.JJTEQNODE), node0.image,
+                                new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL));
             }
         } else if (functionMetadata.name().equals("isNotNull")) {
             List<JexlNode> arguments = functionMetadata.args();
             JexlNode node0 = arguments.get(0);
             if (node0 instanceof ASTIdentifier) {
-                returnNode = JexlNodeFactory.buildNode(new ASTNENode(ParserTreeConstants.JJTNENODE), node0.image, new ASTNullLiteral(
-                                ParserTreeConstants.JJTNULLLITERAL));
+                returnNode = JexlNodeFactory.buildNode(new ASTNENode(ParserTreeConstants.JJTNENODE), node0.image,
+                                new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL));
             }
         }
         return returnNode;

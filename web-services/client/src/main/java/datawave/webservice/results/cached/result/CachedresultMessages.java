@@ -255,8 +255,7 @@ public final class CachedresultMessages {
         /**
          * Protobuf type {@code datawave.webservice.results.cached.result.ColumnVisibility}
          */
-        public static final class Builder
-                        extends
+        public static final class Builder extends
                         com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility,Builder>
                         implements datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibilityOrBuilder {
             // Construct using datawave.webservice.results.cached.result.CachedresultMessages.ColumnVisibility.newBuilder()

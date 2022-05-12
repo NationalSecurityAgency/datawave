@@ -444,8 +444,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
         String literal = getLiteral(node.jjtGetChild(1));
         List<IdentityContext> contexts = new ArrayList<>();
         
-        if (identifier.equals(fields.getSourceFieldName()) || identifier.equals(fields.getSinkFieldName())
-                        || identifier.equals(fields.getAttribute3FieldName()) || identifier.equals(fields.getAttribute2FieldName())) {
+        if (identifier.equals(fields.getSourceFieldName()) || identifier.equals(fields.getSinkFieldName()) || identifier.equals(fields.getAttribute3FieldName())
+                        || identifier.equals(fields.getAttribute2FieldName())) {
             
             if (operator.equals(EdgeModelFields.EQUALS_REGEX) || operator.equals(EdgeModelFields.NOT_EQUALS_REGEX)) {
                 for (String normalizedLiteral : EdgeKeyUtil.normalizeRegexSource(literal, regexDataTypes, true)) {
@@ -523,8 +523,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                 sb.append(node.jjtGetChild(i).image);
             } else if (1 == i) {
                 if (!allowedFunctions.contains(node.jjtGetChild(i).image.toLowerCase())) {
-                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND, node.jjtGetChild(i).image
-                                    + " not supported function for EdgeQuery");
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND,
+                                    node.jjtGetChild(i).image + " not supported function for EdgeQuery");
                     throw new UnsupportedOperationException(qe);
                 }
                 sb.append(":");

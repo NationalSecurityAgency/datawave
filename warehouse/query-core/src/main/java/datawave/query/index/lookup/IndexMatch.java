@@ -70,7 +70,7 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
             return null;
         
         switch (type) {
-        
+            
             case AND:
                 return JexlNodeFactory.createAndNode(nodeSet.getNodes());
             case OR:

@@ -101,8 +101,8 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
         // create some extra geos for testing purposes
         if (helper instanceof NYCTLCHelper && ((NYCTLCHelper) helper).isGenerateExtraGeometries()) {
             if (pickupLat != null && pickupLon != null && dropoffLat != null && dropoffLon != null) {
-                double pickupLonDouble = Double.parseDouble(pickupLon), pickupLatDouble = Double.parseDouble(pickupLat), dropoffLonDouble = Double
-                                .parseDouble(dropoffLon), dropoffLatDouble = Double.parseDouble(dropoffLat);
+                double pickupLonDouble = Double.parseDouble(pickupLon), pickupLatDouble = Double.parseDouble(pickupLat),
+                                dropoffLonDouble = Double.parseDouble(dropoffLon), dropoffLatDouble = Double.parseDouble(dropoffLat);
                 double tripDistance = distance(pickupLonDouble, pickupLatDouble, dropoffLonDouble, dropoffLatDouble);
                 derivedFields.put(ALL_LOCATIONS, createCircle(pickupLonDouble, pickupLatDouble, tripDistance / 2.0).toText());
                 derivedFields.put(ALL_LOCATIONS, createCircle(dropoffLonDouble, dropoffLatDouble, tripDistance / 2.0).toText());
@@ -121,8 +121,8 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
                 derivedFields.put(ALL_LOCATIONS, "POINT (" + pickupLon + " " + pickupLat + ")");
                 derivedFields.put(ALL_LOCATIONS, "POINT (" + dropoffLon + " " + dropoffLat + ")");
                 
-                double pickupLonDouble = Double.parseDouble(pickupLon), pickupLatDouble = Double.parseDouble(pickupLat), dropoffLonDouble = Double
-                                .parseDouble(dropoffLon), dropoffLatDouble = Double.parseDouble(dropoffLat);
+                double pickupLonDouble = Double.parseDouble(pickupLon), pickupLatDouble = Double.parseDouble(pickupLat),
+                                dropoffLonDouble = Double.parseDouble(dropoffLon), dropoffLatDouble = Double.parseDouble(dropoffLat);
                 double tripDistance = distance(pickupLonDouble, pickupLatDouble, dropoffLonDouble, dropoffLatDouble);
                 derivedFields.put(ALL_LOCATIONS_OVERLOADED, createCircle(pickupLonDouble, pickupLatDouble, tripDistance / 2.0).toText());
                 derivedFields.put(ALL_LOCATIONS_OVERLOADED, createCircle(dropoffLonDouble, dropoffLatDouble, tripDistance / 2.0).toText());

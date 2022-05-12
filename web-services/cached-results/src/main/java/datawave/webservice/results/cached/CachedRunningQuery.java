@@ -837,8 +837,8 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         if (this.cacheableLogic == null) {
             return new ResultsPage();
         } else {
-            return new ResultsPage(this.cacheableLogic.readFromCache(cacheableQueryRowList), (hitPageByteTrigger ? ResultsPage.Status.PARTIAL
-                            : ResultsPage.Status.COMPLETE));
+            return new ResultsPage(this.cacheableLogic.readFromCache(cacheableQueryRowList),
+                            (hitPageByteTrigger ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE));
         }
     }
     
@@ -867,8 +867,8 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         if (this.cacheableLogic == null) {
             return new ResultsPage();
         } else {
-            return new ResultsPage(this.cacheableLogic.readFromCache(cacheableQueryRowList), (hitPageByteTrigger ? ResultsPage.Status.PARTIAL
-                            : ResultsPage.Status.COMPLETE));
+            return new ResultsPage(this.cacheableLogic.readFromCache(cacheableQueryRowList),
+                            (hitPageByteTrigger ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE));
         }
     }
     
@@ -1200,8 +1200,8 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                                 } else if (optionalQueryParametersObject instanceof MultiValueMap) {
                                     query.setOptionalQueryParameters((MultiValueMap) optionalQueryParametersObject);
                                 } else {
-                                    throw new IllegalArgumentException("Failed to convert " + optionalQueryParametersObject.getClass() + " to a "
-                                                    + MultiValueMap.class);
+                                    throw new IllegalArgumentException(
+                                                    "Failed to convert " + optionalQueryParametersObject.getClass() + " to a " + MultiValueMap.class);
                                 }
                             }
                         } catch (IOException e) {
@@ -1219,8 +1219,9 @@ public class CachedRunningQuery extends AbstractRunningQuery {
                     }
                     if (crq.queryLogicName != null) {
                         try {
-                            Collection<String> userRoles = (principal instanceof DatawavePrincipal) ? ((DatawavePrincipal) principal).getPrimaryUser()
-                                            .getRoles() : Collections.emptyList();
+                            Collection<String> userRoles = (principal instanceof DatawavePrincipal)
+                                            ? ((DatawavePrincipal) principal).getPrimaryUser().getRoles()
+                                            : Collections.emptyList();
                             crq.queryLogic = queryFactory.getQueryLogic(crq.queryLogicName, userRoles);
                         } catch (IllegalArgumentException | CloneNotSupportedException e) {
                             log.error(e.getMessage(), e);

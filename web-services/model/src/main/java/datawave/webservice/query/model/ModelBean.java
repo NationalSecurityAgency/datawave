@@ -113,7 +113,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.model.ModelList
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */
@@ -188,7 +188,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 412 if model already exists with this name, delete it first
      * @HTTP 500 internal server error
@@ -230,7 +230,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 404 model not found
      * @HTTP 500 internal server error
@@ -279,7 +279,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 204 model not found
      * @HTTP 500 internal server error
@@ -315,7 +315,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.model.Model
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 404 model not found
      * @HTTP 500 internal server error
@@ -393,7 +393,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */
@@ -462,7 +462,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */

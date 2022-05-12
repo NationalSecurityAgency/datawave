@@ -25,8 +25,8 @@ public class ActiveQueryLogTest {
     private static Random rand = new Random();
     
     private static String createQueryId() {
-        return (RandomStringUtils.randomAlphanumeric(5) + "-" + RandomStringUtils.randomAlphanumeric(5) + "-" + RandomStringUtils.randomAlphanumeric(5) + "-" + RandomStringUtils
-                        .randomAlphanumeric(5)).toUpperCase();
+        return (RandomStringUtils.randomAlphanumeric(5) + "-" + RandomStringUtils.randomAlphanumeric(5) + "-" + RandomStringUtils.randomAlphanumeric(5) + "-"
+                        + RandomStringUtils.randomAlphanumeric(5)).toUpperCase();
     }
     
     private static long createRandomDelay() {

@@ -125,8 +125,8 @@ public class ShardRangeStream extends RangeStream {
         }
         
         public QueryPlan apply(Entry<Key,Value> entry) {
-            return new QueryPlan(config.getShardTableName(), node, new Range(new Key(entry.getKey().getRow(), entry.getKey().getColumnFamily()), true, entry
-                            .getKey().followingKey(PartialKey.ROW_COLFAM), false));
+            return new QueryPlan(config.getShardTableName(), node, new Range(new Key(entry.getKey().getRow(), entry.getKey().getColumnFamily()), true,
+                            entry.getKey().followingKey(PartialKey.ROW_COLFAM), false));
         }
     }
 }

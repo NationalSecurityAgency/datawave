@@ -109,9 +109,9 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
                         break;
                     }
                 }
-                this.metadata = new Key(row.getBackingArray(), row.offset(), row.length(), cq.getBackingArray(), nullOffset + 1,
-                                cq.length() - (nullOffset + 1), EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(),
-                                EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(), cv.offset(), cv.length(), key.getTimestamp());
+                this.metadata = new Key(row.getBackingArray(), row.offset(), row.length(), cq.getBackingArray(), nullOffset + 1, cq.length() - (nullOffset + 1),
+                                EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(),
+                                cv.offset(), cv.length(), key.getTimestamp());
             } else if (isTermFrequency(cf)) {
                 // find the second null byte in the cq and take everything before that (cq = DataType\0UID\0Normalized Field Value\0Field Name)
                 final ByteSequence cq = key.getColumnQualifierData();

@@ -400,8 +400,10 @@ public class QueryJexl {
     }
     
     private enum TestHeader {
-        date(Normalizer.LC_NO_DIACRITICS_NORMALIZER), home(Normalizer.LC_NO_DIACRITICS_NORMALIZER), away(Normalizer.LC_NO_DIACRITICS_NORMALIZER), num(
-                        Normalizer.NUMBER_NORMALIZER);
+        date(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        home(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        away(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        num(Normalizer.NUMBER_NORMALIZER);
         
         private final Normalizer<?> normalizer;
         

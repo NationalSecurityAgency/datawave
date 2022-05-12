@@ -123,7 +123,7 @@ public class CredentialsCacheBean {
      *
      * @param dn
      *            the DN to evict from authorization caches
-     *
+     *            
      * @return a string indicating cache flush was successful
      */
     @GET
@@ -214,7 +214,7 @@ public class CredentialsCacheBean {
      *
      * @param dn
      *            the DN of the {@link DatawaveUser} to retrieve from the users cache
-     *
+     *            
      * @return a string indicating cache flush was successful
      */
     @GET

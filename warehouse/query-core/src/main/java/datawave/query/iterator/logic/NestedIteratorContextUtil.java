@@ -102,7 +102,7 @@ public class NestedIteratorContextUtil {
      *            need to always be moved
      * @param transformer
      *            transformer to apply to all results from the contextRequiredIterators
-     *
+     *            
      * @return
      */
     public static <T> T intersect(T context, List<NestedIterator<T>> contextRequiredIterators, TreeMultimap<T,NestedIterator<T>> headMap,
@@ -124,7 +124,7 @@ public class NestedIteratorContextUtil {
      *            always be moved
      * @param transformer
      *            transformer to apply to all results from the contextRequiredIterators
-     * 
+     *            
      * @return
      */
     public static <T> T union(T context, List<NestedIterator<T>> contextRequiredIterators, TreeMultimap<T,NestedIterator<T>> headMap,

@@ -40,8 +40,8 @@ public class SlopQueryNodeBuilder implements QueryBuilder {
         
         SlopQueryNode phraseSlopNode = (SlopQueryNode) queryNode;
         
-        datawave.query.language.tree.QueryNode node = (datawave.query.language.tree.QueryNode) phraseSlopNode.getChild().getTag(
-                        QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
+        datawave.query.language.tree.QueryNode node = (datawave.query.language.tree.QueryNode) phraseSlopNode.getChild()
+                        .getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
         
         if (node instanceof AdjNode) {
             datawave.query.language.tree.QueryNode[] nodeArray = new datawave.query.language.tree.QueryNode[node.getChildren().size()];

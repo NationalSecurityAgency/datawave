@@ -37,8 +37,8 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         private Multimap<BulkIngestKey,Value> cache = HashMultimap.create();
         
         @Override
-        protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException,
-                        InterruptedException {
+        protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
+                        throws IOException, InterruptedException {
             for (Map.Entry<BulkIngestKey,Value> entry : entries.entries()) {
                 cache.put(entry.getKey(), entry.getValue());
             }
@@ -82,7 +82,8 @@ public class WikipediaDataTypeHandlerTest extends WikipediaTestBed {
         MyCachingContextWriter contextWriter = new MyCachingContextWriter();
         
         // Call the Handler
-        StandaloneTaskAttemptContext<Text,RawRecordContainer,BulkIngestKey,Value> ctx = new StandaloneTaskAttemptContext<>(conf, new StandaloneStatusReporter());
+        StandaloneTaskAttemptContext<Text,RawRecordContainer,BulkIngestKey,Value> ctx = new StandaloneTaskAttemptContext<>(conf,
+                        new StandaloneStatusReporter());
         handler.process(new Text("1"), e, eventFields, ctx, contextWriter);
         try {
             contextWriter.write(handler.getMetadata().getBulkMetadata(), ctx);

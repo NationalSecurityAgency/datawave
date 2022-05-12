@@ -278,7 +278,8 @@ public class MapReduceStatePersisterBean {
                 Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
                 c = connectionFactory.getConnection(null, null, AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
                 tableCheck(c);
-                writer = c.createBatchWriter(TABLE_NAME, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1));
+                writer = c.createBatchWriter(TABLE_NAME,
+                                new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1));
                 writer.addMutation(m);
                 writer.flush();
             } catch (RuntimeException re) {
@@ -572,7 +573,7 @@ public class MapReduceStatePersisterBean {
      *
      * @param id
      *            bulk results id
-     *
+     *            
      */
     public void remove(String id) throws QueryException {
         // Find out who/what called this method

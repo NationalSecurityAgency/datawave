@@ -37,8 +37,8 @@ public class RfileSplitInputFormat extends MultiRfileInputformat {
         
         String tableName = BulkInputFormat.getTablename(job.getConfiguration());
         boolean autoAdjust = BulkInputFormat.getAutoAdjustRanges(job.getConfiguration());
-        List<Range> ranges = autoAdjust ? Range.mergeOverlapping(BulkInputFormat.getRanges(job.getConfiguration())) : BulkInputFormat.getRanges(job
-                        .getConfiguration());
+        List<Range> ranges = autoAdjust ? Range.mergeOverlapping(BulkInputFormat.getRanges(job.getConfiguration()))
+                        : BulkInputFormat.getRanges(job.getConfiguration());
         
         if (ranges.isEmpty()) {
             ranges = Lists.newArrayListWithCapacity(1);

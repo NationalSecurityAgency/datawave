@@ -51,8 +51,8 @@ public class ScannerSessionTest {
     private static ResourceQueue resourceQueue;
     
     @BeforeClass
-    public static void setupClass() throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException, IOException,
-                    InterruptedException {
+    public static void setupClass()
+                    throws AccumuloSecurityException, AccumuloException, TableExistsException, TableNotFoundException, IOException, InterruptedException {
         instance = new MiniAccumuloClusterForPostZoo34(temporaryFolder.newFolder(), PASSWORD);
         instance.start();
         
@@ -66,8 +66,8 @@ public class ScannerSessionTest {
         instance.stop();
     }
     
-    private static void setupTable() throws TableExistsException, AccumuloSecurityException, AccumuloException, TableNotFoundException, InterruptedException,
-                    IOException {
+    private static void setupTable()
+                    throws TableExistsException, AccumuloSecurityException, AccumuloException, TableNotFoundException, InterruptedException, IOException {
         connector.tableOperations().create("testTable");
         
         // create splits 1 to 99
@@ -162,8 +162,8 @@ public class ScannerSessionTest {
     
     private void validate(ScannerSession ss) throws TableNotFoundException {
         List<Range> ranges = Arrays.asList(new Range(new Text(String.valueOf(25)), true, new Text(String.valueOf(27)), false),
-                        new Range(new Text(String.valueOf(1)), true, new Text(String.valueOf(2)), false), new Range(new Text(String.valueOf(98)), true,
-                                        new Text(String.valueOf(99)), false));
+                        new Range(new Text(String.valueOf(1)), true, new Text(String.valueOf(2)), false),
+                        new Range(new Text(String.valueOf(98)), true, new Text(String.valueOf(99)), false));
         
         ss.setRanges(ranges);
         
@@ -185,8 +185,8 @@ public class ScannerSessionTest {
         int batchScannerCount = 0;
         BatchScanner scanner = connector.createBatchScanner("testTable", new Authorizations(), 12);
         scanner.setRanges(Arrays.asList(new Range(new Text(String.valueOf(25)), true, new Text(String.valueOf(27)), false),
-                        new Range(new Text(String.valueOf(1)), true, new Text(String.valueOf(2)), false), new Range(new Text(String.valueOf(98)), true,
-                                        new Text(String.valueOf(99)), false)));
+                        new Range(new Text(String.valueOf(1)), true, new Text(String.valueOf(2)), false),
+                        new Range(new Text(String.valueOf(98)), true, new Text(String.valueOf(99)), false)));
         for (Map.Entry<Key,Value> entry : scanner) {
             batchScannerCount++;
         }

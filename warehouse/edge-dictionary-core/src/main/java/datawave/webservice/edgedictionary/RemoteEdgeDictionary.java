@@ -113,8 +113,8 @@ public class RemoteEdgeDictionary extends RemoteHttpService implements EdgeDicti
         // @formatter:on
     }
     
-    protected <T> T executeGetMethodWithRuntimeException(Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
+    protected <T> T executeGetMethodWithRuntimeException(Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
+                    Supplier<String> errorSupplier) {
         try {
             return executeGetMethod(uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
         } catch (URISyntaxException e) {
