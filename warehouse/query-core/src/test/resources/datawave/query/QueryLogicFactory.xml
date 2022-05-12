@@ -46,7 +46,9 @@
         <bean class="datawave.query.language.functions.jexl.ExcerptFields"/>
     </util:list>
 
-    <bean id="DatawaveSelectorExtractor" scope="prototype" class="datawave.audit.DatawaveSelectorExtractor" />
+    <bean id="DatawaveSelectorExtractor" scope="prototype" class="datawave.audit.DatawaveSelectorExtractor" >
+        <property name="luceneToJexlQueryParser" ref="LuceneToJexlQueryParser"/>
+    </bean>
 
     <bean id="SplitSelectorExtractorParamDefaultNull" scope="prototype" class="datawave.audit.SplitSelectorExtractor">
         <property name="separatorCharacter">
