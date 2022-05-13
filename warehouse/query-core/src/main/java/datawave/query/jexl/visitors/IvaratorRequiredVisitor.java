@@ -8,9 +8,8 @@ import org.apache.commons.jexl2.parser.JexlNode;
 
 /**
  * A visitor that checks the query tree to determine if the query requires an ivarator (ExceededValue or ExceededOr)
- * 
  */
-public class IvaratorRequiredVisitor extends BaseVisitor {
+public class IvaratorRequiredVisitor extends ShortCircuitBaseVisitor {
     
     private boolean ivaratorRequired = false;
     
