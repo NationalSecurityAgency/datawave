@@ -120,9 +120,12 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         
         @Override
         public Set<String> fieldsForNormalization(MetadataHelper helper, Set<String> datatypeFilter, int arg) {
-            // all functions use the fields in the first argument for normalization
-            if (arg > 0) {
-                return fields(helper, datatypeFilter);
+            // Do not normalize fields for the includeText function.
+            if (!name.equalsIgnoreCase(INCLUDE_TEXT)) {
+                // All other functions use the fields in the first argument for normalization.
+                if (arg > 0) {
+                    return fields(helper, datatypeFilter);
+                }
             }
             return Collections.emptySet();
         }
