@@ -4,6 +4,11 @@ import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 
 /**
@@ -31,6 +36,32 @@ public class IvaratorRequiredVisitor extends ShortCircuitBaseVisitor {
         } else if (!instance.isAnyTypeOf()) {
             super.visit(and, data);
         }
+        return data;
+    }
+    
+    // ensure we short circuit these nodes
+    @Override
+    public Object visit(ASTLTNode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTGTNode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTLENode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTGENode node, Object data) {
+        return data;
+    }
+    
+    @Override
+    public Object visit(ASTFunctionNode node, Object data) {
         return data;
     }
 }
