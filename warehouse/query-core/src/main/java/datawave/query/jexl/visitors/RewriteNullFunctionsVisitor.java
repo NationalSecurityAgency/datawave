@@ -223,18 +223,19 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
         node.childrenAccept(this, data);
         
         if (rebuiltMultiFieldedFunction) {
-            flattenJunction(node, node.getClass());
+            flattenJunction(node);
             rebuiltMultiFieldedFunction = false;
         }
         
         return data;
     }
     
-    private void flattenJunction(JexlNode node, Class junctionType) {
+    private void flattenJunction(JexlNode node) {
+        boolean junctionType = node instanceof ASTAndNode;
         List<JexlNode> children = new ArrayList<>();
         for (JexlNode child : JexlNodes.children(node)) {
             JexlNode deref = JexlASTHelper.dereference(child);
-            if (deref.getClass().getSimpleName().equals(junctionType.getSimpleName())) {
+            if (junctionType ? (deref instanceof ASTAndNode) : (deref instanceof ASTOrNode)) {
                 Collections.addAll(children, JexlNodes.children(deref));
             } else {
                 children.add(child);
