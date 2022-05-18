@@ -1,11 +1,13 @@
 package datawave.query.transformer;
 
+import datawave.ingest.protobuf.TermWeight;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.postprocessing.tf.PhraseIndexes;
 import org.apache.accumulo.core.data.Key;
@@ -24,8 +26,11 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.and;
 import static org.easymock.EasyMock.anyObject;
@@ -36,6 +41,7 @@ import static org.easymock.EasyMock.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(EasyMockRunner.class)
 public class ExcerptTransformTest extends EasyMockSupport {
@@ -120,8 +126,38 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenExcerptField("BODY", 2);
         givenPhraseIndex("BODY", 10, 14);
         
-        givenMockDocument();
+        givenMockDocumentWithHitTerm("BODY", "word");
         givenMatchingPhrase("BODY", 8, 17, "the quick brown fox jumped over the lazy dog");
+        givenMatchingTermFrequency("BODY", 4, 4, "word");
+        givenMatchingPhrase("BODY", 2, 7, "and the word from bird");
+        
+        Capture<Attributes> capturedArg = Capture.newInstance();
+        document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
+        
+        initTransform();
+        replayAll();
+        
+        applyTransform();
+        verifyAll();
+        
+        Attributes arg = capturedArg.getValue();
+        assertEquals(2, arg.size());
+        Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
+        assertTrue(excerpts.contains("and the word from bird"));
+        assertTrue(excerpts.contains("the quick brown fox jumped over the lazy dog"));
+    }
+    
+    /**
+     * Verify that excerpts are retrieved with the expected inputs.
+     */
+    @Test
+    public void testExcerptOverlapped() throws IOException {
+        givenExcerptField("BODY", 2);
+        givenPhraseIndex("BODY", 10, 14);
+        
+        givenMockDocumentWithHitTerm("BODY", "quick brown");
+        givenMatchingPhrase("BODY", 7, 17, "and the quick brown fox jumped over the lazy dog");
+        givenMatchingTermFrequency("BODY", 9, 10, "quick brown");
         
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
@@ -134,8 +170,8 @@ public class ExcerptTransformTest extends EasyMockSupport {
         
         Attributes arg = capturedArg.getValue();
         assertEquals(1, arg.size());
-        Attribute<?>[] attributes = arg.getAttributes().toArray(new Attribute[0]);
-        assertEquals("the quick brown fox jumped over the lazy dog", ((Content) attributes[0]).getContent());
+        String excerpt = arg.getAttributes().iterator().next().getData().toString();
+        assertEquals("and the quick brown fox jumped over the lazy dog", excerpt);
     }
     
     /**
@@ -178,12 +214,31 @@ public class ExcerptTransformTest extends EasyMockSupport {
         expect(document.isToKeep()).andReturn(true);
         expect(document.containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(true);
         @SuppressWarnings("rawtypes")
-        Attribute phraseIndexAttribute = new Content(phraseIndexes.toString(), new Key(), false);
+        Key metadata = new Key("Row", "cf", "cq");
+        Attribute phraseIndexAttribute = new Content(phraseIndexes.toString(), metadata, false);
         // noinspection unchecked
         expect(document.get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(phraseIndexAttribute);
         
-        Key metadata = new Key("Row", "cf", "cq");
-        expect(document.getMetadata()).andReturn(metadata).times(1);
+        expect(document.containsKey(JexlEvaluation.HIT_TERM_FIELD)).andReturn(false);
+        
+        givenDocument(document);
+    }
+    
+    private void givenMockDocumentWithHitTerm(String field, String value) {
+        Document document = mock(Document.class);
+        
+        expect(document.isToKeep()).andReturn(true);
+        expect(document.containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(true);
+        @SuppressWarnings("rawtypes")
+        Key metadata = new Key("shard", "dt\u0000uid");
+        Attribute phraseIndexAttribute = new Content(phraseIndexes.toString(), metadata, false);
+        // noinspection unchecked
+        expect(document.get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(phraseIndexAttribute);
+        
+        expect(document.containsKey(JexlEvaluation.HIT_TERM_FIELD)).andReturn(true);
+        
+        Attribute hitTerms = new Attributes(Collections.singletonList(new Content(field + ":" + value, metadata, true)), true);
+        expect(document.get(JexlEvaluation.HIT_TERM_FIELD)).andReturn(hitTerms);
         
         givenDocument(document);
     }
@@ -204,6 +259,10 @@ public class ExcerptTransformTest extends EasyMockSupport {
         phraseIndexes.addIndexTriplet(field, EVENT_ID, start, end);
     }
     
+    private void givenHitTerm(String field, String value) {
+        
+    }
+    
     private void givenMatchingPhrase(String field, int start, int end, String phrase) throws IOException {
         Map<String,String> options = getOptions(field, start, end);
         iterator.init(source, options, env);
@@ -215,6 +274,19 @@ public class ExcerptTransformTest extends EasyMockSupport {
         } else {
             expect(iterator.hasTop()).andReturn(false);
         }
+    }
+    
+    private void givenMatchingTermFrequency(String field, int start, int end, String value) throws IOException {
+        TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
+        builder.addTermOffset(end);
+        builder.addPrevSkips(end - start);
+        builder.addScore(1);
+        
+        Value tfpb = new Value(builder.build().toByteArray());
+        
+        source.seek(anyObject(), anyObject(), eq(false));
+        expect(source.hasTop()).andReturn(true);
+        expect(source.getTopValue()).andReturn(tfpb);
     }
     
     private Map<String,String> getOptions(String field, int start, int end) {
