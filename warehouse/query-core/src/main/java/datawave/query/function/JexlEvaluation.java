@@ -145,7 +145,6 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                         Content content = new Content(term, document.getMetadata(), document.isToKeep());
                         content.setColumnVisibility(cv);
                         attributes.add(content);
-                        
                     }
                 }
                 if (attributes.size() > 0) {

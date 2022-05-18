@@ -83,6 +83,7 @@ import datawave.query.jexl.visitors.QueryPruningVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
 import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
 import datawave.query.jexl.visitors.RewriteNegationsVisitor;
+import datawave.query.jexl.visitors.RewriteNullFunctionsVisitor;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
@@ -750,6 +751,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         config.setQueryTree(timedApplyQueryModel(timers, config.getQueryTree(), config, metadataHelper, queryModel));
         
+        // +-------------------------------------+
+        // | Post Query Model Expansion Clean Up |
+        // +-------------------------------------+
+        
+        // rewrite filter:isNull and filter:isNotNull functions into their EQ and !(EQ) equivalents
+        config.setQueryTree(timedRewriteNullFunctions(timers, config.getQueryTree()));
+        
         // Enforce unique terms within an AND or OR expression.
         if (config.getEnforceUniqueTermsWithinExpressions()) {
             config.setQueryTree(timedEnforceUniqueTermsWithinExpressions(timers, config.getQueryTree()));
@@ -1243,6 +1251,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.warn("Query Model was null, will not apply to query tree. This could be a fatal error.");
             return script;
         }
+    }
+    
+    protected ASTJexlScript timedRewriteNullFunctions(QueryStopwatch timers, ASTJexlScript queryTree) throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, "Rewrite Null Functions", () -> (ASTJexlScript) RewriteNullFunctionsVisitor.rewriteNullFunctions(queryTree));
     }
     
     protected ASTJexlScript timedEnforceUniqueTermsWithinExpressions(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {
