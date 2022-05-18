@@ -73,6 +73,11 @@
                 <version>${version.kryonet}</version>
             </dependency>
             <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${version.caffeine}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>2.0.2</version>
@@ -211,6 +216,10 @@
                     <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.github.ben-manes.caffeine</groupId>
+                        <artifactId>caffeine</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

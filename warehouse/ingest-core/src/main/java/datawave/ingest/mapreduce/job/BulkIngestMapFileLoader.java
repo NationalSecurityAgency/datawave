@@ -12,11 +12,14 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.clientImpl.ClientContext;
-import org.apache.accumulo.core.clientImpl.ManagerClient;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.manager.thrift.ManagerClientService;
 import org.apache.accumulo.core.manager.thrift.ManagerClientService.Iface;
 import org.apache.accumulo.core.manager.thrift.ManagerMonitorInfo;
 import org.apache.accumulo.core.master.thrift.TableInfo;
+import org.apache.accumulo.core.rpc.ThriftUtil;
+import org.apache.accumulo.core.rpc.clients.ManagerClient;
+import org.apache.accumulo.core.rpc.clients.ThriftClientTypes;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileChecksum;
@@ -672,11 +675,11 @@ public final class BulkIngestMapFileLoader implements Runnable {
     
     private int getMajorCompactionCount() {
         int majC = 0;
-        
-        Iface client = null;
+
+        ManagerClientService.Client client = null;
         ClientContext context = (ClientContext) accumuloClient;
         try {
-            client = ManagerClient.getConnection(context);
+            client = ThriftClientTypes.MANAGER.getConnection(context);
             ManagerMonitorInfo mmi = client.getManagerStats(null, context.rpcCreds());
             Map<String,TableInfo> tableStats = mmi.getTableMap();
             
@@ -690,7 +693,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
             log.error("Unable to retrieve major compaction stats: " + e.getMessage());
         } finally {
             if (client != null) {
-                ManagerClient.close(client, context);
+                ThriftUtil.close(client, context);
             }
         }
         
