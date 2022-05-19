@@ -1,6 +1,7 @@
 package datawave.query.function;
 
 import datawave.query.Constants;
+import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.ArithmeticJexlEngines;
@@ -96,25 +97,21 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                 
                 for (ValueTuple hitTuple : hitListArithmetic.getHitTuples()) {
                     
-                    ColumnVisibility cv = null;
                     String term = hitTuple.getFieldName() + ':' + hitTuple.getValue();
+                    Attribute a = hitTuple.getSource();
                     
-                    if (hitTuple.getSource() != null) {
-                        cv = hitTuple.getSource().getColumnVisibility();
+                    // fall back to extracting attribute from document
+                    if (a == null) {
+                        // get the attribute for the record with this hit
+                        a = HitListArithmetic.getAttributeForHit(document, term);
                     }
                     
-                    // fall back to extracting column visibility from document
-                    if (cv == null) {
-                        // get the visibility for the record with this hit
-                        cv = HitListArithmetic.getColumnVisibilityForHit(document, term);
-                        // if no visibility computed, then there were no hits that match fields still in the document......
-                    }
-                    
-                    if (cv != null) {
+                    // only add hits if we can determine the visibilty and source
+                    if (a != null) {
                         // unused
                         long timestamp = document.getTimestamp(); // will force an update to make the metadata valid
-                        Content content = new Content(term, document.getMetadata(), document.isToKeep());
-                        content.setColumnVisibility(cv);
+                        Content content = new Content(term, a.getMetadata(), document.isToKeep());
+                        content.setColumnVisibility(a.getColumnVisibility());
                         attributes.add(content);
                     }
                 }

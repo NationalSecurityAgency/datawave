@@ -4,7 +4,6 @@ import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
 import datawave.query.Constants;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.yarn.webapp.hamlet2.HamletSpec;
 import org.javatuples.Triplet;
 
 import java.util.Collection;
@@ -13,7 +12,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 /**
@@ -59,7 +57,7 @@ public class PhraseIndexes {
                 String eventId = indexParts[0];
                 int start = Integer.parseInt(indexParts[1]);
                 int end = Integer.parseInt(indexParts[2]);
-                phraseIndexes.addIndexTriplet(field, eventId, start, end);
+                phraseIndexes.addIndexTriplet(field, eventId.isEmpty() ? null : eventId, start, end);
             }
         }
         return phraseIndexes;
@@ -102,7 +100,7 @@ public class PhraseIndexes {
                     break;
                 }
                 // if from the same event/document, and the endpoints overlap
-                if (indice.getValue0().equals(eventId) && overlaps(indice.getValue1(), indice.getValue2(), start, end)) {
+                if (Objects.equals(eventId, indice.getValue0()) && overlaps(indice.getValue1(), indice.getValue2(), start, end)) {
                     start = Math.min(start, indice.getValue1());
                     end = Math.max(end, indice.getValue2());
                     indices.remove();
@@ -206,8 +204,8 @@ public class PhraseIndexes {
             Iterator<Triplet<String,Integer,Integer>> indexIterator = map.get(field).iterator();
             while (indexIterator.hasNext()) {
                 Triplet<String,Integer,Integer> indexTriplet = indexIterator.next();
-                sb.append(indexTriplet.getValue0()).append(Constants.COMMA).append(indexTriplet.getValue1()).append(Constants.COMMA)
-                                .append(indexTriplet.getValue2());
+                sb.append(indexTriplet.getValue0() == null ? "" : indexTriplet.getValue0()).append(Constants.COMMA).append(indexTriplet.getValue1())
+                                .append(Constants.COMMA).append(indexTriplet.getValue2());
                 if (indexIterator.hasNext()) {
                     sb.append(Constants.COLON);
                 }
@@ -228,7 +226,7 @@ public class PhraseIndexes {
      */
     public PhraseIndexes getSubset(String fieldName, String eventId) {
         PhraseIndexes subset = new PhraseIndexes();
-        getIndices(fieldName).stream().filter(t -> t.getValue0().equals(eventId)).forEach(t -> subset.addIndexTriplet(fieldName, t));
+        getIndices(fieldName).stream().filter(t -> Objects.equals(eventId, t.getValue0())).forEach(t -> subset.addIndexTriplet(fieldName, t));
         return subset;
     }
     
@@ -277,7 +275,7 @@ public class PhraseIndexes {
             if (triplet.getValue1() > end) {
                 break;
             }
-            if (triplet.getValue0().equals(eventId) && overlaps(triplet.getValue1(), triplet.getValue2(), start, end)) {
+            if (Objects.equals(eventId, triplet.getValue0()) && overlaps(triplet.getValue1(), triplet.getValue2(), start, end)) {
                 return triplet;
             }
         }

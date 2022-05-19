@@ -12,7 +12,6 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.function.JexlEvaluation;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
-import datawave.query.jexl.HitListArithmetic;
 import datawave.query.postprocessing.tf.PhraseIndexes;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -20,24 +19,20 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.hadoop.yarn.webapp.hamlet2.Hamlet;
 import org.apache.log4j.Logger;
 import org.javatuples.Triplet;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform {
     
@@ -140,6 +135,11 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      */
     private TermWeightPosition getOffset(ValueTuple hitTuple, Map<String,Map<String,PhraseIndexes>> phraseIndexMap) {
         Key docKey = hitTuple.getSource().getMetadata();
+        // if we do not know the source document key, then we cannot find the term offset
+        if (docKey == null) {
+            log.warn("Unable to find the source document for a hit term, skipping excerpt generation");
+            return null;
+        }
         String fieldName = hitTuple.getFieldName();
         String eventId = keyToEventId(docKey);
         
@@ -235,7 +235,10 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * @return the event id (shard\x00dt\x00uid)
      */
     private String keyToEventId(Key docKey) {
-        return docKey.getRow().toString() + '\u0000' + docKey.getColumnFamily().toString();
+        if (docKey != null) {
+            return docKey.getRow().toString() + '\u0000' + docKey.getColumnFamily().toString();
+        }
+        return null;
     }
     
     /**
