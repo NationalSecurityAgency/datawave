@@ -107,7 +107,6 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         }
         // now lets find all of the terms for excerpt fields and add them to the list
         if (document.containsKey(JexlEvaluation.HIT_TERM_FIELD)) {
-            Map<String,Map<String,PhraseIndexes>> cacheFieldToEventIdToIndexes = new HashMap();
             Attributes hitList = (Attributes) document.get(JexlEvaluation.HIT_TERM_FIELD);
             // for each hit term
             for (Attribute a : hitList.getAttributes()) {
