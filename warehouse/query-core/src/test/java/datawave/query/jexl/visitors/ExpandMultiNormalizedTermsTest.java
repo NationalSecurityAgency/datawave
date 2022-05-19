@@ -15,7 +15,6 @@ import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
@@ -28,7 +27,6 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 public class ExpandMultiNormalizedTermsTest {
     
@@ -488,6 +486,27 @@ public class ExpandMultiNormalizedTermsTest {
             String expected = "((" + marker + " = true) && (FOO == 'Bar'))";
             expandTerms(original, expected);
         }
+    }
+    
+    @Test
+    public void testFailedRegexNormalizers() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType()));
+        
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+        
+        config.setQueryFieldsDatatypes(dataTypes);
+        
+        // this tests for the successful normalization as a simply number can be normalized as a regex
+        String original = "FOO =~ '32'";
+        String expected = "(FOO =~ '32' || FOO =~ '\\Q+bE3.2\\E')";
+        expandTerms(original, expected);
+        
+        // in this case the numeric normalization fails, so we need to mark as evaluation only
+        original = "FOO =~ '3.*2'";
+        expected = "((_Eval_ = true) && (FOO =~ '3.*2'))";
+        expandTerms(original, expected);
     }
     
     private void expandTerms(String original, String expected) throws ParseException {
