@@ -8,8 +8,10 @@ on:
     - 'release/version*'
     - 'feature/accumulo-2.0'
     - 'feature/hadoop3'
+    - 'feature/queryMicroservices'
   pull_request:
     paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+  workflow_dispatch:
 
 jobs:
   # Runs the pom sorter and code formatter to ensure that the code
@@ -138,7 +140,7 @@ jobs:
         ./bootstrap.sh
         docker-compose up -d
         cd scripts
-        ./query.sh        
+        ./query.sh
 
     # Here's an example of how you'd deploy the image to the github package registry.
     # We don't want to do this by default since packages on github cannot be deleted
