@@ -103,6 +103,37 @@ jobs:
         TAG=$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
         contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
 
+  compose-build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - uses: actions/cache@v1
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-build-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-build-
+          ${{ runner.os }}-maven-format-
+          ${{ runner.os }}-maven-
+    # Builds the quickstart docker image and run the query tests
+    - name: Docker Compose Query Tests
+      env:
+        MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
+      run: |
+        mvn -B -V -e -Pcompose,docker,quickstart -Ddeploy -Dtar -DskipTests clean install
+        cd datawave/docker
+        docker-compose up -d
+        sleep 60s
+        cd scripts
+        ./query.sh        
+
     # Here's an example of how you'd deploy the image to the github package registry.
     # We don't want to do this by default since packages on github cannot be deleted
     # or overwritten. So this could only be done for tags, however it seems the quickstart

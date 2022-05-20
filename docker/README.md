@@ -1,5 +1,7 @@
 # DATAWAVE Docker Compose
 
+It is recommended to read through these instructions in their entirety before attempting to build or deploy Datawave.
+
 ## Components
 
 ### Quickstart
@@ -114,7 +116,7 @@ You will need to build the docker image for this service on your local machine f
 
 ## Usage
 
-It is recommended to read through these instructions in their entirety before attempting to build or deploy Datawave.
+Please read through these instructions in their entirety before attempting to build or deploy Datawave.
 
 ### Prereqs
 

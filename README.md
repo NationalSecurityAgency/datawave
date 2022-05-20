@@ -44,7 +44,7 @@ git submodule foreach 'git checkout feature/queryMicroservices || :'
 mvn -Pdocker,dist clean install -T 1C
 
 # If you don't want to build the microservices, disable the 'microservices' profile
-mvn -Pdocker,dist -P !microservices clean install -T 1C
+mvn -Pdocker,dist -P-microservices clean install -T 1C
 ```
 
 ### DataWave Microservices
