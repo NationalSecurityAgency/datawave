@@ -140,7 +140,7 @@ jobs:
         ./bootstrap.sh
         docker-compose up -d
         cd scripts
-        ./query.sh
+        ./queryTest.sh
 
     # Here's an example of how you'd deploy the image to the github package registry.
     # We don't want to do this by default since packages on github cannot be deleted

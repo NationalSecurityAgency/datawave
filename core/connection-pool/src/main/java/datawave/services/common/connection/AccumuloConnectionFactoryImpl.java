@@ -50,7 +50,7 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
     
     private String defaultPoolName = null;
     
-    private static AccumuloConnectionFactoryImpl factory = null;
+    private static volatile AccumuloConnectionFactoryImpl factory = null;
     
     public static AccumuloConnectionFactory getInstance(AccumuloTableCache cache, ConnectionPoolsProperties config) {
         if (factory == null) {
