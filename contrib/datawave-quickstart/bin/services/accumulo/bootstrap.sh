@@ -25,8 +25,8 @@ DW_BIND_HOST="${DW_BIND_HOST:-localhost}"
 
 # If we are configured to bind to all interfaces, instead bind to the hostname
 # Binding to all interfaces is not available until Accumulo 2.0
-DW_ACCUMULO_BIND_HOST="${DW_BIND_HOST}"
-if [ "$DW_BIND_HOST" == "0.0.0.0" ] ; then
+DW_ACCUMULO_BIND_HOST="${DW_ACCUMULO_BIND_HOST:-${DW_BIND_HOST}}"
+if [ "$DW_ACCUMULO_BIND_HOST" == "0.0.0.0" ] ; then
   DW_ACCUMULO_BIND_HOST="$(hostname)"
 fi
 
@@ -45,7 +45,7 @@ admin.enableServer=false
 
 # You may override DW_ACCUMULO_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
 
-DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://dlcdn.apache.org/accumulo/1.10.2/accumulo-1.10.2-bin.tar.gz}"
+DW_ACCUMULO_DIST_URI="${DW_ACCUMULO_DIST_URI:-https://downloads.apache.org/accumulo/1.10.2/accumulo-1.10.2-bin.tar.gz}"
 DW_ACCUMULO_DIST="$( downloadTarball "${DW_ACCUMULO_DIST_URI}" "${DW_ACCUMULO_SERVICE_DIR}" && echo "${tarball}" )"
 DW_ACCUMULO_BASEDIR="accumulo-install"
 DW_ACCUMULO_SYMLINK="accumulo"
@@ -64,7 +64,7 @@ DW_ACCUMULO_VFS_DATAWAVE_DIR="/datawave/accumulo-vfs-classpath"
 
 # accumulo-site.xml (Format: <property-name><space><property-value>{<newline>})
 
-DW_ACCUMULO_SITE_CONF="instance.volumes ${DW_HADOOP_DFS_URI}/accumulo
+DW_ACCUMULO_SITE_CONF="instance.volumes ${DW_HADOOP_DFS_URI_CLIENT}/accumulo
 instance.zookeeper.host localhost:2181
 instance.secret ${DW_ACCUMULO_PASSWORD}
 tserver.memory.maps.max 385M
@@ -77,7 +77,7 @@ general.classpaths \$ACCUMULO_HOME/lib/accumulo-server.jar,\n\$ACCUMULO_HOME/lib
 
 if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
   DW_ACCUMULO_SITE_CONF="${DW_ACCUMULO_SITE_CONF}
-general.vfs.context.classpath.datawave ${DW_HADOOP_DFS_URI}${DW_ACCUMULO_VFS_DATAWAVE_DIR}/.*.jar"
+general.vfs.context.classpath.datawave ${DW_HADOOP_DFS_URI_CLIENT}${DW_ACCUMULO_VFS_DATAWAVE_DIR}/.*.jar"
 fi
 
 DW_ACCUMULO_CLIENT_CONF="instance.zookeeper.host=localhost:2181"

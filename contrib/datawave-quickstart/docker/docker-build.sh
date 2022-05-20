@@ -187,11 +187,20 @@ function buildDockerImage() {
 
     info "Building Docker image: ${IMAGE_NAME}"
 
-    docker build ${docker_opts} -f ${THIS_DIR}/Dockerfile -t ${IMAGE_NAME} \
+    docker build -m 8g ${docker_opts} -f ${THIS_DIR}/Dockerfile -t ${IMAGE_NAME} \
          --build-arg DATAWAVE_COMMIT_ID=$( git rev-parse --verify HEAD ) \
          --build-arg DATAWAVE_BRANCH_NAME=$( git rev-parse --abbrev-ref HEAD ) \
          --build-arg DATAWAVE_JAVA_HOME="${DW_JAVA_HOME_OVERRIDE}" \
+         --build-arg DATAWAVE_BUILD_PROFILE="${DW_DATAWAVE_BUILD_PROFILE}" \
          ${DATAWAVE_SOURCE_DIR} || fatal "Docker image creation for DataWave Quickstart failed"
+}
+
+function testDockerImage() {
+
+    info "Testing Docker image: ${IMAGE_NAME}"
+
+    docker run -m 8g ${IMAGE_NAME} datawave-bootstrap.sh --test \
+         || fatal "Docker image test for DataWave Quickstart failed"
 }
 
 validateArgs "$@"
@@ -199,6 +208,8 @@ validateArgs "$@"
 prepareBuildContext
 
 buildDockerImage
+
+testDockerImage
 
 cleanBuildContext
 

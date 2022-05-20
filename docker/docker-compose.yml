@@ -1,5 +1,38 @@
 version: '2.2'
+volumes:
+  quickstart_data:
+  hadoop_conf:
+
 services:
+  quickstart:
+    profiles:
+      - quickstart
+    command: ["datawave-bootstrap.sh", "--accumulo"]
+    image: datawave/quickstart-compose:3.21.0-SNAPSHOT
+    environment:
+      - DW_ACCUMULO_BIND_HOST=quickstart
+    ports:
+      # resource manager web ui
+      - "8088:8088"
+      # node manager web ui
+      - "8042:8042"
+      # namenode web ui
+      - "9870:9870"
+      # datanode web ui
+      - "9864:9864"
+      # jobhistory web ui
+      - "8021:8021"
+      # accumulo monitor
+      - "9995:9995"
+    volumes:
+      - hadoop_conf:/opt/datawave/contrib/datawave-quickstart/hadoop/etc/hadoop
+      - quickstart_data:/opt/datawave/contrib/datawave-quickstart/data
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: ["CMD-SHELL", "! accumuloStatus | grep DW-WARN > /dev/null"]
+
   consul:
     image: consul:1.9.8
     hostname: localhost
@@ -157,8 +190,8 @@ services:
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
-      - "ZOOKEEPER_HOST=${DW_HOSTNAME}"
-    # This mapping is required to enable the metrics service to communicate
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+    # This mapping is required to enable the audit service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
     extra_hosts:
@@ -187,7 +220,7 @@ services:
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
-      - "ZOOKEEPER_HOST=${DW_HOSTNAME}"
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -220,7 +253,7 @@ services:
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
-      - "ZOOKEEPER_HOST=${DW_HOSTNAME}"
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -286,10 +319,10 @@ services:
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
-      - "ZOOKEEPER_HOST=${DW_HOSTNAME}"
-      - "HADOOP_HOST=${DW_HOSTNAME}"
-      - "BACKEND=${BACKEND:-kafka}"
-      - HADOOP_CONF_DIR
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+      - HADOOP_HOST=${DW_HADOOP_HOST}
+      - BACKEND=${BACKEND:-kafka}
+      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -303,7 +336,7 @@ services:
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs/pool1:/logs
-      - ${HADOOP_CONF_DIR}:${HADOOP_CONF_DIR}
+      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
     networks:
       - demo
     healthcheck:
@@ -331,10 +364,10 @@ services:
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
-      - "ZOOKEEPER_HOST=${DW_HOSTNAME}"
-      - "HADOOP_HOST=${DW_HOSTNAME}"
-      - "BACKEND=${BACKEND:-kafka}"
-      - HADOOP_CONF_DIR
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+      - HADOOP_HOST=${DW_HADOOP_HOST}
+      - BACKEND=${BACKEND:-kafka}
+      - HADOOP_CONF_DIR=${HADOOP_CONF_DIR:-/etc/hadoop/conf}
     # This mapping is required to enable the metrics service to communicate
     # with host-deployed services like hadoop, zookeeper, and accumulo.
     # These values are set locally in .env via bootstrap.sh
@@ -347,7 +380,7 @@ services:
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs/pool2:/logs
-      - ${HADOOP_CONF_DIR}:${HADOOP_CONF_DIR}
+      - ${HADOOP_CONF_DIR:-hadoop_conf}:${HADOOP_CONF_DIR:-/etc/hadoop/conf}:ro
     networks:
       - demo
     healthcheck:
@@ -371,7 +404,7 @@ services:
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
-      - "ZOOKEEPER_HOST=${DW_HOSTNAME}"
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
     extra_hosts:
       - "${DW_HOSTNAME}:${DW_HOST_IP}"
       - "${DW_HOST_FQDN}:${DW_HOST_IP}"

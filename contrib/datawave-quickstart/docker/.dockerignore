@@ -39,7 +39,7 @@
 
 **/datawave-quickstart/bin/services/accumulo/accumulo-install
 **/datawave-quickstart/bin/services/datawave/datawave-ingest-*
-**/datawave-quickstart/bin/services/datawave/datawave-web-*
+**/datawave-quickstart/bin/services/datawave/datawave-webservice-*
 **/datawave-quickstart/bin/services/hadoop/hadoop-install
 **/datawave-quickstart/bin/services/nifi/nifi-install
 **/datawave-quickstart/bin/services/maven/maven-install

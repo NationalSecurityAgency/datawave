@@ -379,6 +379,11 @@
     <profiles>
         <profile>
             <id>docker</id>
+            <activation>
+                <property>
+                    <name>microservice-docker</name>
+                </property>
+            </activation>
             <build>
                 <plugins>
                     <plugin>

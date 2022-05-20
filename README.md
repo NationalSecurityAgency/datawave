@@ -49,7 +49,7 @@ mvn -Pdocker,dist -P !microservices clean install -T 1C
 
 ### DataWave Microservices
 
-For more information about deploying the datawave microservices, check out the [Microservices Docker Readme](microservices/docker/README.md#usage)
+For more information about deploying the datawave quickstart and microservices, check out the [Docker Readme](docker/README.md#usage)
 
 [li]: http://img.shields.io/badge/license-ASL-blue.svg
 [ll]: https://www.apache.org/licenses/LICENSE-2.0

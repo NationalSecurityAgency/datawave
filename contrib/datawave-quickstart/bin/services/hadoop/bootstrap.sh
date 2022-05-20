@@ -11,15 +11,22 @@ DW_HADOOP_SYMLINK="hadoop"
 # You may override DW_BIND_HOST in your env ahead of time, if needed
 DW_BIND_HOST="${DW_BIND_HOST:-localhost}"
 
-DW_HADOOP_DFS_URI="hdfs://${DW_BIND_HOST}:9000"
+DW_HADOOP_DFS_URI_SERVER="hdfs://${DW_BIND_HOST}:9000"
+DW_HADOOP_DFS_URI_CLIENT="hdfs://${DW_BIND_HOST}:9000"
 DW_HADOOP_MR_INTER_DIR="/jobhist/inter"
 DW_HADOOP_MR_DONE_DIR="/jobhist/done"
-DW_HADOOP_RESOURCE_MANAGER_ADDRESS="${DW_BIND_HOST}:8050"
+DW_HADOOP_RESOURCE_MANAGER_ADDRESS_SERVER="${DW_BIND_HOST}:8050"
+DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT="${DW_BIND_HOST}:8050"
+
+if [ "${DW_BIND_HOST}" == "0.0.0.0" ] ; then
+    DW_HADOOP_DFS_URI_CLIENT="hdfs://localhost:9000"
+    DW_HADOOP_RESOURCE_MANAGER_ADDRESS_CLIENT="localhost:8050"
+fi
 
 HADOOP_HOME="${DW_CLOUD_HOME}/${DW_HADOOP_SYMLINK}"
 
 # core-site.xml (Format: <property-name><space><property-value>{<newline>})
-DW_HADOOP_CORE_SITE_CONF="fs.defaultFS ${DW_HADOOP_DFS_URI}
+DW_HADOOP_CORE_SITE_CONF="fs.defaultFS ${DW_HADOOP_DFS_URI_SERVER}
 hadoop.tmp.dir file:/${DW_CLOUD_DATA}/hadoop/tmp
 io.compression.codecs org.apache.hadoop.io.compress.GzipCodec"
 
@@ -51,7 +58,7 @@ mapreduce.reduce.env HADOOP_MAPRED_HOME=${HADOOP_HOME}"
 DW_HADOOP_YARN_SITE_CONF="yarn.resourcemanager.scheduler.address ${DW_BIND_HOST}:8030
 yarn.resourcemanager.scheduler.class org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler
 yarn.resourcemanager.resource-tracker.address ${DW_BIND_HOST}:8025
-yarn.resourcemanager.address ${DW_HADOOP_RESOURCE_MANAGER_ADDRESS}
+yarn.resourcemanager.address ${DW_HADOOP_RESOURCE_MANAGER_ADDRESS_SERVER}
 yarn.resourcemanager.admin.address ${DW_BIND_HOST}:8033
 yarn.resourcemanager.webapp.address ${DW_BIND_HOST}:8088
 yarn.nodemanager.local-dirs ${DW_CLOUD_DATA}/hadoop/yarn/local
@@ -108,7 +115,7 @@ function hadoopIsRunning() {
 function hadoopStart() {
     hadoopIsRunning && echo "Hadoop is already running" || eval "${DW_HADOOP_CMD_START}"
     echo
-    info "For detailed status visit 'http://localhost:50070/dfshealth.html#tab-overview' in your browser"
+    info "For detailed status visit 'http://localhost:9870/dfshealth.html#tab-overview' in your browser"
     # Wait for Hadoop to come out of safemode
     ${HADOOP_HOME}/bin/hdfs dfsadmin -safemode wait
 }
