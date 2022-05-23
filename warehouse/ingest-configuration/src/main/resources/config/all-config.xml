@@ -36,7 +36,7 @@
 
 <property>
         <description>Properties to include in the accumulo table config cache</description>
-	<name>cached.table.properties</name>
+	<name>cache.table.properties</name>
         <value>table.file.compress.*,table.file.blocksize,table.file.replication,table.iterator.minc.*,crypto.*</value>
 </property>
 
