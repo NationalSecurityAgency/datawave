@@ -50,7 +50,7 @@
         <version.geronimo-stax>1.0.1</version.geronimo-stax>
         <version.jms>1.1</version.jms>
         <version.mrunit>1.0.0</version.mrunit>
-        <version.protobuf>2.5.0</version.protobuf>
+        <version.protobuf>3.16.1</version.protobuf>
     </properties>
     <dependencyManagement>
         <dependencies>
