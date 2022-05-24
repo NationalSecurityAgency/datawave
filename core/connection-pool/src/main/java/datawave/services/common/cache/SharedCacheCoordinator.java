@@ -50,7 +50,7 @@ public class SharedCacheCoordinator implements Serializable {
     private static final String LIVE_SERVERS = "/liveServers";
     private static final long EVICT_MESSAGE_TIMEOUT = 60 * 1000L;
     
-    private Logger log = Logger.getLogger(getClass());
+    private static final Logger log = Logger.getLogger(SharedCacheCoordinator.class);
     private transient CuratorFramework curatorClient;
     private String localName;
     private String serverIdentifierPath;

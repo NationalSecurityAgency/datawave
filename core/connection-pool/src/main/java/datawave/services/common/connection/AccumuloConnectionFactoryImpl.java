@@ -50,13 +50,13 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
     
     private String defaultPoolName = null;
     
-    private static volatile AccumuloConnectionFactoryImpl factory = null;
+    private static AccumuloConnectionFactoryImpl factory = null;
     
     public static AccumuloConnectionFactory getInstance(AccumuloTableCache cache, ConnectionPoolsProperties config) {
         if (factory == null) {
             synchronized (AccumuloConnectionFactoryImpl.class) {
                 if (factory == null) {
-                    factory = new AccumuloConnectionFactoryImpl(cache, config);
+                    setFactory(new AccumuloConnectionFactoryImpl(cache, config));
                 }
             }
         }
@@ -173,10 +173,14 @@ public class AccumuloConnectionFactoryImpl implements AccumuloConnectionFactory 
         }
     }
     
+    private static void setFactory(AccumuloConnectionFactoryImpl factory) {
+        AccumuloConnectionFactoryImpl.factory = factory;
+    }
+    
     @Override
     public void close() {
         synchronized (AccumuloConnectionFactoryImpl.class) {
-            factory = null;
+            setFactory(null);
             for (Entry<String,Map<Priority,AccumuloConnectionPool>> entry : this.pools.entrySet()) {
                 for (Entry<Priority,AccumuloConnectionPool> poolEntry : entry.getValue().entrySet()) {
                     try {
