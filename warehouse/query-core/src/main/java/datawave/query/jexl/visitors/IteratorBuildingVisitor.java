@@ -7,26 +7,15 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.core.iterators.filesystem.FileSystemCache;
-import datawave.data.type.NoOpType;
-import datawave.query.attributes.AttributeFactory;
-import datawave.query.iterator.EventFieldIterator;
-import datawave.query.iterator.ivarator.IvaratorCacheDir;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.core.iterators.querylock.QueryLock;
+import datawave.data.type.NoOpType;
 import datawave.query.Constants;
+import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.iterator.EventFieldIterator;
 import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.logic.OrIterator;
-import datawave.query.jexl.functions.EventFieldAggregator;
-import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.functions.TermFrequencyAggregator;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.predicate.ChainableEventDataQueryFilter;
-import datawave.query.predicate.EventDataQueryExpressionFilter;
-import datawave.query.util.sortedset.FileSortedSet;
-import datawave.util.UniversalSet;
 import datawave.query.iterator.SourceFactory;
 import datawave.query.iterator.SourceManager;
 import datawave.query.iterator.builder.AbstractIteratorBuilder;
@@ -41,6 +30,9 @@ import datawave.query.iterator.builder.IvaratorBuilder;
 import datawave.query.iterator.builder.NegationBuilder;
 import datawave.query.iterator.builder.OrIteratorBuilder;
 import datawave.query.iterator.builder.TermFrequencyIndexBuilder;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.OrIterator;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DatawaveJexlContext;
@@ -50,17 +42,26 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.LiteralRange.NodeOperand;
+import datawave.query.jexl.functions.EventFieldAggregator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
+import datawave.query.predicate.ChainableEventDataQueryFilter;
+import datawave.query.predicate.EventDataQueryExpressionFilter;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.Filter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
 import datawave.query.util.TypeMetadata;
+import datawave.query.util.sortedset.FileSortedSet;
+import datawave.util.UniversalSet;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.data.Key;
@@ -99,7 +100,6 @@ import org.apache.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.MessageFormat;
@@ -123,7 +123,6 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  * A visitor that builds a tree of iterators. The main points are at ASTAndNodes and ASTOrNodes, where the code will build AndIterators and OrIterators,
  * respectively. This will automatically roll up binary representations of subtrees into a generic n-ary tree because there isn't a true mapping between JEXL
  * AST trees and iterator trees. A JEXL tree can have subtrees rooted at an ASTNotNode whereas an iterator tree cannot.
- * 
  */
 public class IteratorBuildingVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(IteratorBuildingVisitor.class);
@@ -166,7 +165,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected boolean allowTermFrequencyLookup = true;
     protected Set<String> indexOnlyFields = Collections.emptySet();
     protected FieldIndexAggregator fiAggregator = new IdentityAggregator(null);
-    
     protected CompositeMetadata compositeMetadata;
     protected int compositeSeekThreshold = 10;
     
@@ -236,7 +234,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTAndNode and, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(and);
-        if (instance.isType(ExceededOrThresholdMarkerJexlNode.class)) {
+        if (instance.isType(ExceededTermThresholdMarkerJexlNode.class)) {
+            // use an Ivarator to get the job done
+        } else if (instance.isType(ExceededOrThresholdMarkerJexlNode.class)) {
             JexlNode source = instance.getSource();
             // if the parent is our ExceededOrThreshold marker, then use an
             // Ivarator to get the job done
@@ -426,7 +426,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
     
     /**
-     *
      * @param data
      */
     private NestedIterator<Key> buildExceededFromTermFrequency(String identifier, JexlNode rootNode, JexlNode sourceNode, LiteralRange<?> range, Object data) {
@@ -886,7 +885,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     /**
      * This method should only be used when we know it is not a term frequency or index only in the limited case, as we will subsequently evaluate this
      * expression during final evaluation
-     * 
+     *
      * @param identifier
      * @param range
      * @return
@@ -1036,7 +1035,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     /**
      * Build a list of potential hdfs directories based on each ivarator cache dir configs.
-     * 
+     *
      * @return A path
      */
     private List<IvaratorCacheDir> getIvaratorCacheDirs() throws IOException {
@@ -1091,7 +1090,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
         builder.negateAsNeeded(data);
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
-        ivarate(builder, rootNode, sourceNode, data);
+        ivarate(builder, rootNode, data);
     }
     
     /**
@@ -1168,12 +1167,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder.negateAsNeeded(data);
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
         
-        ivarate(builder, rootNode, sourceNode, data);
+        ivarate(builder, rootNode, data);
     }
     
     /**
      * Build the iterator stack using the regex ivarator (field index caching regex iterator)
-     * 
+     *
      * @param source
      * @param data
      * @return
@@ -1224,7 +1223,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             throw new DatawaveFatalQueryException(qe);
         }
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
-        ivarate(builder, rootNode, sourceNode, data);
+        ivarate(builder, rootNode, data);
     }
     
     /**
@@ -1253,7 +1252,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}", "ASTFunctionNode"));
             throw new DatawaveFatalQueryException(qe);
         }
-        ivarate(builder, rootNode, sourceNode, data);
+        ivarate(builder, rootNode, data);
     }
     
     protected TermFrequencyAggregator getTermFrequencyAggregator(String identifier, JexlNode node, EventDataQueryFilter attrFilter, int maxNextCount) {
@@ -1360,15 +1359,13 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     /**
      * Set up a builder for an ivarator
-     * 
+     *
      * @param builder
      * @param rootNode
      *            the node that was processed to generated this builder
-     * @param sourceNode
-     *            the source node derived from the root
      * @param data
      */
-    public void ivarate(IvaratorBuilder builder, JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
+    public void ivarate(IvaratorBuilder builder, JexlNode rootNode, Object data) throws IOException {
         builder.setQueryId(queryId);
         builder.setSource(unsortedIvaratorSource);
         builder.setTimeFilter(timeFilter);
@@ -1437,7 +1434,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     
     /**
      * Limits the number of source counts.
-     * 
+     *
      * @param sourceCount
      * @return
      */
