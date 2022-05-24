@@ -6,19 +6,21 @@ package datawave.iterators.filter;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
+import java.util.Arrays;
+
 /**
  * This subclass of the {@code RegexFilterBase} class is used to filter based on the column visibility of the {@code Key} object {@code k}.
  */
 public class ColumnVisibilityOrFilter extends TokenFilterBase {
 
     /**
-     * This method returns a {@code Iterator<String>} iterator of tokens containing the column column visibility parts for {@code Key} object {@code k}
+     * Determine if the key's column visibility matches the regex defined by {@link AgeOffConfigParams#MATCHPATTERN}
      *
      * @param k
      *            {@code Key} object containing the row, column family, and column qualifier.
      * @param v
      *            {@code Value} object containing the value corresponding to the {@code Key: k}
-     * @return {@code String} object containing the column visibility of {@code k}
+     * @return true if the provided key's column visibility matches the configured {@link TokenFilterBase}'s pattern
      */
     @Override
     public boolean hasToken(Key k, Value v, byte[][] testTokens) {
@@ -26,11 +28,19 @@ public class ColumnVisibilityOrFilter extends TokenFilterBase {
 
         byte[] cv = k.getColumnVisibilityData().getBackingArray();
 
-        int start = -1;
-        int end = -1;
+        if (prevCVBytes == null) {
+            prevCVBytes = cv; // first time, record cv
+        } else if (Arrays.equals(prevCVBytes, cv)) {
+            // ruleApplied was reset before the call to hasToken
+            setRuleApplied(true);
+            return prevDecision; // return cached decision
+        } else {
+            prevCVBytes = cv; // new cv found, record it
+        }
 
         // find the start of the first token to test
-        start = findNextNonDelimiter(cv, end + 1);
+        int start = findNextNonDelimiter(cv, 0);
+        int end;
 
         // while not past the end and our test token was not found
         while (start < cv.length && !found) {
@@ -54,7 +64,8 @@ public class ColumnVisibilityOrFilter extends TokenFilterBase {
             }
         }
 
-        return found;
+        prevDecision = found;
+        return prevDecision;
     }
 
 }

@@ -24,13 +24,17 @@ public abstract class TokenFilterBase extends AppliedRule {
     private byte[][] patternBytes;
     private boolean ruleApplied;
 
+    // record if the column visibility contained the tokens specified by the filter
+    protected byte[] prevCVBytes;
+    protected boolean prevDecision;
+
     // These are the possible delimiters in a column visibility exception for the double quote. NOTE, this is fragile
     // but currently there is no way to get this list out of the accumulo ColumnVisibility class.
     private static final byte[] DELIMITERS = "|&()".getBytes();
 
     /**
-     * This method is to be implemented by sub-classes of this class. It should return the tokens that needs to be tested against a test token for the instance
-     * of this class.
+     * This method is to be implemented by sub-classes of this class. Child classes should test the provided tokens against the provided key's column visibility
+     * and return true if the pattern was satisfied.
      *
      * @param k
      *            {@code Key} object containing the row, column family, and column qualifier.
@@ -38,7 +42,7 @@ public abstract class TokenFilterBase extends AppliedRule {
      *            {@code Value} object containing the value corresponding to the {@code Key: k}
      * @param testTokens
      *            the tokens to search for (or vs and rules defined by the underlying class)
-     * @return {@code boolean} True of the test token was found
+     * @return {@code boolean} True if the key satisfies the pattern(s)
      */
     public abstract boolean hasToken(Key k, Value v, byte[][] testTokens);
 
@@ -128,6 +132,12 @@ public abstract class TokenFilterBase extends AppliedRule {
             }
         }
         ruleApplied = false;
+        prevCVBytes = null;
+        prevDecision = false;
+    }
+
+    protected void setRuleApplied(boolean ruleApplied) {
+        this.ruleApplied = ruleApplied;
     }
 
     @Override
