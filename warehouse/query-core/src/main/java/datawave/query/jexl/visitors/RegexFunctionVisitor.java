@@ -41,7 +41,9 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T expandRegex(ShardQueryConfiguration config, MetadataHelper metadataHelper, Set<String> nonEventFields, T script) {
         RegexFunctionVisitor visitor = new RegexFunctionVisitor(config, metadataHelper, nonEventFields);
-        return (T) script.jjtAccept(visitor, null);
+        JexlNode root = (T) script.jjtAccept(visitor, null);
+        root = TreeFlatteningRebuildingVisitor.flatten(root);
+        return (T) root;
     }
     
     @Override

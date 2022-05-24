@@ -2,11 +2,14 @@ package datawave.query.jexl.visitors;
 
 import com.google.common.collect.Sets;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -137,5 +140,12 @@ public class RegexFunctionVisitorTest {
         
         // Verify the original script was not modified and has a valid lineage.
         JexlNodeAssert.assertThat(originalScript).isEqualTo(original).hasValidLineage();
+        
+        // assert that the result script is valid
+        try {
+            ASTValidator.isValid(actual);
+        } catch (InvalidQueryTreeException e) {
+            Assert.fail("Invalid query tree detected for script: " + JexlStringBuildingVisitor.buildQueryWithoutParse(actual));
+        }
     }
 }
