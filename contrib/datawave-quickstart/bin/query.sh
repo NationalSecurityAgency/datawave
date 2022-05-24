@@ -456,7 +456,6 @@ function configureUserIdentity() {
     DW_CURL_KEY="${DW_PKI_TMP_DIR}/testUser.key"
     DW_CURL_KEY_RSA="${DW_PKI_TMP_DIR}/testUser.key.rsa"
     DW_CURL_CA="${DW_PKI_TMP_DIR}/testUser.ca"
-    #local opensslVersion3="$( openssl version | awk '{ print $2}' | grep -E ^3\. )"
 
     [ -d "${DW_PKI_TMP_DIR}" ] && return 0 # Already configured
 
