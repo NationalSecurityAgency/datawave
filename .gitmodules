@@ -82,3 +82,7 @@
 	path = microservices/starters/query
 	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-query.git
 	branch = feature/queryMicroservices
+[submodule "microservices/starters/metadata"]
+	path = microservices/starters/metadata
+	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-metadata.git
+	branch = feature/queryMicroservices
