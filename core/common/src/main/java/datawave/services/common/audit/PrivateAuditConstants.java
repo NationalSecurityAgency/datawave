@@ -2,6 +2,9 @@ package datawave.services.common.audit;
 
 import org.springframework.util.MultiValueMap;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Constants marking private parameters that are computed internally and then added at runtime to the incoming query parameters for the purposes of passing them
  * along to the audit service.
@@ -15,7 +18,7 @@ public class PrivateAuditConstants {
     public static final String USER_DN = PREFIX + "userDn";
     public static final String SELECTORS = PREFIX + "selectors";
     
-    public static void stripPrivateParameters(MultiValueMap<String,String> queryParameters) {
+    public static void stripPrivateParameters(Map<String,List<String>> queryParameters) {
         queryParameters.entrySet().removeIf(entry -> entry.getKey().startsWith(PREFIX));
     }
 }

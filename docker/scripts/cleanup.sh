@@ -18,3 +18,6 @@ rm -r -f errorFieldIndexCount_*
 rm -r -f poundit_*
 rm -r -f executor_*
 rm -r -f termFrequency_*
+rm -r -f edgeEvent_*
+rm -r -f hitHighlights_*
+rm -r -f metrics_*

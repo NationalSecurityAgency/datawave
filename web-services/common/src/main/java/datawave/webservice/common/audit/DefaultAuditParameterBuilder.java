@@ -1,6 +1,7 @@
 package datawave.webservice.common.audit;
 
 import datawave.microservice.query.QueryParameters;
+import datawave.services.common.audit.PrivateAuditConstants;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -218,15 +218,15 @@ public class SequentialScheduler extends Scheduler {
     
     @Override
     public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
+        if (null == this.config) {
+            throw new IllegalArgumentException("Null configuration provided");
+        }
         if (!config.isCheckpointable()) {
             throw new UnsupportedOperationException("Cannot checkpoint a scheduler which is not checkpointable");
         }
         if (this.iterator != null) {
             return this.iterator.checkpoint(queryKey);
         } else {
-            if (null == this.config) {
-                throw new IllegalArgumentException("Null configuration provided");
-            }
             return Lists.newArrayList(new QueryCheckpoint(queryKey, config.getQueries()));
         }
     }

@@ -889,7 +889,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setDatatypeFilter(Set<String> typeFilter) {
-        if (typeFilter.isEmpty()) {
+        if (typeFilter == null || typeFilter.isEmpty()) {
             this.datatypeFilter = UniversalSet.instance();
         } else {
             this.datatypeFilter = typeFilter;
@@ -2501,7 +2501,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     // Part of the Serializable interface used to initialize any transient members during deserialization
-    private Object readResolve() throws ObjectStreamException {
+    protected Object readResolve() throws ObjectStreamException {
         this.timers = new QueryStopwatch();
         this.fstCount = new AtomicInteger(0);
         return this;

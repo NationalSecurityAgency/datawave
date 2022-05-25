@@ -131,25 +131,22 @@ In order for the following bootstrap step to work properly, you should ensure th
 
 #### Docker
 
-These services have been successfully deployed using the following versions of docker and docker-compose.
+These services have been successfully deployed using the following versions of docker and docker compose.
 
 ```
 $> docker --version
-Docker version 20.10.3, build 48d30b5
-$> docker-compose version
-docker-compose version 1.28.4, build cabd5cfb
-docker-py version: 4.4.3
-CPython version: 3.7.10
-OpenSSL version: OpenSSL 1.1.0l  10 Sep 2019
+Docker version 20.10.16, build aa7e414
+$> docker compose version
+Docker Compose version v2.5.0
 ```
 
 #### Datawave Quickstart
 
-Prior to starting docker-compose, you need to use the Qatawave Quickstart to deploy working instances of Hadoop, Zookeeper, and Accumulo, along with some sample datasets for query.
+Prior to starting docker compose, you need to use the Qatawave Quickstart to deploy working instances of Hadoop, Zookeeper, and Accumulo, along with some sample datasets for query.
 
 There are two methods for deploying the Datawave Quickstart.  
 
- - **default**: Deploys the Datawave Quickstart as a docker container within docker-compose.
+ - **default**: Deploys the Datawave Quickstart as a docker container within docker compose.
 
  - **hybrid**: Deploys the Datawave Quickstart directly on your host system.
 
@@ -167,12 +164,12 @@ mvn -Pcompose -P-microservices -Dquickstart-docker -Ddeploy -Dtar -Ddist -DskipT
 Note that the quickstart-docker property is set.  This property is a shortcut which activates the `docker` and `quickstart` profiles without activating the `docker` profile for the microservices.
 
 For this command, the build profile is set to `compose`.  This profile contains all of the properties needed to make the quickstart work as part
-of the docker-compose deployment.  The use of any other build profile with docker-compose is unsupported.
+of the docker compose deployment.  The use of any other build profile with docker compose is unsupported.
 
 This command also disabled the `microservices` profile.  This is an optional setting which will skip the microservice builds entirely, saving you some time if you only want to build/rebuild the Datawave Quickstart.  
 
 If you ever need to rebuild the Datawave quickstart docker image, but don't want to ingest the sample data you can add `-DskipIngest` to 
-your build command.  This can save you some time, since the docker-compose configuration stores ingested data in a persistent volume.
+your build command.  This can save you some time, since the docker compose configuration stores ingested data in a persistent volume.
 
 If desired, you can start and test the wildfly deployment embedded in the Datawave Quickstart by running the following command:
 ```
@@ -205,12 +202,12 @@ allInstall
 # Start Accumulo and its dependencies
 accumuloStart
 
-# At this point, you are ready to deploy and test the query microservices via docker-compose
+# At this point, you are ready to deploy and test the query microservices via docker compose
 
 # If desired, start the wildfly webservice, and run some diagnostic tests
 datawaveWebStart && datawaveWebTest
 
-# Make sure to stop the wildfly webservice before starting the query microservices via docker-compose
+# Make sure to stop the wildfly webservice before starting the query microservices via docker compose
 datawaveWebStop
 ```
 
@@ -288,60 +285,60 @@ DW_HADOOP_HOST="<Your hostname>"
 
 Start the default services (with the Kafka as the backend):
 
-```docker-compose up -d```
+```docker compose up -d```
 
 Start the default services (with RabbitMQ as the backend):
 
-```BACKEND=rabbitmq docker-compose up -d```
+```BACKEND=rabbitmq docker compose up -d```
 
 Start the default services (with Hazelcast as the backend):
 
-```BACKEND=hazelcast docker-compose up -d```
+```BACKEND=hazelcast docker compose up -d```
 
 Start the default services, and the dictionary service:
 
-```docker-compose --profile quickstart --profile dictionary up -d```
+```docker compose --profile quickstart --profile dictionary up -d```
 
 Start the default services, the kafka services, and the dictionary service:
 
-```docker-compose --profile quickstart --profile dictionary --profile kafka up -d```
+```docker compose --profile quickstart --profile dictionary --profile kafka up -d```
 
 Start all services:
 
-```docker-compose --profile quickstart --profile full up -d```
+```docker compose --profile quickstart --profile full up -d```
 
 ### View logs
 
 For everything:
 
-```docker-compose logs -f```
+```docker compose logs -f```
 
 For a specific service:
 
-```docker-compose logs -f audit```
+```docker compose logs -f audit```
 
 ### Stop services
 
 Stop the configured services
 
-```docker-compose down```
+```docker compose down```
 
 Stop the configured services, and delete all volumes
 
-```docker-compose down -v```
+```docker compose down -v```
 
 Stop all services, including ones that are no longer enabled
 
-```docker-compose down --remove-orphans```
+```docker compose down --remove-orphans```
 
 ### Restart a service and pull an updated image
 
 ```
-docker-compose stop audit
-docker-compose rm -f audit
-docker-compose up -d
+docker compose stop audit
+docker compose rm -f audit
+docker compose up -d
 ```
 
 ### Restart a service without pulling an updated image
 
-```docker-compose restart <servicename>```
+```docker compose restart <servicename>```

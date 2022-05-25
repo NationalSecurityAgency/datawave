@@ -91,6 +91,9 @@ i=1
 
 QUERY_ID=$(get_query_id < createResponse.xml)
 
+TOTAL_EVENTS=0
+TOTAL_PAGES=0
+
 while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
     if [ "$PAUSE" == "true" ]; then
         echo "press any key to continue"
@@ -109,12 +112,20 @@ while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
         i=-1
     else
         NUM_EVENTS=$(get_num_events < nextResponse_$i.xml)
+        TOTAL_EVENTS=$((TOTAL_EVENTS + NUM_EVENTS))
+        TOTAL_PAGES=$((TOTAL_PAGES + 1))
         echo "$(date): Page $i contained $NUM_EVENTS events"
         echo "$(date): Page $i contained $NUM_EVENTS events" >> querySummary.txt
 
         ((i++))
     fi
 done
+
+echo "$(date): Returned $TOTAL_PAGES pages"
+echo "$(date): Returned $TOTAL_PAGES pages" >> querySummary.txt
+
+echo "$(date): Returned $TOTAL_EVENTS events"
+echo "$(date): Returned $TOTAL_EVENTS events" >> querySummary.txt
 
 echo "$(date): Closing $QUERY_ID"
 echo "$(date): Closing $QUERY_ID" >> querySummary.txt

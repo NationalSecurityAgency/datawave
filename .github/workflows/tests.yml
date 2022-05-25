@@ -138,9 +138,9 @@ jobs:
         mvn -B -V -e -Pcompose,docker,quickstart -Ddeploy -Dtar -DskipTests clean install
         cd docker
         ./bootstrap.sh
-        docker-compose up -d
+        docker compose up -d
         cd scripts
-        ./queryTest.sh
+        ./testAll.sh
 
     # Here's an example of how you'd deploy the image to the github package registry.
     # We don't want to do this by default since packages on github cannot be deleted
