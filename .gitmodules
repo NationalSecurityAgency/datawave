@@ -90,3 +90,7 @@
 	path = microservices/services/query
 	url = git@github.com:NationalSecurityAgency/datawave-query-service.git
 	branch = feature/queryMicroservices
+[submodule "microservices/services/query-executor"]
+	path = microservices/services/query-executor
+	url = git@github.com:NationalSecurityAgency/datawave-query-executor-service.git
+	branch = feature/queryMicroservices
