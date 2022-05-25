@@ -84,4 +84,3 @@ $SCRIPT_DIR/cleanup.sh
 
 echo
 echo "All tests SUCCEEDED!"
-exit 1
