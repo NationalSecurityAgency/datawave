@@ -84,15 +84,18 @@ public class WiredQueryExecutorBeanTest {
         Assert.assertNotNull(defaultQueryPlanner);
     }
     
+    // This test ensures that we can
+    // 1) generate a query logic via xml configuration
+    // 2) inject an xml generated reference bean into the generated query logic
     @Test
     public void testCreatingPrototypeBeans() {
         String[] names = ctx.getBeanNamesForType(QueryLogic.class);
         for (String name : names) {
             QueryLogic<?> ql = ctx.getBean(name, QueryLogic.class);
-            if (ql.getRequiredRoles() == null) {
-                log.error("role manager is null for " + name + " and " + ql + " named " + ql.getLogicName() + " and " + ql.getClass());
+            if (ql.getResponseObjectFactory() == null) {
+                log.error("response object factory is null for " + name + " and " + ql + " named " + ql.getLogicName() + " and " + ql.getClass());
             }
-            Assert.assertNotNull(ql.getRequiredRoles());
+            Assert.assertNotNull(ql.getResponseObjectFactory());
             log.debug("got " + ql);
         }
     }
