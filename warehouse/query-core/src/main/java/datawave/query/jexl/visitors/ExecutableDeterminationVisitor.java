@@ -1,13 +1,13 @@
 package datawave.query.jexl.visitors;
 
+import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.Constants;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -23,13 +23,13 @@ import org.apache.commons.jexl2.parser.ASTBitwiseComplNode;
 import org.apache.commons.jexl2.parser.ASTBitwiseOrNode;
 import org.apache.commons.jexl2.parser.ASTBitwiseXorNode;
 import org.apache.commons.jexl2.parser.ASTBlock;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTConstructorNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTDivNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTEmptyFunction;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTFalseNode;
 import org.apache.commons.jexl2.parser.ASTFloatLiteral;
 import org.apache.commons.jexl2.parser.ASTForeachStatement;
@@ -76,14 +76,13 @@ import java.util.Set;
 
 /**
  * Determine if a node can be processed against the global index and/or the field index
- * 
+ * <p>
  * A node can be processed against the field index if it is not a ER/NR/LE/LT/GE/GT node (unless surrounded by an ivarator expression).
- * 
+ * <p>
  * A node can be processed against the global index if it is not a ER,NR,LE,LT,GE,GT,NOT, or NE (unless surrounded by an ivarator expression).
- * 
+ * <p>
  * In general an OR can be processed if it is completely composed of expressions that can be processed. An AND can be processed it at least one of its children
  * can be processed.
- * 
  */
 public class ExecutableDeterminationVisitor extends BaseVisitor {
     
@@ -153,7 +152,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     
     /**
      * Negate the current data object
-     * 
+     *
      * @param data
      *            the data passed along to the visitor, may be null or a string
      * @return NEGATION_PREFIX if the string was null or the old string appended with NEGATION_PREFIX
@@ -168,7 +167,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     
     /**
      * Determine if a node is in a negated state or not
-     * 
+     *
      * @param data
      *            the data passed along to the visitor. Should be either null or a string containing ! for each negation
      * @return true if the statement is negated, false otherwise
@@ -471,7 +470,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         // until we implement an ivarator that can handle an ExceededTermThreshold node, and ensure that the JexlContext gets
         // _ANYFIELD_ values, then we cannot execute these nodes
         if (instance.isType(ExceededTermThresholdMarkerJexlNode.class)) {
-            state = STATE.NON_EXECUTABLE;
+            state = STATE.ERROR;
             if (output != null) {
                 output.writeLine(data + node.toString() + "( Exceeded Term Threshold ) -> " + state);
             }
