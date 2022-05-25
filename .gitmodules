@@ -78,3 +78,7 @@
 	path = core/in-memory-accumulo
 	url = git@github.com:NationalSecurityAgency/datawave-in-memory-accumulo.git
 	branch = feature/queryMicroservices
+[submodule "microservices/starters/query"]
+	path = microservices/starters/query
+	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-query.git
+	branch = feature/queryMicroservices
