@@ -68,7 +68,7 @@ runTest batchLookupContent.sh 4
 runTest count.sh 12 2
 runTest discovery.sh 2 1
 # runTest edge.sh 0 0
-runTest edgeEvent.sh 1 1
+# runTest edgeEvent.sh 1 1
 runTest errorCount.sh 1 1
 runTest errorDiscovery.sh 1 1
 runTest errorFieldIndexCount.sh 1 1
