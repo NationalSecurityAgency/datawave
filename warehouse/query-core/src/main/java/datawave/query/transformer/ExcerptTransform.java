@@ -67,7 +67,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             // Do not bother adding excerpts to transient documents.
             if (document.isToKeep()) {
                 PhraseIndexes phraseIndexes = getPhraseIndexes(document);
-                if (phraseIndexes != null) {
+                if (!phraseIndexes.isEmpty()) {
                     if (log.isTraceEnabled()) {
                         log.trace("Fetching phrase excerpts " + excerptFields + " for document " + document.getMetadata());
                     }
@@ -120,7 +120,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             }
         }
         // return the file set of phrase indexes if any
-        return (allPhraseIndexes.isEmpty() ? null : allPhraseIndexes);
+        return allPhraseIndexes;
     }
     
     /**
