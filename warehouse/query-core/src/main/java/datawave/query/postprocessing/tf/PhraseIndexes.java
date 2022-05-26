@@ -95,7 +95,7 @@ public class PhraseIndexes {
             Iterator<Triplet<String,Integer,Integer>> indices = map.get(field).iterator();
             while (indices.hasNext()) {
                 Triplet<String,Integer,Integer> indice = indices.next();
-                // if we have gone past the end, then no more possiblility of overlapping
+                // if we have gone past the end, then no more possibility of overlapping
                 if (indice.getValue1() > end) {
                     break;
                 }
@@ -240,7 +240,7 @@ public class PhraseIndexes {
         for (String field : getFields()) {
             Map<String,PhraseIndexes> fieldMap = new HashMap<>();
             map.put(field, fieldMap);
-            for (String eventId : getIndices(field).stream().map(t -> t.getValue0()).collect(Collectors.toSet())) {
+            for (String eventId : getIndices(field).stream().map(Triplet::getValue0).collect(Collectors.toSet())) {
                 fieldMap.put(eventId, getSubset(field, eventId));
             }
         }

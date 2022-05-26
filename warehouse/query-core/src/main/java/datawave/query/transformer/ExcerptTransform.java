@@ -42,7 +42,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     public static final String HIT_EXCERPT = "HIT_EXCERPT";
     
     private final Map<String,String> excerptIteratorOptions = new HashMap<>();
-    private final TermFrequencyExcerptIterator excerptIterator;
+    private final SortedKeyValueIterator<Key,Value> excerptIterator;
     private final ExcerptFields excerptFields;
     private final IteratorEnvironment env;
     private final SortedKeyValueIterator<Key,Value> source;
@@ -51,8 +51,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         this(excerptFields, env, source, new TermFrequencyExcerptIterator());
     }
     
-    protected ExcerptTransform(ExcerptFields excerptFields, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source,
-                    TermFrequencyExcerptIterator excerptIterator) {
+    public ExcerptTransform(ExcerptFields excerptFields, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source,
+                    SortedKeyValueIterator<Key,Value> excerptIterator) {
         this.excerptFields = excerptFields;
         this.env = env;
         this.source = source;
@@ -104,16 +104,16 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         if (document.containsKey(JexlEvaluation.HIT_TERM_FIELD)) {
             Attributes hitList = (Attributes) document.get(JexlEvaluation.HIT_TERM_FIELD);
             // for each hit term
-            for (Attribute a : hitList.getAttributes()) {
-                ValueTuple hitTuple = attributeToHitTuple(a);
+            for (Attribute<?> attr : hitList.getAttributes()) {
+                ValueTuple hitTuple = attributeToHitTuple(attr);
                 // if this is for a requested excerpt field
-                if (excerptFields.getFields().contains(hitTuple.getFieldName())) {
+                if (excerptFields.containsField(hitTuple.getFieldName())) {
                     // get the offset, preferring offsets that overlap with existing phrases for this field/eventId
                     TermWeightPosition pos = getOffset(hitTuple, phraseIndexMap);
                     if (pos != null) {
                         // add the term as a phrase as defined in the term weight position. Note that this will collapse with any overlapping phrases already in
                         // the list.
-                        allPhraseIndexes.addIndexTriplet(String.valueOf(hitTuple.getFieldName()), keyToEventId(a.getMetadata()), pos.getLowOffset(),
+                        allPhraseIndexes.addIndexTriplet(String.valueOf(hitTuple.getFieldName()), keyToEventId(attr.getMetadata()), pos.getLowOffset(),
                                         pos.getOffset());
                     }
                 }
@@ -143,16 +143,10 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         String fieldName = hitTuple.getFieldName();
         String eventId = keyToEventId(docKey);
         
-        // pull out the appropriate phrase indexes for this field/event id
-        PhraseIndexes phraseIndexes = null;
-        if (phraseIndexMap.containsKey(hitTuple.getFieldName())) {
-            phraseIndexes = phraseIndexMap.get(fieldName).get(eventId);
-        }
-        
         // get the key at which we would find the term frequencies
         Key tfKey = new Key(docKey.getRow().toString(), Constants.TERM_FREQUENCY_COLUMN_FAMILY.toString(), docKey.getColumnFamily().toString() + '\u0000'
-                        + hitTuple.getValue());
-        Range range = new Range(tfKey, tfKey);
+                        + hitTuple.getValue() + '\u0000' + hitTuple.getFieldName());
+        Range range = new Range(tfKey, tfKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL));
         try {
             // seek directly to that key
             source.seek(range, Collections.emptyList(), false);
@@ -162,13 +156,17 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 TermWeightPosition.Builder position = new TermWeightPosition.Builder();
                 
                 // if we have phrase indexes, then find one that overlaps if any
-                if (phraseIndexes != null) {
-                    for (int i = 0; i < twInfo.getTermOffsetCount(); i++) {
-                        position.setTermWeightOffsetInfo(twInfo, i);
-                        TermWeightPosition pos = position.build();
-                        if (phraseIndexes.getOverlap(fieldName, eventId, pos.getLowOffset(), pos.getOffset()) != null) {
-                            // if we have an overlapping phrase, then return this position
-                            return pos;
+                // pull out the appropriate phrase indexes for this field/event id
+                if (phraseIndexMap.containsKey(hitTuple.getFieldName())) {
+                    PhraseIndexes phraseIndexes = phraseIndexMap.get(fieldName).get(eventId);
+                    if (phraseIndexes != null) {
+                        for (int i = 0; i < twInfo.getTermOffsetCount(); i++) {
+                            position.setTermWeightOffsetInfo(twInfo, i);
+                            TermWeightPosition pos = position.build();
+                            if (phraseIndexes.getOverlap(fieldName, eventId, pos.getLowOffset(), pos.getOffset()) != null) {
+                                // if we have an overlapping phrase, then return this position
+                                return pos;
+                            }
                         }
                     }
                 }
@@ -192,7 +190,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * @param source
      * @return A ValueTuple representation of the document hit-term attribute
      */
-    private ValueTuple attributeToHitTuple(Attribute source) {
+    private ValueTuple attributeToHitTuple(Attribute<?> source) {
         String hitTuple = String.valueOf(source.getData());
         int index = hitTuple.indexOf(':');
         String fieldName = hitTuple.substring(0, index);

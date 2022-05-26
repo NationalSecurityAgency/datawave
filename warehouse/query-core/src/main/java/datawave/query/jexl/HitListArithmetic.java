@@ -559,6 +559,14 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         }
     }
     
+    public static ColumnVisibility getColumnVisibilityForHit(Document document, String hitTerm) {
+        Attribute attr = getAttributeForHit(document, hitTerm);
+        if (attr != null) {
+            return attr.getColumnVisibility();
+        }
+        return null;
+    }
+    
     public static Attribute getAttributeForHit(Document document, String hitTerm) {
         // get the visibility for the record with this hit
         // split the term:
