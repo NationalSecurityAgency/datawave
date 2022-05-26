@@ -14,7 +14,9 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.util.TableName;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.cache.QueryExpirationConfiguration;
 import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 import datawave.webservice.query.runner.RunningQuery;
@@ -172,7 +174,11 @@ public class LongRunningQueryTest {
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
+        QueryExpirationConfiguration qeConfig = new QueryExpirationConfiguration();
+        qeConfig.setMaxLongRunningTimeoutRetries(10); // up the max retries since we are setting hte queryExecutionForPageTimeout so low (it's only 1)
+        RunningQuery.RunningQueryTiming timing = new RunningQueryTimingImpl(qeConfig, 0);
+        
+        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, timing,
                         Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
@@ -284,7 +290,11 @@ public class LongRunningQueryTest {
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
+        QueryExpirationConfiguration qeConfig = new QueryExpirationConfiguration();
+        qeConfig.setMaxLongRunningTimeoutRetries(10); // up the max retries since we are setting hte queryExecutionForPageTimeout so low (it's only 1)
+        RunningQuery.RunningQueryTiming timing = new RunningQueryTimingImpl(qeConfig, 0);
+        
+        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, timing,
                         Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
