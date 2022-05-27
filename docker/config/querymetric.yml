@@ -94,7 +94,7 @@ hazelcast:
           <!-- Evict the least frequently used entries first if we run out of space and allow 2GB for each cluster node to store data -->
           <eviction eviction-policy="LFU" max-size-policy="USED_HEAP_SIZE" size="2048"/>
           <map-store enabled="true" initial-mode="LAZY">
-            <factory-class-name>datawave.microservice.querymetric.peristence.AccumuloMapStore$Factory</factory-class-name>
+            <factory-class-name>datawave.microservice.querymetric.persistence.AccumuloMapStore$Factory</factory-class-name>
             <write-delay-seconds>1</write-delay-seconds>
             <write-batch-size>1000</write-batch-size>
           </map-store>
@@ -112,7 +112,7 @@ hazelcast:
           <!-- Evict the least frequently used entries first if we run out of space and allow 2GB for each cluster node to store data -->
           <eviction eviction-policy="LFU" max-size-policy="USED_HEAP_SIZE" size="2048"/>
           <map-store enabled="true" initial-mode="LAZY">
-            <factory-class-name>datawave.microservice.querymetric.peristence.AccumuloMapLoader$Factory</factory-class-name>
+            <factory-class-name>datawave.microservice.querymetric.persistence.AccumuloMapLoader$Factory</factory-class-name>
           </map-store>
         </map>
       </hazelcast>
