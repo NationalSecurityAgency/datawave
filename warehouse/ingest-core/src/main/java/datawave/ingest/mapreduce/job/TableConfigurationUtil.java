@@ -56,6 +56,7 @@ public class TableConfigurationUtil {
     public static final String TABLES_CONFIGS_TO_CACHE = "tables.configs.to.cache";
     public static final String TABLE_PROPERTIES_TO_CACHE = "cache.table.properties";
     public static final String TABLE_CONFIGURATION_PROPERTY = ".table.accumulo.configuration";
+    public static final String JOB_INPUT_TABLE_NAMES = "job.input.table.names";
     public static final String JOB_OUTPUT_TABLE_NAMES = "job.output.table.names";
     private Set<String> tableNames = new HashSet<>();
     private AccumuloHelper accumuloHelper;
@@ -77,7 +78,7 @@ public class TableConfigurationUtil {
         return tableNames;
     }
     
-    public Set<String> getJobTableNames() {
+    public static Set<String> getJobOutputTableNames(Configuration conf) {
         HashSet tableNames = new HashSet<>();
         
         String[] outputTables = conf.getStrings(JOB_OUTPUT_TABLE_NAMES);
@@ -508,7 +509,7 @@ public class TableConfigurationUtil {
         // setup and options in a map so that we can group together all of the options for each
         // iterator.
         
-        Set<String> configuredTables = getJobTableNames();
+        Set<String> configuredTables = getJobOutputTableNames(conf);
         
         if (!configuredTables.isEmpty()) {
             for (String table : configuredTables) {

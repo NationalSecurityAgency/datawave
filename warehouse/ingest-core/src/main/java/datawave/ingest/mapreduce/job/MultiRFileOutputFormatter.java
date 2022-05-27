@@ -354,7 +354,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     
     // Get the table list
     protected Set<String> getTableList() {
-        Set<String> tableList = new HashSet<>(TableConfigurationUtil.extractTableNames(conf));
+        Set<String> tableList = TableConfigurationUtil.getJobOutputTableNames(conf);
         
         String configNames = conf.get(CONFIGURED_TABLE_NAMES, "");
         if (log.isInfoEnabled())
@@ -378,7 +378,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
         
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
         
-        tableIds = tcu.getJobTableNames();
+        tableIds = tcu.getJobOutputTableNames(conf);
         Set<String> compressionTableBlackList = getCompressionTableBlackList(conf);
         String compressionType = getCompressionType(conf);
         for (String tableName : tableIds) {

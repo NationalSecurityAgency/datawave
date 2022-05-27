@@ -105,8 +105,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         configureReductionInterface(conf);
         
         // turn off aggregation for tables so configured
-        // todo: this should probably use JOB_OUTPUT_TABLES instead of assuming what the job wants the tables from the handlers, etc
-        for (String table : TableConfigurationUtil.extractTableNames(conf)) {
+        for (String table : TableConfigurationUtil.getJobOutputTableNames(conf)) {
             useAggregators.put(new Text(table), conf.getBoolean(table + USE_AGGREGATOR_PROPERTY, true));
         }
         
@@ -132,7 +131,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         // to a map of table => priority list of column=>class mappings. Users can just call the
         // method getAggregator with a key, and get back a list of aggregators that should be applied
         // to the corresponding value. The return list aggregators should be applied in order.
-        Set<String> tables = tcu.getJobTableNames();
+        Set<String> tables = tcu.getJobOutputTableNames(conf);
         for (String table : tables) {
             Map<Integer,Map<String,String>> priorityOptions = tcu.getTableCombiners(table);
             if (priorityOptions != null) {
@@ -195,7 +194,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         // to a map of table => priority list of column=>class mappings. Users can just call the
         // method getAggregator with a key, and get back a list of aggregators that should be applied
         // to the corresponding value. The return list aggregators should be applied in order.
-        Set<String> tables = tcu.getJobTableNames();
+        Set<String> tables = tcu.getJobOutputTableNames(conf);
         for (String table : tables) {
             log.info(table);
             
