@@ -157,7 +157,10 @@ services:
       - demo
     healthcheck:
       test: curl -f http://localhost:8080/cache/mgmt/health
+      interval: 10s
+      timeout: 10s
       start_period: 36s
+      retries: 9
     depends_on:
       configuration:
         condition: service_started
@@ -179,7 +182,10 @@ services:
       - demo
     healthcheck:
       test: curl -f http://localhost:8080/authorization/mgmt/health
+      interval: 10s
+      timeout: 10s
       start_period: 16s
+      retries: 9
     depends_on:
       cache:
         condition: service_healthy
@@ -209,7 +215,10 @@ services:
       - demo
     healthcheck:
       test: curl -f http://localhost:8080/audit/mgmt/health
+      interval: 10s
+      timeout: 10s
       start_period: 24s
+      retries: 9
     depends_on:
       authorization:
         condition: service_healthy
@@ -241,7 +250,10 @@ services:
       - demo
     healthcheck:
       test: curl -f http://localhost:8080/querymetric/mgmt/health
+      interval: 10s
+      timeout: 10s
       start_period: 39s
+      retries: 9
     depends_on:
       authorization:
         condition: service_healthy
@@ -300,7 +312,10 @@ services:
       - demo
     healthcheck:
       test: curl -f http://localhost:8080/query/mgmt/health
+      interval: 10s
+      timeout: 10s
       start_period: 20s
+      retries: 9
     depends_on:
       audit:
         condition: service_healthy
@@ -346,7 +361,10 @@ services:
       - demo
     healthcheck:
       test: curl -f http://localhost:8080/executor-pool1/mgmt/health
+      interval: 10s
+      timeout: 10s
       start_period: 24s
+      retries: 9
     depends_on:
       rabbitmq:
         condition: service_started
@@ -391,7 +409,10 @@ services:
       - demo
     healthcheck:
       test: curl -f http://localhost:8080/executor-pool2/mgmt/health
+      interval: 10s
+      timeout: 10s
       start_period: 24s
+      retries: 9
     depends_on:
       rabbitmq:
         condition: service_started
