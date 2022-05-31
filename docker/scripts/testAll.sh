@@ -9,31 +9,46 @@ TIMEOUT=10
 # Second argument is the expected number of events
 # Third argument is the expected number of pages
 runTest () {
-    echo -n "Running test: $1 - "
+    ATTEMPTS=3
+    ATTEMPT=1
 
-    QUERY_RESPONSE="$(${SCRIPT_DIR}/$1)"
+    while [ $ATTEMPT -le $ATTEMPTS ]; do
+        echo -n "Running test (Attempt ${ATTEMPT}/${ATTEMPTS}): $1 - "
 
-    if [[ "$QUERY_RESPONSE" == *"Returned $2 events"* ]] ; then
-        if [ ! -z "$3" ] ; then
-            if [[ "$QUERY_RESPONSE" == *"Returned $3 pages"* ]] ; then
-                echo "SUCCESS: Returned $2 events and $3 pages"
+        QUERY_RESPONSE="$(${SCRIPT_DIR}/$1)"
+
+        if [[ "$QUERY_RESPONSE" == *"Returned $2 events"* ]] ; then
+            if [ ! -z "$3" ] ; then
+                if [[ "$QUERY_RESPONSE" == *"Returned $3 pages"* ]] ; then
+                    echo "SUCCESS: Returned $2 events and $3 pages"
+                    return 0
+                else
+                    echo "FAILED: Unexpected number of pages returned"
+                    echo
+                    echo "TEST RESPONSE"
+                    echo "$QUERY_RESPONSE"
+
+                    if [ $ATTEMPT == $ATTEMPTS ] ; then
+                        exit 1
+                    fi
+                fi
             else
-                echo "FAILED: Unexpected number of pages returned"
-                echo
-                echo "TEST RESPONSE"
-                echo "$QUERY_RESPONSE"
-                exit 1
+                echo "SUCCESS: Returned $2 events"
+                return 0
             fi
         else
-            echo "SUCCESS: Returned $2 events"
+            echo "FAILURE: Unexpected number of events returned"
+            echo
+            echo "TEST RESPONSE"
+            echo "$QUERY_RESPONSE"
+
+            if [ $ATTEMPT == $ATTEMPTS ] ; then
+                exit 1
+            fi
         fi
-    else
-        echo "FAILURE: Unexpected number of events returned"
-        echo
-        echo "TEST RESPONSE"
-        echo "$QUERY_RESPONSE"
-        exit 1
-    fi
+
+        ((ATTEMPT++))
+    done
 }
 
 echo "Waiting for services to be ready..."
