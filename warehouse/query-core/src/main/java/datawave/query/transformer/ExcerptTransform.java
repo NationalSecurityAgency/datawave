@@ -1,6 +1,8 @@
 package datawave.query.transformer;
 
+import com.google.common.base.Preconditions;
 import com.google.protobuf.InvalidProtocolBufferException;
+import datawave.common.util.ArgumentChecker;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
@@ -22,6 +24,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 import org.javatuples.Triplet;
 
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
@@ -53,6 +56,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
     
     public ExcerptTransform(ExcerptFields excerptFields, IteratorEnvironment env, SortedKeyValueIterator<Key,Value> source,
                     SortedKeyValueIterator<Key,Value> excerptIterator) {
+        ArgumentChecker.notNull(excerptFields);
         this.excerptFields = excerptFields;
         this.env = env;
         this.source = source;
@@ -160,6 +164,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 if (phraseIndexMap.containsKey(hitTuple.getFieldName())) {
                     PhraseIndexes phraseIndexes = phraseIndexMap.get(fieldName).get(eventId);
                     if (phraseIndexes != null) {
+                        // TODO: can we do a binary search of the term offsets
+                        // TODO: at a minimum terminate the loop once past the max phrase end offset.
                         for (int i = 0; i < twInfo.getTermOffsetCount(); i++) {
                             position.setTermWeightOffsetInfo(twInfo, i);
                             TermWeightPosition pos = position.build();
@@ -222,8 +228,14 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * @return the document Key
      */
     private Key eventIdToKey(String eventId) {
-        int split = eventId.indexOf('\u0000');
-        return new Key(eventId.substring(0, split), eventId.substring(split + 1));
+        if (eventId != null) {
+            int split = eventId.indexOf('\u0000');
+            if (split < 0) {
+                throw new IllegalStateException("Malformed eventId (expected a null separator): " + eventId);
+            }
+            return new Key(eventId.substring(0, split), eventId.substring(split + 1));
+        }
+        return null;
     }
     
     /**

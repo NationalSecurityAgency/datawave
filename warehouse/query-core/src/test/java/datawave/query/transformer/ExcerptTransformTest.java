@@ -88,6 +88,8 @@ public class ExcerptTransformTest extends EasyMockSupport {
         verifyAll();
     }
     
+    // TODO: Add some pathalogical cases: phrases with the end before the start, empty phrases, null/empty cases, etc.
+    
     /**
      * Verify that excerpts are not added for documents that are not marked as to-keep.
      */
@@ -123,13 +125,19 @@ public class ExcerptTransformTest extends EasyMockSupport {
      */
     @Test
     public void testExcerpts() throws IOException {
+        // Setup our excerpts to match 2 words on either side of the BODY
         givenExcerptField("BODY", 2);
+        
+        // setup a matching phrase at 10-14
         givenPhraseIndex("BODY", 10, 14);
         
+        // setup a matching term for BODY:word
         givenMockDocumentWithHitTerm("BODY", "word");
-        givenMatchingPhrase("BODY", 8, 17, "the quick brown fox jumped over the lazy dog");
         givenMatchingTermFrequency("BODY", 4, 4, "word");
         givenMatchingPhrase("BODY", 2, 7, "and the word from bird");
+        
+        // also setup a phrase to match on either side of the matching phrase
+        givenMatchingPhrase("BODY", 8, 17, "the quick brown fox jumped over the lazy dog");
         
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
@@ -143,6 +151,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         Attributes arg = capturedArg.getValue();
         assertEquals(2, arg.size());
         Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
+        // both excerpts should be returned
         assertTrue(excerpts.contains("and the word from bird"));
         assertTrue(excerpts.contains("the quick brown fox jumped over the lazy dog"));
     }
@@ -152,9 +161,13 @@ public class ExcerptTransformTest extends EasyMockSupport {
      */
     @Test
     public void testExcerptOverlapped() throws IOException {
+        // Setup our excerpts to match 2 words on either side of the BODY
         givenExcerptField("BODY", 2);
+        
+        // setup a matching phrase at 10-14
         givenPhraseIndex("BODY", 10, 14);
         
+        // setup a matching term for BODY:quick brown overlapping the phrase match
         givenMockDocumentWithHitTerm("BODY", "quick brown");
         givenMatchingPhrase("BODY", 7, 17, "and the quick brown fox jumped over the lazy dog");
         givenMatchingTermFrequency("BODY", 9, 10, "quick brown");
@@ -171,6 +184,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         Attributes arg = capturedArg.getValue();
         assertEquals(1, arg.size());
         String excerpt = arg.getAttributes().iterator().next().getData().toString();
+        // only one excerpt should return
         assertEquals("and the quick brown fox jumped over the lazy dog", excerpt);
     }
     

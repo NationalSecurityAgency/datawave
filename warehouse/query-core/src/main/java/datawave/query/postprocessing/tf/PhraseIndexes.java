@@ -55,6 +55,10 @@ public class PhraseIndexes {
             for (int i = 1; i < parts.length; i++) {
                 String[] indexParts = parts[i].split(Constants.COMMA);
                 String eventId = indexParts[0];
+                // if the event ID is empty, then it must have been null initially (see toString())
+                if (eventId.isEmpty()) {
+                    eventId = null;
+                }
                 int start = Integer.parseInt(indexParts[1]);
                 int end = Integer.parseInt(indexParts[2]);
                 phraseIndexes.addIndexTriplet(field, eventId.isEmpty() ? null : eventId, start, end);
@@ -204,8 +208,11 @@ public class PhraseIndexes {
             Iterator<Triplet<String,Integer,Integer>> indexIterator = map.get(field).iterator();
             while (indexIterator.hasNext()) {
                 Triplet<String,Integer,Integer> indexTriplet = indexIterator.next();
-                sb.append(indexTriplet.getValue0() == null ? "" : indexTriplet.getValue0()).append(Constants.COMMA).append(indexTriplet.getValue1())
-                                .append(Constants.COMMA).append(indexTriplet.getValue2());
+                if (indexTriplet.getValue0() != null) {
+                    sb.append(indexTriplet.getValue0());
+                }
+                sb.append(Constants.COMMA).append(indexTriplet.getValue1());
+                sb.append(Constants.COMMA).append(indexTriplet.getValue2());
                 if (indexIterator.hasNext()) {
                     sb.append(Constants.COLON);
                 }
