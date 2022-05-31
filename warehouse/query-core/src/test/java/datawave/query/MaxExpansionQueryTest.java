@@ -94,12 +94,8 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
         
         this.logic.setMaxUnfieldedExpansionThreshold(1);
-        try {
-            runTest(query, expect);
-            Assert.fail("exception condition expected");
-        } catch (FullTableScansDisallowedException e) {
-            // expected
-        }
+        this.logic.setFullTableScanEnabled(true);
+        runTest(query, expect);
     }
     
     @Test
