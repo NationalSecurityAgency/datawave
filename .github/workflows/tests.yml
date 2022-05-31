@@ -144,6 +144,7 @@ jobs:
     - name: cleanup
       if: always()
       run: |
+        cd docker
         docker compose down -v --remove-orphans
 
     # Here's an example of how you'd deploy the image to the github package registry.
