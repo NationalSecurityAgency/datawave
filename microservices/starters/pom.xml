@@ -15,6 +15,7 @@
         <module>audit</module>
         <module>cache</module>
         <module>metadata</module>
-        <module>query</module>
+	<module>query</module>
+	<module>query-metric</module>
     </modules>
 </project>

@@ -98,3 +98,7 @@
 	path = microservices/services/query-storage
 	url = git@github.com:NationalSecurityAgency/datawave-query-storage-service.git
 	branch = feature/queryMicroservices
+[submodule "microservices/starters/query-metric"]
+	path = microservices/starters/query-metric
+	url = git@github.com:NationalSecurityAgency/datawave-spring-boot-starter-query-metric.git
+	branch = feature/queryMicroservices
