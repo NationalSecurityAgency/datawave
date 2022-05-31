@@ -61,7 +61,7 @@ public class PhraseIndexes {
                 }
                 int start = Integer.parseInt(indexParts[1]);
                 int end = Integer.parseInt(indexParts[2]);
-                phraseIndexes.addIndexTriplet(field, eventId.isEmpty() ? null : eventId, start, end);
+                phraseIndexes.addIndexTriplet(field, eventId, start, end);
             }
         }
         return phraseIndexes;
