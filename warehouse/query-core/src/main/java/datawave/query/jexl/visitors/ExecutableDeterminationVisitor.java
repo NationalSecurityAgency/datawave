@@ -466,7 +466,8 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         STATE state;
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         if (instance.isType(ExceededTermThresholdMarkerJexlNode.class)) {
-            state = forFieldIndex ? STATE.EXECUTABLE : STATE.NON_EXECUTABLE;
+            // state = forFieldIndex ? STATE.EXECUTABLE : STATE.NON_EXECUTABLE;
+            state = STATE.EXECUTABLE;
             if (output != null) {
                 output.writeLine(data + node.toString() + "( Exceeded Term Threshold ) -> " + state);
             }

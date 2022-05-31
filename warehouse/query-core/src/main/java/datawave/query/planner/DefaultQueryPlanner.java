@@ -194,7 +194,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * Disables Whindex (value-specific) field mappings for GeoWave functions.
-     * 
+     *
      * @see WhindexVisitor
      */
     protected boolean disableWhindexFieldMappings = false;
@@ -216,7 +216,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
     /**
      * Number of documents to combine for concurrent evaluation
-     *
      */
     protected int docsToCombineForEvaluation = -1;
     
@@ -2402,10 +2401,11 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             
             // if a term threshold is exceeded and we cannot handle that, then
-            // throw unsupported
+            // force a full table scan
             boolean thresholdExceeded = StreamContext.EXCEEDED_TERM_THRESHOLD.equals(stream.context());
-            if (thresholdExceeded && !config.canHandleExceededTermThreshold()) {
-                throw new UnsupportedOperationException(EXCEED_TERM_EXPANSION_ERROR);
+            if (IvaratorRequiredVisitor.isIvaratorRequired(queryTree) && thresholdExceeded && !config.canHandleExceededTermThreshold()) {
+                log.debug("Needs full table scan because we exceeded the term threshold and config.canHandleExceededTermThreshold() is false");
+                needsFullTable = true;
             }
             
             if (StreamContext.UNINDEXED.equals(stream.context())) {

@@ -236,6 +236,19 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(and);
         if (instance.isType(ExceededTermThresholdMarkerJexlNode.class)) {
             // use an Ivarator to get the job done
+            JexlNode source = instance.getSource();
+            
+            if (source instanceof ASTAndNode) {
+                try {
+                    ivarateList(and, source, data);
+                } catch (IOException ioe) {
+                    throw new DatawaveFatalQueryException(ioe);
+                }
+            } else {
+                QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}",
+                                "Limited ExceededTermThresholdMarkerJexlNode"));
+                throw new DatawaveFatalQueryException(qe);
+            }
         } else if (instance.isType(ExceededOrThresholdMarkerJexlNode.class)) {
             JexlNode source = instance.getSource();
             // if the parent is our ExceededOrThreshold marker, then use an
