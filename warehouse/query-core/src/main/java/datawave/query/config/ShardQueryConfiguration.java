@@ -686,12 +686,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     /**
-     * A convenience method that determines whether we can handle when we have exceeded the term threshold on some node. Currently we cannot.
+     * A convenience method that determines whether we can handle when we have exceeded the term threshold on some node. We can handle this if the Ivarators can
+     * be used which required a hadoop config and a base hdfs cache directory.
      *
      * @return
      */
     public boolean canHandleExceededTermThreshold() {
-        return false;
+        return this.hdfsSiteConfigURLs != null && (null != this.ivaratorCacheDirConfigs && !this.ivaratorCacheDirConfigs.isEmpty());
     }
     
     public String getShardTableName() {
