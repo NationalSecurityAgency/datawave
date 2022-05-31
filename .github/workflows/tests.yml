@@ -141,6 +141,10 @@ jobs:
         docker compose up -d
         cd scripts
         ./testAll.sh
+    - name: cleanup
+      if: always()
+      run: |
+        docker compose down -v --remove-orphans
 
     # Here's an example of how you'd deploy the image to the github package registry.
     # We don't want to do this by default since packages on github cannot be deleted
