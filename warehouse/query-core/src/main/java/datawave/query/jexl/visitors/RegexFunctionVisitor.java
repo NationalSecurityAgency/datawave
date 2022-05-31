@@ -8,11 +8,13 @@ import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.util.MetadataHelper;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +32,8 @@ import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescri
  * </ul>
  */
 public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
+    
+    private static final Logger log = ThreadConfigurableLogger.getLogger(RegexFunctionVisitor.class);
     
     protected Set<String> nonEventFields;
     
@@ -71,13 +75,23 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                     case 0:
                         return returnNode;
                     case 1:
+                        if (log.isTraceEnabled()) {
+                            log.trace("Rewrote \"" + JexlStringBuildingVisitor.buildQueryWithoutParse(node) + "\" into \""
+                                            + JexlStringBuildingVisitor.buildQueryWithoutParse(children.get(0)) + "\"");
+                        }
                         return children.get(0);
                     default:
                         if (functionMetadata.name().equals(INCLUDE_REGEX)) {
-                            return JexlNodeFactory.createOrNode(children);
+                            returnNode = JexlNodeFactory.createOrNode(children);
                         } else {
-                            return JexlNodeFactory.createAndNode(children);
+                            returnNode = JexlNodeFactory.createAndNode(children);
                         }
+                        
+                        if (log.isTraceEnabled()) {
+                            log.trace("Rewrote \"" + JexlStringBuildingVisitor.buildQueryWithoutParse(node) + "\" into \""
+                                            + JexlStringBuildingVisitor.buildQueryWithoutParse(returnNode) + "\"");
+                        }
+                        return returnNode;
                 }
             }
         }
