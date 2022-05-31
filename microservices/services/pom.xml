@@ -20,7 +20,6 @@
         <module>query/api</module>
         <module>query-executor/api</module>
         <module>query-metric/api</module>
-        <module>query-metric/starter</module>
         <module>query-storage/api</module>
     </modules>
     <profiles>
