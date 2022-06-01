@@ -10,7 +10,6 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.DatawaveErrorCode;

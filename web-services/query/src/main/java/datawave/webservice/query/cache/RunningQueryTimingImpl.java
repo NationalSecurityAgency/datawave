@@ -13,6 +13,11 @@ public class RunningQueryTimingImpl implements RunningQueryTiming {
     // The maximum number of times to continue running a long running query after the timeout is reached.
     private int maxLongRunningTimeoutRetries = 3;
     
+    /**
+     * Uses the default values
+     */
+    public RunningQueryTimingImpl() {}
+    
     public RunningQueryTimingImpl(QueryExpirationConfiguration conf, int pageTimeout) {
         this(conf.getCallTimeInMS(), conf.getPageSizeShortCircuitCheckTimeInMS(), conf.getPageShortCircuitTimeoutInMS(), conf.getMaxLongRunningTimeoutRetries());
         

@@ -185,6 +185,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private QueryPlanner planner = null;
     private QueryParser parser = null;
     private QueryLogicTransformer transformerInstance = null;
+    private GroupingTransform groupingTransformerInstance = null;
     
     private CardinalityConfiguration cardinalityConfiguration = null;
     
@@ -623,7 +624,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 if (alreadyExists != null) {
                     ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
                 } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
+                    ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(getQueryModel(), getConfig().getUniqueFields(), this
+                                    .getQueryExecutionForPageTimeout()));
                 }
             }
             
