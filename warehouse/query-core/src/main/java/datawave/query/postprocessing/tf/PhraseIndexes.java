@@ -1,15 +1,21 @@
 package datawave.query.postprocessing.tf;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
 import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
+import datawave.ingest.protobuf.TermWeight;
+import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.javatuples.Triplet;
 
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,6 +25,7 @@ import java.util.stream.Collectors;
  * required to retrieve excerpts when requested.
  */
 public class PhraseIndexes {
+    private static final Logger log = Logger.getLogger(PhraseIndexes.class);
     
     /**
      * A Map of fieldname to eventId,start,end phrase offsets. The eventId has the form as defined by TermFrequencyList.getEventid(key)
@@ -94,6 +101,13 @@ public class PhraseIndexes {
      *            the end index of the phrase
      */
     public void addIndexTriplet(String field, String eventId, int start, int end) {
+        // ensure offsets ordered correctly
+        if (start > end) {
+            int temp = start;
+            start = end;
+            end = temp;
+        }
+        
         // first remove any overlapping phrases and extend the start/end appropriately
         if (map.containsKey(field)) {
             Iterator<Triplet<String,Integer,Integer>> indices = map.get(field).iterator();
@@ -127,11 +141,11 @@ public class PhraseIndexes {
     }
     
     /**
-     * Get all index pairs found for matching hits for the specified field.
+     * Get all index pairs found for matching hits for the specified field. May return null.
      * 
      * @param field
      *            the field
-     * @return the index pairs
+     * @return the index pairs if any, otherwise null
      */
     public Collection<Triplet<String,Integer,Integer>> getIndices(String field) {
         return map.get(field);
@@ -225,36 +239,6 @@ public class PhraseIndexes {
     }
     
     /**
-     * Get the phrase indexes only including those for a specified fieldname and event id
-     * 
-     * @param fieldName
-     * @param eventId
-     * @return PhraseIndexes containing only one field and one event id
-     */
-    public PhraseIndexes getSubset(String fieldName, String eventId) {
-        PhraseIndexes subset = new PhraseIndexes();
-        getIndices(fieldName).stream().filter(t -> Objects.equals(eventId, t.getValue0())).forEach(t -> subset.addIndexTriplet(fieldName, t));
-        return subset;
-    }
-    
-    /**
-     * Return a map of fieldname to a map of eventId to its subset of phrase indexes.
-     * 
-     * @return a map of fieldname to eventId to phraseIndexes
-     */
-    public Map<String,Map<String,PhraseIndexes>> toMap() {
-        Map<String,Map<String,PhraseIndexes>> map = new HashMap<>();
-        for (String field : getFields()) {
-            Map<String,PhraseIndexes> fieldMap = new HashMap<>();
-            map.put(field, fieldMap);
-            for (String eventId : getIndices(field).stream().map(Triplet::getValue0).collect(Collectors.toSet())) {
-                fieldMap.put(eventId, getSubset(field, eventId));
-            }
-        }
-        return map;
-    }
-    
-    /**
      * Utility function to see if two offset ranges overlap
      * 
      * @param start1
@@ -263,29 +247,152 @@ public class PhraseIndexes {
      * @param end2
      * @return true if (start1 &lt;= end2 &amp;&amp; end1 &gt;= start2)
      */
-    private boolean overlaps(int start1, int end1, int start2, int end2) {
+    public static boolean overlaps(int start1, int end1, int start2, int end2) {
         return (start1 <= end2 && end1 >= start2);
     }
     
     /**
-     * Get the overlapping triplet if any
+     * Utility function to see if a triplet overlaps with a term weight position
      * 
+     * @param triplet
+     * @param pos
+     * @return true if overlapping
+     */
+    public static boolean overlaps(Triplet<String,Integer,Integer> triplet, TermWeightPosition pos) {
+        return overlaps(triplet.getValue1(), triplet.getValue2(), pos.getLowOffset(), pos.getOffset());
+    }
+    
+    /**
+     * Get the overlapping triplet if any
+     *
      * @param fieldName
      * @param eventId
-     * @param start
-     * @param end
+     * @param position
      * @return the overlapping triplet
      */
-    public Triplet<String,Integer,Integer> getOverlap(String fieldName, String eventId, int start, int end) {
-        for (Triplet<String,Integer,Integer> triplet : getIndices(fieldName)) {
-            // if the start of the triplet is past the end, then no more possibility of overlapping
-            if (triplet.getValue1() > end) {
-                break;
-            }
-            if (Objects.equals(eventId, triplet.getValue0()) && overlaps(triplet.getValue1(), triplet.getValue2(), start, end)) {
-                return triplet;
+    public Triplet<String,Integer,Integer> getOverlap(String fieldName, String eventId, TermWeightPosition position) {
+        Collection<Triplet<String,Integer,Integer>> indexes = getIndices(fieldName);
+        if (indexes != null) {
+            int start = position.getLowOffset();
+            int end = position.getOffset();
+            for (Triplet<String,Integer,Integer> triplet : indexes) {
+                // if the start of the triplet is past the end, then no more possibility of overlapping
+                if (triplet.getValue1() > end) {
+                    break;
+                }
+                if (Objects.equals(eventId, triplet.getValue0()) && overlaps(triplet.getValue1(), triplet.getValue2(), start, end)) {
+                    return triplet;
+                }
             }
         }
         return null;
     }
+    
+    /**
+     * Get the overlapping term weight position if any
+     *
+     * @param fieldName
+     * @param eventId
+     * @param twInfo
+     * @return An overlapping TermWeightPosition if any
+     */
+    public TermWeightPosition getOverlappingPosition(String fieldName, String eventId, TermWeight.Info twInfo) {
+        // get the phases for this fieldname
+        Collection<Triplet<String,Integer,Integer>> triplets = getIndices(fieldName);
+        
+        if (triplets != null) {
+            // get the triplets is reverse sorted order base on the end index and filtered by event id
+            List<Triplet<String,Integer,Integer>> reverseEndIndexSortedList = triplets.stream().filter(t -> Objects.equals(eventId, t.getValue0()))
+                            .sorted(endOffsetComparator.reversed()).collect(Collectors.toList());
+            
+            if (!reverseEndIndexSortedList.isEmpty()) {
+                TermWeightPosition.Builder position = new TermWeightPosition.Builder();
+                
+                // first ensure we have a sorted list of term offsets
+                if (!(Ordering.<Integer> natural().isOrdered(twInfo.getTermOffsetList()))) {
+                    log.warn("Term offset list is not ordered, reverting to brute force search");
+                    for (int i = 0; i < twInfo.getTermOffsetCount(); i++) {
+                        position.setTermWeightOffsetInfo(twInfo, i);
+                        TermWeightPosition pos = position.build();
+                        if (getOverlap(fieldName, eventId, pos) != null) {
+                            // if we have an overlapping phrase, then return this position
+                            return pos;
+                        }
+                    }
+                } else {
+                    // get the max prev skip value
+                    int maxSkip = 0;
+                    if (twInfo.getPrevSkipsCount() > 0) {
+                        maxSkip = Ordering.<Integer> natural().max(twInfo.getPrevSkipsList());
+                    }
+                    
+                    // starting at the last term offset
+                    int start = twInfo.getTermOffsetCount() - 1;
+                    
+                    // iterator through the phrase triplets
+                    for (Triplet<String,Integer,Integer> triplet : reverseEndIndexSortedList) {
+                        // find the index of the first offset before or equal to the triplet end offset plus the max skip value
+                        start = findPrevOffset(twInfo, start, triplet.getValue2() + maxSkip);
+                        // if we have an index, then search backwards for an overlap
+                        if (start >= 0) {
+                            for (int offsetIndex = start; offsetIndex >= 0; offsetIndex--) {
+                                position.setTermWeightOffsetInfo(twInfo, offsetIndex);
+                                TermWeightPosition pos = position.build();
+                                if (PhraseIndexes.overlaps(triplet, pos)) {
+                                    return pos;
+                                } else if (pos.getOffset() < triplet.getValue1()) {
+                                    break;
+                                }
+                            }
+                        } else {
+                            // this means that there is no offset prior to the triplet end offset, and hence
+                            // no offset prior to any of the remaining triplet end offsets. We can short-circuit
+                            // this loop.
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Find the last index starting at the specified startIndex of the offset that is less than or equal to the specified offset plus the maxSkip if any. -1
+     * returned if none found.
+     * 
+     * @param twInfo
+     * @param startIndex
+     * @param offset
+     * @return the index of an offset equal or less than the specified offset
+     */
+    private static int findPrevOffset(TermWeight.Info twInfo, int startIndex, int offset) {
+        // to find the offset that is less than or equal to the specified offset, we need to reverse the list and use a reverse comparator
+        int nextOffset = Collections.binarySearch(Lists.reverse(twInfo.getTermOffsetList().subList(0, startIndex + 1)), offset, reverseIntegerCompare);
+        
+        // if a negative number is returned, then this would be the (-(insertion point) - 1)
+        if (nextOffset < 0) {
+            nextOffset = -1 - nextOffset;
+        }
+        
+        // now revert to the offset in the positive direction
+        nextOffset = startIndex - nextOffset;
+        
+        return nextOffset;
+    }
+    
+    private static final Comparator<Triplet<String,Integer,Integer>> endOffsetComparator = new Comparator<Triplet<String,Integer,Integer>>() {
+        @Override
+        public int compare(Triplet<String,Integer,Integer> o1, Triplet<String,Integer,Integer> o2) {
+            return o1.getValue2() - o2.getValue2();
+        }
+    };
+    
+    private static final Comparator<Integer> reverseIntegerCompare = new Comparator<Integer>() {
+        @Override
+        public int compare(Integer o1, Integer o2) {
+            return o1.compareTo(o2);
+        }
+    }.reversed();
+    
 }

@@ -1,6 +1,5 @@
 package datawave.query.transformer;
 
-import com.google.common.base.Preconditions;
 import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.common.util.ArgumentChecker;
 import datawave.ingest.protobuf.TermWeight;
@@ -24,7 +23,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 import org.javatuples.Triplet;
 
-import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
@@ -95,13 +93,12 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * @return the phrase indexes
      */
     private PhraseIndexes getPhraseIndexes(Document document) {
+        PhraseIndexes phraseIndexes = null;
         PhraseIndexes allPhraseIndexes = new PhraseIndexes();
-        Map<String,Map<String,PhraseIndexes>> phraseIndexMap = new HashMap<>();
         // first lets find all of the phrase indexes that came from phrase functions
         if (document.containsKey(PHRASE_INDEXES_ATTRIBUTE)) {
             Content content = (Content) document.get(PHRASE_INDEXES_ATTRIBUTE);
-            PhraseIndexes phraseIndexes = PhraseIndexes.from(content.getContent());
-            phraseIndexMap = phraseIndexes.toMap();
+            phraseIndexes = PhraseIndexes.from(content.getContent());
             allPhraseIndexes.addAll(phraseIndexes);
         }
         // now lets find all of the terms for excerpt fields and add them to the list
@@ -113,7 +110,7 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
                 // if this is for a requested excerpt field
                 if (excerptFields.containsField(hitTuple.getFieldName())) {
                     // get the offset, preferring offsets that overlap with existing phrases for this field/eventId
-                    TermWeightPosition pos = getOffset(hitTuple, phraseIndexMap);
+                    TermWeightPosition pos = getOffset(hitTuple, phraseIndexes);
                     if (pos != null) {
                         // add the term as a phrase as defined in the term weight position. Note that this will collapse with any overlapping phrases already in
                         // the list.
@@ -133,11 +130,11 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
      * 
      * @param hitTuple
      *            The hit term tuple
-     * @param phraseIndexMap
-     *            The phrase indexes in map form to speed up searches.
+     * @param phraseIndexes
+     *            The phrase indexes
      * @return The TermWeightPosition for the given hit term
      */
-    private TermWeightPosition getOffset(ValueTuple hitTuple, Map<String,Map<String,PhraseIndexes>> phraseIndexMap) {
+    private TermWeightPosition getOffset(ValueTuple hitTuple, PhraseIndexes phraseIndexes) {
         Key docKey = hitTuple.getSource().getMetadata();
         // if we do not know the source document key, then we cannot find the term offset
         if (docKey == null) {
@@ -155,31 +152,24 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
             // seek directly to that key
             source.seek(range, Collections.emptyList(), false);
             if (source.hasTop()) {
+                TermWeightPosition pos = null;
+                
                 // parse the term frequencies
                 TermWeight.Info twInfo = TermWeight.Info.parseFrom(source.getTopValue().get());
-                TermWeightPosition.Builder position = new TermWeightPosition.Builder();
                 
                 // if we have phrase indexes, then find one that overlaps if any
-                // pull out the appropriate phrase indexes for this field/event id
-                if (phraseIndexMap.containsKey(hitTuple.getFieldName())) {
-                    PhraseIndexes phraseIndexes = phraseIndexMap.get(fieldName).get(eventId);
-                    if (phraseIndexes != null) {
-                        // TODO: can we do a binary search of the term offsets
-                        // TODO: at a minimum terminate the loop once past the max phrase end offset.
-                        for (int i = 0; i < twInfo.getTermOffsetCount(); i++) {
-                            position.setTermWeightOffsetInfo(twInfo, i);
-                            TermWeightPosition pos = position.build();
-                            if (phraseIndexes.getOverlap(fieldName, eventId, pos.getLowOffset(), pos.getOffset()) != null) {
-                                // if we have an overlapping phrase, then return this position
-                                return pos;
-                            }
-                        }
-                    }
+                if (phraseIndexes != null) {
+                    pos = phraseIndexes.getOverlappingPosition(fieldName, eventId, twInfo);
                 }
                 
                 // if no overlapping phrases, then return the first position
-                position.setTermWeightOffsetInfo(twInfo, 0);
-                return position.build();
+                if (pos == null) {
+                    TermWeightPosition.Builder position = new TermWeightPosition.Builder();
+                    position.setTermWeightOffsetInfo(twInfo, 0);
+                    pos = position.build();
+                }
+                
+                return pos;
             }
             
         } catch (InvalidProtocolBufferException e) {
@@ -346,8 +336,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         PhraseIndexes offsetPhraseIndexes = new PhraseIndexes();
         for (String field : excerptFields.getFields()) {
             // Filter out phrases that are not in desired fields.
-            if (phraseIndexes.containsField(field)) {
-                Collection<Triplet<String,Integer,Integer>> indexes = phraseIndexes.getIndices(field);
+            Collection<Triplet<String,Integer,Integer>> indexes = phraseIndexes.getIndices(field);
+            if (indexes != null) {
                 int offset = excerptFields.getOffset(field);
                 // Ensure the offset is modified to encompass the target excerpt range.
                 for (Triplet<String,Integer,Integer> indexPair : indexes) {
