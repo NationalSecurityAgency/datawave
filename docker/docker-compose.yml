@@ -360,7 +360,7 @@ services:
     networks:
       - demo
     healthcheck:
-      test: curl -f http://localhost:8080/executor-pool1/mgmt/health
+      test: curl -f http://localhost:8080/executor/mgmt/health
       interval: 10s
       timeout: 1s
       start_period: 30s
@@ -408,7 +408,7 @@ services:
     networks:
       - demo
     healthcheck:
-      test: curl -f http://localhost:8080/executor-pool2/mgmt/health
+      test: curl -f http://localhost:8080/executor/mgmt/health
       interval: 10s
       timeout: 1s
       start_period: 30s

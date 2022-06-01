@@ -138,10 +138,32 @@ jobs:
         mvn -B -V -e -Pcompose,docker,quickstart -Ddeploy -Dtar -DskipTests clean install
         cd docker
         ./bootstrap.sh
-        docker compose up -d
+
+        attempt=0
+        max_attempts=3
+        while [ $attempt -lt $max_attempts ]; do
+          ((attempt++))
+
+          echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
+          docker compose up -d
+
+          if [ $? -eq 0 ] ; then
+            echo "Docker compose started successfully"
+            break
+          fi
+
+          if [ $attempt -lt $max_attempts ] ; then
+            sleep 15s
+          else
+            echo "Failed to start docker compose"
+            exit 1
+          fi
+        done
+
         cd scripts
         ./testAll.sh
-    - name: cleanup
+
+    - name: Docker Compose Cleanup
       if: always()
       run: |
         cd docker

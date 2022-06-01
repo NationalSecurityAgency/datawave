@@ -76,7 +76,7 @@ Query flow:
 |Yes|ConfigurationBean|/Common/Configuration|Keep|*|*|All of the spring-boot microservices have refresh endpoints now, so we should be covered.|
 |No|AccumuloTableCacheBean|/Common/AccumuloTableCache|Keep|QueryExecutorController|Executor Service|INB - The executor service may need the ability to reload it's accumulo table cache.|
 |Yes|AccumuloConnectionFactoryBean|/Common/AccumuloConnectionFactory|Keep|QueryExecutorController|Executor Service|Add remote auth profile and add a route in HAProxy.|
-|No|HealthBean|/Common/Health|Keep|*|*|JWO - We want this to make the query service as unavailable so that new requests will not come in, but also so that current requests will be allowed to finish.  |
+|Yes|HealthBean|/Common/Health|Keep|*|*|This will now be handled as part of the actuator health (i.e. mgmt/health) and shutdown (i.e. mgmt/shutdown) endpoints.  Shutdown prevents new requests while allowing existing requests to finish. |
 |No|ModelBean|/Model|Keep|?|?|CDM - Where should model access/manipulation live?  In the query service?|
 |No|ModificationBean|/Modification|Keep|?|?|INB - Is this used anywhere?  Do we need this?  It allows us to list and modify modification services.|
 |No|ModificationCacheBean|/Modification|Keep|?|?|INB - Is this used anywhere?  Do we need this?  It allows us to list mutable fields and reload the mutable field cache.|
@@ -90,6 +90,6 @@ Query flow:
 |No|MapReduceStatusUpdateBean|/MapReduceStatus|?|?|?|Looks like this is a callback handler for BulkResults jobs which updates the internal state of the job.  Is this still needed?|
 |Yes|CredentialsCacheBean|/Security/Admin/Credentials|Keep|AuthorizationOperations|Authorization Service|Add remote auth profile and add a route in HAProxy.  The listAccumuloAuths and reloadAccumuloAuths endpoints will probably be left behind.  |
 |Yes|UserOperationsBase|/Security/User|Keep|AuthorizationOperations|AuthorizationService|Add remote auth profile and add a route in HAProxy.  |
-|No|web-services/deploy/docs/docs/index.html|index.html|Keep|  |  |Should probably live in the query service and use Spring MVC where applicable.|
-|No|web-services/deploy/docs/docs/query_help.html|query_help.html|Keep|  |  |Should probably live in the query service and use Spring MVC where applicable.|
+|Yes|web-services/deploy/docs/docs/index.html|index.html|Keep|  |  |Hosted as a static resource in the query service.  |
+|Yes|web-services/deploy/docs/docs/query_help.html|query_help.html|Keep|  |  |Hosted as a static resource in the query service.  |
 |No|Enunciate Docs| /doc |Keep|  |  |  |
