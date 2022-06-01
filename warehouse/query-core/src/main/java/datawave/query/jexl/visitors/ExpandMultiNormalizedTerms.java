@@ -273,8 +273,12 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     }
                     
                     if (normalizedTerms.size() > 1) {
-                        
-                        nodeToReturn = JexlNodeFactory.createNodeTreeFromFieldValues(ContainerType.OR_NODE, node, node, fieldName, normalizedTerms);
+                        // if it is a negated node, then and the possibilities
+                        if (node instanceof ASTNRNode || node instanceof ASTNENode) {
+                            nodeToReturn = JexlNodeFactory.createNodeTreeFromFieldValues(ContainerType.AND_NODE, node, node, fieldName, normalizedTerms);
+                        } else {
+                            nodeToReturn = JexlNodeFactory.createNodeTreeFromFieldValues(ContainerType.OR_NODE, node, node, fieldName, normalizedTerms);
+                        }
                         
                     } else if (1 == normalizedTerms.size()) {
                         // If there is only one term, we don't need to make an OR
