@@ -161,8 +161,15 @@ public class RewriteNullFunctionsVisitorTest {
         test(query, expected);
     }
     
+    @Test
+    public void testNullFunctionRewriteWithBoundedRange() throws ParseException {
+        String query = "((_Bounded_ = true) && (NUM > '1' && NUM < '5')) && filter:isNotNull((F1||F2)) && FOO == 'bar'";
+        String expected = "((_Bounded_ = true) && (NUM > '1' && NUM < '5')) && (!(F1 == null) || !(F2 == null)) && FOO == 'bar'";
+        test(query, expected);
+    }
+    
     private void test(String original, String expected) throws ParseException {
-        ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
+        ASTJexlScript originalScript = JexlASTHelper.parseAndFlattenJexlQuery(original);
         ASTJexlScript actual = RewriteNullFunctionsVisitor.rewriteNullFunctions(originalScript);
         
         JexlNodeAssert.assertThat(actual).isEqualTo(expected).hasValidLineage();
