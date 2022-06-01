@@ -48,10 +48,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * A Jexl visitor which builds an equivalent Jexl query in a formatted manner.
- * Formatted meaning parenthesis are added on one line, and children are
- * added on a new, indented line. Same functionality as JexlStringBuildingVisitor.java
- * except the query is built in a formatted manner.
+ * A Jexl visitor which builds an equivalent Jexl query in a formatted manner. Formatted meaning parenthesis are added on one line, and children are added on a
+ * new, indented line. Same functionality as JexlStringBuildingVisitor.java except the query is built in a formatted manner.
  */
 public class JexlFormattedStringBuildingVisitor extends BaseVisitor {
     protected static final Logger log = Logger.getLogger(JexlFormattedStringBuildingVisitor.class);
@@ -74,81 +72,106 @@ public class JexlFormattedStringBuildingVisitor extends BaseVisitor {
     }
     
     /**
-     * Given a query String separated into lines consisting of expressions, open parenthesis,
-     * and closing parenthesis, format the string to be indented properly (add necessary number
-     * of tab characters to each line). This is called after all the nodes have been visited to
-     * finalize the formatting of the query.
+     * Given a query String separated into lines consisting of expressions, open parenthesis, and closing parenthesis, format the string to be indented properly
+     * (add necessary number of tab characters to each line). This is called after all the nodes have been visited to finalize the formatting of the query.
+     * 
      * @param query
      * @return the final formatted String
      */
     private static String formatBuiltQuery(String query) {
-    	String res = "";
+        String res = "";
         int numTabs = 0;
         
         String[] lines = query.split(NEWLINE);
         // Go through all the lines
-        for(String line : lines) {
-        	if (line.equals("(")) {
-        		// Add tabs to result then increase the number of tabs
-        		for (int i = 0; i < numTabs; i++) {
-            		res += "\t";
-            	}
-        		numTabs++;
-        	} else if (line.equals(")") || line.equals(") || ") || line.equals(") && ")) {
-        		// Decrease number of tabs then add tabs to result
-        		numTabs--;
-        		for (int i = 0; i < numTabs; i++) {
-            		res += "\t";
-            	}
-        	} else {
-        		// Add tabs to result
-        		for (int i = 0; i < numTabs; i++) {
-            		res += "\t";
-            	}
-        	}
-        	res += line + NEWLINE;
+        for (String line : lines) {
+            if (containsOnly(line, '(')) {
+                // Add tabs to result then increase the number of tabs
+                for (int i = 0; i < numTabs; i++) {
+                    res += "    ";
+                }
+                numTabs++;
+            } else if (containsOnly(line, ')') || closeParensFollowedByAndOr(line)) {
+                // Decrease number of tabs then add tabs to result
+                numTabs--;
+                for (int i = 0; i < numTabs; i++) {
+                    res += "    ";
+                }
+            } else {
+                // Add tabs to result
+                for (int i = 0; i < numTabs; i++) {
+                    res += "    ";
+                }
+            }
+            if (line != lines[lines.length - 1]) {
+                res += line + NEWLINE;
+            } else {
+                res += line;
+            }
         }
         
         return res;
     }
     
     /**
-     * Determines whether a JexlNode should be formatted on multiple lines or not.
-     * If this node is a bounded marker node OR if this node is a marker node which has a child bounded marker node
-     * OR if this node is a marker node with a single term as a child, then return false (should all be one line).
-     * Otherwise, return true.
+     * Returns true if str contains only ch characters (1 or more). False otherwise.
+     * 
+     * @param str
+     * @param ch
+     * @return
+     */
+    private static boolean containsOnly(String str, char ch) {
+        return str.matches("^[" + ch + "]+$");
+    }
+    
+    /**
+     * Returns true if a string contains only closing parenthesis (1 or more) followed by && or ||. E.g., ") || " = true, "))) && " = true.
+     * 
+     * @param str
+     * @param andOr
+     * @return
+     */
+    private static boolean closeParensFollowedByAndOr(String str) {
+        return str.matches("^([)]+ (&&|\\|\\|) )$");
+    }
+    
+    /**
+     * Determines whether a JexlNode should be formatted on multiple lines or not. If this node is a bounded marker node OR if this node is a marker node which
+     * has a child bounded marker node OR if this node is a marker node with a single term as a child, then return false (should all be one line). Otherwise,
+     * return true.
+     * 
      * @param node
      * @return
      */
     private static boolean needNewLines(JexlNode node) {
-    	int numChildren = node.jjtGetNumChildren();
-    	boolean needNewLines = true;
-    	// Whether or not this node has a child with a bounded range query
+        int numChildren = node.jjtGetNumChildren();
+        boolean needNewLines = true;
+        // Whether or not this node has a child with a bounded range query
         boolean childHasBoundedRange = false;
         // Whether or not this node is a marker node which has a child bounded marker node
         boolean markerWithSingleTerm = false;
         
         for (int i = 0; i < numChildren; i++) {
-        	if (QueryPropertyMarker.findInstance(node.jjtGetChild(i)).isType(BoundedRange.class)) {
-        		childHasBoundedRange = true;
-        	}
+            if (QueryPropertyMarker.findInstance(node.jjtGetChild(i)).isType(BoundedRange.class)) {
+                childHasBoundedRange = true;
+            }
         }
         
         if (numChildren == 2) {
-        	if (QueryPropertyMarker.findInstance(node).isAnyType() && 
-        			node.jjtGetChild(1) instanceof ASTReference && node.jjtGetChild(1).jjtGetChild(0) instanceof ASTReferenceExpression && 
-        			!(node.jjtGetChild(1).jjtGetChild(0).jjtGetChild(0) instanceof ASTAndNode) && 
-        			!(node.jjtGetChild(1).jjtGetChild(0).jjtGetChild(0) instanceof ASTOrNode)) {
-        		markerWithSingleTerm = true;
-        	}
+            if (QueryPropertyMarker.findInstance(node).isAnyType() && node.jjtGetChild(1) instanceof ASTReference
+                            && node.jjtGetChild(1).jjtGetChild(0) instanceof ASTReferenceExpression
+                            && !(node.jjtGetChild(1).jjtGetChild(0).jjtGetChild(0) instanceof ASTAndNode)
+                            && !(node.jjtGetChild(1).jjtGetChild(0).jjtGetChild(0) instanceof ASTOrNode)) {
+                markerWithSingleTerm = true;
+            }
         }
         
         // If this node is a bounded marker node OR if this node is a marker node which has a child bounded marker node
         // OR if this node is a marker node with a single term as a child, then
         // we don't want to add any new lines on this visit or on visits to this nodes children
         if (QueryPropertyMarker.findInstance(node).isType(BoundedRange.class) || (QueryPropertyMarker.findInstance(node).isAnyType() && childHasBoundedRange)
-        		|| markerWithSingleTerm) {
-        	needNewLines = false;
+                        || markerWithSingleTerm) {
+            needNewLines = false;
         }
         
         return needNewLines;
@@ -289,8 +312,8 @@ public class JexlFormattedStringBuildingVisitor extends BaseVisitor {
         }
         // If needNewLines is false, we should remove the new lines added to the child strings
         for (String childString : childStrings) {
-        	childStringsFormatted.add(needNewLines ? childString : childString.replace(NEWLINE, ""));
-    	}
+            childStringsFormatted.add(needNewLines ? childString : childString.replace(NEWLINE, ""));
+        }
         sb.append(String.join(" && " + (needNewLines ? NEWLINE : ""), childStringsFormatted));
         
         if (wrapIt)
@@ -611,12 +634,12 @@ public class JexlFormattedStringBuildingVisitor extends BaseVisitor {
     }
     
     public Object visit(ASTReferenceExpression node, Object data) {
-    	JexlNode child = node.jjtGetChild(0);
-    	boolean needNewLines = false;
-    	
-    	if ((child instanceof ASTAndNode || child instanceof ASTOrNode) && needNewLines(child)) {
-    		needNewLines = true;
-    	}
+        JexlNode child = node.jjtGetChild(0);
+        boolean needNewLines = false;
+        
+        if ((child instanceof ASTAndNode || child instanceof ASTOrNode) && needNewLines(child)) {
+            needNewLines = true;
+        }
         StringBuilder sb = (StringBuilder) data;
         sb.append("(" + (needNewLines ? NEWLINE : ""));
         
@@ -625,7 +648,7 @@ public class JexlFormattedStringBuildingVisitor extends BaseVisitor {
         if (sb.length() == lastsize) {
             sb.setLength(sb.length() - 1);
         } else {
-        	sb.append((needNewLines ? NEWLINE : "") + ")");
+            sb.append((needNewLines ? NEWLINE : "") + ")");
         }
         return sb;
     }
