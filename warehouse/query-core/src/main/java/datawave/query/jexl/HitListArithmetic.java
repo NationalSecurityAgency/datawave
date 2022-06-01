@@ -111,9 +111,10 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         for (final Object o : elements) {
             // normalize the element
             Object normalizedO = ValueTuple.getNormalizedValue(o);
+            Object unnormalizedO = ValueTuple.getValue(o);
             
             for (Pattern p : patterns) {
-                if (p.matcher(normalizedO.toString()).matches()) {
+                if (p.matcher(normalizedO.toString()).matches() || p.matcher(unnormalizedO.toString()).matches()) {
                     this.hitSet.add(ValueTuple.toValueTuple(o));
                     if (!exhaustiveHits) {
                         return true;

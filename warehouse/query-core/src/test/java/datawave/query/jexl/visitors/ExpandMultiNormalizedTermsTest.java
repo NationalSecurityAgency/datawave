@@ -498,7 +498,7 @@ public class ExpandMultiNormalizedTermsTest {
         
         config.setQueryFieldsDatatypes(dataTypes);
         
-        // this tests for the successful normalization as a simply number can be normalized as a regex
+        // this tests for the successful normalization as a simple number can be normalized as a regex
         String original = "FOO =~ '32'";
         String expected = "(FOO =~ '32' || FOO =~ '\\Q+bE3.2\\E')";
         expandTerms(original, expected);
