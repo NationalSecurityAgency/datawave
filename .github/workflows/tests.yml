@@ -153,7 +153,7 @@ jobs:
           fi
 
           if [ $attempt -lt $max_attempts ] ; then
-            sleep 15s
+            sleep 45s
           else
             echo "Failed to start docker compose"
             exit 1
