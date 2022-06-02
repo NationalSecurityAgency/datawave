@@ -125,10 +125,9 @@ public class JexlFormattedStringBuildingVisitor extends BaseVisitor {
     }
     
     /**
-     * Returns true if a string contains only closing parenthesis (1 or more) followed by && or ||. E.g., ") || " = true, "))) && " = true.
+     * Returns true if a string contains only closing parenthesis (1 or more) followed by the and or or operator
      * 
      * @param str
-     * @param andOr
      * @return
      */
     private static boolean closeParensFollowedByAndOr(String str) {
