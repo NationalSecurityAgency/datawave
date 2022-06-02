@@ -143,6 +143,7 @@ jobs:
         max_attempts=3
         while [ $attempt -lt $max_attempts ]; do
           attempt=$((attempt+1))
+          exit_code=0
 
           echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
           docker compose up -d --no-recreate || exit_code=$?

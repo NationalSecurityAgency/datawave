@@ -159,7 +159,7 @@ services:
       test: curl -f http://localhost:8080/cache/mgmt/health
       interval: 10s
       timeout: 1s
-      start_period: 60s
+      start_period: 45s
       retries: 3
     depends_on:
       configuration:
@@ -184,7 +184,7 @@ services:
       test: curl -f http://localhost:8080/authorization/mgmt/health
       interval: 10s
       timeout: 1s
-      start_period: 60s
+      start_period: 20s
       retries: 3
     depends_on:
       cache:
@@ -217,7 +217,7 @@ services:
       test: curl -f http://localhost:8080/audit/mgmt/health
       interval: 10s
       timeout: 1s
-      start_period: 60s
+      start_period: 30s
       retries: 3
     depends_on:
       authorization:
@@ -252,7 +252,7 @@ services:
       test: curl -f http://localhost:8080/querymetric/mgmt/health
       interval: 10s
       timeout: 1s
-      start_period: 60s
+      start_period: 45s
       retries: 3
     depends_on:
       authorization:
@@ -314,7 +314,7 @@ services:
       test: curl -f http://localhost:8080/query/mgmt/health
       interval: 10s
       timeout: 1s
-      start_period: 60s
+      start_period: 30s
       retries: 3
     depends_on:
       audit:
@@ -363,7 +363,7 @@ services:
       test: curl -f http://localhost:8080/executor/mgmt/health
       interval: 10s
       timeout: 1s
-      start_period: 60s
+      start_period: 30s
       retries: 3
     depends_on:
       rabbitmq:
@@ -411,7 +411,7 @@ services:
       test: curl -f http://localhost:8080/executor/mgmt/health
       interval: 10s
       timeout: 1s
-      start_period: 60s
+      start_period: 30s
       retries: 3
     depends_on:
       rabbitmq:
