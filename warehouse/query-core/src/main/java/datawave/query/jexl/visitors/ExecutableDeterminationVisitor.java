@@ -85,7 +85,7 @@ import java.util.Set;
  * can be processed.
  */
 public class ExecutableDeterminationVisitor extends BaseVisitor {
-
+    
     /**
      * EXECUTABLE means that the expression is executable against the index PARTIAL means that we have an OR that cannot be completely satisfied by the index
      * NON_EXECUTABLE means that the expression cannot be executed against the index IGNORABLE means that it does not matter the executable state of the
@@ -95,23 +95,23 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     public enum STATE {
         EXECUTABLE, PARTIAL, NON_EXECUTABLE, IGNORABLE, ERROR, NEGATED_EXECUTABLE
     }
-
+    
     private static final Logger log = Logger.getLogger(ExecutableDeterminationVisitor.class);
-
+    
     private interface Output {
         void writeLine(String line);
     }
-
+    
     private static class StringListOutput implements Output {
         private final List<String> outputLines;
-
+        
         public StringListOutput(List<String> debugOutput) {
             this.outputLines = debugOutput;
         }
-
+        
         /*
          * (non-Javadoc)
-         *
+         * 
          * @see PrintingVisitor.Output#writeLine(java.lang.String)
          */
         @Override
@@ -119,28 +119,28 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             outputLines.add(line);
         }
     }
-
+    
     private static StringListOutput newStringListOutput(List<String> debugOutput) {
         return new StringListOutput(debugOutput);
-
+        
     }
-
+    
     private static final String PREFIX = "  ";
     private static final String NEGATION_PREFIX = "!";
-
+    
     private StringListOutput output = null;
-
+    
     protected MetadataHelper helper;
     protected boolean forFieldIndex;
     protected Set<String> indexedFields = null;
     protected Set<String> indexOnlyFields = null;
     protected Set<String> nonEventFields = null;
     protected ShardQueryConfiguration config;
-
+    
     public ExecutableDeterminationVisitor(ShardQueryConfiguration conf, MetadataHelper metadata, boolean forFieldIndex) {
         this(conf, metadata, forFieldIndex, null);
     }
-
+    
     public ExecutableDeterminationVisitor(ShardQueryConfiguration conf, MetadataHelper metadata, boolean forFieldIndex, List<String> debugOutput) {
         this.helper = metadata;
         this.config = conf;
@@ -149,11 +149,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             output = newStringListOutput(debugOutput);
         }
     }
-
+    
     /**
      * Negate the current data object
      *
-     * @param data the data passed along to the visitor, may be null or a string
+     * @param data
+     *            the data passed along to the visitor, may be null or a string
      * @return NEGATION_PREFIX if the string was null or the old string appended with NEGATION_PREFIX
      */
     public static Object negateData(Object data) {
@@ -163,11 +164,12 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             return data.toString() + NEGATION_PREFIX;
         }
     }
-
+    
     /**
      * Determine if a node is in a negated state or not
      *
-     * @param data the data passed along to the visitor. Should be either null or a string containing ! for each negation
+     * @param data
+     *            the data passed along to the visitor. Should be either null or a string containing ! for each negation
      * @return true if the statement is negated, false otherwise
      */
     public static boolean isNegated(Object data) {
@@ -183,7 +185,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
                     notCount++;
                 }
             }
-
+            
             // odd number of nots apply negation
             if (notCount % 2 == 1) {
                 return true;
@@ -192,75 +194,75 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             }
         }
     }
-
+    
     public static STATE getState(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
         return getState(node, config, helper, false);
     }
-
+    
     public static STATE getState(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex) {
         return getState(node, config, helper, forFieldIndex, null);
     }
-
+    
     public static STATE getState(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, List<String> debugOutput) {
         return getState(node, config, helper, false, debugOutput);
     }
-
+    
     public static STATE getState(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex, List<String> debugOutput) {
         ExecutableDeterminationVisitor visitor = new ExecutableDeterminationVisitor(config, helper, forFieldIndex, debugOutput);
-
+        
         // push down any negations to ensure the state is accurate
         JexlNode pushedDownTree = PushdownNegationVisitor.pushdownNegations(node);
         return (STATE) pushedDownTree.jjtAccept(visitor, "");
     }
-
+    
     public static STATE getState(JexlNode node, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
-                                 Set<String> nonEventFields, boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
+                    Set<String> nonEventFields, boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
         return getState(node, "", config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, debugOutput, metadataHelper);
     }
-
+    
     public static STATE getState(JexlNode node, Object parentage, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
-                                 Set<String> nonEventFields, boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
+                    Set<String> nonEventFields, boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
         ExecutableDeterminationVisitor visitor = new ExecutableDeterminationVisitor(config, metadataHelper, forFieldIndex, debugOutput)
-                .setNonEventFields(nonEventFields).setIndexOnlyFields(indexOnlyFields).setIndexedFields(indexedFields);
-
+                        .setNonEventFields(nonEventFields).setIndexOnlyFields(indexOnlyFields).setIndexedFields(indexedFields);
+        
         // push down any negations to ensure the state is accurate
         JexlNode pushedDownTree = PushdownNegationVisitor.pushdownNegations(node);
         return (STATE) pushedDownTree.jjtAccept(visitor, parentage);
     }
-
+    
     public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
         return isExecutable(node, config, helper, false);
     }
-
+    
     public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex) {
         return isExecutable(node, config, helper, forFieldIndex, null);
     }
-
+    
     public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, List<String> debugOutput) {
         return isExecutable(node, config, helper, false, debugOutput);
     }
-
+    
     public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
-                                       Set<String> nonEventFields, List<String> debugOutput, MetadataHelper metadataHelper) {
+                    Set<String> nonEventFields, List<String> debugOutput, MetadataHelper metadataHelper) {
         return isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, debugOutput, metadataHelper);
     }
-
+    
     public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex, List<String> debugOutput) {
         STATE state = getState(node, config, helper, forFieldIndex, debugOutput);
         return state == STATE.EXECUTABLE;
     }
-
+    
     public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
-                                       Set<String> nonEventFields, boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
+                    Set<String> nonEventFields, boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
         return isExecutable(node, "", config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, debugOutput, metadataHelper);
     }
-
+    
     public static boolean isExecutable(JexlNode node, Object parentage, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
-                                       Set<String> nonEventFields, boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
+                    Set<String> nonEventFields, boolean forFieldIndex, List<String> debugOutput, MetadataHelper metadataHelper) {
         STATE state = getState(node, parentage, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, debugOutput, metadataHelper);
         return state == STATE.EXECUTABLE;
     }
-
+    
     /**
      * allOrNone means that all contained children must be executable for this node to be executable. Used for expressions, scripts, and or nodes.
      */
@@ -305,7 +307,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     protected STATE unlessAnyNonExecutable(JexlNode node, Object data) {
         STATE state;
         boolean containsIgnorable = false;
@@ -324,7 +326,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             return STATE.EXECUTABLE;
         }
     }
-
+    
     /**
      * allOrSome means that some of the nodes must be executable for this to be executable. Any partial state results in a partial state however. Used for and
      * nodes.
@@ -371,7 +373,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     /**
      * executableUnlessItIsnt means that none of the nodes may be non-executable or error for this to be executable. Introduced to catch NULL literals in a
      * disjuction
@@ -408,7 +410,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTEQNode node, Object data) {
         STATE state;
@@ -430,7 +432,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTNENode node, Object data) {
         STATE state;
@@ -460,7 +462,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTReference node, Object data) {
         STATE state;
@@ -504,7 +506,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTERNode node, Object data) {
         STATE state;
@@ -523,7 +525,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTNRNode node, Object data) {
         STATE state;
@@ -540,17 +542,17 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     public static boolean isNoFieldOnly(JexlNode node) {
         try {
             return Constants.NO_FIELD.equals(JexlASTHelper.getIdentifier(node));
         } catch (NoSuchElementException e) {
             // no-op
         }
-
+        
         return false;
     }
-
+    
     private boolean isUnOrNoFielded(JexlNode node) {
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
@@ -560,7 +562,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return false;
     }
-
+    
     private boolean isUnindexed(JexlNode node) {
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier identifier : identifiers) {
@@ -584,7 +586,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return false;
     }
-
+    
     private boolean isIndexOnly(JexlNode node) {
         if (this.indexOnlyFields == null) {
             try {
@@ -602,7 +604,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return false;
     }
-
+    
     private boolean isNonEvent(JexlNode node) {
         if (this.nonEventFields == null) {
             try {
@@ -625,22 +627,22 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return false;
     }
-
+    
     public ExecutableDeterminationVisitor setNonEventFields(Set<String> nonEventFields) {
         this.nonEventFields = nonEventFields;
         return this;
     }
-
+    
     public ExecutableDeterminationVisitor setIndexOnlyFields(Set<String> indexOnlyFields) {
         this.indexOnlyFields = indexOnlyFields;
         return this;
     }
-
+    
     public ExecutableDeterminationVisitor setIndexedFields(Set<String> indexedFields) {
         this.indexedFields = indexedFields;
         return this;
     }
-
+    
     private STATE visitLtGtNode(JexlNode node, Object data) {
         STATE state;
         // if we got here, then (iff in a bounded, indexed range) we were not wrapped in an ivarator, or in a delayed predicate. So we know it returns 0
@@ -657,27 +659,27 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTGENode node, Object data) {
         return visitLtGtNode(node, data);
     }
-
+    
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return visitLtGtNode(node, data);
     }
-
+    
     @Override
     public Object visit(ASTLENode node, Object data) {
         return visitLtGtNode(node, data);
     }
-
+    
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return visitLtGtNode(node, data);
     }
-
+    
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         STATE state;
@@ -688,7 +690,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTNotNode node, Object data) {
         // grab the recursive state because its either necessary directly or the error state of the branch needs to be checked
@@ -697,29 +699,29 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         if (state == STATE.EXECUTABLE) {
             state = STATE.NEGATED_EXECUTABLE;
         }
-
+        
         // global index does not yet support NEGATED_EXECUTABLE so unless it is an error it's always NON_EXECUTABLE
         if (!forFieldIndex && state != STATE.ERROR) {
             state = STATE.NON_EXECUTABLE;
         }
-
+        
         return state;
     }
-
+    
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         STATE state;
         state = allOrNone(node, data + PREFIX);
         return state;
     }
-
+    
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         STATE state;
         state = allOrNone(node, data + PREFIX);
         return state;
     }
-
+    
     @Override
     public Object visit(ASTOrNode node, Object data) {
         STATE state;
@@ -731,7 +733,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTAndNode node, Object data) {
         STATE state;
@@ -745,7 +747,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(SimpleNode node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -754,7 +756,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTBlock node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -763,7 +765,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTAmbiguous node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -772,7 +774,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTIfStatement node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -781,7 +783,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -790,7 +792,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTForeachStatement node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -799,7 +801,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTAssignment node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -808,7 +810,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTTernaryNode node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -817,7 +819,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTBitwiseOrNode node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -826,7 +828,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTBitwiseXorNode node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -835,7 +837,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTBitwiseAndNode node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -844,7 +846,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTAdditiveNode node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -853,7 +855,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTAdditiveOperator node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -862,7 +864,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTMulNode node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -871,7 +873,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTDivNode node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -880,7 +882,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTModNode node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -889,7 +891,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTUnaryMinusNode node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -898,7 +900,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -907,7 +909,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTIdentifier node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -916,7 +918,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTNullLiteral node, Object data) {
         STATE state = STATE.NON_EXECUTABLE;
@@ -925,7 +927,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTTrueNode node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -934,7 +936,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTFalseNode node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -943,7 +945,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTIntegerLiteral node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -952,7 +954,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTFloatLiteral node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -961,7 +963,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -970,7 +972,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTArrayLiteral node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -979,7 +981,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTMapLiteral node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -988,7 +990,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTMapEntry node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -997,7 +999,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTEmptyFunction node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -1006,7 +1008,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTSizeFunction node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -1015,7 +1017,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTMethodNode node, Object data) {
         STATE state = STATE.NON_EXECUTABLE;
@@ -1024,7 +1026,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTSizeMethod node, Object data) {
         STATE state = STATE.NON_EXECUTABLE;
@@ -1033,7 +1035,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTConstructorNode node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -1042,7 +1044,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTArrayAccess node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -1051,7 +1053,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTReturnStatement node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -1060,7 +1062,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTVar node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -1069,7 +1071,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
         STATE state = STATE.IGNORABLE;
@@ -1078,5 +1080,5 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
         return state;
     }
-
+    
 }
