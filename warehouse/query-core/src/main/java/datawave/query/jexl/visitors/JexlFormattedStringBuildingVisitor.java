@@ -303,4 +303,19 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
         }
         return sb;
     }
+    
+    public static void main(String args[]) {
+        if (args.length != 1) {
+            System.out.println("Invalid args. Must give 1 argument (the query).");
+        } else {
+            try {
+                System.out.println("Given Query:");
+                System.out.println(args[0]);
+                System.out.println("Formatted Query:");
+                System.out.println(JexlFormattedStringBuildingVisitor.buildQuery(JexlASTHelper.parseJexlQuery(args[0])));
+            } catch (ParseException e) {
+                System.out.println("Failure to parse given query");
+            }
+        }
+    }
 }
