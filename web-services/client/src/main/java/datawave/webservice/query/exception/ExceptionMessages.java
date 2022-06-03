@@ -8,37 +8,53 @@ public final class ExceptionMessages {
     
     public static void registerAllExtensions(com.google.protobuf.ExtensionRegistryLite registry) {}
     
-    public interface QueryExceptionTypeOrBuilder extends com.google.protobuf.MessageLiteOrBuilder {
+    public static void registerAllExtensions(com.google.protobuf.ExtensionRegistry registry) {
+        registerAllExtensions((com.google.protobuf.ExtensionRegistryLite) registry);
+    }
+    
+    public interface QueryExceptionTypeOrBuilder extends
+    // @@protoc_insertion_point(interface_extends:datawave.webservice.query.exception.QueryExceptionType)
+                    com.google.protobuf.MessageOrBuilder {
         
-        // optional string message = 1;
         /**
          * <code>optional string message = 1;</code>
+         * 
+         * @return Whether the message field is set.
          */
         boolean hasMessage();
         
         /**
          * <code>optional string message = 1;</code>
+         * 
+         * @return The message.
          */
         java.lang.String getMessage();
         
         /**
          * <code>optional string message = 1;</code>
+         * 
+         * @return The bytes for message.
          */
         com.google.protobuf.ByteString getMessageBytes();
         
-        // optional string cause = 2;
         /**
          * <code>optional string cause = 2;</code>
+         * 
+         * @return Whether the cause field is set.
          */
         boolean hasCause();
         
         /**
          * <code>optional string cause = 2;</code>
+         * 
+         * @return The cause.
          */
         java.lang.String getCause();
         
         /**
          * <code>optional string cause = 2;</code>
+         * 
+         * @return The bytes for cause.
          */
         com.google.protobuf.ByteString getCauseBytes();
     }
@@ -46,29 +62,40 @@ public final class ExceptionMessages {
     /**
      * Protobuf type {@code datawave.webservice.query.exception.QueryExceptionType}
      */
-    public static final class QueryExceptionType extends com.google.protobuf.GeneratedMessageLite implements QueryExceptionTypeOrBuilder {
+    public static final class QueryExceptionType extends com.google.protobuf.GeneratedMessageV3 implements
+    // @@protoc_insertion_point(message_implements:datawave.webservice.query.exception.QueryExceptionType)
+                    QueryExceptionTypeOrBuilder {
+        private static final long serialVersionUID = 0L;
+        
         // Use QueryExceptionType.newBuilder() to construct.
-        private QueryExceptionType(com.google.protobuf.GeneratedMessageLite.Builder builder) {
+        private QueryExceptionType(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
             super(builder);
-            
         }
         
-        private QueryExceptionType(boolean noInit) {}
-        
-        private static final QueryExceptionType defaultInstance;
-        
-        public static QueryExceptionType getDefaultInstance() {
-            return defaultInstance;
+        private QueryExceptionType() {
+            message_ = "";
+            cause_ = "";
         }
         
-        public QueryExceptionType getDefaultInstanceForType() {
-            return defaultInstance;
+        @java.lang.Override
+        @SuppressWarnings({"unused"})
+        protected java.lang.Object newInstance(UnusedPrivateParameter unused) {
+            return new QueryExceptionType();
+        }
+        
+        @java.lang.Override
+        public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
+            return this.unknownFields;
         }
         
         private QueryExceptionType(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
-            initFields();
+            this();
+            if (extensionRegistry == null) {
+                throw new java.lang.NullPointerException();
+            }
             int mutable_bitField0_ = 0;
+            com.google.protobuf.UnknownFieldSet.Builder unknownFields = com.google.protobuf.UnknownFieldSet.newBuilder();
             try {
                 boolean done = false;
                 while (!done) {
@@ -77,60 +104,69 @@ public final class ExceptionMessages {
                         case 0:
                             done = true;
                             break;
-                        default: {
-                            if (!parseUnknownField(input, extensionRegistry, tag)) {
-                                done = true;
-                            }
-                            break;
-                        }
                         case 10: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000001;
-                            message_ = input.readBytes();
+                            message_ = bs;
                             break;
                         }
                         case 18: {
+                            com.google.protobuf.ByteString bs = input.readBytes();
                             bitField0_ |= 0x00000002;
-                            cause_ = input.readBytes();
+                            cause_ = bs;
+                            break;
+                        }
+                        default: {
+                            if (!parseUnknownField(input, unknownFields, extensionRegistry, tag)) {
+                                done = true;
+                            }
                             break;
                         }
                     }
                 }
             } catch (com.google.protobuf.InvalidProtocolBufferException e) {
                 throw e.setUnfinishedMessage(this);
+            } catch (com.google.protobuf.UninitializedMessageException e) {
+                throw e.asInvalidProtocolBufferException().setUnfinishedMessage(this);
             } catch (java.io.IOException e) {
-                throw new com.google.protobuf.InvalidProtocolBufferException(e.getMessage()).setUnfinishedMessage(this);
+                throw new com.google.protobuf.InvalidProtocolBufferException(e).setUnfinishedMessage(this);
             } finally {
+                this.unknownFields = unknownFields.build();
                 makeExtensionsImmutable();
             }
         }
         
-        public static com.google.protobuf.Parser<QueryExceptionType> PARSER = new com.google.protobuf.AbstractParser<QueryExceptionType>() {
-            public QueryExceptionType parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-                            throws com.google.protobuf.InvalidProtocolBufferException {
-                return new QueryExceptionType(input, extensionRegistry);
-            }
-        };
+        public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+            return datawave.webservice.query.exception.ExceptionMessages.internal_static_datawave_webservice_query_exception_QueryExceptionType_descriptor;
+        }
         
         @java.lang.Override
-        public com.google.protobuf.Parser<QueryExceptionType> getParserForType() {
-            return PARSER;
+        protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+            return datawave.webservice.query.exception.ExceptionMessages.internal_static_datawave_webservice_query_exception_QueryExceptionType_fieldAccessorTable
+                            .ensureFieldAccessorsInitialized(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.class,
+                                            datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder.class);
         }
         
         private int bitField0_;
-        // optional string message = 1;
         public static final int MESSAGE_FIELD_NUMBER = 1;
-        private java.lang.Object message_;
+        private volatile java.lang.Object message_;
         
         /**
          * <code>optional string message = 1;</code>
+         * 
+         * @return Whether the message field is set.
          */
+        @java.lang.Override
         public boolean hasMessage() {
-            return ((bitField0_ & 0x00000001) == 0x00000001);
+            return ((bitField0_ & 0x00000001) != 0);
         }
         
         /**
          * <code>optional string message = 1;</code>
+         * 
+         * @return The message.
          */
+        @java.lang.Override
         public java.lang.String getMessage() {
             java.lang.Object ref = message_;
             if (ref instanceof java.lang.String) {
@@ -147,7 +183,10 @@ public final class ExceptionMessages {
         
         /**
          * <code>optional string message = 1;</code>
+         * 
+         * @return The bytes for message.
          */
+        @java.lang.Override
         public com.google.protobuf.ByteString getMessageBytes() {
             java.lang.Object ref = message_;
             if (ref instanceof java.lang.String) {
@@ -159,20 +198,25 @@ public final class ExceptionMessages {
             }
         }
         
-        // optional string cause = 2;
         public static final int CAUSE_FIELD_NUMBER = 2;
-        private java.lang.Object cause_;
+        private volatile java.lang.Object cause_;
         
         /**
          * <code>optional string cause = 2;</code>
+         * 
+         * @return Whether the cause field is set.
          */
+        @java.lang.Override
         public boolean hasCause() {
-            return ((bitField0_ & 0x00000002) == 0x00000002);
+            return ((bitField0_ & 0x00000002) != 0);
         }
         
         /**
          * <code>optional string cause = 2;</code>
+         * 
+         * @return The cause.
          */
+        @java.lang.Override
         public java.lang.String getCause() {
             java.lang.Object ref = cause_;
             if (ref instanceof java.lang.String) {
@@ -189,7 +233,10 @@ public final class ExceptionMessages {
         
         /**
          * <code>optional string cause = 2;</code>
+         * 
+         * @return The bytes for cause.
          */
+        @java.lang.Override
         public com.google.protobuf.ByteString getCauseBytes() {
             java.lang.Object ref = cause_;
             if (ref instanceof java.lang.String) {
@@ -201,55 +248,104 @@ public final class ExceptionMessages {
             }
         }
         
-        private void initFields() {
-            message_ = "";
-            cause_ = "";
-        }
-        
         private byte memoizedIsInitialized = -1;
         
+        @java.lang.Override
         public final boolean isInitialized() {
             byte isInitialized = memoizedIsInitialized;
-            if (isInitialized != -1)
-                return isInitialized == 1;
+            if (isInitialized == 1)
+                return true;
+            if (isInitialized == 0)
+                return false;
             
             memoizedIsInitialized = 1;
             return true;
         }
         
+        @java.lang.Override
         public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
-            getSerializedSize();
-            if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                output.writeBytes(1, getMessageBytes());
+            if (((bitField0_ & 0x00000001) != 0)) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 1, message_);
             }
-            if (((bitField0_ & 0x00000002) == 0x00000002)) {
-                output.writeBytes(2, getCauseBytes());
+            if (((bitField0_ & 0x00000002) != 0)) {
+                com.google.protobuf.GeneratedMessageV3.writeString(output, 2, cause_);
             }
+            unknownFields.writeTo(output);
         }
         
-        private int memoizedSerializedSize = -1;
-        
+        @java.lang.Override
         public int getSerializedSize() {
-            int size = memoizedSerializedSize;
+            int size = memoizedSize;
             if (size != -1)
                 return size;
             
             size = 0;
-            if (((bitField0_ & 0x00000001) == 0x00000001)) {
-                size += com.google.protobuf.CodedOutputStream.computeBytesSize(1, getMessageBytes());
+            if (((bitField0_ & 0x00000001) != 0)) {
+                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, message_);
             }
-            if (((bitField0_ & 0x00000002) == 0x00000002)) {
-                size += com.google.protobuf.CodedOutputStream.computeBytesSize(2, getCauseBytes());
+            if (((bitField0_ & 0x00000002) != 0)) {
+                size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, cause_);
             }
-            memoizedSerializedSize = size;
+            size += unknownFields.getSerializedSize();
+            memoizedSize = size;
             return size;
         }
         
-        private static final long serialVersionUID = 0L;
+        @java.lang.Override
+        public boolean equals(final java.lang.Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType)) {
+                return super.equals(obj);
+            }
+            datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType other = (datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType) obj;
+            
+            if (hasMessage() != other.hasMessage())
+                return false;
+            if (hasMessage()) {
+                if (!getMessage().equals(other.getMessage()))
+                    return false;
+            }
+            if (hasCause() != other.hasCause())
+                return false;
+            if (hasCause()) {
+                if (!getCause().equals(other.getCause()))
+                    return false;
+            }
+            if (!unknownFields.equals(other.unknownFields))
+                return false;
+            return true;
+        }
         
         @java.lang.Override
-        protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
-            return super.writeReplace();
+        public int hashCode() {
+            if (memoizedHashCode != 0) {
+                return memoizedHashCode;
+            }
+            int hash = 41;
+            hash = (19 * hash) + getDescriptor().hashCode();
+            if (hasMessage()) {
+                hash = (37 * hash) + MESSAGE_FIELD_NUMBER;
+                hash = (53 * hash) + getMessage().hashCode();
+            }
+            if (hasCause()) {
+                hash = (37 * hash) + CAUSE_FIELD_NUMBER;
+                hash = (53 * hash) + getCause().hashCode();
+            }
+            hash = (29 * hash) + unknownFields.hashCode();
+            memoizedHashCode = hash;
+            return hash;
+        }
+        
+        public static datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType parseFrom(java.nio.ByteBuffer data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data);
+        }
+        
+        public static datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType parseFrom(java.nio.ByteBuffer data,
+                        com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
+            return PARSER.parseFrom(data, extensionRegistry);
         }
         
         public static datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType parseFrom(com.google.protobuf.ByteString data)
@@ -273,67 +369,90 @@ public final class ExceptionMessages {
         }
         
         public static datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType parseFrom(java.io.InputStream input) throws java.io.IOException {
-            return PARSER.parseFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
         
         public static datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType parseFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
         
         public static datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType parseDelimitedFrom(java.io.InputStream input)
                         throws java.io.IOException {
-            return PARSER.parseDelimitedFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
         }
         
         public static datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType parseDelimitedFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseDelimitedFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input, extensionRegistry);
         }
         
         public static datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType parseFrom(com.google.protobuf.CodedInputStream input)
                         throws java.io.IOException {
-            return PARSER.parseFrom(input);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
         }
         
         public static datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType parseFrom(com.google.protobuf.CodedInputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
-            return PARSER.parseFrom(input, extensionRegistry);
+            return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input, extensionRegistry);
         }
         
-        public static Builder newBuilder() {
-            return Builder.create();
-        }
-        
+        @java.lang.Override
         public Builder newBuilderForType() {
             return newBuilder();
         }
         
-        public static Builder newBuilder(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType prototype) {
-            return newBuilder().mergeFrom(prototype);
+        public static Builder newBuilder() {
+            return DEFAULT_INSTANCE.toBuilder();
         }
         
+        public static Builder newBuilder(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType prototype) {
+            return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+        }
+        
+        @java.lang.Override
         public Builder toBuilder() {
-            return newBuilder(this);
+            return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
+        }
+        
+        @java.lang.Override
+        protected Builder newBuilderForType(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+            Builder builder = new Builder(parent);
+            return builder;
         }
         
         /**
          * Protobuf type {@code datawave.webservice.query.exception.QueryExceptionType}
          */
-        public static final class Builder extends
-                        com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType,Builder>
-                        implements datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder {
+        public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:datawave.webservice.query.exception.QueryExceptionType)
+                        datawave.webservice.query.exception.ExceptionMessages.QueryExceptionTypeOrBuilder {
+            public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
+                return datawave.webservice.query.exception.ExceptionMessages.internal_static_datawave_webservice_query_exception_QueryExceptionType_descriptor;
+            }
+            
+            @java.lang.Override
+            protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internalGetFieldAccessorTable() {
+                return datawave.webservice.query.exception.ExceptionMessages.internal_static_datawave_webservice_query_exception_QueryExceptionType_fieldAccessorTable
+                                .ensureFieldAccessorsInitialized(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.class,
+                                                datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.Builder.class);
+            }
+            
             // Construct using datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.newBuilder()
             private Builder() {
                 maybeForceBuilderInitialization();
             }
             
-            private void maybeForceBuilderInitialization() {}
-            
-            private static Builder create() {
-                return new Builder();
+            private Builder(com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+                super(parent);
+                maybeForceBuilderInitialization();
             }
             
+            private void maybeForceBuilderInitialization() {
+                if (com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders) {}
+            }
+            
+            @java.lang.Override
             public Builder clear() {
                 super.clear();
                 message_ = "";
@@ -343,14 +462,17 @@ public final class ExceptionMessages {
                 return this;
             }
             
-            public Builder clone() {
-                return create().mergeFrom(buildPartial());
+            @java.lang.Override
+            public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
+                return datawave.webservice.query.exception.ExceptionMessages.internal_static_datawave_webservice_query_exception_QueryExceptionType_descriptor;
             }
             
+            @java.lang.Override
             public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getDefaultInstanceForType() {
                 return datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType.getDefaultInstance();
             }
             
+            @java.lang.Override
             public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType build() {
                 datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType result = buildPartial();
                 if (!result.isInitialized()) {
@@ -359,21 +481,63 @@ public final class ExceptionMessages {
                 return result;
             }
             
+            @java.lang.Override
             public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType buildPartial() {
                 datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType result = new datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType(
                                 this);
                 int from_bitField0_ = bitField0_;
                 int to_bitField0_ = 0;
-                if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+                if (((from_bitField0_ & 0x00000001) != 0)) {
                     to_bitField0_ |= 0x00000001;
                 }
                 result.message_ = message_;
-                if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+                if (((from_bitField0_ & 0x00000002) != 0)) {
                     to_bitField0_ |= 0x00000002;
                 }
                 result.cause_ = cause_;
                 result.bitField0_ = to_bitField0_;
+                onBuilt();
                 return result;
+            }
+            
+            @java.lang.Override
+            public Builder clone() {
+                return super.clone();
+            }
+            
+            @java.lang.Override
+            public Builder setField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.setField(field, value);
+            }
+            
+            @java.lang.Override
+            public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
+                return super.clearField(field);
+            }
+            
+            @java.lang.Override
+            public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+                return super.clearOneof(oneof);
+            }
+            
+            @java.lang.Override
+            public Builder setRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, int index, java.lang.Object value) {
+                return super.setRepeatedField(field, index, value);
+            }
+            
+            @java.lang.Override
+            public Builder addRepeatedField(com.google.protobuf.Descriptors.FieldDescriptor field, java.lang.Object value) {
+                return super.addRepeatedField(field, value);
+            }
+            
+            @java.lang.Override
+            public Builder mergeFrom(com.google.protobuf.Message other) {
+                if (other instanceof datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType) {
+                    return mergeFrom((datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType) other);
+                } else {
+                    super.mergeFrom(other);
+                    return this;
+                }
             }
             
             public Builder mergeFrom(datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType other) {
@@ -382,20 +546,24 @@ public final class ExceptionMessages {
                 if (other.hasMessage()) {
                     bitField0_ |= 0x00000001;
                     message_ = other.message_;
-                    
+                    onChanged();
                 }
                 if (other.hasCause()) {
                     bitField0_ |= 0x00000002;
                     cause_ = other.cause_;
-                    
+                    onChanged();
                 }
+                this.mergeUnknownFields(other.unknownFields);
+                onChanged();
                 return this;
             }
             
+            @java.lang.Override
             public final boolean isInitialized() {
                 return true;
             }
             
+            @java.lang.Override
             public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws java.io.IOException {
                 datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType parsedMessage = null;
@@ -403,7 +571,7 @@ public final class ExceptionMessages {
                     parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
                 } catch (com.google.protobuf.InvalidProtocolBufferException e) {
                     parsedMessage = (datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType) e.getUnfinishedMessage();
-                    throw e;
+                    throw e.unwrapIOException();
                 } finally {
                     if (parsedMessage != null) {
                         mergeFrom(parsedMessage);
@@ -414,24 +582,30 @@ public final class ExceptionMessages {
             
             private int bitField0_;
             
-            // optional string message = 1;
             private java.lang.Object message_ = "";
             
             /**
              * <code>optional string message = 1;</code>
+             * 
+             * @return Whether the message field is set.
              */
             public boolean hasMessage() {
-                return ((bitField0_ & 0x00000001) == 0x00000001);
+                return ((bitField0_ & 0x00000001) != 0);
             }
             
             /**
              * <code>optional string message = 1;</code>
+             * 
+             * @return The message.
              */
             public java.lang.String getMessage() {
                 java.lang.Object ref = message_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    message_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        message_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -440,6 +614,8 @@ public final class ExceptionMessages {
             
             /**
              * <code>optional string message = 1;</code>
+             * 
+             * @return The bytes for message.
              */
             public com.google.protobuf.ByteString getMessageBytes() {
                 java.lang.Object ref = message_;
@@ -454,6 +630,10 @@ public final class ExceptionMessages {
             
             /**
              * <code>optional string message = 1;</code>
+             * 
+             * @param value
+             *            The message to set.
+             * @return This builder for chaining.
              */
             public Builder setMessage(java.lang.String value) {
                 if (value == null) {
@@ -461,22 +641,28 @@ public final class ExceptionMessages {
                 }
                 bitField0_ |= 0x00000001;
                 message_ = value;
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>optional string message = 1;</code>
+             * 
+             * @return This builder for chaining.
              */
             public Builder clearMessage() {
                 bitField0_ = (bitField0_ & ~0x00000001);
                 message_ = getDefaultInstance().getMessage();
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>optional string message = 1;</code>
+             * 
+             * @param value
+             *            The bytes for message to set.
+             * @return This builder for chaining.
              */
             public Builder setMessageBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -484,28 +670,34 @@ public final class ExceptionMessages {
                 }
                 bitField0_ |= 0x00000001;
                 message_ = value;
-                
+                onChanged();
                 return this;
             }
             
-            // optional string cause = 2;
             private java.lang.Object cause_ = "";
             
             /**
              * <code>optional string cause = 2;</code>
+             * 
+             * @return Whether the cause field is set.
              */
             public boolean hasCause() {
-                return ((bitField0_ & 0x00000002) == 0x00000002);
+                return ((bitField0_ & 0x00000002) != 0);
             }
             
             /**
              * <code>optional string cause = 2;</code>
+             * 
+             * @return The cause.
              */
             public java.lang.String getCause() {
                 java.lang.Object ref = cause_;
                 if (!(ref instanceof java.lang.String)) {
-                    java.lang.String s = ((com.google.protobuf.ByteString) ref).toStringUtf8();
-                    cause_ = s;
+                    com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
+                    java.lang.String s = bs.toStringUtf8();
+                    if (bs.isValidUtf8()) {
+                        cause_ = s;
+                    }
                     return s;
                 } else {
                     return (java.lang.String) ref;
@@ -514,6 +706,8 @@ public final class ExceptionMessages {
             
             /**
              * <code>optional string cause = 2;</code>
+             * 
+             * @return The bytes for cause.
              */
             public com.google.protobuf.ByteString getCauseBytes() {
                 java.lang.Object ref = cause_;
@@ -528,6 +722,10 @@ public final class ExceptionMessages {
             
             /**
              * <code>optional string cause = 2;</code>
+             * 
+             * @param value
+             *            The cause to set.
+             * @return This builder for chaining.
              */
             public Builder setCause(java.lang.String value) {
                 if (value == null) {
@@ -535,22 +733,28 @@ public final class ExceptionMessages {
                 }
                 bitField0_ |= 0x00000002;
                 cause_ = value;
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>optional string cause = 2;</code>
+             * 
+             * @return This builder for chaining.
              */
             public Builder clearCause() {
                 bitField0_ = (bitField0_ & ~0x00000002);
                 cause_ = getDefaultInstance().getCause();
-                
+                onChanged();
                 return this;
             }
             
             /**
              * <code>optional string cause = 2;</code>
+             * 
+             * @param value
+             *            The bytes for cause to set.
+             * @return This builder for chaining.
              */
             public Builder setCauseBytes(com.google.protobuf.ByteString value) {
                 if (value == null) {
@@ -558,22 +762,75 @@ public final class ExceptionMessages {
                 }
                 bitField0_ |= 0x00000002;
                 cause_ = value;
-                
+                onChanged();
                 return this;
+            }
+            
+            @java.lang.Override
+            public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.setUnknownFields(unknownFields);
+            }
+            
+            @java.lang.Override
+            public final Builder mergeUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
+                return super.mergeUnknownFields(unknownFields);
             }
             
             // @@protoc_insertion_point(builder_scope:datawave.webservice.query.exception.QueryExceptionType)
         }
         
+        // @@protoc_insertion_point(class_scope:datawave.webservice.query.exception.QueryExceptionType)
+        private static final datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType DEFAULT_INSTANCE;
         static {
-            defaultInstance = new QueryExceptionType(true);
-            defaultInstance.initFields();
+            DEFAULT_INSTANCE = new datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType();
         }
         
-        // @@protoc_insertion_point(class_scope:datawave.webservice.query.exception.QueryExceptionType)
+        public static datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getDefaultInstance() {
+            return DEFAULT_INSTANCE;
+        }
+        
+        @java.lang.Deprecated
+        public static final com.google.protobuf.Parser<QueryExceptionType> PARSER = new com.google.protobuf.AbstractParser<QueryExceptionType>() {
+            @java.lang.Override
+            public QueryExceptionType parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+                            throws com.google.protobuf.InvalidProtocolBufferException {
+                return new QueryExceptionType(input, extensionRegistry);
+            }
+        };
+        
+        public static com.google.protobuf.Parser<QueryExceptionType> parser() {
+            return PARSER;
+        }
+        
+        @java.lang.Override
+        public com.google.protobuf.Parser<QueryExceptionType> getParserForType() {
+            return PARSER;
+        }
+        
+        @java.lang.Override
+        public datawave.webservice.query.exception.ExceptionMessages.QueryExceptionType getDefaultInstanceForType() {
+            return DEFAULT_INSTANCE;
+        }
+        
     }
     
-    static {}
+    private static final com.google.protobuf.Descriptors.Descriptor internal_static_datawave_webservice_query_exception_QueryExceptionType_descriptor;
+    private static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_datawave_webservice_query_exception_QueryExceptionType_fieldAccessorTable;
+    
+    public static com.google.protobuf.Descriptors.FileDescriptor getDescriptor() {
+        return descriptor;
+    }
+    
+    private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
+    static {
+        java.lang.String[] descriptorData = {"\n\030exception_messages.proto\022#datawave.web" + "service.query.exception\"4\n\022QueryExceptio"
+                        + "nType\022\017\n\007message\030\001 \001(\t\022\r\n\005cause\030\002 \001(\tB%\n" + "#datawave.webservice.query.exception"};
+        descriptor = com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData,
+                        new com.google.protobuf.Descriptors.FileDescriptor[] {});
+        internal_static_datawave_webservice_query_exception_QueryExceptionType_descriptor = getDescriptor().getMessageTypes().get(0);
+        internal_static_datawave_webservice_query_exception_QueryExceptionType_fieldAccessorTable = new com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+                        internal_static_datawave_webservice_query_exception_QueryExceptionType_descriptor, new java.lang.String[] {"Message", "Cause",});
+    }
     
     // @@protoc_insertion_point(outer_class_scope)
 }
