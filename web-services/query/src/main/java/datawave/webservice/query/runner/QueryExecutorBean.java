@@ -90,6 +90,10 @@ import org.apache.accumulo.core.util.Pair;
 import org.apache.commons.jexl2.parser.TokenMgrError;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 // TODO: Fix tracing for Accumulo 2.1-compatibility
+import org.apache.accumulo.core.trace.TraceUtil;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Scope;
+
 //import org.apache.htrace.Trace;
 //import org.apache.htrace.TraceInfo;
 //import org.apache.htrace.TraceScope;
@@ -648,6 +652,8 @@ public class QueryExecutorBean implements QueryExecutor {
         AccumuloClient client = null;
         AccumuloConnectionFactory.Priority priority;
 //        TraceScope createSpan = null;
+        Span createSpan = null;
+        Scope spanScope = null;
         RunningQuery rq = null;
         try {
             // Default hasResults to true. If a query logic is actually able to set this value,
@@ -703,6 +709,14 @@ public class QueryExecutorBean implements QueryExecutor {
             } finally {
                 accumuloConnectionRequestBean.requestEnd(q.getId().toString());
             }
+
+            // Testing Accumulo 2.1's new OTEL-based trace api. Always-on mode for now
+            createSpan = TraceUtil.startSpan(QueryExecutorBean.class, "createQuery");
+            spanScope = createSpan.makeCurrent();
+            for (Entry<String,List<String>> param : queryParameters.entrySet()) {
+                createSpan.setAttribute(param.getKey(), param.getValue().get(0));
+            }
+
             // If we're supposed to trace this query, then turn tracing on and set information about the query
             // onto the span so that it is saved in the trace table.
 //            TraceInfo traceInfo = null;
@@ -740,6 +754,10 @@ public class QueryExecutorBean implements QueryExecutor {
             return response;
         } catch (Throwable t) {
             response.setHasResults(false);
+
+            if (createSpan != null) {
+                TraceUtil.setException(createSpan, t, false);
+            }
             
             if (rq != null) {
                 rq.getMetric().setError(t);
@@ -794,6 +812,12 @@ public class QueryExecutorBean implements QueryExecutor {
                 throw new DatawaveWebApplicationException(qe, response, statusCode);
             }
         } finally {
+            if (spanScope != null) {
+                spanScope.close();
+            }
+            if (createSpan != null) {
+                createSpan.end();
+            }
 //            if (createSpan != null) {
 //                createSpan.close();
 //            }

@@ -36,9 +36,14 @@ info "Configuring Wildfly for DataWave..."
 
 ( cd "${DW_CLOUD_HOME}/${DW_DATAWAVE_WEB_SYMLINK}" && ./setup-wildfly.sh )
 
+# Download the OTEL javaagent jar into the web tarball dir
+downloadTarball \
+https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar \
+"${DW_CLOUD_HOME}/${DW_DATAWAVE_WEB_SYMLINK}"
+
 # Set JVM properties on Wildfly as needed
 cat << EOF >> ${TARBALL_BASE_DIR}/bin/standalone.conf
-JAVA_OPTS="\$JAVA_OPTS -Daccumulo.properties=file://${ACCUMULO_HOME}/conf/accumulo.properties"
+JAVA_OPTS="\$JAVA_OPTS -javaagent:${DW_CLOUD_HOME}/${DW_DATAWAVE_WEB_SYMLINK}/opentelemetry-javaagent.jar -Dotel.metrics.exporter=none -Dotel.resource.attributes=service.name=datawave-web -Dotel.traces.exporter=otlp -Daccumulo.properties=file://${ACCUMULO_HOME}/conf/accumulo.properties"
 EOF
 
 echo
