@@ -237,10 +237,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         if (instance.isType(ExceededTermThresholdMarkerJexlNode.class)) {
             // use an Ivarator to get the job done
             JexlNode source = instance.getSource();
-            
             if (source instanceof ASTAndNode) {
                 try {
-                    ivarateList(and, source, data);
+                    ivarateRegex(and, source, data);
                 } catch (IOException ioe) {
                     throw new DatawaveFatalQueryException(ioe);
                 }
