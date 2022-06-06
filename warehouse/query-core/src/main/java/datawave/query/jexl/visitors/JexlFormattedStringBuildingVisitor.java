@@ -15,6 +15,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Scanner;
 import java.util.TreeSet;
 
 /**
@@ -305,17 +306,21 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
     }
     
     public static void main(String args[]) {
+        String query;
+        
         if (args.length != 1) {
-            System.out.println("Invalid args. Must give 1 argument (the query).");
+            Scanner scanner = new Scanner(System.in);
+            System.out.println("Enter Query:");
+            query = scanner.nextLine();
+            scanner.close();
         } else {
-            try {
-                System.out.println("Given Query:");
-                System.out.println(args[0]);
-                System.out.println("Formatted Query:");
-                System.out.println(JexlFormattedStringBuildingVisitor.buildQuery(JexlASTHelper.parseJexlQuery(args[0])));
-            } catch (ParseException e) {
-                System.out.println("Failure to parse given query");
-            }
+            query = args[0];
+        }
+        try {
+            System.out.println("Formatted Query:");
+            System.out.println(JexlFormattedStringBuildingVisitor.buildQuery(JexlASTHelper.parseJexlQuery(query)));
+        } catch (ParseException e) {
+            System.out.println("Failure to parse given query.");
         }
     }
 }
