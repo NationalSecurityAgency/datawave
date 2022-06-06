@@ -15,14 +15,14 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Maps;
 
 /**
- * Applies a whitelist or blacklist projection to a Document. Whitelist projection will preserve Document sub-substructure whereas blacklist projection will
- * prune sub-substructure which does not match the blacklist.
- *
+ * Applies an includes or excludes projection to a Document. Includes projection will preserve Document sub-substructure whereas excludes projection will prune
+ * sub-substructure which does not match the excludes.
+ * <p>
  * e.g. Input: {NAME:'bob', CHILDREN:[{NAME:'frank', AGE:12}, {NAME:'sally', AGE:10}], AGE:40}
- *
- * Whitelist of 'NAME' applied: {NAME:'bob', CHILDREN:[{NAME:'frank'}, {NAME:'sally'}]}
- *
- * Blacklist of 'NAME' applied: {CHILDREN:[{AGE:12}, {AGE:10}], AGE:40}
+ * <p>
+ * Include of 'NAME' applied: {NAME:'bob', CHILDREN:[{NAME:'frank'}, {NAME:'sally'}]}
+ * <p>
+ * Exclude of 'NAME' applied: {CHILDREN:[{AGE:12}, {AGE:10}], AGE:40}
  */
 public class DocumentProjection implements DocumentPermutation {
     @SuppressWarnings("unused")
@@ -52,12 +52,24 @@ public class DocumentProjection implements DocumentPermutation {
         this.trackSizes = trackSizes;
     }
     
-    public void initializeWhitelist(Set<String> whiteListFields) {
-        this.projection.setWhitelist(whiteListFields);
+    /**
+     * Set the delegate {@link Projection} with the fields to include
+     *
+     * @param includes
+     *            the set of fields to include
+     */
+    public void setIncludes(Set<String> includes) {
+        this.projection.setIncludes(includes);
     }
     
-    public void initializeBlacklist(Set<String> blackListFields) {
-        this.projection.setBlacklist(blackListFields);
+    /**
+     * Configure the delegate {@link Projection} with the fields to exclude
+     *
+     * @param excludes
+     *            the set of fields to exclude
+     */
+    public void setExcludes(Set<String> excludes) {
+        this.projection.setExcludes(excludes);
     }
     
     public Projection getProjection() {
@@ -72,7 +84,6 @@ public class DocumentProjection implements DocumentPermutation {
     @Override
     public Entry<Key,Document> apply(Entry<Key,Document> from) {
         Document returnDoc = trim(from.getValue());
-        
         return Maps.immutableEntry(from.getKey(), returnDoc);
     }
     
@@ -85,10 +96,9 @@ public class DocumentProjection implements DocumentPermutation {
             Attribute<?> attr = entry.getValue();
             
             if (projection.apply(fieldName)) {
-                // If the projection is using a blacklist, we want to
-                // traverse down this subtree, and remove entries that
-                // should be excluded via the blacklist
-                if (projection.isUseBlacklist()) {
+                
+                // If the projection is configured to exclude, we must fully traverse the subtree
+                if (projection.isUseExcludes()) {
                     if (attr instanceof Document) {
                         Document newSubDoc = trim((Document) attr);
                         
@@ -111,10 +121,10 @@ public class DocumentProjection implements DocumentPermutation {
                 // We just want to add this subtree
                 newDoc.put(fieldName, (Attribute<?>) attr.copy(), this.includeGroupingContext, this.reducedResponse);
                 
-            } else if (!projection.isUseBlacklist()) {
-                // Blacklist will completely exclude a subtree, whereas a whitelist
-                // will include parents that potentially do not match the whitelist
-                // if there is a child that does match the whitelist
+            } else if (!projection.isUseExcludes()) {
+                // excludes will completely exclude a subtree, but an includes may
+                // initially retain a parent whose children do not match the includes,
+                // i.e., a child attribute does not match the includes
                 if (attr instanceof Document) {
                     Document newSubDoc = trim((Document) attr);
                     

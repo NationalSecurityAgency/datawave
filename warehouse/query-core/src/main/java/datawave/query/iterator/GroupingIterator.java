@@ -160,7 +160,6 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
         }
         
         return false;
-        // return next != null;
     }
     
     @Override

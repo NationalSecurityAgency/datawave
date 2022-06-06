@@ -11,7 +11,6 @@ import datawave.query.util.VisibilityWiseGuysIngest;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
 import datawave.util.TableName;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
@@ -35,10 +34,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * Controlling the execution order via the @FixMethodOrder. Otherwise, it seems that our accumulo instance "remembers" and executes the query faster than the
+ * test can sleep and results in intermittent failures. Therefore, ensure that the test names alphabetically follow the order shortest to longest running
+ * keeping in mind that queries that have been seen before will execute quicker.
+ */
 public class LongRunningQueryTest {
     
     // variables common to all current tests
@@ -49,13 +54,10 @@ public class LongRunningQueryTest {
     private DatawavePrincipal datawavePrincipal;
     private static final Logger log = Logger.getLogger(LongRunningQueryTest.class);
     private static Connector connector = null;
+    private ShardQueryLogic logic;
     
     @Before
     public void setup() throws Exception {
-        
-        System.setProperty(DnUtils.NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-        System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D,E,I");
-        System.setProperty("file.encoding", "UTF-8");
         DatawaveUser user = new DatawaveUser(userDN, DatawaveUser.UserType.USER, Sets.newHashSet(auths.toString().split(",")), null, null, -1L);
         datawavePrincipal = new DatawavePrincipal((Collections.singleton(user)));
         
@@ -70,6 +72,19 @@ public class LongRunningQueryTest {
         PrintUtility.printTable(connector, auths, TableName.SHARD);
         PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
         PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        
+        logic = new ShardQueryLogic();
+        logic.setIncludeGroupingContext(true);
+        logic.setIncludeDataTypeAsField(true);
+        logic.setMarkingFunctions(new MarkingFunctions.Default());
+        logic.setMetadataHelperFactory(new MetadataHelperFactory());
+        logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
+        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        logic.setMaxEvaluationPipelines(1);
+        logic.setFullTableScanEnabled(true);
+        logic.setCacheModel(false);
+        logic.setMaxPipelineCachedResults(0);
+        logic.setIvaratorCacheBufferSize(0);
     }
     
     /**
@@ -82,8 +97,7 @@ public class LongRunningQueryTest {
      * @throws Exception
      */
     @Test
-    public void testAllowLongRunningQueryWithShardQueryLogic() throws Exception {
-        
+    public void testLongRunningGroupByQuery() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("group.fields", "AGE,$GENDER");
         extraParameters.put("group.fields.batch.size", "6");
@@ -101,29 +115,19 @@ public class LongRunningQueryTest {
         query.setParameters(extraParameters);
         query.setId(UUID.randomUUID());
         
-        ShardQueryLogic logic = new ShardQueryLogic();
-        logic.setIncludeGroupingContext(true);
-        logic.setIncludeDataTypeAsField(true);
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
-        logic.setMetadataHelperFactory(new MetadataHelperFactory());
-        logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
-        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         // this parameter is what makes the query long running. Failing to set this will let it default to 50 minutes
         // (and not the 200 milliseconds that it is set to) which will return only 1 page of 8 results, thereby failing this test.
         // the smaller this timeout, the more pages of results that will be returned.
-        logic.setQueryExecutionForPageTimeout(200);
-        
+        logic.setQueryExecutionForPageTimeout(1);
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal,
-                        new QueryMetricFactoryImpl());
+        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
+                        Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();
         pages.add(page);
-        // guarantee the need for at least a second page. (make the wait slightly longer than the page timeout is set to)
-        Thread.sleep(250);
         
         while (page.getStatus() != ResultsPage.Status.COMPLETE) {
             page = runningQuery.next();
@@ -142,22 +146,19 @@ public class LongRunningQueryTest {
         assertEquals(ResultsPage.Status.COMPLETE, pages.get(pages.size() - 1).getStatus());
     }
     
-    /**
+    /***
      * Tests that the code path that allows long running queries does not interfere or create a never ending query if a query legitimately doesn't have results.
-     * Set the queryExecutionForPageTimeout to an extremely small value (10ms) so that we still hit the timeout per page, even though there will be no results.
-     * should have 1 - n pages with 0 results and a status of PARTIAL, but the last page should have 0 results and a status of NONE
-     *
+     * 
      * @throws Exception
      */
     @Test
-    public void testAllowLongRunningQueryOnNoResults() throws Exception {
-        
+    public void testLongRunningQueryWithNoResults() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("group.fields", "AGE,$GENDER");
         extraParameters.put("group.fields.batch.size", "6");
         
         // There should be no results for this query
-        String queryStr = "UUID =~ '^[NAN].*'";
+        String queryStr = "UUID =~ '^[NAN].*' AND UUID =~ '^[BAN].*' AND UUID =~ '^[MAN].*' AND UUID =~ '^[PAN].*'";
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
         QueryImpl query = new QueryImpl();
@@ -170,30 +171,19 @@ public class LongRunningQueryTest {
         query.setParameters(extraParameters);
         query.setId(UUID.randomUUID());
         
-        ShardQueryLogic logic = new ShardQueryLogic();
-        logic.setIncludeGroupingContext(true);
-        logic.setIncludeDataTypeAsField(true);
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
-        logic.setMetadataHelperFactory(new MetadataHelperFactory());
-        logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
-        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         // this parameter is what makes the query long running. Failing to set this will let it default to 50 minutes
-        // (and not the 10 milliseconds that it is set to) Set to just 10 ms because since there will be no results,
-        // we have to make sure we hit the timeout before no results are returned.
+        // (and not the 1 millisecond that it is set to)
         logic.setQueryExecutionForPageTimeout(1);
-        
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal,
-                        new QueryMetricFactoryImpl());
+        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
+                        Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();
+        Thread.sleep(15);
         pages.add(page);
-        
-        // guarantee the need for at least a second page.
-        Thread.sleep(5);
         
         while (page.getStatus() != ResultsPage.Status.NONE) {
             page = runningQuery.next();
@@ -201,13 +191,9 @@ public class LongRunningQueryTest {
         }
         
         // There should be at least 2 pages, more depending on cpu speed.
-        assertTrue(pages.size() > 1);
-        for (int i = 0; i < pages.size() - 1; ++i) {
-            // check every page but the last one for 0 results and PARTIAL status
-            assertEquals(0, pages.get(i).getResults().size());
-            assertEquals(ResultsPage.Status.PARTIAL, pages.get(i).getStatus());
-        }
-        // check the last page for COMPLETE status and that the total number of results is 8
+        assertTrue(pages.size() == 1);
+        
+        // check the last page for COMPLETE status and that the total number of results is 0
         assertEquals(0, pages.get(pages.size() - 1).getResults().size());
         assertEquals(ResultsPage.Status.NONE, pages.get(pages.size() - 1).getStatus());
     }
@@ -221,8 +207,7 @@ public class LongRunningQueryTest {
      * @throws Exception
      */
     @Test
-    public void testAllowLongRunningQueryWithSmallPageSize() throws Exception {
-        
+    public void testLongRunningQueryWithSmallPageSize() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("group.fields", "AGE,$GENDER");
         extraParameters.put("group.fields.batch.size", "6");
@@ -242,23 +227,15 @@ public class LongRunningQueryTest {
         query.setParameters(extraParameters);
         query.setId(UUID.randomUUID());
         
-        ShardQueryLogic logic = new ShardQueryLogic();
-        logic.setIncludeGroupingContext(true);
-        logic.setIncludeDataTypeAsField(true);
-        logic.setMarkingFunctions(new MarkingFunctions.Default());
-        logic.setMetadataHelperFactory(new MetadataHelperFactory());
-        logic.setDateIndexHelperFactory(new DateIndexHelperFactory());
-        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
         // this parameter is what makes the query long running. Failing to set this will let it default to 50 minutes
         // (and not the 500 milliseconds that it is set to) which will return only 1 page of 8 results, thereby failing this test.
         // the smaller this timeout, the more pages of results that will be returned.
         logic.setQueryExecutionForPageTimeout(5);
-        
         GenericQueryConfiguration config = logic.initialize(connector, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal,
-                        new QueryMetricFactoryImpl());
+        RunningQuery runningQuery = new RunningQuery(null, connector, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
+                        Executors.newSingleThreadExecutor(), null, new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();

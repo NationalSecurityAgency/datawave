@@ -14,7 +14,6 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.accumulo.core.client.Connector;
@@ -22,7 +21,6 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.functors.NOPTransformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
-import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,6 +37,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
@@ -73,9 +72,6 @@ public class ExtendedRunningQueryTest {
     
     @Mock
     TransformIterator transformIterator;
-    
-    @Mock
-    QueryLogicTransformer documentTransformer;
     
     private Transformer transformer = NOPTransformer.nopTransformer();
     
@@ -182,8 +178,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
-        expect(this.queryLogic.getTransformer(this.query)).andReturn(documentTransformer);
-        this.documentTransformer.setQueryExecutionForPageStartTime(EasyMock.anyLong());
+        this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();
@@ -273,8 +268,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
-        expect(this.queryLogic.getTransformer(this.query)).andReturn(documentTransformer);
-        this.documentTransformer.setQueryExecutionForPageStartTime(EasyMock.anyLong());
+        this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();
@@ -341,8 +335,7 @@ public class ExtendedRunningQueryTest {
         expect(this.genericConfiguration.getQueryString()).andReturn("query").once();
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
-        expect(this.queryLogic.getTransformer(this.query)).andReturn(documentTransformer);
-        this.documentTransformer.setQueryExecutionForPageStartTime(EasyMock.anyLong());
+        this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();
@@ -480,8 +473,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
-        expect(this.queryLogic.getTransformer(this.query)).andReturn(documentTransformer);
-        this.documentTransformer.setQueryExecutionForPageStartTime(EasyMock.anyLong());
+        this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();

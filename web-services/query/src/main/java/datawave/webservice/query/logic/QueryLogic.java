@@ -109,6 +109,13 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     TransformIterator getTransformIterator(Query settings);
     
     /**
+     * Whether the query is a type that should be allowed to be run long (exceed the short circuit timeout)
+     *
+     * @return Return whether the query is a type that should be allowed to be run long (exceed the short circuit timeout)
+     */
+    boolean isLongRunningQuery();
+    
+    /**
      * release resources
      */
     void close();
@@ -362,4 +369,12 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
         }
         return dns.stream().filter(dnResultLimits::containsKey).map(dnResultLimits::get).min(Long::compareTo).orElseGet(this::getMaxResults);
     }
+    
+    /**
+     * inform the logic of when a new page of results processing starts. Logics may ignore this information, or pass it to interested transformers, but the
+     * logics shouldn't store this property.
+     *
+     * @param pageProcessingStartTime
+     */
+    void setPageProcessingStartTime(long pageProcessingStartTime);
 }
