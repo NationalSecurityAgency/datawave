@@ -7,7 +7,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
@@ -15,8 +14,12 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
@@ -24,13 +27,15 @@ import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
-import datawave.query.attributes.UniqueFields;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.TableName;
 import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -222,7 +227,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     /**
      * Disables Whindex (value-specific) field mappings for GeoWave functions.
-     * 
+     *
      * @see WhindexVisitor
      */
     private boolean disableWhindexFieldMappings = false;
@@ -295,7 +300,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private ReturnType returnType = DocumentSerialization.DEFAULT_RETURN_TYPE;
     private int eventPerDayThreshold = 10000;
     private int shardsPerDayThreshold = 10;
-    private int maxTermThreshold = 2500;
+    private int initialMaxTermThreshold = 2500;
+    private int finalMaxTermThreshold = 2500;
     private int maxDepthThreshold = 2500;
     private boolean expandFields = true;
     private int maxUnfieldedExpansionThreshold = 500;
@@ -373,6 +379,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Set<String> noExpansionFields = new HashSet<>();
     
     /**
+     * The max execution time per page of results - after it has elapsed, an intermediate result page will be returned.
+     */
+    private long queryExecutionForPageTimeout = 3000000L;
+    
+    private ExcerptFields excerptFields = new ExcerptFields();
+    
+    // The class for the excerpt iterator
+    private Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
+    
+    /**
+     * The maximum weight for entries in the visitor function cache. The weight is calculated as the total number of characters for each key and value in the
+     * cache. Default is 5m characters, which is roughly 10MB
+     */
+    private long visitorFunctionMaxWeight = 5000000L;
+    
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -382,7 +404,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     /**
      * Performs a deep copy of the provided ShardQueryConfiguration into a new instance
-     * 
+     *
      * @param other
      *            - another ShardQueryConfiguration instance
      */
@@ -446,7 +468,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         .getRealmSuffixExclusionPatterns()));
         this.setDefaultType(other.getDefaultType());
         this.setShardDateFormatter(null == other.getShardDateFormatter() ? null : new SimpleDateFormat(other.getShardDateFormatter().toPattern())); // TODO --
-                                                                                                                                                    // deep copy
+        // deep copy
         this.setUseEnrichers(other.getUseEnrichers());
         this.setEnricherClassNames(null == other.getEnricherClassNames() ? null : Lists.newArrayList(other.getEnricherClassNames()));
         this.setUseFilters(other.getUseFilters());
@@ -499,7 +521,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setReturnType(other.getReturnType());
         this.setEventPerDayThreshold(other.getEventPerDayThreshold());
         this.setShardsPerDayThreshold(other.getShardsPerDayThreshold());
-        this.setMaxTermThreshold(other.getMaxTermThreshold());
+        this.setInitialMaxTermThreshold(other.getInitialMaxTermThreshold());
+        this.setFinalMaxTermThreshold(other.getFinalMaxTermThreshold());
         this.setMaxDepthThreshold(other.getMaxDepthThreshold());
         this.setMaxUnfieldedExpansionThreshold(other.getMaxUnfieldedExpansionThreshold());
         this.setExpandFields(other.isExpandFields());
@@ -554,6 +577,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexMappingFields(other.getWhindexMappingFields());
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
+        this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
+        this.setExcerptIterator(other.getExcerptIterator());
+        this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
+        this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
     }
     
     /**
@@ -958,8 +985,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      *            filter value
      */
     public void putFilterOptions(final String option, final String value) {
-        if (StringUtils.isNotBlank(option) && StringUtils.isNotBlank(value))
+        if (StringUtils.isNotBlank(option) && StringUtils.isNotBlank(value)) {
             filterOptions.put(option, value);
+        }
     }
     
     /**
@@ -994,7 +1022,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * any, used to construct the IndexIterator, particularly via the TLDQueryIterator.
      *
      * @return list of predicate-implemented classnames
-     *
      * @see QueryIterator
      * @see TLDQueryIterator
      */
@@ -1092,12 +1119,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.shardsPerDayThreshold = shardsPerDayThreshold;
     }
     
-    public int getMaxTermThreshold() {
-        return maxTermThreshold;
+    public int getInitialMaxTermThreshold() {
+        return initialMaxTermThreshold;
     }
     
-    public void setMaxTermThreshold(int maxTermThreshold) {
-        this.maxTermThreshold = maxTermThreshold;
+    public void setInitialMaxTermThreshold(int initialMaxTermThreshold) {
+        this.initialMaxTermThreshold = initialMaxTermThreshold;
+    }
+    
+    public int getFinalMaxTermThreshold() {
+        return finalMaxTermThreshold;
+    }
+    
+    public void setFinalMaxTermThreshold(int finalMaxTermThreshold) {
+        this.finalMaxTermThreshold = finalMaxTermThreshold;
     }
     
     public int getMaxDepthThreshold() {
@@ -1153,8 +1188,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
     
     public void setMaxIndexBatchSize(final int size) {
-        if (size >= 1)
+        if (size >= 1) {
             this.maxIndexBatchSize = size;
+        }
     }
     
     public int getMaxOrExpansionThreshold() {
@@ -2216,5 +2252,40 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setNoExpansionFields(Set<String> noExpansionFields) {
         this.noExpansionFields = noExpansionFields;
+    }
+    
+    public ExcerptFields getExcerptFields() {
+        return excerptFields;
+    }
+    
+    public void setExcerptFields(ExcerptFields excerptFields) {
+        if (excerptFields != null) {
+            excerptFields.deconstructFields();
+        }
+        this.excerptFields = excerptFields;
+    }
+    
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getExcerptIterator() {
+        return excerptIterator;
+    }
+    
+    public void setExcerptIterator(Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator) {
+        this.excerptIterator = excerptIterator;
+    }
+    
+    public long getVisitorFunctionMaxWeight() {
+        return visitorFunctionMaxWeight;
+    }
+    
+    public void setVisitorFunctionMaxWeight(long visitorFunctionMaxWeight) {
+        this.visitorFunctionMaxWeight = visitorFunctionMaxWeight;
+    }
+    
+    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
+        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
+    }
+    
+    public long getQueryExecutionForPageTimeout() {
+        return this.queryExecutionForPageTimeout;
     }
 }

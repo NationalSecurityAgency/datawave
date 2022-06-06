@@ -1,6 +1,6 @@
 package datawave.webservice.query.map;
 
-import datawave.webservice.query.metric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric;
 
 import java.util.List;
 

@@ -1,14 +1,19 @@
 package datawave.query.function;
 
+import datawave.query.Constants;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.DelayedNonEventIndexContext;
+import datawave.query.postprocessing.tf.PhraseIndexes;
+import datawave.query.postprocessing.tf.TermOffsetMap;
+import datawave.query.transformer.ExcerptTransform;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.jexl2.DatawaveJexlScript;
+import org.apache.commons.jexl2.ExpressionImpl;
 import org.apache.commons.jexl2.JexlArithmetic;
-import org.apache.commons.jexl2.Script;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 
@@ -31,9 +36,9 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     private DatawaveJexlEngine engine;
     
     /**
-     * Compiled jexl script
+     * Compiled and flattened jexl script
      */
-    protected Script script;
+    protected DatawaveJexlScript script;
     
     public JexlEvaluation(String query) {
         this(query, new DefaultArithmetic());
@@ -47,7 +52,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         this.engine = ArithmeticJexlEngines.getEngine(arithmetic);
         
         // Evaluate the JexlContext against the Script
-        this.script = this.engine.createScript(this.query);
+        this.script = DatawaveJexlScript.create((ExpressionImpl) this.engine.createScript(this.query));
     }
     
     public JexlArithmetic getArithmetic() {
@@ -111,11 +116,22 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                         Content content = new Content(term, document.getMetadata(), document.isToKeep());
                         content.setColumnVisibility(cv);
                         attributes.add(content);
-                        
                     }
                 }
                 if (attributes.size() > 0) {
                     document.put(HIT_TERM_FIELD, attributes);
+                }
+                
+                // Put the phrase indexes into the document so that we can add phrase excerpts if desired later.
+                TermOffsetMap termOffsetMap = (TermOffsetMap) input.third().get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
+                if (termOffsetMap != null) {
+                    PhraseIndexes phraseIndexes = termOffsetMap.getPhraseIndexes();
+                    Content phraseIndexesAttribute = new Content(phraseIndexes.toString(), document.getMetadata(), false);
+                    document.put(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE, phraseIndexesAttribute);
+                    if (log.isTraceEnabled()) {
+                        log.trace("Added phrase-indexes " + phraseIndexes + " as attribute " + ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE + " to document "
+                                        + document.getMetadata());
+                    }
                 }
             }
             hitListArithmetic.clear();

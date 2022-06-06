@@ -3,6 +3,9 @@ package datawave.webservice.query.metric;
 import java.util.Date;
 import java.util.Map;
 
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.security.authorization.DatawavePrincipal;
 
 public interface QueryMetricHandler<T extends BaseQueryMetric> {
@@ -15,9 +18,9 @@ public interface QueryMetricHandler<T extends BaseQueryMetric> {
     
     QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal);
     
-    QueryMetricsSummaryHtmlResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal);
+    QueryMetricsSummaryResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal);
     
-    QueryMetricsSummaryHtmlResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal);
+    QueryMetricsSummaryResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal);
     
     void flush() throws Exception;
     

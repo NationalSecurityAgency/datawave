@@ -1,15 +1,24 @@
 package datawave.query.metrics;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
-import datawave.webservice.query.metric.QueryMetricHandler;
-import datawave.webservice.query.metric.QueryMetricSummary;
-import datawave.webservice.query.metric.QueryMetricsSummaryResponse;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
+import datawave.microservice.querymetric.QueryMetricSummary;
+import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.language.tree.QueryNode;
+import datawave.webservice.query.metric.QueryMetricHandler;
+
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 
@@ -22,7 +31,7 @@ public abstract class BaseQueryMetricHandler<T extends BaseQueryMetric> implemen
     
     public void populateSummary(T metric, QueryMetricSummary bucket) {
         bucket.addQuery();
-        for (PageMetric page : metric.getPageTimes()) {
+        for (BaseQueryMetric.PageMetric page : metric.getPageTimes()) {
             bucket.addPage(page.getPagesize(), page.getReturnTime());
         }
     }
@@ -53,7 +62,7 @@ public abstract class BaseQueryMetricHandler<T extends BaseQueryMetric> implemen
         return summary;
     }
     
-    public void binSummary(T metric, QueryMetricsSummaryResponse summary, Date hour1, Date hour6, Date hour12, Date day1, Date day7, Date day30, Date day60,
+    protected void binSummary(T metric, QueryMetricsSummaryResponse summary, Date hour1, Date hour6, Date hour12, Date day1, Date day7, Date day30, Date day60,
                     Date day90) {
         Date d = metric.getCreateDate();
         // Find out which buckets this query belongs to based on query create date.
@@ -83,5 +92,64 @@ public abstract class BaseQueryMetricHandler<T extends BaseQueryMetric> implemen
             populateSummary(metric, summary.getDay90());
         }
         populateSummary(metric, summary.getAll());
+    }
+    
+    protected void incrementNumUpdates(T updatedMetric, Collection<T> cachedMetrics) {
+        long maxUpdates = cachedMetrics.stream().map(BaseQueryMetric::getNumUpdates).max(Long::compareTo).orElse(0l);
+        updatedMetric.setNumUpdates(maxUpdates + 1);
+    }
+    
+    protected void populateMetricSelectors(T queryMetric, LuceneToJexlQueryParser luceneToJexlQueryParser) {
+        String type = queryMetric.getQueryType();
+        Lifecycle lifecycle = queryMetric.getLifecycle();
+        // this is time consuming - we only need to parse the query and write the selectors once
+        if (lifecycle.equals(Lifecycle.DEFINED) && type != null && type.equalsIgnoreCase("RunningQuery") && queryMetric.getPositiveSelectors() == null
+                        && queryMetric.getNegativeSelectors() == null) {
+            try {
+                String query = queryMetric.getQuery();
+                if (query != null) {
+                    ASTJexlScript jexlScript = null;
+                    try {
+                        // Parse and flatten here before visitors visit.
+                        jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                    } catch (Throwable t1) {
+                        // not JEXL, try LUCENE
+                        QueryNode node = luceneToJexlQueryParser.parse(query);
+                        String jexlQuery = node.getOriginalQuery();
+                        jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery);
+                    }
+                    
+                    if (jexlScript != null) {
+                        jexlScript = TreeFlatteningRebuildingVisitor.flatten(jexlScript);
+                        List<ASTEQNode> positiveEQNodes = JexlASTHelper.getPositiveEQNodes(jexlScript);
+                        List<String> positiveSelectors = new ArrayList<>();
+                        for (ASTEQNode pos : positiveEQNodes) {
+                            String identifier = JexlASTHelper.getIdentifier(pos);
+                            Object literal = JexlASTHelper.getLiteralValue(pos);
+                            if (identifier != null && literal != null) {
+                                positiveSelectors.add(identifier + ":" + literal);
+                            }
+                        }
+                        if (!positiveSelectors.isEmpty()) {
+                            queryMetric.setPositiveSelectors(positiveSelectors);
+                        }
+                        List<ASTEQNode> negativeEQNodes = JexlASTHelper.getNegativeEQNodes(jexlScript);
+                        List<String> negativeSelectors = new ArrayList<>();
+                        for (ASTEQNode neg : negativeEQNodes) {
+                            String identifier = JexlASTHelper.getIdentifier(neg);
+                            Object literal = JexlASTHelper.getLiteralValue(neg);
+                            if (identifier != null && literal != null) {
+                                negativeSelectors.add(identifier + ":" + literal);
+                            }
+                        }
+                        if (!negativeSelectors.isEmpty()) {
+                            queryMetric.setNegativeSelectors(negativeSelectors);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.error("populateMetricSelectors: " + e.getMessage());
+            }
+        }
     }
 }
