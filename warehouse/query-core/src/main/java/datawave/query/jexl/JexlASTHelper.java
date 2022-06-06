@@ -100,8 +100,8 @@ public class JexlASTHelper {
     private static Pattern OR_PATTERN = Pattern.compile("\\s+[Oo][Rr]\\s+");
     private static Pattern NOT_PATTERN = Pattern.compile("\\s+[Nn][Oo][Tt]\\s+");
     
-    public static final Character GROUPING_CHARACTER_SEPARATOR = '.';
-    public static final Character IDENTIFIER_PREFIX = '$';
+    public static final char GROUPING_CHARACTER_SEPARATOR = '.';
+    public static final char IDENTIFIER_PREFIX = '$';
     
     public static final String SINGLE_BACKSLASH = "\\";
     public static final String DOUBLE_BACKSLASH = "\\\\";

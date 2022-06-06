@@ -16,12 +16,12 @@ public class FixNegativeNumbersVisitorTest {
         ASTJexlScript queryScript = JexlASTHelper.parseJexlQuery(query);
         
         // Verify the script was parsed with a single unary minus node.
-        JexlNodeAssert.assertThat(queryScript).child(0).child(1).isInstanceOf(ASTUnaryMinusNode.class);
+        JexlNodeAssert.assertThat(queryScript).assertChild(0).assertChild(1).isInstanceOf(ASTUnaryMinusNode.class);
         
         ASTJexlScript fixed = FixNegativeNumbersVisitor.fix(queryScript);
         
         // Verify the unary minus mode was converted to a number literal.
-        JexlNodeAssert.assertThat(fixed).child(0).child(1).isInstanceOf(ASTNumberLiteral.class).hasValue("-1");
+        JexlNodeAssert.assertThat(fixed).assertChild(0).assertChild(1).isInstanceOf(ASTNumberLiteral.class).hasValue("-1");
         
         // Verify the resulting script has a valid lineage and the same query string.
         JexlNodeAssert.assertThat(fixed).hasExactQueryString(query).hasValidLineage();
