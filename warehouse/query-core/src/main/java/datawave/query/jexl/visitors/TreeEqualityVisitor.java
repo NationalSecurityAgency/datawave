@@ -1,8 +1,11 @@
 package datawave.query.jexl.visitors;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
@@ -57,17 +60,11 @@ import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserVisitor;
 import org.apache.commons.jexl2.parser.SimpleNode;
-import org.apache.log4j.Logger;
-
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 /**
  * Determine whether two trees are equivalent, accounting for arbitrary order within subtrees.
  */
 public class TreeEqualityVisitor implements ParserVisitor {
-    private static final Logger log = ThreadConfigurableLogger.getLogger(TreeEqualityVisitor.class);
-    
-    private boolean equal = true;
     
     public final static class Comparison {
         
@@ -95,7 +92,7 @@ public class TreeEqualityVisitor implements ParserVisitor {
     }
     
     /**
-     * Return whether or not the provided query trees are considered equivalent.
+     * Return whether the provided query trees are considered equivalent.
      * 
      * @param first
      *            the first query tree
@@ -117,367 +114,491 @@ public class TreeEqualityVisitor implements ParserVisitor {
      * @return the comparison result
      */
     public static Comparison checkEquality(JexlNode first, JexlNode second) {
-        if (first != null && second != null) {
+        if (first == second) {
+            return Comparison.IS_EQUAL;
+        } else if (first == null || second == null) {
+            return Comparison.notEqual("One tree is null: " + first + " vs " + second);
+        } else {
             TreeEqualityVisitor visitor = new TreeEqualityVisitor();
-            String reason = (String) first.jjtAccept(visitor, second);
-            return visitor.equal ? Comparison.IS_EQUAL : Comparison.notEqual(reason);
-        } else if (first == null && second == null) {
+            return (Comparison) first.jjtAccept(visitor, second);
+        }
+    }
+
+    /**
+     * Compare the given node and evaluate their equivalence. This visitor will be applied to each of the first node's children. The visitor will be accepted on
+     * all the first node's children.
+     *
+     * @param first
+     *            the first node
+     * @param second
+     *            the second node
+     * @return the comparison result
+     **/
+    private Comparison checkEquality(SimpleNode first, SimpleNode second) {
+        // Compare the classes.
+        Comparison comparison = compareClasses(first, second);
+        if (!comparison.isEqual()) {
+            return comparison;
+        }
+
+        // Compare the values.
+        comparison = compareValues(first, second);
+        if (!comparison.isEqual()) {
+            return comparison;
+        }
+
+        // Compare the images.
+        comparison = compareImages(first, second);
+        if (!comparison.isEqual()) {
+            return comparison;
+        }
+
+        // Compare the children.
+        return compareChildren(first, second);
+    }
+
+    /**
+     * Compare the classes of both nodes. Note: any nodes that are a subclass of {@link QueryPropertyMarker} will be considered equivalent to a
+     * {@link ASTReference} since the underlying child trees may later be found to be equivalent.
+     *
+     * @param first
+     *            the first node
+     * @param second
+     *            the second node
+     * @return the comparison result
+     */
+    private Comparison compareClasses(SimpleNode first, SimpleNode second) {
+        Class<?> firstClass = first.getClass();
+        Class<?> secondClass = second.getClass();
+        if (firstClass.equals(secondClass) || possiblyEqualQueryPropertyMarkers(firstClass, secondClass)) {
             return Comparison.IS_EQUAL;
         } else {
-            return Comparison.notEqual("One tree is null: " + first + " vs " + second);
+            return Comparison.notEqual("Classes differ: " + firstClass.getSimpleName() + " vs " + secondClass.getSimpleName());
         }
+    }
+
+    /**
+     * Returns whether either the first or second node is an {@link ASTReference}, and the other node is any subclass of {@link QueryPropertyMarker}.
+     *
+     * @param first
+     *            the first node
+     * @param second
+     *            the second node
+     * @return true if the classes indicate the possible presence of equivalent query property markers
+     */
+    private boolean possiblyEqualQueryPropertyMarkers(Class<?> first, Class<?> second) {
+        return (first.equals(ASTReference.class) && ASTReference.class.isAssignableFrom(second))
+                        || (second.equals(ASTReference.class) && ASTReference.class.isAssignableFrom(first));
+    }
+
+    /**
+     * Compare the values of both node.
+     *
+     * @param first
+     *            the first node
+     * @param second
+     *            the second node
+     * @return the comparison result
+     */
+    private Comparison compareValues(SimpleNode first, SimpleNode second) {
+        return Objects.equals(first.jjtGetValue(), second.jjtGetValue()) ? Comparison.IS_EQUAL : Comparison.notEqual("Node values differ: "
+                        + first.jjtGetValue() + " vs " + second.jjtGetValue());
+    }
+
+    /**
+     * Compare the images of both node (if applicable).
+     *
+     * @param first
+     *            the first node
+     * @param second
+     *            the second node
+     * @return the comparison result
+     */
+    private Comparison compareImages(SimpleNode first, SimpleNode second) {
+        if (first instanceof JexlNode) {
+            String firstImage = ((JexlNode) first).image;
+            String secondImage = ((JexlNode) second).image;
+            if (!Objects.equals(firstImage, secondImage)) {
+                return Comparison.notEqual("Node images differ: " + firstImage + " vs " + secondImage);
+            }
+        }
+        return Comparison.IS_EQUAL;
+    }
+
+    /**
+     * Compare the children of both nodes.
+     *
+     * @param first
+     *            the first node
+     * @param second
+     *            the second node
+     * @return the comparison result
+     */
+    private Comparison compareChildren(SimpleNode first, SimpleNode second) {
+        List<SimpleNode> firstChildren = getChildren(first);
+        List<SimpleNode> secondChildren = getChildren(second);
+
+        // Compare the sizes.
+        if (firstChildren.size() != secondChildren.size()) {
+            return Comparison.notEqual("Num children differ: " + firstChildren + " vs " + secondChildren);
+        }
+
+        // Look for an equivalent of each child, visiting each child recursively when needed.
+        Comparison currentComparison = null;
+        for (SimpleNode firstChild : firstChildren) {
+            for (int i = 0; i < secondChildren.size(); i++) {
+                SimpleNode secondChild = secondChildren.get(i);
+                currentComparison = (Comparison) firstChild.jjtAccept(this, secondChild);
+                if (currentComparison.isEqual()) {
+                    secondChildren.remove(i);
+                    break;
+                }
+            }
+
+            if (!currentComparison.isEqual()) {
+                return Comparison.notEqual("Did not find a matching child for " + firstChild + " in " + secondChildren + ": " + currentComparison.getReason());
+            }
+        }
+
+        return Comparison.IS_EQUAL;
     }
     
     /**
-     * Accept the visitor on all this node's children.
+     * Return the flattened children of the given node.
      *
-     * @param node1
-     *            first node
-     * @param node2
-     *            second node
-     * @return result of visit
-     **/
-    private Object visitEquality(SimpleNode node1, SimpleNode node2) {
-        if (!equal) {
-            return "Already not equal";
-        } else if (!node1.getClass().equals(node2.getClass())) {
-            equal = false;
-            return "Classes differ: " + node1.getClass().getSimpleName() + " vs " + node2.getClass().getSimpleName();
-        } else if (!equal(node1.jjtGetValue(), node2.jjtGetValue())) {
-            equal = false;
-            return ("Node values differ: " + node1.jjtGetValue() + " vs " + node2.jjtGetValue());
-        } else if (node1 instanceof JexlNode && !equal(((JexlNode) node1).image, ((JexlNode) node2).image)) {
-            equal = false;
-            return ("Node images differ: " + ((JexlNode) node1).image + " vs " + ((JexlNode) node2).image);
-        } else if (node1.jjtGetNumChildren() > 0 || node2.jjtGetNumChildren() > 0) {
-            List<SimpleNode> list1 = listChildren(node1);
-            List<SimpleNode> list2 = listChildren(node2);
-            if (list1.size() != list2.size()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("not equal " + list1.size() + " " + list2.size());
-                }
-                equal = false;
-                return ("Num children differ: " + list1 + " vs " + list2);
-            }
-            Object reason = null;
-            // start visiting recursively to find equality
-            for (SimpleNode child1 : list1) {
-                // compare the list1 node to each node in list2 until we find a match
-                for (int i = 0; i < list2.size(); i++) {
-                    SimpleNode child2 = list2.get(i);
-                    equal = true;
-                    reason = child1.jjtAccept(this, child2);
-                    if (equal) { // equal may be made false by child
-                        // found a match, break;
-                        list2.remove(i);
-                        break;
-                    }
-                }
-                // if we get here with !equal, then we never found a match for a node...break out
-                if (!equal) {
-                    return "Did not find a matching child for " + child1 + " in " + list2 + ": " + reason;
-                }
-            }
-        }
-        return null;
-    }
-    
-    private List<SimpleNode> listChildren(SimpleNode node) {
-        List<SimpleNode> list = new ArrayList<>();
+     * @param node
+     *            the node to get the children of
+     * @return the flattened children
+     */
+    private List<SimpleNode> getChildren(SimpleNode node) {
+        Class<?> nodeType = node.getClass();
+        List<SimpleNode> children = new ArrayList<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-            list.add(node.jjtGetChild(i));
+            children.addAll(flatten(node.jjtGetChild(i), nodeType));
         }
-        boolean changed = true;
-        List<SimpleNode> newList = new ArrayList<>();
-        while (changed) {
-            changed = false;
-            for (SimpleNode child : list) {
-                // note the isAssignableFrom is to handle QueryPropertyMarker nodes
-                if (((child.getClass().equals(ASTReference.class) || ASTReference.class.isAssignableFrom(child.getClass())) && (child.jjtGetNumChildren() == 1))
-                                || (child.getClass().equals(ASTReferenceExpression.class) && (child.jjtGetNumChildren() == 1))
-                                || (child.getClass().equals(ASTOrNode.class) && ((child.jjtGetNumChildren() == 1) || node.getClass().equals(ASTOrNode.class)))
-                                || (child.getClass().equals(ASTAndNode.class) && ((child.jjtGetNumChildren() == 1) || node.getClass().equals(ASTAndNode.class)))) {
-                    for (int j = 0; j < child.jjtGetNumChildren(); j++) {
-                        newList.add(child.jjtGetChild(j));
-                    }
-                    changed = true;
-                } else {
-                    newList.add(child);
-                }
+        return children;
+    }
+
+    /**
+     * Return a flattened version of the given node if possible, expanding the node to its base comparable children.
+     *
+     * @param node
+     *            the node to flatten
+     * @param rootType
+     *            the type of the original root node
+     * @return the flattened node components.
+     */
+    private List<SimpleNode> flatten(SimpleNode node, Class<?> rootType) {
+        if (isFlattenable(node, rootType)) {
+            List<SimpleNode> children = new ArrayList<>();
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                children.addAll(flatten(node.jjtGetChild(i), rootType));
             }
-            List<SimpleNode> temp = newList;
-            newList = list;
-            list = temp;
-            newList.clear();
+            return children;
+        } else {
+            return Collections.singletonList(node);
         }
-        return list;
+    }
+
+    /**
+     * Return whether the node is considered flattenable, e.g. can we further unwrap it. This specifically does NOT apply to query property marker nodes, they
+     * must be compared as a whole to verify that wrapped query property markers are only considered equal to similarly wrapped equivalents. For instance, the
+     * query {@code (_Bounded_ = true) && (NUM > '1' && NUM < '5')} is not considered equivalent to {@code ((_Bounded_ = true) && (NUM > '1' && NUM < '5'))}.
+     *
+     * @param node
+     *            the node
+     * @param rootType
+     *            the type of the original root node
+     * @return true if the node can be flattened to its children, or false otherwise
+     */
+    private boolean isFlattenable(SimpleNode node, Class<?> rootType) {
+        Class<?> nodeType = node.getClass();
+        boolean hasSingleChild = node.jjtGetNumChildren() == 1;
+        // @formatter:off
+        return (nodeType.equals(ASTReference.class) && hasSingleChild && !isFlattenedQueryPropertyMarker(node))
+                        || (nodeType.equals(ASTReferenceExpression.class) && hasSingleChild)
+                        || (nodeType.equals(ASTOrNode.class) && (hasSingleChild || rootType.equals(ASTOrNode.class)))
+                        || (nodeType.equals(ASTAndNode.class) && (hasSingleChild || rootType.equals(ASTAndNode.class)));
+        // @formatter:on
     }
     
-    public boolean equal(Object o1, Object o2) {
-        if (o1 == o2) {
-            return true;
-        } else if (o1 == null || o2 == null) {
-            return false;
-        } else {
-            return o1.equals(o2);
-        }
+    /**
+     * Return whether the node is a query property marker node that has been flattened down to its last wrapping parentheses, e.g. flattened from something like
+     * {@code ((((_Bounded_ = true) && (NUM > '1' && NUM < '5'))))} to {@code ((_Bounded_ = true) && (NUM > '1' && NUM < '5'))}
+     *
+     * @param node
+     *            the node
+     * @return true if the node is a query property marker or false otherwise
+     */
+    private boolean isFlattenedQueryPropertyMarker(SimpleNode node) {
+        JexlNode child = node.jjtGetChild(0);
+        // @formatter:off
+        // Perform a fast check of whether the structure looks like:
+        // Reference
+        //   ReferenceExpression
+        //     AndNode
+        // before checking if this is a query property marker. If it does not look like the above, it's either not a query property marker, or it's a query
+        // property marker with extra wrapping that needs to be flattened.
+        // @formatter:on
+        return child instanceof ASTReferenceExpression && child.jjtGetNumChildren() == 1 && child.jjtGetChild(0) instanceof ASTAndNode
+                        && QueryPropertyMarker.findInstance((JexlNode) node).isAnyType();
     }
     
     @Override
     public Object visit(SimpleNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTBlock node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTAmbiguous node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTIfStatement node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTForeachStatement node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTAssignment node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTTernaryNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTBitwiseOrNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTBitwiseXorNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTBitwiseAndNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTEQNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTNENode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTLTNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTGTNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTLENode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTGENode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTERNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTNRNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTAdditiveNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTAdditiveOperator node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTMulNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTDivNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTModNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTUnaryMinusNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTNotNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTIdentifier node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTNullLiteral node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTTrueNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTFalseNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     public Object visit(ASTIntegerLiteral node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     public Object visit(ASTFloatLiteral node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTArrayLiteral node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTMapLiteral node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTMapEntry node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTEmptyFunction node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTSizeFunction node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTMethodNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTSizeMethod node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTConstructorNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTArrayAccess node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTReturnStatement node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTVar node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
+        return checkEquality(node, (SimpleNode) data);
     }
 }
