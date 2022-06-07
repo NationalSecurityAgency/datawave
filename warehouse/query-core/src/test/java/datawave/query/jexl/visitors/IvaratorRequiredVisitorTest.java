@@ -5,30 +5,53 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 public class IvaratorRequiredVisitorTest {
     
     @Test
     public void testExceededOrThresholdTrue() throws ParseException {
-        String query = "((_List_ = true) && (FOO == 1 && FOO == 3))";
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        assertTrue(IvaratorRequiredVisitor.isIvaratorRequired(script));
+        testQuery("((_List_ = true) && (FOO == 1 && FOO == 3))", true);
     }
     
     @Test
-    public void testExceededThresholdFalse() throws ParseException {
-        String query = "(FOO == 1 && FOO == 3)";
-        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        assertFalse(IvaratorRequiredVisitor.isIvaratorRequired(script));
+    public void testExceededOrThresholdFalse() throws ParseException {
+        testQuery("(FOO == 1 && FOO == 3)", false);
     }
     
     @Test
     public void testExceededValueThresholdTrue() throws ParseException {
-        String query = "((_Value_ = true) && (FOO == 1 || FOO == 3))";
+        testQuery("((_Value_ = true) && (FOO =~ '1*' || FOO =~ '*3'))", true);
+    }
+    
+    @Test
+    public void testExceededValueThresholdFalse() throws ParseException {
+        testQuery("(FOO =~ '1*' || FOO =~ '*3')", false);
+    }
+    
+    @Test
+    public void testExceededValueThresholdIntersection() throws ParseException {
+        testQuery("FOO == 'bar' && ((_Value_ = true) && (FOO =~ 'ba.*' ))", true);
+    }
+    
+    @Test
+    public void testExceededValueThresholdUnion() throws ParseException {
+        testQuery("FOO == 'bar' || ((_Value_ = true) && (FOO =~ 'ba.*' ))", true);
+    }
+    
+    @Test
+    public void testExceededOrThresholdIntersection() throws ParseException {
+        testQuery("FOO == 'bar' && ((_List_ = true) && (FOO == 'bar' ))", true);
+    }
+    
+    @Test
+    public void testExceededOrThresholdUnion() throws ParseException {
+        testQuery("FOO == 'bar' || ((_List_ = true) && (FOO == 'bar' ))", true);
+    }
+    
+    private void testQuery(String query, boolean ivaratorExpected) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        assertTrue(IvaratorRequiredVisitor.isIvaratorRequired(script));
+        assertEquals(ivaratorExpected, IvaratorRequiredVisitor.isIvaratorRequired(script));
     }
     
 }
