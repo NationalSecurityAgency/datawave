@@ -310,7 +310,6 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
         
         if (args.length != 1) {
             Scanner scanner = new Scanner(System.in);
-            System.out.println("Enter Query:");
             query = scanner.nextLine();
             scanner.close();
         } else {
