@@ -316,7 +316,6 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
             query = args[0];
         }
         try {
-            System.out.println("Formatted Query:");
             System.out.println(JexlFormattedStringBuildingVisitor.buildQuery(JexlASTHelper.parseJexlQuery(query)));
         } catch (ParseException e) {
             System.out.println("Failure to parse given query.");
