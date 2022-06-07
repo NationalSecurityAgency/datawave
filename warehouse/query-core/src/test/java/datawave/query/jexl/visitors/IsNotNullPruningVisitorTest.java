@@ -397,6 +397,20 @@ public class IsNotNullPruningVisitorTest {
         test(query, query);
     }
     
+    @Test
+    public void testFutureCase_PartialPruneOfUnionViaUnion() {
+        
+        // union of same field should allow us to perform a partial prune
+        String query = "(!(FOO == null) || !(FOO2 == null)) && (FOO == 'bar' || FOO == 'baz')";
+        // String expected = "!(FOO2 == null) && (FOO == 'bar' || FOO == 'baz')";
+        test(query, query);
+        
+        // should also work for filter:includeRegex
+        query = "(!(FOO == null) || !(FOO2 == null)) && (filter:includeRegex(FOO, 'bar.*') || filter:includeRegex(FOO, 'baz.*'))";
+        // expected = "!(FOO2 == null) && (filter:includeRegex(FOO, 'bar.*') || filter:includeRegex(FOO, 'baz.*'))";
+        test(query, query);
+    }
+    
     // test cases where nothing should be done
     
     @Test
