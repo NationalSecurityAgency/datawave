@@ -369,7 +369,7 @@ public class IsNotNullPruningVisitorTest {
     // future case
     
     @Test
-    public void testFutureCase() {
+    public void testFutureCase_PruneByUnions() {
         // logically, these unions are equivalent and the 'is not null' side can be pruned
         String query = "(!(FOO == null) || !(FOO2 == null)) && (FOO == 'bar' || FOO2 == 'baz')";
         // String expected = "FOO == 'bar' || FOO2 == 'baz'";
@@ -377,6 +377,24 @@ public class IsNotNullPruningVisitorTest {
         
         // This would be a no-op case
         // String query = "(!(FOO == null) || !(FOO2 == null)) && (FOO == 'bar' || FOO2 == 'baz' || FOO3 == 'buzz')";
+    }
+    
+    @Test
+    public void testFutureCase_FieldForUnion() {
+        // in this case FOO is a common field for the nested union and we can prune the isNotNull term
+        String query = "!(FOO == null) && (FOO == 'bar' || filter:includeRegex(FOO, 'ba.*'))";
+        String expected = "(FOO == 'bar' || filter:includeRegex(FOO, 'ba.*'))";
+        // test(query, expected);
+        
+        // TODO -- update to f:includeText when #1534 is merged
+        query = "!(FOO == null) && (FOO == 'bar' || filter:includeText(FOO, 'ba.*'))";
+        // String expected = "(FOO == 'bar' || filter:includeText(FOO, 'ba.*')";
+        test(query, query);
+        
+        // test case for geo function
+        query = "!(FOO == null) && (FOO == 'bar' || geo:within_bounding_box(FOO, '0_0', '10_10'))";
+        // String expected = "(FOO == 'bar' || geo:within_bounding_box(FOO, '0_0', '10_10'))";
+        test(query, query);
     }
     
     // test cases where nothing should be done
@@ -417,6 +435,12 @@ public class IsNotNullPruningVisitorTest {
         test(query, query);
         
         query = "(!(FOO == null) || !(FOO2 == null)) && FOO =~ 'ba.*'";
+        test(query, query);
+    }
+    
+    @Test
+    public void testNoOpMultiFieldedIncludeRegex() {
+        String query = "!(FOO == null) && filter:includeRegex((FOO||FOO2||FOO3), 'ba.*')";
         test(query, query);
     }
     

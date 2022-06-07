@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
@@ -56,11 +57,15 @@ import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
+import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.INCLUDE_REGEX;
 
 /**
  * This visitor prunes unnecessary 'is not null' functions from the query tree.
@@ -87,6 +92,8 @@ import java.util.Set;
  * term prevents this.
  */
 public class IsNotNullPruningVisitor extends BaseVisitor {
+    
+    private static final Logger log = ThreadConfigurableLogger.getLogger(IsNotNullPruningVisitor.class);
     
     private IsNotNullPruningVisitor() {}
     
@@ -281,7 +288,7 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
         FunctionJexlNodeVisitor visitor = new FunctionJexlNodeVisitor();
         node.jjtAccept(visitor, null);
         
-        if (visitor.namespace().equals("filter") && visitor.name().equals("includeRegex")) {
+        if (visitor.namespace().equals(EVAL_PHASE_FUNCTION_NAMESPACE) && visitor.name().equals(INCLUDE_REGEX)) {
             Set<String> args = JexlASTHelper.getIdentifierNames(visitor.args().get(0));
             if (args.size() == 1) {
                 return args.iterator().next();
@@ -315,6 +322,9 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
             }
             
             if (field == null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Unexpected node type [" + child.getClass().getSimpleName() + "] " + JexlStringBuildingVisitor.buildQueryWithoutParse(child));
+                }
                 return null; // encountered an unexpected node type, the union cannot have a single shared field
             } else {
                 fields.add(field);
