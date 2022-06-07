@@ -84,6 +84,7 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
                         if (functionMetadata.name().equals(INCLUDE_REGEX)) {
                             returnNode = JexlNodeFactory.createOrNode(children);
                         } else {
+                            // build an AND node because of how DeMorgan's law works with expanding negations
                             returnNode = JexlNodeFactory.createAndNode(children);
                         }
                         
