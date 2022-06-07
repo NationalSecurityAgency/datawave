@@ -1,8 +1,5 @@
 package datawave.security.cache;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.accumulo.core.client.Instance;
 import org.infinispan.commons.configuration.BuiltBy;
 import org.infinispan.commons.configuration.ConfigurationFor;
@@ -11,7 +8,9 @@ import org.infinispan.commons.configuration.attributes.AttributeDefinition;
 import org.infinispan.commons.configuration.attributes.AttributeSet;
 import org.infinispan.configuration.cache.AbstractStoreConfiguration;
 import org.infinispan.configuration.cache.AsyncStoreConfiguration;
-import org.infinispan.configuration.cache.SingletonStoreConfiguration;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @BuiltBy(AccumuloCacheStoreConfigurationBuilder.class)
 @ConfigurationFor(AccumuloCacheStore.class)
@@ -48,8 +47,8 @@ public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration 
     private Attribute<Integer> ageoffTTLhours;
     private Attribute<Integer> ageoffPriority;
     
-    public AccumuloCacheStoreConfiguration(AttributeSet attributes, AsyncStoreConfiguration async, SingletonStoreConfiguration singletonStore) {
-        super(attributes, async, singletonStore);
+    public AccumuloCacheStoreConfiguration(AttributeSet attributes, AsyncStoreConfiguration async) {
+        super(attributes, async);
         instance = attributes.attribute(INSTANCE);
         instanceName = attributes.attribute(INSTANCE_NAME);
         zookeepers = attributes.attribute(ZOOKEEPERS);
