@@ -1,9 +1,11 @@
 package datawave.query.jexl.visitors;
 
+import datawave.microservice.querymetric.QueryMetric;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
@@ -13,8 +15,12 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
+
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.Scanner;
+import java.util.Set;
 import java.util.TreeSet;
 
 /**
@@ -304,18 +310,72 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
         return sb;
     }
     
-    public static void main(String args[]) {
-        if (args.length != 1) {
-            System.out.println("Invalid args. Must give 1 argument (the query).");
-        } else {
-            try {
-                System.out.println("Given Query:");
-                System.out.println(args[0]);
-                System.out.println("Formatted Query:");
-                System.out.println(JexlFormattedStringBuildingVisitor.buildQuery(JexlASTHelper.parseJexlQuery(args[0])));
-            } catch (ParseException e) {
-                System.out.println("Failure to parse given query");
+    public static List<QueryMetric> formatMetrics(List<QueryMetric> metrics) {
+        List<QueryMetric> updatedMetrics = new ArrayList<QueryMetric>();
+        
+        // For each metric, update the query to be formatted (if applicable) and update
+        // the plan to be formatted
+        for (QueryMetric metric : metrics) {
+            JexlNode queryNode = null, planNode = null;
+            QueryMetric updatedMetric = new QueryMetric(metric);
+            String query = updatedMetric.getQuery();
+            String plan = updatedMetric.getPlan();
+            // If it is a JEXL query, set the query to be formatted
+            if (isJexlQuery(metric.getParameters())) {
+                try {
+                    queryNode = JexlASTHelper.parseJexlQuery(query);
+                    updatedMetric.setQuery(buildQuery(queryNode));
+                } catch (ParseException e) {
+                    log.error("Could not parse JEXL AST after performing transformations to run the query", e);
+                    
+                    for (String line : PrintingVisitor.formattedQueryStringList(queryNode)) {
+                        log.error(line);
+                    }
+                    log.error("");
+                    
+                    QueryException qe = new QueryException(DatawaveErrorCode.QUERY_EXECUTION_ERROR, e);
+                    throw new DatawaveFatalQueryException(qe);
+                }
             }
+            // Format the plan (plan will always be a JEXL query)
+            try {
+                planNode = JexlASTHelper.parseJexlQuery(plan);
+                updatedMetric.setPlan(buildQuery(planNode));
+            } catch (ParseException e) {
+                log.error("Could not parse JEXL AST after performing transformations to run the query", e);
+                
+                for (String line : PrintingVisitor.formattedQueryStringList(planNode)) {
+                    log.error(line);
+                }
+                log.error("");
+                
+                QueryException qe = new QueryException(DatawaveErrorCode.QUERY_EXECUTION_ERROR, e);
+                throw new DatawaveFatalQueryException(qe);
+            }
+            updatedMetrics.add(updatedMetric);
+        }
+        
+        return updatedMetrics;
+    }
+    
+    private static boolean isJexlQuery(Set<Parameter> params) {
+        return params.stream().anyMatch(p -> p.getParameterName().equals("query.syntax") && p.getParameterValue().equals("JEXL"));
+    }
+    
+    public static void main(String args[]) {
+        String query;
+        
+        if (args.length != 1) {
+            Scanner scanner = new Scanner(System.in);
+            query = scanner.nextLine();
+            scanner.close();
+        } else {
+            query = args[0];
+        }
+        try {
+            System.out.println(JexlFormattedStringBuildingVisitor.buildQuery(JexlASTHelper.parseJexlQuery(query)));
+        } catch (ParseException e) {
+            System.out.println("Failure to parse given query.");
         }
     }
 }
