@@ -361,7 +361,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
     private static boolean isJexlQuery(Set<Parameter> params) {
         return params.stream().anyMatch(p -> p.getParameterName().equals("query.syntax") && p.getParameterValue().equals("JEXL"));
     }
-    
+
     public static void main(String args[]) {
         String query;
         
