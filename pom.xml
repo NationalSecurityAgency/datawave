@@ -89,7 +89,7 @@
         <version.microservice.metadata-utils>1.10-SNAPSHOT</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>1.4-SNAPSHOT</version.microservice.metrics-reporter>
         <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
-        <version.microservice.query-metric-api>1.5.4-SNAPSHOT</version.microservice.query-metric-api>
+        <version.microservice.query-metric-api>1.5.5-SNAPSHOT</version.microservice.query-metric-api>
         <version.microservice.type-utils>1.9-SNAPSHOT</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mysql-connector>8.0.16</version.mysql-connector>
