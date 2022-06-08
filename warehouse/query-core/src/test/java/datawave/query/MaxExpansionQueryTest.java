@@ -2,7 +2,6 @@ package datawave.query;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
-import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.CitiesDataType;
@@ -98,7 +97,7 @@ public class MaxExpansionQueryTest extends AbstractFunctionalQuery {
         try {
             runTest(query, expect);
             Assert.fail("exception condition expected");
-        } catch (InvalidQueryException e) {
+        } catch (FullTableScansDisallowedException e) {
             // expected
         }
     }

@@ -470,7 +470,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         // until we implement an ivarator that can handle an ExceededTermThreshold node, and ensure that the JexlContext gets
         // _ANYFIELD_ values, then we cannot execute these nodes
         if (instance.isType(ExceededTermThresholdMarkerJexlNode.class)) {
-            state = STATE.ERROR;
+            state = STATE.NON_EXECUTABLE;
             if (output != null) {
                 output.writeLine(data + node.toString() + "( Exceeded Term Threshold ) -> " + state);
             }

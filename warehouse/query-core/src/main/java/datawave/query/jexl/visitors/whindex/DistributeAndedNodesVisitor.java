@@ -136,8 +136,9 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
     public Object visit(ASTOrNode node, Object data) {
         DistributeAndedNodesVisitor.DistAndData parentData = (DistributeAndedNodesVisitor.DistAndData) data;
         
-        if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
+        if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression) {
             initialNode = node;
+        }
         
         // if this node is one of the anded nodes, or a whindex
         // comprised of one of the anded nodes, halt recursion
@@ -164,26 +165,33 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
             DistributeAndedNodesVisitor.DistAndData foundData = new DistributeAndedNodesVisitor.DistAndData();
             JexlNode processedChild = (JexlNode) child.jjtAccept(this, foundData);
             
-            if (processedChild != child)
+            if (processedChild != child) {
                 rebuildNode = true;
+            }
             
-            if (foundData.usedAndedNodes.isEmpty())
+            if (foundData.usedAndedNodes.isEmpty()) {
                 nodesMissingEverything.add(processedChild);
-            else if (!foundData.usedAndedNodes.containsAll(andedNodes)) {
+            } else if (!foundData.usedAndedNodes.containsAll(andedNodes)) {
                 List<JexlNode> missingAndedNodes = new ArrayList<>(andedNodes);
                 missingAndedNodes.removeAll(foundData.usedAndedNodes);
                 nodesMissingSomething.put(processedChild, missingAndedNodes);
-            } else
+            } else {
                 nodesWithEverything.add(processedChild);
+            }
         }
         
         // if none of the children are missing anything, we're done
         if (nodesWithEverything.size() == node.jjtGetNumChildren()) {
             parentData.usedAndedNodes.addAll(andedNodes);
-            if (rebuildNode)
+            
+            // set this to indicate that all anded nodes have been distributed
+            parentData.finalized = true;
+            
+            if (rebuildNode) {
                 return WhindexVisitor.createUnwrappedOrNode(nodesWithEverything);
-            else
+            } else {
                 return node;
+            }
         }
         // if all of the children are missing everything, we're done
         // note: we shouldn't need to rebuild the or node because if the children
@@ -197,22 +205,25 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
         
         // for children missing at least one andedNode -> go through each one, and make a new call to 'distributeAndedNode' passing only the missing
         // andedNodes
-        for (Map.Entry<JexlNode,List<JexlNode>> childEntry : nodesMissingSomething.entrySet())
+        for (Map.Entry<JexlNode,List<JexlNode>> childEntry : nodesMissingSomething.entrySet()) {
             rebuiltChildren.add(DistributeAndedNodesVisitor.distributeAndedNode(childEntry.getKey(), childEntry.getValue(), whindexNodes, fieldValueMappings));
-        
-        // for children missing everything -> 'or' them together, then 'and' them with the full set of andedNodes
-        List<JexlNode> nodeList = andedNodes.stream().map(DistributeAndedNodesVisitor::resolvePlaceholderAndRebuild).collect(Collectors.toList());
-        
-        if (!nodesMissingEverything.isEmpty()) {
-            nodeList.add(WhindexVisitor.createUnwrappedOrNode(nodesMissingEverything));
         }
         
-        rebuiltChildren.add(WhindexVisitor.createUnwrappedAndNode(nodeList));
+        if (!nodesMissingEverything.isEmpty()) {
+            // for children missing everything -> 'or' them together, then 'and' them with the full set of andedNodes
+            List<JexlNode> nodeList = andedNodes.stream().map(DistributeAndedNodesVisitor::resolvePlaceholderAndRebuild).collect(Collectors.toList());
+            nodeList.add(WhindexVisitor.createUnwrappedOrNode(nodesMissingEverything));
+            
+            rebuiltChildren.add(WhindexVisitor.createUnwrappedAndNode(nodeList));
+        }
         
         // for children with everything -> keep those as-is
         rebuiltChildren.addAll(nodesWithEverything);
         
         parentData.usedAndedNodes.addAll(andedNodes);
+        
+        // set this to indicate that all anded nodes have been distributed
+        parentData.finalized = true;
         
         return WhindexVisitor.createUnwrappedOrNode(rebuiltChildren);
     }
@@ -230,8 +241,9 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
     public Object visit(ASTAndNode node, Object data) {
         DistributeAndedNodesVisitor.DistAndData parentData = (DistributeAndedNodesVisitor.DistAndData) data;
         
-        if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
+        if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression) {
             initialNode = node;
+        }
         
         // if this node is one of the anded nodes, or a whindex
         // comprised of one of the anded nodes, halt recursion
@@ -348,12 +360,6 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
     }
     
     @Override
-    public Object visit(ASTReference node, Object data) {
-        visitInternal(node, data);
-        return super.visit(node, data);
-    }
-    
-    @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         visitInternal(node, data);
         return super.visit(node, data);
@@ -391,8 +397,9 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
     }
     
     private void visitInternal(JexlNode node, Object data) {
-        if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
+        if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression) {
             initialNode = node;
+        }
         
         DistributeAndedNodesVisitor.DistAndData parentData = (DistributeAndedNodesVisitor.DistAndData) data;
         parentData.usedAndedNodes.addAll(usesAndedNodes(node));
