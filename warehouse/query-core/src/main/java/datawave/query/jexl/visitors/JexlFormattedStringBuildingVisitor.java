@@ -328,13 +328,10 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
                 } catch (ParseException e) {
                     log.error("Could not parse JEXL AST after performing transformations to run the query", e);
                     
-                    for (String line : PrintingVisitor.formattedQueryStringList(queryNode)) {
-                        log.error(line);
+                    if (log.isTraceEnabled()) {
+                        log.trace(PrintingVisitor.formattedQueryString(queryNode));
                     }
                     log.error("");
-                    
-                    QueryException qe = new QueryException(DatawaveErrorCode.QUERY_EXECUTION_ERROR, e);
-                    throw new DatawaveFatalQueryException(qe);
                 }
             }
             // Format the plan (plan will always be a JEXL query)
@@ -344,13 +341,10 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
             } catch (ParseException e) {
                 log.error("Could not parse JEXL AST after performing transformations to run the query", e);
                 
-                for (String line : PrintingVisitor.formattedQueryStringList(planNode)) {
-                    log.error(line);
+                if (log.isTraceEnabled()) {
+                    log.trace(PrintingVisitor.formattedQueryString(planNode));
                 }
                 log.error("");
-                
-                QueryException qe = new QueryException(DatawaveErrorCode.QUERY_EXECUTION_ERROR, e);
-                throw new DatawaveFatalQueryException(qe);
             }
             updatedMetrics.add(updatedMetric);
         }
