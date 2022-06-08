@@ -36,6 +36,18 @@ import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.SimpleNode;
 
+/**
+ * <p>
+ * This class seeks to cut down on query planning time. While there are some nodes that we always want to traverse (AND, OR, NOT, REF, REF_EXPR - which this
+ * class never overrides), we can short circuit recursion at most, if not all, leaf nodes (EQ, NE, ER, NR, GT, LT, GE, LE - this class assumes any classes that
+ * extend it will implement their own short-circuiting of leaf nodes). Limiting certain visitor recursion has been shown to cut visit time on the query tree by
+ * over half.
+ * </p>
+ * <p>
+ * It should be noted that a visitor that needs to visit queries like the ones found in FunctionalSetTest.testFunctionsAsArguments() will not visit the whole
+ * tree. In most cases that shouldn't be an issue, but is worth noting if a particularly complicated or fancy query is required.
+ * </p>
+ */
 public class ShortCircuitBaseVisitor extends BaseVisitor {
     
     @Override
@@ -88,6 +100,7 @@ public class ShortCircuitBaseVisitor extends BaseVisitor {
         return data;
     }
     
+    // Arithmetic Nodes
     @Override
     public Object visit(ASTAdditiveNode node, Object data) {
         return data;
@@ -117,6 +130,8 @@ public class ShortCircuitBaseVisitor extends BaseVisitor {
     public Object visit(ASTUnaryMinusNode node, Object data) {
         return data;
     }
+    
+    // Arithmetic Nodes
     
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
