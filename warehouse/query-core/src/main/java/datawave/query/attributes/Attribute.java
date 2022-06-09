@@ -4,8 +4,8 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.Constants;
+import datawave.query.jexl.DatawaveJexlContext;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -93,7 +93,7 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
      * Given a key, set the metadata. Expected input keys can be an event key, an fi key, or a tf key. Expected metadata is row=shardid, cf = type\0uid; cq =
      * empty; cv, ts left as is.
      */
-    protected void setMetadata(Key key) {
+    public void setMetadata(Key key) {
         if (key == null) {
             this.metadata = null;
         } else {

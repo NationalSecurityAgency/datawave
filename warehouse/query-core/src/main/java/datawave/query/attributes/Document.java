@@ -14,6 +14,7 @@ import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ValueToAttributes;
+import datawave.query.util.AttributeComparator;
 import datawave.query.util.TypeMetadata;
 import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
@@ -315,77 +316,110 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 
                 // When calling put() on a Document which already contains an Attributes
                 // for a given with another Attributes, issue the equivalent of a putAll() on the new Attributes
-                // to not create additional hiearchy inside this Document
+                // to not create additional hierarchy inside this Document
                 //
                 // e.g. Given: {"CONTENT"=>[BODY:foo, HEAD:foo]}.put("CONTENT", [BODY:bar, HEAD:bar, FOOT:bar])
                 // We want to get: {"CONTENT"=>[BODY:foo, HEAD:foo, BODY:bar, HEAD:bar, FOOT:bar]}
                 // *not*: {"CONTENT"=>[BODY:foo, HEAD:foo, [BODY:bar, HEAD:bar, FOOT:bar]]}
                 
                 if (value instanceof Attributes && existingAttr instanceof Attributes) {
-                    // merge the two sets
-                    attrs = (Attributes) existingAttr;
-                    
-                    _count -= attrs.size();
-                    if (trackSizes) {
-                        _bytes -= attrs.sizeInBytes();
-                    }
-                    
-                    attrs.addAll(((Attributes) value).getAttributes());
-                    
-                    _count += attrs.size();
-                    if (trackSizes) {
-                        _bytes += attrs.sizeInBytes();
+                    // ensure there are no fuzzy matches before merging
+                    if (!AttributeComparator.multipleToMultiple((Attributes) existingAttr, (Attributes) value)) {
+                        // merge the two sets
+                        attrs = (Attributes) existingAttr;
+                        
+                        _count -= attrs.size();
+                        if (trackSizes) {
+                            _bytes -= attrs.sizeInBytes();
+                        }
+                        
+                        attrs.addAll(((Attributes) value).getAttributes());
+                        
+                        _count += attrs.size();
+                        if (trackSizes) {
+                            _bytes += attrs.sizeInBytes();
+                        }
+                    } else {
+                        // fuzzy matches found, attempt to combine attributes
+                        Set<Attribute<? extends Comparable<?>>> combinedSet = AttributeComparator.combineMultipleAttributes((Attributes) existingAttr,
+                                        (Attributes) value);
+                        Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
+                        dict.put(key, mergedAttributes);
                     }
                 } else if (value instanceof Attributes) {
-                    _count -= existingAttr.size();
-                    if (trackSizes) {
-                        _bytes -= existingAttr.sizeInBytes();
-                    }
-                    
-                    // change the existing attr to an attributes
-                    HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
-                    attrsSet.add(existingAttr);
-                    attrsSet.addAll(((Attributes) value).getAttributes());
-                    attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
-                    dict.put(key, attrs);
-                    
-                    _count += attrs.size();
-                    if (trackSizes) {
-                        _bytes += attrs.sizeInBytes();
+                    // ensure no fuzzy matches before merging
+                    if (!AttributeComparator.singleToMultiple(existingAttr, (Attributes) value)) {
+                        _count -= existingAttr.size();
+                        if (trackSizes) {
+                            _bytes -= existingAttr.sizeInBytes();
+                        }
+                        
+                        // change the existing attr to an attributes
+                        HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
+                        attrsSet.add(existingAttr);
+                        attrsSet.addAll(((Attributes) value).getAttributes());
+                        attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
+                        dict.put(key, attrs);
+                        
+                        _count += attrs.size();
+                        if (trackSizes) {
+                            _bytes += attrs.sizeInBytes();
+                        }
+                    } else {
+                        // fuzzy matches found, attempt to combine attributes
+                        Set<Attribute<? extends Comparable<?>>> combinedSet = AttributeComparator.combineMultipleAttributes((Attribute) existingAttr,
+                                        (Attributes) value, trackSizes);
+                        Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
+                        dict.put(key, mergedAttributes);
                     }
                 } else if (existingAttr instanceof Attributes) {
-                    // add the value to the set
-                    attrs = (Attributes) existingAttr;
-                    
-                    // Account for the case where we add more results to an Attributes, but the Attributes
-                    // ends up being deduped by the underlying Set
-                    // e.g. Adding BODY:term into an Attributes for BODY:[term, term2] should result in a size of 2
-                    _count -= attrs.size();
-                    if (trackSizes) {
-                        _bytes -= attrs.sizeInBytes();
-                    }
-                    
-                    attrs.add(value);
-                    
-                    _count += attrs.size();
-                    if (trackSizes) {
-                        _bytes += attrs.sizeInBytes();
+                    // ensure no fuzzy matches before merging
+                    if (!AttributeComparator.singleToMultiple(value, (Attributes) existingAttr)) {
+                        // add the value to the set
+                        attrs = (Attributes) existingAttr;
+                        
+                        // Account for the case where we add more results to an Attributes, but the Attributes
+                        // ends up being deduped by the underlying Set
+                        // e.g. Adding BODY:term into an Attributes for BODY:[term, term2] should result in a size of 2
+                        _count -= attrs.size();
+                        if (trackSizes) {
+                            _bytes -= attrs.sizeInBytes();
+                        }
+                        
+                        attrs.add(value);
+                        
+                        _count += attrs.size();
+                        if (trackSizes) {
+                            _bytes += attrs.sizeInBytes();
+                        }
+                    } else {
+                        // fuzzy matches found, attempt to combine attributes
+                        Set<Attribute<? extends Comparable<?>>> combinedSet = AttributeComparator.combineMultipleAttributes((Attributes) existingAttr,
+                                        (Attribute) value, trackSizes);
+                        Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
+                        dict.put(key, mergedAttributes);
                     }
                 } else {
-                    // create a set out of the two values
-                    HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
-                    attrsSet.add(existingAttr);
-                    attrsSet.add(value);
-                    attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
-                    dict.put(key, attrs);
-                    
-                    _count += value.size();
-                    if (trackSizes) {
-                        _bytes += value.sizeInBytes();
+                    // ensure no fuzzy matches before merging
+                    if (!AttributeComparator.singleToSingle(existingAttr, value)) {
+                        // create a set out of the two values
+                        HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
+                        attrsSet.add(existingAttr);
+                        attrsSet.add(value);
+                        attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
+                        dict.put(key, attrs);
+                        
+                        _count += value.size();
+                        if (trackSizes) {
+                            _bytes += value.sizeInBytes();
+                        }
+                    } else {
+                        // fuzzy matches found, attempt to combine attributes
+                        Attribute mergedAttribute = (Attribute) AttributeComparator.combineSingleAttributes(existingAttr, value);
+                        dict.put(key, mergedAttribute);
                     }
+                    invalidateMetadata();
                 }
-                
-                invalidateMetadata();
             }
             // else, a Document cannot contain the same Field:Value, thus
             // when we find a duplicate value in the same field, we ignore it.
@@ -732,7 +766,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         }
         for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
             // For evaluation purposes, all field names have the grouping context
-            // ripped off, regardless of whether or not it's beign return to the client.
+            // ripped off, regardless of whether or not it's being returned to the client.
             // Until grouping-context aware query evaluation is implemented, we always
             // want to remove the grouping-context
             String identifier = JexlASTHelper.rebuildIdentifier(entry.getKey(), false);
