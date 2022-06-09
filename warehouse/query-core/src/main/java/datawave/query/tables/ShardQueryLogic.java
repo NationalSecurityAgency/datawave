@@ -607,7 +607,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public boolean isLongRunningQuery() {
-        return !getConfig().getUniqueFields().isEmpty() || !getConfig().getGroupFields().isEmpty();
+        return !getConfig().getGroupFields().isEmpty();
     }
     
     /**
