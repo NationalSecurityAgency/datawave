@@ -53,11 +53,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
      */
     private boolean trackSizes;
     
-    /**
-     * Whether or not this document represents an intermediate result. If true, then the document fields should also be empty.
-     */
-    private boolean intermediateResult;
-    
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
     
     public MarkingFunctions getMarkingFunctions() {
@@ -129,24 +124,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * into <code>this</code> Document.
      *
      * @param iter
-     *            iterator of entry map
      * @param typeMetadata
-     *            the type metadata
-     * @param docKey
-     *            document key
-     * @param attrFilter
-     *            attribute filter
-     * @param compositeMetadata
-     *            the composite metadata
-     * @param docKeys
-     *            the document keys
-     * @param fromIndex
-     *            boolean flag for fromIndex
-     * @param includeGroupingContext
-     *            check for including the grouping context
-     * @param keepRecordId
-     *            check for keepRecordId
-     * @return a Document object
+     * @return
      */
     public Document consumeRawData(Key docKey, Set<Key> docKeys, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
                     CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter,
@@ -231,8 +210,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * Returns true if this <code>Document</code> contains the given <code>key</code>
      *
      * @param key
-     *            a key
-     * @return a boolean on if a key is found
+     * @return
      */
     public boolean containsKey(String key) {
         return this.dict.containsKey(key);
@@ -242,8 +220,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * Fetch the value for the given <code>key</code>. Will return <code>null</code> if no such mapping exists.
      *
      * @param key
-     *            the key
-     * @return the attribute value
+     * @return
      */
     public Attribute<?> get(String key) {
         return this.dict.get(key);
@@ -257,13 +234,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * Replaces an attribute within a document
      *
      * @param key
-     *            the key
      * @param value
-     *            a value
-     * @param includeGroupingContext
-     *            flag to include grouping context
-     * @param reducedResponse
-     *            flag for reducedResponse
      */
     public void replace(String key, Attribute<?> value, Boolean includeGroupingContext, boolean reducedResponse) {
         dict.put(key, value);
@@ -275,13 +246,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * <code>value</code> and existing attribute to that list.
      *
      * @param key
-     *            the key
      * @param value
-     *            the attribute value
-     * @param includeGroupingContext
-     *            flag to include grouping context
-     * @param reducedResponse
-     *            flag for reducedResponse
      */
     public void put(String key, Attribute<?> value, Boolean includeGroupingContext, boolean reducedResponse) {
         
@@ -323,15 +288,16 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 // *not*: {"CONTENT"=>[BODY:foo, HEAD:foo, [BODY:bar, HEAD:bar, FOOT:bar]]}
                 
                 if (value instanceof Attributes && existingAttr instanceof Attributes) {
-                    attrs = (Attributes) existingAttr;
-                    
-                    _count -= attrs.size();
-                    if (trackSizes) {
-                        _bytes -= attrs.sizeInBytes();
-                    }
                     // ensure there are no fuzzy matches before merging
                     if (!AttributeComparator.multipleToMultiple((Attributes) existingAttr, (Attributes) value)) {
                         // merge the two sets
+                        attrs = (Attributes) existingAttr;
+                        
+                        _count -= attrs.size();
+                        if (trackSizes) {
+                            _bytes -= attrs.sizeInBytes();
+                        }
+                        
                         attrs.addAll(((Attributes) value).getAttributes());
                         
                         _count += attrs.size();
@@ -344,19 +310,15 @@ public class Document extends AttributeBag<Document> implements Serializable {
                                         (Attributes) value);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
-                        
-                        _count += mergedAttributes.size();
-                        if (trackSizes) {
-                            _bytes += mergedAttributes.sizeInBytes();
-                        }
                     }
                 } else if (value instanceof Attributes) {
-                    _count -= existingAttr.size();
-                    if (trackSizes) {
-                        _bytes -= existingAttr.sizeInBytes();
-                    }
                     // ensure no fuzzy matches before merging
                     if (!AttributeComparator.singleToMultiple(existingAttr, (Attributes) value)) {
+                        _count -= existingAttr.size();
+                        if (trackSizes) {
+                            _bytes -= existingAttr.sizeInBytes();
+                        }
+                        
                         // change the existing attr to an attributes
                         HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
                         attrsSet.add(existingAttr);
@@ -374,25 +336,21 @@ public class Document extends AttributeBag<Document> implements Serializable {
                                         (Attributes) value, trackSizes);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
-                        
-                        _count += mergedAttributes.size();
-                        if (trackSizes) {
-                            _bytes += mergedAttributes.sizeInBytes();
-                        }
                     }
                 } else if (existingAttr instanceof Attributes) {
-                    // add the value to the set
-                    attrs = (Attributes) existingAttr;
-                    
-                    // Account for the case where we add more results to an Attributes, but the Attributes
-                    // ends up being deduped by the underlying Set
-                    // e.g. Adding BODY:term into an Attributes for BODY:[term, term2] should result in a size of 2
-                    _count -= attrs.size();
-                    if (trackSizes) {
-                        _bytes -= attrs.sizeInBytes();
-                    }
                     // ensure no fuzzy matches before merging
                     if (!AttributeComparator.singleToMultiple(value, (Attributes) existingAttr)) {
+                        // add the value to the set
+                        attrs = (Attributes) existingAttr;
+                        
+                        // Account for the case where we add more results to an Attributes, but the Attributes
+                        // ends up being deduped by the underlying Set
+                        // e.g. Adding BODY:term into an Attributes for BODY:[term, term2] should result in a size of 2
+                        _count -= attrs.size();
+                        if (trackSizes) {
+                            _bytes -= attrs.sizeInBytes();
+                        }
+                        
                         attrs.add(value);
                         
                         _count += attrs.size();
@@ -405,11 +363,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
                                         (Attribute) value, trackSizes);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
-                        
-                        _count += mergedAttributes.size();
-                        if (trackSizes) {
-                            _bytes += mergedAttributes.sizeInBytes();
-                        }
                     }
                 } else {
                     // ensure no fuzzy matches before merging
@@ -429,11 +382,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         // fuzzy matches found, attempt to combine attributes
                         Attribute mergedAttribute = (Attribute) AttributeComparator.combineSingleAttributes(existingAttr, value);
                         dict.put(key, mergedAttribute);
-                        
-                        _count += mergedAttribute.size();
-                        if (trackSizes) {
-                            _bytes += mergedAttribute.sizeInBytes();
-                        }
                     }
                     invalidateMetadata();
                 }
@@ -479,8 +427,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * Remove an Attribute, non-recursively, from the internal dictionary
      *
      * @param key
-     *            a key
-     * @return the dictionary with the key removed
+     * @return
      */
     public Attribute<?> remove(String key) {
         if (this.getDictionary().containsKey(key)) {
@@ -501,9 +448,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
     
     /**
      * Remove all Attributes from the Document (recursively) whose field is the provided key.
-     * 
+     *
      * @param key
-     *            a key
      */
     public void removeAll(String key) {
         _removeAll(this._getDictionary(), key);
@@ -831,11 +777,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
             }
             if (anySet != null) {
                 anySet.addAll(visitObject);
+                context.set(Constants.ANY_FIELD, anySet);
             }
-        }
-        // now if we have anything in the anySet, add it to the context
-        if (anySet != null && !anySet.isEmpty()) {
-            context.set(Constants.ANY_FIELD, anySet);
         }
         
         // this probably will not be used by anybody as the side-effect of loading the JEXL context is the real result
@@ -931,14 +874,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
         d.shardTimestamp = this.shardTimestamp;
         
         return d;
-    }
-    
-    public void setIntermediateResult(boolean intermediateResult) {
-        this.intermediateResult = intermediateResult;
-    }
-    
-    public boolean isIntermediateResult() {
-        return intermediateResult;
     }
     
 }
