@@ -248,7 +248,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // Parse the query
         try {
             this.script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
-            this.myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
+            this.myEvaluationFunction = getJexlEvaluation(this.getQuery(), arithmetic);
             
         } catch (Exception e) {
             throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
@@ -711,7 +711,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 try {
                     
                     myScript = JexlASTHelper.parseJexlQuery(queries.getValue());
-                    eval = new JexlEvaluation(queries.getValue(), myArithmetic);
+                    eval = getJexlEvaluation(queries.getValue(), myArithmetic);
                     
                 } catch (Exception e) {
                     throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
@@ -1095,20 +1095,47 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected JexlEvaluation getJexlEvaluation(NestedQueryIterator<Key> documentSource) {
+        return getJexlEvaluation(query, documentSource, getArithmetic());
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query) {
+        return getJexlEvaluation(query, null, getArithmetic());
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query, JexlArithmetic arithmetic) {
+        return getJexlEvaluation(query, null, arithmetic);
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query, NestedQueryIterator<Key> documentSource) {
+        return getJexlEvaluation(query, documentSource, getArithmetic());
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query, NestedQueryIterator<Key> documentSource, JexlArithmetic arithmetic) {
+        JexlEvaluation jexlEvaluationFunction = null;
+        
+        if (arithmetic == null) {
+            arithmetic = getArithmetic();
+        }
         
         if (null == documentSource) {
-            return new JexlEvaluation(query, getArithmetic());
-        }
-        JexlEvaluation jexlEvaluationFunction = null;
-        NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
-        if (null == nestedQuery) {
-            jexlEvaluationFunction = new JexlEvaluation(query, getArithmetic());
+            jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
         } else {
-            jexlEvaluationFunction = nestedQuery.getEvaluation();
-            if (null == jexlEvaluationFunction) {
-                return new JexlEvaluation(query, getArithmetic());
+            NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
+            if (null == nestedQuery) {
+                jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+            } else {
+                jexlEvaluationFunction = nestedQuery.getEvaluation();
+                if (null == jexlEvaluationFunction) {
+                    jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+                }
             }
         }
+        
+        // update the jexl evaluation to gather phrase offsets if required for excerpts
+        if (getExcerptFields() != null && !getExcerptFields().isEmpty()) {
+            jexlEvaluationFunction.setGatherPhraseOffsets(true);
+        }
+        
         return jexlEvaluationFunction;
     }
     
