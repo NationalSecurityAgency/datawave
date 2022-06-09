@@ -331,7 +331,6 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
                     if (log.isTraceEnabled()) {
                         log.trace(PrintingVisitor.formattedQueryString(queryNode));
                     }
-                    log.error("");
                 }
             }
             // Format the plan (plan will always be a JEXL query)
@@ -344,7 +343,6 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
                 if (log.isTraceEnabled()) {
                     log.trace(PrintingVisitor.formattedQueryString(planNode));
                 }
-                log.error("");
             }
             updatedMetrics.add(updatedMetric);
         }
