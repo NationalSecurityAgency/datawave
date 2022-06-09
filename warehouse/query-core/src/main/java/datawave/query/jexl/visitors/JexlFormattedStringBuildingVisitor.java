@@ -1,9 +1,11 @@
 package datawave.query.jexl.visitors;
 
+import datawave.microservice.querymetric.QueryMetric;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
@@ -13,9 +15,12 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
+
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.TreeSet;
 
 /**
@@ -303,6 +308,50 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
             sb.append((needNewLines ? NEWLINE : "") + ")");
         }
         return sb;
+    }
+    
+    public static List<QueryMetric> formatMetrics(List<QueryMetric> metrics) {
+        List<QueryMetric> updatedMetrics = new ArrayList<QueryMetric>();
+        
+        // For each metric, update the query to be formatted (if applicable) and update
+        // the plan to be formatted
+        for (QueryMetric metric : metrics) {
+            JexlNode queryNode = null, planNode = null;
+            QueryMetric updatedMetric = new QueryMetric(metric);
+            String query = updatedMetric.getQuery();
+            String plan = updatedMetric.getPlan();
+            // If it is a JEXL query, set the query to be formatted
+            if (isJexlQuery(metric.getParameters())) {
+                try {
+                    queryNode = JexlASTHelper.parseJexlQuery(query);
+                    updatedMetric.setQuery(buildQuery(queryNode));
+                } catch (ParseException e) {
+                    log.error("Could not parse JEXL AST after performing transformations to run the query", e);
+                    
+                    if (log.isTraceEnabled()) {
+                        log.trace(PrintingVisitor.formattedQueryString(queryNode));
+                    }
+                }
+            }
+            // Format the plan (plan will always be a JEXL query)
+            try {
+                planNode = JexlASTHelper.parseJexlQuery(plan);
+                updatedMetric.setPlan(buildQuery(planNode));
+            } catch (ParseException e) {
+                log.error("Could not parse JEXL AST after performing transformations to run the query", e);
+                
+                if (log.isTraceEnabled()) {
+                    log.trace(PrintingVisitor.formattedQueryString(planNode));
+                }
+            }
+            updatedMetrics.add(updatedMetric);
+        }
+        
+        return updatedMetrics;
+    }
+    
+    private static boolean isJexlQuery(Set<Parameter> params) {
+        return params.stream().anyMatch(p -> p.getParameterName().equals("query.syntax") && p.getParameterValue().equals("JEXL"));
     }
     
     public static void main(String args[]) {
