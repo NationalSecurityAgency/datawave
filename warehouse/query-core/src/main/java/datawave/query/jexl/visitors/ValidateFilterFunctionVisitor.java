@@ -62,6 +62,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
+import java.util.Collections;
 import java.util.Set;
 
 import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
@@ -71,16 +72,18 @@ import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescri
 /**
  * Verifies that no filter function is run against an index-only field
  * <p>
- * The exceptions to this rule are the #NO_EXPANSION and #TEXT functions.
+ * The exceptions to this rule are the #NO_EXPANSION and #TEXT functions, neither of which are actually filter functions
  * <p>
- * The #NO_EXPANSION term will be pruned from the query prior to this visitor's execution, and the #TEXT query will have an index query added into the query.
+ * #NO_EXPANSION controls query model expansion and is allowed to limit index only fields
+ * <p>
+ * #TEXT is allowed to run against index-only fields because an index query is added
  */
 public class ValidateFilterFunctionVisitor extends BaseVisitor {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(ValidateFilterFunctionVisitor.class);
     
     private final Set<String> indexOnlyFields;
-    private final Set<String> excludedFunctions = Sets.newHashSet(NO_EXPANSION, INCLUDE_TEXT);
+    private static final Set<String> excludedFunctions = Collections.unmodifiableSet(Sets.newHashSet(NO_EXPANSION, INCLUDE_TEXT));
     
     public ValidateFilterFunctionVisitor(Set<String> indexOnlyFields) {
         this.indexOnlyFields = indexOnlyFields;
@@ -94,8 +97,10 @@ public class ValidateFilterFunctionVisitor extends BaseVisitor {
      * @return the original node
      */
     public static JexlNode validate(JexlNode node, Set<String> indexOnlyFields) {
-        ValidateFilterFunctionVisitor visitor = new ValidateFilterFunctionVisitor(indexOnlyFields);
-        node.jjtAccept(visitor, null);
+        if (!indexOnlyFields.isEmpty()) {
+            ValidateFilterFunctionVisitor visitor = new ValidateFilterFunctionVisitor(indexOnlyFields);
+            node.jjtAccept(visitor, null);
+        }
         return node;
     }
     
@@ -119,7 +124,7 @@ public class ValidateFilterFunctionVisitor extends BaseVisitor {
                     if (indexOnlyFields.contains(identifier)) {
                         
                         if (log.isDebugEnabled()) {
-                            log.debug("Filter function contained index-only field [" + identifier + "] for node ["
+                            log.debug("Filter function " + visitor.name() + " contained index-only field [" + identifier + "] for node ["
                                             + JexlStringBuildingVisitor.buildQueryWithoutParse(node) + "]");
                         }
                         
