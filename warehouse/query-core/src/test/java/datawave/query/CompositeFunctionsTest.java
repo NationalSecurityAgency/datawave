@@ -175,9 +175,9 @@ public abstract class CompositeFunctionsTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         
         eventQueryLogic.setFullTableScanEnabled(true);
-        eventQueryLogic.setMaxDepthThreshold(6);
+        eventQueryLogic.setMaxDepthThreshold(7);
         tldEventQueryLogic.setFullTableScanEnabled(true);
-        tldEventQueryLogic.setMaxDepthThreshold(6);
+        tldEventQueryLogic.setMaxDepthThreshold(7);
         deserializer = new KryoDocumentDeserializer();
     }
     
@@ -435,26 +435,34 @@ public abstract class CompositeFunctionsTest {
                 "UUID =~ '^[CS].*' AND filter:isNull(BOTH_NULL)", // expands to NULL1||NULL2, neither are in any events
                 "filter:isNull(NULL2||NULL1)",
                 "filter:isNull(BOTH_NULL)",
-                // these 2 are equivalent:
                 "filter:isNull(UUID||NULL1)",
                 "filter:isNull(UUID) && filter:isNull(NULL1)",
-                // these 2 are equivalent
                 "filter:isNull(NULL1||NULL2)",
                 "filter:isNull(NULL1) && filter:isNull(NULL2)",
-                // these 3 are equivalent
                 "UUID =~ '^[CS].*' AND filter:isNull(ONE_NULL)",
                 "UUID =~ '^[CS].*' AND filter:isNull(UUID||NULL1)",
                 "UUID =~ '^[CS].*' AND filter:isNull(UUID) && filter:isNull(NULL1)"
         };
-        
+
+        //  @formatter:off
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Collections.emptyList(),
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
-                Collections.emptyList(), Collections.emptyList(),
-                
-                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"), Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"), Collections.emptyList(),
-                Collections.emptyList(), Collections.emptyList(),};
+        List<String>[] expectedLists = new List[] {
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
+                Collections.emptyList(),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Arrays.asList("CORLEONE", "CAPONE", "SOPRANO", "ANDOLINI"),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                Collections.emptyList()};
+        //  @formatter:on
+        
         for (int i = 0; i < queryStrings.length; i++) {
+            System.out.println("query: " + i);
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }

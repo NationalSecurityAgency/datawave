@@ -3,6 +3,7 @@ package datawave.query.jexl.functions;
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import org.javatuples.Pair;
+import org.javatuples.Triplet;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -15,9 +16,11 @@ import java.util.Set;
 
 public class ContentOrderedEvaluatorTest {
     
+    private static final String EVENT_ID = "shard\u0000dt\u0000uid";
     private TermOffsetMap termOffsetMap;
     private final List<List<TermWeightPosition>> offsets = new ArrayList<>();
     private String field;
+    private String eventId = EVENT_ID;
     private int distance;
     private String[] terms;
     
@@ -26,11 +29,13 @@ public class ContentOrderedEvaluatorTest {
     @Before
     public void setup() {
         termOffsetMap = new TermOffsetMap();
+        termOffsetMap.setGatherPhraseOffsets(true);
     }
     
     @After
     public void teardown() {
         field = null;
+        eventId = EVENT_ID;
         offsets.clear();
         terms = null;
     }
@@ -264,6 +269,10 @@ public class ContentOrderedEvaluatorTest {
         this.field = field;
     }
     
+    private void givenEventId(String eventId) {
+        this.eventId = eventId;
+    }
+    
     private void givenOffsets(int... offsets) {
         List<TermWeightPosition> list = new ArrayList<>();
         for (int offset : offsets) {
@@ -285,13 +294,16 @@ public class ContentOrderedEvaluatorTest {
     }
     
     private void assertEvaluate(boolean expected) {
-        Assert.assertEquals("Expected evaluate() to return " + expected, expected, evaluator.evaluate(field, offsets));
+        Assert.assertEquals("Expected evaluate() to return " + expected, expected, evaluator.evaluate(field, eventId, offsets));
     }
     
     private void assertPhraseOffsetsContain(String field, int startOffset, int endOffset) {
-        Collection<Pair<Integer,Integer>> phraseOffsets = termOffsetMap.getPhraseIndexes(field);
-        boolean found = phraseOffsets.stream().anyMatch((pair) -> pair.getValue0().equals(startOffset) && pair.getValue1().equals(endOffset));
-        Assert.assertTrue("Expected phrase offset [" + startOffset + ", " + endOffset + "] for field " + field, found);
+        Collection<Triplet<String,Integer,Integer>> phraseOffsets = termOffsetMap.getPhraseIndexes(field);
+        boolean found = phraseOffsets.stream()
+                        .anyMatch((pair) -> pair.getValue0().equals(eventId) && pair.getValue1().equals(startOffset) && pair.getValue2().equals(endOffset));
+        Assert.assertTrue(
+                        "Expected phrase offset [" + startOffset + ", " + endOffset + "] for field " + field + " and eventId " + eventId.replace('\u0000', '/'),
+                        found);
     }
     
     private void assertPhraseOffsetsEmpty() {
@@ -304,8 +316,8 @@ public class ContentOrderedEvaluatorTest {
         }
         
         @Override
-        protected boolean evaluate(String field, List<List<TermWeightPosition>> offsets) {
-            return super.evaluate(field, offsets);
+        protected boolean evaluate(String field, String eventId, List<List<TermWeightPosition>> offsets) {
+            return super.evaluate(field, eventId, offsets);
         }
     }
 }

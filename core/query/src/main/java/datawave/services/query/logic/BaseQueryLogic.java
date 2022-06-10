@@ -340,4 +340,20 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public Map<String,Long> getDnResultLimits() {
         return dnResultLimits;
     }
+    
+    @Override
+    public void setPageProcessingStartTime(long pageProcessingStartTime) {
+        // no op
+    }
+    
+    /**
+     * Whether the query is a type that should be allowed to be run long (exceed the short circuit timeout). Default to false. Implementations should override
+     * this if the default is not appropriate.
+     *
+     * @return Return whether the query is a type that should be allowed to be run long (exceed the short circuit timeout)
+     */
+    @Override
+    public boolean isLongRunningQuery() {
+        return false;
+    }
 }

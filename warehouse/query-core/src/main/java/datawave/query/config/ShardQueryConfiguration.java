@@ -8,7 +8,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.hash.BloomFilter;
-import datawave.query.attributes.ExcerptFields;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
@@ -17,9 +16,11 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
@@ -35,6 +36,9 @@ import datawave.util.TableName;
 import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -381,7 +385,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // fields exempt from query model expansion
     private Set<String> noExpansionFields = new HashSet<>();
     
-    public ExcerptFields excerptFields = new ExcerptFields();
+    /**
+     * The max execution time per page of results - after it has elapsed, an intermediate result page will be returned.
+     */
+    private long queryExecutionForPageTimeout = 3000000L;
+    
+    private ExcerptFields excerptFields = new ExcerptFields();
+    
+    // The class for the excerpt iterator
+    private Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
     
     /**
      * A bloom filter to avoid duplicate results if needed
@@ -580,7 +592,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
+        this.setExcerptIterator(other.getExcerptIterator());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
+        this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
     }
     
     /**
@@ -2344,12 +2358,28 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.excerptFields = excerptFields;
     }
     
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getExcerptIterator() {
+        return excerptIterator;
+    }
+    
+    public void setExcerptIterator(Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator) {
+        this.excerptIterator = excerptIterator;
+    }
+    
     public long getVisitorFunctionMaxWeight() {
         return visitorFunctionMaxWeight;
     }
     
     public void setVisitorFunctionMaxWeight(long visitorFunctionMaxWeight) {
         this.visitorFunctionMaxWeight = visitorFunctionMaxWeight;
+    }
+    
+    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
+        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
+    }
+    
+    public long getQueryExecutionForPageTimeout() {
+        return this.queryExecutionForPageTimeout;
     }
     
     @Override
@@ -2460,7 +2490,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         && Objects.equals(getModelTableName(), that.getModelTableName()) && Objects.equals(getGroupFields(), that.getGroupFields())
                         && Objects.equals(getUniqueFields(), that.getUniqueFields()) && Objects.equals(getContentFieldNames(), that.getContentFieldNames())
                         && Objects.equals(getActiveQueryLogNameSource(), that.getActiveQueryLogNameSource()) && Objects.equals(getBloom(), that.getBloom())
-                        && Objects.equals(getNoExpansionFields(), that.getNoExpansionFields());
+                        && Objects.equals(getNoExpansionFields(), that.getNoExpansionFields())
+                        && getQueryExecutionForPageTimeout() == that.getQueryExecutionForPageTimeout();
     }
     
     @Override
@@ -2497,7 +2528,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         getModelName(), getModelTableName(), shouldLimitTermExpansionToModel, isCompressServerSideResults(),
                         isIndexOnlyFilterFunctionsEnabled(), isCompositeFilterFunctionsEnabled(), getGroupFieldsBatchSize(), getAccrueStats(), getGroupFields(),
                         getUniqueFields(), getCacheModel(), isTrackSizes(), getContentFieldNames(), getActiveQueryLogNameSource(),
-                        getEnforceUniqueConjunctionsWithinExpression(), getEnforceUniqueDisjunctionsWithinExpression(), getNoExpansionFields(), getBloom());
+                        getEnforceUniqueConjunctionsWithinExpression(), getEnforceUniqueDisjunctionsWithinExpression(), getNoExpansionFields(), getBloom(),
+                        getQueryExecutionForPageTimeout());
     }
     
     // Part of the Serializable interface used to initialize any transient members during deserialization
@@ -2506,5 +2538,4 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.fstCount = new AtomicInteger(0);
         return this;
     }
-    
 }

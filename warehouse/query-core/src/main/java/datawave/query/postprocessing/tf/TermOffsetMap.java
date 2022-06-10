@@ -1,7 +1,7 @@
 package datawave.query.postprocessing.tf;
 
 import datawave.query.jexl.functions.TermFrequencyList;
-import org.javatuples.Pair;
+import org.javatuples.Triplet;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,6 +15,9 @@ import java.util.StringJoiner;
  */
 public class TermOffsetMap {
     
+    // should we gather phrase offsets
+    boolean gatherPhraseOffsets = false;
+    
     /**
      * The term frequencies, with their corresponding fields.
      */
@@ -23,7 +26,7 @@ public class TermOffsetMap {
     /**
      * The phrase indexes found for hits.
      */
-    private final PhraseIndexes phraseIndexes = new PhraseIndexes();
+    private PhraseIndexes phraseIndexes = null;
     
     public TermOffsetMap() {}
     
@@ -61,13 +64,17 @@ public class TermOffsetMap {
      * 
      * @param field
      *            the field
+     * @param eventId
+     *            the event id (see @TermFrequencyList.getEventId(Key))
      * @param start
      *            the phrase starting index
      * @param end
      *            the phrase ending index
      */
-    public void addPhraseIndexPair(String field, int start, int end) {
-        phraseIndexes.addIndexPair(field, start, end);
+    public void addPhraseIndexTriplet(String field, String eventId, int start, int end) {
+        if (phraseIndexes != null) {
+            phraseIndexes.addIndexTriplet(field, eventId, start, end);
+        }
     }
     
     /**
@@ -77,8 +84,11 @@ public class TermOffsetMap {
      *            the field
      * @return the phrase indexes
      */
-    public Collection<Pair<Integer,Integer>> getPhraseIndexes(String field) {
-        return phraseIndexes.getIndices(field);
+    public Collection<Triplet<String,Integer,Integer>> getPhraseIndexes(String field) {
+        if (phraseIndexes != null) {
+            return phraseIndexes.getIndices(field);
+        }
+        return null;
     }
     
     /**
@@ -88,6 +98,21 @@ public class TermOffsetMap {
      */
     public PhraseIndexes getPhraseIndexes() {
         return phraseIndexes;
+    }
+    
+    public boolean isGatherPhraseOffsets() {
+        return gatherPhraseOffsets;
+    }
+    
+    public void setGatherPhraseOffsets(boolean gatherPhraseOffsets) {
+        this.gatherPhraseOffsets = gatherPhraseOffsets;
+        if (gatherPhraseOffsets) {
+            if (this.phraseIndexes == null) {
+                this.phraseIndexes = new PhraseIndexes();
+            }
+        } else {
+            this.phraseIndexes = null;
+        }
     }
     
     @Override
@@ -112,4 +137,5 @@ public class TermOffsetMap {
         return new StringJoiner(", ", TermOffsetMap.class.getSimpleName() + "[", "]").add("termFrequencies=" + termFrequencies)
                         .add("phraseIndexes=" + phraseIndexes).toString();
     }
+    
 }

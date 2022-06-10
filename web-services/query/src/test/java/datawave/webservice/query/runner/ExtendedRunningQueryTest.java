@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.easymock.EasyMock.anyLong;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
@@ -177,6 +178,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
+        this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();
@@ -266,6 +268,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
+        this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();
@@ -332,6 +335,7 @@ public class ExtendedRunningQueryTest {
         expect(this.genericConfiguration.getQueryString()).andReturn("query").once();
         expect(this.queryLogic.getResultLimit(eq(dnList))).andReturn(maxResults);
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults);
+        this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();
@@ -469,6 +473,7 @@ public class ExtendedRunningQueryTest {
         expect(this.queryLogic.getMaxWork()).andReturn(maxWork).anyTimes();
         expect(this.queryLogic.getMaxResults()).andReturn(maxResults).anyTimes();
         expect(this.genericConfiguration.getQueryString()).andReturn(query).once();
+        this.queryLogic.setPageProcessingStartTime(anyLong());
         
         // Run the test
         PowerMock.replayAll();

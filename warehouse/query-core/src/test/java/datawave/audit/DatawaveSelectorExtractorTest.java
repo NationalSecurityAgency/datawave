@@ -140,4 +140,15 @@ public class DatawaveSelectorExtractorTest {
                         .newArrayList(uuids.stream().map(x -> x.substring("_ANY_FIELD_ == '".length(), x.length() - 1)).collect(Collectors.toList()));
         Assert.assertEquals(expected, selectorList);
     }
+    
+    @Test
+    public void extractSelectorsUnknownFunction() {
+        
+        // expect that the exception will be caught and an empty list returned
+        DatawaveSelectorExtractor extractor = new DatawaveSelectorExtractor();
+        QueryImpl q = new QueryImpl();
+        q.setQuery("FIELD1:selector1 AND #UNKNOWN(parameter)");
+        List<String> selectorList = extractor.extractSelectors(q);
+        Assert.assertEquals(0, selectorList.size());
+    }
 }

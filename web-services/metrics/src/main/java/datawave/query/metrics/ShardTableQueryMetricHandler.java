@@ -29,6 +29,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.spring.SpringBean;
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDBuilder;
 import datawave.ingest.config.RawRecordContainerImpl;
@@ -52,6 +53,7 @@ import datawave.microservice.querymetric.QueryMetricsDetailListResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.visitors.JexlFormattedStringBuildingVisitor;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.map.SimpleQueryGeometryHandler;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.AuthorizationsUtil;
@@ -127,6 +129,10 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     
     @Inject
     private QueryMetricFactory metricFactory;
+    
+    @Inject
+    @SpringBean(name = "LuceneToJexlQueryParser", refreshable = true)
+    private LuceneToJexlQueryParser luceneToJexlQueryParser;
     
     private Collection<String> connectorAuthorizationCollection = null;
     private String connectorAuthorizations = null;
@@ -373,11 +379,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             
             // user's DatawavePrincipal must have the Administrator role to use the Metrics query logic
             QueryMetric cachedQueryMetric;
-            QueryMetric newCachedQueryMetric;
+            QueryMetric updatedQueryMetricCopy;
             synchronized (ShardTableQueryMetricHandler.class) {
                 cachedQueryMetric = (QueryMetric) metricsCache.get(updatedQueryMetric.getQueryId());
-                // duplicate updatedQueryMetric because we're counting on the cache to be a snapshot of the QueryMetric
-                // so that we can retrieve it next update call to create the delete Mutations for the values written to Accumulo
                 Map<Long,PageMetric> storedPageMetricMap = new TreeMap<>();
                 if (cachedQueryMetric != null) {
                     List<PageMetric> cachedPageMetrics = cachedQueryMetric.getPageTimes();
@@ -391,11 +395,10 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 for (PageMetric p : updatedQueryMetric.getPageTimes()) {
                     storedPageMetricMap.put(p.getPageNumber(), p);
                 }
-                newCachedQueryMetric = (QueryMetric) updatedQueryMetric.duplicate();
                 ArrayList<PageMetric> newPageMetrics = new ArrayList<>();
                 newPageMetrics.addAll(storedPageMetricMap.values());
-                newCachedQueryMetric.setPageTimes(newPageMetrics);
-                metricsCache.put(updatedQueryMetric.getQueryId(), newCachedQueryMetric);
+                updatedQueryMetric.setPageTimes(newPageMetrics);
+                metricsCache.put(updatedQueryMetric.getQueryId(), updatedQueryMetric);
             }
             
             List<QueryMetric> queryMetrics = new ArrayList<>();
@@ -427,19 +430,10 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 writeMetrics(updatedQueryMetric, queryMetrics, lastUpdated, true);
             }
             
-            long nextUpdateNumber = 0;
-            
-            for (BaseQueryMetric m : queryMetrics) {
-                if ((m.getNumUpdates() + 1) > nextUpdateNumber) {
-                    nextUpdateNumber = m.getNumUpdates() + 1;
-                }
-            }
-            
-            updatedQueryMetric.setNumUpdates(nextUpdateNumber);
-            
+            populateMetricSelectors(updatedQueryMetric, this.luceneToJexlQueryParser);
+            incrementNumUpdates(updatedQueryMetric, queryMetrics);
             synchronized (ShardTableQueryMetricHandler.class) {
-                newCachedQueryMetric.setNumUpdates(nextUpdateNumber);
-                metricsCache.put(updatedQueryMetric.getQueryId(), newCachedQueryMetric);
+                metricsCache.put(updatedQueryMetric.getQueryId(), updatedQueryMetric);
             }
             
             // write new entry

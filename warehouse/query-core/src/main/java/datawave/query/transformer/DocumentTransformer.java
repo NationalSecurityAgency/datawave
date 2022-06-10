@@ -10,6 +10,7 @@ import datawave.services.query.logic.WritesQueryMetrics;
 import datawave.services.query.logic.WritesResultCardinalities;
 import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
@@ -106,6 +107,12 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
             throw new EmptyObjectException();
         }
         
+        if (documentEntry.getValue().isIntermediateResult()) {
+            DefaultEvent output = new DefaultEvent();
+            output.setIntermediateResult(true);
+            return output;
+        }
+        
         Key documentKey = correctKey(documentEntry.getKey());
         Document document = documentEntry.getValue();
         
@@ -192,4 +199,11 @@ public class DocumentTransformer extends DocumentTransformerSupport<Entry<Key,Va
         return event;
     }
     
+    @Override
+    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
+        for (DocumentTransform dt : transforms) {
+            dt.setQueryExecutionForPageStartTime(queryExecutionForCurrentPageStartTime);
+        }
+        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
+    }
 }

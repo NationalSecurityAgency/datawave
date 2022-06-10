@@ -60,8 +60,8 @@ import java.util.Map;
 import java.util.Set;
 
 @Path("/BasicQuery")
-@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})
-@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})
+@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser"})
+@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser"})
 @Stateless
 @LocalBean
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
