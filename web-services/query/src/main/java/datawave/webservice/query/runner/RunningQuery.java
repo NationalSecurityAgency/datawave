@@ -10,7 +10,6 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.cache.RunningQueryTimingImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.data.ObjectSizeOf;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -36,12 +35,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Object that encapsulates a running query
@@ -68,7 +69,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private transient RunningQueryTiming timing = null;
     private ExecutorService executor = null;
     private volatile Future<Object> future = null;
-    private volatile Future<Object> hasNextFuture = null;
+    private BlockingQueue<Object> resultsThreadQueue = new ArrayBlockingQueue<>(1);
+    private AtomicInteger hasNext = new AtomicInteger(0);
+    private AtomicInteger gotNext = new AtomicInteger(0);
+    private AtomicBoolean running = new AtomicBoolean(false);
     private QueryPredictor predictor = null;
     private long maxResults = 0;
     private int currentTimeoutcount = 0;
@@ -205,6 +209,153 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         }
     }
     
+    /**
+     * This is the results thread which will pull results from the iterator and add them to a blocking queue. The blocking queue will be of size 1 which means
+     * that the main RunningQuery.next() loop will have to pull the results before the next one can be retrieved. The hasNext and gotNext counters keep track of
+     * the calls to hasNext and next on the underlying iterator. They will be decremented once a result is acknowledged in the RunningQuery.next() loop. The
+     * running boolean will allow the graceful termination of this thread.
+     * 
+     * @param queue
+     * @param running
+     * @param hasNext
+     * @param gotNext
+     * @return running (with a value of false)
+     */
+    private Object getResultsThread(BlockingQueue<Object> queue, AtomicBoolean running, AtomicInteger hasNext, AtomicInteger gotNext) {
+        try {
+            while (running.get() && !this.finished && !this.canceled && this.iter.hasNext()) {
+                synchronized (hasNext) {
+                    hasNext.incrementAndGet();
+                    hasNext.notifyAll();
+                }
+                // wait until the queue is emptied
+                while (running.get() && !this.finished && !this.canceled && !queue.isEmpty()) {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                // if the queue is available and we are still running, then get the next result
+                if (running.get() && !this.finished && !this.canceled && queue.isEmpty()) {
+                    Object o = this.iter.next();
+                    if (o != null) {
+                        queue.offer(o);
+                        synchronized (gotNext) {
+                            gotNext.incrementAndGet();
+                            gotNext.notifyAll();
+                        }
+                    }
+                    
+                    // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
+                    if (iter.getTransformer() instanceof WritesQueryMetrics) {
+                        ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            if (settings.getUncaughtExceptionHandler() != null) {
+                settings.getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), e);
+            } else {
+                running.set(false);
+                synchronized (hasNext) {
+                    hasNext.notifyAll();
+                }
+                synchronized (gotNext) {
+                    gotNext.notifyAll();
+                }
+                throw new RuntimeException(e);
+            }
+        }
+        
+        running.set(false);
+        synchronized (hasNext) {
+            hasNext.notifyAll();
+        }
+        synchronized (gotNext) {
+            gotNext.notifyAll();
+        }
+        
+        return running;
+    }
+    
+    /**
+     * This method is used to determine if we have a next result. This will throw a timeout exception if the page short circuit limit is reached.
+     * 
+     * @param pageStartTime
+     * @return true if hasNext()
+     * @throws TimeoutException
+     */
+    private boolean hasNext(long pageStartTime) throws TimeoutException {
+        synchronized (hasNext) {
+            if (hasNext.get() == 0 && running.get() && !this.finished && !this.canceled) {
+                long timeout = (timing != null ? Math.max(1, (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
+                                : Long.MAX_VALUE);
+                try {
+                    hasNext.wait(timeout);
+                } catch (InterruptedException e) {
+                    // if we got interrupted, then just return false
+                    return false;
+                }
+                if (running.get() && (hasNext.get() == 0)) {
+                    throw new TimeoutException("hasNext timed out");
+                }
+            }
+            if (hasNext.get() == 0) {
+                log.debug("hasNext returned false.  No more results");
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * This method will get the next object from the results thread queue. This presumes that hasNext has returned true. A timeout exception will be thrown if
+     * the page short circuit timeout has been reached.
+     * 
+     * @param pageStartTime
+     * @return the next object (could be null)
+     * @throws TimeoutException
+     */
+    private Object getNext(long pageStartTime) throws TimeoutException {
+        synchronized (gotNext) {
+            if (gotNext.get() == 0 && running.get() && !this.finished && !this.canceled) {
+                long timeout = (timing != null ? Math.max(1, (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
+                                : Long.MAX_VALUE);
+                try {
+                    gotNext.wait(timeout);
+                } catch (InterruptedException e) {
+                    // if we got interrupted, then just return null
+                    return null;
+                }
+                if (running.get() && (gotNext.get() == 0)) {
+                    throw new TimeoutException("gotNext timed out");
+                }
+            }
+            return resultsThreadQueue.poll();
+        }
+    }
+    
+    /**
+     * terminate the results thread.
+     */
+    public void terminateResultsThread() {
+        running.set(false);
+        if (future != null) {
+            future.cancel(false);
+            while (!future.isDone()) {
+                future.cancel(true);
+            }
+            future = null;
+        }
+    }
+    
+    /**
+     * Get the next results page
+     * 
+     * @return a results page.
+     * @throws Exception
+     */
     public ResultsPage next() throws Exception {
         // update AbstractRunningQuery.lastUsed
         touch();
@@ -222,18 +373,15 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             
             // test for any exceptions prior to loop as hasNext() would likely be false;
             testForUncaughtException(resultList.size());
-            if (hasNextFuture == null) {
-                hasNextFuture = executor.submit(() -> this.iter.hasNext());
+            
+            // start up the results thread if needed
+            if (future == null && !this.canceled && !this.finished) {
+                running.set(true);
+                future = executor.submit(() -> getResultsThread(resultsThreadQueue, running, hasNext, gotNext));
             }
+            
             try {
-                while ((!this.finished && (future != null))
-                                || (Boolean) hasNextFuture.get(
-                                                timing != null ? Math.max(1,
-                                                                (timing.getPageShortCircuitTimeoutMs() - (System.currentTimeMillis() - pageStartTime)))
-                                                                : Long.MAX_VALUE, TimeUnit.MILLISECONDS)) {
-                    // the current hasNextFuture is complete
-                    hasNextFuture = null;
-                    
+                while (!this.finished && hasNext(pageStartTime)) {
                     // if we are canceled, then break out
                     if (this.canceled) {
                         log.info("Query has been cancelled, aborting query.next call");
@@ -287,28 +435,12 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         break;
                     }
                     
-                    Object o = null;
-                    if (future == null) {
-                        future = executor.submit(() -> iter.next());
-                    }
-                    try {
-                        o = future.get(1, TimeUnit.MINUTES);
-                        future = null;
-                    } catch (InterruptedException ie) {
-                        // in this case we were most likely cancelled, no longer waiting
-                        future = null;
-                    } catch (ExecutionException ee) {
-                        // in this case we need to pass up the exception
-                        future = null;
-                        throw ee;
-                    } catch (TimeoutException te) {
-                        // in this case we are still waiting on our future....simply continue
-                    }
+                    // now get the next object
+                    Object o = getNext(pageStartTime);
                     
-                    // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
-                    if (iter.getTransformer() instanceof WritesQueryMetrics) {
-                        ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
-                    }
+                    // now that we got the next object, acknowledge via the counters
+                    hasNext.decrementAndGet();
+                    gotNext.decrementAndGet();
                     
                     if (o instanceof DefaultEvent && ((DefaultEvent) o).isIntermediateResult()) {
                         log.info("Received an intermediate result");
@@ -317,24 +449,21 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         break;
                     }
                     
-                    // if not still waiting on a future, then process the result (or lack thereof)
-                    if (future == null) {
-                        if (null == o) {
-                            log.debug("Null result encountered, no more results");
-                            this.finished = true;
-                            break;
-                        }
-                        resultList.add(o);
-                        if (this.logic.getPageByteTrigger() > 0) {
-                            currentPageBytes += ObjectSizeOf.Sizer.getObjectSize(o);
-                        }
-                        currentPageCount++;
-                        numResults++;
+                    if (null == o) {
+                        log.debug("Null result encountered, no more results");
+                        this.finished = true;
+                        terminateResultsThread();
+                        break;
                     }
                     
+                    resultList.add(o);
+                    if (this.logic.getPageByteTrigger() > 0) {
+                        currentPageBytes += ObjectSizeOf.Sizer.getObjectSize(o);
+                    }
+                    currentPageCount++;
+                    numResults++;
+                    
                     testForUncaughtException(resultList.size());
-                    // setup the next hasNext call
-                    hasNextFuture = executor.submit(() -> this.iter.hasNext());
                 }
             } catch (TimeoutException te) {
                 log.info("Hit the timeout waiting for a result");
@@ -346,6 +475,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     hitShortCircuitForLongRunningQuery = true;
                 } else if (resultList.isEmpty()) {
                     log.warn("Query timed out waiting for next result");
+                    terminateResultsThread();
                     throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Query timed out waiting for next result");
                 }
             }
@@ -362,6 +492,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             this.getMetric().setError(e);
+            terminateResultsThread();
             throw e;
         } finally {
             // update AbstractRunningQuery.lastUsed in case this operation took a long time
@@ -392,6 +523,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 currentTimeoutcount++;
                 if (timing != null && currentTimeoutcount == timing.getMaxLongRunningTimeoutRetries()) {
                     log.warn("Query timed out waiting for results for too many ( " + currentTimeoutcount + ") cycles.");
+                    terminateResultsThread();
                     // this means that we have timed out waiting for a result too many times over the course of this query.
                     // In this case we need to fail the next call with a timeout
                     throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Query timed out waiting for results for too many (" + currentTimeoutcount
@@ -403,6 +535,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
             } else {
                 log.info("Returning final empty page");
+                terminateResultsThread();
                 // This query is done, we have no more results to return.
                 return new ResultsPage();
             }
@@ -411,12 +544,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     
     public void cancel() {
         this.canceled = true;
-        // save off the future as it could be removed at any time
-        Future<Object> future = this.future;
-        // cancel the future if we have one
-        if (future != null) {
-            future.cancel(true);
-        }
+        
+        terminateResultsThread();
         
         // change status to cancelled
         this.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
