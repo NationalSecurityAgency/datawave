@@ -643,7 +643,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     public void setPageProcessingStartTime(long pageProcessingStartTime) {
-        getTransformer(getSettings()).setQueryExecutionForPageStartTime(pageProcessingStartTime);
+        // we only care about setting the start time if we have an instance already
+        if (this.transformerInstance != null) {
+            transformerInstance.setQueryExecutionForPageStartTime(pageProcessingStartTime);
+        }
     }
     
     protected void loadQueryParameters(ShardQueryConfiguration config, Query settings) throws QueryException {
