@@ -79,16 +79,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
     
     public void updateConfig(UniqueFields uniqueFields, QueryModel model) {
-        if (this.uniqueFields != uniqueFields) {
-            uniqueFields.deconstructIdentifierFields();
-            if (!this.uniqueFields.equals(uniqueFields)) {
-                this.uniqueFields = uniqueFields;
-                log.info("Resetting unique fields on the unique transform");
-                this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
-                if (log.isTraceEnabled()) {
-                    log.trace("unique fields: " + this.uniqueFields.getFields());
-                }
-            }
+        this.uniqueFields = uniqueFields;
+        this.uniqueFields.deconstructIdentifierFields();
+        this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
+        if (log.isTraceEnabled()) {
+            log.trace("unique fields: " + this.uniqueFields.getFields());
         }
         if (model != null) {
             modelMapping = HashMultimap.create();

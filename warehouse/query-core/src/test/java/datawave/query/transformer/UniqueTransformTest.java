@@ -493,7 +493,7 @@ public class UniqueTransformTest {
     }
     
     private void assertUniqueDocuments() {
-        List<Document> actual = getUniqueDocumentsWithUpdateConfigCalls(inputDocuments);
+        List<Document> actual = getUniqueDocuments(inputDocuments);
         Collections.sort(expectedUniqueDocuments);
         Collections.sort(actual);
         assertEquals("Unique documents do not match expected", expectedUniqueDocuments, actual);
@@ -506,22 +506,6 @@ public class UniqueTransformTest {
         Iterator<Map.Entry<Key,Document>> resultIterator = Iterators.transform(inputIterator, uniqueTransform);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultIterator, Spliterator.ORDERED), false).filter(Objects::nonNull)
                         .map(Map.Entry::getValue).collect(Collectors.toList());
-    }
-    
-    private List<Document> getUniqueDocumentsWithUpdateConfigCalls(List<Document> documents) {
-        Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
-        TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
-        UniqueTransform uniqueTransform = getUniqueTransform();
-        Iterator<Map.Entry<Key,Document>> resultIterator = Iterators.transform(inputIterator, uniqueTransform);
-        ArrayList<Document> docs = new ArrayList<>();
-        while (resultIterator.hasNext()) {
-            Map.Entry<Key,Document> next = resultIterator.next();
-            if (next != null) {
-                docs.add(next.getValue());
-                updateUniqueTransform(uniqueTransform);
-            }
-        }
-        return docs;
     }
     
     private void assertOrderedFieldSets() {
@@ -543,10 +527,6 @@ public class UniqueTransformTest {
     
     private UniqueTransform getUniqueTransform() {
         return new UniqueTransform(uniqueFields);
-    }
-    
-    private void updateUniqueTransform(UniqueTransform uniqueTransform) {
-        uniqueTransform.updateConfig(uniqueFields, null);
     }
     
     private InputDocumentBuilder givenInputDocument() {
