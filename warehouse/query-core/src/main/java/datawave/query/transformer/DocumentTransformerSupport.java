@@ -497,43 +497,13 @@ public abstract class DocumentTransformerSupport<I,O> extends EventQueryTransfor
     }
     
     /**
-     * Add a document transformer. If the type of document transformer is already in the list of transformers, that instance is replaced. This works under the
-     * assumption that there is only one instance (singleton) of Transformer per query logic.
-     *
-     * If the caller does not want the replacement behavior, call containsTransform and decide whether to call this method based on what that returns.*
-     *
+     * Add a document transformer
+     * 
      * @param transform
      */
     public void addTransform(DocumentTransform transform) {
-        int replacementIndex = -1;
-        for (DocumentTransform t : transforms) {
-            if (transform.getClass().toString().equals(t.getClass().toString())) {
-                replacementIndex = transforms.indexOf(t);
-            }
-        }
         transform.initialize(settings, markingFunctions);
-        
-        if (replacementIndex != -1) {
-            transforms.set(replacementIndex, transform);
-        } else {
-            transforms.add(transform);
-        }
-    }
-    
-    /**
-     * Determine whether the list of transforms already contains an instance of the specified DocumentTransform type
-     *
-     * @param transform
-     *            the transform (type) to determine if an instance is already in the list of transforms.
-     * @return
-     */
-    public DocumentTransform containsTransform(Class transform) {
-        for (DocumentTransform t : transforms) {
-            if (transform.toString().equals(t.getClass().toString())) {
-                return t;
-            }
-        }
-        return null;
+        transforms.add(transform);
     }
     
     @Override
