@@ -116,6 +116,7 @@ services:
         condition: service_started
 
   configuration:
+    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5009","-jar","app.jar" ]
     image: datawave/config-service:1.6-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
@@ -128,6 +129,7 @@ services:
       - KEY_ALIAS=certificate
     ports:
       - "8888:8888"
+      - "5009:5009"
     volumes:
       - ${CONFIG_DIR:-./config}:/microservice-config:ro
       - ${PKI_DIR:-./pki}:/etc/pki:ro
@@ -142,14 +144,14 @@ services:
     image: datawave/hazelcast-service:1.9-SNAPSHOT
     scale: 1
     command:
-      - --spring.profiles.active=consul,compose
+      - --spring.profiles.active=consul,compose,remoteauth
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     ports:
       - "5701-5703"
       - "8080"
-      - "8443"
+      - "8843:8443"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
@@ -166,6 +168,7 @@ services:
         condition: service_started
 
   authorization:
+    entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5008","-jar","app.jar" ]
     image: datawave/authorization-service:1.14-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
@@ -175,6 +178,7 @@ services:
     ports:
       - "8080"
       - "8343:8443"
+      - "5008:5008"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs
@@ -194,7 +198,7 @@ services:
     image: datawave/audit-service:1.11-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
-      - --spring.profiles.active=consul,compose
+      - --spring.profiles.active=consul,compose,remoteauth
       - --spring.cloud.consul.host=consul
       - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
     environment:
@@ -207,7 +211,7 @@ services:
       - "${DW_HOST_FQDN}:${DW_HOST_IP}"
     ports:
       - "8080"
-      - "8443"
+      - "9043:8443"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
       - ./logs:/logs

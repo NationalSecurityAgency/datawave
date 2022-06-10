@@ -78,3 +78,11 @@ datawave:
 swagger:
   doc:
     packages: datawave.microservice
+
+springdoc:
+  api-docs:
+    path: /apidocs
+    resolve-schema-properties: true
+  show-actuator: true
+  writer-with-default-pretty-printer: true
+#  packages-to-scan: datawave.microservice

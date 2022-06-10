@@ -7,7 +7,6 @@
         <version>3.25.0-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
-    <groupId>gov.nsa.datawave</groupId>
     <artifactId>quickstart</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
@@ -30,6 +29,21 @@
     </dependencies>
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>../bin/services/datawave</directory>
+                            <includes>
+                                <include>**/datawave-*-dist.tar.gz</include>
+                                <include>**/datawave-ws-deploy-application-*.tar.gz</include>
+                            </includes>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>

@@ -32,6 +32,26 @@ datawave:
     expiration:
       callTimeout: 300
       callTimeUnit: SECONDS
+  doc:
+    menu:
+      extras: '<li><a href="http://localhost:9995">Accumulo</a></li>'
+  web:
+    cache:
+      uri: 'https://localhost:8843/cache'
+    config:
+      uri: 'https://localhost:8888/configserver'
+    authorization:
+      uri: 'https://localhost:8343/authorization'
+    audit:
+      uri: 'https://localhost:9043/audit'
+    metrics:
+      uri: 'https://localhost:8543/querymetric'
+    dictionary:
+      uri: 'https://localhost:8643/dictionary'
+    executor:
+      uri: 'https://localhost:8743/executor'
+    storage:
+      uri: 'https://localhost:8943/query-storage'
 
 audit-client:
   discovery:
