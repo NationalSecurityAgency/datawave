@@ -8,7 +8,7 @@ services:
     profiles:
       - quickstart
     command: ["datawave-bootstrap.sh", "--accumulo"]
-    image: datawave/quickstart-compose:3.21.0-SNAPSHOT
+    image: datawave/quickstart-compose:3.25.0-SNAPSHOT
     environment:
       - DW_ACCUMULO_BIND_HOST=quickstart
     ports:
