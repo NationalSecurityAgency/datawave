@@ -56,7 +56,7 @@
         <version.google-guava>31.1-jre</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
-        <version.hadoop>3.3.1</version.hadoop>
+        <version.hadoop>3.3.3</version.hadoop>
         <version.hadoop-guava>1.1.1</version.hadoop-guava>
         <version.hadoop-protobuf>1.1.1</version.hadoop-protobuf>
         <version.htrace>4.0.1-incubating</version.htrace>
@@ -114,7 +114,7 @@
         <version.woodstox-core>5.0.3</version.woodstox-core>
         <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
         <version.xerces>2.12.0.SP02</version.xerces>
-        <version.zookeeper>3.7.0</version.zookeeper>
+        <version.zookeeper>3.7.1</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
         <!-- <runOrder>random</runOrder> -->
     </properties>
@@ -652,8 +652,12 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>log4j</groupId>
+                        <groupId>ch.qos.reload4j</groupId>
                         <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
