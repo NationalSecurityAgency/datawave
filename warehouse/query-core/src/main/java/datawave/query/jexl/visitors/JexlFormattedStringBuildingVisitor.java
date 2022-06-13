@@ -312,7 +312,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
     
     public static List<QueryMetric> formatMetrics(List<QueryMetric> metrics) {
         List<QueryMetric> updatedMetrics = new ArrayList<QueryMetric>();
-
+        
         // For each metric, update the query to be formatted (if applicable) and update
         // the plan to be formatted
         for (QueryMetric metric : metrics) {
@@ -327,7 +327,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
                     updatedMetric.setQuery(buildQuery(queryNode));
                 } catch (ParseException e) {
                     log.error("Could not parse JEXL AST after performing transformations to run the query", e);
-
+                    
                     if (log.isTraceEnabled()) {
                         log.trace(PrintingVisitor.formattedQueryString(queryNode));
                     }
@@ -340,7 +340,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
                     updatedMetric.setPlan(buildQuery(planNode));
                 } catch (ParseException e) {
                     log.error("Could not parse JEXL AST after performing transformations to run the query", e);
-
+                    
                     if (log.isTraceEnabled()) {
                         log.trace(PrintingVisitor.formattedQueryString(planNode));
                     }
@@ -348,7 +348,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
             }
             updatedMetrics.add(updatedMetric);
         }
-
+        
         return updatedMetrics;
     }
     
