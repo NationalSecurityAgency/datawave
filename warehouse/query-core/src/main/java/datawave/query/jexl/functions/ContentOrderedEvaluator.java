@@ -51,7 +51,7 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
     }
     
     @Override
-    protected boolean evaluate(String field, List<List<TermWeightPosition>> offsets) {
+    protected boolean evaluate(String field, String eventId, List<List<TermWeightPosition>> offsets) {
         if (offsets.isEmpty() || offsets.size() < terms.length) {
             return false;
         }
@@ -66,12 +66,12 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
             return false;
         }
         
-        while (!isConverged(field, termPositions, distance)) {
+        while (!isConverged(field, eventId, termPositions, distance)) {
             // look for alternatives that also satisfy convergence within each term before rolling forward. Move at most one term one position until there are
             // no alternatives that satisfy the distance left
             List<NavigableSet<EvaluateTermPosition>> alternativeTermPositions = trimAlternatives(termPositions, distance);
             boolean alternativeConverged = false;
-            while (alternativeTermPositions != null && !(alternativeConverged = isConverged(field, alternativeTermPositions, distance))) {
+            while (alternativeTermPositions != null && !(alternativeConverged = isConverged(field, eventId, alternativeTermPositions, distance))) {
                 alternativeTermPositions = trimAlternatives(alternativeTermPositions, distance);
             }
             
@@ -222,11 +222,13 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
      *
      * @param field
      *            the field where the offsets were found
+     * @param eventId
+     *            the event id (see @TermFrequencyList.getEventId(Key))
      * @param offsets
      * @param distance
      * @return true if satisfied, false otherwise
      */
-    private boolean isConverged(String field, List<NavigableSet<EvaluateTermPosition>> offsets, int distance) {
+    private boolean isConverged(String field, String eventId, List<NavigableSet<EvaluateTermPosition>> offsets, int distance) {
         if (offsets.size() == 1) {
             return true;
         }
@@ -252,9 +254,9 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                 // Establish the end offset of the phrase.
                 endOffset = second.first().termWeightPosition.getOffset();
                 // Record the phrase offsets to fetch excerpts later if desired.
-                termOffsetMap.addPhraseIndexPair(field, startOffset, endOffset);
+                termOffsetMap.addPhraseIndexTriplet(field, eventId, startOffset, endOffset);
                 if (log.isTraceEnabled()) {
-                    log.trace("Adding phrase indexes [" + startOffset + "," + endOffset + "] for field " + field + " to jexl context");
+                    log.trace("Adding phrase indexes [" + startOffset + "," + endOffset + "] for field " + field + " for event " + eventId + " to jexl context");
                 }
                 return true;
             }

@@ -49,7 +49,7 @@ public class CompositeTerm extends Composite {
         String identifier = JexlASTHelper.getIdentifier(node);
         jexlNodeList.add(node);
         fieldNameList.add(identifier);
-        expressionList.add(lit.toString());
+        expressionList.add(lit == null ? null : lit.toString());
     }
     
     @Override
@@ -95,7 +95,7 @@ public class CompositeTerm extends Composite {
     // - it contains an unbounded range node
     public boolean isValid() {
         // if we have no nodes, or they are all null
-        if (jexlNodeList.isEmpty() || jexlNodeList.stream().allMatch(Objects::isNull))
+        if (jexlNodeList.isEmpty() || jexlNodeList.stream().allMatch(Objects::isNull) || expressionList.stream().anyMatch(Objects::isNull))
             return false;
         
         for (JexlNode node : jexlNodeList) {

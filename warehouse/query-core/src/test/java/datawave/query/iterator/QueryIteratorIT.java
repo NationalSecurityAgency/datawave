@@ -1200,14 +1200,14 @@ public class QueryIteratorIT extends EasyMockSupport {
     public void event_isNotNullFunction_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");
-        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(filter:isNull(EVENT_FIELD3))", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && filter:isNotNull(EVENT_FIELD3)", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test
     public void event_isNotNullFunction_shardRange_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange(null);
-        event_test(seekRange, "EVENT_FIELD2 == 'b' && not(filter:isNull(EVENT_FIELD3))", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+        event_test(seekRange, "EVENT_FIELD2 == 'b' && filter:isNotNull(EVENT_FIELD3)", false, null, Collections.EMPTY_LIST, Collections.EMPTY_LIST);
     }
     
     @Test

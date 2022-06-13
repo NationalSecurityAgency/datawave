@@ -37,6 +37,7 @@ import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
 import datawave.query.iterator.filter.KeyIdentity;
 import datawave.query.iterator.filter.StringToText;
 import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
@@ -56,7 +57,9 @@ import datawave.util.UniversalSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.OptionDescriber;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.hadoop.fs.FileSystem;
@@ -250,6 +253,8 @@ public class QueryOptions implements OptionDescriber {
     
     public static final String EXCERPT_FIELDS = "excerpt.fields";
     
+    public static final String EXCERPT_ITERATOR = "excerpt.iterator.class";
+    
     protected Map<String,String> options;
     
     protected String scanId;
@@ -396,6 +401,8 @@ public class QueryOptions implements OptionDescriber {
     
     protected ExcerptFields excerptFields;
     
+    protected Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
+    
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -494,6 +501,7 @@ public class QueryOptions implements OptionDescriber {
         this.trackSizes = other.trackSizes;
         this.activeQueryLogName = other.activeQueryLogName;
         this.excerptFields = other.excerptFields;
+        this.excerptIterator = other.excerptIterator;
         
     }
     
@@ -998,6 +1006,14 @@ public class QueryOptions implements OptionDescriber {
         this.excerptFields = excerptFields;
     }
     
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getExcerptIterator() {
+        return excerptIterator;
+    }
+    
+    public void setExcerptIterator(Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator) {
+        this.excerptIterator = excerptIterator;
+    }
+    
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -1090,6 +1106,7 @@ public class QueryOptions implements OptionDescriber {
                                         + ActiveQueryLog.DEFAULT_NAME
                                         + "', will use the default shared Active Query Log instance. If provided otherwise, uses a separate distinct Active Query Log that will include the unique name in log messages.");
         options.put(EXCERPT_FIELDS, "excerpt fields");
+        options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
     
@@ -1548,6 +1565,14 @@ public class QueryOptions implements OptionDescriber {
         
         if (options.containsKey(EXCERPT_FIELDS)) {
             setExcerptFields(ExcerptFields.from(options.get(EXCERPT_FIELDS)));
+        }
+        
+        if (options.containsKey(EXCERPT_ITERATOR)) {
+            try {
+                setExcerptIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(options.get(EXCERPT_ITERATOR)));
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException("Could not get class for " + options.get(EXCERPT_ITERATOR), e);
+            }
         }
         
         return true;

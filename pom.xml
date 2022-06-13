@@ -89,7 +89,7 @@
         <version.microservice.dictionary-api>2.0.0</version.microservice.dictionary-api>
         <version.microservice.metadata-utils>2.1.0-SNAPSHOT</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>1.3</version.microservice.metrics-reporter>
-        <version.microservice.query-metric-api>1.4.8</version.microservice.query-metric-api>
+        <version.microservice.query-metric-api>1.5.4</version.microservice.query-metric-api>
         <version.microservice.type-utils>1.8</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mysql-connector>8.0.16</version.mysql-connector>
@@ -113,7 +113,7 @@
         <version.wildfly>17.0.1.Final</version.wildfly>
         <version.woodstox-core>5.0.3</version.woodstox-core>
         <version.woodstox-stax2>3.1.4</version.woodstox-stax2>
-        <version.xerces>2.12.0.SP02</version.xerces>
+        <version.xerces>2.12.2</version.xerces>
         <version.zookeeper>3.7.1</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
         <!-- <runOrder>random</runOrder> -->
@@ -405,6 +405,16 @@
                 <groupId>gov.nsa.datawave.microservice</groupId>
                 <artifactId>type-utils</artifactId>
                 <version>${version.microservice.type-utils}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.astefanutti.metrics.cdi</groupId>
@@ -839,6 +849,16 @@
                 <groupId>org.geotools</groupId>
                 <artifactId>gt-data</artifactId>
                 <version>${version.geotools}</version>
+                <!-- <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                </exclusions>-->
             </dependency>
             <dependency>
                 <groupId>org.geotools</groupId>
@@ -1390,7 +1410,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.0.0-M2</version>
+                    <version>3.0.0</version>
                     <executions>
                         <execution>
                             <id>enforce-maven</id>
@@ -1403,6 +1423,23 @@
                                         <version>3.0.5</version>
                                     </requireMavenVersion>
                                 </rules>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>enforce-banned-dependencies</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <bannedDependencies>
+                                        <excludes>
+                                            <exclude>log4j:log4j</exclude>
+                                            <exclude>org.slf4j:slf4j-log4j12</exclude>
+                                        </excludes>
+                                    </bannedDependencies>
+                                </rules>
+                                <fail>true</fail>
                             </configuration>
                         </execution>
                     </executions>

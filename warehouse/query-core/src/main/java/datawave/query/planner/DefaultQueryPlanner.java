@@ -84,6 +84,7 @@ import datawave.query.jexl.visitors.QueryPruningVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
 import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
 import datawave.query.jexl.visitors.RewriteNegationsVisitor;
+import datawave.query.jexl.visitors.RewriteNullFunctionsVisitor;
 import datawave.query.jexl.visitors.SetMembershipVisitor;
 import datawave.query.jexl.visitors.SortedUIDsRequiredVisitor;
 import datawave.query.jexl.visitors.TermCountingVisitor;
@@ -540,6 +541,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
         addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
+        addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         Set<String> queryFields = QueryFieldsVisitor.parseQueryFields(newQueryString, metadataHelper);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(filterFields(config.getQueryTermFrequencyFields(), queryFields)), false);
@@ -747,6 +749,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         QueryModel queryModel = loadQueryModel(config);
         
         config.setQueryTree(timedApplyQueryModel(timers, config.getQueryTree(), config, metadataHelper, queryModel));
+        
+        // +-------------------------------------+
+        // | Post Query Model Expansion Clean Up |
+        // +-------------------------------------+
+        
+        // rewrite filter:isNull and filter:isNotNull functions into their EQ and !(EQ) equivalents
+        config.setQueryTree(timedRewriteNullFunctions(timers, config.getQueryTree()));
         
         // Enforce unique terms within an AND or OR expression.
         if (config.getEnforceUniqueTermsWithinExpressions()) {
@@ -1241,6 +1250,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             log.warn("Query Model was null, will not apply to query tree. This could be a fatal error.");
             return script;
         }
+    }
+    
+    protected ASTJexlScript timedRewriteNullFunctions(QueryStopwatch timers, ASTJexlScript queryTree) throws DatawaveQueryException {
+        return visitorManager.timedVisit(timers, "Rewrite Null Functions", () -> (ASTJexlScript) RewriteNullFunctionsVisitor.rewriteNullFunctions(queryTree));
     }
     
     protected ASTJexlScript timedEnforceUniqueTermsWithinExpressions(QueryStopwatch timers, final ASTJexlScript script) throws DatawaveQueryException {

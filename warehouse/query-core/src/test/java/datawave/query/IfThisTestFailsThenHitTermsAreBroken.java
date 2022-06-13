@@ -120,8 +120,7 @@ public class IfThisTestFailsThenHitTermsAreBroken {
             
             new ImmutableListMultimap.Builder<String,String>().put("Second", "NAME.2:Haiqu").put("Second", "BAR.0:BAR").build(),
             
-            new ImmutableListMultimap.Builder<String,String>().put("First", "NAME.0:NAME0").put("First", "UUID.0:First").put("First", "NAME.1:NAME1")
-                            .put("First", "NAME.2:Haiqu").build(),};
+            new ImmutableListMultimap.Builder<String,String>().put("First", "UUID.0:First").build(),};
     
     @AfterClass
     public static void teardown() {
