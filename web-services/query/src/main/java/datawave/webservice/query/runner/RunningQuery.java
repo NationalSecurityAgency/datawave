@@ -87,24 +87,23 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     }
     
     public RunningQuery(Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings, String methodAuths,
-                    Principal principal, RunningQueryTiming timing, ExecutorService executor, QueryMetricFactory metricFactory) throws Exception {
-        this(null, connection, priority, logic, settings, methodAuths, principal, timing, executor, metricFactory);
+                    Principal principal, RunningQueryTiming timing, QueryMetricFactory metricFactory) throws Exception {
+        this(null, connection, priority, logic, settings, methodAuths, principal, timing, metricFactory);
     }
     
     public RunningQuery(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
                     String methodAuths, Principal principal, QueryMetricFactory metricFactory) throws Exception {
-        this(queryMetrics, connection, priority, logic, settings, methodAuths, principal, null, null, metricFactory);
+        this(queryMetrics, connection, priority, logic, settings, methodAuths, principal, null, metricFactory);
     }
     
     public RunningQuery(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
-                    String methodAuths, Principal principal, RunningQueryTiming timing, ExecutorService executor, QueryMetricFactory metricFactory)
+                    String methodAuths, Principal principal, RunningQueryTiming timing, QueryMetricFactory metricFactory) throws Exception {
+        this(queryMetrics, connection, priority, logic, settings, methodAuths, principal, timing, null, metricFactory);
+    }
+    
+    public RunningQuery(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
+                    String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor, QueryMetricFactory metricFactory)
                     throws Exception {
-        this(queryMetrics, connection, priority, logic, settings, methodAuths, principal, timing, executor, null, metricFactory);
-    }
-    
-    public RunningQuery(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
-                    String methodAuths, Principal principal, RunningQueryTiming timing, ExecutorService executor, QueryPredictor predictor,
-                    QueryMetricFactory metricFactory) throws Exception {
         super(metricFactory);
         if (logic != null && logic.getCollectQueryMetrics()) {
             this.queryMetrics = queryMetrics;
@@ -115,10 +114,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.settings = settings;
         this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, principal);
         this.timing = timing;
-        this.executor = executor;
-        if (this.executor == null) {
-            this.executor = Executors.newSingleThreadExecutor();
-        }
+        this.executor = Executors.newSingleThreadExecutor();
         this.predictor = predictor;
         // set the metric information
         this.getMetric().populate(this.settings);
@@ -142,10 +138,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     }
     
     public static RunningQuery createQueryWithAuthorizations(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority,
-                    QueryLogic<?> logic, Query settings, String methodAuths, RunningQueryTiming timing, ExecutorService executor, QueryPredictor predictor,
+                    QueryLogic<?> logic, Query settings, String methodAuths, RunningQueryTiming timing, QueryPredictor predictor,
                     QueryMetricFactory metricFactory) throws Exception {
-        RunningQuery runningQuery = new RunningQuery(queryMetrics, connection, priority, logic, settings, methodAuths, null, timing, executor, predictor,
-                        metricFactory);
+        RunningQuery runningQuery = new RunningQuery(queryMetrics, connection, priority, logic, settings, methodAuths, null, timing, predictor, metricFactory);
         runningQuery.calculatedAuths = Collections.singleton(new Authorizations(methodAuths));
         return runningQuery;
     }
@@ -348,6 +343,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
             future = null;
         }
+        executor.shutdown();
     }
     
     /**
