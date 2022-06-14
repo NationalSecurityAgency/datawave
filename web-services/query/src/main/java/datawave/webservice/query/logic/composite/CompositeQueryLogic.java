@@ -1,20 +1,5 @@
 package datawave.webservice.query.logic.composite;
 
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.result.BaseResponse;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.functors.NOPTransformer;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
-
-import javax.enterprise.inject.Typed;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -27,6 +12,23 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+
+import javax.enterprise.inject.Typed;
+
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.result.BaseResponse;
+
+import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.functors.NOPTransformer;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.log4j.Logger;
 
 /**
  * Query Logic implementation that is configured with more than one query logic delegate. The queries are run in parallel and results are retrieved as they come
@@ -360,4 +362,5 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         }
         return params.isEmpty() ? null : params;
     }
+    
 }
