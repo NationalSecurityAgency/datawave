@@ -57,13 +57,12 @@ public final class AttributeComparator {
      * @return
      */
     public static boolean multipleToMultiple(final Attributes attrs1, final Attributes attrs2) {
-        boolean containsMatch = false;
         for (Attribute<? extends Comparable<?>> newAttr : attrs2.getAttributes()) {
             if (singleToMultiple(newAttr, attrs1)) {
-                containsMatch = true;
+                return true;
             }
         }
-        return containsMatch;
+        return false;
     }
     
     /**
