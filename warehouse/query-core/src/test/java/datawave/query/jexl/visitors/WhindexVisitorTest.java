@@ -24,6 +24,8 @@ public class WhindexVisitorTest {
     private static final Map<String,Map<String,String>> multipleFieldMapping = new HashMap<>();
     private static final Map<String,Map<String,String>> manyToOneFieldMapping = new HashMap<>();
     
+    private static final Map<String,Map<String,String>> allMappings = new HashMap<>();
+    
     private static final MockMetadataHelper metadataHelper = new MockMetadataHelper() {
         @Override
         public Date getEarliestOccurrenceOfField(String fieldName) {
@@ -69,6 +71,9 @@ public class WhindexVisitorTest {
             map.put("ICE_CREAM", "NUT_SUNDAE");
             return map;
         });
+        
+        allMappings.putAll(multipleFieldMapping);
+        allMappings.putAll(manyToOneFieldMapping);
     }
     
     @Test
@@ -693,6 +698,25 @@ public class WhindexVisitorTest {
         
         Assert.assertEquals(
                         "(geowave:intersects(ICE_CREAM, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') || geowave:intersects(ICE_CREAM, 'POLYGON((-20 -20, 20 -20, 20 20, -20 20, -20 -20))')) && ((TOPPINGS == 'HOT_FUDGE' && BAR == 'FOO') || FOO == 'BAR')",
+                        JexlStringBuildingVisitor.buildQuery(jexlScript));
+    }
+    
+    @Test
+    public void geoWaveMultiFieldTest() throws ParseException {
+        // Test with a combination of fields that can and can't be mapped to a whindex
+        String query = "geowave:intersects(ICE_CREAM || NOTHING, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))') && TOPPINGS == 'PEANUT'";
+        
+        ShardQueryConfiguration config = new ShardQueryConfiguration();
+        config.setWhindexMappingFields(mappingFields);
+        config.setWhindexFieldMappings(allMappings);
+        
+        ASTJexlScript jexlScript = JexlASTHelper.parseJexlQuery(query);
+        jexlScript = WhindexVisitor.apply(jexlScript, config, new Date(), metadataHelper);
+        
+        System.out.println(JexlStringBuildingVisitor.buildQuery(jexlScript));
+        
+        Assert.assertEquals(
+                        "((TOPPINGS == 'PEANUT' && geowave:intersects(NOTHING, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')) || (((_Eval_ = true) && (TOPPINGS == 'PEANUT')) && geowave:intersects(NUT_SUNDAE, 'POLYGON((-10 -10, 10 -10, 10 10, -10 10, -10 -10))')))",
                         JexlStringBuildingVisitor.buildQuery(jexlScript));
     }
 }
