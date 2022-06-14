@@ -158,10 +158,6 @@
             <artifactId>gt-geojson</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-commons</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.javatuples</groupId>
             <artifactId>javatuples</artifactId>
         </dependency>

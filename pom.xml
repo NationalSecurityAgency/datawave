@@ -61,7 +61,6 @@
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
         <version.in-memory-accumulo>1.9.2.3</version.in-memory-accumulo>
-        <version.infinispan>13.0.10.Final</version.infinispan>
         <version.jackson>2.10.0.pr1</version.jackson>
         <version.javassist>3.24.0-GA</version.javassist>
         <version.javastatsd>3.1.0</version.javastatsd>
@@ -832,22 +831,6 @@
                 <version>3.4.0.GA</version>
             </dependency>
             <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-commons</artifactId>
-                <version>${version.infinispan}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.infinispan</groupId>
-                <artifactId>infinispan-core</artifactId>
-                <version>${version.infinispan}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.jboss.spec.javax.transaction</groupId>
-                        <artifactId>jboss-transaction-api_1.1_spec</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>org.jboss.weld.se</groupId>
                 <artifactId>weld-se-core</artifactId>
                 <version>${version.weld-se}</version>
@@ -907,18 +890,6 @@
                 <artifactId>picketbox</artifactId>
                 <version>${version.picketbox}</version>
                 <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.picketbox</groupId>
-                <artifactId>picketbox-infinispan</artifactId>
-                <version>${version.picketbox}</version>
-                <scope>provided</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>dom4j</groupId>
-                        <artifactId>dom4j</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>

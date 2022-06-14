@@ -89,10 +89,6 @@
             <artifactId>easymock</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.powermock</groupId>
             <artifactId>powermock-api-easymock</artifactId>
         </dependency>
@@ -179,11 +175,6 @@
         <dependency>
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.picketbox</groupId>
-            <artifactId>picketbox-infinispan</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
