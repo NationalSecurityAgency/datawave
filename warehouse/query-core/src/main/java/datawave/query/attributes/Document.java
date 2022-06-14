@@ -323,16 +323,15 @@ public class Document extends AttributeBag<Document> implements Serializable {
                 // *not*: {"CONTENT"=>[BODY:foo, HEAD:foo, [BODY:bar, HEAD:bar, FOOT:bar]]}
                 
                 if (value instanceof Attributes && existingAttr instanceof Attributes) {
+                    attrs = (Attributes) existingAttr;
+                    
+                    _count -= attrs.size();
+                    if (trackSizes) {
+                        _bytes -= attrs.sizeInBytes();
+                    }
                     // ensure there are no fuzzy matches before merging
                     if (!AttributeComparator.multipleToMultiple((Attributes) existingAttr, (Attributes) value)) {
                         // merge the two sets
-                        attrs = (Attributes) existingAttr;
-                        
-                        _count -= attrs.size();
-                        if (trackSizes) {
-                            _bytes -= attrs.sizeInBytes();
-                        }
-                        
                         attrs.addAll(((Attributes) value).getAttributes());
                         
                         _count += attrs.size();
@@ -345,15 +344,19 @@ public class Document extends AttributeBag<Document> implements Serializable {
                                         (Attributes) value);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
+                        
+                        _count += mergedAttributes.size();
+                        if (trackSizes) {
+                            _bytes += mergedAttributes.sizeInBytes();
+                        }
                     }
                 } else if (value instanceof Attributes) {
+                    _count -= existingAttr.size();
+                    if (trackSizes) {
+                        _bytes -= existingAttr.sizeInBytes();
+                    }
                     // ensure no fuzzy matches before merging
                     if (!AttributeComparator.singleToMultiple(existingAttr, (Attributes) value)) {
-                        _count -= existingAttr.size();
-                        if (trackSizes) {
-                            _bytes -= existingAttr.sizeInBytes();
-                        }
-                        
                         // change the existing attr to an attributes
                         HashSet<Attribute<? extends Comparable<?>>> attrsSet = Sets.newHashSet();
                         attrsSet.add(existingAttr);
@@ -371,21 +374,25 @@ public class Document extends AttributeBag<Document> implements Serializable {
                                         (Attributes) value, trackSizes);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
+                        
+                        _count += mergedAttributes.size();
+                        if (trackSizes) {
+                            _bytes += mergedAttributes.sizeInBytes();
+                        }
                     }
                 } else if (existingAttr instanceof Attributes) {
+                    // add the value to the set
+                    attrs = (Attributes) existingAttr;
+                    
+                    // Account for the case where we add more results to an Attributes, but the Attributes
+                    // ends up being deduped by the underlying Set
+                    // e.g. Adding BODY:term into an Attributes for BODY:[term, term2] should result in a size of 2
+                    _count -= attrs.size();
+                    if (trackSizes) {
+                        _bytes -= attrs.sizeInBytes();
+                    }
                     // ensure no fuzzy matches before merging
                     if (!AttributeComparator.singleToMultiple(value, (Attributes) existingAttr)) {
-                        // add the value to the set
-                        attrs = (Attributes) existingAttr;
-                        
-                        // Account for the case where we add more results to an Attributes, but the Attributes
-                        // ends up being deduped by the underlying Set
-                        // e.g. Adding BODY:term into an Attributes for BODY:[term, term2] should result in a size of 2
-                        _count -= attrs.size();
-                        if (trackSizes) {
-                            _bytes -= attrs.sizeInBytes();
-                        }
-                        
                         attrs.add(value);
                         
                         _count += attrs.size();
@@ -398,6 +405,11 @@ public class Document extends AttributeBag<Document> implements Serializable {
                                         (Attribute) value, trackSizes);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
+                        
+                        _count += mergedAttributes.size();
+                        if (trackSizes) {
+                            _bytes += mergedAttributes.sizeInBytes();
+                        }
                     }
                 } else {
                     // ensure no fuzzy matches before merging
@@ -417,6 +429,11 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         // fuzzy matches found, attempt to combine attributes
                         Attribute mergedAttribute = (Attribute) AttributeComparator.combineSingleAttributes(existingAttr, value);
                         dict.put(key, mergedAttribute);
+                        
+                        _count += mergedAttribute.size();
+                        if (trackSizes) {
+                            _bytes += mergedAttribute.sizeInBytes();
+                        }
                     }
                     invalidateMetadata();
                 }
