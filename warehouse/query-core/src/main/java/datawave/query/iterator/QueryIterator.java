@@ -3,6 +3,7 @@ package datawave.query.iterator;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -69,6 +70,7 @@ import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.transformer.ExcerptTransform;
+import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.EmptyContext;
 import datawave.query.util.EntryToTuple;
@@ -189,7 +191,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     protected UniqueTransform uniqueTransform = null;
     
-    protected GroupingIterator groupingIterator;
+    protected GroupingTransform groupingTransform;
     
     protected boolean groupingContextAddedByMe = false;
     
@@ -248,7 +250,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // Parse the query
         try {
             this.script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
-            this.myEvaluationFunction = new JexlEvaluation(this.getQuery(), arithmetic);
+            this.myEvaluationFunction = getJexlEvaluation(this.getQuery(), arithmetic);
             
         } catch (Exception e) {
             throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
@@ -492,26 +494,24 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 });
             }
             
-            // now apply the unique iterator if requested
+            // now apply the unique transform if requested
             UniqueTransform uniquify = getUniqueTransform();
             if (uniquify != null) {
-                // pipelineDocuments = uniquify;
                 pipelineDocuments = Iterators.filter(pipelineDocuments, uniquify.getUniquePredicate());
             }
             
-            // apply the grouping iterator if requested and if the batch size is greater than zero
+            // apply the grouping transform if requested and if the batch size is greater than zero
             // if the batch size is 0, then grouping is computed only on the web server
-            if (this.groupFieldsBatchSize > 0) {
-                GroupingIterator groupify = getGroupingIteratorInstance(pipelineDocuments);
-                if (groupify != null) {
-                    pipelineDocuments = groupify;
-                    
-                    if (log.isTraceEnabled()) {
-                        pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
-                            log.trace("after grouping, keyDocumentEntry:" + keyDocumentEntry);
-                            return true;
-                        });
-                    }
+            GroupingTransform groupify = getGroupingTransform();
+            if (groupify != null && this.groupFieldsBatchSize > 0) {
+                
+                pipelineDocuments = groupingTransform.getGroupingIterator(pipelineDocuments, this.groupFieldsBatchSize, this.yield);
+                
+                if (log.isTraceEnabled()) {
+                    pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
+                        log.trace("after grouping, keyDocumentEntry:" + keyDocumentEntry);
+                        return true;
+                    });
                 }
             }
             
@@ -711,7 +711,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 try {
                     
                     myScript = JexlASTHelper.parseJexlQuery(queries.getValue());
-                    eval = new JexlEvaluation(queries.getValue(), myArithmetic);
+                    eval = getJexlEvaluation(queries.getValue(), myArithmetic);
                     
                 } catch (Exception e) {
                     throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
@@ -1095,20 +1095,47 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected JexlEvaluation getJexlEvaluation(NestedQueryIterator<Key> documentSource) {
+        return getJexlEvaluation(query, documentSource, getArithmetic());
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query) {
+        return getJexlEvaluation(query, null, getArithmetic());
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query, JexlArithmetic arithmetic) {
+        return getJexlEvaluation(query, null, arithmetic);
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query, NestedQueryIterator<Key> documentSource) {
+        return getJexlEvaluation(query, documentSource, getArithmetic());
+    }
+    
+    protected JexlEvaluation getJexlEvaluation(String query, NestedQueryIterator<Key> documentSource, JexlArithmetic arithmetic) {
+        JexlEvaluation jexlEvaluationFunction = null;
+        
+        if (arithmetic == null) {
+            arithmetic = getArithmetic();
+        }
         
         if (null == documentSource) {
-            return new JexlEvaluation(query, getArithmetic());
-        }
-        JexlEvaluation jexlEvaluationFunction = null;
-        NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
-        if (null == nestedQuery) {
-            jexlEvaluationFunction = new JexlEvaluation(query, getArithmetic());
+            jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
         } else {
-            jexlEvaluationFunction = nestedQuery.getEvaluation();
-            if (null == jexlEvaluationFunction) {
-                return new JexlEvaluation(query, getArithmetic());
+            NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
+            if (null == nestedQuery) {
+                jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+            } else {
+                jexlEvaluationFunction = nestedQuery.getEvaluation();
+                if (null == jexlEvaluationFunction) {
+                    jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+                }
             }
         }
+        
+        // update the jexl evaluation to gather phrase offsets if required for excerpts
+        if (getExcerptFields() != null && !getExcerptFields().isEmpty()) {
+            jexlEvaluationFunction.setGatherPhraseOffsets(true);
+        }
+        
         return jexlEvaluationFunction;
     }
     
@@ -1606,16 +1633,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return uniqueTransform;
     }
     
-    protected GroupingIterator getGroupingIteratorInstance(Iterator<Entry<Key,Document>> in) {
-        if (groupingIterator == null && getGroupFields() != null && !getGroupFields().isEmpty()) {
+    protected GroupingTransform getGroupingTransform() {
+        if (groupingTransform == null && getGroupFields() != null && !getGroupFields().isEmpty()) {
             synchronized (getGroupFields()) {
-                if (groupingIterator == null) {
-                    groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(), getGroupFields(), this.groupFieldsBatchSize,
-                                    this.yield);
+                if (groupingTransform == null) {
+                    groupingTransform = new GroupingTransform(null, getGroupFields(), true);
+                    groupingTransform.initialize(null, MarkingFunctionsFactory.createMarkingFunctions());
                 }
             }
         }
-        return groupingIterator;
+        return groupingTransform;
     }
     
     protected ActiveQueryLog getActiveQueryLog() {

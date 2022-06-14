@@ -3,18 +3,15 @@ package datawave.webservice.query.cache;
 import datawave.webservice.query.runner.RunningQuery.RunningQueryTiming;
 
 public class RunningQueryTimingImpl implements RunningQueryTiming {
-    
     // The max time allowed within a call (e.g. next())
     private long maxCallMs = 60 * 60 * 1000; // the default is 60, can be overridden in call
     // The time after which we start checking the page size velocity
     private long pageSizeShortCircuitCheckTimeMs = 30 * 60 * 1000;
     // The time after which will we prematurely return if we have results.
     private long pageShortCircuitTimeoutMs = 58 * 60 * 1000;
-    // The maximum number of times to continue running a long running query after the timeout is reached.
-    private int maxLongRunningTimeoutRetries = 3;
     
     public RunningQueryTimingImpl(QueryExpirationConfiguration conf, int pageTimeout) {
-        this(conf.getCallTimeInMS(), conf.getPageSizeShortCircuitCheckTimeInMS(), conf.getPageShortCircuitTimeoutInMS(), conf.getMaxLongRunningTimeoutRetries());
+        this(conf.getCallTimeInMS(), conf.getPageSizeShortCircuitCheckTimeInMS(), conf.getPageShortCircuitTimeoutInMS());
         
         if (pageTimeout > 0) {
             maxCallMs = pageTimeout * 60 * 1000;
@@ -24,16 +21,9 @@ public class RunningQueryTimingImpl implements RunningQueryTiming {
     }
     
     public RunningQueryTimingImpl(long maxCallMs, long pageSizeShortCircuitCheckTimeMs, long pageShortCircuitTimeoutMs) {
-        this(maxCallMs, pageSizeShortCircuitCheckTimeMs, pageShortCircuitTimeoutMs, 0);
-    }
-    
-    public RunningQueryTimingImpl(long maxCallMs, long pageSizeShortCircuitCheckTimeMs, long pageShortCircuitTimeoutMs, int maxLongRunningTimeoutRetries) {
         this.maxCallMs = maxCallMs;
         this.pageSizeShortCircuitCheckTimeMs = pageSizeShortCircuitCheckTimeMs;
         this.pageShortCircuitTimeoutMs = pageShortCircuitTimeoutMs;
-        if (maxLongRunningTimeoutRetries > 0) {
-            this.maxLongRunningTimeoutRetries = maxLongRunningTimeoutRetries;
-        }
     }
     
     public long getMaxCallMs() {
@@ -44,14 +34,8 @@ public class RunningQueryTimingImpl implements RunningQueryTiming {
         return pageSizeShortCircuitCheckTimeMs;
     }
     
-    @Override
     public long getPageShortCircuitTimeoutMs() {
         return pageShortCircuitTimeoutMs;
-    }
-    
-    @Override
-    public int getMaxLongRunningTimeoutRetries() {
-        return maxLongRunningTimeoutRetries;
     }
     
     @Override
