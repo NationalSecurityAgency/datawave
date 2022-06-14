@@ -321,7 +321,7 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
             String query = updatedMetric.getQuery();
             String plan = updatedMetric.getPlan();
             // If it is a JEXL query, set the query to be formatted
-            if (isJexlQuery(metric.getParameters())) {
+            if (query != null && isJexlQuery(metric.getParameters())) {
                 try {
                     queryNode = JexlASTHelper.parseJexlQuery(query);
                     updatedMetric.setQuery(buildQuery(queryNode));
@@ -334,14 +334,16 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
                 }
             }
             // Format the plan (plan will always be a JEXL query)
-            try {
-                planNode = JexlASTHelper.parseJexlQuery(plan);
-                updatedMetric.setPlan(buildQuery(planNode));
-            } catch (ParseException e) {
-                log.error("Could not parse JEXL AST after performing transformations to run the query", e);
-                
-                if (log.isTraceEnabled()) {
-                    log.trace(PrintingVisitor.formattedQueryString(planNode));
+            if (plan != null) {
+                try {
+                    planNode = JexlASTHelper.parseJexlQuery(plan);
+                    updatedMetric.setPlan(buildQuery(planNode));
+                } catch (ParseException e) {
+                    log.error("Could not parse JEXL AST after performing transformations to run the query", e);
+                    
+                    if (log.isTraceEnabled()) {
+                        log.trace(PrintingVisitor.formattedQueryString(planNode));
+                    }
                 }
             }
             updatedMetrics.add(updatedMetric);
