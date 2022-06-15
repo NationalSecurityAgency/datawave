@@ -1639,7 +1639,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             synchronized (getGroupFields()) {
                 if (groupingIterator == null) {
                     groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(), getGroupFields(), this.groupFieldsBatchSize,
-                                    this.yield);
+                                    this.yield, this.getResultTimeout());
                 }
             }
         }

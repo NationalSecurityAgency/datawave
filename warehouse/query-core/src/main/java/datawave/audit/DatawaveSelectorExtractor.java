@@ -3,7 +3,6 @@ package datawave.audit;
 import java.util.ArrayList;
 import java.util.List;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.webservice.query.Query;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
