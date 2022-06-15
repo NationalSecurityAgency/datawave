@@ -14,6 +14,7 @@
 **/.classpath/**
 **/.project/**
 **/.settings/**
+**/logs/**
 
 # Ignore temporary .dockerignore symlink in the root directory...
 .dockerignore
