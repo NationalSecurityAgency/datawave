@@ -592,7 +592,7 @@
                         <artifactId>hadoop-aws</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>org.codehaus.jackson</groupId>
+                        <groupId>com.fasterxml.jackson</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
