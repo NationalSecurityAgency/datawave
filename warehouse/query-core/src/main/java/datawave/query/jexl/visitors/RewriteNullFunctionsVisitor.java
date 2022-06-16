@@ -228,11 +228,16 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
         boolean junctionType = node instanceof ASTAndNode;
         List<JexlNode> children = new ArrayList<>();
         for (JexlNode child : JexlNodes.children(node)) {
-            JexlNode deref = JexlASTHelper.dereference(child);
-            if (junctionType ? (deref instanceof ASTAndNode) : (deref instanceof ASTOrNode)) {
-                Collections.addAll(children, JexlNodes.children(deref));
-            } else {
+            
+            if (QueryPropertyMarkerVisitor.getInstance(child).isAnyType()) {
                 children.add(child);
+            } else {
+                JexlNode deref = JexlASTHelper.dereference(child);
+                if (junctionType ? (deref instanceof ASTAndNode) : (deref instanceof ASTOrNode)) {
+                    Collections.addAll(children, JexlNodes.children(deref));
+                } else {
+                    children.add(child);
+                }
             }
         }
         JexlNodes.children(node, children.toArray(new JexlNode[0]));
