@@ -15,7 +15,6 @@ public class QueryExpirationConfiguration {
     private long callTimeMinutes = PAGE_TIMEOUT_MIN_DEFAULT;
     private long pageSizeShortCircuitCheckTimeMinutes = PAGE_TIMEOUT_MIN_DEFAULT / 2;
     private long pageShortCircuitTimeoutMinutes = Math.round(0.97 * PAGE_TIMEOUT_MIN_DEFAULT);
-    private int maxLongRunningTimeoutRetries = 3;
     
     public long getIdleTimeMinutes() {
         return idleTimeMinutes;
@@ -81,11 +80,4 @@ public class QueryExpirationConfiguration {
         this.pageShortCircuitTimeoutMinutes = pageShortCircuitTimeoutMinutes;
     }
     
-    public int getMaxLongRunningTimeoutRetries() {
-        return maxLongRunningTimeoutRetries;
-    }
-    
-    public void setMaxLongRunningTimeoutRetries(int maxLongRunningTimeoutRetries) {
-        this.maxLongRunningTimeoutRetries = maxLongRunningTimeoutRetries;
-    }
 }
