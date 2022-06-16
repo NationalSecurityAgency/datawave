@@ -117,7 +117,7 @@ datawave:
           metadataTableName: ${warehouse.tables.metadata.name}
           indexTableName: ${warehouse.tables.index.name}
           reverseIndexTableName: ${warehouse.tables.reverseIndex.name}
-          maxResults: 369
+          maxResults: -1
           queryThreads: ${warehouse.defaults.queryThreads}
           indexLookupThreads: ${warehouse.defaults.indexLookupThreads}
           dateIndexThreads: ${warehouse.defaults.dateIndexThreads}

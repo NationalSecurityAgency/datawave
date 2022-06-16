@@ -25,13 +25,16 @@ logging:
     datawave.microservice.query.storage: WARN
 
 datawave:
+  swagger:
+    title: "Query Service"
+    description: "REST API provided by the Query Service"
   query:
     nextCall:
       resultPollInterval: 500
       statusUpdateInterval: 500
     expiration:
-      callTimeout: 300
-      callTimeUnit: SECONDS
+      callTimeout: 1
+      callTimeUnit: HOURS
   doc:
     menu:
       extras: '<li><a href="http://localhost:9995">Accumulo</a></li>'

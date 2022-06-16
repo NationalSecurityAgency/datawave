@@ -52,6 +52,11 @@ audit:
       enabled: false
       pathUri: 'file:///audit'
 
+datawave:
+  swagger:
+    title: "Audit Service"
+    description: "REST API provided by the Audit Service"
+
 logging:
   level:
     datawave.microservice.audit: DEBUG

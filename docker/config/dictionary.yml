@@ -4,6 +4,9 @@ server:
     client-auth: NEED
 
 datawave:
+  swagger:
+    title: "Dictionary Service"
+    description: "REST API provided by the Dictionary Service"
   metadata:
     all-metadata-auths:
       - PRIVATE,PUBLIC

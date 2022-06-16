@@ -4,6 +4,11 @@ spring:
       jwt:
         enabled: false
 
+datawave:
+  swagger:
+    title: "Cache Service"
+    description: "REST API provided by the Cache Service"
+
 hazelcast:
   server:
     # How long to wait (in seconds) before performing the first split-brain merge. When a number

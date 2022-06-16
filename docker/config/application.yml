@@ -74,6 +74,9 @@ hazelcast:
 datawave:
   authorization:
     uri: "https://authorization:8443/authorization/v1/authorize"
+  swagger:
+    title: "${spring.application.name} service"
+    description: "REST API provided by the ${spring.application.name} service"
 
 swagger:
   doc:
@@ -82,7 +85,9 @@ swagger:
 springdoc:
   api-docs:
     path: /apidocs
-    resolve-schema-properties: true
   show-actuator: true
   writer-with-default-pretty-printer: true
-#  packages-to-scan: datawave.microservice
+  swagger-ui:
+    docExpansion: 'none'
+    operationsSorter: 'method'
+    tagsSorter: 'alpha'
