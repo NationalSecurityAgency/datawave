@@ -82,7 +82,7 @@
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk16</artifactId>
+            <artifactId>bcprov-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.easymock</groupId>
@@ -267,7 +267,7 @@
                         <configuration>
                             <outputDirectory>lib</outputDirectory>
                             <!-- just grab the non-provided runtime dependencies -->
-                            <includeArtifactIds>commons-cli,httpclient,httpcore,commons-digester3,bcprov-jdk16</includeArtifactIds>
+                            <includeArtifactIds>commons-cli,httpclient,httpcore,commons-digester3,bcprov-jdk18on</includeArtifactIds>
                             <excludeTransitive>false</excludeTransitive>
                         </configuration>
                     </execution>
