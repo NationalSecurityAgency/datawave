@@ -194,6 +194,42 @@ services:
       cache:
         condition: service_healthy
 
+  accumulo:
+    profiles:
+      - accumulo
+      - full
+    image: datawave/accumulo-service:1.4-SNAPSHOT
+    command:
+      - --spring.output.ansi.enabled=ALWAYS
+      - --spring.profiles.active=consul,compose,remoteauth
+      - --spring.cloud.consul.host=consul
+      - --spring.cloud.consul.discovery.instance-id=$${spring.application.name}:$${random.value}
+    environment:
+      - AUDIT_SERVER_URL=http://audit:8080/audit
+      - ZOOKEEPER_HOST=${DW_ZOOKEEPER_HOST}
+    # This mapping is required to enable the metrics service to communicate
+    # with host-deployed services like hadoop, zookeeper, and accumulo.
+    # These values are set locally in .env via bootstrap.sh
+    extra_hosts:
+      - "${DW_HOSTNAME}:${DW_HOST_IP}"
+      - "${DW_HOST_FQDN}:${DW_HOST_IP}"
+    ports:
+      - "9143:8443"
+    volumes:
+      - ${PKI_DIR:-./pki}:/etc/pki:ro
+      - ./logs:/logs
+    networks:
+      - demo
+    healthcheck:
+      test: curl -f http://localhost:8080/accumulo/mgmt/health
+      interval: 10s
+      timeout: 1s
+      start_period: 45s
+      retries: 3
+    depends_on:
+      authorization:
+        condition: service_healthy
+
   audit:
     image: datawave/audit-service:1.11-SNAPSHOT
     command:

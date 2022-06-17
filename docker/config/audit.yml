@@ -51,6 +51,8 @@ audit:
     dump:
       enabled: false
       pathUri: 'file:///audit'
+  replay:
+    enabled: true
 
 datawave:
   swagger:

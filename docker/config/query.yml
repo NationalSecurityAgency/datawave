@@ -39,6 +39,8 @@ datawave:
     menu:
       extras: '<li><a href="http://localhost:9995">Accumulo</a></li>'
   web:
+    accumulo:
+      uri: 'https://localhost:9143/accumulo'
     cache:
       uri: 'https://localhost:8843/cache'
     config:
