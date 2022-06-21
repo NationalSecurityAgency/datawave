@@ -265,8 +265,8 @@
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-            <version>1.67</version>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.71</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -55,8 +55,8 @@
         <version.google-guava>15.0</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
-        <!-- Can download cdh binary from https://www.cloudera.com/documentation/enterprise/release-notes/topics/cdh_vd_cdh_package_tarball_59.html#tarball_59x -->
         <version.hadoop>3.3.3</version.hadoop>
+        <version.hadoop-thirdparty>1.1.1</version.hadoop-thirdparty>
         <version.htrace>4.0.1-incubating</version.htrace>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
@@ -88,7 +88,7 @@
         <version.microservice.query-metric-api>1.4.8</version.microservice.query-metric-api>
         <version.microservice.type-utils>1.8</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
-        <version.mysql-connector>8.0.16</version.mysql-connector>
+        <version.mysql-connector>8.0.29</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
         <version.picketbox>5.0.3.Final</version.picketbox>
@@ -689,6 +689,16 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop.thirdparty</groupId>
+                <artifactId>hadoop-shaded-guava</artifactId>
+                <version>${version.hadoop-thirdparty}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop.thirdparty</groupId>
+                <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
+                <version>${version.hadoop-thirdparty}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.htrace</groupId>
