@@ -24,7 +24,7 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
-import org.javatuples.Pair;
+import org.javatuples.Triplet;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -51,7 +51,8 @@ public class ContentFunctionsTest {
     
     private String phraseFunction = ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
     private String scoredPhraseFunction = ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
-    private String eventId = "shard\0type\0uid";
+    private static final String EVENT_ID = "shard\u0000dt\u0000uid";
+    private String eventId = EVENT_ID;
     
     @BeforeClass
     public static void setUp() throws URISyntaxException {
@@ -66,6 +67,7 @@ public class ContentFunctionsTest {
     public void setup() {
         this.context = new MapContext();
         this.termOffSetMap = new TermOffsetMap();
+        this.termOffSetMap.setGatherPhraseOffsets(true);
     }
     
     /**
@@ -166,9 +168,12 @@ public class ContentFunctionsTest {
     }
     
     private void assertPhraseOffset(String field, int startOffset, int endOffset) {
-        Collection<Pair<Integer,Integer>> phraseOffsets = termOffSetMap.getPhraseIndexes(field);
-        boolean found = phraseOffsets.stream().anyMatch((pair) -> pair.getValue0().equals(startOffset) && pair.getValue1().equals(endOffset));
-        Assert.assertTrue("Expected phrase offset [" + startOffset + ", " + endOffset + "] for field " + field + " but was " + phraseOffsets, found);
+        Collection<Triplet<String,Integer,Integer>> phraseOffsets = termOffSetMap.getPhraseIndexes(field);
+        boolean found = phraseOffsets.stream().anyMatch(
+                        (pair) -> pair.getValue0().equals(eventId) && pair.getValue1().equals(startOffset) && pair.getValue2().equals(endOffset));
+        Assert.assertTrue(
+                        "Expected phrase offset [" + startOffset + ", " + endOffset + "] for field " + field + " and eventId " + eventId.replace('\u0000', '/'),
+                        found);
     }
     
     private void assertPhraseOffsetsEmpty() {

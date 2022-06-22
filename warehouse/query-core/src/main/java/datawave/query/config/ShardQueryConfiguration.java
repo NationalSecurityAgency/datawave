@@ -20,6 +20,7 @@ import datawave.query.attributes.UniqueFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
@@ -33,6 +34,9 @@ import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -375,12 +379,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // fields exempt from query model expansion
     private Set<String> noExpansionFields = new HashSet<>();
     
-    public ExcerptFields excerptFields = new ExcerptFields();
-    
     /**
      * The max execution time per page of results - after it has elapsed, an intermediate result page will be returned.
      */
     private long queryExecutionForPageTimeout = 3000000L;
+    
+    private ExcerptFields excerptFields = new ExcerptFields();
+    
+    // The class for the excerpt iterator
+    private Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
     
     /**
      * The maximum weight for entries in the visitor function cache. The weight is calculated as the total number of characters for each key and value in the
@@ -572,7 +579,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
-        this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
+        this.setExcerptIterator(other.getExcerptIterator());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
     }
     
@@ -2258,12 +2265,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.excerptFields = excerptFields;
     }
     
-    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
-        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getExcerptIterator() {
+        return excerptIterator;
     }
     
-    public long getQueryExecutionForPageTimeout() {
-        return this.queryExecutionForPageTimeout;
+    public void setExcerptIterator(Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator) {
+        this.excerptIterator = excerptIterator;
     }
     
     public long getVisitorFunctionMaxWeight() {

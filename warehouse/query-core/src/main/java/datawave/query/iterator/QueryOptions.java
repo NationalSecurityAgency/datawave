@@ -37,6 +37,7 @@ import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
 import datawave.query.iterator.filter.KeyIdentity;
 import datawave.query.iterator.filter.StringToText;
 import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
@@ -56,7 +57,9 @@ import datawave.util.UniversalSet;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.OptionDescriber;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.hadoop.fs.FileSystem;
@@ -155,9 +158,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String DATATYPE_FIELDNAME = "include.datatype.fieldname";
     public static final String TRACK_SIZES = "track.sizes";
     
-    public static final String QUERY_PAGE_EXECUTION_TIMEOUT = "query.execution.for.page.timeout";
-    public static final String QUERY_IS_LONG_RUNNING = "query.is.long.running";
-    
     // pass through to Evaluating iterator to ensure consistency between query
     // logics
     
@@ -252,6 +252,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String ACTIVE_QUERY_LOG_NAME = "active.query.log.name";
     
     public static final String EXCERPT_FIELDS = "excerpt.fields";
+    
+    public static final String EXCERPT_ITERATOR = "excerpt.iterator.class";
     
     protected Map<String,String> options;
     
@@ -388,18 +390,6 @@ public class QueryOptions implements OptionDescriber {
     protected boolean debugMultithreadedSources = false;
     
     /**
-     * Manually stop the iteration (query execution) after the specified time has elapsed. Default to 50 minutes (3000000 milliseconds). A Value of 0
-     * effectively means no timeout. If this timeout is reached, either partial results, or a blank page is returned.
-     */
-    protected long queryExecutionTimeout = 3000000;
-    
-    /**
-     * If true, triggers keeping track of the intermediate result keys so that a blank page may be sent back at the end of each executionTimeout period, and
-     * then all results are returned at once after execution completes. An example of query that uses this is if the GROUP_FIELDS option exists.
-     */
-    protected boolean allowLongRunningQuery = false;
-    
-    /**
      * should document sizes be tracked
      */
     protected boolean trackSizes = true;
@@ -410,6 +400,8 @@ public class QueryOptions implements OptionDescriber {
     protected String activeQueryLogName;
     
     protected ExcerptFields excerptFields;
+    
+    protected Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
     
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
@@ -509,9 +501,8 @@ public class QueryOptions implements OptionDescriber {
         this.trackSizes = other.trackSizes;
         this.activeQueryLogName = other.activeQueryLogName;
         this.excerptFields = other.excerptFields;
+        this.excerptIterator = other.excerptIterator;
         
-        this.queryExecutionTimeout = other.queryExecutionTimeout;
-        this.allowLongRunningQuery = other.allowLongRunningQuery;
     }
     
     public String getQuery() {
@@ -1015,6 +1006,14 @@ public class QueryOptions implements OptionDescriber {
         this.excerptFields = excerptFields;
     }
     
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getExcerptIterator() {
+        return excerptIterator;
+    }
+    
+    public void setExcerptIterator(Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator) {
+        this.excerptIterator = excerptIterator;
+    }
+    
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -1107,8 +1106,7 @@ public class QueryOptions implements OptionDescriber {
                                         + ActiveQueryLog.DEFAULT_NAME
                                         + "', will use the default shared Active Query Log instance. If provided otherwise, uses a separate distinct Active Query Log that will include the unique name in log messages.");
         options.put(EXCERPT_FIELDS, "excerpt fields");
-        options.put(QUERY_PAGE_EXECUTION_TIMEOUT, "Time, in milliseocnds, after which a blank page will be returned and the query will continue to execute.");
-        options.put(QUERY_IS_LONG_RUNNING, "Allow the query to exceed the the timeout. Needs to be used in conjunction with QUERY_PAGE_EXECUTION_TIMEOUT");
+        options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
     
@@ -1368,8 +1366,6 @@ public class QueryOptions implements OptionDescriber {
             for (String param : Splitter.on(',').omitEmptyStrings().trimResults().split(groupFields)) {
                 this.getGroupFields().add(param);
             }
-            
-            this.setAllowLongRunningQuery(true);
         }
         
         if (options.containsKey(GROUP_FIELDS_BATCH_SIZE)) {
@@ -1571,13 +1567,12 @@ public class QueryOptions implements OptionDescriber {
             setExcerptFields(ExcerptFields.from(options.get(EXCERPT_FIELDS)));
         }
         
-        if (options.containsKey(QUERY_PAGE_EXECUTION_TIMEOUT)) {
-            String queryExecutionTimeoutStr = options.get(QUERY_PAGE_EXECUTION_TIMEOUT);
-            this.setQueryExecutionTimeout(Long.parseLong(queryExecutionTimeoutStr));
-        }
-        
-        if (options.containsKey(QUERY_IS_LONG_RUNNING)) {
-            this.setAllowLongRunningQuery(Boolean.parseBoolean(options.get(QUERY_IS_LONG_RUNNING)));
+        if (options.containsKey(EXCERPT_ITERATOR)) {
+            try {
+                setExcerptIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(options.get(EXCERPT_ITERATOR)));
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException("Could not get class for " + options.get(EXCERPT_ITERATOR), e);
+            }
         }
         
         return true;
@@ -1984,22 +1979,6 @@ public class QueryOptions implements OptionDescriber {
     
     public void setYieldThresholdMs(long yieldThresholdMs) {
         this.yieldThresholdMs = yieldThresholdMs;
-    }
-    
-    public void setQueryExecutionTimeout(long queryExecutionTimeout) {
-        this.queryExecutionTimeout = queryExecutionTimeout;
-    }
-    
-    public long getQueryExecutionTimeout() {
-        return queryExecutionTimeout;
-    }
-    
-    public void setAllowLongRunningQuery(boolean allowLongRunningQuery) {
-        this.allowLongRunningQuery = allowLongRunningQuery;
-    }
-    
-    public boolean allowLongRunningQuery() {
-        return allowLongRunningQuery;
     }
     
 }

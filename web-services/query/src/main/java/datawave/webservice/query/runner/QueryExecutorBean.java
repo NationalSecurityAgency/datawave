@@ -168,8 +168,8 @@ import static datawave.webservice.query.cache.QueryTraceCache.CacheListener;
 import static datawave.webservice.query.cache.QueryTraceCache.PatternWrapper;
 
 @Path("/Query")
-@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})
-@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "PrivilegedUser", "InternalUser", "Administrator", "JBossAdministrator"})
+@RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser"})
+@DeclareRoles({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser"})
 @Stateless
 @LocalBean
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
@@ -178,6 +178,7 @@ import static datawave.webservice.query.cache.QueryTraceCache.PatternWrapper;
 public class QueryExecutorBean implements QueryExecutor {
     
     private static final String PRIVILEGED_USER = "PrivilegedUser";
+    private static final String UNLIMITED_QUERY_RESULTS_USER = "UnlimitedQueryResultsUser";
     
     /**
      * Used when getting a plan prior to creating a query
@@ -512,9 +513,9 @@ public class QueryExecutorBean implements QueryExecutor {
         }
         
         // validate the max results override relative to the max results on a query logic
-        // privileged users however can set whatever they want
+        // privileged users or unlimited max results users however, may ignore this limitation.
         if (qp.isMaxResultsOverridden() && qd.logic.getMaxResults() >= 0) {
-            if (!ctx.isCallerInRole(PRIVILEGED_USER)) {
+            if (!ctx.isCallerInRole(PRIVILEGED_USER) || !ctx.isCallerInRole(UNLIMITED_QUERY_RESULTS_USER)) {
                 if (qp.getMaxResultsOverride() < 0 || (qd.logic.getMaxResults() < qp.getMaxResultsOverride())) {
                     log.error("Invalid max results override: " + qp.getMaxResultsOverride() + " vs " + qd.logic.getMaxResults());
                     GenericResponse<String> response = new GenericResponse<>();
@@ -1367,9 +1368,9 @@ public class QueryExecutorBean implements QueryExecutor {
             span = Trace.trace(traceInfo, "query:next");
         }
         
-        ResultsPage resultsPage;
+        ResultsPage resultList;
         try {
-            resultsPage = query.next();
+            resultList = query.next();
         } catch (RejectedExecutionException e) {
             // - race condition, query expired while user called next
             throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_OR_SERVER_ERROR, e, MessageFormat.format("id = {0}", queryId));
@@ -1377,8 +1378,8 @@ public class QueryExecutorBean implements QueryExecutor {
         
         long pageNum = query.getLastPageNumber();
         
-        BaseQueryResponse response = query.getLogic().getTransformer(query.getSettings()).createResponse(resultsPage);
-        if (resultsPage.getStatus() != ResultsPage.Status.NONE) {
+        BaseQueryResponse response = query.getLogic().getTransformer(query.getSettings()).createResponse(resultList);
+        if (!resultList.getResults().isEmpty()) {
             response.setHasResults(true);
         } else {
             response.setHasResults(false);
@@ -1393,11 +1394,9 @@ public class QueryExecutorBean implements QueryExecutor {
         
         query.getMetric().setProxyServers(proxyServers);
         
-        testForUncaughtException(query.getSettings(), resultsPage);
+        testForUncaughtException(query.getSettings(), resultList);
         
-        // This should NOT be an exception - revisit. Unfortunately, the jboss interceptor looks for a
-        // NoResultsQueryException in order to set the status code.
-        if (resultsPage.getStatus() == ResultsPage.Status.NONE) {
+        if (resultList.getResults().isEmpty()) {
             NoResultsQueryException qe = new NoResultsQueryException(DatawaveErrorCode.NO_QUERY_RESULTS_FOUND, MessageFormat.format("{0}", queryId));
             response.addException(qe);
             throw new NoResultsException(qe);
