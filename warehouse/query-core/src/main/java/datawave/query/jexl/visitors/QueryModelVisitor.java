@@ -188,7 +188,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
         
         for (String alias : aliases) {
             if (alias != null) {
-                BoundedRange rangeNode = BoundedRange.create(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE),
+                BoundedRange rangeNode = (BoundedRange) BoundedRange.create(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE),
                                 JexlASTHelper.setField(RebuildingVisitor.copy(range.getLowerNode()), alias),
                                 JexlASTHelper.setField(RebuildingVisitor.copy(range.getUpperNode()), alias)));
                 aliasedBounds.add(rangeNode);
