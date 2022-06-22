@@ -23,6 +23,10 @@ import datawave.marking.SecurityMarking;
 import datawave.microservice.query.QueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.microservice.query.config.QueryExpirationProperties;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.query.data.UUIDType;
 import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
@@ -60,10 +64,6 @@ import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.query.factory.Persister;
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
-import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.logic.QueryLogicDescription;
@@ -1390,9 +1390,9 @@ public class QueryExecutorBean implements QueryExecutor {
             span = Trace.trace(traceInfo, "query:next");
         }
         
-        ResultsPage resultsPage;
+        ResultsPage resultList;
         try {
-            resultsPage = query.next();
+            resultList = query.next();
         } catch (RejectedExecutionException e) {
             // - race condition, query expired while user called next
             throw new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TIMEOUT_OR_SERVER_ERROR, e, MessageFormat.format("id = {0}", queryId));
@@ -1400,8 +1400,8 @@ public class QueryExecutorBean implements QueryExecutor {
         
         long pageNum = query.getLastPageNumber();
         
-        BaseQueryResponse response = query.getLogic().getTransformer(query.getSettings()).createResponse(resultsPage);
-        if (resultsPage.getStatus() != ResultsPage.Status.NONE) {
+        BaseQueryResponse response = query.getLogic().getTransformer(query.getSettings()).createResponse(resultList);
+        if (!resultList.getResults().isEmpty()) {
             response.setHasResults(true);
         } else {
             response.setHasResults(false);
@@ -1416,11 +1416,9 @@ public class QueryExecutorBean implements QueryExecutor {
         
         query.getMetric().setProxyServers(proxyServers);
         
-        testForUncaughtException(query.getSettings(), resultsPage);
+        testForUncaughtException(query.getSettings(), resultList);
         
-        // This should NOT be an exception - revisit. Unfortunately, the jboss interceptor looks for a
-        // NoResultsQueryException in order to set the status code.
-        if (resultsPage.getStatus() == ResultsPage.Status.NONE) {
+        if (resultList.getResults().isEmpty()) {
             NoResultsQueryException qe = new NoResultsQueryException(DatawaveErrorCode.NO_QUERY_RESULTS_FOUND, MessageFormat.format("{0}", queryId));
             response.addException(qe);
             throw new NoResultsException(qe);

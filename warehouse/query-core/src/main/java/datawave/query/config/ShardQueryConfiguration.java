@@ -8,7 +8,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.hash.BloomFilter;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
@@ -20,6 +19,7 @@ import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -594,7 +594,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
         this.setExcerptIterator(other.getExcerptIterator());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
-        this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
     }
     
     /**

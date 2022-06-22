@@ -20,8 +20,6 @@ import java.util.List;
  */
 public class DashboardQueryLogic extends ShardQueryLogic implements QueryLogicTransformer {
     
-    protected long queryExecutionForCurrentPageStartTime;
-    
     public DashboardQueryLogic() {}
     
     public DashboardQueryLogic(DashboardQueryLogic logic) {
@@ -67,11 +65,6 @@ public class DashboardQueryLogic extends ShardQueryLogic implements QueryLogicTr
     @Override
     public Object transform(Object input) {
         return input;
-    }
-    
-    @Override
-    public void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime) {
-        this.queryExecutionForCurrentPageStartTime = queryExecutionForCurrentPageStartTime;
     }
     
 }
