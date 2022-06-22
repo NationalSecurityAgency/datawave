@@ -55,6 +55,13 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>accumulo-utils</artifactId>
+            <exclusions>
+                <!-- Exxclude so that older version of jjwt isn't pulled in. -->
+                <exclusion>
+                    <groupId>gov.nsa.datawave.microservice</groupId>
+                    <artifactId>authorization-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
