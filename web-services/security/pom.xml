@@ -55,6 +55,7 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
+	    <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>javax.enterprise</groupId>

@@ -395,6 +395,7 @@
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-jackson</artifactId>
                 <version>${version.jjwt}</version>
+		<scope>runtime</scope>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
