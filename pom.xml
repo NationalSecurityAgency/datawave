@@ -392,12 +392,6 @@
                 <version>${version.jjwt}</version>
             </dependency>
             <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt-jackson</artifactId>
-                <version>${version.jjwt}</version>
-		<scope>runtime</scope>
-            </dependency>
-            <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
                 <version>${version.netty}</version>
@@ -954,6 +948,12 @@
                 <artifactId>wildfly-undertow</artifactId>
                 <version>${version.wildfly}</version>
                 <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${version.jjwt}</version>
+                <scope>runtime</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.deltaspike.core</groupId>
