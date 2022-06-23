@@ -5,7 +5,6 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
@@ -213,7 +212,8 @@ public class PushdownNegationVisitor extends BaseVisitor {
         // flip the root operator and finish validating the root
         JexlNode newRoot;
         if (root instanceof ASTAndNode) {
-            newRoot = JexlNodeFactory.createOrNode(negatedChildren); // I think we need to create unwrapped versions
+            // may need to create an unwrapped or node
+            newRoot = JexlNodeFactory.createOrNode(negatedChildren);
         } else if (root instanceof ASTOrNode) {
             newRoot = JexlNodeFactory.createAndNode(negatedChildren);
         } else {
