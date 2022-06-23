@@ -49,7 +49,10 @@ done
 
 [ "${START_WEB}" == true ] && datawaveWebStart
 
-[ "${START_TEST}" == true ] && datawaveWebStart && datawaveWebTest --blacklist-files QueryMetrics && allStop || fatal "DataWave Quickstart Tests failed"
+if [ "${START_TEST}" == true ] ; then
+    datawaveWebStart && datawaveWebTest --blacklist-files QueryMetrics && allStop
+    exit $?
+fi
 
 if [ "${START_AS_DAEMON}" == true ] ; then
     while true; do sleep 1000; done

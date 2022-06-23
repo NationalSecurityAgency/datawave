@@ -140,7 +140,7 @@ jobs:
         ./bootstrap.sh
 
         attempt=0
-        max_attempts=3
+        max_attempts=5
         while [ $attempt -lt $max_attempts ]; do
           attempt=$((attempt+1))
           exit_code=0
