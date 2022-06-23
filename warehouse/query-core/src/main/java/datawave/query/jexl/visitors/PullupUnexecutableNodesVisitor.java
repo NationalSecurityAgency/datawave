@@ -244,7 +244,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
         // if a delayed predicate, then change it to a regular reference
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         if (instance.isType(ASTDelayedPredicate.class)) {
-            JexlNode source = instance.getSource();
+            JexlNode source = ASTDelayedPredicate.unwrapFully(node, ASTDelayedPredicate.class);
             JexlNodes.swap(node.jjtGetParent(), node, source);
             return source;
         } else if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
