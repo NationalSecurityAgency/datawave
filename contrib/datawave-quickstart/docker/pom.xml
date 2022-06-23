@@ -15,11 +15,13 @@
         <dist.accumulo>accumulo-1.10.2-bin.tar.gz</dist.accumulo>
         <dist.hadoop>hadoop-3.3.3.tar.gz</dist.hadoop>
         <dist.maven>apache-maven-3.8.6-bin.tar.gz</dist.maven>
+        <dist.wildfly>wildfly-17.0.1.Final.tar.gz</dist.wildfly>
         <dist.zookeeper>apache-zookeeper-3.6.3-bin.tar.gz</dist.zookeeper>
         <skipIngest>false</skipIngest>
         <url.accumulo>https://dlcdn.apache.org/accumulo/1.10.2/${dist.accumulo}</url.accumulo>
         <url.hadoop>http://dlcdn.apache.org/hadoop/common/hadoop-3.3.3/${dist.hadoop}</url.hadoop>
         <url.maven>https://archive.apache.org/dist/maven/maven-3/3.8.6/binaries/${dist.maven}</url.maven>
+        <url.wildfly>https://download.jboss.org/wildfly/17.0.1.Final/${dist.wildfly}</url.wildfly>
         <url.zookeeper>https://dlcdn.apache.org/zookeeper/zookeeper-3.6.3/${dist.zookeeper}</url.zookeeper>
     </properties>
     <dependencies>
@@ -84,6 +86,16 @@
                             <outputDirectory>${project.build.outputDirectory}</outputDirectory>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>download-wildfly</id>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${url.wildfly}</url>
+                            <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -103,6 +115,7 @@
                             <includes>
                                 <include>**/datawave-*-dist.tar.gz</include>
                                 <include>**/datawave-ws-deploy-application-*.tar.gz</include>
+                                <include>**/wildfly-*.tar.gz</include>
                             </includes>
                         </fileset>
                         <fileset>
@@ -161,6 +174,12 @@
                                     <directory>${project.basedir}/../../../web-services/deploy/application/target/</directory>
                                     <includes>
                                         <include>datawave-ws-deploy-application-${project.version}-${build.env}.tar.gz</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>${project.build.outputDirectory}</directory>
+                                    <includes>
+                                        <include>${dist.wildfly}</include>
                                     </includes>
                                 </resource>
                             </resources>
