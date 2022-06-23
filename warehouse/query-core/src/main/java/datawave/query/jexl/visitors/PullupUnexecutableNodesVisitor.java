@@ -245,6 +245,9 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         if (instance.isType(ASTDelayedPredicate.class)) {
             JexlNode source = ASTDelayedPredicate.unwrapFully(node, ASTDelayedPredicate.class);
+            if (!(source instanceof ASTReferenceExpression)) {
+                source = JexlNodes.wrap(source);
+            }
             JexlNodes.swap(node.jjtGetParent(), node, source);
             return source;
         } else if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
