@@ -407,6 +407,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private long visitorFunctionMaxWeight = 5000000L;
     
     /**
+     * If true, the LAZY_SET mechanism will be enabled for non-event and index-only fields.
+     */
+    private boolean lazySetMechanismEnabled = false;
+    
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -594,6 +599,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
         this.setExcerptIterator(other.getExcerptIterator());
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
+        this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
     }
     
     /**
@@ -2373,12 +2379,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.visitorFunctionMaxWeight = visitorFunctionMaxWeight;
     }
     
-    public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
-        this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
+    public boolean isLazySetMechanismEnabled() {
+        return lazySetMechanismEnabled;
     }
     
-    public long getQueryExecutionForPageTimeout() {
-        return this.queryExecutionForPageTimeout;
+    public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
+        this.lazySetMechanismEnabled = lazySetMechanismEnabled;
     }
     
     @Override
@@ -2489,8 +2495,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         && Objects.equals(getModelTableName(), that.getModelTableName()) && Objects.equals(getGroupFields(), that.getGroupFields())
                         && Objects.equals(getUniqueFields(), that.getUniqueFields()) && Objects.equals(getContentFieldNames(), that.getContentFieldNames())
                         && Objects.equals(getActiveQueryLogNameSource(), that.getActiveQueryLogNameSource()) && Objects.equals(getBloom(), that.getBloom())
-                        && Objects.equals(getNoExpansionFields(), that.getNoExpansionFields())
-                        && getQueryExecutionForPageTimeout() == that.getQueryExecutionForPageTimeout();
+                        && Objects.equals(getNoExpansionFields(), that.getNoExpansionFields());
     }
     
     @Override
@@ -2527,8 +2532,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
                         getModelName(), getModelTableName(), shouldLimitTermExpansionToModel, isCompressServerSideResults(),
                         isIndexOnlyFilterFunctionsEnabled(), isCompositeFilterFunctionsEnabled(), getGroupFieldsBatchSize(), getAccrueStats(), getGroupFields(),
                         getUniqueFields(), getCacheModel(), isTrackSizes(), getContentFieldNames(), getActiveQueryLogNameSource(),
-                        getEnforceUniqueConjunctionsWithinExpression(), getEnforceUniqueDisjunctionsWithinExpression(), getNoExpansionFields(), getBloom(),
-                        getQueryExecutionForPageTimeout());
+                        getEnforceUniqueConjunctionsWithinExpression(), getEnforceUniqueDisjunctionsWithinExpression(), getNoExpansionFields(), getBloom());
     }
     
     // Part of the Serializable interface used to initialize any transient members during deserialization
